@@ -1,0 +1,14 @@
+*.o
+*.lo
+*~
+*.la
+*.pc
+*.tgz
+*.gz
+.dirstamp
+
+Makefile
+
+.cproject
+.project
+
