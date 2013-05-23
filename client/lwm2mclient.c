@@ -1,4 +1,6 @@
 
+#include "lwm2mclient.h"
+
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -65,6 +67,117 @@ int get_socket()
     return s;
 }
 
+
+static int prv_get_number(const char * uriString,
+                          size_t uriLength,
+                          int * headP)
+{
+    int result = 0;
+    int mul = 0;
+
+    while (*headP < uriLength && uriString[*headP] != '/')
+    {
+        if ('0' <= uriString[*headP] && uriString[*headP] <= '9')
+        {
+            if (0 == mul)
+            {
+                mul = 10;
+            }
+            else
+            {
+                result *= mul;
+                mul *= 10;
+            }
+            result += uriString[*headP] - '0';
+        }
+        else
+        {
+            return -1;
+        }
+        *headP += 1;
+    }
+
+    if (uriString[*headP] == '/')
+        *headP += 1;
+
+    return result;
+}
+
+
+lwm2m_uri_t * decode_uri(const char * uriString,
+                         size_t uriLength)
+{
+    lwm2m_uri_t * uriP;
+    int head = 0;
+    int readNum;
+
+    if (NULL == uriString || 0 == uriLength) return NULL;
+
+    uriP = (lwm2m_uri_t *)malloc(sizeof(lwm2m_uri_t));
+    if (NULL == uriP) return NULL;
+
+    uriP->objID = LWM2M_URI_NO_ID;
+    uriP->objInstance = LWM2M_URI_NO_INSTANCE;
+    uriP->resID = LWM2M_URI_NO_ID;
+    uriP->resInstance = LWM2M_URI_NO_INSTANCE;
+
+    // Read object ID
+    readNum = prv_get_number(uriString, uriLength, &head);
+    if (readNum < 0 || readNum >= LWM2M_URI_NO_ID) goto error;
+    uriP->objID = (uint16_t)readNum;
+    if (head >= uriLength) return uriP;
+
+    // Read object instance
+    if (uriString[head] == '/')
+    {
+        // no instance
+        head++;
+    }
+    else
+    {
+        readNum = prv_get_number(uriString, uriLength, &head);
+        if (readNum < 0 || readNum >= LWM2M_URI_NO_INSTANCE) goto error;
+        uriP->objInstance = (uint8_t)readNum;
+    }
+    if (head >= uriLength) return uriP;
+
+    // Read ressource ID
+    if (uriString[head] == '/')
+    {
+        // no ID
+        head++;
+    }
+    else
+    {
+        readNum = prv_get_number(uriString, uriLength, &head);
+        if (readNum < 0 || readNum >= LWM2M_URI_NO_ID) goto error;
+        uriP->resID = (uint16_t)readNum;
+    }
+    if (head >= uriLength) return uriP;
+
+    // Read ressource instance
+    if (uriString[head] == '/')
+    {
+        // no instance
+        head++;
+    }
+    else
+    {
+        if (LWM2M_URI_NO_ID == uriP->resID) goto error;
+        readNum = prv_get_number(uriString, uriLength, &head);
+        if (readNum < 0 || readNum >= LWM2M_URI_NO_INSTANCE) goto error;
+        uriP->resInstance = (uint8_t)readNum;
+    }
+    if (head < uriLength) goto error;
+
+    return uriP;
+
+error:
+    free(uriP);
+    return NULL;
+}
+
+
 void handle_response(coap_packet_t * message)
 {
 }
@@ -75,13 +188,31 @@ coap_status_t handle_request(coap_packet_t * message,
                              uint16_t preferred_size,
                              int32_t *offset)
 {
-    if (!strncmp(message->uri_path, "0/1/2", message->uri_path_len))
+    lwm2m_uri_t * uriP;
+    coap_status_t result = NOT_FOUND_4_04;
+
+    uriP = decode_uri(message->uri_path, message->uri_path_len);
+
+    if (NULL == uriP)
+    {
+        fprintf(stderr, "Invalid URI !\r\n");
+        return NOT_FOUND_4_04;
+    }
+
+    fprintf(stdout, "object ID: %d\r\nobject instance: %d\r\nressource ID: %d\r\n ressource instance: %d\r\n",
+                    uriP->objID, uriP->objInstance, uriP->resID, uriP->resInstance);
+
+
+    if (uriP->objID == 1 &&  uriP->objInstance == 2)
     {
         coap_set_status_code(response, CONTENT_2_05);
         coap_set_payload(response, "Hi there !", strlen("Hi there !"));
-        return NO_ERROR;
+        result = NO_ERROR;
     }
-    return NOT_FOUND_4_04;
+
+    free(uriP);
+
+    return result;
 }
 
 /* This function is an adaptation of function coap_receive() from Erbium's er-coap-13-engine.c.
