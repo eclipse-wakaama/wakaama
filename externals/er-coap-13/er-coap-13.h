@@ -41,8 +41,15 @@
 
 #include <stdint.h>
 #include <stddef.h> /* for size_t */
-//#include "contiki-net.h"
-//#include "erbium.h"
+
+#ifdef CONTIKI
+#include "contiki-net.h"
+#include "erbium.h"
+#else
+#include <netinet/in.h>
+#include <signal.h>
+#include <time.h>
+#endif
 
 /*
  * The maximum buffer size that is provided for resource responses and must be respected due to the limited IP buffer.
@@ -101,8 +108,10 @@
 #define COAP_MAX_ATTEMPTS             4
 #endif /* COAP_MAX_ATTEMPTS */
 
+#ifdef CONTIKI
 #define UIP_IP_BUF    ((struct uip_ip_hdr *)&uip_buf[UIP_LLH_LEN])
 #define UIP_UDP_BUF   ((struct uip_udp_hdr *)&uip_buf[UIP_LLH_LEN + UIP_IPH_LEN])
+#endif
 
 /* Bitmap for set options */
 enum { OPTION_MAP_SIZE = sizeof(uint8_t) * 8 };
@@ -319,12 +328,18 @@ typedef struct {
 extern coap_status_t coap_error_code;
 extern char *coap_error_message;
 
-//void coap_init_connection(uint16_t port);
+#ifdef CONTIKI
+void coap_init_connection(uint16_t port);
+#endif
 uint16_t coap_get_mid(void);
 
 void coap_init_message(void *packet, coap_message_type_t type, uint8_t code, uint16_t mid);
 size_t coap_serialize_message(void *packet, uint8_t *buffer);
-//void coap_send_message(uip_ipaddr_t *addr, uint16_t port, uint8_t *data, uint16_t length);
+#ifdef CONTIKI
+void coap_send_message(uip_ipaddr_t *addr, uint16_t port, uint8_t *data, uint16_t length);
+#else
+void coap_send_message(int sock, struct sockaddr_storage *addr, socklen_t addrLen, uint8_t *data, uint16_t length);
+#endif
 coap_status_t coap_parse_message(void *request, uint8_t *data, uint16_t data_len);
 
 int coap_get_query_variable(void *packet, const char *name, const char **output);

@@ -16,6 +16,7 @@
 #include <signal.h>
 
 #include "externals/er-coap-13/er-coap-13.h"
+#include "externals/er-coap-13/er-coap-13-transactions.h"
 
 #define MAX_PACKET_SIZE 128
 
@@ -64,21 +65,205 @@ int get_socket()
     return s;
 }
 
-void handle_packet(uint8_t * buffer, int length)
+void handle_response(coap_packet_t * message)
+{
+}
+
+coap_status_t handle_request(coap_packet_t * message,
+                             coap_packet_t * response,
+                             uint8_t *buffer,
+                             uint16_t preferred_size,
+                             int32_t *offset)
+{
+    if (!strncmp(message->uri_path, "0/1/2", message->uri_path_len))
+    {
+        coap_set_status_code(response, CONTENT_2_05);
+        coap_set_payload(response, "Hi there !", strlen("Hi there !"));
+        return NO_ERROR;
+    }
+    return NOT_FOUND_4_04;
+}
+
+/* This function is an adaptation of function coap_receive() from Erbium's er-coap-13-engine.c.
+ * Erbium is Copyright (c) 2013, Institute for Pervasive Computing, ETH Zurich
+ * All rights reserved.
+ */
+static void handle_packet(uint8_t * buffer,
+                          int length,
+                          int sock,
+                          struct sockaddr_storage addr,
+                          socklen_t addrLen)
 {
     coap_status_t coap_error_code = NO_ERROR;
     static coap_packet_t message[1];
+    static coap_packet_t response[1];
+    static coap_transaction_t * transaction = NULL;
 
     coap_error_code = coap_parse_message(message, buffer, (uint16_t)length);
     if (coap_error_code==NO_ERROR)
     {
-        fprintf(stdout, "  Parsed: ver %u, type %u, tkl %u, code %u, mid %u\n", message->version, message->type, message->token_len, message->code, message->mid);
-        fprintf(stdout, "  URL: %.*s\n", message->uri_path_len, message->uri_path);
-        fprintf(stdout, "  Payload: %.*s\n\n", message->payload_len, message->payload);
-    }
+        fprintf(stdout, "  Parsed: ver %u, type %u, tkl %u, code %u, mid %u\r\n", message->version, message->type, message->token_len, message->code, message->mid);
+        fprintf(stdout, "  URL: %.*s\r\n", message->uri_path_len, message->uri_path);
+        fprintf(stdout, "  Payload: %.*s\r\n\n", message->payload_len, message->payload);
+
+        if (message->code >= COAP_GET && message->code <= COAP_DELETE)
+        {
+            /* Use transaction buffer for response to confirmable request. */
+            if ( (transaction = coap_new_transaction(message->mid, sock, &addr, addrLen)) )
+            {
+                uint32_t block_num = 0;
+                uint16_t block_size = REST_MAX_CHUNK_SIZE;
+                uint32_t block_offset = 0;
+                int32_t new_offset = 0;
+
+                /* prepare response */
+                if (message->type==COAP_TYPE_CON)
+                {
+                    /* Reliable CON requests are answered with an ACK. */
+                    coap_init_message(response, COAP_TYPE_ACK, CONTENT_2_05, message->mid);
+                }
+                else
+                {
+                    /* Unreliable NON requests are answered with a NON as well. */
+                    coap_init_message(response, COAP_TYPE_NON, CONTENT_2_05, coap_get_mid());
+                }
+
+                /* mirror token */
+                if (message->token_len)
+                {
+                    coap_set_header_token(response, message->token, message->token_len);
+                }
+
+                /* get offset for blockwise transfers */
+                if (coap_get_header_block2(message, &block_num, NULL, &block_size, &block_offset))
+                {
+                    fprintf(stdout, "Blockwise: block request %lu (%u/%u) @ %lu bytes\n", block_num, block_size, REST_MAX_CHUNK_SIZE, block_offset);
+                    block_size = MIN(block_size, REST_MAX_CHUNK_SIZE);
+                    new_offset = block_offset;
+                }
+
+                coap_error_code = handle_request(message, response, transaction->packet+COAP_MAX_HEADER_SIZE, block_size, &new_offset);
+                if (coap_error_code==NO_ERROR)
+                {
+                    /* Apply blockwise transfers. */
+                    if ( IS_OPTION(message, COAP_OPTION_BLOCK1) && response->code<BAD_REQUEST_4_00 && !IS_OPTION(response, COAP_OPTION_BLOCK1) )
+                    {
+                        fprintf(stdout, "Block1 NOT IMPLEMENTED\n");
+
+                        coap_error_code = NOT_IMPLEMENTED_5_01;
+                        coap_error_message = "NoBlock1Support";
+                    }
+                    else if ( IS_OPTION(message, COAP_OPTION_BLOCK2) )
+                    {
+                        /* unchanged new_offset indicates that resource is unaware of blockwise transfer */
+                        if (new_offset==block_offset)
+                        {
+                            fprintf(stdout, "Blockwise: unaware resource with payload length %u/%u\n", response->payload_len, block_size);
+                            if (block_offset >= response->payload_len)
+                            {
+                                fprintf(stdout, "handle_incoming_data(): block_offset >= response->payload_len\n");
+
+                                response->code = BAD_OPTION_4_02;
+                                coap_set_payload(response, "BlockOutOfScope", 15); /* a const char str[] and sizeof(str) produces larger code size */
+                            }
+                            else
+                            {
+                                coap_set_header_block2(response, block_num, response->payload_len - block_offset > block_size, block_size);
+                                coap_set_payload(response, response->payload+block_offset, MIN(response->payload_len - block_offset, block_size));
+                            } /* if (valid offset) */
+                        }
+                        else
+                        {
+                            /* resource provides chunk-wise data */
+                            fprintf(stdout, "Blockwise: blockwise resource, new offset %ld\n", new_offset);
+                            coap_set_header_block2(response, block_num, new_offset!=-1 || response->payload_len > block_size, block_size);
+                            if (response->payload_len > block_size) coap_set_payload(response, response->payload, block_size);
+                        } /* if (resource aware of blockwise) */
+                    }
+                    else if (new_offset!=0)
+                    {
+                        fprintf(stdout, "Blockwise: no block option for blockwise resource, using block size %u\n", REST_MAX_CHUNK_SIZE);
+
+                        coap_set_header_block2(response, 0, new_offset!=-1, REST_MAX_CHUNK_SIZE);
+                        coap_set_payload(response, response->payload, MIN(response->payload_len, REST_MAX_CHUNK_SIZE));
+                    } /* if (blockwise request) */
+                } /* no errors/hooks */
+
+                /* Serialize response. */
+                if (coap_error_code==NO_ERROR)
+                {
+                    if ((transaction->packet_len = coap_serialize_message(response, transaction->packet))==0)
+                    {
+                        coap_error_code = PACKET_SERIALIZATION_ERROR;
+                    }
+                }
+            }
+            else
+            {
+                coap_error_code = SERVICE_UNAVAILABLE_5_03;
+                coap_error_message = "NoFreeTraBuffer";
+            } /* if (transaction buffer) */
+        }
+        else
+        {
+            /* Responses */
+
+            if (message->type==COAP_TYPE_ACK)
+            {
+              fprintf(stdout, "Received ACK\n");
+            }
+            else if (message->type==COAP_TYPE_RST)
+            {
+                fprintf(stdout, "Received RST\n");
+                /* Cancel possible subscriptions. */
+ //               coap_remove_observer_by_mid(&UIP_IP_BUF->srcipaddr, UIP_UDP_BUF->srcport, message->mid);
+            }
+
+            if ( (transaction = coap_get_transaction_by_mid(message->mid)) )
+            {
+                /* Free transaction memory before callback, as it may create a new transaction. */
+                coap_clear_transaction(transaction);
+
+                handle_response(message);
+            }
+            transaction = NULL;
+        } /* Request or Response */
+    } /* if (parsed correctly) */
     else
     {
         fprintf(stderr, "Message parsing failed %d\r\n", coap_error_code);
+    }
+
+    if (coap_error_code==NO_ERROR)
+    {
+        if (transaction) coap_send_transaction(transaction);
+    }
+    else if (coap_error_code==MANUAL_RESPONSE)
+    {
+        fprintf(stdout, "Clearing transaction for manual response");
+        coap_clear_transaction(transaction);
+    }
+    else
+    {
+        uint8_t buffer[COAP_MAX_PACKET_SIZE+1];
+        size_t bufferLen = 0;
+
+        fprintf(stdout, "ERROR %u: %s\n", coap_error_code, coap_error_message);
+        coap_clear_transaction(transaction);
+
+        /* Set to sendable error code. */
+        if (coap_error_code >= 192)
+        {
+            coap_error_code = INTERNAL_SERVER_ERROR_5_00;
+        }
+        /* Reuse input buffer for error message. */
+        coap_init_message(message, COAP_TYPE_ACK, coap_error_code, message->mid);
+        coap_set_payload(message, coap_error_message, strlen(coap_error_message));
+        bufferLen = coap_serialize_message(message, buffer);
+        if (0 != bufferLen)
+        {
+            coap_send_message(sock, &addr, addrLen, buffer, bufferLen);
+        }
     }
 }
 
@@ -139,7 +324,7 @@ int main(int argc, char *argv[])
                                       INET6_ADDRSTRLEN),
                             &((struct sockaddr_in6*)&addr)->sin6_port);
 
-                    handle_packet(buffer, numBytes);
+                    handle_packet(buffer, numBytes, socket, addr, addrLen);
                 }
             }
         }

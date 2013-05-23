@@ -36,16 +36,19 @@
  *      Matthias Kovatsch <kovatsch@inf.ethz.ch>
  */
 
-//#include "contiki.h"
-//#include "contiki-net.h"
+#ifdef CONTIKI
+#include "contiki.h"
+#include "contiki-net.h"
+#endif
+
 #include <string.h>
 #include <stdio.h>
 
 #include "er-coap-13.h"
-//#include "er-coap-13-transactions.h"
+#include "er-coap-13-transactions.h"
 
 
-#define DEBUG 0
+#define DEBUG 1
 #if DEBUG
 #include <stdio.h>
 #define PRINTF(...) printf(__VA_ARGS__)
@@ -60,7 +63,9 @@
 /*-----------------------------------------------------------------------------------*/
 /*- Variables -----------------------------------------------------------------------*/
 /*-----------------------------------------------------------------------------------*/
+#ifdef CONTIKI
 static struct uip_udp_conn *udp_conn = NULL;
+#endif
 static uint16_t current_mid = 0;
 
 coap_status_t coap_error_code = NO_ERROR;
@@ -272,7 +277,8 @@ coap_get_variable(const char *buffer, size_t length, const char *name, const cha
 /*-----------------------------------------------------------------------------------*/
 /*- MEASSAGE SENDING ----------------------------------------------------------------*/
 /*-----------------------------------------------------------------------------------*/
-#if 0
+
+#ifdef CONTIKI
 void
 coap_init_connection(uint16_t port)
 {
@@ -285,6 +291,7 @@ coap_init_connection(uint16_t port)
   current_mid = random_rand();
 }
 #endif
+
 /*-----------------------------------------------------------------------------------*/
 uint16_t
 coap_get_mid()
@@ -402,7 +409,7 @@ coap_serialize_message(void *packet, uint8_t *buffer)
   return (option - buffer) + coap_pkt->payload_len; /* packet length */
 }
 /*-----------------------------------------------------------------------------------*/
-#if 0
+#ifdef CONTIKI
 void
 coap_send_message(uip_ipaddr_t *addr, uint16_t port, uint8_t *data, uint16_t length)
 {
@@ -416,6 +423,12 @@ coap_send_message(uip_ipaddr_t *addr, uint16_t port, uint8_t *data, uint16_t len
   /* Restore server connection to allow data from any node */
   memset(&udp_conn->ripaddr, 0, sizeof(udp_conn->ripaddr));
   udp_conn->rport = 0;
+}
+#else
+void
+coap_send_message(int sock, struct sockaddr_storage *addr, socklen_t addrLen, uint8_t *data, uint16_t length)
+{
+    sendto(sock, data, length, 0, (struct sockaddr *)addr, addrLen);
 }
 #endif
 /*-----------------------------------------------------------------------------------*/
