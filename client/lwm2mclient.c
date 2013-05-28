@@ -182,6 +182,20 @@ void handle_response(coap_packet_t * message)
 {
 }
 
+coap_status_t object_get_response(coap_method_t method,
+                                  lwm2m_uri_t * uriP,
+                                  coap_packet_t * response)
+{
+    if (uriP->objID == 1 &&  uriP->objInstance == 2)
+    {
+        coap_set_status_code(response, CONTENT_2_05);
+        coap_set_payload(response, "Hi there !", strlen("Hi there !"));
+        return NO_ERROR;
+    }
+
+    return NOT_FOUND_4_04;
+}
+
 coap_status_t handle_request(coap_packet_t * message,
                              coap_packet_t * response,
                              uint8_t *buffer,
@@ -203,12 +217,7 @@ coap_status_t handle_request(coap_packet_t * message,
                     uriP->objID, uriP->objInstance, uriP->resID, uriP->resInstance);
 
 
-    if (uriP->objID == 1 &&  uriP->objInstance == 2)
-    {
-        coap_set_status_code(response, CONTENT_2_05);
-        coap_set_payload(response, "Hi there !", strlen("Hi there !"));
-        result = NO_ERROR;
-    }
+    result = object_get_response(message->code, uriP, response);
 
     free(uriP);
 

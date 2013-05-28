@@ -4,4 +4,7 @@ project (lwm2mclient)
 
 include_directories ("${PROJECT_SOURCE_DIR}/..")
 
-add_executable(lwm2mclient lwm2mclient.c ${PROJECT_SOURCE_DIR}/../externals/er-coap-13/er-coap-13.c ${PROJECT_SOURCE_DIR}/../externals/er-coap-13/er-coap-13-transactions.c)
+SET(SOURCES lwm2mclient.c value.c)
+SET(EXT_SOURCES ${PROJECT_SOURCE_DIR}/../externals/er-coap-13/er-coap-13.c ${PROJECT_SOURCE_DIR}/../externals/er-coap-13/er-coap-13-transactions.c)
+
+add_executable(lwm2mclient ${SOURCES} ${EXT_SOURCES})
