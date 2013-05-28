@@ -1,4 +1,4 @@
-#include "lwm2mclient.h"
+#include "core/liblwm2m.h"
 #include <stdlib.h>
 #include <string.h>
 
