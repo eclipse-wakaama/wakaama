@@ -34,7 +34,7 @@ David Navarro <david.navarro@intel.com>
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
-
+#include <netinet/in.h>
 
 /*
  *  Ressource URI
@@ -91,9 +91,11 @@ lwm2m_value_t * lwm2m_timeToValue(int64_t data);
 /*
  * LWM2M Objects
  */
+
 typedef uint8_t (*lwm2m_read_callback_t) (lwm2m_uri_t * uriP, lwm2m_value_t ** valueP, void * userData);
 typedef uint8_t (*lwm2m_write_callback_t) (lwm2m_uri_t * uriP, lwm2m_value_t * valueP, void * userData);
 typedef uint8_t (*lwm2m_execute_callback_t) (lwm2m_uri_t * uriP, void * userData);
+typedef void (*lwm2m_close_callback_t) (void * userData);
 
 typedef struct
 {
@@ -101,7 +103,23 @@ typedef struct
     lwm2m_read_callback_t    readFunc;
     lwm2m_write_callback_t   writeFunc;
     lwm2m_execute_callback_t executeFunc;
+    lwm2m_close_callback_t   closeFunc;
     void *                   userData;
 } lwm2m_object_t;
+
+/*
+ * LWM2M Context
+ */
+
+typedef struct
+{
+    uint16_t          numObject;
+    lwm2m_object_t ** objectList;
+} lwm2m_context_t;
+
+lwm2m_context_t * lwm2m_init();
+void lwm2m_close(lwm2m_context_t * contextP);
+int lwm2m_add_object(lwm2m_context_t * contextP, lwm2m_object_t * objectP);
+int lwm2m_handle_packet(lwm2m_context_t * contextP, uint8_t * buffer, int length, int socket, struct sockaddr_storage fromAddr, socklen_t fromAddrLen);
 
 #endif
