@@ -1,5 +1,6 @@
 #include "core/liblwm2m.h"
 #include <stdlib.h>
+#include <string.h>
 
 
 static int prv_get_number(const char * uriString,
@@ -50,14 +51,11 @@ lwm2m_uri_t * lwm2m_decode_uri(const char * uriString,
     uriP = (lwm2m_uri_t *)malloc(sizeof(lwm2m_uri_t));
     if (NULL == uriP) return NULL;
 
-    uriP->objID = LWM2M_URI_NO_ID;
-    uriP->objInstance = LWM2M_URI_NO_INSTANCE;
-    uriP->resID = LWM2M_URI_NO_ID;
-    uriP->resInstance = LWM2M_URI_NO_INSTANCE;
+    memset(uriP, 0xFF, sizeof(lwm2m_uri_t));
 
     // Read object ID
     readNum = prv_get_number(uriString, uriLength, &head);
-    if (readNum < 0 || readNum >= LWM2M_URI_NO_ID) goto error;
+    if (readNum < 0 || readNum >= LWM2M_URI_NOT_DEFINED) goto error;
     uriP->objID = (uint16_t)readNum;
     if (head >= uriLength) return uriP;
 
@@ -70,8 +68,8 @@ lwm2m_uri_t * lwm2m_decode_uri(const char * uriString,
     else
     {
         readNum = prv_get_number(uriString, uriLength, &head);
-        if (readNum < 0 || readNum >= LWM2M_URI_NO_INSTANCE) goto error;
-        uriP->objInstance = (uint8_t)readNum;
+        if (readNum < 0 || readNum >= LWM2M_URI_NOT_DEFINED) goto error;
+        uriP->objInstance = (uint16_t)readNum;
     }
     if (head >= uriLength) return uriP;
 
@@ -84,7 +82,7 @@ lwm2m_uri_t * lwm2m_decode_uri(const char * uriString,
     else
     {
         readNum = prv_get_number(uriString, uriLength, &head);
-        if (readNum < 0 || readNum >= LWM2M_URI_NO_ID) goto error;
+        if (readNum < 0 || readNum >= LWM2M_URI_NOT_DEFINED) goto error;
         uriP->resID = (uint16_t)readNum;
     }
     if (head >= uriLength) return uriP;
@@ -97,10 +95,10 @@ lwm2m_uri_t * lwm2m_decode_uri(const char * uriString,
     }
     else
     {
-        if (LWM2M_URI_NO_ID == uriP->resID) goto error;
+        if (LWM2M_URI_NOT_DEFINED == uriP->resID) goto error;
         readNum = prv_get_number(uriString, uriLength, &head);
-        if (readNum < 0 || readNum >= LWM2M_URI_NO_INSTANCE) goto error;
-        uriP->resInstance = (uint8_t)readNum;
+        if (readNum < 0 || readNum >= LWM2M_URI_NOT_DEFINED) goto error;
+        uriP->resInstance = (uint16_t)readNum;
     }
     if (head < uriLength) goto error;
 
