@@ -55,26 +55,14 @@ typedef struct
  *  Ressource values
  */
 
-typedef enum
-{
-    LWM2M_OPAQUE_TYPE = 0,
-    LWM2M_STRING_TYPE,
-    LWM2M_INTEGER_TYPE,
-    LWM2M_FLOAT_TYPE,
-    LWM2M_BOOLEAN_TYPE,
-    LWM2M_TIME_TYPE
-} lwm2m_data_type_t;
-
 typedef struct
 {
-    lwm2m_data_type_t   type;
-    size_t              length;
-    uint8_t             buffer[8];
+    size_t    length;
+    uint8_t * buffer;
 } lwm2m_value_t;
 
 // defined in value.c
-lwm2m_value_t * lwm2m_opaqueToValue(uint8_t * buffer, size_t length);
-lwm2m_value_t * lwm2m_stringToValue(char * stringP, size_t length);
+lwm2m_value_t * lwm2m_bufferToValue(uint8_t * buffer, size_t length);
 lwm2m_value_t * lwm2m_int8ToValue(int8_t data);
 lwm2m_value_t * lwm2m_int16ToValue(int16_t data);
 lwm2m_value_t * lwm2m_int32ToValue(int32_t data);

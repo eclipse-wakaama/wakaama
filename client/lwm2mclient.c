@@ -133,7 +133,7 @@ uint8_t test_read(lwm2m_uri_t * uriP,
 
     if (uriP->resID == 1)
     {
-        *valueP = lwm2m_stringToValue("Hi there !", strlen("Hi there !"));
+        *valueP = lwm2m_bufferToValue("Hi there !", strlen("Hi there !"));
         return 69; // CONTENT_2_05
     }
     return 132; // NOT_FOUND_4_04
