@@ -72,7 +72,25 @@ lwm2m_value_t * lwm2m_bufferToValue(uint8_t * buffer, size_t length)
     return valueP;
 }
 
-static lwm2m_value_t * prv_intToValue(int64_t data)
+lwm2m_value_t * lwm2m_int8ToValue(int8_t data)
+{
+    return lwm2m_int64ToValue((int64_t)data);
+}
+
+
+lwm2m_value_t * lwm2m_int16ToValue(int16_t data)
+{
+    return lwm2m_int64ToValue((int64_t)data);
+}
+
+
+lwm2m_value_t * lwm2m_int32ToValue(int32_t data)
+{
+    return lwm2m_int64ToValue((int64_t)data);
+}
+
+
+lwm2m_value_t * lwm2m_int64ToValue(int64_t data)
 {
     lwm2m_value_t * valueP;
     char string[32];
@@ -88,45 +106,6 @@ static lwm2m_value_t * prv_intToValue(int64_t data)
             strncpy(valueP->buffer, string, len);
         }
     }
-
-    return valueP;
-}
-
-lwm2m_value_t * lwm2m_int8ToValue(int8_t data)
-{
-    lwm2m_value_t * valueP;
-
-    valueP = prv_intToValue((int64_t)data);
-
-    return valueP;
-}
-
-
-lwm2m_value_t * lwm2m_int16ToValue(int16_t data)
-{
-    lwm2m_value_t * valueP;
-
-    valueP = prv_intToValue((int64_t)data);
-
-    return valueP;
-}
-
-
-lwm2m_value_t * lwm2m_int32ToValue(int32_t data)
-{
-    lwm2m_value_t * valueP;
-
-    valueP = prv_intToValue((int64_t)data);
-
-    return valueP;
-}
-
-
-lwm2m_value_t * lwm2m_int64ToValue(int64_t data)
-{
-    lwm2m_value_t * valueP;
-
-    valueP = prv_intToValue(data);
 
     return valueP;
 }
@@ -161,29 +140,11 @@ lwm2m_value_t * lwm2m_float64ToValue(double data)
 
 lwm2m_value_t * lwm2m_boolToValue(bool data)
 {
-    lwm2m_value_t * valueP;
-
-    valueP = (lwm2m_value_t *)malloc(sizeof(lwm2m_value_t));
-    if (NULL != valueP)
-    {
-        valueP->length = sizeof(bool);
-        *((bool *)valueP->buffer) = data;
-    }
-
-    return valueP;
+    return lwm2m_int64ToValue((int64_t)(data?1:0));
 }
 
 
 lwm2m_value_t * lwm2m_timeToValue(int64_t data)
 {
-    lwm2m_value_t * valueP;
-
-    valueP = (lwm2m_value_t *)malloc(sizeof(lwm2m_value_t));
-    if (NULL != valueP)
-    {
-        valueP->length = 8;
-        *((int64_t *)valueP->buffer) = data;
-    }
-
-    return valueP;
+    return lwm2m_int64ToValue(data);
 }

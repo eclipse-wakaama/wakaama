@@ -131,12 +131,23 @@ uint8_t test_read(lwm2m_uri_t * uriP,
 {
     *valueP = NULL;
 
-    if (uriP->resID == 1)
+    switch (uriP->resID)
     {
+    case 1:
         *valueP = lwm2m_bufferToValue("Hi there !", strlen("Hi there !"));
         return 69; // CONTENT_2_05
+    case 2:
+        *valueP = lwm2m_int8ToValue(42);
+        return 69; // CONTENT_2_05
+    case 3:
+        *valueP = lwm2m_float32ToValue(3.14159265);
+        return 69; // CONTENT_2_05
+    case 4:
+        *valueP = lwm2m_boolToValue(true);
+        return 69; // CONTENT_2_05
+    default:
+        return 132; // NOT_FOUND_4_04
     }
-    return 132; // NOT_FOUND_4_04
 }
 
 int create_test_objects(uint16_t id,
