@@ -28,23 +28,56 @@ David Navarro <david.navarro@intel.com>
 
 */
 
-#ifndef _LWM2M_INTERNALS_H_
-#define _LWM2M_INTERNALS_H_
+#include "internals.h"
 
-#include "liblwm2m.h"
+#include <string.h>
 
-#include <stdint.h>
-#include <stddef.h>
-#include <stdbool.h>
+coap_status_t object_get_response(lwm2m_context_t * contextP,
+                                  coap_method_t method,
+                                  lwm2m_uri_t * uriP,
+                                  coap_packet_t * response)
+{
+    int i;
+    coap_status_t result;
+    lwm2m_value_t * valueP = NULL;
 
-#include "externals/er-coap-13/er-coap-13.h"
-#include "externals/er-coap-13/er-coap-13-transactions.h"
+    i = 0;
+    while (i < contextP->numObject && contextP->objectList[i]->objID < uriP->objID)
+    {
+        i++;
+    }
+    if (i == contextP->numObject)
+    {
+        result = NOT_FOUND_4_04;
+    }
+    else
+    {
+        result = METHOD_NOT_ALLOWED_4_05;
+        switch (method)
+        {
+        case COAP_GET:
+            if (NULL != contextP->objectList[i]->readFunc)
+            {
+                result = contextP->objectList[i]->readFunc(uriP, &valueP, contextP->objectList[i]->userData);
+            }
+            break;
+        case COAP_POST:
+            break;
+        case COAP_PUT:
+            break;
+        case COAP_DELETE:
+            break;
+        default:
+            result = BAD_REQUEST_4_00;
+            break;
+        }
+    }
 
+    coap_set_status_code(response, result);
+    if (NULL != valueP)
+    {
+        coap_set_payload(response, valueP->buffer, valueP->length);
+    }
 
-// defined in uri.c
-lwm2m_uri_t * lwm2m_decode_uri(const char * uriString, size_t uriLength);
-
-// defined in objects.c
-coap_status_t object_get_response(lwm2m_context_t * contextP, coap_method_t method, lwm2m_uri_t * uriP, coap_packet_t * response);
-
-#endif
+    return result;
+}

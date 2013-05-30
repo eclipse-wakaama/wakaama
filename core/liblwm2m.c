@@ -60,7 +60,6 @@ Contains code snippets which are:
 
 */
 
-#include "liblwm2m.h"
 #include "internals.h"
 
 #include <stdlib.h>
@@ -147,25 +146,12 @@ static void handle_response(coap_packet_t * message)
 {
 }
 
-coap_status_t object_get_response(coap_method_t method,
-                                  lwm2m_uri_t * uriP,
-                                  coap_packet_t * response)
-{
-    if (uriP->objID == 1 &&  uriP->objInstance == 2)
-    {
-        coap_set_status_code(response, CONTENT_2_05);
-        coap_set_payload(response, "Hi there !", strlen("Hi there !"));
-        return NO_ERROR;
-    }
-
-    return NOT_FOUND_4_04;
-}
-
-static coap_status_t handle_request(coap_packet_t * message,
-                             coap_packet_t * response,
-                             uint8_t *buffer,
-                             uint16_t preferred_size,
-                             int32_t *offset)
+static coap_status_t handle_request(lwm2m_context_t * contextP,
+                                    coap_packet_t * message,
+                                    coap_packet_t * response,
+                                    uint8_t *buffer,
+                                    uint16_t preferred_size,
+                                    int32_t *offset)
 {
     lwm2m_uri_t * uriP;
     coap_status_t result = NOT_FOUND_4_04;
@@ -182,9 +168,14 @@ static coap_status_t handle_request(coap_packet_t * message,
                     uriP->objID, uriP->objInstance, uriP->resID, uriP->resInstance);
 
 
-    result = object_get_response(message->code, uriP, response);
+    result = object_get_response(contextP, message->code, uriP, response);
 
     free(uriP);
+
+    if (result < BAD_REQUEST_4_00)
+    {
+        return NO_ERROR;
+    }
 
     return result;
 }
@@ -248,7 +239,7 @@ int lwm2m_handle_packet(lwm2m_context_t * contextP,
                     new_offset = block_offset;
                 }
 
-                coap_error_code = handle_request(message, response, transaction->packet+COAP_MAX_HEADER_SIZE, block_size, &new_offset);
+                coap_error_code = handle_request(contextP, message, response, transaction->packet+COAP_MAX_HEADER_SIZE, block_size, &new_offset);
                 if (coap_error_code==NO_ERROR)
                 {
                     /* Apply blockwise transfers. */

@@ -28,7 +28,7 @@ David Navarro <david.navarro@intel.com>
 
 */
 
-#include "liblwm2m.h"
+#include "internals.h"
 #include <stdlib.h>
 #include <string.h>
 

@@ -131,7 +131,12 @@ uint8_t test_read(lwm2m_uri_t * uriP,
 {
     *valueP = NULL;
 
-    return 161; // NOT_IMPLEMENTED_5_01
+    if (uriP->resID == 1)
+    {
+        *valueP = lwm2m_stringToValue("Hi there !", strlen("Hi there !"));
+        return 69; // CONTENT_2_05
+    }
+    return 132; // NOT_FOUND_4_04
 }
 
 int create_test_objects(uint16_t id,
@@ -165,19 +170,19 @@ int main(int argc, char *argv[])
 
     if (-1 == create_test_objects(1031, lwm2mH))
     {
-        fprintf(stderr, "Failed to add object 1034\r\n");
+        fprintf(stderr, "Failed to add object 1031\r\n");
         lwm2m_close(lwm2mH);
         return -1;
     }
     if (-1 == create_test_objects(1033, lwm2mH))
     {
-        fprintf(stderr, "Failed to add object 1034\r\n");
+        fprintf(stderr, "Failed to add object 1033\r\n");
         lwm2m_close(lwm2mH);
         return -1;
     }
     if (-1 == create_test_objects(1032, lwm2mH))
     {
-        fprintf(stderr, "Failed to add object 1034\r\n");
+        fprintf(stderr, "Failed to add object 1032\r\n");
         lwm2m_close(lwm2mH);
         return -1;
     }

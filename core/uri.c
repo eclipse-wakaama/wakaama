@@ -28,7 +28,6 @@ David Navarro <david.navarro@intel.com>
 
 */
 
-#include "liblwm2m.h"
 #include "internals.h"
 #include <stdlib.h>
 #include <string.h>
@@ -52,7 +51,6 @@ static int prv_get_number(const char * uriString,
             else
             {
                 result *= mul;
-                mul *= 10;
             }
             result += uriString[*headP] - '0';
         }
