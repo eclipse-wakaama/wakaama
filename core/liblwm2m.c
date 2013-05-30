@@ -293,6 +293,9 @@ int lwm2m_handle_packet(lwm2m_context_t * contextP,
                     {
                         coap_error_code = PACKET_SERIALIZATION_ERROR;
                     }
+                    free(response->payload);
+                    response->payload = NULL;
+                    response->payload_len = 0;
                 }
             }
             else

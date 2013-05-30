@@ -30,7 +30,9 @@ David Navarro <david.navarro@intel.com>
 
 #include "internals.h"
 
+#include <stdlib.h>
 #include <string.h>
+
 
 coap_status_t object_get_response(lwm2m_context_t * contextP,
                                   coap_method_t method,
@@ -77,6 +79,7 @@ coap_status_t object_get_response(lwm2m_context_t * contextP,
     if (NULL != valueP)
     {
         coap_set_payload(response, valueP->buffer, valueP->length);
+        free(valueP);
     }
 
     return result;
