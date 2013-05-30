@@ -126,38 +126,49 @@ int get_socket()
 }
 
 uint8_t test_read(lwm2m_uri_t * uriP,
-                  lwm2m_value_t ** valueP,
+                  char ** bufferP,
+                  int * lengthP,
                   void * userData)
 {
-    *valueP = NULL;
+    *bufferP = NULL;
+    *lengthP = 0;
 
     switch (uriP->resID)
     {
     case 1:
-        *valueP = lwm2m_bufferToValue("Hi there !", strlen("Hi there !"));
-        return 69; // CONTENT_2_05
+        *bufferP = strdup("Hi there !");
+        *lengthP = strlen(*bufferP);
+        break;
     case 2:
-        *valueP = lwm2m_int8ToValue(42);
-        return 69; // CONTENT_2_05
+        *lengthP = lwm2m_int8ToPlainText(42, bufferP);
+        break;
     case 3:
-        *valueP = lwm2m_float32ToValue(3.14159265);
-        return 69; // CONTENT_2_05
+        *lengthP = lwm2m_float32ToPlainText(3.14159265, bufferP);
+        break;
     case 4:
-        *valueP = lwm2m_boolToValue(true);
-        return 69; // CONTENT_2_05
+        *lengthP = lwm2m_boolToPlainText(true, bufferP);
+        break;
     default:
         return 132; // NOT_FOUND_4_04
     }
+
+    if (*lengthP <= 0)
+    {
+        return 160; //INTERNAL_SERVER_ERROR_5_00
+    }
+
+    return 69; // CONTENT_2_05
 }
 
 uint8_t test_write(lwm2m_uri_t * uriP,
-                   lwm2m_value_t * valueP,
+                   char * buffer,
+                   int length,
                    void * userData)
 {
     switch (uriP->resID)
     {
     case 1:
-        fprintf(stdout, "Write (%d bytes): %.*s\r\n\n", valueP->length, valueP->length, valueP->buffer);
+        fprintf(stdout, "Write (%d bytes): %.*s\r\n\n", length, length, buffer);
         return 68; // CHANGED_2_04
     default:
         return 132; // NOT_FOUND_4_04

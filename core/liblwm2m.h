@@ -55,30 +55,28 @@ typedef struct
  *  Ressource values
  */
 
-typedef struct
-{
-    size_t    length;
-    uint8_t * buffer;
-} lwm2m_value_t;
-
-// defined in value.c
-lwm2m_value_t * lwm2m_bufferToValue(uint8_t * buffer, size_t length);
-lwm2m_value_t * lwm2m_int8ToValue(int8_t data);
-lwm2m_value_t * lwm2m_int16ToValue(int16_t data);
-lwm2m_value_t * lwm2m_int32ToValue(int32_t data);
-lwm2m_value_t * lwm2m_int64ToValue(int64_t data);
-lwm2m_value_t * lwm2m_float32ToValue(float data);
-lwm2m_value_t * lwm2m_float64ToValue(double data);
-lwm2m_value_t * lwm2m_boolToValue(bool data);
-lwm2m_value_t * lwm2m_timeToValue(int64_t data);
+// defined in utils.c
+/*
+ * These utility functions allocate a new buffer storing the plain text
+ * representation of data. They return the size in bytes of the buffer
+ * or 0 in case of error.
+ * There is no trailing '\0' character in the buffer.
+ */
+int lwm2m_int8ToPlainText(int8_t data, char ** bufferP);
+int lwm2m_int16ToPlainText(int16_t data, char ** bufferP);
+int lwm2m_int32ToPlainText(int32_t data, char ** bufferP);
+int lwm2m_int64ToPlainText(int64_t data, char ** bufferP);
+int lwm2m_float32ToPlainText(float data, char ** bufferP);
+int lwm2m_float64ToPlainText(double data, char ** bufferP);
+int lwm2m_boolToPlainText(bool data, char ** bufferP);
 
 
 /*
  * LWM2M Objects
  */
 
-typedef uint8_t (*lwm2m_read_callback_t) (lwm2m_uri_t * uriP, lwm2m_value_t ** valueP, void * userData);
-typedef uint8_t (*lwm2m_write_callback_t) (lwm2m_uri_t * uriP, lwm2m_value_t * valueP, void * userData);
+typedef uint8_t (*lwm2m_read_callback_t) (lwm2m_uri_t * uriP, char ** bufferP, int * lengthP, void * userData);
+typedef uint8_t (*lwm2m_write_callback_t) (lwm2m_uri_t * uriP, char * buffer, int length, void * userData);
 typedef uint8_t (*lwm2m_execute_callback_t) (lwm2m_uri_t * uriP, void * userData);
 typedef void (*lwm2m_close_callback_t) (void * userData);
 

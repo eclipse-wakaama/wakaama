@@ -149,7 +149,7 @@ static void handle_response(coap_packet_t * message)
 static coap_status_t handle_request(lwm2m_context_t * contextP,
                                     coap_packet_t * message,
                                     coap_packet_t * response,
-                                    uint8_t *buffer,
+                                    uint8_t *coap_buffer,
                                     uint16_t preferred_size,
                                     int32_t *offset)
 {
@@ -167,13 +167,14 @@ static coap_status_t handle_request(lwm2m_context_t * contextP,
     {
     case COAP_GET:
         {
-            lwm2m_value_t * valueP = NULL;
+            char * buffer = NULL;
+            int length = 0;
 
-            result = object_read(contextP, uriP, &valueP);
-            if (NULL != valueP)
+            result = object_read(contextP, uriP, &buffer, &length);
+            if (NULL != buffer)
             {
-                coap_set_payload(response, valueP->buffer, valueP->length);
-                free(valueP); // lwm2m_handle_packet will free valueP->buffer
+                coap_set_payload(response, buffer, length);
+                // lwm2m_handle_packet will free buffer
             }
         }
         break;
@@ -182,12 +183,7 @@ static coap_status_t handle_request(lwm2m_context_t * contextP,
         break;
     case COAP_PUT:
         {
-            lwm2m_value_t value;
-
-            value.length = message->payload_len;
-            value.buffer = message->payload;
-
-            result = object_write(contextP, uriP, value);
+            result = object_write(contextP, uriP, message->payload, message->payload_len);
         }
         break;
     case COAP_DELETE:

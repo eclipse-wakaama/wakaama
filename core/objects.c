@@ -56,7 +56,8 @@ static lwm2m_object_t * prv_find_object(lwm2m_context_t * contextP,
 
 coap_status_t object_read(lwm2m_context_t * contextP,
                           lwm2m_uri_t * uriP,
-                          lwm2m_value_t ** valueP)
+                          char ** bufferP,
+                          int * lengthP)
 {
     lwm2m_object_t * targetP;
 
@@ -71,13 +72,14 @@ coap_status_t object_read(lwm2m_context_t * contextP,
         return METHOD_NOT_ALLOWED_4_05;
     }
 
-    return targetP->readFunc(uriP, valueP, targetP->userData);
+    return targetP->readFunc(uriP, bufferP, lengthP, targetP->userData);
 }
 
 
 coap_status_t object_write(lwm2m_context_t * contextP,
                            lwm2m_uri_t * uriP,
-                           lwm2m_value_t value)
+                           char * buffer,
+                           int length)
 {
     lwm2m_object_t * targetP;
 
@@ -92,6 +94,6 @@ coap_status_t object_write(lwm2m_context_t * contextP,
         return METHOD_NOT_ALLOWED_4_05;
     }
 
-    return targetP->writeFunc(uriP, &value, targetP->userData);
+    return targetP->writeFunc(uriP, buffer, length, targetP->userData);
 }
 
