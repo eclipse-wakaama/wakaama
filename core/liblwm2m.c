@@ -61,14 +61,12 @@ Contains code snippets which are:
 */
 
 #include "liblwm2m.h"
+#include "internals.h"
 
 #include <stdlib.h>
 #include <string.h>
 
 #include <stdio.h>
-
-#include "externals/er-coap-13/er-coap-13.h"
-#include "externals/er-coap-13/er-coap-13-transactions.h"
 
 
 lwm2m_context_t * lwm2m_init()
@@ -149,7 +147,7 @@ static void handle_response(coap_packet_t * message)
 {
 }
 
-static coap_status_t object_get_response(coap_method_t method,
+coap_status_t object_get_response(coap_method_t method,
                                   lwm2m_uri_t * uriP,
                                   coap_packet_t * response)
 {

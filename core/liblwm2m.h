@@ -50,9 +50,6 @@ typedef struct
     uint16_t    resInstance;
 } lwm2m_uri_t;
 
-// defined in uri.c
-lwm2m_uri_t * lwm2m_decode_uri(const char * uriString, size_t uriLength);
-
 
 /*
  *  Ressource values
@@ -106,6 +103,7 @@ typedef struct
     lwm2m_close_callback_t   closeFunc;
     void *                   userData;
 } lwm2m_object_t;
+
 
 /*
  * LWM2M Context
