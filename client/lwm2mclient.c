@@ -150,6 +150,20 @@ uint8_t test_read(lwm2m_uri_t * uriP,
     }
 }
 
+uint8_t test_write(lwm2m_uri_t * uriP,
+                   lwm2m_value_t * valueP,
+                   void * userData)
+{
+    switch (uriP->resID)
+    {
+    case 1:
+        fprintf(stdout, "Write (%d bytes): %.*s\r\n\n", valueP->length, valueP->length, valueP->buffer);
+        return 68; // CHANGED_2_04
+    default:
+        return 132; // NOT_FOUND_4_04
+    }
+}
+
 int create_test_objects(uint16_t id,
                         lwm2m_context_t * lwm2mH)
 {
@@ -161,6 +175,7 @@ int create_test_objects(uint16_t id,
     memset(objectP, 0, sizeof(lwm2m_object_t));
     objectP->objID = id;
     objectP->readFunc = test_read;
+    objectP->writeFunc = test_write;
 
     return lwm2m_add_object(lwm2mH, objectP);
 }

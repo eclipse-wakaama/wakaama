@@ -34,53 +34,64 @@ David Navarro <david.navarro@intel.com>
 #include <string.h>
 
 
-coap_status_t object_get_response(lwm2m_context_t * contextP,
-                                  coap_method_t method,
-                                  lwm2m_uri_t * uriP,
-                                  coap_packet_t * response)
+static lwm2m_object_t * prv_find_object(lwm2m_context_t * contextP,
+                                        uint16_t Id)
 {
     int i;
-    coap_status_t result;
-    lwm2m_value_t * valueP = NULL;
 
     i = 0;
-    while (i < contextP->numObject && contextP->objectList[i]->objID < uriP->objID)
+    while (i < contextP->numObject && contextP->objectList[i]->objID < Id)
     {
         i++;
     }
     if (i == contextP->numObject)
     {
-        result = NOT_FOUND_4_04;
+        return NULL;
     }
     else
     {
-        result = METHOD_NOT_ALLOWED_4_05;
-        switch (method)
-        {
-        case COAP_GET:
-            if (NULL != contextP->objectList[i]->readFunc)
-            {
-                result = contextP->objectList[i]->readFunc(uriP, &valueP, contextP->objectList[i]->userData);
-            }
-            break;
-        case COAP_POST:
-            break;
-        case COAP_PUT:
-            break;
-        case COAP_DELETE:
-            break;
-        default:
-            result = BAD_REQUEST_4_00;
-            break;
-        }
+        return contextP->objectList[i];
     }
-
-    coap_set_status_code(response, result);
-    if (NULL != valueP)
-    {
-        coap_set_payload(response, valueP->buffer, valueP->length);
-        free(valueP);
-    }
-
-    return result;
 }
+
+coap_status_t object_read(lwm2m_context_t * contextP,
+                          lwm2m_uri_t * uriP,
+                          lwm2m_value_t ** valueP)
+{
+    lwm2m_object_t * targetP;
+
+    targetP = prv_find_object(contextP, uriP->objID);
+
+    if (NULL == targetP)
+    {
+        return NOT_FOUND_4_04;
+    }
+    if (NULL == targetP->readFunc)
+    {
+        return METHOD_NOT_ALLOWED_4_05;
+    }
+
+    return targetP->readFunc(uriP, valueP, targetP->userData);
+}
+
+
+coap_status_t object_write(lwm2m_context_t * contextP,
+                           lwm2m_uri_t * uriP,
+                           lwm2m_value_t value)
+{
+    lwm2m_object_t * targetP;
+
+    targetP = prv_find_object(contextP, uriP->objID);
+
+    if (NULL == targetP)
+    {
+        return NOT_FOUND_4_04;
+    }
+    if (NULL == targetP->writeFunc)
+    {
+        return METHOD_NOT_ALLOWED_4_05;
+    }
+
+    return targetP->writeFunc(uriP, &value, targetP->userData);
+}
+

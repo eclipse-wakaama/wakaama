@@ -160,15 +160,45 @@ static coap_status_t handle_request(lwm2m_context_t * contextP,
 
     if (NULL == uriP)
     {
-        fprintf(stderr, "Invalid URI !\r\n");
-        return NOT_FOUND_4_04;
+        return BAD_REQUEST_4_00;
     }
 
-    fprintf(stdout, "object ID: %d\r\nobject instance: %d\r\nressource ID: %d\r\nressource instance: %d\r\n",
-                    uriP->objID, uriP->objInstance, uriP->resID, uriP->resInstance);
+    switch (message->code)
+    {
+    case COAP_GET:
+        {
+            lwm2m_value_t * valueP = NULL;
 
+            result = object_read(contextP, uriP, &valueP);
+            if (NULL != valueP)
+            {
+                coap_set_payload(response, valueP->buffer, valueP->length);
+                free(valueP); // lwm2m_handle_packet will free valueP->buffer
+            }
+        }
+        break;
+    case COAP_POST:
+        result = NOT_IMPLEMENTED_5_01;
+        break;
+    case COAP_PUT:
+        {
+            lwm2m_value_t value;
 
-    result = object_get_response(contextP, message->code, uriP, response);
+            value.length = message->payload_len;
+            value.buffer = message->payload;
+
+            result = object_write(contextP, uriP, value);
+        }
+        break;
+    case COAP_DELETE:
+        result = NOT_IMPLEMENTED_5_01;
+        break;
+    default:
+        result = BAD_REQUEST_4_00;
+        break;
+    }
+
+    coap_set_status_code(response, result);
 
     free(uriP);
 

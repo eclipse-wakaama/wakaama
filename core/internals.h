@@ -45,6 +45,7 @@ David Navarro <david.navarro@intel.com>
 lwm2m_uri_t * lwm2m_decode_uri(const char * uriString, size_t uriLength);
 
 // defined in objects.c
-coap_status_t object_get_response(lwm2m_context_t * contextP, coap_method_t method, lwm2m_uri_t * uriP, coap_packet_t * response);
+coap_status_t object_read(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_value_t ** valueP);
+coap_status_t object_write(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_value_t value);
 
 #endif
