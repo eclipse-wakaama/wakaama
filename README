@@ -1,0 +1,30 @@
+liblwm2m is an implementation of the LWM2M protocol from the Open Mobile Alliance.
+Project homepage is: https://01.org/liblwm2m
+
+Source Layout
+-------------
+
+-+- client              (a linux command-line client library)
+ |
+ +- core                (the LWM2M engine)
+ |
+ +- externals
+ |    |
+ |    +- er-coap-13     (Erbium's CoAP engine from http://people.inf.ethz.ch/mkovatsc/erbium.php,
+ |                       modified to run on linux)
+ |
+ +- objects             (LWM2M objects)
+
+
+Compiling and testing on Linux
+------------------------------
+
+liblwm2m uses CMake.
+
+In the any directory, run the following commands:
+    cmake [liblwm2m directory]/client
+    make
+    ./lwm2mclient
+    
+The lwm2m opens udp port 5683. You can connect to it by installing the firefox plugin Copper
+(http://people.inf.ethz.ch/mkovatsc/copper.php) and opening a new Firefox tab to: coap://[::1]:5683
