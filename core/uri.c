@@ -34,15 +34,15 @@ David Navarro <david.navarro@intel.com>
 
 
 static int prv_get_number(const char * uriString,
-                          size_t uriLength,
-                          int * headP)
+                          size_t uriLength)
 {
     int result = 0;
     int mul = 0;
+    int i = 0;
 
-    while (*headP < uriLength && uriString[*headP] != '/')
+    while (i < uriLength)
     {
-        if ('0' <= uriString[*headP] && uriString[*headP] <= '9')
+        if ('0' <= uriString[i] && uriString[i] <= '9')
         {
             if (0 == mul)
             {
@@ -52,30 +52,25 @@ static int prv_get_number(const char * uriString,
             {
                 result *= mul;
             }
-            result += uriString[*headP] - '0';
+            result += uriString[i] - '0';
         }
         else
         {
             return -1;
         }
-        *headP += 1;
+        i++;
     }
-
-    if (uriString[*headP] == '/')
-        *headP += 1;
 
     return result;
 }
 
 
-lwm2m_uri_t * lwm2m_decode_uri(const char * uriString,
-                               size_t uriLength)
+lwm2m_uri_t * lwm2m_decode_uri(multi_option_t *uriPath)
 {
     lwm2m_uri_t * uriP;
-    int head = 0;
     int readNum;
 
-    if (NULL == uriString || 0 == uriLength) return NULL;
+    if (NULL == uriPath) return NULL;
 
     uriP = (lwm2m_uri_t *)malloc(sizeof(lwm2m_uri_t));
     if (NULL == uriP) return NULL;
@@ -83,42 +78,37 @@ lwm2m_uri_t * lwm2m_decode_uri(const char * uriString,
     memset(uriP, 0xFF, sizeof(lwm2m_uri_t));
 
     // Read object ID
-    readNum = prv_get_number(uriString, uriLength, &head);
+    readNum = prv_get_number(uriPath->data, uriPath->len);
     if (readNum < 0 || readNum >= LWM2M_URI_NOT_DEFINED) goto error;
     uriP->objID = (uint16_t)readNum;
-    if (head >= uriLength) return uriP;
+    if (NULL == uriPath->next) return uriP;
+    uriPath = uriPath->next;
 
     // Read object instance
-    if (uriString[head] == '/')
+    if (uriPath->len == 0)
     {
         // default instance
         uriP->objInstance = 0;
-        head++;
     }
     else
     {
-        readNum = prv_get_number(uriString, uriLength, &head);
+        readNum = prv_get_number(uriPath->data, uriPath->len);
         if (readNum < 0 || readNum >= LWM2M_URI_NOT_DEFINED) goto error;
         uriP->objInstance = (uint16_t)readNum;
     }
-    if (head >= uriLength) return uriP;
+    if (NULL == uriPath->next) return uriP;
+    uriPath = uriPath->next;
 
     // Read ressource ID
-    if (uriString[head] == '/')
+    if (uriPath->len != 0)
     {
-        // no ID
-        head++;
-    }
-    else
-    {
-        readNum = prv_get_number(uriString, uriLength, &head);
+        readNum = prv_get_number(uriPath->data, uriPath->len);
         if (readNum < 0 || readNum >= LWM2M_URI_NOT_DEFINED) goto error;
         uriP->resID = (uint16_t)readNum;
     }
 
-    if (head < uriLength) goto error;
-
-    return uriP;
+    // must be the last segment
+    if (NULL == uriPath->next) return uriP;
 
 error:
     free(uriP);

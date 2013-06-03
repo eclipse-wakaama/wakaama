@@ -42,7 +42,7 @@ David Navarro <david.navarro@intel.com>
 
 
 // defined in uri.c
-lwm2m_uri_t * lwm2m_decode_uri(const char * uriString, size_t uriLength);
+lwm2m_uri_t * lwm2m_decode_uri(multi_option_t *uriPath);
 
 // defined in objects.c
 coap_status_t object_read(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, char ** bufferP, int * lengthP);

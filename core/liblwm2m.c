@@ -156,7 +156,7 @@ static coap_status_t handle_request(lwm2m_context_t * contextP,
     lwm2m_uri_t * uriP;
     coap_status_t result = NOT_FOUND_4_04;
 
-    uriP = lwm2m_decode_uri(message->uri_path, message->uri_path_len);
+    uriP = lwm2m_decode_uri(message->uri_path);
 
     if (NULL == uriP)
     {
@@ -226,7 +226,6 @@ int lwm2m_handle_packet(lwm2m_context_t * contextP,
     if (coap_error_code==NO_ERROR)
     {
         fprintf(stdout, "  Parsed: ver %u, type %u, tkl %u, code %u, mid %u\r\n", message->version, message->type, message->token_len, message->code, message->mid);
-        fprintf(stdout, "  URL: %.*s\r\n", message->uri_path_len, message->uri_path);
         fprintf(stdout, "  Payload: %.*s\r\n\n", message->payload_len, message->payload);
 
         if (message->code >= COAP_GET && message->code <= COAP_DELETE)

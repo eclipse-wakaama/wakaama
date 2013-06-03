@@ -223,6 +223,12 @@ typedef enum {
     APPLICATION_X_OBIX_BINARY = 51
 } coap_content_type_t;
 
+typedef struct _multi_option_t {
+  struct _multi_option_t *next;
+  size_t len;
+  const char *data;
+} multi_option_t;
+
 /* Parsed message struct */
 typedef struct {
   uint8_t *buffer; /* pointer to CoAP header / incoming packet buffer / memory to serialize packet */
@@ -247,8 +253,7 @@ typedef struct {
   uint16_t uri_port;
   size_t location_query_len;
   const char *location_query;
-  size_t uri_path_len;
-  const char *uri_path;
+  multi_option_t *uri_path;
   uint16_t observe;
   uint8_t token_len;
   uint8_t token[COAP_TOKEN_LEN];
@@ -302,6 +307,12 @@ typedef struct {
       option += coap_serialize_array_option(number, current_number, option, (uint8_t *) coap_pkt->field, coap_pkt->field##_len, splitter); \
       current_number = number; \
     }
+#define COAP_SERIALIZE_MULTI_OPTION(number, field, text)      \
+        if (IS_OPTION(coap_pkt, number)) { \
+          PRINTF(text); \
+          option += coap_serialize_multi_option(number, current_number, option, coap_pkt->field); \
+          current_number = number; \
+        }
 #define COAP_SERIALIZE_ACCEPT_OPTION(number, field, text)  \
     if (IS_OPTION(coap_pkt, number)) { \
       int i; \
