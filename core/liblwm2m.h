@@ -47,7 +47,6 @@ typedef struct
     uint16_t    objID;
     uint16_t    objInstance;
     uint16_t    resID;
-    uint16_t    resInstance;
 } lwm2m_uri_t;
 
 

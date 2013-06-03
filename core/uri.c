@@ -91,7 +91,8 @@ lwm2m_uri_t * lwm2m_decode_uri(const char * uriString,
     // Read object instance
     if (uriString[head] == '/')
     {
-        // no instance
+        // default instance
+        uriP->objInstance = 0;
         head++;
     }
     else
@@ -114,21 +115,7 @@ lwm2m_uri_t * lwm2m_decode_uri(const char * uriString,
         if (readNum < 0 || readNum >= LWM2M_URI_NOT_DEFINED) goto error;
         uriP->resID = (uint16_t)readNum;
     }
-    if (head >= uriLength) return uriP;
 
-    // Read ressource instance
-    if (uriString[head] == '/')
-    {
-        // no instance
-        head++;
-    }
-    else
-    {
-        if (LWM2M_URI_NOT_DEFINED == uriP->resID) goto error;
-        readNum = prv_get_number(uriString, uriLength, &head);
-        if (readNum < 0 || readNum >= LWM2M_URI_NOT_DEFINED) goto error;
-        uriP->resInstance = (uint16_t)readNum;
-    }
     if (head < uriLength) goto error;
 
     return uriP;
