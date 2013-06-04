@@ -34,6 +34,39 @@ David Navarro <david.navarro@intel.com>
 #include <stdio.h>
 
 
+int lwm2m_PlainTextToUInt64(char * buffer,
+                            int length,
+                            uint64_t * dataP)
+{
+    uint64_t result = 0;
+    int mul = 0;
+    int i = 0;
+
+    while (i < length)
+    {
+        if ('0' <= buffer[i] && buffer[i] <= '9')
+        {
+            if (0 == mul)
+            {
+                mul = 10;
+            }
+            else
+            {
+                result *= mul;
+            }
+            result += buffer[i] - '0';
+        }
+        else
+        {
+            return 0;
+        }
+        i++;
+    }
+
+    *dataP = result;
+    return 1;
+}
+
 int lwm2m_int8ToPlainText(int8_t data,
                           char ** bufferP)
 {
