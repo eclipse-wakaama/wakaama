@@ -82,6 +82,8 @@ Contains code snippets which are:
 
 static int g_quit = 0;
 
+extern lwm2m_object_t * get_object_device();
+
 void handle_sigint(int signum)
 {
     g_quit = 1;
@@ -202,6 +204,13 @@ int main(int argc, char *argv[])
     lwm2mH = lwm2m_init();
     if (NULL == lwm2mH)
     {
+        return -1;
+    }
+
+    if (-1 == lwm2m_add_object(lwm2mH, get_object_device()))
+    {
+        fprintf(stderr, "Failed to add Device object\r\n");
+        lwm2m_close(lwm2mH);
         return -1;
     }
 
