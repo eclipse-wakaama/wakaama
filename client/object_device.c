@@ -215,7 +215,7 @@ static int prv_get_object_tlv(char ** bufferP,
     if (0 == result) goto error;
     length += result;
 
-    fprintf(stderr, "TLV:\r\n");
+    fprintf(stderr, "TLV (%d bytes):\r\n", length);
     prv_output_buffer(*bufferP, length);
 
     return length;

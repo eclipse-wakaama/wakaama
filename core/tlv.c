@@ -151,16 +151,17 @@ int lwm2m_intToTLV(lwm2m_tlv_type_t type,
         value = data;
     }
 
-    while (value > ((1 << (7 * length)) - 1))
+    do
     {
-        data_buffer[_PRV_64BIT_BUFFER_SIZE - length] = (value >> (8*length)) & 0xFF;
         length++;
-    }
+        data_buffer[_PRV_64BIT_BUFFER_SIZE - length] = (value >> (8*(length-1))) & 0xFF;
+    } while (value > (((uint64_t)1 << ((8 * length)-1)) - 1));
+
 
     if (1 == negative)
     {
         data_buffer[_PRV_64BIT_BUFFER_SIZE - length] |= 0x80;
     }
 
-    return lwm2m_opaqueToTLV(type, data_buffer, length, id, buffer, buffer_len);
+    return lwm2m_opaqueToTLV(type, data_buffer + (_PRV_64BIT_BUFFER_SIZE - length), length, id, buffer, buffer_len);
 }
