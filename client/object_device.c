@@ -46,7 +46,8 @@ David Navarro <david.navarro@intel.com>
 #define PRV_MEMORY_FREE       15
 #define PRV_ERROR_CODE        0
 
-#define PRV_OFFSET_MAXLEN 7 //+HH:MM\0 at max
+#define PRV_OFFSET_MAXLEN   7 //+HH:MM\0 at max
+#define PRV_TLV_BUFFER_SIZE 128
 
 
 typedef struct
@@ -54,6 +55,44 @@ typedef struct
     int64_t time;
     char time_offset[PRV_OFFSET_MAXLEN];
 } device_data_t;
+
+
+static void prv_output_buffer(uint8_t * buffer,
+                              int length)
+{
+    int i;
+    uint8_t array[16];
+
+    i = 0;
+    while (i < length)
+    {
+        int j;
+        fprintf(stderr, "  ");
+
+        memcpy(array, buffer+i, 16);
+
+        for (j = 0 ; j < 16 && i+j < length; j++)
+        {
+            fprintf(stderr, "%02X ", array[j]);
+        }
+        while (j < 16)
+        {
+            fprintf(stderr, "   ");
+            j++;
+        }
+        fprintf(stderr, "  ");
+        for (j = 0 ; j < 16 && i+j < length; j++)
+        {
+            if (isprint(array[j]))
+                fprintf(stderr, "%c ", array[j]);
+            else
+                fprintf(stderr, ". ");
+        }
+        fprintf(stderr, "\n");
+
+        i += 16;
+    }
+}
 
 // basic check that the time offset value is at ISO 8601 format
 // bug: +12:30 is considered a valid value by this function
@@ -94,6 +133,97 @@ static int prv_check_time_offset(char * buffer,
     if (buffer[min_index+1] < '0' || buffer[min_index+1] > '9') return 0;
 
     return 1;
+}
+
+static int prv_get_object_tlv(char ** bufferP,
+                              device_data_t* dataP)
+{
+    int length = 0;
+    int result;
+
+    *bufferP = (uint8_t *)malloc(PRV_TLV_BUFFER_SIZE);
+
+    if (NULL == *bufferP) return 0;
+
+    result = lwm2m_opaqueToTLV(TLV_RESSOURCE,
+                               PRV_MANUFACTURER, strlen(PRV_MANUFACTURER),
+                               0,
+                               *bufferP + length, PRV_TLV_BUFFER_SIZE - length);
+    if (0 == result) goto error;
+    length += result;
+
+    result = lwm2m_opaqueToTLV(TLV_RESSOURCE,
+                               PRV_MODEL_NUMBER, strlen(PRV_MODEL_NUMBER),
+                               1,
+                               *bufferP + length, PRV_TLV_BUFFER_SIZE - length);
+    if (0 == result) goto error;
+    length += result;
+
+    result = lwm2m_opaqueToTLV(TLV_RESSOURCE,
+                               PRV_SERIAL_NUMBER, strlen(PRV_SERIAL_NUMBER),
+                               2,
+                               *bufferP + length, PRV_TLV_BUFFER_SIZE - length);
+    if (0 == result) goto error;
+    length += result;
+
+    result = lwm2m_opaqueToTLV(TLV_RESSOURCE,
+                               PRV_FIRMWARE_VERSION, strlen(PRV_FIRMWARE_VERSION),
+                               3,
+                               *bufferP + length, PRV_TLV_BUFFER_SIZE - length);
+    if (0 == result) goto error;
+    length += result;
+
+    result = lwm2m_intToTLV(TLV_RESSOURCE,
+                            PRV_POWER_STATUS,
+                            6,
+                            *bufferP + length, PRV_TLV_BUFFER_SIZE - length);
+    if (0 == result) goto error;
+    length += result;
+
+    result = lwm2m_intToTLV(TLV_RESSOURCE,
+                            PRV_BATTERY_LEVEL,
+                            7,
+                            *bufferP + length, PRV_TLV_BUFFER_SIZE - length);
+    if (0 == result) goto error;
+    length += result;
+
+    result = lwm2m_intToTLV(TLV_RESSOURCE,
+                            PRV_MEMORY_FREE,
+                            8,
+                            *bufferP + length, PRV_TLV_BUFFER_SIZE - length);
+    if (0 == result) goto error;
+    length += result;
+
+    result = lwm2m_intToTLV(TLV_RESSOURCE,
+                            PRV_ERROR_CODE,
+                            9,
+                            *bufferP + length, PRV_TLV_BUFFER_SIZE - length);
+    if (0 == result) goto error;
+    length += result;
+
+    result = lwm2m_intToTLV(TLV_RESSOURCE,
+                            dataP->time,
+                            11,
+                            *bufferP + length, PRV_TLV_BUFFER_SIZE - length);
+    if (0 == result) goto error;
+    length += result;
+
+    result = lwm2m_opaqueToTLV(TLV_RESSOURCE,
+                               dataP->time_offset, strlen(dataP->time_offset),
+                               12,
+                               *bufferP + length, PRV_TLV_BUFFER_SIZE - length);
+    if (0 == result) goto error;
+    length += result;
+
+    fprintf(stderr, "TLV:\r\n");
+    prv_output_buffer(*bufferP, length);
+
+    return length;
+
+error:
+    free(*bufferP);
+    *bufferP = NULL;
+    return 0;
 }
 
 static uint8_t prv_device_read(lwm2m_uri_t * uriP,
@@ -225,8 +355,15 @@ static uint8_t prv_device_read(lwm2m_uri_t * uriP,
             return MEMORY_ALLOCATION_ERROR;
         }
     case LWM2M_URI_NOT_DEFINED:
-        // TODO: return whole object
-        return NOT_IMPLEMENTED_5_01;
+        *lengthP = prv_get_object_tlv(bufferP, (device_data_t*)userData);
+        if (0 != *lengthP)
+        {
+            return CONTENT_2_05;
+        }
+        else
+        {
+            return MEMORY_ALLOCATION_ERROR;
+        }
     default:
         return NOT_FOUND_4_04;
     }

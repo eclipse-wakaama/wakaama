@@ -73,6 +73,30 @@ int lwm2m_boolToPlainText(bool data, char ** bufferP);
 
 
 /*
+ * TLV
+ */
+
+#define LWM2M_TLV_HEADER_MAX_LENGTH 6
+
+typedef enum
+{
+    TLV_OBJECT_INSTANCE,
+    TLV_RESSOURCE_INSTANCE,
+    TLV_MULTIPLE_INSTANCE,
+    TLV_RESSOURCE
+} lwm2m_tlv_type_t;
+
+/*
+ * These utility functions fill the buffer with a TLV record containig
+ * the data. They return the size in bytes of the TLV record, 0 in case
+ * of error.
+ */
+int lwm2m_intToTLV(lwm2m_tlv_type_t type, int64_t data, uint16_t id, char * buffer, size_t buffer_len);
+int lwm2m_boolToTLV(lwm2m_tlv_type_t type, bool value, uint16_t id, char * buffer, size_t buffer_len);
+int lwm2m_opaqueToTLV(lwm2m_tlv_type_t type, uint8_t* dataP, size_t data_len, uint16_t id, char * buffer, size_t buffer_len);
+
+
+/*
  * LWM2M Objects
  */
 
