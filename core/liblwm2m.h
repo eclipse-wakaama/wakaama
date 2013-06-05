@@ -55,7 +55,7 @@ typedef struct
  */
 
 // defined in utils.c
-int lwm2m_PlainTextToUInt64(char * buffer, int length, uint64_t * dataP);
+int lwm2m_PlainTextToInt64(char * buffer, int length, int64_t * dataP);
 
 /*
  * These utility functions allocate a new buffer storing the plain text

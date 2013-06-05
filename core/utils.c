@@ -34,13 +34,22 @@ David Navarro <david.navarro@intel.com>
 #include <stdio.h>
 
 
-int lwm2m_PlainTextToUInt64(char * buffer,
-                            int length,
-                            uint64_t * dataP)
+int lwm2m_PlainTextToInt64(char * buffer,
+                           int length,
+                           int64_t * dataP)
 {
     uint64_t result = 0;
+    int sign = 1;
     int mul = 0;
     int i = 0;
+
+    if (0 <= length) return 0;
+
+    if (buffer[0] == '-')
+    {
+        sign = -1;
+        i = 1;
+    }
 
     while (i < length)
     {
@@ -63,7 +72,7 @@ int lwm2m_PlainTextToUInt64(char * buffer,
         i++;
     }
 
-    *dataP = result;
+    *dataP = result * sign;
     return 1;
 }
 
