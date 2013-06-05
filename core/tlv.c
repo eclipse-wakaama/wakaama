@@ -41,44 +41,50 @@ static int prv_create_header(uint8_t * header,
                              uint16_t id,
                              size_t data_len)
 {
-    int header_len;
+    int header_len = 2;
 
     header[0] = 0;
     switch (type)
     {
     case TLV_OBJECT_INSTANCE:
-        header_len = 3;
-        header[0] |= 0x30;
-        header[1] = (id >> 8) & 0XFF;
-        header[2] = id & 0XFF;
+        // do nothing
         break;
     case TLV_RESSOURCE_INSTANCE:
-        header_len = 2;
         header[0] |= 0x40;
-        header[1] = id & 0XFF;
         break;
     case TLV_MULTIPLE_INSTANCE:
-        header_len = 3;
-        header[0] |= 0x90;
-        header[1] = (id >> 8) & 0XFF;
-        header[2] = id & 0XFF;
+        header[0] |= 0x80;
         break;
     case TLV_RESSOURCE:
-        header_len = 3;
-        header[0] |= 0xB0;
-        header[1] = (id >> 8) & 0XFF;
-        header[2] = id & 0XFF;
+        header[0] |= 0xA0;
         break;
     default:
         return 0;
+    }
+    if (id > 0xFF)
+    {
+        header[0] |= 0x20;
+        header[1] = (id >> 8) & 0XFF;
+        header[2] = id & 0XFF;
+        header_len += 1;
+    }
+    else
+    {
+        header[1] = id;
     }
     if (data_len <= 7)
     {
         header[0] += data_len;
     }
-    else if (data_len <= 0xFFFF)
+    else if (data_len <= 0xFF)
     {
         header[0] |= 0x08;
+        header[header_len] = data_len;
+        header_len += 1;
+    }
+    else if (data_len <= 0xFFFF)
+    {
+        header[0] |= 0x10;
         header[header_len] = (data_len >> 8) & 0XFF;
         header[header_len+1] = data_len & 0XFF;
         header_len += 2;
@@ -89,7 +95,7 @@ static int prv_create_header(uint8_t * header,
         header[header_len] = (data_len >> 16) & 0XFF;
         header[header_len+1] = (data_len >> 8) & 0XFF;
         header[header_len+2] = data_len & 0XFF;
-        header_len += 2;
+        header_len += 3;
     }
 
     return header_len;
