@@ -41,10 +41,16 @@ David Navarro <david.navarro@intel.com>
 #define PRV_MODEL_NUMBER      "Lightweight M2M Client"
 #define PRV_SERIAL_NUMBER     "345000123"
 #define PRV_FIRMWARE_VERSION  "1.0"
-#define PRV_POWER_STATUS      0
+#define PRV_POWER_SOURCE_1    1
+#define PRV_POWER_SOURCE_2    5
+#define PRV_POWER_VOLTAGE_1   3800
+#define PRV_POWER_VOLTAGE_2   5000
+#define PRV_POWER_CURRENT_1   125
+#define PRV_POWER_CURRENT_2   900
 #define PRV_BATTERY_LEVEL     100
 #define PRV_MEMORY_FREE       15
 #define PRV_ERROR_CODE        0
+#define PRV_BINDING_MODE      "U"
 
 #define PRV_OFFSET_MAXLEN   7 //+HH:MM\0 at max
 #define PRV_TLV_BUFFER_SIZE 128
@@ -140,6 +146,8 @@ static int prv_get_object_tlv(char ** bufferP,
 {
     int length = 0;
     int result;
+    char temp_buffer[16];
+    int temp_length;
 
     *bufferP = (uint8_t *)malloc(PRV_TLV_BUFFER_SIZE);
 
@@ -173,44 +181,84 @@ static int prv_get_object_tlv(char ** bufferP,
     if (0 == result) goto error;
     length += result;
 
-    result = lwm2m_intToTLV(TLV_RESSOURCE,
-                            PRV_POWER_STATUS,
-                            6,
-                            *bufferP + length, PRV_TLV_BUFFER_SIZE - length);
+
+    result = lwm2m_intToTLV(TLV_RESSOURCE_INSTANCE, PRV_POWER_SOURCE_1, 0, temp_buffer, 16);
+    if (0 == result) goto error;
+    temp_length = result;
+    result = lwm2m_intToTLV(TLV_RESSOURCE_INSTANCE, PRV_POWER_SOURCE_2, 1, temp_buffer+result, 16-result);
+    if (0 == result) goto error;
+    temp_length += result;
+    result = lwm2m_opaqueToTLV(TLV_MULTIPLE_INSTANCE,
+                               temp_buffer, temp_length,
+                               6,
+                               *bufferP + length, PRV_TLV_BUFFER_SIZE - length);
+    if (0 == result) goto error;
+    length += result;
+
+    result = lwm2m_intToTLV(TLV_RESSOURCE_INSTANCE, PRV_POWER_VOLTAGE_1, 0, temp_buffer, 16);
+    if (0 == result) goto error;
+    temp_length = result;
+    result = lwm2m_intToTLV(TLV_RESSOURCE_INSTANCE, PRV_POWER_VOLTAGE_2, 1, temp_buffer+result, 16-result);
+    if (0 == result) goto error;
+    temp_length += result;
+    result = lwm2m_opaqueToTLV(TLV_MULTIPLE_INSTANCE,
+                               temp_buffer, temp_length,
+                               7,
+                               *bufferP + length, PRV_TLV_BUFFER_SIZE - length);
+    if (0 == result) goto error;
+    length += result;
+
+    result = lwm2m_intToTLV(TLV_RESSOURCE_INSTANCE, PRV_POWER_CURRENT_1, 0, temp_buffer, 16);
+    if (0 == result) goto error;
+    temp_length = result;
+    result = lwm2m_intToTLV(TLV_RESSOURCE_INSTANCE, PRV_POWER_CURRENT_2, 1, temp_buffer+result, 16-result);
+    if (0 == result) goto error;
+    temp_length += result;
+    result = lwm2m_opaqueToTLV(TLV_MULTIPLE_INSTANCE,
+                               temp_buffer, temp_length,
+                               8,
+                               *bufferP + length, PRV_TLV_BUFFER_SIZE - length);
     if (0 == result) goto error;
     length += result;
 
     result = lwm2m_intToTLV(TLV_RESSOURCE,
                             PRV_BATTERY_LEVEL,
-                            7,
-                            *bufferP + length, PRV_TLV_BUFFER_SIZE - length);
-    if (0 == result) goto error;
-    length += result;
-
-    result = lwm2m_intToTLV(TLV_RESSOURCE,
-                            PRV_MEMORY_FREE,
-                            8,
-                            *bufferP + length, PRV_TLV_BUFFER_SIZE - length);
-    if (0 == result) goto error;
-    length += result;
-
-    result = lwm2m_intToTLV(TLV_RESSOURCE,
-                            PRV_ERROR_CODE,
                             9,
                             *bufferP + length, PRV_TLV_BUFFER_SIZE - length);
     if (0 == result) goto error;
     length += result;
 
     result = lwm2m_intToTLV(TLV_RESSOURCE,
-                            dataP->time,
+                            PRV_MEMORY_FREE,
+                            10,
+                            *bufferP + length, PRV_TLV_BUFFER_SIZE - length);
+    if (0 == result) goto error;
+    length += result;
+
+    result = lwm2m_intToTLV(TLV_RESSOURCE,
+                            PRV_ERROR_CODE,
                             11,
+                            *bufferP + length, PRV_TLV_BUFFER_SIZE - length);
+    if (0 == result) goto error;
+    length += result;
+
+    result = lwm2m_intToTLV(TLV_RESSOURCE,
+                            dataP->time,
+                            13,
                             *bufferP + length, PRV_TLV_BUFFER_SIZE - length);
     if (0 == result) goto error;
     length += result;
 
     result = lwm2m_opaqueToTLV(TLV_RESSOURCE,
                                dataP->time_offset, strlen(dataP->time_offset),
-                               12,
+                               14,
+                               *bufferP + length, PRV_TLV_BUFFER_SIZE - length);
+    if (0 == result) goto error;
+    length += result;
+
+    result = lwm2m_opaqueToTLV(TLV_RESSOURCE,
+                               PRV_BINDING_MODE, strlen(PRV_BINDING_MODE),
+                               15,
                                *bufferP + length, PRV_TLV_BUFFER_SIZE - length);
     if (0 == result) goto error;
     length += result;
@@ -221,6 +269,7 @@ static int prv_get_object_tlv(char ** bufferP,
     return length;
 
 error:
+    fprintf(stderr, "TLV generation failed:\r\n");
     free(*bufferP);
     *bufferP = NULL;
     return 0;
@@ -291,16 +340,87 @@ static uint8_t prv_device_read(lwm2m_uri_t * uriP,
     case 5:
         return METHOD_NOT_ALLOWED_4_05;
     case 6:
-        *lengthP = lwm2m_int8ToPlainText(PRV_POWER_STATUS, bufferP);
-        if (0 != *lengthP)
-        {
-            return CONTENT_2_05;
-        }
-        else
-        {
-            return MEMORY_ALLOCATION_ERROR;
-        }
+    {
+        char buffer1[16];
+        char buffer2[16];
+        int result;
+        int instance_length;
+
+        result = lwm2m_intToTLV(TLV_RESSOURCE_INSTANCE, PRV_POWER_SOURCE_1, 0, buffer1, 16);
+        if (0 == result) return MEMORY_ALLOCATION_ERROR;
+        instance_length = result;
+        result = lwm2m_intToTLV(TLV_RESSOURCE_INSTANCE, PRV_POWER_SOURCE_2, 1, buffer1+result, 16-result);
+        if (0 == result) return MEMORY_ALLOCATION_ERROR;
+        instance_length += result;
+
+        *lengthP = lwm2m_opaqueToTLV(TLV_MULTIPLE_INSTANCE, buffer1, instance_length, 6, buffer2, 16);
+        if (0 == *lengthP) return MEMORY_ALLOCATION_ERROR;
+
+        *bufferP = (char *)malloc(*lengthP);
+        if (NULL == *bufferP) return MEMORY_ALLOCATION_ERROR;
+
+        memmove(*bufferP, buffer2, *lengthP);
+
+        fprintf(stderr, "TLV (%d bytes):\r\n", *lengthP);
+        prv_output_buffer(*bufferP, *lengthP);
+
+        return CONTENT_2_05;
+    }
     case 7:
+    {
+        char buffer1[16];
+        char buffer2[16];
+        int result;
+        int instance_length;
+
+        result = lwm2m_intToTLV(TLV_RESSOURCE_INSTANCE, PRV_POWER_VOLTAGE_1, 0, buffer1, 16);
+        if (0 == result) return MEMORY_ALLOCATION_ERROR;
+        instance_length = result;
+        result = lwm2m_intToTLV(TLV_RESSOURCE_INSTANCE, PRV_POWER_VOLTAGE_2, 1, buffer1+result, 16-result);
+        if (0 == result) return MEMORY_ALLOCATION_ERROR;
+        instance_length += result;
+
+        *lengthP = lwm2m_opaqueToTLV(TLV_MULTIPLE_INSTANCE, buffer1, instance_length, 7, buffer2, 16);
+        if (0 == *lengthP) return MEMORY_ALLOCATION_ERROR;
+
+        *bufferP = (char *)malloc(*lengthP);
+        if (NULL == *bufferP) return MEMORY_ALLOCATION_ERROR;
+
+        memmove(*bufferP, buffer2, *lengthP);
+
+        fprintf(stderr, "TLV (%d bytes):\r\n", *lengthP);
+        prv_output_buffer(*bufferP, *lengthP);
+
+        return CONTENT_2_05;
+    }
+    case 8:
+    {
+        char buffer1[16];
+        char buffer2[16];
+        int result;
+        int instance_length;
+
+        result = lwm2m_intToTLV(TLV_RESSOURCE_INSTANCE, PRV_POWER_CURRENT_1, 0, buffer1, 16);
+        if (0 == result) return MEMORY_ALLOCATION_ERROR;
+        instance_length = result;
+        result = lwm2m_intToTLV(TLV_RESSOURCE_INSTANCE, PRV_POWER_CURRENT_2, 1, buffer1+result, 16-result);
+        if (0 == result) return MEMORY_ALLOCATION_ERROR;
+        instance_length += result;
+
+        *lengthP = lwm2m_opaqueToTLV(TLV_MULTIPLE_INSTANCE, buffer1, instance_length, 8, buffer2, 16);
+        if (0 == *lengthP) return MEMORY_ALLOCATION_ERROR;
+
+        *bufferP = (char *)malloc(*lengthP);
+        if (NULL == *bufferP) return MEMORY_ALLOCATION_ERROR;
+
+        memmove(*bufferP, buffer2, *lengthP);
+
+        fprintf(stderr, "TLV (%d bytes):\r\n", *lengthP);
+        prv_output_buffer(*bufferP, *lengthP);
+
+        return CONTENT_2_05;
+    }
+    case 9:
         *lengthP = lwm2m_int8ToPlainText(PRV_BATTERY_LEVEL, bufferP);
         if (0 != *lengthP)
         {
@@ -310,7 +430,7 @@ static uint8_t prv_device_read(lwm2m_uri_t * uriP,
         {
             return MEMORY_ALLOCATION_ERROR;
         }
-    case 8:
+    case 10:
         *lengthP = lwm2m_int8ToPlainText(PRV_MEMORY_FREE, bufferP);
         if (0 != *lengthP)
         {
@@ -320,8 +440,7 @@ static uint8_t prv_device_read(lwm2m_uri_t * uriP,
         {
             return MEMORY_ALLOCATION_ERROR;
         }
-    case 9:
-        // TODO: this is a multi-instance ressource
+    case 11:
         *lengthP = lwm2m_int8ToPlainText(PRV_ERROR_CODE, bufferP);
         if (0 != *lengthP)
         {
@@ -331,9 +450,9 @@ static uint8_t prv_device_read(lwm2m_uri_t * uriP,
         {
             return MEMORY_ALLOCATION_ERROR;
         }
-    case 10:
+    case 12:
         return METHOD_NOT_ALLOWED_4_05;
-    case 11:
+    case 13:
         *lengthP = lwm2m_int64ToPlainText(((device_data_t*)userData)->time, bufferP);
         if (0 != *lengthP)
         {
@@ -343,8 +462,19 @@ static uint8_t prv_device_read(lwm2m_uri_t * uriP,
         {
             return MEMORY_ALLOCATION_ERROR;
         }
-    case 12:
+    case 14:
         *bufferP = strdup(((device_data_t*)userData)->time_offset);
+        if (NULL != *bufferP)
+        {
+            *lengthP = strlen(*bufferP);
+            return CONTENT_2_05;
+        }
+        else
+        {
+            return MEMORY_ALLOCATION_ERROR;
+        }
+    case 15:
+        *bufferP = strdup(PRV_BINDING_MODE);
         if (NULL != *bufferP)
         {
             *lengthP = strlen(*bufferP);
