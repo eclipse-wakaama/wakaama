@@ -117,18 +117,52 @@ typedef struct
 
 
 /*
+ * LWM2M Servers
+ *
+ * Since LWM2M Server Object instances are not accessible to LWM2M servers,
+ * there is no need to store them as lwm2m_objects_t
+ */
+
+typedef enum
+{
+    SEC_PRE_SHARED_KEY = 0,
+    SEC_RAW_PUBLIC_KEY,
+    SEC_CERTIFICATE,
+    SEC_NONE
+} lwm2m_security_t;
+
+typedef struct _lwm2m_server_
+{
+    struct _lwm2m_server_ * next;
+    char *           uri;
+    bool             isBootstrap;
+    lwm2m_security_t securityMode;
+    size_t           publicKeyLength;
+    uint8_t *        publicKey;
+    size_t           privateKeyLength;
+    uint8_t *        privateKey;
+    uint16_t         shortID;
+    uint32_t         holdOffTime;
+} lwm2m_server_t;
+
+/*
  * LWM2M Context
  */
 
 typedef struct
 {
+    lwm2m_server_t *  serverList;
     uint16_t          numObject;
     lwm2m_object_t ** objectList;
 } lwm2m_context_t;
 
 lwm2m_context_t * lwm2m_init();
 void lwm2m_close(lwm2m_context_t * contextP);
+
+int lwm2m_add_server(lwm2m_context_t * contextP, lwm2m_server_t * serverP);
+
 int lwm2m_add_object(lwm2m_context_t * contextP, lwm2m_object_t * objectP);
+
 int lwm2m_handle_packet(lwm2m_context_t * contextP, uint8_t * buffer, int length, int socket, struct sockaddr_storage fromAddr, socklen_t fromAddrLen);
 
 #endif

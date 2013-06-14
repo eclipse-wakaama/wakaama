@@ -95,6 +95,19 @@ void lwm2m_close(lwm2m_context_t * contextP)
         free(contextP->objectList[i]);
     }
 
+    while (NULL != contextP->serverList)
+    {
+        lwm2m_server_t * targetP;
+
+        targetP = contextP->serverList;
+        contextP->serverList = contextP->serverList->next;
+
+        if (NULL != targetP->uri) free (targetP->uri);
+        if (NULL != targetP->privateKey) free (targetP->privateKey);
+        if (NULL != targetP->publicKey) free (targetP->publicKey);
+        free(targetP);
+    }
+
     if (NULL != contextP->objectList)
     {
         free(contextP->objectList);
@@ -104,7 +117,16 @@ void lwm2m_close(lwm2m_context_t * contextP)
 }
 
 
-int lwm2m_add_object(lwm2m_context_t * contextP, lwm2m_object_t * objectP)
+int lwm2m_add_server(lwm2m_context_t * contextP,
+                     lwm2m_server_t * serverP)
+{
+    serverP->next = contextP->serverList;
+    contextP->serverList = serverP;
+}
+
+
+int lwm2m_add_object(lwm2m_context_t * contextP,
+                     lwm2m_object_t * objectP)
 {
     lwm2m_object_t ** newArray;
     int i;
