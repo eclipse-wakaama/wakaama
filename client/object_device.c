@@ -235,10 +235,13 @@ static int prv_get_object_tlv(char ** bufferP,
     if (0 == result) goto error;
     length += result;
 
-    result = lwm2m_intToTLV(TLV_RESSOURCE,
-                            PRV_ERROR_CODE,
-                            11,
-                            *bufferP + length, PRV_TLV_BUFFER_SIZE - length);
+    result = lwm2m_intToTLV(TLV_RESSOURCE_INSTANCE, PRV_ERROR_CODE, 0, temp_buffer, 16);
+    if (0 == result) goto error;
+    temp_length = result;
+    result = lwm2m_opaqueToTLV(TLV_MULTIPLE_INSTANCE,
+                               temp_buffer, temp_length,
+                               11,
+                               *bufferP + length, PRV_TLV_BUFFER_SIZE - length);
     if (0 == result) goto error;
     length += result;
 
