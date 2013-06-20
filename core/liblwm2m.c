@@ -95,6 +95,14 @@ void lwm2m_close(lwm2m_context_t * contextP)
         free(contextP->objectList[i]);
     }
 
+    if (NULL != contextP->bootstrapServer)
+    {
+        if (NULL != contextP->bootstrapServer->uri) free (contextP->bootstrapServer->uri);
+        if (NULL != contextP->bootstrapServer->security.privateKey) free (contextP->bootstrapServer->security.privateKey);
+        if (NULL != contextP->bootstrapServer->security.publicKey) free (contextP->bootstrapServer->security.publicKey);
+        free(contextP->bootstrapServer);
+    }
+
     while (NULL != contextP->serverList)
     {
         lwm2m_server_t * targetP;
@@ -103,8 +111,8 @@ void lwm2m_close(lwm2m_context_t * contextP)
         contextP->serverList = contextP->serverList->next;
 
         if (NULL != targetP->uri) free (targetP->uri);
-        if (NULL != targetP->privateKey) free (targetP->privateKey);
-        if (NULL != targetP->publicKey) free (targetP->publicKey);
+        if (NULL != targetP->security.privateKey) free (targetP->security.privateKey);
+        if (NULL != targetP->security.publicKey) free (targetP->security.publicKey);
         free(targetP);
     }
 
@@ -116,6 +124,19 @@ void lwm2m_close(lwm2m_context_t * contextP)
     free(contextP);
 }
 
+
+int lwm2m_set_bootstrap_server(lwm2m_context_t * contextP,
+                               lwm2m_bootstrap_server_t * serverP)
+{
+    if (NULL != contextP->bootstrapServer)
+    {
+        if (NULL != contextP->bootstrapServer->uri) free (contextP->bootstrapServer->uri);
+        if (NULL != contextP->bootstrapServer->security.privateKey) free (contextP->bootstrapServer->security.privateKey);
+        if (NULL != contextP->bootstrapServer->security.publicKey) free (contextP->bootstrapServer->security.publicKey);
+        free(contextP->bootstrapServer);
+    }
+    contextP->bootstrapServer = serverP;
+}
 
 int lwm2m_add_server(lwm2m_context_t * contextP,
                      lwm2m_server_t * serverP)

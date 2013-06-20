@@ -129,21 +129,31 @@ typedef enum
     SEC_RAW_PUBLIC_KEY,
     SEC_CERTIFICATE,
     SEC_NONE
+} lwm2m_security_mode_t;
+
+typedef struct
+{
+    lwm2m_security_mode_t mode;
+    size_t     publicKeyLength;
+    uint8_t *  publicKey;
+    size_t     privateKeyLength;
+    uint8_t *  privateKey;
 } lwm2m_security_t;
 
 typedef struct _lwm2m_server_
 {
     struct _lwm2m_server_ * next;
     char *           uri;
-    bool             isBootstrap;
-    lwm2m_security_t securityMode;
-    size_t           publicKeyLength;
-    uint8_t *        publicKey;
-    size_t           privateKeyLength;
-    uint8_t *        privateKey;
+    lwm2m_security_t security;
     uint16_t         shortID;
-    uint32_t         holdOffTime;
 } lwm2m_server_t;
+
+typedef struct
+{
+    char *           uri;
+    lwm2m_security_t security;
+    uint32_t         holdOffTime;
+} lwm2m_bootstrap_server_t;
 
 /*
  * LWM2M Context
@@ -151,6 +161,7 @@ typedef struct _lwm2m_server_
 
 typedef struct
 {
+    lwm2m_bootstrap_server_t * bootstrapServer;
     lwm2m_server_t *  serverList;
     uint16_t          numObject;
     lwm2m_object_t ** objectList;
@@ -159,6 +170,7 @@ typedef struct
 lwm2m_context_t * lwm2m_init();
 void lwm2m_close(lwm2m_context_t * contextP);
 
+int lwm2m_set_bootstrap_server(lwm2m_context_t * contextP, lwm2m_bootstrap_server_t * serverP);
 int lwm2m_add_server(lwm2m_context_t * contextP, lwm2m_server_t * serverP);
 
 int lwm2m_add_object(lwm2m_context_t * contextP, lwm2m_object_t * objectP);
