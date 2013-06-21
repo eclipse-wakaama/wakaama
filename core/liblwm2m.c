@@ -90,7 +90,7 @@ void lwm2m_close(lwm2m_context_t * contextP)
     {
         if (NULL != contextP->objectList[i]->closeFunc)
         {
-            contextP->objectList[i]->closeFunc(contextP->objectList[i]->userData);
+            contextP->objectList[i]->closeFunc(contextP->objectList[i]);
         }
         free(contextP->objectList[i]);
     }

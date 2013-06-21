@@ -100,12 +100,15 @@ int lwm2m_opaqueToTLV(lwm2m_tlv_type_t type, uint8_t* dataP, size_t data_len, ui
  * LWM2M Objects
  */
 
-typedef uint8_t (*lwm2m_read_callback_t) (lwm2m_uri_t * uriP, char ** bufferP, int * lengthP, void * userData);
-typedef uint8_t (*lwm2m_write_callback_t) (lwm2m_uri_t * uriP, char * buffer, int length, void * userData);
-typedef uint8_t (*lwm2m_execute_callback_t) (lwm2m_uri_t * uriP, void * userData);
-typedef void (*lwm2m_close_callback_t) (void * userData);
+typedef struct _lwm2m_object_t lwm2m_object_t;
 
-typedef struct
+typedef uint8_t (*lwm2m_read_callback_t) (lwm2m_uri_t * uriP, char ** bufferP, int * lengthP, lwm2m_object_t * objectP);
+typedef uint8_t (*lwm2m_write_callback_t) (lwm2m_uri_t * uriP, char * buffer, int length, lwm2m_object_t * objectP);
+typedef uint8_t (*lwm2m_execute_callback_t) (lwm2m_uri_t * uriP, lwm2m_object_t * objectP);
+typedef void (*lwm2m_close_callback_t) (lwm2m_object_t * objectP);
+
+
+struct _lwm2m_object_t
 {
     uint16_t                 objID;
     lwm2m_read_callback_t    readFunc;
@@ -113,7 +116,7 @@ typedef struct
     lwm2m_execute_callback_t executeFunc;
     lwm2m_close_callback_t   closeFunc;
     void *                   userData;
-} lwm2m_object_t;
+} ;
 
 
 /*

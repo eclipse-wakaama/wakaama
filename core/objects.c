@@ -72,7 +72,7 @@ coap_status_t object_read(lwm2m_context_t * contextP,
         return METHOD_NOT_ALLOWED_4_05;
     }
 
-    return targetP->readFunc(uriP, bufferP, lengthP, targetP->userData);
+    return targetP->readFunc(uriP, bufferP, lengthP, targetP);
 }
 
 
@@ -94,6 +94,6 @@ coap_status_t object_write(lwm2m_context_t * contextP,
         return METHOD_NOT_ALLOWED_4_05;
     }
 
-    return targetP->writeFunc(uriP, buffer, length, targetP->userData);
+    return targetP->writeFunc(uriP, buffer, length, targetP);
 }
 

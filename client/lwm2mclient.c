@@ -130,7 +130,7 @@ int get_socket()
 uint8_t test_read(lwm2m_uri_t * uriP,
                   char ** bufferP,
                   int * lengthP,
-                  void * userData)
+                  lwm2m_object_t * objectP)
 {
     *bufferP = NULL;
     *lengthP = 0;
@@ -165,7 +165,7 @@ uint8_t test_read(lwm2m_uri_t * uriP,
 uint8_t test_write(lwm2m_uri_t * uriP,
                    char * buffer,
                    int length,
-                   void * userData)
+                   lwm2m_object_t * objectP)
 {
     switch (uriP->resID)
     {

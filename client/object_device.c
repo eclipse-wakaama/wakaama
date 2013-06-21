@@ -281,7 +281,7 @@ error:
 static uint8_t prv_device_read(lwm2m_uri_t * uriP,
                                char ** bufferP,
                                int * lengthP,
-                               void * userData)
+                               lwm2m_object_t * objectP)
 {
     *bufferP = NULL;
     *lengthP = 0;
@@ -456,7 +456,7 @@ static uint8_t prv_device_read(lwm2m_uri_t * uriP,
     case 12:
         return METHOD_NOT_ALLOWED_4_05;
     case 13:
-        *lengthP = lwm2m_int64ToPlainText(((device_data_t*)userData)->time, bufferP);
+        *lengthP = lwm2m_int64ToPlainText(((device_data_t*)(objectP->userData))->time, bufferP);
         if (0 != *lengthP)
         {
             return CONTENT_2_05;
@@ -466,7 +466,7 @@ static uint8_t prv_device_read(lwm2m_uri_t * uriP,
             return MEMORY_ALLOCATION_ERROR;
         }
     case 14:
-        *bufferP = strdup(((device_data_t*)userData)->time_offset);
+        *bufferP = strdup(((device_data_t*)(objectP->userData))->time_offset);
         if (NULL != *bufferP)
         {
             *lengthP = strlen(*bufferP);
@@ -488,7 +488,7 @@ static uint8_t prv_device_read(lwm2m_uri_t * uriP,
             return MEMORY_ALLOCATION_ERROR;
         }
     case LWM2M_URI_NOT_DEFINED:
-        *lengthP = prv_get_object_tlv(bufferP, (device_data_t*)userData);
+        *lengthP = prv_get_object_tlv(bufferP, (device_data_t*)(objectP->userData));
         if (0 != *lengthP)
         {
             return CONTENT_2_05;
@@ -506,7 +506,7 @@ static uint8_t prv_device_read(lwm2m_uri_t * uriP,
 static uint8_t prv_device_write(lwm2m_uri_t * uriP,
                                 char * buffer,
                                 int length,
-                                void * userData)
+                                lwm2m_object_t * objectP)
 {
     // this is a single instance object
     if (0 != uriP->objInstance)
@@ -517,7 +517,7 @@ static uint8_t prv_device_write(lwm2m_uri_t * uriP,
     switch (uriP->resID)
     {
     case 11:
-        if (1 == lwm2m_PlainTextToInt64(buffer, length, &((device_data_t*)userData)->time))
+        if (1 == lwm2m_PlainTextToInt64(buffer, length, &((device_data_t*)(objectP->userData))->time))
         {
             return CHANGED_2_04;
         }
@@ -528,8 +528,8 @@ static uint8_t prv_device_write(lwm2m_uri_t * uriP,
     case 12:
         if (1 == prv_check_time_offset(buffer, length))
         {
-            strncpy(((device_data_t*)userData)->time_offset, buffer, length);
-            ((device_data_t*)userData)->time_offset[length] = 0;
+            strncpy(((device_data_t*)(objectP->userData))->time_offset, buffer, length);
+            ((device_data_t*)(objectP->userData))->time_offset[length] = 0;
             return CHANGED_2_04;
         }
         else
@@ -542,7 +542,7 @@ static uint8_t prv_device_write(lwm2m_uri_t * uriP,
 }
 
 static uint8_t prv_device_execute(lwm2m_uri_t * uriP,
-                                  void * userData)
+                                  lwm2m_object_t * objectP)
 {
     // this is a single instance object
     if (0 != uriP->objInstance)
