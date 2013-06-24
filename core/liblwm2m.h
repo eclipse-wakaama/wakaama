@@ -51,6 +51,27 @@ typedef struct
 
 
 /*
+ * Utility functions for sorted linked list
+ */
+
+typedef struct _lwm2m_list_t
+{
+    struct _lwm2m_list_t * next;
+    uint16_t    id;
+} lwm2m_list_t;
+
+// defined in list.c
+// Add 'node' to the list 'head' and return the new list
+lwm2m_list_t * lwm2m_list_add(lwm2m_list_t * head, lwm2m_list_t * node);
+// Return the node with ID 'id' from the list 'head' or NULL if not found
+lwm2m_list_t * lwm2m_list_find(lwm2m_list_t * head, uint16_t id);
+// Remove the node with ID 'id' from the list 'head' and return the new list
+lwm2m_list_t * lwm2m_list_remove(lwm2m_list_t * head, uint16_t id, lwm2m_list_t ** nodeP);
+
+#define LWM2M_LIST_ADD(H,N) lwm2m_list_add((lwm2m_list_t *)H, (lwm2m_list_t *)N);
+
+
+/*
  *  Ressource values
  */
 
@@ -116,7 +137,7 @@ struct _lwm2m_object_t
     lwm2m_execute_callback_t executeFunc;
     lwm2m_close_callback_t   closeFunc;
     void *                   userData;
-} ;
+};
 
 
 /*
@@ -145,10 +166,10 @@ typedef struct
 
 typedef struct _lwm2m_server_
 {
-    struct _lwm2m_server_ * next;
+    struct _lwm2m_server_ * next;   // matches lwm2m_list_t::next
+    uint16_t         shortID;       // matches lwm2m_list_t::id
     char *           uri;
     lwm2m_security_t security;
-    uint16_t         shortID;
 } lwm2m_server_t;
 
 typedef struct

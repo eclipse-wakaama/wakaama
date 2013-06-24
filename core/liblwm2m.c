@@ -141,8 +141,7 @@ int lwm2m_set_bootstrap_server(lwm2m_context_t * contextP,
 int lwm2m_add_server(lwm2m_context_t * contextP,
                      lwm2m_server_t * serverP)
 {
-    serverP->next = contextP->serverList;
-    contextP->serverList = serverP;
+    contextP->serverList = (lwm2m_server_t*)LWM2M_LIST_ADD(contextP->serverList, serverP);
 }
 
 
