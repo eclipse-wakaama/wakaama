@@ -303,7 +303,7 @@ static uint8_t prv_device_read(lwm2m_uri_t * uriP,
         }
         else
         {
-            return MEMORY_ALLOCATION_ERROR;
+            return INTERNAL_SERVER_ERROR_5_00;
         }
     case 1:
         *bufferP = strdup(PRV_MODEL_NUMBER);
@@ -314,7 +314,7 @@ static uint8_t prv_device_read(lwm2m_uri_t * uriP,
         }
         else
         {
-            return MEMORY_ALLOCATION_ERROR;
+            return INTERNAL_SERVER_ERROR_5_00;
         }
     case 2:
         *bufferP = strdup(PRV_SERIAL_NUMBER);
@@ -325,7 +325,7 @@ static uint8_t prv_device_read(lwm2m_uri_t * uriP,
         }
         else
         {
-            return MEMORY_ALLOCATION_ERROR;
+            return INTERNAL_SERVER_ERROR_5_00;
         }
     case 3:
         *bufferP = strdup(PRV_FIRMWARE_VERSION);
@@ -336,7 +336,7 @@ static uint8_t prv_device_read(lwm2m_uri_t * uriP,
         }
         else
         {
-            return MEMORY_ALLOCATION_ERROR;
+            return INTERNAL_SERVER_ERROR_5_00;
         }
     case 4:
         return METHOD_NOT_ALLOWED_4_05;
@@ -350,17 +350,17 @@ static uint8_t prv_device_read(lwm2m_uri_t * uriP,
         int instance_length;
 
         result = lwm2m_intToTLV(TLV_RESSOURCE_INSTANCE, PRV_POWER_SOURCE_1, 0, buffer1, 16);
-        if (0 == result) return MEMORY_ALLOCATION_ERROR;
+        if (0 == result) return INTERNAL_SERVER_ERROR_5_00;
         instance_length = result;
         result = lwm2m_intToTLV(TLV_RESSOURCE_INSTANCE, PRV_POWER_SOURCE_2, 1, buffer1+result, 16-result);
-        if (0 == result) return MEMORY_ALLOCATION_ERROR;
+        if (0 == result) return INTERNAL_SERVER_ERROR_5_00;
         instance_length += result;
 
         *lengthP = lwm2m_opaqueToTLV(TLV_MULTIPLE_INSTANCE, buffer1, instance_length, 6, buffer2, 16);
-        if (0 == *lengthP) return MEMORY_ALLOCATION_ERROR;
+        if (0 == *lengthP) return INTERNAL_SERVER_ERROR_5_00;
 
         *bufferP = (char *)malloc(*lengthP);
-        if (NULL == *bufferP) return MEMORY_ALLOCATION_ERROR;
+        if (NULL == *bufferP) return INTERNAL_SERVER_ERROR_5_00;
 
         memmove(*bufferP, buffer2, *lengthP);
 
@@ -377,17 +377,17 @@ static uint8_t prv_device_read(lwm2m_uri_t * uriP,
         int instance_length;
 
         result = lwm2m_intToTLV(TLV_RESSOURCE_INSTANCE, PRV_POWER_VOLTAGE_1, 0, buffer1, 16);
-        if (0 == result) return MEMORY_ALLOCATION_ERROR;
+        if (0 == result) return INTERNAL_SERVER_ERROR_5_00;
         instance_length = result;
         result = lwm2m_intToTLV(TLV_RESSOURCE_INSTANCE, PRV_POWER_VOLTAGE_2, 1, buffer1+result, 16-result);
-        if (0 == result) return MEMORY_ALLOCATION_ERROR;
+        if (0 == result) return INTERNAL_SERVER_ERROR_5_00;
         instance_length += result;
 
         *lengthP = lwm2m_opaqueToTLV(TLV_MULTIPLE_INSTANCE, buffer1, instance_length, 7, buffer2, 16);
-        if (0 == *lengthP) return MEMORY_ALLOCATION_ERROR;
+        if (0 == *lengthP) return INTERNAL_SERVER_ERROR_5_00;
 
         *bufferP = (char *)malloc(*lengthP);
-        if (NULL == *bufferP) return MEMORY_ALLOCATION_ERROR;
+        if (NULL == *bufferP) return INTERNAL_SERVER_ERROR_5_00;
 
         memmove(*bufferP, buffer2, *lengthP);
 
@@ -404,17 +404,17 @@ static uint8_t prv_device_read(lwm2m_uri_t * uriP,
         int instance_length;
 
         result = lwm2m_intToTLV(TLV_RESSOURCE_INSTANCE, PRV_POWER_CURRENT_1, 0, buffer1, 16);
-        if (0 == result) return MEMORY_ALLOCATION_ERROR;
+        if (0 == result) return INTERNAL_SERVER_ERROR_5_00;
         instance_length = result;
         result = lwm2m_intToTLV(TLV_RESSOURCE_INSTANCE, PRV_POWER_CURRENT_2, 1, buffer1+result, 16-result);
-        if (0 == result) return MEMORY_ALLOCATION_ERROR;
+        if (0 == result) return INTERNAL_SERVER_ERROR_5_00;
         instance_length += result;
 
         *lengthP = lwm2m_opaqueToTLV(TLV_MULTIPLE_INSTANCE, buffer1, instance_length, 8, buffer2, 16);
-        if (0 == *lengthP) return MEMORY_ALLOCATION_ERROR;
+        if (0 == *lengthP) return INTERNAL_SERVER_ERROR_5_00;
 
         *bufferP = (char *)malloc(*lengthP);
-        if (NULL == *bufferP) return MEMORY_ALLOCATION_ERROR;
+        if (NULL == *bufferP) return INTERNAL_SERVER_ERROR_5_00;
 
         memmove(*bufferP, buffer2, *lengthP);
 
@@ -431,7 +431,7 @@ static uint8_t prv_device_read(lwm2m_uri_t * uriP,
         }
         else
         {
-            return MEMORY_ALLOCATION_ERROR;
+            return INTERNAL_SERVER_ERROR_5_00;
         }
     case 10:
         *lengthP = lwm2m_int8ToPlainText(PRV_MEMORY_FREE, bufferP);
@@ -441,7 +441,7 @@ static uint8_t prv_device_read(lwm2m_uri_t * uriP,
         }
         else
         {
-            return MEMORY_ALLOCATION_ERROR;
+            return INTERNAL_SERVER_ERROR_5_00;
         }
     case 11:
         *lengthP = lwm2m_int8ToPlainText(PRV_ERROR_CODE, bufferP);
@@ -451,7 +451,7 @@ static uint8_t prv_device_read(lwm2m_uri_t * uriP,
         }
         else
         {
-            return MEMORY_ALLOCATION_ERROR;
+            return INTERNAL_SERVER_ERROR_5_00;
         }
     case 12:
         return METHOD_NOT_ALLOWED_4_05;
@@ -463,7 +463,7 @@ static uint8_t prv_device_read(lwm2m_uri_t * uriP,
         }
         else
         {
-            return MEMORY_ALLOCATION_ERROR;
+            return INTERNAL_SERVER_ERROR_5_00;
         }
     case 14:
         *bufferP = strdup(((device_data_t*)(objectP->userData))->time_offset);
@@ -474,7 +474,7 @@ static uint8_t prv_device_read(lwm2m_uri_t * uriP,
         }
         else
         {
-            return MEMORY_ALLOCATION_ERROR;
+            return INTERNAL_SERVER_ERROR_5_00;
         }
     case 15:
         *bufferP = strdup(PRV_BINDING_MODE);
@@ -485,7 +485,7 @@ static uint8_t prv_device_read(lwm2m_uri_t * uriP,
         }
         else
         {
-            return MEMORY_ALLOCATION_ERROR;
+            return INTERNAL_SERVER_ERROR_5_00;
         }
     case LWM2M_URI_NOT_DEFINED:
         *lengthP = prv_get_object_tlv(bufferP, (device_data_t*)(objectP->userData));
@@ -495,7 +495,7 @@ static uint8_t prv_device_read(lwm2m_uri_t * uriP,
         }
         else
         {
-            return MEMORY_ALLOCATION_ERROR;
+            return INTERNAL_SERVER_ERROR_5_00;
         }
     default:
         return NOT_FOUND_4_04;

@@ -83,6 +83,11 @@ coap_status_t object_write(lwm2m_context_t * contextP,
 {
     lwm2m_object_t * targetP;
 
+    if (LWM2M_URI_NOT_DEFINED == uriP->objInstance)
+    {
+        return BAD_REQUEST_4_00;
+    }
+
     targetP = prv_find_object(contextP, uriP->objID);
 
     if (NULL == targetP)

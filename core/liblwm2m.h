@@ -132,6 +132,7 @@ typedef void (*lwm2m_close_callback_t) (lwm2m_object_t * objectP);
 struct _lwm2m_object_t
 {
     uint16_t                 objID;
+    lwm2m_list_t *           instanceList;
     lwm2m_read_callback_t    readFunc;
     lwm2m_write_callback_t   writeFunc;
     lwm2m_execute_callback_t executeFunc;

@@ -83,6 +83,7 @@ Contains code snippets which are:
 static int g_quit = 0;
 
 extern lwm2m_object_t * get_object_device();
+extern lwm2m_object_t * get_test_object();
 
 void handle_sigint(int signum)
 {
@@ -127,72 +128,6 @@ int get_socket()
     return s;
 }
 
-uint8_t test_read(lwm2m_uri_t * uriP,
-                  char ** bufferP,
-                  int * lengthP,
-                  lwm2m_object_t * objectP)
-{
-    *bufferP = NULL;
-    *lengthP = 0;
-
-    switch (uriP->resID)
-    {
-    case 1:
-        *bufferP = strdup("Hi there !");
-        *lengthP = strlen(*bufferP);
-        break;
-    case 2:
-        *lengthP = lwm2m_int8ToPlainText(42, bufferP);
-        break;
-    case 3:
-        *lengthP = lwm2m_float32ToPlainText(3.14159265, bufferP);
-        break;
-    case 4:
-        *lengthP = lwm2m_boolToPlainText(true, bufferP);
-        break;
-    default:
-        return 132; // NOT_FOUND_4_04
-    }
-
-    if (*lengthP <= 0)
-    {
-        return 160; //INTERNAL_SERVER_ERROR_5_00
-    }
-
-    return 69; // CONTENT_2_05
-}
-
-uint8_t test_write(lwm2m_uri_t * uriP,
-                   char * buffer,
-                   int length,
-                   lwm2m_object_t * objectP)
-{
-    switch (uriP->resID)
-    {
-    case 1:
-        fprintf(stdout, "Write (%d bytes): %.*s\r\n\n", length, length, buffer);
-        return 68; // CHANGED_2_04
-    default:
-        return 132; // NOT_FOUND_4_04
-    }
-}
-
-int create_test_objects(uint16_t id,
-                        lwm2m_context_t * lwm2mH)
-{
-    lwm2m_object_t * objectP;
-
-    objectP = (lwm2m_object_t *)malloc(sizeof(lwm2m_object_t));
-    if (NULL == objectP) return -1;
-
-    memset(objectP, 0, sizeof(lwm2m_object_t));
-    objectP->objID = id;
-    objectP->readFunc = test_read;
-    objectP->writeFunc = test_write;
-
-    return lwm2m_add_object(lwm2mH, objectP);
-}
-
 int main(int argc, char *argv[])
 {
     int socket;
@@ -214,21 +149,9 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    if (-1 == create_test_objects(1031, lwm2mH))
+    if (-1 == lwm2m_add_object(lwm2mH, get_test_object()))
     {
-        fprintf(stderr, "Failed to add object 1031\r\n");
-        lwm2m_close(lwm2mH);
-        return -1;
-    }
-    if (-1 == create_test_objects(1033, lwm2mH))
-    {
-        fprintf(stderr, "Failed to add object 1033\r\n");
-        lwm2m_close(lwm2mH);
-        return -1;
-    }
-    if (-1 == create_test_objects(1032, lwm2mH))
-    {
-        fprintf(stderr, "Failed to add object 1032\r\n");
+        fprintf(stderr, "Failed to add test object\r\n");
         lwm2m_close(lwm2mH);
         return -1;
     }
