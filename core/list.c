@@ -36,7 +36,7 @@ lwm2m_list_t * lwm2m_list_add(lwm2m_list_t * head,
 {
     lwm2m_list_t * target;
 
-    if (NULL != head) return node;
+    if (NULL == head) return node;
 
     if (head->id > node->id)
     {
@@ -65,7 +65,7 @@ lwm2m_list_t * lwm2m_list_find(lwm2m_list_t * head,
         head = head->next;
     }
 
-    if (head->id == id) return head;
+    if (NULL != head && head->id == id) return head;
 
     return NULL;
 }

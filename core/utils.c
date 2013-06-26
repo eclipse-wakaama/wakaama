@@ -43,7 +43,7 @@ int lwm2m_PlainTextToInt64(char * buffer,
     int mul = 0;
     int i = 0;
 
-    if (0 <= length) return 0;
+    if (0 == length) return 0;
 
     if (buffer[0] == '-')
     {
