@@ -135,24 +135,26 @@ int main(int argc, char *argv[])
     struct timeval tv;
     int result;
     lwm2m_context_t * lwm2mH = NULL;
+    lwm2m_object_t * objArray[2];
 
-    lwm2mH = lwm2m_init();
-    if (NULL == lwm2mH)
-    {
-        return -1;
-    }
-
-    if (-1 == lwm2m_add_object(lwm2mH, get_object_device()))
+    objArray[0] = get_object_device();
+    if (NULL == objArray[0])
     {
         fprintf(stderr, "Failed to add Device object\r\n");
-        lwm2m_close(lwm2mH);
         return -1;
     }
 
-    if (-1 == lwm2m_add_object(lwm2mH, get_test_object()))
+    objArray[1] = get_test_object();
+    if (NULL == objArray[1])
     {
         fprintf(stderr, "Failed to add test object\r\n");
-        lwm2m_close(lwm2mH);
+        return -1;
+    }
+
+    lwm2mH = lwm2m_init(2, objArray);
+    if (NULL == lwm2mH)
+    {
+        fprintf(stderr, "lwm2m_init() failed\r\n");
         return -1;
     }
 

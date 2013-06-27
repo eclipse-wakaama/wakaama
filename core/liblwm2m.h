@@ -192,13 +192,11 @@ typedef struct
     lwm2m_object_t ** objectList;
 } lwm2m_context_t;
 
-lwm2m_context_t * lwm2m_init();
+lwm2m_context_t * lwm2m_init(uint16_t numObject, lwm2m_object_t * objectList[]);
 void lwm2m_close(lwm2m_context_t * contextP);
 
 int lwm2m_set_bootstrap_server(lwm2m_context_t * contextP, lwm2m_bootstrap_server_t * serverP);
 int lwm2m_add_server(lwm2m_context_t * contextP, lwm2m_server_t * serverP);
-
-int lwm2m_add_object(lwm2m_context_t * contextP, lwm2m_object_t * objectP);
 
 int lwm2m_handle_packet(lwm2m_context_t * contextP, uint8_t * buffer, int length, int socket, struct sockaddr_storage fromAddr, socklen_t fromAddrLen);
 

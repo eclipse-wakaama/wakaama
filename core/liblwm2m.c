@@ -68,7 +68,8 @@ Contains code snippets which are:
 #include <stdio.h>
 
 
-lwm2m_context_t * lwm2m_init()
+lwm2m_context_t * lwm2m_init(uint16_t numObject,
+                             lwm2m_object_t * objectList[])
 {
     lwm2m_context_t * contextP;
 
@@ -76,6 +77,15 @@ lwm2m_context_t * lwm2m_init()
     if (NULL != contextP)
     {
         memset(contextP, 0, sizeof(lwm2m_context_t));
+        if (numObject != 0)
+        {
+            contextP->objectList = (lwm2m_object_t **)malloc(numObject * sizeof(lwm2m_object_t *));
+            if (NULL != contextP->objectList)
+            {
+                memcpy(contextP->objectList, objectList, numObject * sizeof(lwm2m_object_t *));
+                contextP->numObject = numObject;
+            }
+        }
     }
 
     return contextP;
@@ -142,46 +152,6 @@ int lwm2m_add_server(lwm2m_context_t * contextP,
                      lwm2m_server_t * serverP)
 {
     contextP->serverList = (lwm2m_server_t*)LWM2M_LIST_ADD(contextP->serverList, serverP);
-}
-
-
-int lwm2m_add_object(lwm2m_context_t * contextP,
-                     lwm2m_object_t * objectP)
-{
-    lwm2m_object_t ** newArray;
-    int i;
-
-    newArray = (lwm2m_object_t **)malloc((contextP->numObject + 1) * sizeof(lwm2m_object_t *));
-    if (NULL == newArray) return -1;
-
-    for (i = 0;
-         i < contextP->numObject && contextP->objectList[i]->objID < objectP->objID;
-         i++)
-    {
-        newArray[i] = contextP->objectList[i];
-    }
-
-    if (i < contextP->numObject
-     && contextP->objectList[i]->objID == objectP->objID)
-    {
-        // duplicate ID
-        free(newArray);
-        return -1;
-    }
-
-    newArray[i] = objectP;
-
-    while(i < contextP->numObject)
-    {
-        newArray[i+1] = contextP->objectList[i];
-        i++;
-    }
-
-    contextP->numObject++;
-    if (NULL != contextP->objectList) free(contextP->objectList);
-    contextP->objectList = newArray;
-
-    return 0;
 }
 
 static void handle_response(coap_packet_t * message)
