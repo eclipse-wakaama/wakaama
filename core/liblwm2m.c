@@ -199,7 +199,9 @@ static coap_status_t handle_request(lwm2m_context_t * contextP,
         }
         break;
     case COAP_DELETE:
-        result = NOT_IMPLEMENTED_5_01;
+        {
+            result = object_delete(contextP, uriP);
+        }
         break;
     default:
         result = BAD_REQUEST_4_00;

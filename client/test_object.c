@@ -207,6 +207,20 @@ static uint8_t prv_write(lwm2m_uri_t * uriP,
     }
 }
 
+static uint8_t prv_delete(uint16_t id,
+                          lwm2m_object_t * objectP)
+{
+    prv_instance_t * targetP;
+    int64_t value;
+
+    objectP->instanceList = lwm2m_list_remove(objectP->instanceList, id, (lwm2m_list_t **)&targetP);
+    if (NULL == targetP) return NOT_FOUND_4_04;
+
+    free(targetP);
+
+    return DELETED_2_02;
+}
+
 lwm2m_object_t * get_test_object()
 {
     lwm2m_object_t * testObj;
@@ -232,6 +246,7 @@ lwm2m_object_t * get_test_object()
         }
         testObj->readFunc = prv_read;
         testObj->writeFunc = prv_write;
+        testObj->deleteFunc = prv_delete;
     }
 
     return testObj;

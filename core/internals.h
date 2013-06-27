@@ -47,5 +47,6 @@ lwm2m_uri_t * lwm2m_decode_uri(multi_option_t *uriPath);
 // defined in objects.c
 coap_status_t object_read(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, char ** bufferP, int * lengthP);
 coap_status_t object_write(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, char * buffer, int length);
+coap_status_t object_delete(lwm2m_context_t * contextP, lwm2m_uri_t * uriP);
 
 #endif
