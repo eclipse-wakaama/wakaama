@@ -56,7 +56,7 @@ static int prv_create_header(uint8_t * header,
         header[0] |= 0x80;
         break;
     case TLV_RESSOURCE:
-        header[0] |= 0xA0;
+        header[0] |= 0xC0;
         break;
     default:
         return 0;
@@ -170,4 +170,107 @@ int lwm2m_intToTLV(lwm2m_tlv_type_t type,
     }
 
     return lwm2m_opaqueToTLV(type, data_buffer + (_PRV_64BIT_BUFFER_SIZE - length), length, id, buffer, buffer_len);
+}
+
+int lwm2m_decodeTLV(char * buffer,
+                    size_t buffer_len,
+                    lwm2m_tlv_type_t * oType,
+                    uint16_t * oID,
+                    size_t * oDataIndex,
+                    size_t * oDataLen)
+{
+
+    if (buffer_len < 2) return 0;
+
+    *oDataIndex = 2;
+
+    switch (buffer[0]&0xC0)
+    {
+    case 0x00:
+        *oType = TLV_OBJECT_INSTANCE;
+        break;
+    case 0x40:
+        *oType = TLV_RESSOURCE_INSTANCE;
+        break;
+    case 0x80:
+        *oType = TLV_MULTIPLE_INSTANCE;
+        break;
+    case 0xC0:
+        *oType = TLV_RESSOURCE;
+        break;
+    default:
+        // can't happen
+        return 0;
+    }
+
+    if ((uint8_t)(buffer[0]&0x20) == (uint8_t)0x20)
+    {
+        // id is 16 bits long
+        if (buffer_len < 3) return 0;
+        *oDataIndex += 1;
+        *oID = buffer[1]<<8 + buffer[2];
+    }
+    else
+    {
+        // id is 8 bits long
+        *oID = buffer[1];
+    }
+
+    switch (buffer[0]&0x18)
+    {
+    case 0x00:
+        // no length field
+        *oDataLen = buffer[0]&0x07;
+        break;
+    case 0x08:
+        // length field is 8 bits long
+        if (buffer_len < *oDataIndex + 1) return 0;
+        *oDataLen = buffer[*oDataIndex];
+        *oDataIndex += 1;
+        break;
+    case 0x10:
+        // length field is 16 bits long
+        if (buffer_len < *oDataIndex + 2) return 0;
+        *oDataLen = buffer[*oDataIndex]<<8 + buffer[*oDataIndex+1];
+        *oDataIndex += 2;
+        break;
+    case 0x18:
+        // length field is 24 bits long
+        if (buffer_len < *oDataIndex + 3) return 0;
+        *oDataLen = buffer[*oDataIndex]<<16 + buffer[*oDataIndex+1]<<8 + buffer[*oDataIndex+2];
+        *oDataIndex += 3;
+        break;
+    default:
+        // can't happen
+        return 0;
+    }
+
+    if (*oDataIndex + *oDataLen > buffer_len) return 0;
+
+    return *oDataIndex + *oDataLen;
+}
+
+int lwm2m_opaqueToInt(char * buffer,
+                      size_t buffer_len,
+                      int64_t * dataP)
+{
+    int i;
+
+    if (buffer_len == 0 || buffer_len > 8) return 0;
+
+    // first bit is the sign
+    *dataP = buffer[0]&0x7F;
+
+    for (i = 1 ; i < buffer_len ; i++)
+    {
+        *dataP = (*dataP << (i*8)) + buffer[i];
+    }
+
+    // first bit is the sign
+    if (buffer[0]&0x80 == 0x80)
+    {
+        *dataP = 0 - *dataP;
+    }
+
+    return i;
 }
