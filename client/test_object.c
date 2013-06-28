@@ -207,6 +207,61 @@ static uint8_t prv_write(lwm2m_uri_t * uriP,
     }
 }
 
+static uint8_t prv_create(uint16_t id,
+                          char * buffer,
+                          int length,
+                          lwm2m_object_t * objectP)
+{
+    prv_instance_t * targetP;
+    lwm2m_tlv_type_t type;
+    uint16_t resID;
+    size_t dataIndex;
+    size_t dataLen;
+    int result;
+    int64_t value;
+
+    if (LWM2M_URI_NOT_DEFINED != id)
+    {
+        targetP = (prv_instance_t *)lwm2m_list_find(objectP->instanceList, id);
+        if (targetP != NULL) return NOT_ACCEPTABLE_4_06;
+    }
+    else
+    {
+        // determine a new unique ID
+        id = 0;
+        for (targetP = (prv_instance_t *)(objectP->instanceList) ; targetP != NULL ; targetP = targetP->next)
+        {
+            if (targetP->shortID >= id)
+            {
+                id = targetP->shortID + 1;
+            }
+        }
+    }
+
+    result = lwm2m_decodeTLV(buffer, length, &type, &resID, &dataIndex, &dataLen);
+    if (result != length)
+    {
+        // decode failure or too much data for our single ressource object
+        return BAD_REQUEST_4_00;
+    }
+    if (type != TLV_RESSOURCE || resID != 1)
+    {
+        return BAD_REQUEST_4_00;
+    }
+    result = lwm2m_opaqueToInt(buffer + dataIndex, dataLen, &value);
+    if (result == 0 || value < 0 || value > 255)
+        return BAD_REQUEST_4_00;
+
+    targetP = (prv_instance_t *)malloc(sizeof(prv_instance_t));
+    if (NULL == targetP) return INTERNAL_SERVER_ERROR_5_00;
+    memset(targetP, 0, sizeof(prv_instance_t));
+    targetP->shortID = id;
+    targetP->test = value;
+    objectP->instanceList = LWM2M_LIST_ADD(objectP->instanceList, targetP);
+
+    return CREATED_2_01;
+}
+
 static uint8_t prv_delete(uint16_t id,
                           lwm2m_object_t * objectP)
 {
@@ -246,6 +301,7 @@ lwm2m_object_t * get_test_object()
         }
         testObj->readFunc = prv_read;
         testObj->writeFunc = prv_write;
+        testObj->createFunc = prv_create;
         testObj->deleteFunc = prv_delete;
     }
 

@@ -203,7 +203,7 @@ int lwm2m_decodeTLV(char * buffer,
         return 0;
     }
 
-    if ((uint8_t)(buffer[0]&0x20) == (uint8_t)0x20)
+    if ((uint8_t)(buffer[0]&0x20) == 0x20)
     {
         // id is 16 bits long
         if (buffer_len < 3) return 0;
@@ -263,11 +263,11 @@ int lwm2m_opaqueToInt(char * buffer,
 
     for (i = 1 ; i < buffer_len ; i++)
     {
-        *dataP = (*dataP << (i*8)) + buffer[i];
+        *dataP = (*dataP << 8) + buffer[i];
     }
 
     // first bit is the sign
-    if (buffer[0]&0x80 == 0x80)
+    if ((uint8_t)(buffer[0]&0x80) == 0x80)
     {
         *dataP = 0 - *dataP;
     }

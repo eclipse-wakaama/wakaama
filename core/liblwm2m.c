@@ -191,7 +191,9 @@ static coap_status_t handle_request(lwm2m_context_t * contextP,
         }
         break;
     case COAP_POST:
-        result = NOT_IMPLEMENTED_5_01;
+        {
+            result = object_create(contextP, uriP, message->payload, message->payload_len);
+        }
         break;
     case COAP_PUT:
         {

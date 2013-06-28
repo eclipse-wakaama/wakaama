@@ -102,6 +102,33 @@ coap_status_t object_write(lwm2m_context_t * contextP,
     return targetP->writeFunc(uriP, buffer, length, targetP);
 }
 
+coap_status_t object_create(lwm2m_context_t * contextP,
+                            lwm2m_uri_t * uriP,
+                            char * buffer,
+                            int length)
+{
+    lwm2m_object_t * targetP;
+
+    if (LWM2M_URI_NOT_DEFINED != uriP->resID
+     || 0 == length || NULL == buffer)
+    {
+        return BAD_REQUEST_4_00;
+    }
+
+    targetP = prv_find_object(contextP, uriP->objID);
+
+    if (NULL == targetP)
+    {
+        return NOT_FOUND_4_04;
+    }
+    if (NULL == targetP->createFunc)
+    {
+        return METHOD_NOT_ALLOWED_4_05;
+    }
+
+    return targetP->createFunc(uriP->objInstance, buffer, length, targetP);
+}
+
 coap_status_t object_delete(lwm2m_context_t * contextP,
                             lwm2m_uri_t * uriP)
 {

@@ -5,6 +5,6 @@ project (tlvdecode)
 include_directories ("${PROJECT_SOURCE_DIR}/../..")
 
 SET(SOURCES decode.c)
-SET(CORE_SOURCES ../core/tlv.c)
+SET(CORE_SOURCES ${PROJECT_SOURCE_DIR}/../../core/tlv.c)
 
 add_executable(tlvdecode ${SOURCES} ${CORE_SOURCES})

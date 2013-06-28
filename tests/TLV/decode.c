@@ -41,7 +41,7 @@ static void prv_output_buffer(uint8_t * buffer,
     int i;
     uint8_t array[16];
 
-    if (length == 0) printf("\n");
+    if (length == 0 || length > 16) printf("\n");
 
     i = 0;
     while (i < length)
@@ -54,6 +54,14 @@ static void prv_output_buffer(uint8_t * buffer,
         for (j = 0 ; j < 16 && i+j < length; j++)
         {
             printf("%02X ", array[j]);
+        }
+        if (length > 16)
+        {
+            while (j < 16)
+            {
+                printf("   ");
+                j++;
+            }
         }
         printf("  ");
         for (j = 0 ; j < 16 && i+j < length; j++)
@@ -119,6 +127,15 @@ void decode(char * buffer,
         {
             decode(buffer + length + dataIndex, dataLen, indent+1);
         }
+        else if (dataLen <= 8)
+        {
+            int64_t value;
+            if (0 != lwm2m_opaqueToInt(buffer + length + dataIndex, dataLen, &value))
+            {
+                print_indent(indent);
+                printf("  as int: %ld\r\n", value);
+            }
+        }
 
         length += result;
     }
@@ -136,8 +153,8 @@ int main(int argc, char *argv[])
                       0x01, 0x03, 0x84, 0xC1, 0x09, 0x64 , 0xC1, 0x0A, 0x0F, 0x83, 0x0B, 0x41, 0x00, 0x00, 0xC4,
                       0x0D, 0x51, 0x82, 0x42, 0x8F, 0xC6, 0x0E, 0x2B, 0x30, 0x32, 0x3A, 0x30, 0x30, 0xC1, 0x0F, 0x55};
 
-//    printf("Buffer 1: \r\r\n");
-//    decode(buffer1, sizeof(buffer1), 0);
+    printf("Buffer 1: \r\r\n");
+    decode(buffer1, sizeof(buffer1), 0);
     printf("\r\rBuffer 2: \r\r\n");
     decode(buffer2, sizeof(buffer2), 0);
 
