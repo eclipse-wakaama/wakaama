@@ -408,3 +408,15 @@ int lwm2m_handle_packet(lwm2m_context_t * contextP,
     }
 }
 
+
+int lwm2m_register(lwm2m_context_t * contextP)
+{
+    char payload[64];
+
+    if (prv_getRegisterPayload(contextP, payload, 8) > 0)
+    {
+        fprintf(stdout, "Register: \"%s\"\r\n", payload);
+    }
+
+    return 0;
+}

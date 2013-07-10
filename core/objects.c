@@ -32,6 +32,7 @@ David Navarro <david.navarro@intel.com>
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 
 static lwm2m_object_t * prv_find_object(lwm2m_context_t * contextP,
@@ -152,4 +153,59 @@ coap_status_t object_delete(lwm2m_context_t * contextP,
     }
 
     return targetP->deleteFunc(uriP->objInstance, targetP);
+}
+
+int prv_getRegisterPayload(lwm2m_context_t * contextP,
+                           char * buffer,
+                           size_t length)
+{
+    int index;
+    int i;
+
+    // index can not be greater than length
+    index = 0;
+    for (i = 0 ; i < contextP->numObject ; i++)
+    {
+        if (contextP->objectList[i]->instanceList == NULL)
+        {
+            int result;
+
+            result = snprintf(buffer + index, length - index, "%hu, ", contextP->objectList[i]->objID);
+            if (result > 0 && result <= length - index)
+            {
+                index += result;
+            }
+            else
+            {
+                return 0;
+            }
+        }
+        else
+        {
+            lwm2m_list_t * targetP;
+            for (targetP = contextP->objectList[i]->instanceList ; targetP != NULL ; targetP = targetP->next)
+            {
+                int result;
+
+                result = snprintf(buffer + index, length - index, "%hu/%hu, ", contextP->objectList[i]->objID, targetP->id);
+                if (result > 0 && result <= length - index)
+                {
+                    index += result;
+                }
+                else
+                {
+                    return 0;
+                }
+            }
+        }
+    }
+
+    if (index > 0)
+    {
+        index = index - 2;
+    }
+
+    buffer[index] = 0;
+
+    return index;
 }

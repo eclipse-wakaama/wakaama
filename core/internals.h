@@ -49,5 +49,7 @@ coap_status_t object_read(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, char *
 coap_status_t object_write(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, char * buffer, int length);
 coap_status_t object_create(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, char * buffer, int length);
 coap_status_t object_delete(lwm2m_context_t * contextP, lwm2m_uri_t * uriP);
+int prv_getRegisterPayload(lwm2m_context_t * contextP, char * buffer, size_t length);
+
 
 #endif
