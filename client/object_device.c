@@ -34,8 +34,6 @@ David Navarro <david.navarro@intel.com>
 #include <stdlib.h>
 #include <string.h>
 
-#include "externals/er-coap-13/er-coap-13.h"
-
 
 #define PRV_MANUFACTURER      "Open Mobile Alliance"
 #define PRV_MODEL_NUMBER      "Lightweight M2M Client"
@@ -289,7 +287,7 @@ static uint8_t prv_device_read(lwm2m_uri_t * uriP,
     // this is a single instance object
     if (0 != uriP->objInstance && LWM2M_URI_NOT_DEFINED != uriP->objInstance)
     {
-        return NOT_FOUND_4_04;
+        return COAP_404_NOT_FOUND;
     }
 
     switch (uriP->resID)
@@ -299,49 +297,49 @@ static uint8_t prv_device_read(lwm2m_uri_t * uriP,
         if (NULL != *bufferP)
         {
             *lengthP = strlen(*bufferP);
-            return CONTENT_2_05;
+            return COAP_205_CONTENT;
         }
         else
         {
-            return INTERNAL_SERVER_ERROR_5_00;
+            return COAP_500_INTERNAL_SERVER_ERROR;
         }
     case 1:
         *bufferP = strdup(PRV_MODEL_NUMBER);
         if (NULL != *bufferP)
         {
             *lengthP = strlen(*bufferP);
-            return CONTENT_2_05;
+            return COAP_205_CONTENT;
         }
         else
         {
-            return INTERNAL_SERVER_ERROR_5_00;
+            return COAP_500_INTERNAL_SERVER_ERROR;
         }
     case 2:
         *bufferP = strdup(PRV_SERIAL_NUMBER);
         if (NULL != *bufferP)
         {
             *lengthP = strlen(*bufferP);
-            return CONTENT_2_05;
+            return COAP_205_CONTENT;
         }
         else
         {
-            return INTERNAL_SERVER_ERROR_5_00;
+            return COAP_500_INTERNAL_SERVER_ERROR;
         }
     case 3:
         *bufferP = strdup(PRV_FIRMWARE_VERSION);
         if (NULL != *bufferP)
         {
             *lengthP = strlen(*bufferP);
-            return CONTENT_2_05;
+            return COAP_205_CONTENT;
         }
         else
         {
-            return INTERNAL_SERVER_ERROR_5_00;
+            return COAP_500_INTERNAL_SERVER_ERROR;
         }
     case 4:
-        return METHOD_NOT_ALLOWED_4_05;
+        return COAP_405_METHOD_NOT_ALLOWED;
     case 5:
-        return METHOD_NOT_ALLOWED_4_05;
+        return COAP_405_METHOD_NOT_ALLOWED;
     case 6:
     {
         char buffer1[16];
@@ -350,24 +348,24 @@ static uint8_t prv_device_read(lwm2m_uri_t * uriP,
         int instance_length;
 
         result = lwm2m_intToTLV(TLV_RESSOURCE_INSTANCE, PRV_POWER_SOURCE_1, 0, buffer1, 16);
-        if (0 == result) return INTERNAL_SERVER_ERROR_5_00;
+        if (0 == result) return COAP_500_INTERNAL_SERVER_ERROR;
         instance_length = result;
         result = lwm2m_intToTLV(TLV_RESSOURCE_INSTANCE, PRV_POWER_SOURCE_2, 1, buffer1+result, 16-result);
-        if (0 == result) return INTERNAL_SERVER_ERROR_5_00;
+        if (0 == result) return COAP_500_INTERNAL_SERVER_ERROR;
         instance_length += result;
 
         *lengthP = lwm2m_opaqueToTLV(TLV_MULTIPLE_INSTANCE, buffer1, instance_length, 6, buffer2, 16);
-        if (0 == *lengthP) return INTERNAL_SERVER_ERROR_5_00;
+        if (0 == *lengthP) return COAP_500_INTERNAL_SERVER_ERROR;
 
         *bufferP = (char *)malloc(*lengthP);
-        if (NULL == *bufferP) return INTERNAL_SERVER_ERROR_5_00;
+        if (NULL == *bufferP) return COAP_500_INTERNAL_SERVER_ERROR;
 
         memmove(*bufferP, buffer2, *lengthP);
 
         fprintf(stderr, "TLV (%d bytes):\r\n", *lengthP);
         prv_output_buffer(*bufferP, *lengthP);
 
-        return CONTENT_2_05;
+        return COAP_205_CONTENT;
     }
     case 7:
     {
@@ -377,24 +375,24 @@ static uint8_t prv_device_read(lwm2m_uri_t * uriP,
         int instance_length;
 
         result = lwm2m_intToTLV(TLV_RESSOURCE_INSTANCE, PRV_POWER_VOLTAGE_1, 0, buffer1, 16);
-        if (0 == result) return INTERNAL_SERVER_ERROR_5_00;
+        if (0 == result) return COAP_500_INTERNAL_SERVER_ERROR;
         instance_length = result;
         result = lwm2m_intToTLV(TLV_RESSOURCE_INSTANCE, PRV_POWER_VOLTAGE_2, 1, buffer1+result, 16-result);
-        if (0 == result) return INTERNAL_SERVER_ERROR_5_00;
+        if (0 == result) return COAP_500_INTERNAL_SERVER_ERROR;
         instance_length += result;
 
         *lengthP = lwm2m_opaqueToTLV(TLV_MULTIPLE_INSTANCE, buffer1, instance_length, 7, buffer2, 16);
-        if (0 == *lengthP) return INTERNAL_SERVER_ERROR_5_00;
+        if (0 == *lengthP) return COAP_500_INTERNAL_SERVER_ERROR;
 
         *bufferP = (char *)malloc(*lengthP);
-        if (NULL == *bufferP) return INTERNAL_SERVER_ERROR_5_00;
+        if (NULL == *bufferP) return COAP_500_INTERNAL_SERVER_ERROR;
 
         memmove(*bufferP, buffer2, *lengthP);
 
         fprintf(stderr, "TLV (%d bytes):\r\n", *lengthP);
         prv_output_buffer(*bufferP, *lengthP);
 
-        return CONTENT_2_05;
+        return COAP_205_CONTENT;
     }
     case 8:
     {
@@ -404,101 +402,101 @@ static uint8_t prv_device_read(lwm2m_uri_t * uriP,
         int instance_length;
 
         result = lwm2m_intToTLV(TLV_RESSOURCE_INSTANCE, PRV_POWER_CURRENT_1, 0, buffer1, 16);
-        if (0 == result) return INTERNAL_SERVER_ERROR_5_00;
+        if (0 == result) return COAP_500_INTERNAL_SERVER_ERROR;
         instance_length = result;
         result = lwm2m_intToTLV(TLV_RESSOURCE_INSTANCE, PRV_POWER_CURRENT_2, 1, buffer1+result, 16-result);
-        if (0 == result) return INTERNAL_SERVER_ERROR_5_00;
+        if (0 == result) return COAP_500_INTERNAL_SERVER_ERROR;
         instance_length += result;
 
         *lengthP = lwm2m_opaqueToTLV(TLV_MULTIPLE_INSTANCE, buffer1, instance_length, 8, buffer2, 16);
-        if (0 == *lengthP) return INTERNAL_SERVER_ERROR_5_00;
+        if (0 == *lengthP) return COAP_500_INTERNAL_SERVER_ERROR;
 
         *bufferP = (char *)malloc(*lengthP);
-        if (NULL == *bufferP) return INTERNAL_SERVER_ERROR_5_00;
+        if (NULL == *bufferP) return COAP_500_INTERNAL_SERVER_ERROR;
 
         memmove(*bufferP, buffer2, *lengthP);
 
         fprintf(stderr, "TLV (%d bytes):\r\n", *lengthP);
         prv_output_buffer(*bufferP, *lengthP);
 
-        return CONTENT_2_05;
+        return COAP_205_CONTENT;
     }
     case 9:
         *lengthP = lwm2m_int8ToPlainText(PRV_BATTERY_LEVEL, bufferP);
         if (0 != *lengthP)
         {
-            return CONTENT_2_05;
+            return COAP_205_CONTENT;
         }
         else
         {
-            return INTERNAL_SERVER_ERROR_5_00;
+            return COAP_500_INTERNAL_SERVER_ERROR;
         }
     case 10:
         *lengthP = lwm2m_int8ToPlainText(PRV_MEMORY_FREE, bufferP);
         if (0 != *lengthP)
         {
-            return CONTENT_2_05;
+            return COAP_205_CONTENT;
         }
         else
         {
-            return INTERNAL_SERVER_ERROR_5_00;
+            return COAP_500_INTERNAL_SERVER_ERROR;
         }
     case 11:
         *lengthP = lwm2m_int8ToPlainText(PRV_ERROR_CODE, bufferP);
         if (0 != *lengthP)
         {
-            return CONTENT_2_05;
+            return COAP_205_CONTENT;
         }
         else
         {
-            return INTERNAL_SERVER_ERROR_5_00;
+            return COAP_500_INTERNAL_SERVER_ERROR;
         }
     case 12:
-        return METHOD_NOT_ALLOWED_4_05;
+        return COAP_405_METHOD_NOT_ALLOWED;
     case 13:
         *lengthP = lwm2m_int64ToPlainText(((device_data_t*)(objectP->userData))->time, bufferP);
         if (0 != *lengthP)
         {
-            return CONTENT_2_05;
+            return COAP_205_CONTENT;
         }
         else
         {
-            return INTERNAL_SERVER_ERROR_5_00;
+            return COAP_500_INTERNAL_SERVER_ERROR;
         }
     case 14:
         *bufferP = strdup(((device_data_t*)(objectP->userData))->time_offset);
         if (NULL != *bufferP)
         {
             *lengthP = strlen(*bufferP);
-            return CONTENT_2_05;
+            return COAP_205_CONTENT;
         }
         else
         {
-            return INTERNAL_SERVER_ERROR_5_00;
+            return COAP_500_INTERNAL_SERVER_ERROR;
         }
     case 15:
         *bufferP = strdup(PRV_BINDING_MODE);
         if (NULL != *bufferP)
         {
             *lengthP = strlen(*bufferP);
-            return CONTENT_2_05;
+            return COAP_205_CONTENT;
         }
         else
         {
-            return INTERNAL_SERVER_ERROR_5_00;
+            return COAP_500_INTERNAL_SERVER_ERROR;
         }
     case LWM2M_URI_NOT_DEFINED:
         *lengthP = prv_get_object_tlv(bufferP, (device_data_t*)(objectP->userData));
         if (0 != *lengthP)
         {
-            return CONTENT_2_05;
+            return COAP_205_CONTENT;
         }
         else
         {
-            return INTERNAL_SERVER_ERROR_5_00;
+            return COAP_500_INTERNAL_SERVER_ERROR;
         }
     default:
-        return NOT_FOUND_4_04;
+        return COAP_404_NOT_FOUND;
     }
 
 }
@@ -511,7 +509,7 @@ static uint8_t prv_device_write(lwm2m_uri_t * uriP,
     // this is a single instance object
     if (0 != uriP->objInstance)
     {
-        return NOT_FOUND_4_04;
+        return COAP_404_NOT_FOUND;
     }
 
     switch (uriP->resID)
@@ -519,25 +517,25 @@ static uint8_t prv_device_write(lwm2m_uri_t * uriP,
     case 11:
         if (1 == lwm2m_PlainTextToInt64(buffer, length, &((device_data_t*)(objectP->userData))->time))
         {
-            return CHANGED_2_04;
+            return COAP_204_CHANGED;
         }
         else
         {
-            return BAD_REQUEST_4_00;
+            return COAP_400_BAD_REQUEST;
         }
     case 12:
         if (1 == prv_check_time_offset(buffer, length))
         {
             strncpy(((device_data_t*)(objectP->userData))->time_offset, buffer, length);
             ((device_data_t*)(objectP->userData))->time_offset[length] = 0;
-            return CHANGED_2_04;
+            return COAP_204_CHANGED;
         }
         else
         {
-            return BAD_REQUEST_4_00;
+            return COAP_400_BAD_REQUEST;
         }
     default:
-        return METHOD_NOT_ALLOWED_4_05;
+        return COAP_405_METHOD_NOT_ALLOWED;
     }
 }
 
@@ -547,22 +545,22 @@ static uint8_t prv_device_execute(lwm2m_uri_t * uriP,
     // this is a single instance object
     if (0 != uriP->objInstance)
     {
-        return NOT_FOUND_4_04;
+        return COAP_404_NOT_FOUND;
     }
 
     switch (uriP->resID)
     {
     case 4:
         fprintf(stdout, "\n\t REBOOT\r\n\n");
-        return CHANGED_2_04;
+        return COAP_204_CHANGED;
     case 5:
         fprintf(stdout, "\n\t FACTORY RESET\r\n\n");
-        return CHANGED_2_04;
+        return COAP_204_CHANGED;
     case 10:
         fprintf(stdout, "\n\t RESET ERROR CODE\r\n\n");
-        return CHANGED_2_04;
+        return COAP_204_CHANGED;
     default:
-        return METHOD_NOT_ALLOWED_4_05;
+        return COAP_405_METHOD_NOT_ALLOWED;
     }
 }
 

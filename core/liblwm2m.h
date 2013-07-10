@@ -36,6 +36,23 @@ David Navarro <david.navarro@intel.com>
 #include <stdbool.h>
 #include <netinet/in.h>
 
+
+/*
+ * Error code
+ */
+
+#define COAP_201_CREATED                (uint8_t)0x41
+#define COAP_202_DELETED                (uint8_t)0x42
+#define COAP_204_CHANGED                (uint8_t)0x44
+#define COAP_205_CONTENT                (uint8_t)0x45
+#define COAP_400_BAD_REQUEST            (uint8_t)0x80
+#define COAP_404_NOT_FOUND              (uint8_t)0x84
+#define COAP_405_METHOD_NOT_ALLOWED     (uint8_t)0x85
+#define COAP_406_NOT_ACCEPTABLE         (uint8_t)0x86
+#define COAP_500_INTERNAL_SERVER_ERROR  (uint8_t)0xA0
+#define COAP_501_NOT_IMPLEMENTED        (uint8_t)0xA1
+
+
 /*
  *  Ressource URI
  */
