@@ -980,15 +980,28 @@ coap_get_header_uri_path(void *packet, const char **path)
 int
 coap_set_header_uri_path(void *packet, const char *path)
 {
-  coap_packet_t *const coap_pkt = (coap_packet_t *) packet;
+  coap_packet_t *coap_pkt = (coap_packet_t *) packet;
+  int length = 0;
 
-  while (path[0]=='/') ++path;
+  free_multi_option(coap_pkt->uri_path);
+  coap_pkt->uri_path = NULL;
 
-//  coap_pkt->uri_path = path;
-//  coap_pkt->uri_path_len = strlen(path);
+  if (path[0]=='/') ++path;
 
-//  SET_OPTION(coap_pkt, COAP_OPTION_URI_PATH);
-  return 0; //coap_pkt->uri_path_len;
+  do
+  {
+      int i = 0;
+
+      while (path[i] != 0 && path[i] != '/') i++;
+      coap_add_multi_option(&(coap_pkt->uri_path), (uint8_t *)path, i);
+
+      if (path[i] == '/') i++;
+      path += i;
+      length += i;
+  } while (path[0] != 0);
+
+  SET_OPTION(coap_pkt, COAP_OPTION_URI_PATH);
+  return length;
 }
 /*-----------------------------------------------------------------------------------*/
 int
