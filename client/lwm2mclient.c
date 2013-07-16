@@ -120,7 +120,7 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    lwm2mH = lwm2m_init(2, objArray);
+    lwm2mH = lwm2m_init("testlwm2mclient", 2, objArray);
     if (NULL == lwm2mH)
     {
         fprintf(stderr, "lwm2m_init() failed\r\n");

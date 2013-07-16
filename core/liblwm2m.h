@@ -208,13 +208,14 @@ typedef struct
 
 typedef struct
 {
+    char * endpointName;
     lwm2m_bootstrap_server_t * bootstrapServer;
     lwm2m_server_t *  serverList;
     uint16_t          numObject;
     lwm2m_object_t ** objectList;
 } lwm2m_context_t;
 
-lwm2m_context_t * lwm2m_init(uint16_t numObject, lwm2m_object_t * objectList[]);
+lwm2m_context_t * lwm2m_init(char * endpointName, uint16_t numObject, lwm2m_object_t * objectList[]);
 void lwm2m_close(lwm2m_context_t * contextP);
 
 int lwm2m_set_bootstrap_server(lwm2m_context_t * contextP, lwm2m_bootstrap_server_t * serverP);

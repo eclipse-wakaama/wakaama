@@ -68,7 +68,8 @@ Contains code snippets which are:
 #include <stdio.h>
 
 
-lwm2m_context_t * lwm2m_init(uint16_t numObject,
+lwm2m_context_t * lwm2m_init(char * endpointName,
+                             uint16_t numObject,
                              lwm2m_object_t * objectList[])
 {
     lwm2m_context_t * contextP;
@@ -77,6 +78,12 @@ lwm2m_context_t * lwm2m_init(uint16_t numObject,
     if (NULL != contextP)
     {
         memset(contextP, 0, sizeof(lwm2m_context_t));
+        contextP->endpointName = strdup(endpointName);
+        if (contextP->endpointName == NULL)
+        {
+            free(contextP);
+            return NULL;
+        }
         if (numObject != 0)
         {
             contextP->objectList = (lwm2m_object_t **)malloc(numObject * sizeof(lwm2m_object_t *));
@@ -85,12 +92,17 @@ lwm2m_context_t * lwm2m_init(uint16_t numObject,
                 memcpy(contextP->objectList, objectList, numObject * sizeof(lwm2m_object_t *));
                 contextP->numObject = numObject;
             }
+            else
+            {
+                free(contextP->endpointName);
+                free(contextP);
+                return NULL;
+            }
         }
     }
 
     return contextP;
 }
-
 
 void lwm2m_close(lwm2m_context_t * contextP)
 {
@@ -131,9 +143,9 @@ void lwm2m_close(lwm2m_context_t * contextP)
         free(contextP->objectList);
     }
 
+    free(contextP->endpointName);
     free(contextP);
 }
-
 
 int lwm2m_set_bootstrap_server(lwm2m_context_t * contextP,
                                lwm2m_bootstrap_server_t * serverP)
