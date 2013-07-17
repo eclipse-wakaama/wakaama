@@ -35,6 +35,7 @@ David Navarro <david.navarro@intel.com>
 #include <stddef.h>
 #include <stdbool.h>
 #include <netinet/in.h>
+#include <sys/socket.h>
 
 
 /*
@@ -190,9 +191,12 @@ typedef struct
 typedef struct _lwm2m_server_
 {
     struct _lwm2m_server_ * next;   // matches lwm2m_list_t::next
-    uint16_t         shortID;       // matches lwm2m_list_t::id
-    char *           uri;
-    lwm2m_security_t security;
+    uint16_t          shortID;      // matches lwm2m_list_t::id
+    char *            host;
+    uint16_t          port;
+    lwm2m_security_t  security;
+    struct sockaddr * addr;
+    socklen_t         addrLen;
 } lwm2m_server_t;
 
 typedef struct
@@ -219,7 +223,7 @@ lwm2m_context_t * lwm2m_init(char * endpointName, uint16_t numObject, lwm2m_obje
 void lwm2m_close(lwm2m_context_t * contextP);
 
 int lwm2m_set_bootstrap_server(lwm2m_context_t * contextP, lwm2m_bootstrap_server_t * serverP);
-int lwm2m_add_server(lwm2m_context_t * contextP, lwm2m_server_t * serverP);
+int lwm2m_add_server(lwm2m_context_t * contextP, uint16_t shortID, char * host, uint16_t port, lwm2m_security_t * securityP);
 
 // try to register to all known LWM2M Servers. Return the number of successful registrations.
 int lwm2m_register(lwm2m_context_t * contextP);

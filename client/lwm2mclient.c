@@ -105,18 +105,19 @@ int main(int argc, char *argv[])
     int result;
     lwm2m_context_t * lwm2mH = NULL;
     lwm2m_object_t * objArray[2];
+    lwm2m_security_t security;
 
     objArray[0] = get_object_device();
     if (NULL == objArray[0])
     {
-        fprintf(stderr, "Failed to add Device object\r\n");
+        fprintf(stderr, "Failed to create Device object\r\n");
         return -1;
     }
 
     objArray[1] = get_test_object();
     if (NULL == objArray[1])
     {
-        fprintf(stderr, "Failed to add test object\r\n");
+        fprintf(stderr, "Failed to create test object\r\n");
         return -1;
     }
 
@@ -131,6 +132,16 @@ int main(int argc, char *argv[])
 
     socket = get_socket();
     if (socket < 0) return -1;
+
+    memset(&security, 0, sizeof(lwm2m_security_t));
+    result = lwm2m_add_server(lwm2mH, 123, "::1", 5684, &security);
+    if (result != 0)
+    {
+        fprintf(stderr, "lwm2m_add_server() failed: 0x%X\r\n", result);
+        return -1;
+    }
+    result = lwm2m_register(lwm2mH);
+    fprintf(stdout, "Registered to %d servers.\r\n", result);
 
     while (0 == g_quit)
     {

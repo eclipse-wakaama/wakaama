@@ -64,6 +64,7 @@ Contains code snippets which are:
 
 #include <stdlib.h>
 #include <string.h>
+#include <netdb.h>
 
 #include <stdio.h>
 
@@ -132,7 +133,7 @@ void lwm2m_close(lwm2m_context_t * contextP)
         targetP = contextP->serverList;
         contextP->serverList = contextP->serverList->next;
 
-        if (NULL != targetP->uri) free (targetP->uri);
+        if (NULL != targetP->addr) free (targetP->addr);
         if (NULL != targetP->security.privateKey) free (targetP->security.privateKey);
         if (NULL != targetP->security.publicKey) free (targetP->security.publicKey);
         free(targetP);
@@ -161,9 +162,52 @@ int lwm2m_set_bootstrap_server(lwm2m_context_t * contextP,
 }
 
 int lwm2m_add_server(lwm2m_context_t * contextP,
-                     lwm2m_server_t * serverP)
+                     uint16_t shortID,
+                     char * host,
+                     uint16_t port,
+                     lwm2m_security_t * securityP)
 {
+    lwm2m_server_t * serverP;
+    char portStr[6];
+    int status;
+    struct addrinfo hints;
+    struct addrinfo *servinfo;
+
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_DGRAM;
+
+    if (0 >= sprintf(portStr, "%hu", port)) return INTERNAL_SERVER_ERROR_5_00;
+    if (0 != getaddrinfo(host, portStr, &hints, &servinfo) || servinfo == NULL) return NOT_FOUND_4_04;
+
+    serverP = (lwm2m_server_t *)malloc(sizeof(lwm2m_server_t));
+    if (serverP == NULL)
+    {
+        freeaddrinfo(servinfo);
+        return INTERNAL_SERVER_ERROR_5_00;
+    }
+    memset(serverP, 0, sizeof(lwm2m_server_t));
+
+    memcpy(&(serverP->security), securityP, sizeof(lwm2m_security_t));
+    serverP->shortID = shortID;
+    serverP->port = port;
+
+    // we just take the first IP address
+    serverP->addr = (struct sockaddr *)malloc(sizeof(struct sockaddr));
+    if (serverP->addr == NULL)
+    {
+        freeaddrinfo(servinfo);
+        free(serverP);
+        return INTERNAL_SERVER_ERROR_5_00;
+    }
+    memcpy(serverP->addr, servinfo->ai_addr, sizeof(struct sockaddr));
+    serverP->addrLen = servinfo->ai_addrlen;
+
     contextP->serverList = (lwm2m_server_t*)LWM2M_LIST_ADD(contextP->serverList, serverP);
+
+    freeaddrinfo(servinfo);
+
+    return 0;
 }
 
 static void handle_response(coap_packet_t * message)
@@ -425,7 +469,7 @@ int lwm2m_register(lwm2m_context_t * contextP)
 {
     char payload[64];
 
-    if (prv_getRegisterPayload(contextP, payload, 8) > 0)
+    if (prv_getRegisterPayload(contextP, payload, 64) > 0)
     {
         fprintf(stdout, "Register: \"%s\"\r\n", payload);
     }
