@@ -464,14 +464,51 @@ int lwm2m_handle_packet(lwm2m_context_t * contextP,
     }
 }
 
-int lwm2m_register(lwm2m_context_t * contextP)
-{
-    char payload[64];
+#define REGISTRATION_URI "/rd"
+#define QUERY_TEMPLATE "ep="
+#define QUERY_LENGTH 3
 
-    if (prv_getRegisterPayload(contextP, payload, 64) > 0)
+int lwm2m_register(lwm2m_context_t * contextP,
+                   int sock)
+{
+    char * query;
+    char payload[64];
+    int payload_length;
+    lwm2m_server_t * targetP;
+    int result = 0;
+
+    payload_length = prv_getRegisterPayload(contextP, payload, 64);
+    if (payload_length == 0) return INTERNAL_SERVER_ERROR_5_00;
+
+    query = (char*)malloc(QUERY_LENGTH + strlen(contextP->endpointName) + 1);
+    if (query == NULL) return INTERNAL_SERVER_ERROR_5_00;
+    strcpy(query, QUERY_TEMPLATE);
+    strcpy(query + QUERY_LENGTH, contextP->endpointName);
+
+    targetP = contextP->serverList;
+    while (targetP != NULL)
     {
-        fprintf(stdout, "Register: \"%s\"\r\n", payload);
+        coap_packet_t message[1];
+        coap_transaction_t * transaction;
+
+        coap_init_message(message, COAP_TYPE_CON, COAP_POST, targetP->shortID);
+        coap_set_header_uri_path(message, REGISTRATION_URI);
+        coap_set_header_uri_query(message, query);
+        coap_set_payload(message, payload, payload_length);
+
+        transaction = coap_new_transaction(message->mid, sock, targetP->addr, targetP->addrLen);
+        if (transaction != NULL)
+        {
+            transaction->packet_len = coap_serialize_message(message, transaction->packet);
+            if (transaction->packet_len > 0)
+            {
+                coap_send_transaction(transaction);
+                result++;
+            }
+        }
+
+        targetP =targetP->next;
     }
 
-    return 0;
+    return result;
 }
