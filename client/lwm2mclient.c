@@ -188,7 +188,7 @@ int main(int argc, char *argv[])
                                       INET6_ADDRSTRLEN),
                             &((struct sockaddr_in6*)&addr)->sin6_port);
 
-                    lwm2m_handle_packet(lwm2mH, buffer, numBytes, socket, addr, addrLen);
+                    lwm2m_handle_packet(lwm2mH, buffer, numBytes, socket, (struct sockaddr *)&addr, addrLen);
                 }
             }
         }

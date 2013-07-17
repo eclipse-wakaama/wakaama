@@ -83,7 +83,7 @@ void coap_register_as_transaction_handler();
 
 coap_transaction_t *coap_new_transaction(uint16_t mid, uip_ipaddr_t *addr, uint16_t port);
 #else
-coap_transaction_t *coap_new_transaction(uint16_t mid, int sock, struct sockaddr_storage *addr, socklen_t addrLen);
+coap_transaction_t *coap_new_transaction(uint16_t mid, int sock, struct sockaddr *addr, socklen_t addrLen);
 #endif
 void coap_send_transaction(coap_transaction_t *t);
 

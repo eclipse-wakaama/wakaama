@@ -228,6 +228,6 @@ int lwm2m_add_server(lwm2m_context_t * contextP, uint16_t shortID, char * host, 
 // try to register to all known LWM2M Servers. Return the number of successful registrations.
 int lwm2m_register(lwm2m_context_t * contextP);
 
-int lwm2m_handle_packet(lwm2m_context_t * contextP, uint8_t * buffer, int length, int socket, struct sockaddr_storage fromAddr, socklen_t fromAddrLen);
+int lwm2m_handle_packet(lwm2m_context_t * contextP, uint8_t * buffer, int length, int socket, struct sockaddr * fromAddr, socklen_t fromAddrLen);
 
 #endif

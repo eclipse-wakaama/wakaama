@@ -486,9 +486,9 @@ coap_send_message(uip_ipaddr_t *addr, uint16_t port, uint8_t *data, uint16_t len
 }
 #else
 void
-coap_send_message(int sock, struct sockaddr_storage *addr, socklen_t addrLen, uint8_t *data, uint16_t length)
+coap_send_message(int sock, struct sockaddr *addr, socklen_t addrLen, uint8_t *data, uint16_t length)
 {
-    sendto(sock, data, length, 0, (struct sockaddr *)addr, addrLen);
+    sendto(sock, data, length, 0, addr, addrLen);
 }
 #endif
 /*-----------------------------------------------------------------------------------*/

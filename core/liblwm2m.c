@@ -193,14 +193,14 @@ int lwm2m_add_server(lwm2m_context_t * contextP,
     serverP->port = port;
 
     // we just take the first IP address
-    serverP->addr = (struct sockaddr *)malloc(sizeof(struct sockaddr));
+    serverP->addr = (struct sockaddr *)malloc(servinfo->ai_addrlen);
     if (serverP->addr == NULL)
     {
         freeaddrinfo(servinfo);
         free(serverP);
         return INTERNAL_SERVER_ERROR_5_00;
     }
-    memcpy(serverP->addr, servinfo->ai_addr, sizeof(struct sockaddr));
+    memcpy(serverP->addr, servinfo->ai_addr, servinfo->ai_addrlen);
     serverP->addrLen = servinfo->ai_addrlen;
 
     contextP->serverList = (lwm2m_server_t*)LWM2M_LIST_ADD(contextP->serverList, serverP);
@@ -286,7 +286,7 @@ int lwm2m_handle_packet(lwm2m_context_t * contextP,
                         uint8_t * buffer,
                         int length,
                         int socket,
-                        struct sockaddr_storage fromAddr,
+                        struct sockaddr * fromAddr,
                         socklen_t fromAddrLen)
 {
     coap_status_t coap_error_code = NO_ERROR;
@@ -303,7 +303,7 @@ int lwm2m_handle_packet(lwm2m_context_t * contextP,
         if (message->code >= COAP_GET && message->code <= COAP_DELETE)
         {
             /* Use transaction buffer for response to confirmable request. */
-            if ( (transaction = coap_new_transaction(message->mid, socket, &fromAddr, fromAddrLen)) )
+            if ( (transaction = coap_new_transaction(message->mid, socket, fromAddr, fromAddrLen)) )
             {
                 uint32_t block_num = 0;
                 uint16_t block_size = REST_MAX_CHUNK_SIZE;
@@ -459,11 +459,10 @@ int lwm2m_handle_packet(lwm2m_context_t * contextP,
         bufferLen = coap_serialize_message(message, buffer);
         if (0 != bufferLen)
         {
-            coap_send_message(socket, &fromAddr, fromAddrLen, buffer, bufferLen);
+            coap_send_message(socket, fromAddr, fromAddrLen, buffer, bufferLen);
         }
     }
 }
-
 
 int lwm2m_register(lwm2m_context_t * contextP)
 {

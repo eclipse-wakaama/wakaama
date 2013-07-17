@@ -349,7 +349,7 @@ size_t coap_serialize_message(void *packet, uint8_t *buffer);
 #ifdef CONTIKI
 void coap_send_message(uip_ipaddr_t *addr, uint16_t port, uint8_t *data, uint16_t length);
 #else
-void coap_send_message(int sock, struct sockaddr_storage *addr, socklen_t addrLen, uint8_t *data, uint16_t length);
+void coap_send_message(int sock, struct sockaddr *addr, socklen_t addrLen, uint8_t *data, uint16_t length);
 #endif
 coap_status_t coap_parse_message(void *request, uint8_t *data, uint16_t data_len);
 

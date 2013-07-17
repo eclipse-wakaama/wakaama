@@ -105,7 +105,7 @@ coap_new_transaction(uint16_t mid, uip_ipaddr_t *addr, uint16_t port)
 }
 #else
 coap_transaction_t *
-coap_new_transaction(uint16_t mid, int sock, struct sockaddr_storage *addr, socklen_t addrLen)
+coap_new_transaction(uint16_t mid, int sock, struct sockaddr *addr, socklen_t addrLen)
 {
   coap_transaction_t *t = (coap_transaction_t *)malloc(sizeof(coap_transaction_t));
 
@@ -117,7 +117,7 @@ coap_new_transaction(uint16_t mid, int sock, struct sockaddr_storage *addr, sock
 
     /* save peer address */
     t->sock = sock;
-    memcpy(&t->addr, addr, sizeof(struct sockaddr_storage));
+    memcpy(&t->addr, addr, addrLen);
     t->addrLen = addrLen;
 
     t->next = transactions_list;
@@ -135,7 +135,7 @@ coap_send_transaction(coap_transaction_t *t)
 #ifdef CONTIKI
   coap_send_message(&t->addr, t->port, t->packet, t->packet_len);
 #else
-  coap_send_message(t-> sock, &t->addr, t->addrLen, t->packet, t->packet_len);
+  coap_send_message(t-> sock, (struct sockaddr *)&t->addr, t->addrLen, t->packet, t->packet_len);
 #endif
 
   if (COAP_TYPE_CON==((COAP_HEADER_TYPE_MASK & t->packet[0])>>COAP_HEADER_TYPE_POSITION))
