@@ -62,6 +62,7 @@ Contains code snippets which are:
 
 #include "core/liblwm2m.h"
 #include "externals/er-coap-13/er-coap-13.h"
+#include "externals/er-coap-13/er-coap-13-transactions.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -268,7 +269,28 @@ int main(int argc, char *argv[])
                         }
                         fprintf(stdout, "  Payload: %.*s\r\n\n", message->payload_len, message->payload);
                     }
-                    //lwm2m_handle_packet(lwm2mH, buffer, numBytes, socket, addr, addrLen);
+                    // Reply with an hard-coded location
+                    if (message->code == COAP_POST && !strncmp(message->uri_path->data, "rd", message->uri_path->len))
+                    {
+                        coap_packet_t response[1];
+                        coap_transaction_t * transaction;
+
+                        coap_init_message(response, COAP_TYPE_ACK, CREATED_2_01, message->mid);
+                        coap_set_header_location_path(response, "/rd/54321");
+
+                        transaction = coap_new_transaction(message->mid, socket, (struct sockaddr *)&addr, addrLen);
+                        if (transaction != NULL)
+                        {
+                            transaction->packet_len = coap_serialize_message(response, transaction->packet);
+                            if (transaction->packet_len > 0)
+                            {
+                                fprintf(stdout, "Sending:\r\n");
+                                prv_output_buffer(transaction->packet, transaction->packet_len);
+                                coap_send_transaction(transaction);
+                                result++;
+                            }
+                        }
+                    }
                 }
             }
         }
