@@ -226,9 +226,9 @@ void lwm2m_close(lwm2m_context_t * contextP);
 int lwm2m_set_bootstrap_server(lwm2m_context_t * contextP, lwm2m_bootstrap_server_t * serverP);
 int lwm2m_add_server(lwm2m_context_t * contextP, uint16_t shortID, char * host, uint16_t port, lwm2m_security_t * securityP);
 
-// try to register to all known LWM2M Servers.
+// send registration message to all known LWM2M Servers.
 int lwm2m_register(lwm2m_context_t * contextP);
 
-int lwm2m_handle_packet(lwm2m_context_t * contextP, uint8_t * buffer, int length, int socket, struct sockaddr * fromAddr, socklen_t fromAddrLen);
+int lwm2m_handle_packet(lwm2m_context_t * contextP, uint8_t * buffer, int length, struct sockaddr * fromAddr, socklen_t fromAddrLen);
 
 #endif

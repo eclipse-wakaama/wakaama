@@ -173,17 +173,14 @@ int main(int argc, char *argv[])
     int result;
     lwm2m_context_t * lwm2mH = NULL;
 
+    socket = get_socket();
+    if (socket < 0)
     {
-        static coap_packet_t packet[1];
-        int length;
-
-        length = coap_set_header_uri_path(packet, "/1/20/300/4000");
-        length = coap_set_header_uri_path(packet, "/1///4");
-        length = coap_set_header_uri_path(packet, "/1/2/3/4");
-
+        fprintf(stderr, "Error opening socket: %d\r\n", errno);
+        return -1;
     }
 
-    lwm2mH = lwm2m_init("testlwm2mserver", 0, NULL);
+    lwm2mH = lwm2m_init(socket, "testlwm2mserver", 0, NULL);
     if (NULL == lwm2mH)
     {
         fprintf(stderr, "lwm2m_init() failed\r\n");
@@ -191,13 +188,6 @@ int main(int argc, char *argv[])
     }
 
     signal(SIGINT, handle_sigint);
-
-    socket = get_socket();
-    if (socket < 0)
-    {
-        fprintf(stderr, "Error opening socket: %d\r\n", errno);
-        return -1;
-    }
 
     while (0 == g_quit)
     {
