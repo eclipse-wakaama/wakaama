@@ -210,7 +210,6 @@ int lwm2m_register(lwm2m_context_t * contextP)
     char payload[64];
     int payload_length;
     lwm2m_server_t * targetP;
-    int result = 0;
 
     payload_length = prv_getRegisterPayload(contextP, payload, 64);
     if (payload_length == 0) return INTERNAL_SERVER_ERROR_5_00;
@@ -226,7 +225,7 @@ int lwm2m_register(lwm2m_context_t * contextP)
         coap_packet_t message[1];
         coap_transaction_t * transaction;
 
-        coap_init_message(message, COAP_TYPE_CON, COAP_POST, targetP->shortID);
+        coap_init_message(message, COAP_TYPE_CON, COAP_POST, contextP->nextMID++);
         coap_set_header_uri_path(message, REGISTRATION_URI);
         coap_set_header_uri_query(message, query);
         coap_set_payload(message, payload, payload_length);
@@ -238,11 +237,12 @@ int lwm2m_register(lwm2m_context_t * contextP)
             if (transaction->packet_len > 0)
             {
                 coap_send_transaction(transaction);
-                result++;
+                targetP->status = STATE_REG_PENDING;
+                targetP->mid = transaction->mid;
             }
         }
 
-        targetP =targetP->next;
+        targetP = targetP->next;
     }
 
     return 0;

@@ -188,6 +188,13 @@ typedef struct
     uint8_t *  privateKey;
 } lwm2m_security_t;
 
+typedef enum
+{
+    STATE_UNKNOWN = 0,
+    STATE_REG_PENDING,
+    STATE_REGISTERED
+} lwm2m_status_t;
+
 typedef struct _lwm2m_server_
 {
     struct _lwm2m_server_ * next;   // matches lwm2m_list_t::next
@@ -197,6 +204,9 @@ typedef struct _lwm2m_server_
     lwm2m_security_t  security;
     struct sockaddr * addr;
     socklen_t         addrLen;
+    lwm2m_status_t    status;
+    char *            location;
+    uint16_t          mid;
 } lwm2m_server_t;
 
 typedef struct
@@ -218,6 +228,7 @@ typedef struct
     lwm2m_server_t *  serverList;
     lwm2m_object_t ** objectList;
     uint16_t          numObject;
+    uint16_t          nextMID;
 } lwm2m_context_t;
 
 lwm2m_context_t * lwm2m_init(int socket, char * endpointName, uint16_t numObject, lwm2m_object_t * objectList[]);

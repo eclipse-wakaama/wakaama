@@ -70,18 +70,64 @@ Contains code snippets which are:
 #include <stdio.h>
 
 
-static void handle_response(coap_packet_t * message)
+static lwm2m_server_t * prv_findServer(lwm2m_context_t * contextP,
+                                       struct sockaddr * fromAddr,
+                                       socklen_t fromAddrLen)
 {
+    lwm2m_server_t * targetP;
+
+    targetP = contextP->serverList;
+    while (targetP != NULL && memcmp(targetP->addr, fromAddr, fromAddrLen) != 0)
+    {
+        targetP = targetP->next;
+    }
+
+    return targetP;
+}
+
+static void handle_response(lwm2m_context_t * contextP,
+                            struct sockaddr * fromAddr,
+                            socklen_t fromAddrLen,
+                            coap_packet_t * message)
+{
+    // find the server sending this response
+    lwm2m_server_t * targetP;
+
+    targetP = prv_findServer(contextP, fromAddr, fromAddrLen);
+    if (targetP == NULL) return;
+
+    if (targetP->status == STATE_REG_PENDING
+     && message->mid == targetP->mid
+     && message->type == COAP_TYPE_ACK
+     && message->location_path_len != 0
+     && message->location_path != NULL)
+    {
+        if (message->code == CREATED_2_01)
+        {
+            targetP->status = STATE_REGISTERED;
+            targetP->location = (char *)malloc(message->location_path_len + 1);
+            if (targetP->location != NULL)
+            {
+                memcpy(targetP->location, message->location_path, message->location_path_len);
+                targetP->location[message->location_path_len] = 0;
+            }
+        }
+        else if (message->code == BAD_REQUEST_4_00)
+        {
+            targetP->status = STATE_UNKNOWN;
+            targetP->mid = 0;
+        }
+    }
 }
 
 static coap_status_t handle_request(lwm2m_context_t * contextP,
+                                    struct sockaddr * fromAddr,
+                                    socklen_t fromAddrLen,
                                     coap_packet_t * message,
-                                    coap_packet_t * response,
-                                    uint8_t *coap_buffer,
-                                    uint16_t preferred_size,
-                                    int32_t *offset)
+                                    coap_packet_t * response)
 {
     lwm2m_uri_t * uriP;
+    lwm2m_server_t * targetP;
     coap_status_t result = NOT_FOUND_4_04;
 
     uriP = lwm2m_decode_uri(message->uri_path);
@@ -91,6 +137,15 @@ static coap_status_t handle_request(lwm2m_context_t * contextP,
         return BAD_REQUEST_4_00;
     }
 
+/*
+ * Commented out for testing
+ *
+    targetP = prv_findServer(contextP, fromAddr, fromAddrLen);
+    if (targetP == NULL || targetP->status != STATE_REGISTERED)
+    {
+        return BAD_REQUEST_4_00;
+    }
+*/
     switch (message->code)
     {
     case COAP_GET:
@@ -195,7 +250,7 @@ int lwm2m_handle_packet(lwm2m_context_t * contextP,
                     new_offset = block_offset;
                 }
 
-                coap_error_code = handle_request(contextP, message, response, transaction->packet+COAP_MAX_HEADER_SIZE, block_size, &new_offset);
+                coap_error_code = handle_request(contextP, fromAddr, fromAddrLen, message, response);
                 if (coap_error_code==NO_ERROR)
                 {
                     /* Apply blockwise transfers. */
@@ -280,7 +335,7 @@ int lwm2m_handle_packet(lwm2m_context_t * contextP,
                 /* Free transaction memory before callback, as it may create a new transaction. */
                 coap_clear_transaction(transaction);
 
-                handle_response(message);
+                handle_response(contextP, fromAddr, fromAddrLen, message);
             }
             transaction = NULL;
         } /* Request or Response */

@@ -121,6 +121,7 @@ coap_new_transaction(uint16_t mid, int sock, struct sockaddr *addr, socklen_t ad
     t->addrLen = addrLen;
 
     t->next = transactions_list;
+    transactions_list = t;
   }
 
   return t;
