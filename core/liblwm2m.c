@@ -69,7 +69,8 @@ Contains code snippets which are:
 #include <stdio.h>
 
 
-lwm2m_context_t * lwm2m_init(char * endpointName,
+lwm2m_context_t * lwm2m_init(int socket,
+                             char * endpointName,
                              uint16_t numObject,
                              lwm2m_object_t * objectList[])
 {
@@ -79,6 +80,7 @@ lwm2m_context_t * lwm2m_init(char * endpointName,
     if (NULL != contextP)
     {
         memset(contextP, 0, sizeof(lwm2m_context_t));
+        contextP->socket = socket;
         contextP->endpointName = strdup(endpointName);
         if (contextP->endpointName == NULL)
         {
@@ -169,9 +171,11 @@ int lwm2m_add_server(lwm2m_context_t * contextP,
 {
     lwm2m_server_t * serverP;
     char portStr[6];
-    int status;
+    int status = INTERNAL_SERVER_ERROR_5_00;
     struct addrinfo hints;
-    struct addrinfo *servinfo;
+    struct addrinfo *servinfo = NULL;
+    struct addrinfo *p;
+    int sock;
 
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = AF_UNSPEC;
@@ -181,33 +185,50 @@ int lwm2m_add_server(lwm2m_context_t * contextP,
     if (0 != getaddrinfo(host, portStr, &hints, &servinfo) || servinfo == NULL) return NOT_FOUND_4_04;
 
     serverP = (lwm2m_server_t *)malloc(sizeof(lwm2m_server_t));
-    if (serverP == NULL)
+    if (serverP != NULL)
     {
-        freeaddrinfo(servinfo);
-        return INTERNAL_SERVER_ERROR_5_00;
+        memset(serverP, 0, sizeof(lwm2m_server_t));
+
+        memcpy(&(serverP->security), securityP, sizeof(lwm2m_security_t));
+        serverP->shortID = shortID;
+        serverP->port = port;
+
+        // we test the various addresses
+        sock = -1;
+        for(p = servinfo ; p != NULL && sock == -1 ; p = p->ai_next)
+        {
+            sock = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
+            if (sock >= 0)
+            {
+                if (-1 == connect(sock, p->ai_addr, p->ai_addrlen))
+                {
+                    close(sock);
+                    sock = -1;
+                }
+            }
+        }
+        if (sock >= 0)
+        {
+            serverP->addr = (struct sockaddr *)malloc(servinfo->ai_addrlen);
+            if (serverP->addr != NULL)
+            {
+                memcpy(serverP->addr, servinfo->ai_addr, servinfo->ai_addrlen);
+                serverP->addrLen = servinfo->ai_addrlen;
+
+                contextP->serverList = (lwm2m_server_t*)LWM2M_LIST_ADD(contextP->serverList, serverP);
+
+                status = 0;
+            }
+            else
+            {
+                free(serverP);
+            }
+            close(sock);
+        }
     }
-    memset(serverP, 0, sizeof(lwm2m_server_t));
-
-    memcpy(&(serverP->security), securityP, sizeof(lwm2m_security_t));
-    serverP->shortID = shortID;
-    serverP->port = port;
-
-    // we just take the first IP address
-    serverP->addr = (struct sockaddr *)malloc(servinfo->ai_addrlen);
-    if (serverP->addr == NULL)
-    {
-        freeaddrinfo(servinfo);
-        free(serverP);
-        return INTERNAL_SERVER_ERROR_5_00;
-    }
-    memcpy(serverP->addr, servinfo->ai_addr, servinfo->ai_addrlen);
-    serverP->addrLen = servinfo->ai_addrlen;
-
-    contextP->serverList = (lwm2m_server_t*)LWM2M_LIST_ADD(contextP->serverList, serverP);
 
     freeaddrinfo(servinfo);
-
-    return 0;
+    return status;
 }
 
 static void handle_response(coap_packet_t * message)
@@ -468,8 +489,7 @@ int lwm2m_handle_packet(lwm2m_context_t * contextP,
 #define QUERY_TEMPLATE "ep="
 #define QUERY_LENGTH 3
 
-int lwm2m_register(lwm2m_context_t * contextP,
-                   int sock)
+int lwm2m_register(lwm2m_context_t * contextP)
 {
     char * query;
     char payload[64];
@@ -496,7 +516,7 @@ int lwm2m_register(lwm2m_context_t * contextP,
         coap_set_header_uri_query(message, query);
         coap_set_payload(message, payload, payload_length);
 
-        transaction = coap_new_transaction(message->mid, sock, targetP->addr, targetP->addrLen);
+        transaction = coap_new_transaction(message->mid, contextP->socket, targetP->addr, targetP->addrLen);
         if (transaction != NULL)
         {
             transaction->packet_len = coap_serialize_message(message, transaction->packet);
@@ -510,5 +530,5 @@ int lwm2m_register(lwm2m_context_t * contextP,
         targetP =targetP->next;
     }
 
-    return result;
+    return 0;
 }

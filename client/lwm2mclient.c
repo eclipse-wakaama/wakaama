@@ -107,6 +107,13 @@ int main(int argc, char *argv[])
     lwm2m_object_t * objArray[2];
     lwm2m_security_t security;
 
+    socket = get_socket();
+    if (socket < 0)
+    {
+        fprintf(stderr, "Failed to open socket: %d\r\n", errno);
+        return -1;
+    }
+
     objArray[0] = get_object_device();
     if (NULL == objArray[0])
     {
@@ -121,7 +128,7 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    lwm2mH = lwm2m_init("testlwm2mclient", 2, objArray);
+    lwm2mH = lwm2m_init(socket, "testlwm2mclient", 2, objArray);
     if (NULL == lwm2mH)
     {
         fprintf(stderr, "lwm2m_init() failed\r\n");
@@ -130,9 +137,6 @@ int main(int argc, char *argv[])
 
     signal(SIGINT, handle_sigint);
 
-    socket = get_socket();
-    if (socket < 0) return -1;
-
     memset(&security, 0, sizeof(lwm2m_security_t));
     result = lwm2m_add_server(lwm2mH, 123, "::1", 5684, &security);
     if (result != 0)
@@ -140,8 +144,12 @@ int main(int argc, char *argv[])
         fprintf(stderr, "lwm2m_add_server() failed: 0x%X\r\n", result);
         return -1;
     }
-    result = lwm2m_register(lwm2mH, socket);
-    fprintf(stdout, "Registered to %d servers.\r\n", result);
+    result = lwm2m_register(lwm2mH);
+    if (result != 0)
+    {
+        fprintf(stderr, "lwm2m_register() failed: 0x%X\r\n", result);
+        return -1;
+    }
 
     while (0 == g_quit)
     {
