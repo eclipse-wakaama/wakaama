@@ -514,7 +514,7 @@ static uint8_t prv_device_write(lwm2m_uri_t * uriP,
 
     switch (uriP->resID)
     {
-    case 11:
+    case 13:
         if (1 == lwm2m_PlainTextToInt64(buffer, length, &((device_data_t*)(objectP->userData))->time))
         {
             return COAP_204_CHANGED;
@@ -523,7 +523,7 @@ static uint8_t prv_device_write(lwm2m_uri_t * uriP,
         {
             return COAP_400_BAD_REQUEST;
         }
-    case 12:
+    case 14:
         if (1 == prv_check_time_offset(buffer, length))
         {
             strncpy(((device_data_t*)(objectP->userData))->time_offset, buffer, length);
