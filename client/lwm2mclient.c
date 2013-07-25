@@ -157,9 +157,9 @@ int main(int argc, char *argv[])
         FD_SET(socket, &readfds);
 
         tv.tv_usec = 0;
-        tv.tv_sec = 0;
+        tv.tv_sec = 1; /* 1 second select wait */
 
-        result = select(FD_SETSIZE, &readfds, 0, 0, &tv);
+        result = select(FD_SETSIZE, &readfds, NULL, NULL, &tv);
 
         if ( result < 0 )
         {
