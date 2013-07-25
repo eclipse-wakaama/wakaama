@@ -41,7 +41,7 @@ static lwm2m_object_t * prv_find_object(lwm2m_context_t * contextP,
     int i;
 
     i = 0;
-    while (i < contextP->numObject && contextP->objectList[i]->objID < Id)
+    while (i < contextP->numObject && contextP->objectList[i]->objID != Id)
     {
         i++;
     }
