@@ -235,7 +235,7 @@ int main(int argc, char *argv[])
                                       &(((struct sockaddr_in6*)&addr)->sin6_addr),
                                       s,
                                       INET6_ADDRSTRLEN),
-                            &((struct sockaddr_in6*)&addr)->sin6_port);
+                            ntohs(((struct sockaddr_in6*)&addr)->sin6_port));
 
                     prv_output_buffer(buffer, numBytes);
                     coap_error_code = coap_parse_message(message, buffer, (uint16_t)numBytes);

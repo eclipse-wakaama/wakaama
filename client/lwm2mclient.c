@@ -194,7 +194,7 @@ int main(int argc, char *argv[])
                                       &(((struct sockaddr_in6*)&addr)->sin6_addr),
                                       s,
                                       INET6_ADDRSTRLEN),
-                            &((struct sockaddr_in6*)&addr)->sin6_port);
+                            ntohs(((struct sockaddr_in6*)&addr)->sin6_port));
 
                     lwm2m_handle_packet(lwm2mH, buffer, numBytes, (struct sockaddr *)&addr, addrLen);
                 }
