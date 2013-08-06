@@ -40,19 +40,15 @@ static lwm2m_object_t * prv_find_object(lwm2m_context_t * contextP,
 {
     int i;
 
-    i = 0;
-    while (i < contextP->numObject && contextP->objectList[i]->objID != Id)
+    for (i = 0 ; i < contextP->numObject ; i++)
     {
-        i++;
+        if (contextP->objectList[i]->objID == Id)
+        {
+            return contextP->objectList[i];
+        }
     }
-    if (i == contextP->numObject)
-    {
-        return NULL;
-    }
-    else
-    {
-        return contextP->objectList[i];
-    }
+
+    return NULL;
 }
 
 coap_status_t object_read(lwm2m_context_t * contextP,
