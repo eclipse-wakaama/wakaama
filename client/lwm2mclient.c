@@ -100,8 +100,6 @@ int get_socket()
 int main(int argc, char *argv[])
 {
     int socket;
-    fd_set readfds;
-    struct timeval tv;
     int result;
     lwm2m_context_t * lwm2mH = NULL;
     lwm2m_object_t * objArray[2];
@@ -153,11 +151,25 @@ int main(int argc, char *argv[])
 
     while (0 == g_quit)
     {
+        struct timeval tv;
+        fd_set readfds;
+
         FD_ZERO(&readfds);
         FD_SET(socket, &readfds);
 
-        tv.tv_usec = 0;
-        tv.tv_sec = 1; /* 1 second select wait */
+        result = lwm2m_step(lwm2mH, &tv);
+        if (result != 0)
+        {
+            fprintf(stderr, "lwm2m_step() failed: 0x%X\r\n", result);
+            return -1;
+        }
+
+        if (tv.tv_sec == 0)
+        {
+            fprintf(stdout, "No timeout.\r\n");
+            tv.tv_usec = 0;
+            tv.tv_sec = 10; /* 10 second select wait */
+        }
 
         result = select(FD_SETSIZE, &readfds, NULL, NULL, &tv);
 

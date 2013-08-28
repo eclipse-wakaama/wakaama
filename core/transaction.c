@@ -64,6 +64,15 @@ Contains code snippets which are:
 #include "internals.h"
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
+
+
+/*
+ * Modulo mask (+1 and +0.5 for rounding) for a random number to get the tick number for the random
+ * retransmission time between COAP_RESPONSE_TIMEOUT and COAP_RESPONSE_TIMEOUT*COAP_RESPONSE_RANDOM_FACTOR.
+ */
+#define COAP_RESPONSE_TIMEOUT_TICKS         (CLOCK_SECOND * COAP_RESPONSE_TIMEOUT)
+#define COAP_RESPONSE_TIMEOUT_BACKOFF_MASK  ((CLOCK_SECOND * COAP_RESPONSE_TIMEOUT * (COAP_RESPONSE_RANDOM_FACTOR - 1)) + 1.5)
 
 
 lwm2m_transaction_t * transaction_new(uint16_t mID,
@@ -120,6 +129,7 @@ void transaction_send(lwm2m_context_t * contextP,
         break;
 
     case ENDPOINT_SERVER:
+        fprintf(stdout, "Sending %d bytes\r\n", transacP->packet_len);
         sendto(contextP->socket,
                transacP->packet, transacP->packet_len,
                0,
@@ -134,9 +144,25 @@ void transaction_send(lwm2m_context_t * contextP,
         return;
     }
 
+    if (transacP->retrans_counter == 0)
+    {
+        struct timeval tv;
+
+        if (0 == gettimeofday(&tv, NULL))
+        {
+            transacP->retrans_time = tv.tv_sec;
+            transacP->retrans_counter = 1;
+        }
+        else
+        {
+            // crude error handling
+            transacP->retrans_counter = COAP_MAX_RETRANSMIT;
+        }
+    }
+
     if (transacP->retrans_counter < COAP_MAX_RETRANSMIT)
     {
-        // TODO: handle retransit timer
+        transacP->retrans_time += COAP_RESPONSE_TIMEOUT * transacP->retrans_counter;
 
         transacP->retrans_counter++;
     }
@@ -144,4 +170,55 @@ void transaction_send(lwm2m_context_t * contextP,
     {
         transaction_remove(contextP, transacP);
     }
+}
+
+int lwm2m_step(lwm2m_context_t * contextP,
+               struct timeval * timeoutP)
+{
+    lwm2m_transaction_t * transacP;
+    struct timeval tv;
+    int sendCalled = 0;
+
+    memset(timeoutP, 0, sizeof(struct timeval));
+
+    if (0 != gettimeofday(&tv, NULL)) return COAP_500_INTERNAL_SERVER_ERROR;
+
+    transacP = contextP->transactionList;
+    while (transacP != NULL)
+    {
+        // transaction_send() may remove transaction from the linked list
+
+        lwm2m_transaction_t * nextP = transacP->next;
+
+        if (transacP->retrans_time <= tv.tv_sec)
+        {
+            transaction_send(contextP, transacP);
+        }
+
+        transacP = nextP;
+    }
+
+    transacP = contextP->transactionList;
+    while (transacP != NULL)
+    {
+        time_t interval;
+
+        if (transacP->retrans_time > tv.tv_sec)
+        {
+            interval = transacP->retrans_time - tv.tv_sec;
+        }
+        else
+        {
+            interval = 1;
+        }
+
+        if (0 == timeoutP->tv_sec || timeoutP->tv_sec > interval)
+        {
+            timeoutP->tv_sec = interval;
+        }
+
+        transacP = transacP->next;
+    }
+
+    return 0;
 }

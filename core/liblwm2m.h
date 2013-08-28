@@ -36,7 +36,7 @@ David Navarro <david.navarro@intel.com>
 #include <stdbool.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
-
+#include <sys/time.h>
 
 /*
  * Error code
@@ -238,6 +238,7 @@ typedef struct _lwm2m_transaction_
     lwm2m_endpoint_type_t peerType;
     void *                peerP;
     uint8_t  retrans_counter;
+    time_t   retrans_time;
     uint16_t packet_len;
     uint8_t  packet[LWM2M_MAX_PACKET_SIZE];
 } lwm2m_transaction_t;
@@ -266,6 +267,9 @@ int lwm2m_add_server(lwm2m_context_t * contextP, uint16_t shortID, char * host, 
 
 // send registration message to all known LWM2M Servers.
 int lwm2m_register(lwm2m_context_t * contextP);
+
+// perform any required pending operation and return the maximal time interval to wait
+int lwm2m_step(lwm2m_context_t * contextP, struct timeval * timeoutP);
 
 int lwm2m_handle_packet(lwm2m_context_t * contextP, uint8_t * buffer, int length, struct sockaddr * fromAddr, socklen_t fromAddrLen);
 
