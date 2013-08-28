@@ -53,6 +53,7 @@ David Navarro <david.navarro@intel.com>
 #define COAP_500_INTERNAL_SERVER_ERROR  (uint8_t)0xA0
 #define COAP_501_NOT_IMPLEMENTED        (uint8_t)0xA1
 
+#define LWM2M_MAX_PACKET_SIZE 198
 
 /*
  *  Ressource URI
@@ -217,6 +218,31 @@ typedef struct
 } lwm2m_bootstrap_server_t;
 
 /*
+ * LWM2M transaction
+ *
+ * Adaptation of Erbium's coap_transaction_t
+ */
+
+typedef enum
+{
+    ENDPOINT_UNKNOWN = 0,
+    ENDPOINT_CLIENT,
+    ENDPOINT_SERVER,
+    ENDPOINT_BOOTSTRAP
+} lwm2m_endpoint_type_t;
+
+typedef struct _lwm2m_transaction_
+{
+    struct _lwm2m_transaction_ * next;  // matches lwm2m_list_t::next
+    uint16_t    mID;                    // matches lwm2m_list_t::id
+    lwm2m_endpoint_type_t peerType;
+    void *                peerP;
+    uint8_t  retrans_counter;
+    uint16_t packet_len;
+    uint8_t  packet[LWM2M_MAX_PACKET_SIZE];
+} lwm2m_transaction_t;
+
+/*
  * LWM2M Context
  */
 
@@ -229,6 +255,7 @@ typedef struct
     lwm2m_object_t ** objectList;
     uint16_t          numObject;
     uint16_t          nextMID;
+    lwm2m_transaction_t * transactionList;
 } lwm2m_context_t;
 
 lwm2m_context_t * lwm2m_init(int socket, char * endpointName, uint16_t numObject, lwm2m_object_t * objectList[]);

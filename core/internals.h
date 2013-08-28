@@ -51,5 +51,8 @@ coap_status_t object_create(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, char
 coap_status_t object_delete(lwm2m_context_t * contextP, lwm2m_uri_t * uriP);
 int prv_getRegisterPayload(lwm2m_context_t * contextP, char * buffer, size_t length);
 
+// defined in transaction.c
+lwm2m_transaction_t * transaction_new(uint16_t mID, lwm2m_endpoint_type_t peerType, void * peerP);
+void transaction_send(lwm2m_context_t * contextP, lwm2m_transaction_t * transacP);
 
 #endif

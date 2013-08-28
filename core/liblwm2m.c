@@ -223,22 +223,23 @@ int lwm2m_register(lwm2m_context_t * contextP)
     while (targetP != NULL)
     {
         coap_packet_t message[1];
-        coap_transaction_t * transaction;
+        lwm2m_transaction_t * transaction;
 
         coap_init_message(message, COAP_TYPE_CON, COAP_POST, contextP->nextMID++);
         coap_set_header_uri_path(message, REGISTRATION_URI);
         coap_set_header_uri_query(message, query);
         coap_set_payload(message, payload, payload_length);
 
-        transaction = coap_new_transaction(message->mid, contextP->socket, targetP->addr, targetP->addrLen);
+        transaction = transaction_new(message->mid, ENDPOINT_SERVER, (void *)targetP);
         if (transaction != NULL)
         {
             transaction->packet_len = coap_serialize_message(message, transaction->packet);
             if (transaction->packet_len > 0)
             {
-                coap_send_transaction(transaction);
+                contextP->transactionList = (lwm2m_transaction_t *)LWM2M_LIST_ADD(contextP->transactionList, transaction);
+                transaction_send(contextP, transaction);
                 targetP->status = STATE_REG_PENDING;
-                targetP->mid = transaction->mid;
+                targetP->mid = transaction->mID;
             }
         }
 
