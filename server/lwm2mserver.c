@@ -62,7 +62,6 @@ Contains code snippets which are:
 
 #include "core/liblwm2m.h"
 #include "externals/er-coap-13/er-coap-13.h"
-#include "externals/er-coap-13/er-coap-13-transactions.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -263,22 +262,19 @@ int main(int argc, char *argv[])
                     if (message->code == COAP_POST && !strncmp(message->uri_path->data, "rd", message->uri_path->len))
                     {
                         coap_packet_t response[1];
-                        coap_transaction_t * transaction;
+                        uint8_t pktBuffer[COAP_MAX_PACKET_SIZE+1];
+                        size_t pktBufferLen = 0;
 
                         coap_init_message(response, COAP_TYPE_ACK, CREATED_2_01, message->mid);
                         coap_set_header_location_path(response, "/rd/54321");
 
-                        transaction = coap_new_transaction(message->mid, socket, (struct sockaddr *)&addr, addrLen);
-                        if (transaction != NULL)
+                        pktBufferLen = coap_serialize_message(response, pktBuffer);
+                        if (pktBufferLen > 0)
                         {
-                            transaction->packet_len = coap_serialize_message(response, transaction->packet);
-                            if (transaction->packet_len > 0)
-                            {
-                                fprintf(stdout, "Sending:\r\n");
-                                prv_output_buffer(transaction->packet, transaction->packet_len);
-                                coap_send_transaction(transaction);
-                                result++;
-                            }
+                            fprintf(stdout, "Sending:\r\n");
+                            prv_output_buffer(pktBuffer, pktBufferLen);
+                            coap_send_message(socket, (struct sockaddr *)&addr, addrLen, pktBuffer, pktBufferLen);
+                            result++;
                         }
                     }
                 }

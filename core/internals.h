@@ -38,7 +38,6 @@ David Navarro <david.navarro@intel.com>
 #include <stdbool.h>
 
 #include "externals/er-coap-13/er-coap-13.h"
-#include "externals/er-coap-13/er-coap-13-transactions.h"
 
 
 // defined in uri.c

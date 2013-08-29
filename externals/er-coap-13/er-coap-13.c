@@ -47,7 +47,6 @@
 #include <stdio.h>
 
 #include "er-coap-13.h"
-#include "er-coap-13-transactions.h"
 
 
 #define DEBUG 0
