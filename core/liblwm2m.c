@@ -237,7 +237,7 @@ int lwm2m_register(lwm2m_context_t * contextP)
             if (transaction->packet_len > 0)
             {
                 contextP->transactionList = (lwm2m_transaction_t *)LWM2M_LIST_ADD(contextP->transactionList, transaction);
-                transaction_send(contextP, transaction);
+                (void)transaction_send(contextP, transaction);
                 targetP->status = STATE_REG_PENDING;
                 targetP->mid = transaction->mID;
             }

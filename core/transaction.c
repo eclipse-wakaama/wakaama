@@ -119,8 +119,8 @@ void transaction_remove(lwm2m_context_t * contextP,
     free(transacP);
 }
 
-void transaction_send(lwm2m_context_t * contextP,
-                      lwm2m_transaction_t * transacP)
+int transaction_send(lwm2m_context_t * contextP,
+                     lwm2m_transaction_t * transacP)
 {
     switch(transacP->peerType)
     {
@@ -163,13 +163,15 @@ void transaction_send(lwm2m_context_t * contextP,
     if (transacP->retrans_counter < COAP_MAX_RETRANSMIT)
     {
         transacP->retrans_time += COAP_RESPONSE_TIMEOUT * transacP->retrans_counter;
-
         transacP->retrans_counter++;
     }
     else
     {
         transaction_remove(contextP, transacP);
+        return -1;
     }
+
+    return 0;
 }
 
 int lwm2m_step(lwm2m_context_t * contextP,
@@ -177,7 +179,6 @@ int lwm2m_step(lwm2m_context_t * contextP,
 {
     lwm2m_transaction_t * transacP;
     struct timeval tv;
-    int sendCalled = 0;
 
     memset(timeoutP, 0, sizeof(struct timeval));
 
@@ -187,37 +188,34 @@ int lwm2m_step(lwm2m_context_t * contextP,
     while (transacP != NULL)
     {
         // transaction_send() may remove transaction from the linked list
-
         lwm2m_transaction_t * nextP = transacP->next;
+        int removed = 0;
 
         if (transacP->retrans_time <= tv.tv_sec)
         {
-            transaction_send(contextP, transacP);
+            removed = transaction_send(contextP, transacP);
+        }
+
+        if (0 == removed)
+        {
+            time_t interval;
+
+            if (transacP->retrans_time > tv.tv_sec)
+            {
+                interval = transacP->retrans_time - tv.tv_sec;
+            }
+            else
+            {
+                interval = 1;
+            }
+
+            if (0 == timeoutP->tv_sec || timeoutP->tv_sec > interval)
+            {
+                timeoutP->tv_sec = interval;
+            }
         }
 
         transacP = nextP;
-    }
-
-    transacP = contextP->transactionList;
-    while (transacP != NULL)
-    {
-        time_t interval;
-
-        if (transacP->retrans_time > tv.tv_sec)
-        {
-            interval = transacP->retrans_time - tv.tv_sec;
-        }
-        else
-        {
-            interval = 1;
-        }
-
-        if (0 == timeoutP->tv_sec || timeoutP->tv_sec > interval)
-        {
-            timeoutP->tv_sec = interval;
-        }
-
-        transacP = transacP->next;
     }
 
     return 0;
