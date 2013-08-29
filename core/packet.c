@@ -86,37 +86,23 @@ static lwm2m_server_t * prv_findServer(lwm2m_context_t * contextP,
 }
 
 static void handle_response(lwm2m_context_t * contextP,
+                            lwm2m_transaction_t * transacP,
                             struct sockaddr * fromAddr,
                             socklen_t fromAddrLen,
                             coap_packet_t * message)
 {
-    // find the server sending this response
-    lwm2m_server_t * targetP;
-
-    targetP = prv_findServer(contextP, fromAddr, fromAddrLen);
-    if (targetP == NULL) return;
-
-    if (targetP->status == STATE_REG_PENDING
-     && message->mid == targetP->mid
-     && message->type == COAP_TYPE_ACK
-     && message->location_path_len != 0
-     && message->location_path != NULL)
+    switch (transacP->peerType)
     {
-        if (message->code == CREATED_2_01)
-        {
-            targetP->status = STATE_REGISTERED;
-            targetP->location = (char *)malloc(message->location_path_len + 1);
-            if (targetP->location != NULL)
-            {
-                memcpy(targetP->location, message->location_path, message->location_path_len);
-                targetP->location[message->location_path_len] = 0;
-            }
-        }
-        else if (message->code == BAD_REQUEST_4_00)
-        {
-            targetP->status = STATE_UNKNOWN;
-            targetP->mid = 0;
-        }
+    case ENDPOINT_CLIENT:
+        // not implemented yet
+        break;
+
+    case ENDPOINT_SERVER:
+        handle_server_reply(contextP, transacP, message);
+        break;
+
+    default:
+        return;
     }
 }
 
@@ -327,7 +313,7 @@ int lwm2m_handle_packet(lwm2m_context_t * contextP,
             contextP->transactionList = (lwm2m_transaction_t *)LWM2M_LIST_RM(contextP->transactionList, message->mid, &transaction);
             if (NULL != transaction)
             {
-                handle_response(contextP, fromAddr, fromAddrLen, message);
+                handle_response(contextP, transaction, fromAddr, fromAddrLen, message);
             }
         } /* Request or Response */
     } /* if (parsed correctly) */

@@ -54,4 +54,6 @@ int prv_getRegisterPayload(lwm2m_context_t * contextP, char * buffer, size_t len
 lwm2m_transaction_t * transaction_new(uint16_t mID, lwm2m_endpoint_type_t peerType, void * peerP);
 int transaction_send(lwm2m_context_t * contextP, lwm2m_transaction_t * transacP);
 
+void handle_server_reply(lwm2m_context_t * contextP, lwm2m_transaction_t * transacP, coap_packet_t * message);
+
 #endif
