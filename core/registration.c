@@ -34,7 +34,6 @@ David Navarro <david.navarro@intel.com>
 #include <string.h>
 
 
-#define REGISTRATION_URI "/rd"
 #define QUERY_TEMPLATE "ep="
 #define QUERY_LENGTH 3
 
@@ -61,7 +60,7 @@ int lwm2m_register(lwm2m_context_t * contextP)
         lwm2m_transaction_t * transaction;
 
         coap_init_message(message, COAP_TYPE_CON, COAP_POST, contextP->nextMID++);
-        coap_set_header_uri_path(message, REGISTRATION_URI);
+        coap_set_header_uri_path(message, "/"URI_REGISTRATION_SEGMENT);
         coap_set_header_uri_query(message, query);
         coap_set_payload(message, payload, payload_length);
 

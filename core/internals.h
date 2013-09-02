@@ -40,8 +40,21 @@ David Navarro <david.navarro@intel.com>
 #include "externals/er-coap-13/er-coap-13.h"
 
 
+#define URI_REGISTRATION_SEGMENT        "rd"
+#define URI_REGISTRATION_SEGMENT_LEN    2
+#define URI_BOOTSTRAP_SEGMENT           "bs"
+#define URI_BOOTSTRAP_SEGMENT_LEN       2
+
+typedef enum
+{
+    URI_UNKNOWN = 0,
+    URI_REGISTRATION,
+    URI_BOOTSTRAP,
+    URI_DM,
+} lwm2m_uri_type_t;
+
 // defined in uri.c
-lwm2m_uri_t * lwm2m_decode_uri(multi_option_t *uriPath);
+lwm2m_uri_type_t lwm2m_decode_uri(multi_option_t *uriPath, lwm2m_uri_t * uriP);
 
 // defined in objects.c
 coap_status_t object_read(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, char ** bufferP, int * lengthP);

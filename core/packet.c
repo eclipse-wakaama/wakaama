@@ -127,68 +127,68 @@ static coap_status_t handle_request(lwm2m_context_t * contextP,
                                     coap_packet_t * message,
                                     coap_packet_t * response)
 {
-    lwm2m_uri_t * uriP;
+    lwm2m_uri_t uri;
     lwm2m_server_t * targetP;
     coap_status_t result = NOT_FOUND_4_04;
 
-    uriP = lwm2m_decode_uri(message->uri_path);
 
-    if (NULL == uriP)
+    switch(lwm2m_decode_uri(message->uri_path, &uri))
     {
-        return BAD_REQUEST_4_00;
-    }
-
-/*
- * Commented out for testing
- *
-    targetP = prv_findServer(contextP, fromAddr, fromAddrLen);
-    if (targetP == NULL || targetP->status != STATE_REGISTERED)
+    case URI_DM:
     {
-        return BAD_REQUEST_4_00;
-    }
-*/
-    switch (message->code)
-    {
-    case COAP_GET:
+        switch (message->code)
         {
-            char * buffer = NULL;
-            int length = 0;
-
-            result = object_read(contextP, uriP, &buffer, &length);
-            if (NULL != buffer)
+        case COAP_GET:
             {
-                coap_set_payload(response, buffer, length);
-                // lwm2m_handle_packet will free buffer
+                char * buffer = NULL;
+                int length = 0;
+
+                result = object_read(contextP, &uri, &buffer, &length);
+                if (NULL != buffer)
+                {
+                    coap_set_payload(response, buffer, length);
+                    // lwm2m_handle_packet will free buffer
+                }
             }
+            break;
+        case COAP_POST:
+            {
+                result = object_create(contextP, &uri, message->payload, message->payload_len);
+            }
+            break;
+        case COAP_PUT:
+            {
+                result = object_write(contextP, &uri, message->payload, message->payload_len);
+            }
+            break;
+        case COAP_DELETE:
+            {
+                result = object_delete(contextP, &uri);
+            }
+            break;
+        default:
+            result = BAD_REQUEST_4_00;
+            break;
         }
-        break;
-    case COAP_POST:
+
+        coap_set_status_code(response, result);
+
+        if (result < BAD_REQUEST_4_00)
         {
-            result = object_create(contextP, uriP, message->payload, message->payload_len);
+            result = NO_ERROR;
         }
+    }
+    break;
+
+    case URI_REGISTRATION:
         break;
-    case COAP_PUT:
-        {
-            result = object_write(contextP, uriP, message->payload, message->payload_len);
-        }
+
+    case URI_BOOTSTRAP:
         break;
-    case COAP_DELETE:
-        {
-            result = object_delete(contextP, uriP);
-        }
-        break;
+
     default:
         result = BAD_REQUEST_4_00;
         break;
-    }
-
-    coap_set_status_code(response, result);
-
-    free(uriP);
-
-    if (result < BAD_REQUEST_4_00)
-    {
-        return NO_ERROR;
     }
 
     return result;
