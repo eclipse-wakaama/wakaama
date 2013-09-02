@@ -85,6 +85,18 @@ static lwm2m_server_t * prv_findServer(lwm2m_context_t * contextP,
     return targetP;
 }
 
+static int prv_check_addr(struct sockaddr * leftAddr,
+                          socklen_t leftAddrLen,
+                          struct sockaddr * rightAddr,
+                          socklen_t rightAddrLen)
+{
+    if (leftAddrLen != rightAddrLen) return 0;
+
+    if (memcmp(leftAddr, rightAddr, leftAddrLen) != 0) return 0;
+
+    return 1;
+}
+
 static void handle_response(lwm2m_context_t * contextP,
                             lwm2m_transaction_t * transacP,
                             struct sockaddr * fromAddr,
@@ -98,7 +110,10 @@ static void handle_response(lwm2m_context_t * contextP,
         break;
 
     case ENDPOINT_SERVER:
-        handle_server_reply(contextP, transacP, message);
+        if (prv_check_addr(fromAddr, fromAddrLen, ((lwm2m_server_t *)transacP->peerP)->addr, ((lwm2m_server_t *)transacP->peerP)->addrLen))
+        {
+            handle_server_reply(contextP, transacP, message);
+        }
         break;
 
     default:
