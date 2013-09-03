@@ -65,6 +65,43 @@ void print_usage(void)
     fprintf(stderr, "Launch a LWM2M client.\r\n\n");
 }
 
+static void prv_output_buffer(uint8_t * buffer,
+                              int length)
+{
+    int i;
+    uint8_t array[16];
+
+    i = 0;
+    while (i < length)
+    {
+        int j;
+        fprintf(stderr, "  ");
+
+        memcpy(array, buffer+i, 16);
+
+        for (j = 0 ; j < 16 && i+j < length; j++)
+        {
+            fprintf(stderr, "%02X ", array[j]);
+        }
+        while (j < 16)
+        {
+            fprintf(stderr, "   ");
+            j++;
+        }
+        fprintf(stderr, "  ");
+        for (j = 0 ; j < 16 && i+j < length; j++)
+        {
+            if (isprint(array[j]))
+                fprintf(stderr, "%c ", array[j]);
+            else
+                fprintf(stderr, ". ");
+        }
+        fprintf(stderr, "\n");
+
+        i += 16;
+    }
+}
+
 int get_socket()
 {
     int s = -1;
@@ -207,6 +244,7 @@ int main(int argc, char *argv[])
                                       s,
                                       INET6_ADDRSTRLEN),
                             ntohs(((struct sockaddr_in6*)&addr)->sin6_port));
+                    prv_output_buffer(buffer, numBytes);
 
                     lwm2m_handle_packet(lwm2mH, buffer, numBytes, (struct sockaddr *)&addr, addrLen);
                 }
