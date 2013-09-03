@@ -101,3 +101,20 @@ lwm2m_list_t * lwm2m_list_remove(lwm2m_list_t * head,
 
     return head;
 }
+
+uint16_t lwm2m_list_newId(lwm2m_list_t * head)
+{
+    uint16_t id;
+    lwm2m_list_t * target;
+
+    id = 0;
+    target = head;
+
+    while (target != NULL && id == target->id)
+    {
+        id = target->id + 1;
+        target = target->next;
+    }
+
+    return id;
+}

@@ -32,11 +32,191 @@ David Navarro <david.navarro@intel.com>
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 
 #define QUERY_TEMPLATE "ep="
 #define QUERY_LENGTH 3
+#define QUERY_DELIMITER '&'
 
+#define MAX_LOCATION_LENGTH 10  // strlen("/rd/65534") + 1
+
+
+static void prv_getParameters(const char * query,
+                              size_t queryLen,
+                              char ** nameP)
+{
+    const char * start;
+    int length;
+
+    *nameP = NULL;
+
+    if (queryLen <= QUERY_LENGTH) return;
+
+    // we assume query starts with the Endpoint Client Name
+    // TODO: modify the way uri_query are handled in er-coap-13.c
+    if (strncmp(query, QUERY_TEMPLATE, QUERY_LENGTH) != 0) return;
+    start = query + QUERY_LENGTH;
+
+    length = 0;
+    while (start[length] != 0
+        && start[length] != QUERY_DELIMITER
+        && length < queryLen - QUERY_LENGTH)
+    {
+        length++;
+    }
+    if (length == 0) return;
+
+    *nameP = (char *)malloc(length + 1);
+    if (*nameP != NULL)
+    {
+        memcpy(*nameP, start, length);
+        (*nameP)[length] = 0;
+    }
+}
+
+static int prv_getId(uint8_t * data,
+                     uint16_t length,
+                     uint16_t * objId,
+                     uint16_t * instanceId)
+{
+    int value;
+    uint16_t limit;
+    uint16_t end;
+
+    limit = 0;
+    while (limit < length && data[limit] != '/' && data[limit] != ' ') limit++;
+    value = prv_get_number(data, limit);
+    if (value < 0 || value >= LWM2M_URI_NOT_DEFINED) return 0;
+    *objId = value;
+
+    if (limit != length)
+    {
+        limit += 1;
+        end = limit;
+        while (end < length && data[end] != ' ') end++;
+        if (end != limit)
+        {
+            value = prv_get_number(data + limit, end - limit);
+            if (value >= 0 && value < LWM2M_URI_NOT_DEFINED)
+            {
+                *instanceId = value;
+                return 2;
+            }
+        }
+    }
+
+    return 1;
+}
+
+static lwm2m_client_object_t * prv_decodeRegisterPayload(uint8_t * payload,
+                                                         uint16_t payloadLength)
+{
+    lwm2m_client_object_t * objList;
+    uint16_t id;
+    uint16_t instance;
+    uint16_t start;
+    uint16_t end;
+    int result;
+
+    objList = NULL;
+    start = 0;
+    while (start < payloadLength)
+    {
+        while (start < payloadLength && payload[start] == ' ') start++;
+        if (start == payloadLength) return objList;
+        end = start;
+        while (end < payloadLength && payload[end] != ',') end++;
+        result = prv_getId(payload + start, end - start, &id, &instance);
+        if (result != 0)
+        {
+            lwm2m_client_object_t * objectP;
+
+            objectP = (lwm2m_client_object_t *)lwm2m_list_find((lwm2m_list_t *)objList, id);
+            if (objectP == NULL)
+            {
+                objectP = (lwm2m_client_object_t *)malloc(sizeof(lwm2m_client_object_t));
+                if (objectP == NULL) return objList;
+                objectP->id = id;
+                objList = (lwm2m_client_object_t *)LWM2M_LIST_ADD(objList, objectP);
+            }
+            if (result == 2)
+            {
+                lwm2m_list_t * instanceP;
+
+                instanceP = lwm2m_list_find(objectP->instanceList, instance);
+                if (instanceP == NULL)
+                {
+                    instanceP = (lwm2m_list_t *)malloc(sizeof(lwm2m_list_t));
+                    instanceP->id = instance;
+                    objectP->instanceList = LWM2M_LIST_ADD(objectP->instanceList, instanceP);
+                }
+            }
+        }
+        start = end + 1;
+    }
+
+    return objList;
+}
+
+static lwm2m_client_t * prv_getClientByName(lwm2m_context_t * contextP,
+                                            char * name)
+{
+    lwm2m_client_t * targetP;
+
+    targetP = contextP->clientList;
+    while (targetP != NULL && strcmp(name, targetP->name) != 0)
+    {
+        targetP = targetP->next;
+    }
+
+    return targetP;
+}
+
+static void prv_freeClientObjectList(lwm2m_client_object_t * objects)
+{
+    while (objects != NULL)
+    {
+        lwm2m_client_object_t * objP;
+
+        while (objects->instanceList != NULL)
+        {
+            lwm2m_list_t * target;
+
+            target = objects->instanceList;
+            objects->instanceList = objects->instanceList->next;
+            free(target);
+        }
+
+        objP = objects;
+        objects = objects->next;
+        free(objP);
+    }
+}
+
+static void prv_freeClient(lwm2m_client_t * clientP)
+{
+    if (clientP->addr != NULL) free(clientP->addr);
+    if (clientP->name != NULL) free(clientP->name);
+    prv_freeClientObjectList(clientP->objectList);
+    free(clientP);
+}
+
+static int prv_getLocationString(uint16_t id,
+                                 char location[MAX_LOCATION_LENGTH])
+{
+    int result;
+
+    memset(location, 0, MAX_LOCATION_LENGTH);
+
+    result = snprintf(location, MAX_LOCATION_LENGTH, "/"URI_REGISTRATION_SEGMENT"/%hu", id);
+    if (result <= 0 || result > MAX_LOCATION_LENGTH)
+    {
+        return 0;
+    }
+
+    return result;
+}
 
 int lwm2m_register(lwm2m_context_t * contextP)
 {
@@ -83,9 +263,9 @@ int lwm2m_register(lwm2m_context_t * contextP)
     return 0;
 }
 
-void handle_server_reply(lwm2m_context_t * contextP,
-                         lwm2m_transaction_t * transacP,
-                         coap_packet_t * message)
+void handle_registration_reply(lwm2m_context_t * contextP,
+                               lwm2m_transaction_t * transacP,
+                               coap_packet_t * message)
 {
     lwm2m_server_t * targetP;
 
@@ -119,4 +299,88 @@ void handle_server_reply(lwm2m_context_t * contextP,
     default:
         break;
     }
+}
+
+coap_status_t handle_registration_request(lwm2m_context_t * contextP,
+                                          struct sockaddr * fromAddr,
+                                          socklen_t fromAddrLen,
+                                          coap_packet_t * message,
+                                          coap_packet_t * response)
+{
+    coap_status_t result;
+
+    switch(message->code)
+    {
+    case COAP_POST:
+    {
+        char * name = NULL;
+        lwm2m_client_object_t * objects;
+        lwm2m_client_t * clientP;
+        char location[MAX_LOCATION_LENGTH];
+
+        // we know first uri segment is "/rd", check that there is no other segment
+        if (message->uri_path->next != NULL) return COAP_400_BAD_REQUEST;
+        prv_getParameters(message->uri_query, message->uri_query_len, &name);
+        if (name == NULL) return COAP_400_BAD_REQUEST;
+        objects = prv_decodeRegisterPayload(message->payload, message->payload_len);
+        if (objects == NULL)
+        {
+            free(name);
+            return COAP_400_BAD_REQUEST;
+        }
+        clientP = prv_getClientByName(contextP, name);
+        if (clientP != NULL)
+        {
+            // we reset this registration
+            free(clientP->name);
+            free(clientP->addr);
+            prv_freeClientObjectList(clientP->objectList);
+        }
+        else
+        {
+            clientP = (lwm2m_client_t *)malloc(sizeof(lwm2m_client_t));
+            if (clientP == NULL)
+            {
+                free(name);
+                prv_freeClientObjectList(objects);
+                return COAP_500_INTERNAL_SERVER_ERROR;
+            }
+            clientP->internalID = lwm2m_list_newId((lwm2m_list_t *)contextP->clientList);
+            contextP->clientList = (lwm2m_client_t *)LWM2M_LIST_ADD(contextP->clientList, clientP);
+        }
+        clientP->name = name;
+        clientP->objectList = objects;
+        clientP->addr = (struct sockaddr *)malloc(fromAddrLen);
+        if (clientP->addr == NULL)
+        {
+            prv_freeClient(clientP);
+            return COAP_500_INTERNAL_SERVER_ERROR;
+        }
+        memcpy(clientP->addr, fromAddr, fromAddrLen);
+        clientP->addrLen = fromAddrLen;
+
+        if (prv_getLocationString(clientP->internalID, location) == 0)
+        {
+            prv_freeClient(clientP);
+            return COAP_500_INTERNAL_SERVER_ERROR;
+        }
+        coap_set_header_location_path(response, location);
+
+        result = CREATED_2_01;
+    }
+    break;
+
+    case COAP_PUT:
+        result = COAP_501_NOT_IMPLEMENTED;
+        break;
+
+    case COAP_DELETE:
+        result = COAP_501_NOT_IMPLEMENTED;
+        break;
+
+    default:
+        return COAP_400_BAD_REQUEST;
+    }
+
+    return result;
 }

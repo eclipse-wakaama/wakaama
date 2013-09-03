@@ -86,6 +86,8 @@ lwm2m_list_t * lwm2m_list_add(lwm2m_list_t * head, lwm2m_list_t * node);
 lwm2m_list_t * lwm2m_list_find(lwm2m_list_t * head, uint16_t id);
 // Remove the node with ID 'id' from the list 'head' and return the new list
 lwm2m_list_t * lwm2m_list_remove(lwm2m_list_t * head, uint16_t id, lwm2m_list_t ** nodeP);
+// Return the lowest unused ID in the list 'head'
+uint16_t lwm2m_list_newId(lwm2m_list_t * head);
 
 #define LWM2M_LIST_ADD(H,N) lwm2m_list_add((lwm2m_list_t *)H, (lwm2m_list_t *)N);
 #define LWM2M_LIST_RM(H,I,N) lwm2m_list_remove((lwm2m_list_t *)H, I, (lwm2m_list_t **)N);
@@ -219,6 +221,31 @@ typedef struct
 } lwm2m_bootstrap_server_t;
 
 /*
+ * LWM2M Clients
+ *
+ * Be careful not to mix lwm2m_client_object_t used to store list of objects of remote clients
+ * and lwm2m_object_t describing objects exposed to remote servers.
+ *
+ */
+
+typedef struct _lwm2m_client_object_
+{
+    struct _lwm2m_client_object_ * next; // matches lwm2m_list_t::next
+    uint16_t                 id;         // matches lwm2m_list_t::id
+    lwm2m_list_t *           instanceList;
+} lwm2m_client_object_t;
+
+typedef struct _lwm2m_client_
+{
+    struct _lwm2m_client_ * next;       // matches lwm2m_list_t::next
+    uint16_t                internalID; // matches lwm2m_list_t::id
+    char * name;
+    struct sockaddr * addr;
+    socklen_t         addrLen;
+    lwm2m_client_object_t * objectList;
+} lwm2m_client_t;
+
+/*
  * LWM2M transaction
  *
  * Adaptation of Erbium's coap_transaction_t
@@ -254,6 +281,7 @@ typedef struct
     char * endpointName;
     lwm2m_bootstrap_server_t * bootstrapServer;
     lwm2m_server_t *  serverList;
+    lwm2m_client_t *  clientList;
     lwm2m_object_t ** objectList;
     uint16_t          numObject;
     uint16_t          nextMID;

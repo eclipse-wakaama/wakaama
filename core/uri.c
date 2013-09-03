@@ -33,8 +33,8 @@ David Navarro <david.navarro@intel.com>
 #include <string.h>
 
 
-static int prv_get_number(const char * uriString,
-                          size_t uriLength)
+int prv_get_number(const char * uriString,
+                   size_t uriLength)
 {
     int result = 0;
     int mul = 0;

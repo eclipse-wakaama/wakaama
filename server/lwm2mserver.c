@@ -235,48 +235,9 @@ int main(int argc, char *argv[])
                                       s,
                                       INET6_ADDRSTRLEN),
                             ntohs(((struct sockaddr_in6*)&addr)->sin6_port));
-
                     prv_output_buffer(buffer, numBytes);
-                    coap_error_code = coap_parse_message(message, buffer, (uint16_t)numBytes);
-                    if (coap_error_code==NO_ERROR)
-                    {
-                        fprintf(stdout, "  Parsed: ver %u, type %u, tkl %u, mid %u, code ", message->version, message->type, message->token_len, message->mid);
-                        switch (message->code)
-                        {
-                        case COAP_GET:
-                            fprintf(stdout, "GET\r\n");
-                            break;
-                        case COAP_POST:
-                            fprintf(stdout, "POST\r\n");
-                            break;
-                        case COAP_PUT:
-                            fprintf(stdout, "PUT\r\n");
-                            break;
-                        case COAP_DELETE:
-                            fprintf(stdout, "DELETE\r\n");
-                            break;
-                        }
-                        fprintf(stdout, "  Payload: %.*s\r\n\n", message->payload_len, message->payload);
-                    }
-                    // Reply with an hard-coded location
-                    if (message->code == COAP_POST && !strncmp(message->uri_path->data, "rd", message->uri_path->len))
-                    {
-                        coap_packet_t response[1];
-                        uint8_t pktBuffer[COAP_MAX_PACKET_SIZE+1];
-                        size_t pktBufferLen = 0;
 
-                        coap_init_message(response, COAP_TYPE_ACK, CREATED_2_01, message->mid);
-                        coap_set_header_location_path(response, "/rd/54321");
-
-                        pktBufferLen = coap_serialize_message(response, pktBuffer);
-                        if (pktBufferLen > 0)
-                        {
-                            fprintf(stdout, "Sending:\r\n");
-                            prv_output_buffer(pktBuffer, pktBufferLen);
-                            coap_send_message(socket, (struct sockaddr *)&addr, addrLen, pktBuffer, pktBufferLen);
-                            result++;
-                        }
-                    }
+                    lwm2m_handle_packet(lwm2mH, buffer, numBytes, (struct sockaddr *)&addr, addrLen);
                 }
             }
         }

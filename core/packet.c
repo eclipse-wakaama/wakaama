@@ -112,7 +112,7 @@ static void handle_response(lwm2m_context_t * contextP,
     case ENDPOINT_SERVER:
         if (prv_check_addr(fromAddr, fromAddrLen, ((lwm2m_server_t *)transacP->peerP)->addr, ((lwm2m_server_t *)transacP->peerP)->addrLen))
         {
-            handle_server_reply(contextP, transacP, message);
+            handle_registration_reply(contextP, transacP, message);
         }
         break;
 
@@ -170,25 +170,27 @@ static coap_status_t handle_request(lwm2m_context_t * contextP,
             result = BAD_REQUEST_4_00;
             break;
         }
-
-        coap_set_status_code(response, result);
-
-        if (result < BAD_REQUEST_4_00)
-        {
-            result = NO_ERROR;
-        }
     }
     break;
 
     case URI_REGISTRATION:
+        result = handle_registration_request(contextP, fromAddr, fromAddrLen, message, response);
         break;
 
     case URI_BOOTSTRAP:
+        result = NOT_IMPLEMENTED_5_01;
         break;
 
     default:
         result = BAD_REQUEST_4_00;
         break;
+    }
+
+    coap_set_status_code(response, result);
+
+    if (result < BAD_REQUEST_4_00)
+    {
+        result = NO_ERROR;
     }
 
     return result;

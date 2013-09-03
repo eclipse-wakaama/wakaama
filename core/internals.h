@@ -54,6 +54,7 @@ typedef enum
 } lwm2m_uri_type_t;
 
 // defined in uri.c
+int prv_get_number(const char * uriString, size_t uriLength);
 lwm2m_uri_type_t lwm2m_decode_uri(multi_option_t *uriPath, lwm2m_uri_t * uriP);
 
 // defined in objects.c
@@ -67,6 +68,7 @@ int prv_getRegisterPayload(lwm2m_context_t * contextP, char * buffer, size_t len
 lwm2m_transaction_t * transaction_new(uint16_t mID, lwm2m_endpoint_type_t peerType, void * peerP);
 int transaction_send(lwm2m_context_t * contextP, lwm2m_transaction_t * transacP);
 
-void handle_server_reply(lwm2m_context_t * contextP, lwm2m_transaction_t * transacP, coap_packet_t * message);
+void handle_registration_reply(lwm2m_context_t * contextP, lwm2m_transaction_t * transacP, coap_packet_t * message);
+coap_status_t handle_registration_request(lwm2m_context_t * contextP, struct sockaddr * fromAddr, socklen_t fromAddrLen, coap_packet_t * message, coap_packet_t * response);
 
 #endif
