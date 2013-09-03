@@ -276,7 +276,8 @@ error:
     return 0;
 }
 
-static uint8_t prv_device_read(lwm2m_uri_t * uriP,
+static uint8_t prv_device_read(uint16_t * instanceId,
+                               uint16_t * resId,
                                char ** bufferP,
                                int * lengthP,
                                lwm2m_object_t * objectP)
@@ -285,12 +286,27 @@ static uint8_t prv_device_read(lwm2m_uri_t * uriP,
     *lengthP = 0;
 
     // this is a single instance object
-    if (0 != uriP->objInstance && LWM2M_URI_NOT_DEFINED != uriP->objInstance)
+    if (instanceId != NULL
+     && *instanceId != 0 )
     {
         return COAP_404_NOT_FOUND;
     }
 
-    switch (uriP->resID)
+    // is the server asking for the full object ?
+    if (resId == NULL)
+    {
+        *lengthP = prv_get_object_tlv(bufferP, (device_data_t*)(objectP->userData));
+        if (0 != *lengthP)
+        {
+            return COAP_205_CONTENT;
+        }
+        else
+        {
+            return COAP_500_INTERNAL_SERVER_ERROR;
+        }
+    }
+    // else
+    switch (*resId)
     {
     case 0:
         *bufferP = strdup(PRV_MANUFACTURER);
@@ -485,34 +501,28 @@ static uint8_t prv_device_read(lwm2m_uri_t * uriP,
         {
             return COAP_500_INTERNAL_SERVER_ERROR;
         }
-    case LWM2M_URI_NOT_DEFINED:
-        *lengthP = prv_get_object_tlv(bufferP, (device_data_t*)(objectP->userData));
-        if (0 != *lengthP)
-        {
-            return COAP_205_CONTENT;
-        }
-        else
-        {
-            return COAP_500_INTERNAL_SERVER_ERROR;
-        }
     default:
         return COAP_404_NOT_FOUND;
     }
 
 }
 
-static uint8_t prv_device_write(lwm2m_uri_t * uriP,
+static uint8_t prv_device_write(uint16_t * instanceId,
+                                uint16_t * resId,
                                 char * buffer,
                                 int length,
                                 lwm2m_object_t * objectP)
 {
     // this is a single instance object
-    if (0 != uriP->objInstance)
+    if (instanceId != NULL
+     && *instanceId != 0 )
     {
         return COAP_404_NOT_FOUND;
     }
 
-    switch (uriP->resID)
+    if (resId == NULL) return COAP_501_NOT_IMPLEMENTED;
+
+    switch (*resId)
     {
     case 13:
         if (1 == lwm2m_PlainTextToInt64(buffer, length, &((device_data_t*)(objectP->userData))->time))
@@ -539,16 +549,19 @@ static uint8_t prv_device_write(lwm2m_uri_t * uriP,
     }
 }
 
-static uint8_t prv_device_execute(lwm2m_uri_t * uriP,
+static uint8_t prv_device_execute(uint16_t * instanceId,
+                                  uint16_t * resId,
                                   lwm2m_object_t * objectP)
 {
     // this is a single instance object
-    if (0 != uriP->objInstance)
+    if (instanceId != NULL
+     && *instanceId != 0 )
     {
         return COAP_404_NOT_FOUND;
     }
 
-    switch (uriP->resID)
+    // for execute callback, resId is always set.
+    switch (*resId)
     {
     case 4:
         fprintf(stdout, "\n\t REBOOT\r\n\n");

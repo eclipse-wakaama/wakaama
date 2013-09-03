@@ -65,60 +65,75 @@ int prv_get_number(const char * uriString,
 }
 
 
-lwm2m_uri_type_t lwm2m_decode_uri(multi_option_t *uriPath,
-                                  lwm2m_uri_t * uriP)
+lwm2m_uri_t * lwm2m_decode_uri(multi_option_t *uriPath)
 {
+    lwm2m_uri_t * uriP;
     int readNum;
 
-    if (NULL == uriPath) return URI_UNKNOWN;
+    if (NULL == uriPath) return NULL;
 
-    memset(uriP, 0xFF, sizeof(lwm2m_uri_t));
+    uriP = (lwm2m_uri_t *)malloc(sizeof(lwm2m_uri_t));
+    if (NULL == uriP) return NULL;
+
+    memset(uriP, 0, sizeof(lwm2m_uri_t));
 
     // Read object ID
     if (URI_REGISTRATION_SEGMENT_LEN == uriPath->len
      && 0 == strncmp(URI_REGISTRATION_SEGMENT, uriPath->data, uriPath->len))
     {
-        return URI_REGISTRATION;
+        uriP->flag |= LWM2M_URI_FLAG_REGISTRATION;
+        uriPath = uriPath->next;
+        if (uriPath == NULL) return uriP;
     }
-    if (URI_BOOTSTRAP_SEGMENT_LEN == uriPath->len
+    else if (URI_BOOTSTRAP_SEGMENT_LEN == uriPath->len
      && 0 == strncmp(URI_BOOTSTRAP_SEGMENT, uriPath->data, uriPath->len))
     {
-        return URI_BOOTSTRAP;
+        uriP->flag |= LWM2M_URI_FLAG_BOOTSTRAP;
+        uriPath = uriPath->next;
+        if (uriPath != NULL) goto error;
+        return uriP;
     }
 
     readNum = prv_get_number(uriPath->data, uriPath->len);
-    if (readNum < 0 || readNum >= LWM2M_URI_NOT_DEFINED) goto error;
-    uriP->objID = (uint16_t)readNum;
-    if (NULL == uriPath->next) return URI_DM;
+    if (readNum < 0 || readNum > LWM2M_MAX_ID) goto error;
+    uriP->id = (uint16_t)readNum;
+    uriP->flag |= LWM2M_URI_FLAG_OBJECT_ID;
     uriPath = uriPath->next;
 
-    // Read object instance
-    if (uriPath->len == 0)
+    if (uriP->flag & LWM2M_URI_MASK_TYPE == LWM2M_URI_FLAG_REGISTRATION)
     {
-        // default instance
-        uriP->objInstance = 0;
+        if (uriPath != NULL) goto error;
+        return uriP;
     }
-    else
+    uriP->flag |= LWM2M_URI_FLAG_DM;
+
+    if (uriPath == NULL) return uriP;
+
+    // Read object instance
+    if (uriPath->len != 0)
     {
         readNum = prv_get_number(uriPath->data, uriPath->len);
-        if (readNum < 0 || readNum >= LWM2M_URI_NOT_DEFINED) goto error;
-        uriP->objInstance = (uint16_t)readNum;
+        if (readNum < 0 || readNum >= LWM2M_MAX_ID) goto error;
+        uriP->instanceId = (uint16_t)readNum;
+        uriP->flag |= LWM2M_URI_FLAG_INSTANCE_ID;
     }
-    if (NULL == uriPath->next) return URI_DM;
     uriPath = uriPath->next;
+
+    if (uriPath == NULL) return uriP;
 
     // Read ressource ID
     if (uriPath->len != 0)
     {
         readNum = prv_get_number(uriPath->data, uriPath->len);
-        if (readNum < 0 || readNum >= LWM2M_URI_NOT_DEFINED) goto error;
-        uriP->resID = (uint16_t)readNum;
+        if (readNum < 0 || readNum > LWM2M_MAX_ID) goto error;
+        uriP->resourceId = (uint16_t)readNum;
+        uriP->flag |= LWM2M_URI_FLAG_RESOURCE_ID;
     }
 
     // must be the last segment
-    if (NULL == uriPath->next) return URI_DM;
+    if (NULL == uriPath->next) return uriP;
 
 error:
-    memset(uriP, 0xFF, sizeof(lwm2m_uri_t));
-    return URI_UNKNOWN;
+    free(uriP);
+    return NULL;
 }

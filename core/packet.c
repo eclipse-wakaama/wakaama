@@ -127,14 +127,17 @@ static coap_status_t handle_request(lwm2m_context_t * contextP,
                                     coap_packet_t * message,
                                     coap_packet_t * response)
 {
-    lwm2m_uri_t uri;
+    lwm2m_uri_t * uriP;
     lwm2m_server_t * targetP;
     coap_status_t result = NOT_FOUND_4_04;
 
 
-    switch(lwm2m_decode_uri(message->uri_path, &uri))
+    uriP = lwm2m_decode_uri(message->uri_path);
+    if (uriP == NULL) return BAD_REQUEST_4_00;
+
+    switch(uriP->flag & LWM2M_URI_MASK_TYPE)
     {
-    case URI_DM:
+    case LWM2M_URI_FLAG_DM:
     {
         switch (message->code)
         {
@@ -143,7 +146,7 @@ static coap_status_t handle_request(lwm2m_context_t * contextP,
                 char * buffer = NULL;
                 int length = 0;
 
-                result = object_read(contextP, &uri, &buffer, &length);
+                result = object_read(contextP, uriP, &buffer, &length);
                 if (NULL != buffer)
                 {
                     coap_set_payload(response, buffer, length);
@@ -153,17 +156,17 @@ static coap_status_t handle_request(lwm2m_context_t * contextP,
             break;
         case COAP_POST:
             {
-                result = object_create(contextP, &uri, message->payload, message->payload_len);
+                result = object_create_execute(contextP, uriP, message->payload, message->payload_len);
             }
             break;
         case COAP_PUT:
             {
-                result = object_write(contextP, &uri, message->payload, message->payload_len);
+                result = object_write(contextP, uriP, message->payload, message->payload_len);
             }
             break;
         case COAP_DELETE:
             {
-                result = object_delete(contextP, &uri);
+                result = object_delete(contextP, uriP);
             }
             break;
         default:
@@ -173,11 +176,11 @@ static coap_status_t handle_request(lwm2m_context_t * contextP,
     }
     break;
 
-    case URI_REGISTRATION:
-        result = handle_registration_request(contextP, fromAddr, fromAddrLen, message, response);
+    case LWM2M_URI_FLAG_REGISTRATION:
+        result = handle_registration_request(contextP, uriP, fromAddr, fromAddrLen, message, response);
         break;
 
-    case URI_BOOTSTRAP:
+    case LWM2M_URI_FLAG_BOOTSTRAP:
         result = NOT_IMPLEMENTED_5_01;
         break;
 

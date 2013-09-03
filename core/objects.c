@@ -58,7 +58,7 @@ coap_status_t object_read(lwm2m_context_t * contextP,
 {
     lwm2m_object_t * targetP;
 
-    targetP = prv_find_object(contextP, uriP->objID);
+    targetP = prv_find_object(contextP, uriP->id);
 
     if (NULL == targetP)
     {
@@ -69,7 +69,9 @@ coap_status_t object_read(lwm2m_context_t * contextP,
         return METHOD_NOT_ALLOWED_4_05;
     }
 
-    return targetP->readFunc(uriP, bufferP, lengthP, targetP);
+    return targetP->readFunc(uriP->flag & LWM2M_URI_FLAG_INSTANCE_ID?&(uriP->instanceId):NULL,
+                             uriP->flag & LWM2M_URI_FLAG_RESOURCE_ID?&(uriP->resourceId):NULL,
+                             bufferP, lengthP, targetP);
 }
 
 
@@ -80,12 +82,12 @@ coap_status_t object_write(lwm2m_context_t * contextP,
 {
     lwm2m_object_t * targetP;
 
-    if (LWM2M_URI_NOT_DEFINED == uriP->objInstance)
+    if (uriP->flag & LWM2M_URI_FLAG_INSTANCE_ID == 0)
     {
         return BAD_REQUEST_4_00;
     }
 
-    targetP = prv_find_object(contextP, uriP->objID);
+    targetP = prv_find_object(contextP, uriP->id);
 
     if (NULL == targetP)
     {
@@ -96,34 +98,57 @@ coap_status_t object_write(lwm2m_context_t * contextP,
         return METHOD_NOT_ALLOWED_4_05;
     }
 
-    return targetP->writeFunc(uriP, buffer, length, targetP);
+    return targetP->writeFunc(&(uriP->instanceId),
+                              uriP->flag & LWM2M_URI_FLAG_RESOURCE_ID?&(uriP->resourceId):NULL,
+                              buffer, length, targetP);
 }
 
-coap_status_t object_create(lwm2m_context_t * contextP,
-                            lwm2m_uri_t * uriP,
-                            char * buffer,
-                            int length)
+coap_status_t object_create_execute(lwm2m_context_t * contextP,
+                                    lwm2m_uri_t * uriP,
+                                    char * buffer,
+                                    int length)
 {
     lwm2m_object_t * targetP;
 
-    if (LWM2M_URI_NOT_DEFINED != uriP->resID
-     || 0 == length || NULL == buffer)
-    {
-        return BAD_REQUEST_4_00;
-    }
-
-    targetP = prv_find_object(contextP, uriP->objID);
+    targetP = prv_find_object(contextP, uriP->id);
 
     if (NULL == targetP)
     {
         return NOT_FOUND_4_04;
     }
-    if (NULL == targetP->createFunc)
-    {
-        return METHOD_NOT_ALLOWED_4_05;
-    }
 
-    return targetP->createFunc(uriP->objInstance, buffer, length, targetP);
+    if (uriP->flag & LWM2M_URI_FLAG_RESOURCE_ID != 0)
+    {
+        // This is an execute
+        if (length != 0 || buffer != 0)
+        {
+            return BAD_REQUEST_4_00;
+        }
+
+        if (NULL == targetP->executeFunc)
+        {
+            return METHOD_NOT_ALLOWED_4_05;
+        }
+
+        return targetP->writeFunc(uriP->flag & LWM2M_URI_FLAG_INSTANCE_ID?&(uriP->instanceId):NULL,
+                                  &(uriP->resourceId),
+                                  buffer, length, targetP);
+    }
+    else
+    {
+        // This is a create
+        if (length == 0 || buffer == 0)
+        {
+            return BAD_REQUEST_4_00;
+        }
+        if (NULL == targetP->createFunc)
+        {
+            return METHOD_NOT_ALLOWED_4_05;
+        }
+
+        return targetP->createFunc(uriP->flag & LWM2M_URI_FLAG_INSTANCE_ID?&(uriP->instanceId):NULL,
+                                   buffer, length, targetP);
+    }
 }
 
 coap_status_t object_delete(lwm2m_context_t * contextP,
@@ -131,13 +156,12 @@ coap_status_t object_delete(lwm2m_context_t * contextP,
 {
     lwm2m_object_t * targetP;
 
-    if (LWM2M_URI_NOT_DEFINED == uriP->objInstance
-     || LWM2M_URI_NOT_DEFINED != uriP->resID)
+    if (uriP->flag & LWM2M_URI_MASK_ID == LWM2M_URI_FLAG_OBJECT_ID)
     {
         return BAD_REQUEST_4_00;
     }
 
-    targetP = prv_find_object(contextP, uriP->objID);
+    targetP = prv_find_object(contextP, uriP->id);
 
     if (NULL == targetP)
     {
@@ -148,7 +172,7 @@ coap_status_t object_delete(lwm2m_context_t * contextP,
         return METHOD_NOT_ALLOWED_4_05;
     }
 
-    return targetP->deleteFunc(uriP->objInstance, targetP);
+    return targetP->deleteFunc(uriP->instanceId, targetP);
 }
 
 int prv_getRegisterPayload(lwm2m_context_t * contextP,

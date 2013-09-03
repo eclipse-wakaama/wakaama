@@ -95,7 +95,8 @@ static void prv_output_buffer(uint8_t * buffer,
     }
 }
 
-static uint8_t prv_read(lwm2m_uri_t * uriP,
+static uint8_t prv_read(uint16_t * instanceId,
+                        uint16_t * resId,
                         char ** bufferP,
                         int * lengthP,
                         lwm2m_object_t * objectP)
@@ -105,7 +106,7 @@ static uint8_t prv_read(lwm2m_uri_t * uriP,
     *bufferP = NULL;
     *lengthP = 0;
 
-    if (LWM2M_URI_NOT_DEFINED == uriP->objInstance)
+    if (instanceId == NULL)
     {
         *bufferP = (uint8_t *)malloc(PRV_TLV_BUFFER_SIZE);
         if (NULL == *bufferP) return COAP_500_INTERNAL_SERVER_ERROR;
@@ -144,18 +145,11 @@ static uint8_t prv_read(lwm2m_uri_t * uriP,
     }
     else
     {
-        targetP = (prv_instance_t *)lwm2m_list_find(objectP->instanceList, uriP->objInstance);
+        targetP = (prv_instance_t *)lwm2m_list_find(objectP->instanceList, *instanceId);
         if (NULL == targetP) return COAP_404_NOT_FOUND;
 
-        switch (uriP->resID)
+        if (resId == NULL)
         {
-        case 1:
-            // we use int16 because value is unsigned
-            *lengthP = lwm2m_int16ToPlainText(targetP->test, bufferP);
-            if (*lengthP <= 0) return COAP_500_INTERNAL_SERVER_ERROR;
-            return COAP_205_CONTENT;
-
-        case LWM2M_URI_NOT_DEFINED:
             // TLV
             *bufferP = (uint8_t *)malloc(PRV_TLV_BUFFER_SIZE);
             if (NULL == *bufferP) return COAP_500_INTERNAL_SERVER_ERROR;
@@ -169,6 +163,14 @@ static uint8_t prv_read(lwm2m_uri_t * uriP,
             }
             prv_output_buffer(*bufferP, *lengthP);
             return COAP_205_CONTENT;
+        }
+        switch (*resId)
+        {
+        case 1:
+            // we use int16 because value is unsigned
+            *lengthP = lwm2m_int16ToPlainText(targetP->test, bufferP);
+            if (*lengthP <= 0) return COAP_500_INTERNAL_SERVER_ERROR;
+            return COAP_205_CONTENT;
 
         default:
             return COAP_404_NOT_FOUND;
@@ -176,7 +178,8 @@ static uint8_t prv_read(lwm2m_uri_t * uriP,
     }
 }
 
-static uint8_t prv_write(lwm2m_uri_t * uriP,
+static uint8_t prv_write(uint16_t * instanceId,
+                         uint16_t * resId,
                          char * buffer,
                          int length,
                          lwm2m_object_t * objectP)
@@ -184,10 +187,13 @@ static uint8_t prv_write(lwm2m_uri_t * uriP,
     prv_instance_t * targetP;
     int64_t value;
 
-    targetP = (prv_instance_t *)lwm2m_list_find(objectP->instanceList, uriP->objInstance);
+    // for write, instance ID is always set
+    targetP = (prv_instance_t *)lwm2m_list_find(objectP->instanceList, *instanceId);
     if (NULL == targetP) return COAP_404_NOT_FOUND;
 
-    switch (uriP->resID)
+    if (resId == NULL) return COAP_501_NOT_IMPLEMENTED;
+
+    switch (*resId)
     {
     case 1:
         if (1 == lwm2m_PlainTextToInt64(buffer, length, &value))
@@ -199,42 +205,35 @@ static uint8_t prv_write(lwm2m_uri_t * uriP,
             }
         }
         return COAP_400_BAD_REQUEST;
-    case LWM2M_URI_NOT_DEFINED:
-        return COAP_501_NOT_IMPLEMENTED;
     default:
         return COAP_404_NOT_FOUND;
     }
 }
 
-static uint8_t prv_create(uint16_t id,
+static uint8_t prv_create(uint16_t * id,
                           char * buffer,
                           int length,
                           lwm2m_object_t * objectP)
 {
     prv_instance_t * targetP;
     lwm2m_tlv_type_t type;
+    uint16_t newId;
     uint16_t resID;
     size_t dataIndex;
     size_t dataLen;
     int result;
     int64_t value;
 
-    if (LWM2M_URI_NOT_DEFINED != id)
+    if (id != NULL)
     {
-        targetP = (prv_instance_t *)lwm2m_list_find(objectP->instanceList, id);
+        targetP = (prv_instance_t *)lwm2m_list_find(objectP->instanceList, *id);
         if (targetP != NULL) return COAP_406_NOT_ACCEPTABLE;
+        newId = *id;
     }
     else
     {
         // determine a new unique ID
-        id = 0;
-        for (targetP = (prv_instance_t *)(objectP->instanceList) ; targetP != NULL ; targetP = targetP->next)
-        {
-            if (targetP->shortID >= id)
-            {
-                id = targetP->shortID + 1;
-            }
-        }
+        newId = lwm2m_list_newId(objectP->instanceList);
     }
 
     result = lwm2m_decodeTLV(buffer, length, &type, &resID, &dataIndex, &dataLen);
@@ -254,7 +253,7 @@ static uint8_t prv_create(uint16_t id,
     targetP = (prv_instance_t *)malloc(sizeof(prv_instance_t));
     if (NULL == targetP) return COAP_500_INTERNAL_SERVER_ERROR;
     memset(targetP, 0, sizeof(prv_instance_t));
-    targetP->shortID = id;
+    targetP->shortID = newId;
     targetP->test = value;
     objectP->instanceList = LWM2M_LIST_ADD(objectP->instanceList, targetP);
 

@@ -55,19 +55,6 @@ David Navarro <david.navarro@intel.com>
 
 #define LWM2M_MAX_PACKET_SIZE 198
 
-/*
- *  Ressource URI
- */
-
-#define LWM2M_URI_NOT_DEFINED   ((uint16_t)0xFFFF)
-
-typedef struct
-{
-    uint16_t    objID;
-    uint16_t    objInstance;
-    uint16_t    resID;
-} lwm2m_uri_t;
-
 
 /*
  * Utility functions for sorted linked list
@@ -146,10 +133,10 @@ int lwm2m_opaqueToInt(char * buffer, size_t buffer_len, int64_t * dataP);
 
 typedef struct _lwm2m_object_t lwm2m_object_t;
 
-typedef uint8_t (*lwm2m_read_callback_t) (lwm2m_uri_t * uriP, char ** bufferP, int * lengthP, lwm2m_object_t * objectP);
-typedef uint8_t (*lwm2m_write_callback_t) (lwm2m_uri_t * uriP, char * buffer, int length, lwm2m_object_t * objectP);
-typedef uint8_t (*lwm2m_execute_callback_t) (lwm2m_uri_t * uriP, lwm2m_object_t * objectP);
-typedef uint8_t (*lwm2m_create_callback_t) (uint16_t id, char * buffer, int length, lwm2m_object_t * objectP);
+typedef uint8_t (*lwm2m_read_callback_t) (uint16_t * instanceId, uint16_t * resId, char ** bufferP, int * lengthP, lwm2m_object_t * objectP);
+typedef uint8_t (*lwm2m_write_callback_t) (uint16_t * instanceId, uint16_t * resId, char * buffer, int length, lwm2m_object_t * objectP);
+typedef uint8_t (*lwm2m_execute_callback_t) (uint16_t * instanceId, uint16_t * resId, lwm2m_object_t * objectP);
+typedef uint8_t (*lwm2m_create_callback_t) (uint16_t * id, char * buffer, int length, lwm2m_object_t * objectP);
 typedef uint8_t (*lwm2m_delete_callback_t) (uint16_t id, lwm2m_object_t * objectP);
 typedef void (*lwm2m_close_callback_t) (lwm2m_object_t * objectP);
 

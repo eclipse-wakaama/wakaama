@@ -87,7 +87,7 @@ static int prv_getId(uint8_t * data,
     limit = 0;
     while (limit < length && data[limit] != '/' && data[limit] != ' ') limit++;
     value = prv_get_number(data, limit);
-    if (value < 0 || value >= LWM2M_URI_NOT_DEFINED) return 0;
+    if (value < 0 || value >= LWM2M_MAX_ID) return 0;
     *objId = value;
 
     if (limit != length)
@@ -98,7 +98,7 @@ static int prv_getId(uint8_t * data,
         if (end != limit)
         {
             value = prv_get_number(data + limit, end - limit);
-            if (value >= 0 && value < LWM2M_URI_NOT_DEFINED)
+            if (value >= 0 && value < LWM2M_MAX_ID)
             {
                 *instanceId = value;
                 return 2;
@@ -302,6 +302,7 @@ void handle_registration_reply(lwm2m_context_t * contextP,
 }
 
 coap_status_t handle_registration_request(lwm2m_context_t * contextP,
+                                          lwm2m_uri_t * uriP,
                                           struct sockaddr * fromAddr,
                                           socklen_t fromAddrLen,
                                           coap_packet_t * message,
@@ -318,8 +319,7 @@ coap_status_t handle_registration_request(lwm2m_context_t * contextP,
         lwm2m_client_t * clientP;
         char location[MAX_LOCATION_LENGTH];
 
-        // we know first uri segment is "/rd", check that there is no other segment
-        if (message->uri_path->next != NULL) return COAP_400_BAD_REQUEST;
+        if (uriP->flag & LWM2M_URI_MASK_ID != 0) return COAP_400_BAD_REQUEST;
         prv_getParameters(message->uri_query, message->uri_query_len, &name);
         if (name == NULL) return COAP_400_BAD_REQUEST;
         objects = prv_decodeRegisterPayload(message->payload, message->payload_len);
