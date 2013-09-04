@@ -42,8 +42,7 @@ David Navarro <david.navarro@intel.com>
 #define MAX_LOCATION_LENGTH 10  // strlen("/rd/65534") + 1
 
 
-static void prv_getParameters(const char * query,
-                              size_t queryLen,
+static void prv_getParameters(multi_option_t * query,
                               char ** nameP)
 {
     const char * start;
@@ -51,27 +50,22 @@ static void prv_getParameters(const char * query,
 
     *nameP = NULL;
 
-    if (queryLen <= QUERY_LENGTH) return;
-
-    // we assume query starts with the Endpoint Client Name
-    // TODO: modify the way uri_query are handled in er-coap-13.c
-    if (strncmp(query, QUERY_TEMPLATE, QUERY_LENGTH) != 0) return;
-    start = query + QUERY_LENGTH;
-
-    length = 0;
-    while (start[length] != 0
-        && start[length] != QUERY_DELIMITER
-        && length < queryLen - QUERY_LENGTH)
+    while (query != NULL)
     {
-        length++;
-    }
-    if (length == 0) return;
-
-    *nameP = (char *)malloc(length + 1);
-    if (*nameP != NULL)
-    {
-        memcpy(*nameP, start, length);
-        (*nameP)[length] = 0;
+        if (query->len > QUERY_LENGTH)
+        {
+            if (strncmp(query->data, QUERY_TEMPLATE, QUERY_LENGTH) == 0)
+            {
+                *nameP = (char *)malloc(query->len - QUERY_LENGTH + 1);
+                if (*nameP != NULL)
+                {
+                    memcpy(*nameP, query->data + QUERY_LENGTH, query->len - QUERY_LENGTH);
+                    (*nameP)[query->len - QUERY_LENGTH] = 0;
+                }
+                break;
+            }
+        }
+        query = query->next;
     }
 }
 
@@ -343,7 +337,7 @@ coap_status_t handle_registration_request(lwm2m_context_t * contextP,
         char location[MAX_LOCATION_LENGTH];
 
         if (uriP->flag & LWM2M_URI_MASK_ID != 0) return COAP_400_BAD_REQUEST;
-        prv_getParameters(message->uri_query, message->uri_query_len, &name);
+        prv_getParameters(message->uri_query, &name);
         if (name == NULL) return COAP_400_BAD_REQUEST;
         objects = prv_decodeRegisterPayload(message->payload, message->payload_len);
         if (objects == NULL)

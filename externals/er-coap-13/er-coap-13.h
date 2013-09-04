@@ -270,8 +270,7 @@ typedef struct {
   uint16_t block1_size;
   uint32_t block1_offset;
   uint32_t size;
-  size_t uri_query_len;
-  const char *uri_query;
+  multi_option_t *uri_query;
   uint8_t if_none_match;
 
   uint16_t payload_len;
