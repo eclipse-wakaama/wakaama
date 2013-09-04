@@ -104,6 +104,8 @@ void lwm2m_close(lwm2m_context_t * contextP)
         targetP = contextP->serverList;
         contextP->serverList = contextP->serverList->next;
 
+        registration_deregister(contextP, targetP);
+
         if (NULL != targetP->addr) free (targetP->addr);
         if (NULL != targetP->security.privateKey) free (targetP->security.privateKey);
         if (NULL != targetP->security.publicKey) free (targetP->security.publicKey);

@@ -263,6 +263,27 @@ int lwm2m_register(lwm2m_context_t * contextP)
     return 0;
 }
 
+void registration_deregister(lwm2m_context_t * contextP,
+                             lwm2m_server_t * serverP)
+{
+    coap_packet_t message[1];
+    uint8_t pktBuffer[COAP_MAX_PACKET_SIZE+1];
+    size_t pktBufferLen = 0;
+
+    if (serverP->status != STATE_REGISTERED) return;
+
+    coap_init_message(message, COAP_TYPE_NON, COAP_DELETE, contextP->nextMID++);
+    coap_set_header_uri_path(message, serverP->location);
+
+    pktBufferLen = coap_serialize_message(message, pktBuffer);
+    if (0 != pktBufferLen)
+    {
+        coap_send_message(contextP->socket, serverP->addr, serverP->addrLen, pktBuffer, pktBufferLen);
+    }
+
+    serverP->status = STATE_UNKNOWN;
+}
+
 void handle_registration_reply(lwm2m_context_t * contextP,
                                lwm2m_transaction_t * transacP,
                                coap_packet_t * message)
@@ -375,8 +396,17 @@ coap_status_t handle_registration_request(lwm2m_context_t * contextP,
         break;
 
     case COAP_DELETE:
-        result = COAP_501_NOT_IMPLEMENTED;
-        break;
+    {
+        lwm2m_client_t * clientP;
+
+        if (uriP->flag & LWM2M_URI_MASK_ID != LWM2M_URI_FLAG_OBJECT_ID) return COAP_400_BAD_REQUEST;
+
+        contextP->clientList = (lwm2m_client_t *)LWM2M_LIST_RM(contextP->clientList, uriP->id, &clientP);
+        if (clientP == NULL) return COAP_400_BAD_REQUEST;
+        prv_freeClient(clientP);
+        result = DELETED_2_02;
+    }
+    break;
 
     default:
         return COAP_400_BAD_REQUEST;
