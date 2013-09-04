@@ -77,6 +77,12 @@ lwm2m_list_t * lwm2m_list_remove(lwm2m_list_t * head,
 {
     lwm2m_list_t * target;
 
+    if (head == NULL)
+    {
+        *nodeP = NULL;
+        return NULL;
+    }
+
     if (head->id == id)
     {
         *nodeP = head;
