@@ -136,6 +136,7 @@ static lwm2m_client_object_t * prv_decodeRegisterPayload(uint8_t * payload,
             if (objectP == NULL)
             {
                 objectP = (lwm2m_client_object_t *)malloc(sizeof(lwm2m_client_object_t));
+                memset(objectP, 0, sizeof(lwm2m_client_object_t));
                 if (objectP == NULL) return objList;
                 objectP->id = id;
                 objList = (lwm2m_client_object_t *)LWM2M_LIST_ADD(objList, objectP);
@@ -148,6 +149,7 @@ static lwm2m_client_object_t * prv_decodeRegisterPayload(uint8_t * payload,
                 if (instanceP == NULL)
                 {
                     instanceP = (lwm2m_list_t *)malloc(sizeof(lwm2m_list_t));
+                    memset(instanceP, 0, sizeof(lwm2m_list_t));
                     instanceP->id = instance;
                     objectP->instanceList = LWM2M_LIST_ADD(objectP->instanceList, instanceP);
                 }
@@ -356,6 +358,7 @@ coap_status_t handle_registration_request(lwm2m_context_t * contextP,
             free(clientP->name);
             free(clientP->addr);
             prv_freeClientObjectList(clientP->objectList);
+            clientP->objectList = NULL;
         }
         else
         {
@@ -366,6 +369,7 @@ coap_status_t handle_registration_request(lwm2m_context_t * contextP,
                 prv_freeClientObjectList(objects);
                 return COAP_500_INTERNAL_SERVER_ERROR;
             }
+            memset(clientP, 0, sizeof(lwm2m_client_t));
             clientP->internalID = lwm2m_list_newId((lwm2m_list_t *)contextP->clientList);
             contextP->clientList = (lwm2m_client_t *)LWM2M_LIST_ADD(contextP->clientList, clientP);
         }

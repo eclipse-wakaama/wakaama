@@ -121,6 +121,40 @@ static void prv_output_buffer(uint8_t * buffer,
     }
 }
 
+static void prv_output_clients(lwm2m_context_t * lwm2mH)
+{
+    lwm2m_client_t * targetP;
+    lwm2m_client_object_t * objectP;
+
+    targetP = lwm2mH->clientList;
+
+    for (targetP = lwm2mH->clientList ; targetP != NULL ; targetP = targetP->next)
+    {
+        char s[INET6_ADDRSTRLEN];
+
+        fprintf(stdout, "Client #%d:\r\n", targetP->internalID);
+        fprintf(stdout, "\tname: \"%s\"\r\n", targetP->name);
+        fprintf(stdout, "\tobjects: ");
+        for (objectP = targetP->objectList; objectP != NULL ; objectP = objectP->next)
+        {
+            if (objectP->instanceList == NULL)
+            {
+                fprintf(stdout, "%d, ", objectP->id);
+            }
+            else
+            {
+                lwm2m_list_t * instanceP;
+
+                for (instanceP = objectP->instanceList; instanceP != NULL ; instanceP = instanceP->next)
+                {
+                    fprintf(stdout, "%d/%d, ", objectP->id, instanceP->id);
+                }
+            }
+        }
+        fprintf(stdout, "\r\n");
+    }
+}
+
 void handle_sigint(int signum)
 {
     g_quit = 1;
@@ -194,7 +228,7 @@ int main(int argc, char *argv[])
         FD_SET(socket, &readfds);
 
         tv.tv_usec = 0;
-        tv.tv_sec = 1;
+        tv.tv_sec = 10;
 
         result = select(FD_SETSIZE, &readfds, 0, 0, &tv);
 
@@ -241,6 +275,7 @@ int main(int argc, char *argv[])
                 }
             }
         }
+        prv_output_clients(lwm2mH);
     }
 
     lwm2m_close(lwm2mH);

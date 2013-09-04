@@ -201,3 +201,50 @@ int lwm2m_add_server(lwm2m_context_t * contextP,
     freeaddrinfo(servinfo);
     return status;
 }
+
+int lwm2m_step(lwm2m_context_t * contextP,
+               struct timeval * timeoutP)
+{
+    lwm2m_transaction_t * transacP;
+    struct timeval tv;
+
+    memset(timeoutP, 0, sizeof(struct timeval));
+
+    if (0 != gettimeofday(&tv, NULL)) return COAP_500_INTERNAL_SERVER_ERROR;
+
+    transacP = contextP->transactionList;
+    while (transacP != NULL)
+    {
+        // transaction_send() may remove transaction from the linked list
+        lwm2m_transaction_t * nextP = transacP->next;
+        int removed = 0;
+
+        if (transacP->retrans_time <= tv.tv_sec)
+        {
+            removed = transaction_send(contextP, transacP);
+        }
+
+        if (0 == removed)
+        {
+            time_t interval;
+
+            if (transacP->retrans_time > tv.tv_sec)
+            {
+                interval = transacP->retrans_time - tv.tv_sec;
+            }
+            else
+            {
+                interval = 1;
+            }
+
+            if (0 == timeoutP->tv_sec || timeoutP->tv_sec > interval)
+            {
+                timeoutP->tv_sec = interval;
+            }
+        }
+
+        transacP = nextP;
+    }
+
+    return 0;
+}

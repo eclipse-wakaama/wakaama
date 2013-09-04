@@ -128,7 +128,6 @@ static coap_status_t handle_request(lwm2m_context_t * contextP,
                                     coap_packet_t * response)
 {
     lwm2m_uri_t * uriP;
-    lwm2m_server_t * targetP;
     coap_status_t result = NOT_FOUND_4_04;
 
 
@@ -138,43 +137,8 @@ static coap_status_t handle_request(lwm2m_context_t * contextP,
     switch(uriP->flag & LWM2M_URI_MASK_TYPE)
     {
     case LWM2M_URI_FLAG_DM:
-    {
-        switch (message->code)
-        {
-        case COAP_GET:
-            {
-                char * buffer = NULL;
-                int length = 0;
-
-                result = object_read(contextP, uriP, &buffer, &length);
-                if (NULL != buffer)
-                {
-                    coap_set_payload(response, buffer, length);
-                    // lwm2m_handle_packet will free buffer
-                }
-            }
-            break;
-        case COAP_POST:
-            {
-                result = object_create_execute(contextP, uriP, message->payload, message->payload_len);
-            }
-            break;
-        case COAP_PUT:
-            {
-                result = object_write(contextP, uriP, message->payload, message->payload_len);
-            }
-            break;
-        case COAP_DELETE:
-            {
-                result = object_delete(contextP, uriP);
-            }
-            break;
-        default:
-            result = BAD_REQUEST_4_00;
-            break;
-        }
-    }
-    break;
+        result = handle_registration_request(contextP, uriP, fromAddr, fromAddrLen, message, response);
+        break;
 
     case LWM2M_URI_FLAG_REGISTRATION:
         result = handle_registration_request(contextP, uriP, fromAddr, fromAddrLen, message, response);
@@ -300,14 +264,7 @@ int lwm2m_handle_packet(lwm2m_context_t * contextP,
                     coap_set_payload(response, response->payload, MIN(response->payload_len, REST_MAX_CHUNK_SIZE));
                 } /* if (blockwise request) */
 
-                if ((pktBufferLen = coap_serialize_message(response, pktBuffer))==0)
-                {
-                    coap_error_code = PACKET_SERIALIZATION_ERROR;
-                }
-                else if (0 != pktBufferLen)
-                {
-                    coap_send_message(contextP->socket, fromAddr, fromAddrLen, pktBuffer, pktBufferLen);
-                }
+                coap_error_code = message_send(contextP, response, fromAddr, fromAddrLen);
 
                 free(response->payload);
                 response->payload = NULL;
@@ -354,10 +311,45 @@ int lwm2m_handle_packet(lwm2m_context_t * contextP,
         /* Reuse input buffer for error message. */
         coap_init_message(message, COAP_TYPE_ACK, coap_error_code, message->mid);
         coap_set_payload(message, coap_error_message, strlen(coap_error_message));
-        pktBufferLen = coap_serialize_message(message, pktBuffer);
-        if (0 != pktBufferLen)
-        {
-            coap_send_message(contextP->socket, fromAddr, fromAddrLen, pktBuffer, pktBufferLen);
-        }
+        message_send(contextP, message, fromAddr, fromAddrLen);
     }
 }
+
+
+coap_status_t buffer_send(int sock,
+                          uint8_t * buffer,
+                          size_t length,
+                          struct sockaddr * addr,
+                          socklen_t addrLen)
+{
+    size_t nbSent;
+    size_t offset;
+
+    offset = 0;
+    while (offset != length)
+    {
+        nbSent = sendto(sock, buffer + offset, length - offset, 0, addr, addrLen);
+        if (nbSent == -1) return INTERNAL_SERVER_ERROR_5_00;
+        offset += nbSent;
+    }
+    return NO_ERROR;
+}
+
+coap_status_t message_send(lwm2m_context_t * contextP,
+                           coap_packet_t * message,
+                           struct sockaddr * addr,
+                           socklen_t addrLen)
+{
+    coap_status_t result = INTERNAL_SERVER_ERROR_5_00;
+    uint8_t pktBuffer[COAP_MAX_PACKET_SIZE+1];
+    size_t pktBufferLen = 0;
+
+    pktBufferLen = coap_serialize_message(message, pktBuffer);
+    if (0 != pktBufferLen)
+    {
+        result = buffer_send(contextP->socket, pktBuffer, pktBufferLen, addr, addrLen);
+    }
+
+    return result;
+}
+

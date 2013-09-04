@@ -80,8 +80,17 @@ int prv_getRegisterPayload(lwm2m_context_t * contextP, char * buffer, size_t len
 lwm2m_transaction_t * transaction_new(uint16_t mID, lwm2m_endpoint_type_t peerType, void * peerP);
 int transaction_send(lwm2m_context_t * contextP, lwm2m_transaction_t * transacP);
 
+// defined in management.c
+coap_status_t handle_dm_request(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, struct sockaddr * fromAddr, socklen_t fromAddrLen, coap_packet_t * message, coap_packet_t * response);
+
+// defined in registration.c
 void handle_registration_reply(lwm2m_context_t * contextP, lwm2m_transaction_t * transacP, coap_packet_t * message);
 coap_status_t handle_registration_request(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, struct sockaddr * fromAddr, socklen_t fromAddrLen, coap_packet_t * message, coap_packet_t * response);
 void registration_deregister(lwm2m_context_t * contextP, lwm2m_server_t * serverP);
+
+// defined in packet.c
+coap_status_t message_send(lwm2m_context_t * contextP, coap_packet_t * message, struct sockaddr * addr, socklen_t addrLen);
+coap_status_t buffer_send(int sock, uint8_t * buffer, size_t length, struct sockaddr * addr, socklen_t addrLen);
+
 
 #endif

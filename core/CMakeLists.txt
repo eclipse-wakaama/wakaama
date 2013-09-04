@@ -9,6 +9,7 @@ SET(CORE_SOURCES
     ${CMAKE_CURRENT_LIST_DIR}/packet.c
     ${CMAKE_CURRENT_LIST_DIR}/transaction.c
     ${CMAKE_CURRENT_LIST_DIR}/registration.c
+    ${CMAKE_CURRENT_LIST_DIR}/management.c
     ${EXT_SOURCES}
     PARENT_SCOPE)
     

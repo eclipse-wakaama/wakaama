@@ -130,10 +130,9 @@ int transaction_send(lwm2m_context_t * contextP,
 
     case ENDPOINT_SERVER:
         fprintf(stdout, "Sending %d bytes\r\n", transacP->packet_len);
-        sendto(contextP->socket,
-               transacP->packet, transacP->packet_len,
-               0,
-               ((lwm2m_server_t*)transacP->peerP)->addr, ((lwm2m_server_t*)transacP->peerP)->addrLen);
+        buffer_send(contextP->socket,
+                    transacP->packet, transacP->packet_len,
+                    ((lwm2m_server_t*)transacP->peerP)->addr, ((lwm2m_server_t*)transacP->peerP)->addrLen);
         break;
 
     case ENDPOINT_BOOTSTRAP:
@@ -169,53 +168,6 @@ int transaction_send(lwm2m_context_t * contextP,
     {
         transaction_remove(contextP, transacP);
         return -1;
-    }
-
-    return 0;
-}
-
-int lwm2m_step(lwm2m_context_t * contextP,
-               struct timeval * timeoutP)
-{
-    lwm2m_transaction_t * transacP;
-    struct timeval tv;
-
-    memset(timeoutP, 0, sizeof(struct timeval));
-
-    if (0 != gettimeofday(&tv, NULL)) return COAP_500_INTERNAL_SERVER_ERROR;
-
-    transacP = contextP->transactionList;
-    while (transacP != NULL)
-    {
-        // transaction_send() may remove transaction from the linked list
-        lwm2m_transaction_t * nextP = transacP->next;
-        int removed = 0;
-
-        if (transacP->retrans_time <= tv.tv_sec)
-        {
-            removed = transaction_send(contextP, transacP);
-        }
-
-        if (0 == removed)
-        {
-            time_t interval;
-
-            if (transacP->retrans_time > tv.tv_sec)
-            {
-                interval = transacP->retrans_time - tv.tv_sec;
-            }
-            else
-            {
-                interval = 1;
-            }
-
-            if (0 == timeoutP->tv_sec || timeoutP->tv_sec > interval)
-            {
-                timeoutP->tv_sec = interval;
-            }
-        }
-
-        transacP = nextP;
     }
 
     return 0;
