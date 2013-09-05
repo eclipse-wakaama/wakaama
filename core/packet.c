@@ -137,7 +137,7 @@ static coap_status_t handle_request(lwm2m_context_t * contextP,
     switch(uriP->flag & LWM2M_URI_MASK_TYPE)
     {
     case LWM2M_URI_FLAG_DM:
-        result = handle_registration_request(contextP, uriP, fromAddr, fromAddrLen, message, response);
+        result = handle_dm_request(contextP, uriP, fromAddr, fromAddrLen, message, response);
         break;
 
     case LWM2M_URI_FLAG_REGISTRATION:

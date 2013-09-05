@@ -51,12 +51,35 @@ static lwm2m_object_t * prv_find_object(lwm2m_context_t * contextP,
     return NULL;
 }
 
+static void prv_intern_to_lwm2m_uri(intern_uri_t * from,
+                                    lwm2m_uri_t * to)
+{
+    to->objectId = from->id;
+    if (from->flag & LWM2M_URI_FLAG_INSTANCE_ID != 0)
+    {
+        to->instanceId = from->instanceId;
+    }
+    else
+    {
+        to->instanceId = LWM2M_URI_MAX_ID + 1;
+    }
+    if (from->flag & LWM2M_URI_FLAG_RESOURCE_ID != 0)
+    {
+        to->resourceId = from->resourceId;
+    }
+    else
+    {
+        to->resourceId = LWM2M_URI_MAX_ID + 1;
+    }
+}
+
 coap_status_t object_read(lwm2m_context_t * contextP,
                           intern_uri_t * uriP,
                           char ** bufferP,
                           int * lengthP)
 {
     lwm2m_object_t * targetP;
+    lwm2m_uri_t uri;
 
     targetP = prv_find_object(contextP, uriP->id);
 
@@ -69,9 +92,9 @@ coap_status_t object_read(lwm2m_context_t * contextP,
         return METHOD_NOT_ALLOWED_4_05;
     }
 
-    return targetP->readFunc(uriP->flag & LWM2M_URI_FLAG_INSTANCE_ID?&(uriP->instanceId):NULL,
-                             uriP->flag & LWM2M_URI_FLAG_RESOURCE_ID?&(uriP->resourceId):NULL,
-                             bufferP, lengthP, targetP);
+    prv_intern_to_lwm2m_uri(uriP, &uri);
+
+    return targetP->readFunc(&uri, bufferP, lengthP, targetP);
 }
 
 
@@ -81,6 +104,7 @@ coap_status_t object_write(lwm2m_context_t * contextP,
                            int length)
 {
     lwm2m_object_t * targetP;
+    lwm2m_uri_t uri;
 
     if (uriP->flag & LWM2M_URI_FLAG_INSTANCE_ID == 0)
     {
@@ -98,9 +122,9 @@ coap_status_t object_write(lwm2m_context_t * contextP,
         return METHOD_NOT_ALLOWED_4_05;
     }
 
-    return targetP->writeFunc(&(uriP->instanceId),
-                              uriP->flag & LWM2M_URI_FLAG_RESOURCE_ID?&(uriP->resourceId):NULL,
-                              buffer, length, targetP);
+    prv_intern_to_lwm2m_uri(uriP, &uri);
+
+    return targetP->writeFunc(&uri, buffer, length, targetP);
 }
 
 coap_status_t object_create_execute(lwm2m_context_t * contextP,
@@ -109,6 +133,7 @@ coap_status_t object_create_execute(lwm2m_context_t * contextP,
                                     int length)
 {
     lwm2m_object_t * targetP;
+    lwm2m_uri_t uri;
 
     targetP = prv_find_object(contextP, uriP->id);
 
@@ -116,6 +141,8 @@ coap_status_t object_create_execute(lwm2m_context_t * contextP,
     {
         return NOT_FOUND_4_04;
     }
+
+    prv_intern_to_lwm2m_uri(uriP, &uri);
 
     if (uriP->flag & LWM2M_URI_FLAG_RESOURCE_ID != 0)
     {
@@ -130,9 +157,7 @@ coap_status_t object_create_execute(lwm2m_context_t * contextP,
             return METHOD_NOT_ALLOWED_4_05;
         }
 
-        return targetP->writeFunc(uriP->flag & LWM2M_URI_FLAG_INSTANCE_ID?&(uriP->instanceId):NULL,
-                                  &(uriP->resourceId),
-                                  buffer, length, targetP);
+        return targetP->writeFunc(&uri, buffer, length, targetP);
     }
     else
     {
@@ -146,8 +171,7 @@ coap_status_t object_create_execute(lwm2m_context_t * contextP,
             return METHOD_NOT_ALLOWED_4_05;
         }
 
-        return targetP->createFunc(uriP->flag & LWM2M_URI_FLAG_INSTANCE_ID?&(uriP->instanceId):NULL,
-                                   buffer, length, targetP);
+        return targetP->createFunc(&uri, buffer, length, targetP);
     }
 }
 

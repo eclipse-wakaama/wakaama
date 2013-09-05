@@ -276,8 +276,7 @@ error:
     return 0;
 }
 
-static uint8_t prv_device_read(uint16_t * instanceId,
-                               uint16_t * resId,
+static uint8_t prv_device_read(lwm2m_uri_t * uriP,
                                char ** bufferP,
                                int * lengthP,
                                lwm2m_object_t * objectP)
@@ -286,14 +285,13 @@ static uint8_t prv_device_read(uint16_t * instanceId,
     *lengthP = 0;
 
     // this is a single instance object
-    if (instanceId != NULL
-     && *instanceId != 0 )
+    if (uriP->instanceId > 0 && uriP->instanceId <= LWM2M_URI_MAX_ID)
     {
         return COAP_404_NOT_FOUND;
     }
 
     // is the server asking for the full object ?
-    if (resId == NULL)
+    if (uriP->resourceId > LWM2M_URI_MAX_ID)
     {
         *lengthP = prv_get_object_tlv(bufferP, (device_data_t*)(objectP->userData));
         if (0 != *lengthP)
@@ -306,7 +304,7 @@ static uint8_t prv_device_read(uint16_t * instanceId,
         }
     }
     // else
-    switch (*resId)
+    switch (uriP->resourceId)
     {
     case 0:
         *bufferP = strdup(PRV_MANUFACTURER);
@@ -507,22 +505,20 @@ static uint8_t prv_device_read(uint16_t * instanceId,
 
 }
 
-static uint8_t prv_device_write(uint16_t * instanceId,
-                                uint16_t * resId,
+static uint8_t prv_device_write(lwm2m_uri_t * uriP,
                                 char * buffer,
                                 int length,
                                 lwm2m_object_t * objectP)
 {
     // this is a single instance object
-    if (instanceId != NULL
-     && *instanceId != 0 )
+    if (uriP->instanceId > 0 && uriP->instanceId <= LWM2M_URI_MAX_ID)
     {
         return COAP_404_NOT_FOUND;
     }
 
-    if (resId == NULL) return COAP_501_NOT_IMPLEMENTED;
+    if (uriP->resourceId > LWM2M_URI_MAX_ID) return COAP_501_NOT_IMPLEMENTED;
 
-    switch (*resId)
+    switch (uriP->resourceId)
     {
     case 13:
         if (1 == lwm2m_PlainTextToInt64(buffer, length, &((device_data_t*)(objectP->userData))->time))
@@ -549,19 +545,17 @@ static uint8_t prv_device_write(uint16_t * instanceId,
     }
 }
 
-static uint8_t prv_device_execute(uint16_t * instanceId,
-                                  uint16_t * resId,
+static uint8_t prv_device_execute(lwm2m_uri_t * uriP,
                                   lwm2m_object_t * objectP)
 {
     // this is a single instance object
-    if (instanceId != NULL
-     && *instanceId != 0 )
+    if (uriP->instanceId > 0 && uriP->instanceId <= LWM2M_URI_MAX_ID)
     {
         return COAP_404_NOT_FOUND;
     }
 
     // for execute callback, resId is always set.
-    switch (*resId)
+    switch (uriP->resourceId)
     {
     case 4:
         fprintf(stdout, "\n\t REBOOT\r\n\n");

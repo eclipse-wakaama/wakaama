@@ -128,15 +128,32 @@ int lwm2m_decodeTLV(char * buffer, size_t buffer_len, lwm2m_tlv_type_t * oType, 
 int lwm2m_opaqueToInt(char * buffer, size_t buffer_len, int64_t * dataP);
 
 /*
+ * URI
+ *
+ * objectId is always set
+ * if instanceId or resourceId is greater than LWM2M_URI_MAX_ID, it means it is not specified
+ *
+ */
+
+#define LWM2M_URI_MAX_ID   (0xFFFF)
+
+typedef struct
+{
+    uint16_t    objectId;
+    uint32_t    instanceId;
+    uint32_t    resourceId;
+} lwm2m_uri_t;
+
+/*
  * LWM2M Objects
  */
 
 typedef struct _lwm2m_object_t lwm2m_object_t;
 
-typedef uint8_t (*lwm2m_read_callback_t) (uint16_t * instanceId, uint16_t * resId, char ** bufferP, int * lengthP, lwm2m_object_t * objectP);
-typedef uint8_t (*lwm2m_write_callback_t) (uint16_t * instanceId, uint16_t * resId, char * buffer, int length, lwm2m_object_t * objectP);
-typedef uint8_t (*lwm2m_execute_callback_t) (uint16_t * instanceId, uint16_t * resId, lwm2m_object_t * objectP);
-typedef uint8_t (*lwm2m_create_callback_t) (uint16_t * id, char * buffer, int length, lwm2m_object_t * objectP);
+typedef uint8_t (*lwm2m_read_callback_t) (lwm2m_uri_t * uriP, char ** bufferP, int * lengthP, lwm2m_object_t * objectP);
+typedef uint8_t (*lwm2m_write_callback_t) (lwm2m_uri_t * uriP, char * buffer, int length, lwm2m_object_t * objectP);
+typedef uint8_t (*lwm2m_execute_callback_t) (lwm2m_uri_t * uriP, lwm2m_object_t * objectP);
+typedef uint8_t (*lwm2m_create_callback_t) (lwm2m_uri_t * uriP, char * buffer, int length, lwm2m_object_t * objectP);
 typedef uint8_t (*lwm2m_delete_callback_t) (uint16_t id, lwm2m_object_t * objectP);
 typedef void (*lwm2m_close_callback_t) (lwm2m_object_t * objectP);
 
