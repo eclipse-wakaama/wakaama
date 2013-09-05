@@ -79,10 +79,13 @@ Contains code snippets which are:
 #include <errno.h>
 #include <signal.h>
 
+#include "commandline.h"
+
 #define MAX_PACKET_SIZE 128
 #define SERVER_PORT "5684"
 
 static int g_quit = 0;
+
 
 static void prv_output_buffer(uint8_t * buffer,
                               int length)
@@ -121,12 +124,20 @@ static void prv_output_buffer(uint8_t * buffer,
     }
 }
 
-static void prv_output_clients(lwm2m_context_t * lwm2mH)
+static void prv_output_clients(char * buffer,
+                               void * user_data)
 {
+    lwm2m_context_t * lwm2mH = (lwm2m_context_t *) user_data;
     lwm2m_client_t * targetP;
     lwm2m_client_object_t * objectP;
 
     targetP = lwm2mH->clientList;
+
+    if (targetP == NULL)
+    {
+        fprintf(stdout, "No client.\r\n");
+        return;
+    }
 
     for (targetP = lwm2mH->clientList ; targetP != NULL ; targetP = targetP->next)
     {
@@ -155,9 +166,15 @@ static void prv_output_clients(lwm2m_context_t * lwm2mH)
     }
 }
 
-void handle_sigint(int signum)
+static void prv_quit(char * buffer,
+                     void * user_data)
 {
     g_quit = 1;
+}
+
+void handle_sigint(int signum)
+{
+    prv_quit(NULL, NULL);
 }
 
 void print_usage(void)
@@ -205,6 +222,13 @@ int main(int argc, char *argv[])
     struct timeval tv;
     int result;
     lwm2m_context_t * lwm2mH = NULL;
+    int i;
+    command_desc_t commands[] =
+    {
+            {"list", "List registered clients.", NULL, prv_output_clients, NULL},
+            {"quit", "Quit the server.", NULL, prv_quit, NULL},
+            COMMAND_END_LIST
+    };
 
     socket = get_socket();
     if (socket < 0)
@@ -222,10 +246,17 @@ int main(int argc, char *argv[])
 
     signal(SIGINT, handle_sigint);
 
+    for (i = 0 ; commands[i].name != NULL ; i++)
+    {
+        commands[i].userData = (void *)lwm2mH;
+    }
+    fprintf(stdout, "> "); fflush(stdout);
+
     while (0 == g_quit)
     {
         FD_ZERO(&readfds);
         FD_SET(socket, &readfds);
+        FD_SET(STDIN_FILENO, &readfds);
 
         tv.tv_usec = 0;
         tv.tv_sec = 10;
@@ -241,12 +272,13 @@ int main(int argc, char *argv[])
         }
         else if (result > 0)
         {
+            uint8_t buffer[MAX_PACKET_SIZE];
+            int numBytes;
+
             if (FD_ISSET(socket, &readfds))
             {
                 struct sockaddr_storage addr;
                 socklen_t addrLen;
-                uint8_t buffer[MAX_PACKET_SIZE];
-                int numBytes;
 
                 addrLen = sizeof(addr);
                 numBytes = recvfrom(socket, buffer, MAX_PACKET_SIZE, 0, (struct sockaddr *)&addr, &addrLen);
@@ -262,7 +294,7 @@ int main(int argc, char *argv[])
                     static coap_packet_t message[1];
 
 
-                    fprintf(stdout, "%d bytes received from [%s]:%hu\r\n",
+                    fprintf(stderr, "%d bytes received from [%s]:%hu\r\n",
                             numBytes,
                             inet_ntop(addr.ss_family,
                                       &(((struct sockaddr_in6*)&addr)->sin6_addr),
@@ -274,8 +306,25 @@ int main(int argc, char *argv[])
                     lwm2m_handle_packet(lwm2mH, buffer, numBytes, (struct sockaddr *)&addr, addrLen);
                 }
             }
+            else if (FD_ISSET(STDIN_FILENO, &readfds))
+            {
+                numBytes = read(STDIN_FILENO, buffer, MAX_PACKET_SIZE);
+
+                if (numBytes > 1)
+                {
+                    handle_command(commands, buffer);
+                }
+                if (g_quit == 0)
+                {
+                    fprintf(stdout, "\r\n> ");
+                    fflush(stdout);
+                }
+                else
+                {
+                    fprintf(stdout, "\r\n");
+                }
+            }
         }
-        prv_output_clients(lwm2mH);
     }
 
     lwm2m_close(lwm2mH);
