@@ -52,7 +52,7 @@ static lwm2m_object_t * prv_find_object(lwm2m_context_t * contextP,
 }
 
 coap_status_t object_read(lwm2m_context_t * contextP,
-                          lwm2m_uri_t * uriP,
+                          intern_uri_t * uriP,
                           char ** bufferP,
                           int * lengthP)
 {
@@ -76,7 +76,7 @@ coap_status_t object_read(lwm2m_context_t * contextP,
 
 
 coap_status_t object_write(lwm2m_context_t * contextP,
-                           lwm2m_uri_t * uriP,
+                           intern_uri_t * uriP,
                            char * buffer,
                            int length)
 {
@@ -104,7 +104,7 @@ coap_status_t object_write(lwm2m_context_t * contextP,
 }
 
 coap_status_t object_create_execute(lwm2m_context_t * contextP,
-                                    lwm2m_uri_t * uriP,
+                                    intern_uri_t * uriP,
                                     char * buffer,
                                     int length)
 {
@@ -152,7 +152,7 @@ coap_status_t object_create_execute(lwm2m_context_t * contextP,
 }
 
 coap_status_t object_delete(lwm2m_context_t * contextP,
-                            lwm2m_uri_t * uriP)
+                            intern_uri_t * uriP)
 {
     lwm2m_object_t * targetP;
 

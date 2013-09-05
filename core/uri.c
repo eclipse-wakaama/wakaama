@@ -65,17 +65,17 @@ int prv_get_number(const char * uriString,
 }
 
 
-lwm2m_uri_t * lwm2m_decode_uri(multi_option_t *uriPath)
+intern_uri_t * lwm2m_decode_uri(multi_option_t *uriPath)
 {
-    lwm2m_uri_t * uriP;
+    intern_uri_t * uriP;
     int readNum;
 
     if (NULL == uriPath) return NULL;
 
-    uriP = (lwm2m_uri_t *)malloc(sizeof(lwm2m_uri_t));
+    uriP = (intern_uri_t *)malloc(sizeof(intern_uri_t));
     if (NULL == uriP) return NULL;
 
-    memset(uriP, 0, sizeof(lwm2m_uri_t));
+    memset(uriP, 0, sizeof(intern_uri_t));
 
     // Read object ID
     if (URI_REGISTRATION_SEGMENT_LEN == uriPath->len

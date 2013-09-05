@@ -31,7 +31,7 @@ David Navarro <david.navarro@intel.com>
 #include "internals.h"
 
 coap_status_t handle_dm_request(lwm2m_context_t * contextP,
-                                lwm2m_uri_t * uriP,
+                                intern_uri_t * uriP,
                                 struct sockaddr * fromAddr,
                                 socklen_t fromAddrLen,
                                 coap_packet_t * message,

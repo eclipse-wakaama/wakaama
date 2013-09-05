@@ -63,17 +63,17 @@ typedef struct
     uint16_t    id;
     uint16_t    instanceId;
     uint16_t    resourceId;
-} lwm2m_uri_t;
+} intern_uri_t;
 
 // defined in uri.c
 int prv_get_number(const char * uriString, size_t uriLength);
-lwm2m_uri_t * lwm2m_decode_uri(multi_option_t *uriPath);
+intern_uri_t * lwm2m_decode_uri(multi_option_t *uriPath);
 
 // defined in objects.c
-coap_status_t object_read(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, char ** bufferP, int * lengthP);
-coap_status_t object_write(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, char * buffer, int length);
-coap_status_t object_create_execute(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, char * buffer, int length);
-coap_status_t object_delete(lwm2m_context_t * contextP, lwm2m_uri_t * uriP);
+coap_status_t object_read(lwm2m_context_t * contextP, intern_uri_t * uriP, char ** bufferP, int * lengthP);
+coap_status_t object_write(lwm2m_context_t * contextP, intern_uri_t * uriP, char * buffer, int length);
+coap_status_t object_create_execute(lwm2m_context_t * contextP, intern_uri_t * uriP, char * buffer, int length);
+coap_status_t object_delete(lwm2m_context_t * contextP, intern_uri_t * uriP);
 int prv_getRegisterPayload(lwm2m_context_t * contextP, char * buffer, size_t length);
 
 // defined in transaction.c
@@ -81,11 +81,11 @@ lwm2m_transaction_t * transaction_new(uint16_t mID, lwm2m_endpoint_type_t peerTy
 int transaction_send(lwm2m_context_t * contextP, lwm2m_transaction_t * transacP);
 
 // defined in management.c
-coap_status_t handle_dm_request(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, struct sockaddr * fromAddr, socklen_t fromAddrLen, coap_packet_t * message, coap_packet_t * response);
+coap_status_t handle_dm_request(lwm2m_context_t * contextP, intern_uri_t * uriP, struct sockaddr * fromAddr, socklen_t fromAddrLen, coap_packet_t * message, coap_packet_t * response);
 
 // defined in registration.c
 void handle_registration_reply(lwm2m_context_t * contextP, lwm2m_transaction_t * transacP, coap_packet_t * message);
-coap_status_t handle_registration_request(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, struct sockaddr * fromAddr, socklen_t fromAddrLen, coap_packet_t * message, coap_packet_t * response);
+coap_status_t handle_registration_request(lwm2m_context_t * contextP, intern_uri_t * uriP, struct sockaddr * fromAddr, socklen_t fromAddrLen, coap_packet_t * message, coap_packet_t * response);
 void registration_deregister(lwm2m_context_t * contextP, lwm2m_server_t * serverP);
 
 // defined in packet.c
