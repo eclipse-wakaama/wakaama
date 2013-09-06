@@ -53,8 +53,6 @@ David Navarro <david.navarro@intel.com>
 #define COAP_500_INTERNAL_SERVER_ERROR  (uint8_t)0xA0
 #define COAP_501_NOT_IMPLEMENTED        (uint8_t)0xA1
 
-#define LWM2M_MAX_PACKET_SIZE 198
-
 
 /*
  * Utility functions for sorted linked list
@@ -279,8 +277,9 @@ typedef struct _lwm2m_transaction_
     void *                peerP;
     uint8_t  retrans_counter;
     time_t   retrans_time;
-    uint16_t packet_len;
-    uint8_t  packet[LWM2M_MAX_PACKET_SIZE];
+    void * message;
+    uint16_t buffer_len;
+    uint8_t * buffer;
 } lwm2m_transaction_t;
 
 /*

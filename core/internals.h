@@ -39,6 +39,7 @@ David Navarro <david.navarro@intel.com>
 
 #include "externals/er-coap-13/er-coap-13.h"
 
+#define LWM2M_MAX_PACKET_SIZE 198
 
 #define URI_REGISTRATION_SEGMENT        "rd"
 #define URI_REGISTRATION_SEGMENT_LEN    2
@@ -77,7 +78,7 @@ coap_status_t object_delete(lwm2m_context_t * contextP, intern_uri_t * uriP);
 int prv_getRegisterPayload(lwm2m_context_t * contextP, char * buffer, size_t length);
 
 // defined in transaction.c
-lwm2m_transaction_t * transaction_new(uint16_t mID, lwm2m_endpoint_type_t peerType, void * peerP);
+lwm2m_transaction_t * transaction_new(coap_method_t method, uint16_t mID, lwm2m_endpoint_type_t peerType, void * peerP);
 int transaction_send(lwm2m_context_t * contextP, lwm2m_transaction_t * transacP);
 
 // defined in management.c

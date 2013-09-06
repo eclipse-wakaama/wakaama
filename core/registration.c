@@ -232,25 +232,20 @@ int lwm2m_register(lwm2m_context_t * contextP)
     targetP = contextP->serverList;
     while (targetP != NULL)
     {
-        coap_packet_t message[1];
         lwm2m_transaction_t * transaction;
 
-        coap_init_message(message, COAP_TYPE_CON, COAP_POST, contextP->nextMID++);
-        coap_set_header_uri_path(message, "/"URI_REGISTRATION_SEGMENT);
-        coap_set_header_uri_query(message, query);
-        coap_set_payload(message, payload, payload_length);
+        transaction = transaction_new(COAP_POST, contextP->nextMID++, ENDPOINT_SERVER, (void *)targetP);
+        if (transaction == NULL) return INTERNAL_SERVER_ERROR_5_00;
 
-        transaction = transaction_new(message->mid, ENDPOINT_SERVER, (void *)targetP);
-        if (transaction != NULL)
+        coap_set_header_uri_path(transaction->message, "/"URI_REGISTRATION_SEGMENT);
+        coap_set_header_uri_query(transaction->message, query);
+        coap_set_payload(transaction->message, payload, payload_length);
+
+        contextP->transactionList = (lwm2m_transaction_t *)LWM2M_LIST_ADD(contextP->transactionList, transaction);
+        if (transaction_send(contextP, transaction))
         {
-            transaction->packet_len = coap_serialize_message(message, transaction->packet);
-            if (transaction->packet_len > 0)
-            {
-                contextP->transactionList = (lwm2m_transaction_t *)LWM2M_LIST_ADD(contextP->transactionList, transaction);
-                (void)transaction_send(contextP, transaction);
-                targetP->status = STATE_REG_PENDING;
-                targetP->mid = transaction->mID;
-            }
+            targetP->status = STATE_REG_PENDING;
+            targetP->mid = transaction->mID;
         }
 
         targetP = targetP->next;

@@ -75,7 +75,8 @@ Contains code snippets which are:
 #define COAP_RESPONSE_TIMEOUT_BACKOFF_MASK  ((CLOCK_SECOND * COAP_RESPONSE_TIMEOUT * (COAP_RESPONSE_RANDOM_FACTOR - 1)) + 1.5)
 
 
-lwm2m_transaction_t * transaction_new(uint16_t mID,
+lwm2m_transaction_t * transaction_new(coap_method_t method,
+                                      uint16_t mID,
                                       lwm2m_endpoint_type_t peerType,
                                       void * peerP)
 {
@@ -83,13 +84,20 @@ lwm2m_transaction_t * transaction_new(uint16_t mID,
 
     transacP = (lwm2m_transaction_t *)malloc(sizeof(lwm2m_transaction_t));
 
-    if (NULL != transacP)
+    if (transacP == NULL) return NULL;
+    memset(transacP, 0, sizeof(lwm2m_transaction_t));
+
+    transacP->message = malloc(sizeof(coap_packet_t));
+    if (transacP->message == NULL)
     {
-        memset(transacP, 0, sizeof(lwm2m_transaction_t));
-        transacP->mID = mID;
-        transacP->peerType = peerType;
-        transacP->peerP = peerP;
+        free(transacP);
+        return NULL;
     }
+    coap_init_message(transacP->message, COAP_TYPE_CON, method, mID);
+
+    transacP->mID = mID;
+    transacP->peerType = peerType;
+    transacP->peerP = peerP;
 
     return transacP;
 }
@@ -122,16 +130,34 @@ void transaction_remove(lwm2m_context_t * contextP,
 int transaction_send(lwm2m_context_t * contextP,
                      lwm2m_transaction_t * transacP)
 {
+    if (transacP->buffer == NULL)
+    {
+        uint8_t tempBuffer[LWM2M_MAX_PACKET_SIZE];
+        int length;
+
+        length = coap_serialize_message(transacP->message, tempBuffer);
+        if (length <= 0) return COAP_500_INTERNAL_SERVER_ERROR;
+
+        transacP->buffer = (uint8_t*)malloc(length);
+        if (transacP->buffer == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
+
+        memcpy(transacP->buffer, tempBuffer, length);
+        transacP->buffer_len = length;
+    }
+
     switch(transacP->peerType)
     {
     case ENDPOINT_CLIENT:
-        // not implemented yet
+        fprintf(stderr, "Sending %d bytes\r\n", transacP->buffer_len);
+        buffer_send(contextP->socket,
+                    transacP->buffer, transacP->buffer_len,
+                    ((lwm2m_client_t*)transacP->peerP)->addr, ((lwm2m_client_t*)transacP->peerP)->addrLen);
         break;
 
     case ENDPOINT_SERVER:
-        fprintf(stdout, "Sending %d bytes\r\n", transacP->packet_len);
+        fprintf(stderr, "Sending %d bytes\r\n", transacP->buffer_len);
         buffer_send(contextP->socket,
-                    transacP->packet, transacP->packet_len,
+                    transacP->buffer, transacP->buffer_len,
                     ((lwm2m_server_t*)transacP->peerP)->addr, ((lwm2m_server_t*)transacP->peerP)->addrLen);
         break;
 
