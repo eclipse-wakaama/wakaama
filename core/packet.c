@@ -103,10 +103,11 @@ static void handle_response(lwm2m_context_t * contextP,
                             socklen_t fromAddrLen,
                             coap_packet_t * message)
 {
+    //TODO: rewrite this using transaction callback
     switch (transacP->peerType)
     {
     case ENDPOINT_CLIENT:
-        // not implemented yet
+        transacP->callback(transacP, message);
         break;
 
     case ENDPOINT_SERVER:
@@ -291,6 +292,7 @@ int lwm2m_handle_packet(lwm2m_context_t * contextP,
             if (NULL != transaction)
             {
                 handle_response(contextP, transaction, fromAddr, fromAddrLen, message);
+                transaction_free(transaction);
             }
         } /* Request or Response */
     } /* if (parsed correctly) */

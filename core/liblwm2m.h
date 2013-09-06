@@ -52,6 +52,7 @@ David Navarro <david.navarro@intel.com>
 #define COAP_406_NOT_ACCEPTABLE         (uint8_t)0x86
 #define COAP_500_INTERNAL_SERVER_ERROR  (uint8_t)0xA0
 #define COAP_501_NOT_IMPLEMENTED        (uint8_t)0xA1
+#define COAP_503_SERVICE_UNAVAILABLE    (uint8_t)0xA3
 
 
 /*
@@ -255,6 +256,8 @@ typedef struct _lwm2m_client_
     lwm2m_client_object_t * objectList;
 } lwm2m_client_t;
 
+typedef void (*lwm2m_result_callback_t) (uint16_t clientID, lwm2m_uri_t * uriP, int status, uint8_t * data, int dataLength, void * userData);
+
 /*
  * LWM2M transaction
  *
@@ -269,10 +272,14 @@ typedef enum
     ENDPOINT_BOOTSTRAP
 } lwm2m_endpoint_type_t;
 
-typedef struct _lwm2m_transaction_
+typedef struct _lwm2m_transaction_ lwm2m_transaction_t;
+
+typedef void (*lwm2m_transaction_callback_t) (lwm2m_transaction_t * transacP, void * message);
+
+struct _lwm2m_transaction_
 {
-    struct _lwm2m_transaction_ * next;  // matches lwm2m_list_t::next
-    uint16_t    mID;                    // matches lwm2m_list_t::id
+    lwm2m_transaction_t * next;  // matches lwm2m_list_t::next
+    uint16_t              mID;   // matches lwm2m_list_t::id
     lwm2m_endpoint_type_t peerType;
     void *                peerP;
     uint8_t  retrans_counter;
@@ -280,7 +287,9 @@ typedef struct _lwm2m_transaction_
     void * message;
     uint16_t buffer_len;
     uint8_t * buffer;
-} lwm2m_transaction_t;
+    lwm2m_transaction_callback_t callback;
+    void * userData;
+};
 
 /*
  * LWM2M Context
@@ -310,6 +319,9 @@ int lwm2m_register(lwm2m_context_t * contextP);
 
 // perform any required pending operation and return the maximal time interval to wait
 int lwm2m_step(lwm2m_context_t * contextP, struct timeval * timeoutP);
+
+// Device Management APIs
+int lwm2m_dm_read(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, lwm2m_result_callback_t callback, void * userData);
 
 int lwm2m_handle_packet(lwm2m_context_t * contextP, uint8_t * buffer, int length, struct sockaddr * fromAddr, socklen_t fromAddrLen);
 

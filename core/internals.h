@@ -33,6 +33,9 @@ David Navarro <david.navarro@intel.com>
 
 #include "liblwm2m.h"
 
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
@@ -66,6 +69,13 @@ typedef struct
     uint16_t    resourceId;
 } intern_uri_t;
 
+typedef struct
+{
+    lwm2m_uri_t uri;
+    lwm2m_result_callback_t callback;
+    void * userData;
+} dm_data_t;
+
 // defined in uri.c
 int prv_get_number(const char * uriString, size_t uriLength);
 intern_uri_t * lwm2m_decode_uri(multi_option_t *uriPath);
@@ -80,6 +90,7 @@ int prv_getRegisterPayload(lwm2m_context_t * contextP, char * buffer, size_t len
 // defined in transaction.c
 lwm2m_transaction_t * transaction_new(coap_method_t method, uint16_t mID, lwm2m_endpoint_type_t peerType, void * peerP);
 int transaction_send(lwm2m_context_t * contextP, lwm2m_transaction_t * transacP);
+void transaction_free(lwm2m_transaction_t * transacP);
 
 // defined in management.c
 coap_status_t handle_dm_request(lwm2m_context_t * contextP, intern_uri_t * uriP, struct sockaddr * fromAddr, socklen_t fromAddrLen, coap_packet_t * message, coap_packet_t * response);

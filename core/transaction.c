@@ -62,9 +62,6 @@ Contains code snippets which are:
 
 
 #include "internals.h"
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
 
 
 /*
@@ -102,6 +99,13 @@ lwm2m_transaction_t * transaction_new(coap_method_t method,
     return transacP;
 }
 
+void transaction_free(lwm2m_transaction_t * transacP)
+{
+    if (transacP->message) free(transacP->message);
+    if (transacP->buffer) free(transacP->buffer);
+    free(transacP);
+}
+
 void transaction_remove(lwm2m_context_t * contextP,
                         lwm2m_transaction_t * transacP)
 {
@@ -124,7 +128,7 @@ void transaction_remove(lwm2m_context_t * contextP,
             }
         }
     }
-    free(transacP);
+    transaction_free(transacP);
 }
 
 int transaction_send(lwm2m_context_t * contextP,
@@ -192,6 +196,10 @@ int transaction_send(lwm2m_context_t * contextP,
     }
     else
     {
+        if (transacP->callback)
+        {
+            transacP->callback(transacP, NULL);
+        }
         transaction_remove(contextP, transacP);
         return -1;
     }
