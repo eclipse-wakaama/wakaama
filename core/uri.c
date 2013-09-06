@@ -33,16 +33,17 @@ David Navarro <david.navarro@intel.com>
 #include <string.h>
 
 
-int prv_get_number(const char * uriString,
-                   size_t uriLength)
+static int prv_parse_number(const char * uriString,
+                            size_t uriLength,
+                            int * headP)
 {
     int result = 0;
     int mul = 0;
     int i = 0;
 
-    while (i < uriLength)
+    while (*headP < uriLength && uriString[*headP] != '/')
     {
-        if ('0' <= uriString[i] && uriString[i] <= '9')
+        if ('0' <= uriString[*headP] && uriString[*headP] <= '9')
         {
             if (0 == mul)
             {
@@ -52,16 +53,28 @@ int prv_get_number(const char * uriString,
             {
                 result *= mul;
             }
-            result += uriString[i] - '0';
+            result += uriString[*headP] - '0';
         }
         else
         {
             return -1;
         }
-        i++;
+        *headP += 1;
     }
 
+    if (uriString[*headP] == '/')
+        *headP += 1;
+
     return result;
+}
+
+
+int prv_get_number(const char * uriString,
+                   size_t uriLength)
+{
+    int index = 0;
+
+    return prv_parse_number(uriString, uriLength, &index);
 }
 
 
@@ -100,7 +113,7 @@ intern_uri_t * lwm2m_decode_uri(multi_option_t *uriPath)
     uriP->flag |= LWM2M_URI_FLAG_OBJECT_ID;
     uriPath = uriPath->next;
 
-    if (uriP->flag & LWM2M_URI_MASK_TYPE == LWM2M_URI_FLAG_REGISTRATION)
+    if ((uriP->flag & LWM2M_URI_MASK_TYPE) == LWM2M_URI_FLAG_REGISTRATION)
     {
         if (uriPath != NULL) goto error;
         return uriP;
@@ -137,3 +150,60 @@ error:
     free(uriP);
     return NULL;
 }
+
+int lwm2m_stringToUri(char * buffer,
+                      size_t buffer_len,
+                      lwm2m_uri_t * uriP)
+{
+    int head;
+    int readNum;
+
+    if (buffer == NULL || buffer_len == 0 || uriP == NULL) return 0;
+
+    // Skip any white space
+    head = 0;
+    while (head < buffer_len && isspace(buffer[head]))
+    {
+        head++;
+    }
+    if (head == buffer_len) return 0;
+
+    // Read object ID
+    readNum = prv_parse_number(buffer, buffer_len, &head);
+    if (readNum < 0 || readNum > LWM2M_URI_MAX_ID) return 0;
+    uriP->objectId = (uint16_t)readNum;
+    LWM2M_URI_UNSET_ID(uriP->instanceId);
+    LWM2M_URI_UNSET_ID(uriP->resourceId);
+
+    if (head >= buffer_len) return head;
+
+    // Read object instance
+    if (buffer[head] == '/')
+    {
+        // default instance
+        head++;
+    }
+    else
+    {
+        readNum = prv_parse_number(buffer, buffer_len, &head);
+        if (readNum < 0 || readNum >= LWM2M_URI_MAX_ID) return 0;
+        uriP->instanceId = (uint16_t)readNum;
+    }
+    if (head >= buffer_len) return head;
+
+    // Read ressource ID
+    if (buffer[head] == '/')
+    {
+        // no ID
+        head++;
+    }
+    else
+    {
+        readNum = prv_parse_number(buffer, buffer_len, &head);
+        if (readNum < 0 || readNum >= LWM2M_URI_MAX_ID) return 0;
+        uriP->resourceId = (uint16_t)readNum;
+    }
+
+    return head;
+}
+

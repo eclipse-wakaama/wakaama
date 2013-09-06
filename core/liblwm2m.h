@@ -140,9 +140,17 @@ int lwm2m_opaqueToInt(char * buffer, size_t buffer_len, int64_t * dataP);
 typedef struct
 {
     uint16_t    objectId;
-    uint32_t    instanceId;
-    uint32_t    resourceId;
+    int32_t    instanceId;
+    int32_t    resourceId;
 } lwm2m_uri_t;
+
+#define LWM2M_URI_UNSET_ID(id) id = -1
+#define LWM2M_URI_IS_ID_SET(id) (id >= 0 && id <= LWM2M_URI_MAX_ID)
+
+// Parse an uri in LWM2M format (/3, /3//2, /3/0/) and fill the lwm2m_uri_t.
+// Return the number of characters read from buffer or 0 in case of error.
+int lwm2m_stringToUri(char * buffer, size_t buffer_len, lwm2m_uri_t * uriP);
+
 
 /*
  * LWM2M Objects

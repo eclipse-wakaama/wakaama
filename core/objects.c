@@ -55,21 +55,21 @@ static void prv_intern_to_lwm2m_uri(intern_uri_t * from,
                                     lwm2m_uri_t * to)
 {
     to->objectId = from->id;
-    if (from->flag & LWM2M_URI_FLAG_INSTANCE_ID != 0)
+    if ((from->flag & LWM2M_URI_FLAG_INSTANCE_ID) != 0)
     {
         to->instanceId = from->instanceId;
     }
     else
     {
-        to->instanceId = LWM2M_URI_MAX_ID + 1;
+        LWM2M_URI_UNSET_ID(to->instanceId);
     }
-    if (from->flag & LWM2M_URI_FLAG_RESOURCE_ID != 0)
+    if ((from->flag & LWM2M_URI_FLAG_RESOURCE_ID) != 0)
     {
         to->resourceId = from->resourceId;
     }
     else
     {
-        to->resourceId = LWM2M_URI_MAX_ID + 1;
+        LWM2M_URI_UNSET_ID(to->resourceId);
     }
 }
 

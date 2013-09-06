@@ -105,7 +105,7 @@ static uint8_t prv_read(lwm2m_uri_t * uriP,
     *bufferP = NULL;
     *lengthP = 0;
 
-    if (uriP->instanceId > LWM2M_URI_MAX_ID)
+    if (!LWM2M_URI_IS_ID_SET(uriP->instanceId))
     {
         *bufferP = (uint8_t *)malloc(PRV_TLV_BUFFER_SIZE);
         if (NULL == *bufferP) return COAP_500_INTERNAL_SERVER_ERROR;
@@ -147,7 +147,7 @@ static uint8_t prv_read(lwm2m_uri_t * uriP,
         targetP = (prv_instance_t *)lwm2m_list_find(objectP->instanceList, uriP->instanceId);
         if (NULL == targetP) return COAP_404_NOT_FOUND;
 
-        if (uriP->resourceId > LWM2M_URI_MAX_ID)
+        if (!LWM2M_URI_IS_ID_SET(uriP->resourceId))
         {
             // TLV
             *bufferP = (uint8_t *)malloc(PRV_TLV_BUFFER_SIZE);
@@ -189,7 +189,7 @@ static uint8_t prv_write(lwm2m_uri_t * uriP,
     targetP = (prv_instance_t *)lwm2m_list_find(objectP->instanceList, uriP->instanceId);
     if (NULL == targetP) return COAP_404_NOT_FOUND;
 
-    if (uriP->resourceId > LWM2M_URI_MAX_ID) return COAP_501_NOT_IMPLEMENTED;
+    if (!LWM2M_URI_IS_ID_SET(uriP->instanceId)) return COAP_501_NOT_IMPLEMENTED;
 
     switch (uriP->resourceId)
     {
@@ -222,7 +222,7 @@ static uint8_t prv_create(lwm2m_uri_t * uriP,
     int result;
     int64_t value;
 
-    if (uriP->instanceId <= LWM2M_URI_MAX_ID)
+    if (LWM2M_URI_IS_ID_SET(uriP->instanceId))
     {
         targetP = (prv_instance_t *)lwm2m_list_find(objectP->instanceList, uriP->instanceId);
         if (targetP != NULL) return COAP_406_NOT_ACCEPTABLE;

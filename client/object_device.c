@@ -285,13 +285,13 @@ static uint8_t prv_device_read(lwm2m_uri_t * uriP,
     *lengthP = 0;
 
     // this is a single instance object
-    if (uriP->instanceId > 0 && uriP->instanceId <= LWM2M_URI_MAX_ID)
+    if (LWM2M_URI_IS_ID_SET(uriP->instanceId) && uriP->instanceId != 0)
     {
         return COAP_404_NOT_FOUND;
     }
 
     // is the server asking for the full object ?
-    if (uriP->resourceId > LWM2M_URI_MAX_ID)
+    if (!LWM2M_URI_IS_ID_SET(uriP->resourceId))
     {
         *lengthP = prv_get_object_tlv(bufferP, (device_data_t*)(objectP->userData));
         if (0 != *lengthP)
@@ -511,12 +511,12 @@ static uint8_t prv_device_write(lwm2m_uri_t * uriP,
                                 lwm2m_object_t * objectP)
 {
     // this is a single instance object
-    if (uriP->instanceId > 0 && uriP->instanceId <= LWM2M_URI_MAX_ID)
+    if (LWM2M_URI_IS_ID_SET(uriP->instanceId) && uriP->instanceId != 0)
     {
         return COAP_404_NOT_FOUND;
     }
 
-    if (uriP->resourceId > LWM2M_URI_MAX_ID) return COAP_501_NOT_IMPLEMENTED;
+    if (!LWM2M_URI_IS_ID_SET(uriP->resourceId)) return COAP_501_NOT_IMPLEMENTED;
 
     switch (uriP->resourceId)
     {
@@ -549,7 +549,7 @@ static uint8_t prv_device_execute(lwm2m_uri_t * uriP,
                                   lwm2m_object_t * objectP)
 {
     // this is a single instance object
-    if (uriP->instanceId > 0 && uriP->instanceId <= LWM2M_URI_MAX_ID)
+    if (LWM2M_URI_IS_ID_SET(uriP->instanceId) && uriP->instanceId != 0)
     {
         return COAP_404_NOT_FOUND;
     }
