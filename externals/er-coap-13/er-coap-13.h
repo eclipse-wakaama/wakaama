@@ -388,6 +388,7 @@ int coap_set_header_uri_host(void *packet, const char *host);
 
 int coap_get_header_uri_path(void *packet, const char **path); /* In-place string might not be 0-terminated. */
 int coap_set_header_uri_path(void *packet, const char *path);
+int coap_set_header_uri_path_segment(void *packet, const char *path);
 
 int coap_get_header_uri_query(void *packet, const char **query); /* In-place string might not be 0-terminated. */
 int coap_set_header_uri_query(void *packet, const char *query);

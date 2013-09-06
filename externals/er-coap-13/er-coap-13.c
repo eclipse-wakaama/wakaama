@@ -225,6 +225,7 @@ coap_serialize_multi_option(unsigned int number, unsigned int current_number, ui
   for (j = array; j != NULL; j= j->next)
   {
      i += coap_set_option_header(number - current_number, j->len, &buffer[i]);
+     current_number = number;
      memcpy(&buffer[i], j->data, j->len);
      i += j->len;
   } /* for */
@@ -1002,6 +1003,27 @@ coap_set_header_uri_path(void *packet, const char *path)
       path += i;
       length += i;
   } while (path[0] != 0);
+
+  SET_OPTION(coap_pkt, COAP_OPTION_URI_PATH);
+  return length;
+}
+
+int
+coap_set_header_uri_path_segment(void *packet, const char *segment)
+{
+  coap_packet_t *coap_pkt = (coap_packet_t *) packet;
+  int length;
+
+  if (segment == NULL || segment[0] == 0)
+  {
+      coap_add_multi_option(&(coap_pkt->uri_path), NULL, 0);
+      length = 0;
+  }
+  else
+  {
+      length = strlen(segment);
+      coap_add_multi_option(&(coap_pkt->uri_path), (uint8_t *)segment, length);
+  }
 
   SET_OPTION(coap_pkt, COAP_OPTION_URI_PATH);
   return length;
