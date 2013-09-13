@@ -82,8 +82,8 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
 #define ID_AS_STRING_MAX_LEN 8
 
 
-void dm_read_callback(lwm2m_transaction_t * transacP,
-                      void * message)
+void dm_result_callback(lwm2m_transaction_t * transacP,
+                        void * message)
 {
     dm_data_t * dataP = (dm_data_t *)transacP->userData;
 
@@ -165,7 +165,78 @@ int lwm2m_dm_read(lwm2m_context_t * contextP,
         dataP->callback = callback;
         dataP->userData = userData;
 
-        transaction->callback = dm_read_callback;
+        transaction->callback = dm_result_callback;
+        transaction->userData = (void *)dataP;
+    }
+
+    contextP->transactionList = (lwm2m_transaction_t *)LWM2M_LIST_ADD(contextP->transactionList, transaction);
+
+    return transaction_send(contextP, transaction);
+}
+
+int lwm2m_dm_write(lwm2m_context_t * contextP,
+                   uint16_t clientID,
+                   lwm2m_uri_t * uriP,
+                   char * buffer,
+                   int length,
+                   lwm2m_result_callback_t callback,
+                   void * userData)
+{
+    lwm2m_client_t * clientP;
+    char objStringID[ID_AS_STRING_MAX_LEN];
+    char instanceStringID[ID_AS_STRING_MAX_LEN];
+    char resourceStringID[ID_AS_STRING_MAX_LEN];
+    int result;
+    lwm2m_transaction_t * transaction;
+    dm_data_t * dataP;
+
+    clientP = (lwm2m_client_t *)lwm2m_list_find((lwm2m_list_t *)contextP->clientList, clientID);
+    if (clientP == NULL) return COAP_404_NOT_FOUND;
+
+    transaction = transaction_new(COAP_PUT, contextP->nextMID++, ENDPOINT_CLIENT, (void *)clientP);
+    if (transaction == NULL) return INTERNAL_SERVER_ERROR_5_00;
+
+    result = snprintf(objStringID, ID_AS_STRING_MAX_LEN, "%hu", uriP->objectId);
+    if (result < 0 || result > ID_AS_STRING_MAX_LEN) return COAP_500_INTERNAL_SERVER_ERROR;
+
+    coap_set_header_uri_path_segment(transaction->message, objStringID);
+
+    if (LWM2M_URI_IS_ID_SET(uriP->instanceId))
+    {
+        result = snprintf(instanceStringID, ID_AS_STRING_MAX_LEN, "%hu", uriP->instanceId);
+        if (result < 0 || result > ID_AS_STRING_MAX_LEN) return COAP_500_INTERNAL_SERVER_ERROR;
+        coap_set_header_uri_path_segment(transaction->message, instanceStringID);
+    }
+    else
+    {
+        if (LWM2M_URI_IS_ID_SET(uriP->resourceId))
+        {
+            coap_set_header_uri_path_segment(transaction->message, NULL);
+        }
+    }
+    if (LWM2M_URI_IS_ID_SET(uriP->resourceId))
+    {
+        result = snprintf(resourceStringID, ID_AS_STRING_MAX_LEN, "%hu", uriP->resourceId);
+        if (result < 0 || result > ID_AS_STRING_MAX_LEN) return COAP_500_INTERNAL_SERVER_ERROR;
+        coap_set_header_uri_path_segment(transaction->message, resourceStringID);
+    }
+
+    // TODO: Take care of fragmentation
+    coap_set_payload(transaction->message, buffer, length);
+
+    if (callback != NULL)
+    {
+        dataP = (dm_data_t *)malloc(sizeof(dataP));
+        if (dataP == NULL)
+        {
+            transaction_free(transaction);
+            return COAP_500_INTERNAL_SERVER_ERROR;
+        }
+        memcpy(&dataP->uri, uriP, sizeof(lwm2m_uri_t));
+        dataP->callback = callback;
+        dataP->userData = userData;
+
+        transaction->callback = dm_result_callback;
         transaction->userData = (void *)dataP;
     }
 

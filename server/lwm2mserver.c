@@ -204,7 +204,7 @@ static void prv_result_callback(uint16_t clientID,
                                 int dataLength,
                                 void * userData)
 {
-    fprintf(stdout, "\r\nRead from client #%d %d", clientID, uriP->objectId);
+    fprintf(stdout, "\r\nClient #%d %d", clientID, uriP->objectId);
     if (LWM2M_URI_IS_ID_SET(uriP->instanceId))
         fprintf(stdout, "/%d", uriP->instanceId);
     else if (LWM2M_URI_IS_ID_SET(uriP->resourceId))
@@ -238,6 +238,50 @@ static void prv_read_client(char * buffer,
     if (result == 0) goto syntax_error;
 
     result = lwm2m_dm_read(lwm2mH, clientId, &uri, prv_result_callback, NULL);
+
+    if (result == 0)
+    {
+        fprintf(stdout, "OK");
+    }
+    else
+    {
+        fprintf(stdout, "Error %d.%2d", (result&0xE0)>>5, result&0x1F);
+    }
+    return;
+
+syntax_error:
+    fprintf(stdout, "Syntax error !");
+}
+
+static void prv_write_client(char * buffer,
+                             void * user_data)
+{
+    lwm2m_context_t * lwm2mH = (lwm2m_context_t *) user_data;
+    uint16_t clientId;
+    lwm2m_uri_t uri;
+    char * uriString;
+    int i;
+    int result;
+
+    result = prv_read_id(buffer, &clientId);
+    if (result != 1) goto syntax_error;
+
+    buffer = prv_next_arg(buffer);
+    if (buffer[0] == 0) goto syntax_error;
+    uriString = buffer;
+
+    buffer = prv_next_arg(buffer);
+    if (buffer[0] == 0) goto syntax_error;
+
+    i = 0;
+    while (uriString + i < buffer && !isspace(uriString[i]))
+    {
+        i++;
+    }
+    result = lwm2m_stringToUri(uriString, i, &uri);
+    if (result == 0) goto syntax_error;
+
+    result = lwm2m_dm_write(lwm2mH, clientId, &uri, buffer, strlen(buffer), prv_result_callback, NULL);
 
     if (result == 0)
     {
@@ -317,6 +361,11 @@ int main(int argc, char *argv[])
                                             "   CLIENT#: client number as returned by command 'list'\r\n"
                                             "   URI: uri to read such as /3, /3//2, /3/0/2, /1024/11, /1024//1\r\n"
                                             "Result will be displayed asynchronously.", prv_read_client, NULL},
+            {"write", "Write to a client.", " write CLIENT# URI DATA\r\n"
+                                            "   CLIENT#: client number as returned by command 'list'\r\n"
+                                            "   URI: uri to write to such as /3, /3//2, /3/0/2, /1024/11, /1024//1\r\n"
+                                            "   DATA: data to write\r\n"
+                                            "Result will be displayed asynchronously.", prv_write_client, NULL},
             {"quit", "Quit the server.", NULL, prv_quit, NULL},
 
             COMMAND_END_LIST
