@@ -73,11 +73,13 @@ Contains code snippets which are:
 
 
 lwm2m_transaction_t * transaction_new(coap_method_t method,
+                                      lwm2m_uri_t * uriP,
                                       uint16_t mID,
                                       lwm2m_endpoint_type_t peerType,
                                       void * peerP)
 {
     lwm2m_transaction_t * transacP;
+    int result;
 
     transacP = (lwm2m_transaction_t *)malloc(sizeof(lwm2m_transaction_t));
 
@@ -85,18 +87,47 @@ lwm2m_transaction_t * transaction_new(coap_method_t method,
     memset(transacP, 0, sizeof(lwm2m_transaction_t));
 
     transacP->message = malloc(sizeof(coap_packet_t));
-    if (transacP->message == NULL)
-    {
-        free(transacP);
-        return NULL;
-    }
+    if (transacP->message == NULL) goto error;
+
     coap_init_message(transacP->message, COAP_TYPE_CON, method, mID);
 
     transacP->mID = mID;
     transacP->peerType = peerType;
     transacP->peerP = peerP;
 
+    if (uriP != NULL)
+    {
+        result = snprintf(transacP->objStringID, LWM2M_STRING_ID_MAX_LEN, "%hu", uriP->objectId);
+        if (result < 0 || result > LWM2M_STRING_ID_MAX_LEN) goto error;
+
+        coap_set_header_uri_path_segment(transacP->message, transacP->objStringID);
+
+        if (LWM2M_URI_IS_ID_SET(uriP->instanceId))
+        {
+            result = snprintf(transacP->instanceStringID, LWM2M_STRING_ID_MAX_LEN, "%hu", uriP->instanceId);
+            if (result < 0 || result > LWM2M_STRING_ID_MAX_LEN) goto error;
+            coap_set_header_uri_path_segment(transacP->message, transacP->instanceStringID);
+        }
+        else
+        {
+            if (LWM2M_URI_IS_ID_SET(uriP->resourceId))
+            {
+                coap_set_header_uri_path_segment(transacP->message, NULL);
+            }
+        }
+        if (LWM2M_URI_IS_ID_SET(uriP->resourceId))
+        {
+            result = snprintf(transacP->resourceStringID, LWM2M_STRING_ID_MAX_LEN, "%hu", uriP->resourceId);
+            if (result < 0 || result > LWM2M_STRING_ID_MAX_LEN) goto error;
+            coap_set_header_uri_path_segment(transacP->message, transacP->resourceStringID);
+        }
+    }
+
     return transacP;
+
+error:
+    free(transacP);
+    return NULL;
 }
 
 void transaction_free(lwm2m_transaction_t * transacP)

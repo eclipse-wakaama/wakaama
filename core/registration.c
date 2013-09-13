@@ -234,7 +234,7 @@ int lwm2m_register(lwm2m_context_t * contextP)
     {
         lwm2m_transaction_t * transaction;
 
-        transaction = transaction_new(COAP_POST, contextP->nextMID++, ENDPOINT_SERVER, (void *)targetP);
+        transaction = transaction_new(COAP_POST, NULL, contextP->nextMID++, ENDPOINT_SERVER, (void *)targetP);
         if (transaction == NULL) return INTERNAL_SERVER_ERROR_5_00;
 
         coap_set_header_uri_path(transaction->message, "/"URI_REGISTRATION_SEGMENT);

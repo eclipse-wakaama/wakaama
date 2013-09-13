@@ -146,6 +146,8 @@ typedef struct
 #define LWM2M_URI_UNSET_ID(id) id = -1
 #define LWM2M_URI_IS_ID_SET(id) (id >= 0 && id <= LWM2M_URI_MAX_ID)
 
+#define LWM2M_STRING_ID_MAX_LEN 6
+
 // Parse an uri in LWM2M format (/3, /3//2, /3/0/) and fill the lwm2m_uri_t.
 // Return the number of characters read from buffer or 0 in case of error.
 int lwm2m_stringToUri(char * buffer, size_t buffer_len, lwm2m_uri_t * uriP);
@@ -284,6 +286,9 @@ struct _lwm2m_transaction_
     void *                peerP;
     uint8_t  retrans_counter;
     time_t   retrans_time;
+    char objStringID[LWM2M_STRING_ID_MAX_LEN];
+    char instanceStringID[LWM2M_STRING_ID_MAX_LEN];
+    char resourceStringID[LWM2M_STRING_ID_MAX_LEN];
     void * message;
     uint16_t buffer_len;
     uint8_t * buffer;
