@@ -115,10 +115,6 @@ int lwm2m_dm_read(lwm2m_context_t * contextP,
                   void * userData)
 {
     lwm2m_client_t * clientP;
-    char objStringID[ID_AS_STRING_MAX_LEN];
-    char instanceStringID[ID_AS_STRING_MAX_LEN];
-    char resourceStringID[ID_AS_STRING_MAX_LEN];
-    int result;
     lwm2m_transaction_t * transaction;
     dm_data_t * dataP;
 
@@ -158,10 +154,6 @@ int lwm2m_dm_write(lwm2m_context_t * contextP,
                    void * userData)
 {
     lwm2m_client_t * clientP;
-    char objStringID[ID_AS_STRING_MAX_LEN];
-    char instanceStringID[ID_AS_STRING_MAX_LEN];
-    char resourceStringID[ID_AS_STRING_MAX_LEN];
-    int result;
     lwm2m_transaction_t * transaction;
     dm_data_t * dataP;
 
@@ -202,10 +194,6 @@ int lwm2m_dm_execute(lwm2m_context_t * contextP,
                      void * userData)
 {
     lwm2m_client_t * clientP;
-    char objStringID[ID_AS_STRING_MAX_LEN];
-    char instanceStringID[ID_AS_STRING_MAX_LEN];
-    char resourceStringID[ID_AS_STRING_MAX_LEN];
-    int result;
     lwm2m_transaction_t * transaction;
     dm_data_t * dataP;
 
