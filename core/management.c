@@ -108,14 +108,14 @@ static void dm_result_callback(lwm2m_transaction_t * transacP,
     }
 }
 
-static int prv_create_operation(lwm2m_context_t * contextP,
-                                uint16_t clientID,
-                                lwm2m_uri_t * uriP,
-                                coap_method_t method,
-                                char * buffer,
-                                int length,
-                                lwm2m_result_callback_t callback,
-                                void * userData)
+static int prv_make_operation(lwm2m_context_t * contextP,
+                              uint16_t clientID,
+                              lwm2m_uri_t * uriP,
+                              coap_method_t method,
+                              char * buffer,
+                              int length,
+                              lwm2m_result_callback_t callback,
+                              void * userData)
 {
     lwm2m_client_t * clientP;
     lwm2m_transaction_t * transaction;
@@ -160,9 +160,9 @@ int lwm2m_dm_read(lwm2m_context_t * contextP,
                   lwm2m_result_callback_t callback,
                   void * userData)
 {
-    return prv_create_operation(contextP, clientID, uriP,
-                                COAP_GET, NULL, 0,
-                                callback, userData);
+    return prv_make_operation(contextP, clientID, uriP,
+                              COAP_GET, NULL, 0,
+                              callback, userData);
 }
 
 int lwm2m_dm_write(lwm2m_context_t * contextP,
@@ -179,9 +179,9 @@ int lwm2m_dm_write(lwm2m_context_t * contextP,
         return COAP_400_BAD_REQUEST;
     }
 
-    return prv_create_operation(contextP, clientID, uriP,
-                                COAP_PUT, buffer, length,
-                                callback, userData);
+    return prv_make_operation(contextP, clientID, uriP,
+                              COAP_PUT, buffer, length,
+                              callback, userData);
 }
 
 int lwm2m_dm_execute(lwm2m_context_t * contextP,
@@ -190,9 +190,15 @@ int lwm2m_dm_execute(lwm2m_context_t * contextP,
                      lwm2m_result_callback_t callback,
                      void * userData)
 {
-    return prv_create_operation(contextP, clientID, uriP,
-                                COAP_POST, NULL, 0,
-                                callback, userData);
+    if (!LWM2M_URI_IS_ID_SET(uriP->instanceId)
+     || !LWM2M_URI_IS_ID_SET(uriP->resourceId))
+    {
+        return COAP_400_BAD_REQUEST;
+    }
+
+    return prv_make_operation(contextP, clientID, uriP,
+                              COAP_POST, NULL, 0,
+                              callback, userData);
 }
 
 int lwm2m_dm_create(lwm2m_context_t * contextP,
@@ -203,19 +209,15 @@ int lwm2m_dm_create(lwm2m_context_t * contextP,
                     lwm2m_result_callback_t callback,
                     void * userData)
 {
-    lwm2m_client_t * clientP;
-    lwm2m_transaction_t * transaction;
-    dm_data_t * dataP;
-
     if (LWM2M_URI_IS_ID_SET(uriP->resourceId)
      || length == 0)
     {
         return COAP_400_BAD_REQUEST;
     }
 
-    return prv_create_operation(contextP, clientID, uriP,
-                                COAP_POST, buffer, length,
-                                callback, userData);
+    return prv_make_operation(contextP, clientID, uriP,
+                              COAP_POST, buffer, length,
+                              callback, userData);
 }
 
 int lwm2m_dm_delete(lwm2m_context_t * contextP,
@@ -224,7 +226,13 @@ int lwm2m_dm_delete(lwm2m_context_t * contextP,
                     lwm2m_result_callback_t callback,
                     void * userData)
 {
-    return prv_create_operation(contextP, clientID, uriP,
-                                COAP_DELETE, NULL, 0,
-                                callback, userData);
+    if (!LWM2M_URI_IS_ID_SET(uriP->instanceId)
+     || LWM2M_URI_IS_ID_SET(uriP->resourceId))
+    {
+        return COAP_400_BAD_REQUEST;
+    }
+
+    return prv_make_operation(contextP, clientID, uriP,
+                              COAP_DELETE, NULL, 0,
+                              callback, userData);
 }

@@ -144,7 +144,9 @@ coap_status_t object_create_execute(lwm2m_context_t * contextP,
 
     prv_intern_to_lwm2m_uri(uriP, &uri);
 
-    if (uriP->flag & LWM2M_URI_FLAG_RESOURCE_ID != 0)
+    if (uriP->flag & LWM2M_URI_FLAG_INSTANCE_ID != 0
+     && uriP->flag & LWM2M_URI_FLAG_RESOURCE_ID != 0
+     && length == 0)
     {
         // This is an execute
         if (length != 0 || buffer != 0)
@@ -157,9 +159,10 @@ coap_status_t object_create_execute(lwm2m_context_t * contextP,
             return METHOD_NOT_ALLOWED_4_05;
         }
 
-        return targetP->writeFunc(&uri, buffer, length, targetP);
+        return targetP->executeFunc(&uri, targetP);
     }
-    else
+    else if (uriP->flag & LWM2M_URI_FLAG_RESOURCE_ID == 0
+          && length != 0)
     {
         // This is a create
         if (length == 0 || buffer == 0)
@@ -173,6 +176,7 @@ coap_status_t object_create_execute(lwm2m_context_t * contextP,
 
         return targetP->createFunc(&uri, buffer, length, targetP);
     }
+    else return BAD_REQUEST_4_00;
 }
 
 coap_status_t object_delete(lwm2m_context_t * contextP,
@@ -180,7 +184,8 @@ coap_status_t object_delete(lwm2m_context_t * contextP,
 {
     lwm2m_object_t * targetP;
 
-    if (uriP->flag & LWM2M_URI_MASK_ID == LWM2M_URI_FLAG_OBJECT_ID)
+    if (uriP->flag & LWM2M_URI_FLAG_INSTANCE_ID == 0
+     || uriP->flag & LWM2M_URI_FLAG_RESOURCE_ID != 0)
     {
         return BAD_REQUEST_4_00;
     }

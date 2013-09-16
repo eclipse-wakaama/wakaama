@@ -39,6 +39,7 @@ David Navarro <david.navarro@intel.com>
  *              Supported    Multiple
  *  Name | ID | Operations | Instances | Mandatory |  Type   | Range | Units | Description |
  *  test |  1 |    R/W     |    No     |    Yes    | Integer | 0-255 |       |             |
+ *  exec |  2 |     E      |    No     |    Yes    |         |       |       |             |
  *
  */
 
@@ -272,6 +273,28 @@ static uint8_t prv_delete(uint16_t id,
     return COAP_202_DELETED;
 }
 
+static uint8_t prv_exec(lwm2m_uri_t * uriP,
+                        lwm2m_object_t * objectP)
+{
+    int64_t value;
+
+    if (NULL == lwm2m_list_find(objectP->instanceList, uriP->instanceId)) return COAP_404_NOT_FOUND;
+
+    switch (uriP->resourceId)
+    {
+    case 1:
+        return COAP_405_METHOD_NOT_ALLOWED;
+    case 2:
+        fprintf(stdout, "\r\n-----------------\r\n"
+                        "Execute on %hu/%d/%d\r\n"
+                        "-----------------\r\n\r\n",
+                        uriP->objectId, uriP->instanceId, uriP->resourceId);
+        return COAP_204_CHANGED;
+    default:
+        return COAP_404_NOT_FOUND;
+    }
+}
+
 lwm2m_object_t * get_test_object()
 {
     lwm2m_object_t * testObj;
@@ -299,6 +322,7 @@ lwm2m_object_t * get_test_object()
         testObj->writeFunc = prv_write;
         testObj->createFunc = prv_create;
         testObj->deleteFunc = prv_delete;
+        testObj->executeFunc = prv_exec;
     }
 
     return testObj;
