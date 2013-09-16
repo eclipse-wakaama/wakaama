@@ -242,7 +242,7 @@ int lwm2m_register(lwm2m_context_t * contextP)
         coap_set_payload(transaction->message, payload, payload_length);
 
         contextP->transactionList = (lwm2m_transaction_t *)LWM2M_LIST_ADD(contextP->transactionList, transaction);
-        if (transaction_send(contextP, transaction))
+        if (transaction_send(contextP, transaction) == 0)
         {
             targetP->status = STATE_REG_PENDING;
             targetP->mid = transaction->mID;
