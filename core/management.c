@@ -157,6 +157,12 @@ int lwm2m_dm_write(lwm2m_context_t * contextP,
     lwm2m_transaction_t * transaction;
     dm_data_t * dataP;
 
+    if (!LWM2M_URI_IS_ID_SET(uriP->instanceId)
+     || length == 0)
+    {
+        return COAP_400_BAD_REQUEST;
+    }
+
     clientP = (lwm2m_client_t *)lwm2m_list_find((lwm2m_list_t *)contextP->clientList, clientID);
     if (clientP == NULL) return COAP_404_NOT_FOUND;
 
@@ -197,7 +203,8 @@ int lwm2m_dm_execute(lwm2m_context_t * contextP,
     lwm2m_transaction_t * transaction;
     dm_data_t * dataP;
 
-    if (!LWM2M_URI_IS_ID_SET(uriP->instanceId) || ! LWM2M_URI_IS_ID_SET(uriP->resourceId))
+    if (!LWM2M_URI_IS_ID_SET(uriP->instanceId)
+     || !LWM2M_URI_IS_ID_SET(uriP->resourceId))
     {
         return COAP_400_BAD_REQUEST;
     }
@@ -206,6 +213,96 @@ int lwm2m_dm_execute(lwm2m_context_t * contextP,
     if (clientP == NULL) return COAP_404_NOT_FOUND;
 
     transaction = transaction_new(COAP_POST, uriP, contextP->nextMID++, ENDPOINT_CLIENT, (void *)clientP);
+    if (transaction == NULL) return INTERNAL_SERVER_ERROR_5_00;
+
+    if (callback != NULL)
+    {
+        dataP = (dm_data_t *)malloc(sizeof(dm_data_t));
+        if (dataP == NULL)
+        {
+            transaction_free(transaction);
+            return COAP_500_INTERNAL_SERVER_ERROR;
+        }
+        memcpy(&dataP->uri, uriP, sizeof(lwm2m_uri_t));
+        dataP->callback = callback;
+        dataP->userData = userData;
+
+        transaction->callback = dm_result_callback;
+        transaction->userData = (void *)dataP;
+    }
+
+    contextP->transactionList = (lwm2m_transaction_t *)LWM2M_LIST_ADD(contextP->transactionList, transaction);
+
+    return transaction_send(contextP, transaction);
+}
+
+int lwm2m_dm_create(lwm2m_context_t * contextP,
+                    uint16_t clientID,
+                    lwm2m_uri_t * uriP,
+                    char * buffer,
+                    int length,
+                    lwm2m_result_callback_t callback,
+                    void * userData)
+{
+    lwm2m_client_t * clientP;
+    lwm2m_transaction_t * transaction;
+    dm_data_t * dataP;
+
+    if (LWM2M_URI_IS_ID_SET(uriP->resourceId)
+     || length == 0)
+    {
+        return COAP_400_BAD_REQUEST;
+    }
+
+    clientP = (lwm2m_client_t *)lwm2m_list_find((lwm2m_list_t *)contextP->clientList, clientID);
+    if (clientP == NULL) return COAP_404_NOT_FOUND;
+
+    transaction = transaction_new(COAP_POST, uriP, contextP->nextMID++, ENDPOINT_CLIENT, (void *)clientP);
+    if (transaction == NULL) return INTERNAL_SERVER_ERROR_5_00;
+
+    // TODO: Take care of fragmentation
+    coap_set_payload(transaction->message, buffer, length);
+
+    if (callback != NULL)
+    {
+        dataP = (dm_data_t *)malloc(sizeof(dm_data_t));
+        if (dataP == NULL)
+        {
+            transaction_free(transaction);
+            return COAP_500_INTERNAL_SERVER_ERROR;
+        }
+        memcpy(&dataP->uri, uriP, sizeof(lwm2m_uri_t));
+        dataP->callback = callback;
+        dataP->userData = userData;
+
+        transaction->callback = dm_result_callback;
+        transaction->userData = (void *)dataP;
+    }
+
+    contextP->transactionList = (lwm2m_transaction_t *)LWM2M_LIST_ADD(contextP->transactionList, transaction);
+
+    return transaction_send(contextP, transaction);
+}
+
+int lwm2m_dm_delete(lwm2m_context_t * contextP,
+                    uint16_t clientID,
+                    lwm2m_uri_t * uriP,
+                    lwm2m_result_callback_t callback,
+                    void * userData)
+{
+    lwm2m_client_t * clientP;
+    lwm2m_transaction_t * transaction;
+    dm_data_t * dataP;
+
+    if (!LWM2M_URI_IS_ID_SET(uriP->instanceId) || LWM2M_URI_IS_ID_SET(uriP->resourceId))
+    {
+        return COAP_400_BAD_REQUEST;
+    }
+
+    clientP = (lwm2m_client_t *)lwm2m_list_find((lwm2m_list_t *)contextP->clientList, clientID);
+    if (clientP == NULL) return COAP_404_NOT_FOUND;
+
+    transaction = transaction_new(COAP_DELETE, uriP, contextP->nextMID++, ENDPOINT_CLIENT, (void *)clientP);
     if (transaction == NULL) return INTERNAL_SERVER_ERROR_5_00;
 
     if (callback != NULL)
