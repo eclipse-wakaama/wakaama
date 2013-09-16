@@ -218,6 +218,8 @@ static void prv_result_callback(uint16_t clientID,
         fprintf(stdout, "%d bytes received:\r\n", dataLength);
         prv_output_buffer(stdout, data, dataLength);
     }
+
+    fprintf(stdout, "\r\n> ");
 }
 
 static void prv_read_client(char * buffer,

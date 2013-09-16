@@ -103,22 +103,29 @@ static void handle_response(lwm2m_context_t * contextP,
                             socklen_t fromAddrLen,
                             coap_packet_t * message)
 {
-    //TODO: rewrite this using transaction callback
+    struct sockaddr * targetAddr;
+    socklen_t targetAddrLen;
+
     switch (transacP->peerType)
     {
     case ENDPOINT_CLIENT:
-        transacP->callback(transacP, message);
+        targetAddr = ((lwm2m_client_t *)transacP->peerP)->addr;
+        targetAddrLen = ((lwm2m_client_t *)transacP->peerP)->addrLen;
         break;
 
     case ENDPOINT_SERVER:
-        if (prv_check_addr(fromAddr, fromAddrLen, ((lwm2m_server_t *)transacP->peerP)->addr, ((lwm2m_server_t *)transacP->peerP)->addrLen))
-        {
-            handle_registration_reply(contextP, transacP, message);
-        }
+        targetAddr = ((lwm2m_server_t *)transacP->peerP)->addr;
+        targetAddrLen = ((lwm2m_server_t *)transacP->peerP)->addrLen;
         break;
 
     default:
         return;
+    }
+
+    if (prv_check_addr(fromAddr, fromAddrLen, targetAddr, targetAddrLen))
+    {
+        transacP->callback(transacP, message);
+        transaction_remove(contextP, transacP);
     }
 }
 
@@ -183,8 +190,8 @@ int lwm2m_handle_packet(lwm2m_context_t * contextP,
     coap_error_code = coap_parse_message(message, buffer, (uint16_t)length);
     if (coap_error_code==NO_ERROR)
     {
-        fprintf(stdout, "  Parsed: ver %u, type %u, tkl %u, code %u, mid %u\r\n", message->version, message->type, message->token_len, message->code, message->mid);
-        fprintf(stdout, "  Payload: %.*s\r\n\n", message->payload_len, message->payload);
+        fprintf(stderr, "  Parsed: ver %u, type %u, tkl %u, code %u, mid %u\r\n", message->version, message->type, message->token_len, message->code, message->mid);
+        fprintf(stderr, "  Payload: %.*s\r\n\n", message->payload_len, message->payload);
 
         if (message->code >= COAP_GET && message->code <= COAP_DELETE)
         {
@@ -288,11 +295,10 @@ int lwm2m_handle_packet(lwm2m_context_t * contextP,
  //               coap_remove_observer_by_mid(&UIP_IP_BUF->srcipaddr, UIP_UDP_BUF->srcport, message->mid);
             }
 
-            contextP->transactionList = (lwm2m_transaction_t *)LWM2M_LIST_RM(contextP->transactionList, message->mid, &transaction);
+            transaction = (lwm2m_transaction_t *)lwm2m_list_find((lwm2m_list_t *)contextP->transactionList, message->mid);
             if (NULL != transaction)
             {
                 handle_response(contextP, transaction, fromAddr, fromAddrLen, message);
-                transaction_free(transaction);
             }
         } /* Request or Response */
     } /* if (parsed correctly) */

@@ -214,6 +214,45 @@ static int prv_getLocationString(uint16_t id,
     return result;
 }
 
+static void prv_handleRegistrationReply(lwm2m_transaction_t * transacP,
+                                        void * message)
+{
+    lwm2m_context_t * contextP = (lwm2m_context_t *)transacP->userData;
+    lwm2m_server_t * targetP;
+    coap_packet_t * packet = (coap_packet_t *)message;
+
+    targetP = (lwm2m_server_t *)(transacP->peerP);
+
+    switch(targetP->status)
+    {
+    case STATE_REG_PENDING:
+     if (packet->mid == targetP->mid
+      && packet->type == COAP_TYPE_ACK
+      && packet->location_path_len != 0
+      && packet->location_path != NULL)
+     {
+        if (packet->code == CREATED_2_01)
+        {
+            targetP->status = STATE_REGISTERED;
+            targetP->location = (char *)malloc(packet->location_path_len + 1);
+            if (targetP->location != NULL)
+            {
+                memcpy(targetP->location, packet->location_path, packet->location_path_len);
+                targetP->location[packet->location_path_len] = 0;
+            }
+        }
+        else if (packet->code == BAD_REQUEST_4_00)
+        {
+            targetP->status = STATE_UNKNOWN;
+            targetP->mid = 0;
+        }
+     }
+     break;
+    default:
+        break;
+    }
+}
+
 int lwm2m_register(lwm2m_context_t * contextP)
 {
     char * query;
@@ -240,6 +279,9 @@ int lwm2m_register(lwm2m_context_t * contextP)
         coap_set_header_uri_path(transaction->message, "/"URI_REGISTRATION_SEGMENT);
         coap_set_header_uri_query(transaction->message, query);
         coap_set_payload(transaction->message, payload, payload_length);
+
+        transaction->callback = prv_handleRegistrationReply;
+        transaction->userData = (void *) contextP;
 
         contextP->transactionList = (lwm2m_transaction_t *)LWM2M_LIST_ADD(contextP->transactionList, transaction);
         if (transaction_send(contextP, transaction) == 0)
@@ -273,44 +315,6 @@ void registration_deregister(lwm2m_context_t * contextP,
     }
 
     serverP->status = STATE_UNKNOWN;
-}
-
-void handle_registration_reply(lwm2m_context_t * contextP,
-                               lwm2m_transaction_t * transacP,
-                               coap_packet_t * message)
-{
-    lwm2m_server_t * targetP;
-
-    targetP = (lwm2m_server_t *)(transacP->peerP);
-
-    switch(targetP->status)
-    {
-    case STATE_REG_PENDING:
-     if (message->mid == targetP->mid
-      && message->type == COAP_TYPE_ACK
-      && message->location_path_len != 0
-      && message->location_path != NULL)
-     {
-        if (message->code == CREATED_2_01)
-        {
-            targetP->status = STATE_REGISTERED;
-            targetP->location = (char *)malloc(message->location_path_len + 1);
-            if (targetP->location != NULL)
-            {
-                memcpy(targetP->location, message->location_path, message->location_path_len);
-                targetP->location[message->location_path_len] = 0;
-            }
-        }
-        else if (message->code == BAD_REQUEST_4_00)
-        {
-            targetP->status = STATE_UNKNOWN;
-            targetP->mid = 0;
-        }
-     }
-     break;
-    default:
-        break;
-    }
 }
 
 coap_status_t handle_registration_request(lwm2m_context_t * contextP,
