@@ -183,14 +183,14 @@ int transaction_send(lwm2m_context_t * contextP,
     switch(transacP->peerType)
     {
     case ENDPOINT_CLIENT:
-        fprintf(stderr, "Sending %d bytes\r\n", transacP->buffer_len);
+        LOG("Sending %d bytes\r\n", transacP->buffer_len);
         buffer_send(contextP->socket,
                     transacP->buffer, transacP->buffer_len,
                     ((lwm2m_client_t*)transacP->peerP)->addr, ((lwm2m_client_t*)transacP->peerP)->addrLen);
         break;
 
     case ENDPOINT_SERVER:
-        fprintf(stderr, "Sending %d bytes\r\n", transacP->buffer_len);
+        LOG("Sending %d bytes\r\n", transacP->buffer_len);
         buffer_send(contextP->socket,
                     transacP->buffer, transacP->buffer_len,
                     ((lwm2m_server_t*)transacP->peerP)->addr, ((lwm2m_server_t*)transacP->peerP)->addrLen);

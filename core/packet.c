@@ -190,8 +190,8 @@ int lwm2m_handle_packet(lwm2m_context_t * contextP,
     coap_error_code = coap_parse_message(message, buffer, (uint16_t)length);
     if (coap_error_code==NO_ERROR)
     {
-        fprintf(stderr, "  Parsed: ver %u, type %u, tkl %u, code %u, mid %u\r\n", message->version, message->type, message->token_len, message->code, message->mid);
-        fprintf(stderr, "  Payload: %.*s\r\n\n", message->payload_len, message->payload);
+        LOG("  Parsed: ver %u, type %u, tkl %u, code %u, mid %u\r\n", message->version, message->type, message->token_len, message->code, message->mid);
+        LOG("  Payload: %.*s\r\n\n", message->payload_len, message->payload);
 
         if (message->code >= COAP_GET && message->code <= COAP_DELETE)
         {
@@ -221,7 +221,7 @@ int lwm2m_handle_packet(lwm2m_context_t * contextP,
             /* get offset for blockwise transfers */
             if (coap_get_header_block2(message, &block_num, NULL, &block_size, &block_offset))
             {
-                fprintf(stdout, "Blockwise: block request %lu (%u/%u) @ %lu bytes\n", block_num, block_size, REST_MAX_CHUNK_SIZE, block_offset);
+                LOG("Blockwise: block request %lu (%u/%u) @ %lu bytes\n", block_num, block_size, REST_MAX_CHUNK_SIZE, block_offset);
                 block_size = MIN(block_size, REST_MAX_CHUNK_SIZE);
                 new_offset = block_offset;
             }
@@ -232,7 +232,7 @@ int lwm2m_handle_packet(lwm2m_context_t * contextP,
                 /* Apply blockwise transfers. */
                 if ( IS_OPTION(message, COAP_OPTION_BLOCK1) && response->code<BAD_REQUEST_4_00 && !IS_OPTION(response, COAP_OPTION_BLOCK1) )
                 {
-                    fprintf(stdout, "Block1 NOT IMPLEMENTED\n");
+                    LOG("Block1 NOT IMPLEMENTED\n");
 
                     coap_error_code = NOT_IMPLEMENTED_5_01;
                     coap_error_message = "NoBlock1Support";
@@ -242,10 +242,10 @@ int lwm2m_handle_packet(lwm2m_context_t * contextP,
                     /* unchanged new_offset indicates that resource is unaware of blockwise transfer */
                     if (new_offset==block_offset)
                     {
-                        fprintf(stdout, "Blockwise: unaware resource with payload length %u/%u\n", response->payload_len, block_size);
+                        LOG("Blockwise: unaware resource with payload length %u/%u\n", response->payload_len, block_size);
                         if (block_offset >= response->payload_len)
                         {
-                            fprintf(stdout, "handle_incoming_data(): block_offset >= response->payload_len\n");
+                            LOG("handle_incoming_data(): block_offset >= response->payload_len\n");
 
                             response->code = BAD_OPTION_4_02;
                             coap_set_payload(response, "BlockOutOfScope", 15); /* a const char str[] and sizeof(str) produces larger code size */
@@ -259,14 +259,14 @@ int lwm2m_handle_packet(lwm2m_context_t * contextP,
                     else
                     {
                         /* resource provides chunk-wise data */
-                        fprintf(stdout, "Blockwise: blockwise resource, new offset %ld\n", new_offset);
+                        LOG("Blockwise: blockwise resource, new offset %ld\n", new_offset);
                         coap_set_header_block2(response, block_num, new_offset!=-1 || response->payload_len > block_size, block_size);
                         if (response->payload_len > block_size) coap_set_payload(response, response->payload, block_size);
                     } /* if (resource aware of blockwise) */
                 }
                 else if (new_offset!=0)
                 {
-                    fprintf(stdout, "Blockwise: no block option for blockwise resource, using block size %u\n", REST_MAX_CHUNK_SIZE);
+                    LOG("Blockwise: no block option for blockwise resource, using block size %u\n", REST_MAX_CHUNK_SIZE);
 
                     coap_set_header_block2(response, 0, new_offset!=-1, REST_MAX_CHUNK_SIZE);
                     coap_set_payload(response, response->payload, MIN(response->payload_len, REST_MAX_CHUNK_SIZE));
@@ -286,11 +286,11 @@ int lwm2m_handle_packet(lwm2m_context_t * contextP,
 
             if (message->type==COAP_TYPE_ACK)
             {
-              fprintf(stdout, "Received ACK\n");
+                LOG("Received ACK\n");
             }
             else if (message->type==COAP_TYPE_RST)
             {
-                fprintf(stdout, "Received RST\n");
+                LOG("Received RST\n");
                 /* Cancel possible subscriptions. */
  //               coap_remove_observer_by_mid(&UIP_IP_BUF->srcipaddr, UIP_UDP_BUF->srcport, message->mid);
             }
@@ -304,12 +304,12 @@ int lwm2m_handle_packet(lwm2m_context_t * contextP,
     } /* if (parsed correctly) */
     else
     {
-        fprintf(stderr, "Message parsing failed %d\r\n", coap_error_code);
+        LOG("Message parsing failed %d\r\n", coap_error_code);
     }
 
     if (coap_error_code != NO_ERROR)
     {
-        fprintf(stdout, "ERROR %u: %s\n", coap_error_code, coap_error_message);
+        LOG("ERROR %u: %s\n", coap_error_code, coap_error_message);
 
         /* Set to sendable error code. */
         if (coap_error_code >= 192)

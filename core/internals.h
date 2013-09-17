@@ -42,6 +42,8 @@ David Navarro <david.navarro@intel.com>
 
 #include "externals/er-coap-13/er-coap-13.h"
 
+#define LOG(...) fprintf(stderr, __VA_ARGS__)
+
 #define LWM2M_MAX_PACKET_SIZE 198
 
 #define URI_REGISTRATION_SEGMENT        "rd"
