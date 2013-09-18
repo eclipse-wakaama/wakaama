@@ -226,28 +226,35 @@ static void prv_handleRegistrationReply(lwm2m_transaction_t * transacP,
     switch(targetP->status)
     {
     case STATE_REG_PENDING:
-     if (packet->mid == targetP->mid
-      && packet->type == COAP_TYPE_ACK
-      && packet->location_path_len != 0
-      && packet->location_path != NULL)
-     {
-        if (packet->code == CREATED_2_01)
-        {
-            targetP->status = STATE_REGISTERED;
-            targetP->location = (char *)malloc(packet->location_path_len + 1);
-            if (targetP->location != NULL)
-            {
-                memcpy(targetP->location, packet->location_path, packet->location_path_len);
-                targetP->location[packet->location_path_len] = 0;
-            }
-        }
-        else if (packet->code == BAD_REQUEST_4_00)
+    {
+        if (packet == NULL)
         {
             targetP->status = STATE_UNKNOWN;
             targetP->mid = 0;
         }
-     }
-     break;
+        else if (packet->mid == targetP->mid
+              && packet->type == COAP_TYPE_ACK
+              && packet->location_path_len != 0
+              && packet->location_path != NULL)
+        {
+            if (packet->code == CREATED_2_01)
+            {
+                targetP->status = STATE_REGISTERED;
+                targetP->location = (char *)malloc(packet->location_path_len + 1);
+                if (targetP->location != NULL)
+                {
+                    memcpy(targetP->location, packet->location_path, packet->location_path_len);
+                    targetP->location[packet->location_path_len] = 0;
+                }
+            }
+            else if (packet->code == BAD_REQUEST_4_00)
+            {
+                targetP->status = STATE_UNKNOWN;
+                targetP->mid = 0;
+            }
+        }
+    }
+    break;
     default:
         break;
     }
