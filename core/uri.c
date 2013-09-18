@@ -78,17 +78,17 @@ int prv_get_number(const char * uriString,
 }
 
 
-intern_uri_t * lwm2m_decode_uri(multi_option_t *uriPath)
+lwm2m_uri_t * lwm2m_decode_uri(multi_option_t *uriPath)
 {
-    intern_uri_t * uriP;
+    lwm2m_uri_t * uriP;
     int readNum;
 
     if (NULL == uriPath) return NULL;
 
-    uriP = (intern_uri_t *)malloc(sizeof(intern_uri_t));
+    uriP = (lwm2m_uri_t *)malloc(sizeof(lwm2m_uri_t));
     if (NULL == uriP) return NULL;
 
-    memset(uriP, 0, sizeof(intern_uri_t));
+    memset(uriP, 0, sizeof(lwm2m_uri_t));
 
     // Read object ID
     if (URI_REGISTRATION_SEGMENT_LEN == uriPath->len
@@ -109,7 +109,7 @@ intern_uri_t * lwm2m_decode_uri(multi_option_t *uriPath)
 
     readNum = prv_get_number(uriPath->data, uriPath->len);
     if (readNum < 0 || readNum > LWM2M_MAX_ID) goto error;
-    uriP->id = (uint16_t)readNum;
+    uriP->objectId = (uint16_t)readNum;
     uriP->flag |= LWM2M_URI_FLAG_OBJECT_ID;
     uriPath = uriPath->next;
 
@@ -170,10 +170,8 @@ int lwm2m_stringToUri(char * buffer,
 
     // Read object ID
     readNum = prv_parse_number(buffer, buffer_len, &head);
-    if (readNum < 0 || readNum > LWM2M_URI_MAX_ID) return 0;
+    if (readNum < 0 || readNum > LWM2M_MAX_ID) return 0;
     uriP->objectId = (uint16_t)readNum;
-    LWM2M_URI_UNSET_ID(uriP->instanceId);
-    LWM2M_URI_UNSET_ID(uriP->resourceId);
 
     if (head >= buffer_len) return head;
 
@@ -186,8 +184,9 @@ int lwm2m_stringToUri(char * buffer,
     else
     {
         readNum = prv_parse_number(buffer, buffer_len, &head);
-        if (readNum < 0 || readNum >= LWM2M_URI_MAX_ID) return 0;
+        if (readNum < 0 || readNum >= LWM2M_MAX_ID) return 0;
         uriP->instanceId = (uint16_t)readNum;
+        uriP->flag |= LWM2M_URI_FLAG_INSTANCE_ID;
     }
     if (head >= buffer_len) return head;
 
@@ -200,8 +199,9 @@ int lwm2m_stringToUri(char * buffer,
     else
     {
         readNum = prv_parse_number(buffer, buffer_len, &head);
-        if (readNum < 0 || readNum >= LWM2M_URI_MAX_ID) return 0;
+        if (readNum < 0 || readNum >= LWM2M_MAX_ID) return 0;
         uriP->resourceId = (uint16_t)readNum;
+        uriP->flag |= LWM2M_URI_FLAG_RESOURCE_ID;
     }
 
     return head;

@@ -176,7 +176,7 @@ static int prv_read_id(char * buffer,
     nb = sscanf(buffer, "%d", &value);
     if (nb == 1)
     {
-        if (value < 0 || value > LWM2M_URI_MAX_ID)
+        if (value < 0 || value > LWM2M_MAX_ID)
         {
             nb = 0;
         }
@@ -205,11 +205,11 @@ static void prv_result_callback(uint16_t clientID,
                                 void * userData)
 {
     fprintf(stdout, "\r\nClient #%d %d", clientID, uriP->objectId);
-    if (LWM2M_URI_IS_ID_SET(uriP->instanceId))
+    if (LWM2M_URI_IS_SET_INSTANCE(uriP))
         fprintf(stdout, "/%d", uriP->instanceId);
-    else if (LWM2M_URI_IS_ID_SET(uriP->resourceId))
+    else if (LWM2M_URI_IS_SET_RESOURCE(uriP))
         fprintf(stdout, "/");
-    if (LWM2M_URI_IS_ID_SET(uriP->resourceId))
+    if (LWM2M_URI_IS_SET_RESOURCE(uriP))
             fprintf(stdout, "/%d", uriP->resourceId);
     fprintf(stdout, " returned status %d.%2d\r\n", (status&0xE0)>>5, status&0x1F);
 
@@ -220,6 +220,7 @@ static void prv_result_callback(uint16_t clientID,
     }
 
     fprintf(stdout, "\r\n> ");
+    fflush(stdout);
 }
 
 static void prv_read_client(char * buffer,

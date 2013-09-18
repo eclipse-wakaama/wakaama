@@ -33,7 +33,7 @@ David Navarro <david.navarro@intel.com>
 
 
 coap_status_t handle_dm_request(lwm2m_context_t * contextP,
-                                intern_uri_t * uriP,
+                                lwm2m_uri_t * uriP,
                                 struct sockaddr * fromAddr,
                                 socklen_t fromAddrLen,
                                 coap_packet_t * message,
@@ -184,7 +184,7 @@ int lwm2m_dm_write(lwm2m_context_t * contextP,
                    lwm2m_result_callback_t callback,
                    void * userData)
 {
-    if (!LWM2M_URI_IS_ID_SET(uriP->instanceId)
+    if (!LWM2M_URI_IS_SET_INSTANCE(uriP)
      || length == 0)
     {
         return COAP_400_BAD_REQUEST;
@@ -201,8 +201,8 @@ int lwm2m_dm_execute(lwm2m_context_t * contextP,
                      lwm2m_result_callback_t callback,
                      void * userData)
 {
-    if (!LWM2M_URI_IS_ID_SET(uriP->instanceId)
-     || !LWM2M_URI_IS_ID_SET(uriP->resourceId))
+    if (!LWM2M_URI_IS_SET_INSTANCE(uriP)
+     || !LWM2M_URI_IS_SET_RESOURCE(uriP))
     {
         return COAP_400_BAD_REQUEST;
     }
@@ -220,7 +220,7 @@ int lwm2m_dm_create(lwm2m_context_t * contextP,
                     lwm2m_result_callback_t callback,
                     void * userData)
 {
-    if (LWM2M_URI_IS_ID_SET(uriP->resourceId)
+    if (LWM2M_URI_IS_SET_RESOURCE(uriP)
      || length == 0)
     {
         return COAP_400_BAD_REQUEST;
@@ -237,8 +237,8 @@ int lwm2m_dm_delete(lwm2m_context_t * contextP,
                     lwm2m_result_callback_t callback,
                     void * userData)
 {
-    if (!LWM2M_URI_IS_ID_SET(uriP->instanceId)
-     || LWM2M_URI_IS_ID_SET(uriP->resourceId))
+    if (!LWM2M_URI_IS_SET_INSTANCE(uriP)
+     || LWM2M_URI_IS_SET_RESOURCE(uriP))
     {
         return COAP_400_BAD_REQUEST;
     }

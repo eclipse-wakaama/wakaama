@@ -51,25 +51,14 @@ David Navarro <david.navarro@intel.com>
 #define URI_BOOTSTRAP_SEGMENT           "bs"
 #define URI_BOOTSTRAP_SEGMENT_LEN       2
 
-#define LWM2M_MAX_ID   ((uint16_t)0xFFFF)
 
-#define LWM2M_URI_FLAG_DM           (uint8_t)0x10
+#define LWM2M_URI_FLAG_DM           (uint8_t)0x00
 #define LWM2M_URI_FLAG_REGISTRATION (uint8_t)0x20
 #define LWM2M_URI_FLAG_BOOTSTRAP    (uint8_t)0x40
-#define LWM2M_URI_FLAG_OBJECT_ID    (uint8_t)0x04
-#define LWM2M_URI_FLAG_INSTANCE_ID  (uint8_t)0x02
-#define LWM2M_URI_FLAG_RESOURCE_ID  (uint8_t)0x01
 
-#define LWM2M_URI_MASK_TYPE (uint8_t)0xF0
-#define LWM2M_URI_MASK_ID   (uint8_t)0x0F
+#define LWM2M_URI_MASK_TYPE (uint8_t)0x70
+#define LWM2M_URI_MASK_ID   (uint8_t)0x07
 
-typedef struct
-{
-    uint8_t     flag;           // indicates the type of URI and which segments are set
-    uint16_t    id;
-    uint16_t    instanceId;
-    uint16_t    resourceId;
-} intern_uri_t;
 
 typedef struct
 {
@@ -80,13 +69,13 @@ typedef struct
 
 // defined in uri.c
 int prv_get_number(const char * uriString, size_t uriLength);
-intern_uri_t * lwm2m_decode_uri(multi_option_t *uriPath);
+lwm2m_uri_t * lwm2m_decode_uri(multi_option_t *uriPath);
 
 // defined in objects.c
-coap_status_t object_read(lwm2m_context_t * contextP, intern_uri_t * uriP, char ** bufferP, int * lengthP);
-coap_status_t object_write(lwm2m_context_t * contextP, intern_uri_t * uriP, char * buffer, int length);
-coap_status_t object_create_execute(lwm2m_context_t * contextP, intern_uri_t * uriP, char * buffer, int length);
-coap_status_t object_delete(lwm2m_context_t * contextP, intern_uri_t * uriP);
+coap_status_t object_read(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, char ** bufferP, int * lengthP);
+coap_status_t object_write(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, char * buffer, int length);
+coap_status_t object_create_execute(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, char * buffer, int length);
+coap_status_t object_delete(lwm2m_context_t * contextP, lwm2m_uri_t * uriP);
 int prv_getRegisterPayload(lwm2m_context_t * contextP, char * buffer, size_t length);
 
 // defined in transaction.c
@@ -95,15 +84,15 @@ int transaction_send(lwm2m_context_t * contextP, lwm2m_transaction_t * transacP)
 void transaction_free(lwm2m_transaction_t * transacP);
 
 // defined in management.c
-coap_status_t handle_dm_request(lwm2m_context_t * contextP, intern_uri_t * uriP, struct sockaddr * fromAddr, socklen_t fromAddrLen, coap_packet_t * message, coap_packet_t * response);
+coap_status_t handle_dm_request(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, struct sockaddr * fromAddr, socklen_t fromAddrLen, coap_packet_t * message, coap_packet_t * response);
 
 // defined in observe.c
-coap_status_t handle_observe_request(lwm2m_context_t * contextP, intern_uri_t * uriP, struct sockaddr * fromAddr, socklen_t fromAddrLen, coap_packet_t * message, coap_packet_t * response);
-void cancel_observe(lwm2m_context_t * contextP, intern_uri_t * uriP, struct sockaddr * fromAddr, socklen_t fromAddrLen);
+coap_status_t handle_observe_request(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, struct sockaddr * fromAddr, socklen_t fromAddrLen, coap_packet_t * message, coap_packet_t * response);
+void cancel_observe(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, struct sockaddr * fromAddr, socklen_t fromAddrLen);
 
 // defined in registration.c
 void handle_registration_reply(lwm2m_context_t * contextP, lwm2m_transaction_t * transacP, coap_packet_t * message);
-coap_status_t handle_registration_request(lwm2m_context_t * contextP, intern_uri_t * uriP, struct sockaddr * fromAddr, socklen_t fromAddrLen, coap_packet_t * message, coap_packet_t * response);
+coap_status_t handle_registration_request(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, struct sockaddr * fromAddr, socklen_t fromAddrLen, coap_packet_t * message, coap_packet_t * response);
 void registration_deregister(lwm2m_context_t * contextP, lwm2m_server_t * serverP);
 
 // defined in packet.c

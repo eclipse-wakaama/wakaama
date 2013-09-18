@@ -33,7 +33,7 @@ David Navarro <david.navarro@intel.com>
 
 
 coap_status_t handle_observe_request(lwm2m_context_t * contextP,
-                                     intern_uri_t * uriP,
+                                     lwm2m_uri_t * uriP,
                                      struct sockaddr * fromAddr,
                                      socklen_t fromAddrLen,
                                      coap_packet_t * message,
@@ -50,7 +50,7 @@ coap_status_t handle_observe_request(lwm2m_context_t * contextP,
 }
 
 void cancel_observe(lwm2m_context_t * contextP,
-                    intern_uri_t * uriP,
+                    lwm2m_uri_t * uriP,
                     struct sockaddr * fromAddr,
                     socklen_t fromAddrLen)
 {

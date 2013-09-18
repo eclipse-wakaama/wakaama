@@ -134,17 +134,23 @@ int lwm2m_opaqueToInt(char * buffer, size_t buffer_len, int64_t * dataP);
  *
  */
 
-#define LWM2M_URI_MAX_ID   (0xFFFF)
+#define LWM2M_MAX_ID   ((uint16_t)0xFFFF)
+
+#define LWM2M_URI_FLAG_OBJECT_ID    (uint8_t)0x04
+#define LWM2M_URI_FLAG_INSTANCE_ID  (uint8_t)0x02
+#define LWM2M_URI_FLAG_RESOURCE_ID  (uint8_t)0x01
+
+#define LWM2M_URI_IS_SET_INSTANCE(uri) ((uri->flag & LWM2M_URI_FLAG_INSTANCE_ID) != 0)
+#define LWM2M_URI_IS_SET_RESOURCE(uri) ((uri->flag & LWM2M_URI_FLAG_RESOURCE_ID) != 0)
 
 typedef struct
 {
+    uint8_t     flag;           // indicates which segments are set
     uint16_t    objectId;
-    int32_t    instanceId;
-    int32_t    resourceId;
+    uint16_t    instanceId;
+    uint16_t    resourceId;
 } lwm2m_uri_t;
 
-#define LWM2M_URI_UNSET_ID(id) id = -1
-#define LWM2M_URI_IS_ID_SET(id) (id >= 0 && id <= LWM2M_URI_MAX_ID)
 
 #define LWM2M_STRING_ID_MAX_LEN 6
 

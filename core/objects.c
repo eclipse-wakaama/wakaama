@@ -51,37 +51,14 @@ static lwm2m_object_t * prv_find_object(lwm2m_context_t * contextP,
     return NULL;
 }
 
-static void prv_intern_to_lwm2m_uri(intern_uri_t * from,
-                                    lwm2m_uri_t * to)
-{
-    to->objectId = from->id;
-    if ((from->flag & LWM2M_URI_FLAG_INSTANCE_ID) != 0)
-    {
-        to->instanceId = from->instanceId;
-    }
-    else
-    {
-        LWM2M_URI_UNSET_ID(to->instanceId);
-    }
-    if ((from->flag & LWM2M_URI_FLAG_RESOURCE_ID) != 0)
-    {
-        to->resourceId = from->resourceId;
-    }
-    else
-    {
-        LWM2M_URI_UNSET_ID(to->resourceId);
-    }
-}
-
 coap_status_t object_read(lwm2m_context_t * contextP,
-                          intern_uri_t * uriP,
+                          lwm2m_uri_t * uriP,
                           char ** bufferP,
                           int * lengthP)
 {
     lwm2m_object_t * targetP;
-    lwm2m_uri_t uri;
 
-    targetP = prv_find_object(contextP, uriP->id);
+    targetP = prv_find_object(contextP, uriP->objectId);
 
     if (NULL == targetP)
     {
@@ -92,26 +69,23 @@ coap_status_t object_read(lwm2m_context_t * contextP,
         return METHOD_NOT_ALLOWED_4_05;
     }
 
-    prv_intern_to_lwm2m_uri(uriP, &uri);
-
-    return targetP->readFunc(&uri, bufferP, lengthP, targetP);
+    return targetP->readFunc(uriP, bufferP, lengthP, targetP);
 }
 
 
 coap_status_t object_write(lwm2m_context_t * contextP,
-                           intern_uri_t * uriP,
+                           lwm2m_uri_t * uriP,
                            char * buffer,
                            int length)
 {
     lwm2m_object_t * targetP;
-    lwm2m_uri_t uri;
 
     if (uriP->flag & LWM2M_URI_FLAG_INSTANCE_ID == 0)
     {
         return BAD_REQUEST_4_00;
     }
 
-    targetP = prv_find_object(contextP, uriP->id);
+    targetP = prv_find_object(contextP, uriP->objectId);
 
     if (NULL == targetP)
     {
@@ -122,27 +96,22 @@ coap_status_t object_write(lwm2m_context_t * contextP,
         return METHOD_NOT_ALLOWED_4_05;
     }
 
-    prv_intern_to_lwm2m_uri(uriP, &uri);
-
-    return targetP->writeFunc(&uri, buffer, length, targetP);
+    return targetP->writeFunc(uriP, buffer, length, targetP);
 }
 
 coap_status_t object_create_execute(lwm2m_context_t * contextP,
-                                    intern_uri_t * uriP,
+                                    lwm2m_uri_t * uriP,
                                     char * buffer,
                                     int length)
 {
     lwm2m_object_t * targetP;
-    lwm2m_uri_t uri;
 
-    targetP = prv_find_object(contextP, uriP->id);
+    targetP = prv_find_object(contextP, uriP->objectId);
 
     if (NULL == targetP)
     {
         return NOT_FOUND_4_04;
     }
-
-    prv_intern_to_lwm2m_uri(uriP, &uri);
 
     if (uriP->flag & LWM2M_URI_FLAG_INSTANCE_ID != 0
      && uriP->flag & LWM2M_URI_FLAG_RESOURCE_ID != 0
@@ -159,7 +128,7 @@ coap_status_t object_create_execute(lwm2m_context_t * contextP,
             return METHOD_NOT_ALLOWED_4_05;
         }
 
-        return targetP->executeFunc(&uri, targetP);
+        return targetP->executeFunc(uriP, targetP);
     }
     else if (uriP->flag & LWM2M_URI_FLAG_RESOURCE_ID == 0
           && length != 0)
@@ -174,13 +143,13 @@ coap_status_t object_create_execute(lwm2m_context_t * contextP,
             return METHOD_NOT_ALLOWED_4_05;
         }
 
-        return targetP->createFunc(&uri, buffer, length, targetP);
+        return targetP->createFunc(uriP, buffer, length, targetP);
     }
     else return BAD_REQUEST_4_00;
 }
 
 coap_status_t object_delete(lwm2m_context_t * contextP,
-                            intern_uri_t * uriP)
+                            lwm2m_uri_t * uriP)
 {
     lwm2m_object_t * targetP;
 
@@ -190,7 +159,7 @@ coap_status_t object_delete(lwm2m_context_t * contextP,
         return BAD_REQUEST_4_00;
     }
 
-    targetP = prv_find_object(contextP, uriP->id);
+    targetP = prv_find_object(contextP, uriP->objectId);
 
     if (NULL == targetP)
     {
