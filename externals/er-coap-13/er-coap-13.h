@@ -254,7 +254,7 @@ typedef struct {
   size_t location_query_len;
   const char *location_query;
   multi_option_t *uri_path;
-  uint16_t observe;
+  uint32_t observe;
   uint8_t token_len;
   uint8_t token[COAP_TOKEN_LEN];
   uint8_t accept_num;

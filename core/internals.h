@@ -97,6 +97,10 @@ void transaction_free(lwm2m_transaction_t * transacP);
 // defined in management.c
 coap_status_t handle_dm_request(lwm2m_context_t * contextP, intern_uri_t * uriP, struct sockaddr * fromAddr, socklen_t fromAddrLen, coap_packet_t * message, coap_packet_t * response);
 
+// defined in observe.c
+coap_status_t handle_observe_request(lwm2m_context_t * contextP, intern_uri_t * uriP, struct sockaddr * fromAddr, socklen_t fromAddrLen, coap_packet_t * message, coap_packet_t * response);
+void cancel_observe(lwm2m_context_t * contextP, intern_uri_t * uriP, struct sockaddr * fromAddr, socklen_t fromAddrLen);
+
 // defined in registration.c
 void handle_registration_reply(lwm2m_context_t * contextP, lwm2m_transaction_t * transacP, coap_packet_t * message);
 coap_status_t handle_registration_request(lwm2m_context_t * contextP, intern_uri_t * uriP, struct sockaddr * fromAddr, socklen_t fromAddrLen, coap_packet_t * message, coap_packet_t * response);
