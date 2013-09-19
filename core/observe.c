@@ -30,7 +30,138 @@ David Navarro <david.navarro@intel.com>
 
 #include "internals.h"
 #include <stdio.h>
+#include <stdbool.h>
 
+
+static lwm2m_observed_t * prv_findObserved(lwm2m_context_t * contextP,
+                                           lwm2m_uri_t * uriP,
+                                           bool strict)
+{
+    lwm2m_observed_t * targetP;
+
+    targetP = contextP->observedList;
+    while (targetP != NULL)
+    {
+        if (targetP->uri.objectId == uriP->objectId
+         && targetP->uri.instanceId == uriP->instanceId)
+        {
+            if (!LWM2M_URI_IS_SET_RESOURCE(uriP))
+            {
+                if ((targetP->uri.flag & LWM2M_URI_FLAG_RESOURCE_ID) == 0)
+                {
+                    return targetP;
+                }
+            }
+            else
+            {
+                if ((targetP->uri.flag & LWM2M_URI_FLAG_RESOURCE_ID) == 0)
+                {
+                    if (strict == false)
+                    {
+                        return targetP;
+                    }
+                }
+                else
+                {
+                    if (targetP->uri.resourceId == uriP->resourceId)
+                    {
+                        return targetP;
+                    }
+                }
+            }
+        }
+
+        targetP = targetP->next;
+    }
+
+    return targetP;
+}
+
+static void prv_unlinkObserved(lwm2m_context_t * contextP,
+                               lwm2m_observed_t * observedP)
+{
+    if (contextP->observedList == observedP)
+    {
+        contextP->observedList = contextP->observedList->next;
+    }
+    else
+    {
+        lwm2m_observed_t * parentP;
+
+        parentP = contextP->observedList;
+        while (parentP->next != NULL
+            && parentP->next != observedP)
+        {
+            parentP = parentP->next;
+        }
+        if (parentP->next != NULL)
+        {
+            parentP->next = parentP->next->next;
+        }
+    }
+}
+
+static lwm2m_server_t * prv_findServer(lwm2m_context_t * contextP,
+                                       struct sockaddr * fromAddr,
+                                       socklen_t fromAddrLen)
+{
+    lwm2m_server_t * targetP;
+
+    targetP = contextP->serverList;
+    while (targetP != NULL
+        && targetP->addrLen != fromAddrLen
+        && memcmp(targetP->addr, fromAddr, fromAddrLen) != 0)
+    {
+        targetP = targetP->next;
+    }
+
+    return targetP;
+}
+
+static lwm2m_watcher_t * prv_findWatcher(lwm2m_observed_t * observedP,
+                                         lwm2m_server_t * serverP)
+{
+    lwm2m_watcher_t * targetP;
+
+    targetP = observedP->watcherList;
+    while (targetP != NULL
+        && targetP->server != serverP)
+    {
+        targetP = targetP->next;
+    }
+
+    return targetP;
+}
+
+static void prv_removeWatcher(lwm2m_observed_t * observedP,
+                              lwm2m_server_t * serverP)
+{
+    lwm2m_watcher_t * targetP = NULL;
+
+    if (observedP->watcherList->server == serverP)
+    {
+        targetP = observedP->watcherList;
+        observedP->watcherList = observedP->watcherList->next;
+    }
+    else
+    {
+        lwm2m_watcher_t * parentP;
+
+        parentP = observedP->watcherList;
+        while (parentP->next != NULL
+            && parentP->next->server != serverP)
+        {
+            parentP = parentP->next;
+        }
+        if (parentP->next != NULL)
+        {
+            targetP = parentP->next;
+            parentP->next = parentP->next->next;
+        }
+    }
+
+    if (targetP != NULL) free(targetP);
+}
 
 coap_status_t handle_observe_request(lwm2m_context_t * contextP,
                                      lwm2m_uri_t * uriP,
@@ -39,14 +170,45 @@ coap_status_t handle_observe_request(lwm2m_context_t * contextP,
                                      coap_packet_t * message,
                                      coap_packet_t * response)
 {
-    coap_status_t result;
+    lwm2m_observed_t * observedP;
+    lwm2m_watcher_t * watcherP;
+    lwm2m_server_t * serverP;
 
     LOG("handle_observe_request()\r\n");
 
-    result = COAP_205_CONTENT;
-    coap_set_header_observe(response, 0);
+    if (!LWM2M_URI_IS_SET_INSTANCE(uriP)) return COAP_400_BAD_REQUEST;
+    if (message->token_len == 0) return COAP_400_BAD_REQUEST;
 
-    return result;
+    serverP = prv_findServer(contextP, fromAddr, fromAddrLen);
+    if (serverP == NULL || serverP->status != STATE_REGISTERED) return COAP_401_UNAUTHORIZED;
+
+    observedP = prv_findObserved(contextP, uriP, true);
+    if (observedP == NULL)
+    {
+        observedP = (lwm2m_observed_t *)malloc(sizeof(lwm2m_observed_t));
+        if (observedP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
+        memset(observedP, 0, sizeof(lwm2m_observed_t));
+        memcpy(&(observedP->uri), uriP, sizeof(lwm2m_uri_t));
+        observedP->next = contextP->observedList;
+        contextP->observedList = observedP;
+    }
+
+    watcherP = prv_findWatcher(observedP, serverP);
+    if (watcherP == NULL)
+    {
+        watcherP = (lwm2m_watcher_t *)malloc(sizeof(lwm2m_watcher_t));
+        if (watcherP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
+        memset(watcherP, 0, sizeof(lwm2m_watcher_t));
+        watcherP->server = serverP;
+        watcherP->tokenLen = message->token_len;
+        memcpy(watcherP->token, message->token, message->token_len);
+        watcherP->next = observedP->watcherList;
+        observedP->watcherList = watcherP;
+    }
+
+    coap_set_header_observe(response, watcherP->counter);
+
+    return COAP_205_CONTENT;
 }
 
 void cancel_observe(lwm2m_context_t * contextP,
@@ -54,5 +216,25 @@ void cancel_observe(lwm2m_context_t * contextP,
                     struct sockaddr * fromAddr,
                     socklen_t fromAddrLen)
 {
+    lwm2m_observed_t * observedP;
+    lwm2m_watcher_t * watcherP;
+    lwm2m_server_t * serverP;
+
     LOG("cancel_observe()\r\n");
+
+    if (!LWM2M_URI_IS_SET_INSTANCE(uriP)) return;
+
+    observedP = prv_findObserved(contextP, uriP, true);
+    if (observedP == NULL) return;
+
+    serverP = prv_findServer(contextP, fromAddr, fromAddrLen);
+    if (serverP == NULL) return;
+
+    prv_removeWatcher(observedP, serverP);
+
+    if (observedP->watcherList == NULL)
+    {
+        prv_unlinkObserved(contextP, observedP);
+        free(observedP);
+    }
 }

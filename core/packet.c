@@ -70,21 +70,6 @@ Contains code snippets which are:
 #include <stdio.h>
 
 
-static lwm2m_server_t * prv_findServer(lwm2m_context_t * contextP,
-                                       struct sockaddr * fromAddr,
-                                       socklen_t fromAddrLen)
-{
-    lwm2m_server_t * targetP;
-
-    targetP = contextP->serverList;
-    while (targetP != NULL && memcmp(targetP->addr, fromAddr, fromAddrLen) != 0)
-    {
-        targetP = targetP->next;
-    }
-
-    return targetP;
-}
-
 static int prv_check_addr(struct sockaddr * leftAddr,
                           socklen_t leftAddrLen,
                           struct sockaddr * rightAddr,

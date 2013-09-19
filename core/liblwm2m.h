@@ -47,6 +47,7 @@ David Navarro <david.navarro@intel.com>
 #define COAP_204_CHANGED                (uint8_t)0x44
 #define COAP_205_CONTENT                (uint8_t)0x45
 #define COAP_400_BAD_REQUEST            (uint8_t)0x80
+#define COAP_401_UNAUTHORIZED           (uint8_t)0x81
 #define COAP_404_NOT_FOUND              (uint8_t)0x84
 #define COAP_405_METHOD_NOT_ALLOWED     (uint8_t)0x85
 #define COAP_406_NOT_ACCEPTABLE         (uint8_t)0x86
@@ -196,10 +197,10 @@ struct _lwm2m_object_t
 
 typedef enum
 {
-    SEC_PRE_SHARED_KEY = 0,
+    SEC_NONE = 0,
+    SEC_PRE_SHARED_KEY,
     SEC_RAW_PUBLIC_KEY,
-    SEC_CERTIFICATE,
-    SEC_NONE
+    SEC_CERTIFICATE
 } lwm2m_security_mode_t;
 
 typedef struct
@@ -303,6 +304,27 @@ struct _lwm2m_transaction_
 };
 
 /*
+ * LWM2M observed resources
+ */
+typedef struct _lwm2m_watcher_
+{
+    struct _lwm2m_watcher_ * next;
+
+    lwm2m_server_t * server;
+    uint8_t token[8];
+    size_t tokenLen;
+    uint32_t counter;
+} lwm2m_watcher_t;
+
+typedef struct _lwm2m_observed_
+{
+    struct _lwm2m_observed_ * next;
+
+    lwm2m_uri_t uri;
+    lwm2m_watcher_t * watcherList;
+} lwm2m_observed_t;
+
+/*
  * LWM2M Context
  */
 
@@ -317,6 +339,7 @@ typedef struct
     uint16_t          numObject;
     uint16_t          nextMID;
     lwm2m_transaction_t * transactionList;
+    lwm2m_observed_t * observedList;
 } lwm2m_context_t;
 
 lwm2m_context_t * lwm2m_init(int socket, char * endpointName, uint16_t numObject, lwm2m_object_t * objectList[]);
