@@ -163,6 +163,7 @@ int lwm2m_add_server(lwm2m_context_t * contextP,
         memcpy(&(serverP->security), securityP, sizeof(lwm2m_security_t));
         serverP->shortID = shortID;
         serverP->port = port;
+        serverP->host = strdup(host);
 
         // we test the various addresses
         sock = -1;

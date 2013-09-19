@@ -30,6 +30,7 @@ David Navarro <david.navarro@intel.com>
 
 
 #include "core/liblwm2m.h"
+#include "commandline.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -54,9 +55,15 @@ static int g_quit = 0;
 extern lwm2m_object_t * get_object_device();
 extern lwm2m_object_t * get_test_object();
 
-void handle_sigint(int signum)
+static void prv_quit(char * buffer,
+                     void * user_data)
 {
     g_quit = 1;
+}
+
+void handle_sigint(int signum)
+{
+    g_quit = 2;
 }
 
 void print_usage(void)
@@ -134,6 +141,44 @@ int get_socket()
     return s;
 }
 
+static void prv_output_servers(char * buffer,
+                               void * user_data)
+{
+    lwm2m_context_t * lwm2mH = (lwm2m_context_t *) user_data;
+    lwm2m_server_t * targetP;
+    lwm2m_client_object_t * objectP;
+
+    targetP = lwm2mH->serverList;
+
+    if (targetP == NULL)
+    {
+        fprintf(stdout, "No server.\r\n");
+        return;
+    }
+
+    for (targetP = lwm2mH->serverList ; targetP != NULL ; targetP = targetP->next)
+    {
+        char s[INET6_ADDRSTRLEN];
+
+        fprintf(stdout, "Server ID %d:\r\n", targetP->shortID);
+        fprintf(stdout, "\thost: \"%s\" port: %hu\r\n", targetP->host, targetP->port);
+        fprintf(stdout, "\tstatus: ");
+        switch(targetP->status)
+        {
+        case STATE_UNKNOWN:
+            fprintf(stdout, "UNKNOWN\r\n");
+            break;
+        case STATE_REG_PENDING:
+            fprintf(stdout, "REGISTRATION PENDING\r\n");
+            break;
+        case STATE_REGISTERED:
+            fprintf(stdout, "REGISTERED location: \"%s\"\r\n", targetP->location);
+            break;
+        }
+        fprintf(stdout, "\r\n");
+    }
+}
+
 int main(int argc, char *argv[])
 {
     int socket;
@@ -141,6 +186,15 @@ int main(int argc, char *argv[])
     lwm2m_context_t * lwm2mH = NULL;
     lwm2m_object_t * objArray[2];
     lwm2m_security_t security;
+    int i;
+    command_desc_t commands[] =
+    {
+            {"list", "List known servers.", NULL, prv_output_servers, NULL},
+            {"quit", "Quit the client gracefully.", NULL, prv_quit, NULL},
+            {"^C", "Quit the client abruptly (without sending a de-register message).", NULL, NULL, NULL},
+
+            COMMAND_END_LIST
+    };
 
     socket = get_socket();
     if (socket < 0)
@@ -186,6 +240,12 @@ int main(int argc, char *argv[])
         return -1;
     }
 
+    for (i = 0 ; commands[i].name != NULL ; i++)
+    {
+        commands[i].userData = (void *)lwm2mH;
+    }
+    fprintf(stdout, "> "); fflush(stdout);
+
     while (0 == g_quit)
     {
         struct timeval tv;
@@ -193,19 +253,13 @@ int main(int argc, char *argv[])
 
         FD_ZERO(&readfds);
         FD_SET(socket, &readfds);
+        FD_SET(STDIN_FILENO, &readfds);
 
         result = lwm2m_step(lwm2mH, &tv);
         if (result != 0)
         {
             fprintf(stderr, "lwm2m_step() failed: 0x%X\r\n", result);
             return -1;
-        }
-
-        if (tv.tv_sec == 0)
-        {
-            fprintf(stdout, "No timeout.\r\n");
-            tv.tv_usec = 0;
-            tv.tv_sec = 10; /* 10 second select wait */
         }
 
         result = select(FD_SETSIZE, &readfds, NULL, NULL, &tv);
@@ -219,12 +273,13 @@ int main(int argc, char *argv[])
         }
         else if (result > 0)
         {
+            uint8_t buffer[MAX_PACKET_SIZE];
+            int numBytes;
+
             if (FD_ISSET(socket, &readfds))
             {
                 struct sockaddr_storage addr;
                 socklen_t addrLen;
-                uint8_t buffer[MAX_PACKET_SIZE];
-                int numBytes;
 
                 addrLen = sizeof(addr);
                 numBytes = recvfrom(socket, buffer, MAX_PACKET_SIZE, 0, (struct sockaddr *)&addr, &addrLen);
@@ -249,10 +304,32 @@ int main(int argc, char *argv[])
                     lwm2m_handle_packet(lwm2mH, buffer, numBytes, (struct sockaddr *)&addr, addrLen);
                 }
             }
+            else if (FD_ISSET(STDIN_FILENO, &readfds))
+            {
+                numBytes = read(STDIN_FILENO, buffer, MAX_PACKET_SIZE);
+
+                if (numBytes > 1)
+                {
+                    buffer[numBytes - 1] = 0;
+                    handle_command(commands, buffer);
+                }
+                if (g_quit == 0)
+                {
+                    fprintf(stdout, "\r\n> ");
+                    fflush(stdout);
+                }
+                else
+                {
+                    fprintf(stdout, "\r\n");
+                }
+            }
         }
     }
 
-    lwm2m_close(lwm2mH);
+    if (g_quit == 1)
+    {
+        lwm2m_close(lwm2mH);
+    }
     close(socket);
 
     return 0;
