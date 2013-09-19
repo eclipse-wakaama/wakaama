@@ -476,6 +476,9 @@ int main(int argc, char *argv[])
         FD_SET(socket, &readfds);
         FD_SET(STDIN_FILENO, &readfds);
 
+        tv.tv_sec = 60;
+        tv.tv_usec = 0;
+
         result = lwm2m_step(lwm2mH, &tv);
         if (result != 0)
         {
