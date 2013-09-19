@@ -189,14 +189,6 @@ static int prv_read_id(char * buffer,
     return nb;
 }
 
-static char * prv_next_arg(char * buffer)
-{
-    while (buffer[0] != 0 && !isspace(buffer[0])) buffer++;
-    while (buffer[0] != 0 && isspace(buffer[0])) buffer++;
-
-    return buffer;
-}
-
 static void prv_result_callback(uint16_t clientID,
                                 lwm2m_uri_t * uriP,
                                 int status,
@@ -234,7 +226,7 @@ static void prv_read_client(char * buffer,
     result = prv_read_id(buffer, &clientId);
     if (result != 1) goto syntax_error;
 
-    buffer = prv_next_arg(buffer);
+    buffer = get_next_arg(buffer);
     if (buffer[0] == 0) goto syntax_error;
 
     result = lwm2m_stringToUri(buffer, strlen(buffer), &uri);
@@ -269,11 +261,11 @@ static void prv_write_client(char * buffer,
     result = prv_read_id(buffer, &clientId);
     if (result != 1) goto syntax_error;
 
-    buffer = prv_next_arg(buffer);
+    buffer = get_next_arg(buffer);
     if (buffer[0] == 0) goto syntax_error;
     uriString = buffer;
 
-    buffer = prv_next_arg(buffer);
+    buffer = get_next_arg(buffer);
     if (buffer[0] == 0) goto syntax_error;
 
     i = 0;
@@ -311,7 +303,7 @@ static void prv_exec_client(char * buffer,
     result = prv_read_id(buffer, &clientId);
     if (result != 1) goto syntax_error;
 
-    buffer = prv_next_arg(buffer);
+    buffer = get_next_arg(buffer);
     if (buffer[0] == 0) goto syntax_error;
 
     result = lwm2m_stringToUri(buffer, strlen(buffer), &uri);
@@ -344,7 +336,7 @@ static void prv_delete_client(char * buffer,
     result = prv_read_id(buffer, &clientId);
     if (result != 1) goto syntax_error;
 
-    buffer = prv_next_arg(buffer);
+    buffer = get_next_arg(buffer);
     if (buffer[0] == 0) goto syntax_error;
 
     result = lwm2m_stringToUri(buffer, strlen(buffer), &uri);

@@ -131,3 +131,12 @@ void handle_command(command_desc_t * commandArray,
         }
     }
 }
+
+char * get_next_arg(char * buffer)
+{
+    while (buffer[0] != 0 && !isspace(buffer[0])) buffer++;
+    while (buffer[0] != 0 && isspace(buffer[0])) buffer++;
+
+    return buffer;
+}
+

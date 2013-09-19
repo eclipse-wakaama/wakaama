@@ -179,6 +179,45 @@ static void prv_output_servers(char * buffer,
     }
 }
 
+static void prv_change(char * buffer,
+                       void * user_data)
+{
+    lwm2m_context_t * lwm2mH = (lwm2m_context_t *) user_data;
+    lwm2m_uri_t uri;
+    char * uriString;
+    int i;
+    int result;
+
+    if (buffer[0] == 0) goto syntax_error;
+    uriString = buffer;
+
+    buffer = get_next_arg(buffer);
+    if (buffer[0] == 0) goto syntax_error;
+
+    i = 0;
+    while (uriString + i < buffer && !isspace(uriString[i]))
+    {
+        i++;
+    }
+    result = lwm2m_stringToUri(uriString, i, &uri);
+    if (result == 0) goto syntax_error;
+
+    result = lwm2m_resource_value_changed(lwm2mH, &uri, buffer, strlen(buffer));
+
+    if (result == 0)
+    {
+        fprintf(stdout, "OK");
+    }
+    else
+    {
+        fprintf(stdout, "Error %d.%2d", (result&0xE0)>>5, result&0x1F);
+    }
+    return;
+
+syntax_error:
+    fprintf(stdout, "Syntax error !");
+}
+
 int main(int argc, char *argv[])
 {
     int socket;
@@ -190,6 +229,9 @@ int main(int argc, char *argv[])
     command_desc_t commands[] =
     {
             {"list", "List known servers.", NULL, prv_output_servers, NULL},
+            {"change", "Change the value of resource.", " change URI DATA\r\n"
+                                                        "   URI: uri of the resource such as /3/0, /3/0/2\r\n"
+                                                        "   DATA: new value\r\n", prv_change, NULL},
             {"quit", "Quit the client gracefully.", NULL, prv_quit, NULL},
             {"^C", "Quit the client abruptly (without sending a de-register message).", NULL, NULL, NULL},
 

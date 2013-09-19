@@ -206,7 +206,7 @@ coap_status_t handle_observe_request(lwm2m_context_t * contextP,
         observedP->watcherList = watcherP;
     }
 
-    coap_set_header_observe(response, watcherP->counter);
+    coap_set_header_observe(response, watcherP->counter++);
 
     return COAP_205_CONTENT;
 }
@@ -238,3 +238,55 @@ void cancel_observe(lwm2m_context_t * contextP,
         free(observedP);
     }
 }
+
+int lwm2m_resource_value_changed(lwm2m_context_t * contextP,
+                                 lwm2m_uri_t * uriP,
+                                 char * value,
+                                 int value_len)
+{
+    int result;
+    lwm2m_observed_t * observedP;
+    lwm2m_watcher_t * watcherP;
+
+    observedP = prv_findObserved(contextP, uriP, true);
+    if (observedP != NULL)
+    {
+        coap_packet_t message[1];
+
+        coap_init_message(message, COAP_TYPE_ACK, COAP_204_CHANGED, contextP->nextMID++);
+        coap_set_payload(message, value, value_len);
+
+        for (watcherP = observedP->watcherList ; watcherP != NULL ; watcherP = watcherP->next)
+        {
+            coap_set_header_token(message, watcherP->token, watcherP->tokenLen);
+            coap_set_header_observe(message, watcherP->counter++);
+            result = message_send(contextP, message, watcherP->server->addr, watcherP->server->addrLen);
+        }
+    }
+
+    observedP = prv_findObserved(contextP, uriP, false);
+    if (observedP != NULL)
+    {
+        char * buffer = NULL;
+        int length = 0;
+
+        result = object_read(contextP, uriP, &buffer, &length);
+        if (result == COAP_205_CONTENT)
+        {
+            coap_packet_t message[1];
+
+            coap_init_message(message, COAP_TYPE_ACK, COAP_204_CHANGED, contextP->nextMID++);
+            coap_set_payload(message, buffer, length);
+
+            for (watcherP = observedP->watcherList ; watcherP != NULL ; watcherP = watcherP->next)
+            {
+                coap_set_header_token(message, watcherP->token, watcherP->tokenLen);
+                coap_set_header_observe(message, watcherP->counter++);
+                result = message_send(contextP, message, watcherP->server->addr, watcherP->server->addrLen);
+            }
+        }
+    }
+
+    return result;
+}
+
