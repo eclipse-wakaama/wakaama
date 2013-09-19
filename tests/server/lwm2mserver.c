@@ -476,8 +476,12 @@ int main(int argc, char *argv[])
         FD_SET(socket, &readfds);
         FD_SET(STDIN_FILENO, &readfds);
 
-        tv.tv_usec = 0;
-        tv.tv_sec = 10;
+        result = lwm2m_step(lwm2mH, &tv);
+        if (result != 0)
+        {
+            fprintf(stderr, "lwm2m_step() failed: 0x%X\r\n", result);
+            return -1;
+        }
 
         result = select(FD_SETSIZE, &readfds, 0, 0, &tv);
 
