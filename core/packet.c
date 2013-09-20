@@ -207,7 +207,7 @@ int lwm2m_handle_packet(lwm2m_context_t * contextP,
             /* get offset for blockwise transfers */
             if (coap_get_header_block2(message, &block_num, NULL, &block_size, &block_offset))
             {
-                LOG("Blockwise: block request %lu (%u/%u) @ %lu bytes\n", block_num, block_size, REST_MAX_CHUNK_SIZE, block_offset);
+                LOG("Blockwise: block request %u (%u/%u) @ %u bytes\n", block_num, block_size, REST_MAX_CHUNK_SIZE, block_offset);
                 block_size = MIN(block_size, REST_MAX_CHUNK_SIZE);
                 new_offset = block_offset;
             }
@@ -245,7 +245,7 @@ int lwm2m_handle_packet(lwm2m_context_t * contextP,
                     else
                     {
                         /* resource provides chunk-wise data */
-                        LOG("Blockwise: blockwise resource, new offset %ld\n", new_offset);
+                        LOG("Blockwise: blockwise resource, new offset %d\n", new_offset);
                         coap_set_header_block2(response, block_num, new_offset!=-1 || response->payload_len > block_size, block_size);
                         if (response->payload_len > block_size) coap_set_payload(response, response->payload, block_size);
                     } /* if (resource aware of blockwise) */

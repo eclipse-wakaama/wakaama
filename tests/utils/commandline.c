@@ -85,16 +85,12 @@ static void prv_displayHelp(command_desc_t * commandArray,
 
         for (i = 0 ; commandArray[i].name != NULL ; i++)
         {
-            fprintf(stdout, commandArray[i].name);
-            fprintf(stdout, "\t");
-            fprintf(stdout, commandArray[i].shortDesc);
-            fprintf(stdout, "\r\n");
+            fprintf(stdout, "%s\t%s\r\n", commandArray[i].name, commandArray[i].shortDesc);
         }
     }
     else
     {
-        fprintf(stdout, cmdP->longDesc?cmdP->longDesc:cmdP->shortDesc);
-        fprintf(stdout, "\r\n");
+        fprintf(stdout, "%s\r\n", cmdP->longDesc?cmdP->longDesc:cmdP->shortDesc);
     }
 }
 

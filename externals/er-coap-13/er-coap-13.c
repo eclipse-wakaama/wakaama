@@ -141,7 +141,7 @@ coap_set_option_header(unsigned int delta, size_t length, uint8_t *buffer)
       buffer[++written] = (*x-13);
     }
   }
-  while (x!=&length && (x=&length));
+  while (x!=(unsigned int *)&length && (x=(unsigned int *)&length));
 
   PRINTF("WRITTEN %u B opt header\n", written);
 
@@ -584,7 +584,7 @@ coap_parse_message(void *packet, uint8_t *data, uint16_t data_len)
         ++current_option;
       }
     }
-    while (x!=&option_length && (x=&option_length));
+    while (x!=(unsigned int *)&option_length && (x=(unsigned int *)&option_length));
 
     option_number += option_delta;
 
