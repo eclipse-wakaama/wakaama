@@ -241,6 +241,32 @@ typedef struct
 } lwm2m_bootstrap_server_t;
 
 /*
+ * LWM2M result callback
+ *
+ * When used with an observe, if 'data' is not nil, 'status' holds the observe counter.
+ */
+typedef void (*lwm2m_result_callback_t) (uint16_t clientID, lwm2m_uri_t * uriP, int status, uint8_t * data, int dataLength, void * userData);
+
+/*
+ * LWM2M Observations
+ *
+ * Used to store observation of remotte clients resources.
+ * status STATE_REG_PENDING means the observe request was sent to the client but not yet answered.
+ * status STATE_REGISTERED means the client aclnowledged the observe request.
+ */
+
+typedef struct _lwm2m_observation_
+{
+    struct _lwm2m_observation_ * next;  // matches lwm2m_list_t::next
+    uint16_t                 id;        // matches lwm2m_list_t::id
+    lwm2m_uri_t uri;
+    uint32_t    token;
+    lwm2m_status_t    status;
+    lwm2m_result_callback_t callback;
+    void * userData;
+} lwm2m_observation_t;
+
+/*
  * LWM2M Clients
  *
  * Be careful not to mix lwm2m_client_object_t used to store list of objects of remote clients
@@ -263,9 +289,9 @@ typedef struct _lwm2m_client_
     struct sockaddr * addr;
     socklen_t         addrLen;
     lwm2m_client_object_t * objectList;
+    lwm2m_observation_t * observationList;
 } lwm2m_client_t;
 
-typedef void (*lwm2m_result_callback_t) (uint16_t clientID, lwm2m_uri_t * uriP, int status, uint8_t * data, int dataLength, void * userData);
 
 /*
  * LWM2M transaction
@@ -362,6 +388,10 @@ int lwm2m_dm_write(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * 
 int lwm2m_dm_execute(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, lwm2m_result_callback_t callback, void * userData);
 int lwm2m_dm_create(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, char * buffer, int length, lwm2m_result_callback_t callback, void * userData);
 int lwm2m_dm_delete(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, lwm2m_result_callback_t callback, void * userData);
+
+// Information Reporting APIs
+int lwm2m_observe(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, lwm2m_result_callback_t callback, void * userData);
+int lwm2m_cancel_observe(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, lwm2m_result_callback_t callback, void * userData);
 
 int lwm2m_handle_packet(lwm2m_context_t * contextP, uint8_t * buffer, int length, struct sockaddr * fromAddr, socklen_t fromAddrLen);
 

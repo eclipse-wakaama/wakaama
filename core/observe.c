@@ -290,3 +290,122 @@ int lwm2m_resource_value_changed(lwm2m_context_t * contextP,
     return result;
 }
 
+static void prv_observationRemove(lwm2m_client_t * clientP,
+                                  lwm2m_observation_t * observationP)
+{
+    if (clientP->observationList == observationP)
+    {
+        clientP->observationList = clientP->observationList->next;
+    }
+    else
+    {
+        lwm2m_observation_t * parentP;
+
+        parentP = clientP->observationList;
+        while (parentP->next != NULL
+            && parentP->next != observationP)
+        {
+            parentP = parentP->next;
+        }
+        if (parentP->next != NULL)
+        {
+            parentP->next = parentP->next->next;
+        }
+    }
+
+    free(observationP);
+}
+
+static void prv_obsRequestCallback(lwm2m_transaction_t * transacP,
+                                   void * message)
+{
+    lwm2m_observation_t * observationP = (lwm2m_observation_t *)transacP->userData;
+    coap_packet_t * packet = (coap_packet_t *)message;
+    uint8_t code;
+
+    if (message == NULL)
+    {
+        code = COAP_503_SERVICE_UNAVAILABLE;
+    }
+    else if (packet->code == COAP_205_CONTENT
+         && !IS_OPTION(packet, COAP_OPTION_OBSERVE))
+    {
+        code = COAP_405_METHOD_NOT_ALLOWED;
+    }
+    else
+    {
+        code = packet->code;
+    }
+
+    if (code != COAP_205_CONTENT)
+    {
+        observationP->callback(((lwm2m_client_t*)transacP->peerP)->internalID,
+                               &observationP->uri,
+                               code,
+                               NULL, 0,
+                               observationP->userData);
+        prv_observationRemove(((lwm2m_client_t*)transacP->peerP), observationP);
+    }
+    else
+    {
+        observationP->status = STATE_REGISTERED;
+        observationP->callback(((lwm2m_client_t*)transacP->peerP)->internalID,
+                               &observationP->uri,
+                               COAP_205_CONTENT,
+                               packet->payload, packet->payload_len,
+                               observationP->userData);
+    }
+}
+
+int lwm2m_observe(lwm2m_context_t * contextP,
+                  uint16_t clientID,
+                  lwm2m_uri_t * uriP,
+                  lwm2m_result_callback_t callback,
+                  void * userData)
+{
+    lwm2m_client_t * clientP;
+    lwm2m_transaction_t * transactionP;
+    lwm2m_observation_t * observationP;
+
+    clientP = (lwm2m_client_t *)lwm2m_list_find((lwm2m_list_t *)contextP->clientList, clientID);
+    if (clientP == NULL) return COAP_404_NOT_FOUND;
+
+    observationP = (lwm2m_observation_t *)malloc(sizeof(lwm2m_observation_t));
+    if (observationP == NULL) return INTERNAL_SERVER_ERROR_5_00;
+    memset(observationP, 0, sizeof(lwm2m_observation_t));
+
+    transactionP = transaction_new(COAP_GET, uriP, contextP->nextMID++, ENDPOINT_CLIENT, (void *)clientP);
+    if (transactionP == NULL)
+    {
+        free(observationP);
+        return INTERNAL_SERVER_ERROR_5_00;
+    }
+
+    observationP->id = lwm2m_list_newId((lwm2m_list_t *)clientP->observationList);
+    observationP->token = (clientP->internalID << 16) | observationP->id;
+    memcpy(&observationP->uri, uriP, sizeof(lwm2m_uri_t));
+    observationP->status = STATE_REG_PENDING;
+    observationP->callback = callback;
+    observationP->userData = userData;
+    clientP->observationList = (lwm2m_observation_t *)LWM2M_LIST_ADD(clientP->observationList, observationP);
+
+    coap_set_header_observe(transactionP->message, 0);
+    coap_set_header_token(transactionP->message, (uint8_t *)&observationP->token, sizeof(observationP->token));
+
+    transactionP->callback = prv_obsRequestCallback;
+    transactionP->userData = (void *)observationP;
+
+    contextP->transactionList = (lwm2m_transaction_t *)LWM2M_LIST_ADD(contextP->transactionList, transactionP);
+
+    return transaction_send(contextP, transactionP);
+}
+
+int lwm2m_observe_cancel(lwm2m_context_t * contextP,
+                         uint16_t clientID,
+                         lwm2m_uri_t * uriP,
+                         lwm2m_result_callback_t callback,
+                         void * userData)
+{
+}
+
+
