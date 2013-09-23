@@ -391,7 +391,7 @@ int lwm2m_dm_delete(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t *
 
 // Information Reporting APIs
 int lwm2m_observe(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, lwm2m_result_callback_t callback, void * userData);
-int lwm2m_cancel_observe(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, lwm2m_result_callback_t callback, void * userData);
+int lwm2m_observe_cancel(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, lwm2m_result_callback_t callback, void * userData);
 
 int lwm2m_handle_packet(lwm2m_context_t * contextP, uint8_t * buffer, int length, struct sockaddr * fromAddr, socklen_t fromAddrLen);
 

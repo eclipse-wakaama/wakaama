@@ -290,6 +290,28 @@ int lwm2m_resource_value_changed(lwm2m_context_t * contextP,
     return result;
 }
 
+static lwm2m_observation_t * prv_findObservationByURI(lwm2m_client_t * clientP,
+                                                      lwm2m_uri_t * uriP)
+{
+    lwm2m_observation_t * targetP;
+
+    targetP = clientP->observationList;
+    while (targetP != NULL)
+    {
+        if (targetP->uri.objectId == uriP->objectId
+         && targetP->uri.flag == uriP->flag
+         && targetP->uri.instanceId == uriP->instanceId
+         && targetP->uri.resourceId == uriP->resourceId)
+        {
+            return targetP;
+        }
+
+        targetP = targetP->next;
+    }
+
+    return targetP;
+}
+
 static void prv_observationRemove(lwm2m_client_t * clientP,
                                   lwm2m_observation_t * observationP)
 {
@@ -357,6 +379,32 @@ static void prv_obsRequestCallback(lwm2m_transaction_t * transacP,
     }
 }
 
+static void prv_obsCancelCallback(lwm2m_transaction_t * transacP,
+                                  void * message)
+{
+    lwm2m_observation_t * observationP = (lwm2m_observation_t *)transacP->userData;
+
+    if (message == NULL)
+    {
+        observationP->callback(((lwm2m_client_t*)transacP->peerP)->internalID,
+                               &observationP->uri,
+                               COAP_503_SERVICE_UNAVAILABLE,
+                               NULL, 0,
+                               observationP->userData);
+    }
+    else
+    {
+        coap_packet_t * packet = (coap_packet_t *)message;
+
+        observationP->callback(((lwm2m_client_t*)transacP->peerP)->internalID,
+                               &observationP->uri,
+                               packet->code,
+                               packet->payload, packet->payload_len,
+                               observationP->userData);
+    }
+    prv_observationRemove(((lwm2m_client_t*)transacP->peerP), observationP);
+}
+
 int lwm2m_observe(lwm2m_context_t * contextP,
                   uint16_t clientID,
                   lwm2m_uri_t * uriP,
@@ -371,14 +419,14 @@ int lwm2m_observe(lwm2m_context_t * contextP,
     if (clientP == NULL) return COAP_404_NOT_FOUND;
 
     observationP = (lwm2m_observation_t *)malloc(sizeof(lwm2m_observation_t));
-    if (observationP == NULL) return INTERNAL_SERVER_ERROR_5_00;
+    if (observationP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
     memset(observationP, 0, sizeof(lwm2m_observation_t));
 
     transactionP = transaction_new(COAP_GET, uriP, contextP->nextMID++, ENDPOINT_CLIENT, (void *)clientP);
     if (transactionP == NULL)
     {
         free(observationP);
-        return INTERNAL_SERVER_ERROR_5_00;
+        return COAP_500_INTERNAL_SERVER_ERROR;
     }
 
     observationP->id = lwm2m_list_newId((lwm2m_list_t *)clientP->observationList);
@@ -406,6 +454,25 @@ int lwm2m_observe_cancel(lwm2m_context_t * contextP,
                          lwm2m_result_callback_t callback,
                          void * userData)
 {
+    lwm2m_client_t * clientP;
+    lwm2m_transaction_t * transactionP;
+    lwm2m_observation_t * observationP;
+
+    clientP = (lwm2m_client_t *)lwm2m_list_find((lwm2m_list_t *)contextP->clientList, clientID);
+    if (clientP == NULL) return COAP_404_NOT_FOUND;
+
+    observationP = prv_findObservationByURI(clientP, uriP);
+    if (observationP == NULL) return COAP_404_NOT_FOUND;
+
+    transactionP = transaction_new(COAP_GET, uriP, contextP->nextMID++, ENDPOINT_CLIENT, (void *)clientP);
+    if (transactionP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
+
+    contextP->transactionList = (lwm2m_transaction_t *)LWM2M_LIST_ADD(contextP->transactionList, transactionP);
+
+    transactionP->callback = prv_obsCancelCallback;
+    transactionP->userData = (void *)observationP;
+
+    return transaction_send(contextP, transactionP);
 }
 
 
