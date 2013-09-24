@@ -559,9 +559,6 @@ coap_parse_message(void *packet, uint8_t *data, uint16_t data_len)
         coap_pkt->payload_len = REST_MAX_CHUNK_SIZE;
       }
 
-      /* Null-terminate payload */
-      coap_pkt->payload[coap_pkt->payload_len] = '\0';
-
       break;
     }
 
