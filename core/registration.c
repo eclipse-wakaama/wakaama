@@ -195,6 +195,14 @@ static void prv_freeClient(lwm2m_client_t * clientP)
     if (clientP->addr != NULL) free(clientP->addr);
     if (clientP->name != NULL) free(clientP->name);
     prv_freeClientObjectList(clientP->objectList);
+    while(clientP->observationList != NULL)
+    {
+        lwm2m_observation_t * targetP;
+
+        targetP = clientP->observationList;
+        clientP->observationList = clientP->observationList->next;
+        free(targetP);
+    }
     free(clientP);
 }
 

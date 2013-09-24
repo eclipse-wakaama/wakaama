@@ -184,34 +184,15 @@ static void prv_change(char * buffer,
 {
     lwm2m_context_t * lwm2mH = (lwm2m_context_t *) user_data;
     lwm2m_uri_t uri;
-    char * uriString;
-    int i;
     int result;
 
     if (buffer[0] == 0) goto syntax_error;
-    uriString = buffer;
 
-    buffer = get_next_arg(buffer);
-    if (buffer[0] == 0) goto syntax_error;
-
-    i = 0;
-    while (uriString + i < buffer && !isspace(uriString[i]))
-    {
-        i++;
-    }
-    result = lwm2m_stringToUri(uriString, i, &uri);
+    result = lwm2m_stringToUri(buffer, strlen(buffer), &uri);
     if (result == 0) goto syntax_error;
 
-    result = lwm2m_resource_value_changed(lwm2mH, &uri, buffer, strlen(buffer));
+    lwm2m_resource_value_changed(lwm2mH, &uri);
 
-    if (result == 0)
-    {
-        fprintf(stdout, "OK");
-    }
-    else
-    {
-        fprintf(stdout, "Error %d.%2d", (result&0xE0)>>5, result&0x1F);
-    }
     return;
 
 syntax_error:

@@ -30,51 +30,63 @@ David Navarro <david.navarro@intel.com>
 
 #include "internals.h"
 #include <stdio.h>
-#include <stdbool.h>
 
 
 static lwm2m_observed_t * prv_findObserved(lwm2m_context_t * contextP,
-                                           lwm2m_uri_t * uriP,
-                                           bool strict)
+                                           lwm2m_uri_t * uriP)
 {
     lwm2m_observed_t * targetP;
 
     targetP = contextP->observedList;
-    while (targetP != NULL)
+    while (targetP != NULL
+        && (targetP->uri.objectId != uriP->objectId
+         || targetP->uri.flag != uriP->flag
+         || (LWM2M_URI_IS_SET_INSTANCE(uriP) && targetP->uri.instanceId != uriP->instanceId)
+         || (LWM2M_URI_IS_SET_RESOURCE(uriP) && targetP->uri.resourceId != uriP->resourceId)))
     {
-        if (targetP->uri.objectId == uriP->objectId
-         && targetP->uri.instanceId == uriP->instanceId)
-        {
-            if (!LWM2M_URI_IS_SET_RESOURCE(uriP))
-            {
-                if ((targetP->uri.flag & LWM2M_URI_FLAG_RESOURCE_ID) == 0)
-                {
-                    return targetP;
-                }
-            }
-            else
-            {
-                if ((targetP->uri.flag & LWM2M_URI_FLAG_RESOURCE_ID) == 0)
-                {
-                    if (strict == false)
-                    {
-                        return targetP;
-                    }
-                }
-                else
-                {
-                    if (targetP->uri.resourceId == uriP->resourceId)
-                    {
-                        return targetP;
-                    }
-                }
-            }
-        }
-
         targetP = targetP->next;
     }
 
     return targetP;
+}
+
+static obs_list_t * prv_getObservedList(lwm2m_context_t * contextP,
+                                        lwm2m_uri_t * uriP)
+{
+    obs_list_t * resultP;
+    lwm2m_observed_t * targetP;
+
+    resultP = NULL;
+
+    targetP = contextP->observedList;
+    while (targetP != NULL)
+    {
+        if (targetP->uri.objectId == uriP->objectId)
+        {
+            if (!LWM2M_URI_IS_SET_INSTANCE(uriP)
+             || (targetP->uri.flag & LWM2M_URI_FLAG_INSTANCE_ID) == 0
+             || uriP->instanceId == targetP->uri.instanceId)
+            {
+                if (!LWM2M_URI_IS_SET_RESOURCE(uriP)
+                 || (targetP->uri.flag & LWM2M_URI_FLAG_RESOURCE_ID) == 0
+                 || uriP->resourceId == targetP->uri.resourceId)
+                {
+                    obs_list_t * newP;
+
+                    newP = (obs_list_t *)malloc(sizeof(obs_list_t));
+                    if (newP != NULL)
+                    {
+                        newP->item = targetP;
+                        newP->next = resultP;
+                        resultP = newP;
+                    }
+                }
+            }
+        }
+        targetP = targetP->next;
+    }
+
+    return resultP;
 }
 
 static void prv_unlinkObserved(lwm2m_context_t * contextP,
@@ -176,13 +188,13 @@ coap_status_t handle_observe_request(lwm2m_context_t * contextP,
 
     LOG("handle_observe_request()\r\n");
 
-    if (!LWM2M_URI_IS_SET_INSTANCE(uriP)) return COAP_400_BAD_REQUEST;
+    if (!LWM2M_URI_IS_SET_INSTANCE(uriP) && LWM2M_URI_IS_SET_RESOURCE(uriP)) return COAP_400_BAD_REQUEST;
     if (message->token_len == 0) return COAP_400_BAD_REQUEST;
 
     serverP = prv_findServer(contextP, fromAddr, fromAddrLen);
     if (serverP == NULL || serverP->status != STATE_REGISTERED) return COAP_401_UNAUTHORIZED;
 
-    observedP = prv_findObserved(contextP, uriP, true);
+    observedP = prv_findObserved(contextP, uriP);
     if (observedP == NULL)
     {
         observedP = (lwm2m_observed_t *)malloc(sizeof(lwm2m_observed_t));
@@ -224,7 +236,7 @@ void cancel_observe(lwm2m_context_t * contextP,
 
     if (!LWM2M_URI_IS_SET_INSTANCE(uriP)) return;
 
-    observedP = prv_findObserved(contextP, uriP, true);
+    observedP = prv_findObserved(contextP, uriP);
     if (observedP == NULL) return;
 
     serverP = prv_findServer(contextP, fromAddr, fromAddrLen);
@@ -239,38 +251,21 @@ void cancel_observe(lwm2m_context_t * contextP,
     }
 }
 
-int lwm2m_resource_value_changed(lwm2m_context_t * contextP,
-                                 lwm2m_uri_t * uriP,
-                                 char * value,
-                                 int value_len)
+void lwm2m_resource_value_changed(lwm2m_context_t * contextP,
+                                  lwm2m_uri_t * uriP)
 {
     int result;
-    lwm2m_observed_t * observedP;
+    obs_list_t * listP;
     lwm2m_watcher_t * watcherP;
 
-    observedP = prv_findObserved(contextP, uriP, true);
-    if (observedP != NULL)
+    listP = prv_getObservedList(contextP, uriP);
+    while (listP != NULL)
     {
-        coap_packet_t message[1];
-
-        coap_init_message(message, COAP_TYPE_ACK, COAP_204_CHANGED, contextP->nextMID++);
-        coap_set_payload(message, value, value_len);
-
-        for (watcherP = observedP->watcherList ; watcherP != NULL ; watcherP = watcherP->next)
-        {
-            coap_set_header_token(message, watcherP->token, watcherP->tokenLen);
-            coap_set_header_observe(message, watcherP->counter++);
-            result = message_send(contextP, message, watcherP->server->addr, watcherP->server->addrLen);
-        }
-    }
-
-    observedP = prv_findObserved(contextP, uriP, false);
-    if (observedP != NULL)
-    {
+        obs_list_t * targetP;
         char * buffer = NULL;
         int length = 0;
 
-        result = object_read(contextP, uriP, &buffer, &length);
+        result = object_read(contextP, &listP->item->uri, &buffer, &length);
         if (result == COAP_205_CONTENT)
         {
             coap_packet_t message[1];
@@ -278,16 +273,18 @@ int lwm2m_resource_value_changed(lwm2m_context_t * contextP,
             coap_init_message(message, COAP_TYPE_ACK, COAP_204_CHANGED, contextP->nextMID++);
             coap_set_payload(message, buffer, length);
 
-            for (watcherP = observedP->watcherList ; watcherP != NULL ; watcherP = watcherP->next)
+            for (watcherP = listP->item->watcherList ; watcherP != NULL ; watcherP = watcherP->next)
             {
                 coap_set_header_token(message, watcherP->token, watcherP->tokenLen);
                 coap_set_header_observe(message, watcherP->counter++);
-                result = message_send(contextP, message, watcherP->server->addr, watcherP->server->addrLen);
+                (void)message_send(contextP, message, watcherP->server->addr, watcherP->server->addrLen);
             }
         }
+        targetP = listP;
+        listP = listP->next;
+        free(targetP);
     }
 
-    return result;
 }
 
 static lwm2m_observation_t * prv_findObservationByURI(lwm2m_client_t * clientP,
@@ -415,6 +412,8 @@ int lwm2m_observe(lwm2m_context_t * contextP,
     lwm2m_transaction_t * transactionP;
     lwm2m_observation_t * observationP;
     uint8_t token[4];
+
+    if (!LWM2M_URI_IS_SET_INSTANCE(uriP) && LWM2M_URI_IS_SET_RESOURCE(uriP)) return COAP_400_BAD_REQUEST;
 
     clientP = (lwm2m_client_t *)lwm2m_list_find((lwm2m_list_t *)contextP->clientList, clientID);
     if (clientP == NULL) return COAP_404_NOT_FOUND;

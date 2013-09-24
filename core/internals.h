@@ -67,6 +67,12 @@ typedef struct
     void * userData;
 } dm_data_t;
 
+typedef struct _obs_list_
+{
+    struct _obs_list_ * next;
+    lwm2m_observed_t * item;
+} obs_list_t;
+
 // defined in uri.c
 int prv_get_number(const char * uriString, size_t uriLength);
 lwm2m_uri_t * lwm2m_decode_uri(multi_option_t *uriPath);

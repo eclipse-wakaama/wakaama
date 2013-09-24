@@ -379,7 +379,7 @@ int lwm2m_register(lwm2m_context_t * contextP);
 // perform any required pending operation and return the maximal time interval to wait
 int lwm2m_step(lwm2m_context_t * contextP, struct timeval * timeoutP);
 
-int lwm2m_resource_value_changed(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, char * value, int value_len);
+void lwm2m_resource_value_changed(lwm2m_context_t * contextP, lwm2m_uri_t * uriP);
 
 // Device Management APIs
 int lwm2m_dm_read(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, lwm2m_result_callback_t callback, void * userData);
