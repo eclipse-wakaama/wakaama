@@ -521,21 +521,24 @@ coap_parse_message(void *packet, uint8_t *data, uint16_t data_len)
 
   uint8_t *current_option = data + COAP_HEADER_LEN;
 
-  memcpy(coap_pkt->token, current_option, coap_pkt->token_len);
-  PRINTF("Token (len %u) [0x%02X%02X%02X%02X%02X%02X%02X%02X]\n", coap_pkt->token_len,
-    coap_pkt->token[0],
-    coap_pkt->token[1],
-    coap_pkt->token[2],
-    coap_pkt->token[3],
-    coap_pkt->token[4],
-    coap_pkt->token[5],
-    coap_pkt->token[6],
-    coap_pkt->token[7]
-  ); /*FIXME always prints 8 bytes */
+  if (coap_pkt->token_len != 0)
+  {
+      memcpy(coap_pkt->token, current_option, coap_pkt->token_len);
+      SET_OPTION(coap_pkt, COAP_OPTION_TOKEN);
 
+      PRINTF("Token (len %u) [0x%02X%02X%02X%02X%02X%02X%02X%02X]\n", coap_pkt->token_len,
+        coap_pkt->token[0],
+        coap_pkt->token[1],
+        coap_pkt->token[2],
+        coap_pkt->token[3],
+        coap_pkt->token[4],
+        coap_pkt->token[5],
+        coap_pkt->token[6],
+        coap_pkt->token[7]
+      ); /*FIXME always prints 8 bytes */
+  }
 
   /* parse options */
-  memset(coap_pkt->options, 0, sizeof(coap_pkt->options));
   current_option += coap_pkt->token_len;
 
   unsigned int option_number = 0;
