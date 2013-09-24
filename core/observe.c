@@ -414,6 +414,7 @@ int lwm2m_observe(lwm2m_context_t * contextP,
     lwm2m_client_t * clientP;
     lwm2m_transaction_t * transactionP;
     lwm2m_observation_t * observationP;
+    uint8_t token[4];
 
     clientP = (lwm2m_client_t *)lwm2m_list_find((lwm2m_list_t *)contextP->clientList, clientID);
     if (clientP == NULL) return COAP_404_NOT_FOUND;
@@ -430,15 +431,19 @@ int lwm2m_observe(lwm2m_context_t * contextP,
     }
 
     observationP->id = lwm2m_list_newId((lwm2m_list_t *)clientP->observationList);
-    observationP->token = (clientP->internalID << 16) | observationP->id;
     memcpy(&observationP->uri, uriP, sizeof(lwm2m_uri_t));
     observationP->status = STATE_REG_PENDING;
     observationP->callback = callback;
     observationP->userData = userData;
     clientP->observationList = (lwm2m_observation_t *)LWM2M_LIST_ADD(clientP->observationList, observationP);
 
+    token[0] = clientP->internalID >> 8;
+    token[1] = clientP->internalID & 0xFF;
+    token[2] = observationP->id >> 8;
+    token[3] = observationP->id & 0xFF;
+
     coap_set_header_observe(transactionP->message, 0);
-    coap_set_header_token(transactionP->message, (uint8_t *)&observationP->token, sizeof(observationP->token));
+    coap_set_header_token(transactionP->message, token, sizeof(token));
 
     transactionP->callback = prv_obsRequestCallback;
     transactionP->userData = (void *)observationP;
@@ -475,4 +480,37 @@ int lwm2m_observe_cancel(lwm2m_context_t * contextP,
     return transaction_send(contextP, transactionP);
 }
 
+void handle_observe_notify(lwm2m_context_t * contextP,
+                           struct sockaddr * fromAddr,
+                           socklen_t fromAddrLen,
+                           coap_packet_t * message)
+{
+    uint8_t * tokenP;
+    int token_len;
+    uint16_t clientID;
+    uint16_t obsID;
+    lwm2m_client_t * clientP;
+    lwm2m_observation_t * observationP;
+    uint32_t count;
+
+    token_len = coap_get_header_token(message, (const uint8_t **)&tokenP);
+    if (token_len != sizeof(uint32_t)) return;
+
+    clientID = (tokenP[0] << 8) | tokenP[1];
+    obsID = (tokenP[2] << 8) | tokenP[3];
+
+    clientP = (lwm2m_client_t *)lwm2m_list_find((lwm2m_list_t *)contextP->clientList, clientID);
+    if (clientP == NULL) return;
+
+    observationP = (lwm2m_observation_t *)lwm2m_list_find((lwm2m_list_t *)clientP->observationList, obsID);
+    if (observationP == NULL) return;
+
+    if (1 != coap_get_header_observe(message, &count)) return;
+
+    observationP->callback(clientID,
+                           &observationP->uri,
+                           (int)count,
+                           message->payload, message->payload_len,
+                           observationP->userData);
+}
 

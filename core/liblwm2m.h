@@ -260,7 +260,6 @@ typedef struct _lwm2m_observation_
     struct _lwm2m_observation_ * next;  // matches lwm2m_list_t::next
     uint16_t                 id;        // matches lwm2m_list_t::id
     lwm2m_uri_t uri;
-    uint32_t    token;
     lwm2m_status_t    status;
     lwm2m_result_callback_t callback;
     void * userData;

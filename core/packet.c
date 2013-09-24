@@ -286,6 +286,11 @@ int lwm2m_handle_packet(lwm2m_context_t * contextP,
             {
                 handle_response(contextP, transaction, fromAddr, fromAddrLen, message);
             }
+            else if (message->code = COAP_204_CHANGED
+                  && IS_OPTION(message, COAP_OPTION_OBSERVE))
+            {
+                handle_observe_notify(contextP, fromAddr, fromAddrLen, message);
+            }
         } /* Request or Response */
     } /* if (parsed correctly) */
     else

@@ -91,7 +91,6 @@ coap_status_t handle_observe_request(lwm2m_context_t * contextP, lwm2m_uri_t * u
 void cancel_observe(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, struct sockaddr * fromAddr, socklen_t fromAddrLen);
 
 // defined in registration.c
-void handle_registration_reply(lwm2m_context_t * contextP, lwm2m_transaction_t * transacP, coap_packet_t * message);
 coap_status_t handle_registration_request(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, struct sockaddr * fromAddr, socklen_t fromAddrLen, coap_packet_t * message, coap_packet_t * response);
 void registration_deregister(lwm2m_context_t * contextP, lwm2m_server_t * serverP);
 
@@ -99,5 +98,7 @@ void registration_deregister(lwm2m_context_t * contextP, lwm2m_server_t * server
 coap_status_t message_send(lwm2m_context_t * contextP, coap_packet_t * message, struct sockaddr * addr, socklen_t addrLen);
 coap_status_t buffer_send(int sock, uint8_t * buffer, size_t length, struct sockaddr * addr, socklen_t addrLen);
 
+// defined in observe.c
+void handle_observe_notify(lwm2m_context_t * contextP, struct sockaddr * fromAddr, socklen_t fromAddrLen, coap_packet_t * message);
 
 #endif
