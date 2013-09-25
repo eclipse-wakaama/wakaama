@@ -338,6 +338,7 @@ typedef struct _lwm2m_watcher_
     uint8_t token[8];
     size_t tokenLen;
     uint32_t counter;
+    uint16_t lastMid;
 } lwm2m_watcher_t;
 
 typedef struct _lwm2m_observed_

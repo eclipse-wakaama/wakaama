@@ -82,6 +82,16 @@ static int prv_check_addr(struct sockaddr * leftAddr,
     return 1;
 }
 
+static void handle_reset(lwm2m_context_t * contextP,
+                         struct sockaddr * fromAddr,
+                         socklen_t fromAddrLen,
+                         coap_packet_t * message)
+{
+#ifdef LWM2M_CLIENT_MODE
+    cancel_observe(contextP, message->mid, fromAddr, fromAddrLen);
+#endif
+}
+
 static void handle_response(lwm2m_context_t * contextP,
                             lwm2m_transaction_t * transacP,
                             struct sockaddr * fromAddr,
@@ -126,7 +136,6 @@ static coap_status_t handle_request(lwm2m_context_t * contextP,
 {
     lwm2m_uri_t * uriP;
     coap_status_t result = NOT_FOUND_4_04;
-
 
     uriP = lwm2m_decode_uri(message->uri_path);
     if (uriP == NULL) return BAD_REQUEST_4_00;
@@ -285,7 +294,7 @@ int lwm2m_handle_packet(lwm2m_context_t * contextP,
             {
                 LOG("Received RST\n");
                 /* Cancel possible subscriptions. */
- //               coap_remove_observer_by_mid(&UIP_IP_BUF->srcipaddr, UIP_UDP_BUF->srcport, message->mid);
+                handle_reset(contextP, fromAddr, fromAddrLen, message);
             }
 
             transaction = (lwm2m_transaction_t *)lwm2m_list_find((lwm2m_list_t *)contextP->transactionList, message->mid);
