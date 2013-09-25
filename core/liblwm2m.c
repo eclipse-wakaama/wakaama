@@ -50,6 +50,7 @@ lwm2m_context_t * lwm2m_init(int socket,
     {
         memset(contextP, 0, sizeof(lwm2m_context_t));
         contextP->socket = socket;
+#ifdef LWM2M_CLIENT_MODE
         contextP->endpointName = strdup(endpointName);
         if (contextP->endpointName == NULL)
         {
@@ -71,6 +72,7 @@ lwm2m_context_t * lwm2m_init(int socket,
                 return NULL;
             }
         }
+#endif
     }
 
     return contextP;
@@ -80,6 +82,7 @@ void lwm2m_close(lwm2m_context_t * contextP)
 {
     int i;
 
+#ifdef LWM2M_CLIENT_MODE
     for (i = 0 ; i < contextP->numObject ; i++)
     {
         if (NULL != contextP->objectList[i]->closeFunc)
@@ -118,9 +121,34 @@ void lwm2m_close(lwm2m_context_t * contextP)
     }
 
     free(contextP->endpointName);
+#endif
+
+#ifdef LWM2M_SERVER_MODE
+    while (NULL != contextP->clientList)
+    {
+        lwm2m_client_t * clientP;
+
+        clientP = contextP->clientList;
+        contextP->clientList = contextP->clientList->next;
+
+        prv_freeClient(clientP);
+    }
+#endif
+
+    while (NULL != contextP->transactionList)
+    {
+        lwm2m_transaction_t * transacP;
+
+        transacP = contextP->transactionList;
+        contextP->transactionList = contextP->transactionList->next;
+
+        transaction_free(transacP);
+    }
+
     free(contextP);
 }
 
+#ifdef LWM2M_CLIENT_MODE
 int lwm2m_set_bootstrap_server(lwm2m_context_t * contextP,
                                lwm2m_bootstrap_server_t * serverP)
 {
@@ -202,6 +230,7 @@ int lwm2m_add_server(lwm2m_context_t * contextP,
     freeaddrinfo(servinfo);
     return status;
 }
+#endif
 
 int lwm2m_step(lwm2m_context_t * contextP,
                struct timeval * timeoutP)

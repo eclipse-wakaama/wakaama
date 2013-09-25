@@ -93,15 +93,19 @@ static void handle_response(lwm2m_context_t * contextP,
 
     switch (transacP->peerType)
     {
+#ifdef LWM2M_SERVER_MODE
     case ENDPOINT_CLIENT:
         targetAddr = ((lwm2m_client_t *)transacP->peerP)->addr;
         targetAddrLen = ((lwm2m_client_t *)transacP->peerP)->addrLen;
         break;
+#endif
 
+#ifdef LWM2M_CLIENT_MODE
     case ENDPOINT_SERVER:
         targetAddr = ((lwm2m_server_t *)transacP->peerP)->addr;
         targetAddrLen = ((lwm2m_server_t *)transacP->peerP)->addrLen;
         break;
+#endif
 
     default:
         return;
@@ -129,19 +133,22 @@ static coap_status_t handle_request(lwm2m_context_t * contextP,
 
     switch(uriP->flag & LWM2M_URI_MASK_TYPE)
     {
+#ifdef LWM2M_CLIENT_MODE
     case LWM2M_URI_FLAG_DM:
         // TODO: Authentify server
         result = handle_dm_request(contextP, uriP, fromAddr, fromAddrLen, message, response);
         break;
 
-    case LWM2M_URI_FLAG_REGISTRATION:
-        result = handle_registration_request(contextP, uriP, fromAddr, fromAddrLen, message, response);
-        break;
-
     case LWM2M_URI_FLAG_BOOTSTRAP:
         result = NOT_IMPLEMENTED_5_01;
         break;
+#endif
 
+#ifdef LWM2M_SERVER_MODE
+   case LWM2M_URI_FLAG_REGISTRATION:
+        result = handle_registration_request(contextP, uriP, fromAddr, fromAddrLen, message, response);
+        break;
+#endif
     default:
         result = BAD_REQUEST_4_00;
         break;
@@ -286,11 +293,13 @@ int lwm2m_handle_packet(lwm2m_context_t * contextP,
             {
                 handle_response(contextP, transaction, fromAddr, fromAddrLen, message);
             }
+#ifdef LWM2M_SERVER_MODE
             else if (message->code = COAP_204_CHANGED
                   && IS_OPTION(message, COAP_OPTION_OBSERVE))
             {
                 handle_observe_notify(contextP, fromAddr, fromAddrLen, message);
             }
+#endif
         } /* Request or Response */
     } /* if (parsed correctly) */
     else

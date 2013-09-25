@@ -32,6 +32,7 @@ David Navarro <david.navarro@intel.com>
 #include <stdio.h>
 
 
+#ifdef LWM2M_CLIENT_MODE
 coap_status_t handle_dm_request(lwm2m_context_t * contextP,
                                 lwm2m_uri_t * uriP,
                                 struct sockaddr * fromAddr,
@@ -89,9 +90,11 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
 
     return result;
 }
+#endif
+
+#ifdef LWM2M_SERVER_MODE
 
 #define ID_AS_STRING_MAX_LEN 8
-
 
 static void dm_result_callback(lwm2m_transaction_t * transacP,
                                void * message)
@@ -247,3 +250,4 @@ int lwm2m_dm_delete(lwm2m_context_t * contextP,
                               COAP_DELETE, NULL, 0,
                               callback, userData);
 }
+#endif

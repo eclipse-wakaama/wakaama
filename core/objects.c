@@ -28,6 +28,8 @@ David Navarro <david.navarro@intel.com>
 
 */
 
+#ifdef LWM2M_CLIENT_MODE
+
 #include "internals.h"
 
 #include <stdlib.h>
@@ -227,3 +229,4 @@ int prv_getRegisterPayload(lwm2m_context_t * contextP,
 
     return index;
 }
+#endif

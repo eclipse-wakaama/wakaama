@@ -187,7 +187,6 @@ struct _lwm2m_object_t
     void *                   userData;
 };
 
-
 /*
  * LWM2M Servers
  *
@@ -250,7 +249,7 @@ typedef void (*lwm2m_result_callback_t) (uint16_t clientID, lwm2m_uri_t * uriP, 
 /*
  * LWM2M Observations
  *
- * Used to store observation of remotte clients resources.
+ * Used to store observation of remote clients resources.
  * status STATE_REG_PENDING means the observe request was sent to the client but not yet answered.
  * status STATE_REGISTERED means the client aclnowledged the observe request.
  */
@@ -356,31 +355,42 @@ typedef struct _lwm2m_observed_
 typedef struct
 {
     int    socket;
+#ifdef LWM2M_CLIENT_MODE
     char * endpointName;
     lwm2m_bootstrap_server_t * bootstrapServer;
     lwm2m_server_t *  serverList;
-    lwm2m_client_t *  clientList;
     lwm2m_object_t ** objectList;
     uint16_t          numObject;
+    lwm2m_observed_t * observedList;
+#endif
+#ifdef LWM2M_SERVER_MODE
+    lwm2m_client_t *  clientList;
+#endif
     uint16_t          nextMID;
     lwm2m_transaction_t * transactionList;
-    lwm2m_observed_t * observedList;
 } lwm2m_context_t;
 
+// initialize a liblwm2m context. endpointName, numObject and objectList are ignored for pure servers.
 lwm2m_context_t * lwm2m_init(int socket, char * endpointName, uint16_t numObject, lwm2m_object_t * objectList[]);
+// close a liblwm2m context.
 void lwm2m_close(lwm2m_context_t * contextP);
 
+// perform any required pending operation and return the maximal time interval to wait.
+int lwm2m_step(lwm2m_context_t * contextP, struct timeval * timeoutP);
+// dispatch received data to liblwm2m
+int lwm2m_handle_packet(lwm2m_context_t * contextP, uint8_t * buffer, int length, struct sockaddr * fromAddr, socklen_t fromAddrLen);
+
+#ifdef LWM2M_CLIENT_MODE
 int lwm2m_set_bootstrap_server(lwm2m_context_t * contextP, lwm2m_bootstrap_server_t * serverP);
 int lwm2m_add_server(lwm2m_context_t * contextP, uint16_t shortID, char * host, uint16_t port, lwm2m_security_t * securityP);
 
 // send registration message to all known LWM2M Servers.
 int lwm2m_register(lwm2m_context_t * contextP);
-
-// perform any required pending operation and return the maximal time interval to wait
-int lwm2m_step(lwm2m_context_t * contextP, struct timeval * timeoutP);
-
+// inform liblwm2m that a resource value has changed.
 void lwm2m_resource_value_changed(lwm2m_context_t * contextP, lwm2m_uri_t * uriP);
+#endif
 
+#ifdef LWM2M_SERVER_MODE
 // Device Management APIs
 int lwm2m_dm_read(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, lwm2m_result_callback_t callback, void * userData);
 int lwm2m_dm_write(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, char * buffer, int length, lwm2m_result_callback_t callback, void * userData);
@@ -391,7 +401,6 @@ int lwm2m_dm_delete(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t *
 // Information Reporting APIs
 int lwm2m_observe(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, lwm2m_result_callback_t callback, void * userData);
 int lwm2m_observe_cancel(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, lwm2m_result_callback_t callback, void * userData);
-
-int lwm2m_handle_packet(lwm2m_context_t * contextP, uint8_t * buffer, int length, struct sockaddr * fromAddr, socklen_t fromAddrLen);
+#endif
 
 #endif

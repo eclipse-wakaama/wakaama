@@ -2,6 +2,8 @@ cmake_minimum_required (VERSION 2.8.3)
 
 project (lwm2mserver)
 
+add_definitions(-DLWM2M_SERVER_MODE)
+
 include_directories (${PROJECT_SOURCE_DIR}/../.. ${PROJECT_SOURCE_DIR}/../utils)
 
 add_subdirectory(${PROJECT_SOURCE_DIR}/../../core ${CMAKE_CURRENT_BINARY_DIR}/core)

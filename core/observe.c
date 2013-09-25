@@ -32,6 +32,7 @@ David Navarro <david.navarro@intel.com>
 #include <stdio.h>
 
 
+#ifdef LWM2M_CLIENT_MODE
 static lwm2m_observed_t * prv_findObserved(lwm2m_context_t * contextP,
                                            lwm2m_uri_t * uriP)
 {
@@ -286,7 +287,9 @@ void lwm2m_resource_value_changed(lwm2m_context_t * contextP,
     }
 
 }
+#endif
 
+#ifdef LWM2M_SERVER_MODE
 static lwm2m_observation_t * prv_findObservationByURI(lwm2m_client_t * clientP,
                                                       lwm2m_uri_t * uriP)
 {
@@ -512,4 +515,4 @@ void handle_observe_notify(lwm2m_context_t * contextP,
                            message->payload, message->payload_len,
                            observationP->userData);
 }
-
+#endif

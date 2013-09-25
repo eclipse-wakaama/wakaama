@@ -42,6 +42,119 @@ David Navarro <david.navarro@intel.com>
 #define MAX_LOCATION_LENGTH 10  // strlen("/rd/65534") + 1
 
 
+#ifdef LWM2M_CLIENT_MODE
+static void prv_handleRegistrationReply(lwm2m_transaction_t * transacP,
+                                        void * message)
+{
+    lwm2m_context_t * contextP = (lwm2m_context_t *)transacP->userData;
+    lwm2m_server_t * targetP;
+    coap_packet_t * packet = (coap_packet_t *)message;
+
+    targetP = (lwm2m_server_t *)(transacP->peerP);
+
+    switch(targetP->status)
+    {
+    case STATE_REG_PENDING:
+    {
+        if (packet == NULL)
+        {
+            targetP->status = STATE_UNKNOWN;
+            targetP->mid = 0;
+        }
+        else if (packet->mid == targetP->mid
+              && packet->type == COAP_TYPE_ACK
+              && packet->location_path_len != 0
+              && packet->location_path != NULL)
+        {
+            if (packet->code == CREATED_2_01)
+            {
+                targetP->status = STATE_REGISTERED;
+                targetP->location = (char *)malloc(packet->location_path_len + 1);
+                if (targetP->location != NULL)
+                {
+                    memcpy(targetP->location, packet->location_path, packet->location_path_len);
+                    targetP->location[packet->location_path_len] = 0;
+                }
+            }
+            else if (packet->code == BAD_REQUEST_4_00)
+            {
+                targetP->status = STATE_UNKNOWN;
+                targetP->mid = 0;
+            }
+        }
+    }
+    break;
+    default:
+        break;
+    }
+}
+
+int lwm2m_register(lwm2m_context_t * contextP)
+{
+    char * query;
+    char payload[64];
+    int payload_length;
+    lwm2m_server_t * targetP;
+
+    payload_length = prv_getRegisterPayload(contextP, payload, 64);
+    if (payload_length == 0) return INTERNAL_SERVER_ERROR_5_00;
+
+    query = (char*)malloc(QUERY_LENGTH + strlen(contextP->endpointName) + 1);
+    if (query == NULL) return INTERNAL_SERVER_ERROR_5_00;
+    strcpy(query, QUERY_TEMPLATE);
+    strcpy(query + QUERY_LENGTH, contextP->endpointName);
+
+    targetP = contextP->serverList;
+    while (targetP != NULL)
+    {
+        lwm2m_transaction_t * transaction;
+
+        transaction = transaction_new(COAP_POST, NULL, contextP->nextMID++, ENDPOINT_SERVER, (void *)targetP);
+        if (transaction == NULL) return INTERNAL_SERVER_ERROR_5_00;
+
+        coap_set_header_uri_path(transaction->message, "/"URI_REGISTRATION_SEGMENT);
+        coap_set_header_uri_query(transaction->message, query);
+        coap_set_payload(transaction->message, payload, payload_length);
+
+        transaction->callback = prv_handleRegistrationReply;
+        transaction->userData = (void *) contextP;
+
+        contextP->transactionList = (lwm2m_transaction_t *)LWM2M_LIST_ADD(contextP->transactionList, transaction);
+        if (transaction_send(contextP, transaction) == 0)
+        {
+            targetP->status = STATE_REG_PENDING;
+            targetP->mid = transaction->mID;
+        }
+
+        targetP = targetP->next;
+    }
+
+    return 0;
+}
+
+void registration_deregister(lwm2m_context_t * contextP,
+                             lwm2m_server_t * serverP)
+{
+    coap_packet_t message[1];
+    uint8_t pktBuffer[COAP_MAX_PACKET_SIZE+1];
+    size_t pktBufferLen = 0;
+
+    if (serverP->status != STATE_REGISTERED) return;
+
+    coap_init_message(message, COAP_TYPE_NON, COAP_DELETE, contextP->nextMID++);
+    coap_set_header_uri_path(message, serverP->location);
+
+    pktBufferLen = coap_serialize_message(message, pktBuffer);
+    if (0 != pktBufferLen)
+    {
+        coap_send_message(contextP->socket, serverP->addr, serverP->addrLen, pktBuffer, pktBufferLen);
+    }
+
+    serverP->status = STATE_UNKNOWN;
+}
+#endif
+
+#ifdef LWM2M_SERVER_MODE
 static void prv_getParameters(multi_option_t * query,
                               char ** nameP)
 {
@@ -190,7 +303,7 @@ static void prv_freeClientObjectList(lwm2m_client_object_t * objects)
     }
 }
 
-static void prv_freeClient(lwm2m_client_t * clientP)
+void prv_freeClient(lwm2m_client_t * clientP)
 {
     if (clientP->addr != NULL) free(clientP->addr);
     if (clientP->name != NULL) free(clientP->name);
@@ -220,116 +333,6 @@ static int prv_getLocationString(uint16_t id,
     }
 
     return result;
-}
-
-static void prv_handleRegistrationReply(lwm2m_transaction_t * transacP,
-                                        void * message)
-{
-    lwm2m_context_t * contextP = (lwm2m_context_t *)transacP->userData;
-    lwm2m_server_t * targetP;
-    coap_packet_t * packet = (coap_packet_t *)message;
-
-    targetP = (lwm2m_server_t *)(transacP->peerP);
-
-    switch(targetP->status)
-    {
-    case STATE_REG_PENDING:
-    {
-        if (packet == NULL)
-        {
-            targetP->status = STATE_UNKNOWN;
-            targetP->mid = 0;
-        }
-        else if (packet->mid == targetP->mid
-              && packet->type == COAP_TYPE_ACK
-              && packet->location_path_len != 0
-              && packet->location_path != NULL)
-        {
-            if (packet->code == CREATED_2_01)
-            {
-                targetP->status = STATE_REGISTERED;
-                targetP->location = (char *)malloc(packet->location_path_len + 1);
-                if (targetP->location != NULL)
-                {
-                    memcpy(targetP->location, packet->location_path, packet->location_path_len);
-                    targetP->location[packet->location_path_len] = 0;
-                }
-            }
-            else if (packet->code == BAD_REQUEST_4_00)
-            {
-                targetP->status = STATE_UNKNOWN;
-                targetP->mid = 0;
-            }
-        }
-    }
-    break;
-    default:
-        break;
-    }
-}
-
-int lwm2m_register(lwm2m_context_t * contextP)
-{
-    char * query;
-    char payload[64];
-    int payload_length;
-    lwm2m_server_t * targetP;
-
-    payload_length = prv_getRegisterPayload(contextP, payload, 64);
-    if (payload_length == 0) return INTERNAL_SERVER_ERROR_5_00;
-
-    query = (char*)malloc(QUERY_LENGTH + strlen(contextP->endpointName) + 1);
-    if (query == NULL) return INTERNAL_SERVER_ERROR_5_00;
-    strcpy(query, QUERY_TEMPLATE);
-    strcpy(query + QUERY_LENGTH, contextP->endpointName);
-
-    targetP = contextP->serverList;
-    while (targetP != NULL)
-    {
-        lwm2m_transaction_t * transaction;
-
-        transaction = transaction_new(COAP_POST, NULL, contextP->nextMID++, ENDPOINT_SERVER, (void *)targetP);
-        if (transaction == NULL) return INTERNAL_SERVER_ERROR_5_00;
-
-        coap_set_header_uri_path(transaction->message, "/"URI_REGISTRATION_SEGMENT);
-        coap_set_header_uri_query(transaction->message, query);
-        coap_set_payload(transaction->message, payload, payload_length);
-
-        transaction->callback = prv_handleRegistrationReply;
-        transaction->userData = (void *) contextP;
-
-        contextP->transactionList = (lwm2m_transaction_t *)LWM2M_LIST_ADD(contextP->transactionList, transaction);
-        if (transaction_send(contextP, transaction) == 0)
-        {
-            targetP->status = STATE_REG_PENDING;
-            targetP->mid = transaction->mID;
-        }
-
-        targetP = targetP->next;
-    }
-
-    return 0;
-}
-
-void registration_deregister(lwm2m_context_t * contextP,
-                             lwm2m_server_t * serverP)
-{
-    coap_packet_t message[1];
-    uint8_t pktBuffer[COAP_MAX_PACKET_SIZE+1];
-    size_t pktBufferLen = 0;
-
-    if (serverP->status != STATE_REGISTERED) return;
-
-    coap_init_message(message, COAP_TYPE_NON, COAP_DELETE, contextP->nextMID++);
-    coap_set_header_uri_path(message, serverP->location);
-
-    pktBufferLen = coap_serialize_message(message, pktBuffer);
-    if (0 != pktBufferLen)
-    {
-        coap_send_message(contextP->socket, serverP->addr, serverP->addrLen, pktBuffer, pktBufferLen);
-    }
-
-    serverP->status = STATE_UNKNOWN;
 }
 
 coap_status_t handle_registration_request(lwm2m_context_t * contextP,
@@ -426,3 +429,4 @@ coap_status_t handle_registration_request(lwm2m_context_t * contextP,
 
     return result;
 }
+#endif
