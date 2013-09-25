@@ -35,7 +35,7 @@ David Navarro <david.navarro@intel.com>
 #include "commandline.h"
 
 #define HELP_COMMAND "help"
-#define HELP_DESC    "Display this help message"
+#define HELP_DESC    "Type '"HELP_COMMAND" [COMMAND]' for more details on a command."
 #define UNKNOWN_CMD_MSG "Unknown command. Type '"HELP_COMMAND"' for help."
 
 
