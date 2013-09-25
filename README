@@ -4,27 +4,73 @@ liblwm2m is an implementation of the LWM2M protocol from the Open Mobile Allianc
 Source Layout
 -------------
 
--+- client              (a linux command-line client library)
- |
- +- core                (the LWM2M engine)
+-+- core                (the LWM2M engine)
  |
  +- externals
  |    |
  |    +- er-coap-13     (Erbium's CoAP engine from http://people.inf.ethz.ch/mkovatsc/erbium.php,
  |                       modified to run on linux)
  |
- +- objects             (LWM2M objects)
+ +- tests               (example and test application)
+      |
+      +- client         (a command-line LWM2M client with two test objects)
+      |
+      +- server         (a command-line LWM2M server)
+      |
+      +- TLV            (application decoding two hard-coded TLV buffers)
+      |
+      +- utils          (utility functions for command-line interface)
 
 
-Compiling and testing on Linux
-------------------------------
+Compiling
+---------
 
-liblwm2m uses CMake.
+Despite its name, liblwm2m is not a library but files to be built with an application. liblwm2m
+uses CMake. Look at tests/server/CMakeLists.txt for an example of how to include it. 
+Two compilation switches are used: LWM2M_CLIENT_MODE and LWM2M_SERVER_MODE.
+
+Define LWM2M_CLIENT_MODE to enable LWM2M Client interfaces. Define LWM2M_SERVER_MODE to enable
+LWM2M Server interfaces. Both can be defined at the same time.
+
+
+Testing
+-------
+
+To compile the test server
+ - - - - - - - - - - - - -
 
 In the any directory, run the following commands:
-    cmake [liblwm2m directory]/client
+    cmake [liblwm2m directory]/tests/server
+    make
+    ./lwm2mserver
+
+The lwm2mserver listens on UDP port 5684. It features a basic command line interface. Type 'help' for
+a list of supported commands.
+
+
+To compile the test client
+ - - - - - - - - - - - - -
+  
+In the any directory, run the following commands:
+    cmake [liblwm2m directory]/tests/client
     make
     ./lwm2mclient
+
+The lwm2mclient features two LWM2M objects:
+    - Device Object (id: 3) containing hard-coded values from the Example LWM2M Client of
+    Appendix E of the LWM2M Technical Specification.
+    - a test object (id: 1024) with the following description:
+                           Multiple
+          Object |  ID  | Instances | Mandatoty |
+           Test  | 1024 |    Yes    |    No     |
+         
+           Ressources:
+                       Supported    Multiple
+           Name | ID | Operations | Instances | Mandatory |  Type   | Range | Units | Description |
+           test |  1 |    R/W     |    No     |    Yes    | Integer | 0-255 |       |             |
+           exec |  2 |     E      |    No     |    Yes    |         |       |       |             |
     
-The lwm2m opens udp port 5683. You can connect to it by installing the firefox plugin Copper
+The lwm2mclient opens udp port 5683. You can connect to it by installing the firefox plugin Copper
 (http://people.inf.ethz.ch/mkovatsc/copper.php) and opening a new Firefox tab to: coap://[::1]:5683
+At launch, lwm2mclient tries to register to a LWM2M Server at [::1]:5684. It features a basic command
+line interface. Type 'help' for a list of supported commands.
