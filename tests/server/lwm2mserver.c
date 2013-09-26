@@ -298,6 +298,8 @@ static void prv_exec_client(char * buffer,
     lwm2m_context_t * lwm2mH = (lwm2m_context_t *) user_data;
     uint16_t clientId;
     lwm2m_uri_t uri;
+    char * uriString;
+    int i;
     int result;
 
     result = prv_read_id(buffer, &clientId);
@@ -305,11 +307,26 @@ static void prv_exec_client(char * buffer,
 
     buffer = get_next_arg(buffer);
     if (buffer[0] == 0) goto syntax_error;
+    uriString = buffer;
 
-    result = lwm2m_stringToUri(buffer, strlen(buffer), &uri);
+    buffer = get_next_arg(buffer);
+
+    i = 0;
+    while (uriString + i < buffer && !isspace(uriString[i]))
+    {
+        i++;
+    }
+    result = lwm2m_stringToUri(uriString, i, &uri);
     if (result == 0) goto syntax_error;
 
-    result = lwm2m_dm_execute(lwm2mH, clientId, &uri, prv_result_callback, NULL);
+    if (buffer[0] == 0)
+    {
+        result = lwm2m_dm_execute(lwm2mH, clientId, &uri, NULL, 0, prv_result_callback, NULL);
+    }
+    else
+    {
+        result = lwm2m_dm_execute(lwm2mH, clientId, &uri, buffer, strlen(buffer), prv_result_callback, NULL);
+    }
 
     if (result == 0)
     {

@@ -197,6 +197,8 @@ int lwm2m_dm_write(lwm2m_context_t * contextP,
 int lwm2m_dm_execute(lwm2m_context_t * contextP,
                      uint16_t clientID,
                      lwm2m_uri_t * uriP,
+                     char * buffer,
+                     int length,
                      lwm2m_result_callback_t callback,
                      void * userData)
 {
@@ -207,7 +209,7 @@ int lwm2m_dm_execute(lwm2m_context_t * contextP,
     }
 
     return prv_make_operation(contextP, clientID, uriP,
-                              COAP_POST, NULL, 0,
+                              COAP_POST, buffer, length,
                               callback, userData);
 }
 

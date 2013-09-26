@@ -116,21 +116,15 @@ coap_status_t object_create_execute(lwm2m_context_t * contextP,
     }
 
     if (uriP->flag & LWM2M_URI_FLAG_INSTANCE_ID != 0
-     && uriP->flag & LWM2M_URI_FLAG_RESOURCE_ID != 0
-     && length == 0)
+     && uriP->flag & LWM2M_URI_FLAG_RESOURCE_ID != 0)
     {
         // This is an execute
-        if (length != 0 || buffer != 0)
-        {
-            return BAD_REQUEST_4_00;
-        }
-
         if (NULL == targetP->executeFunc)
         {
             return METHOD_NOT_ALLOWED_4_05;
         }
 
-        return targetP->executeFunc(uriP, targetP);
+        return targetP->executeFunc(uriP, buffer, length, targetP);
     }
     else if (uriP->flag & LWM2M_URI_FLAG_RESOURCE_ID == 0
           && length != 0)

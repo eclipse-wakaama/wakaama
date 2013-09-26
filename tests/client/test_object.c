@@ -274,6 +274,8 @@ static uint8_t prv_delete(uint16_t id,
 }
 
 static uint8_t prv_exec(lwm2m_uri_t * uriP,
+                        char * buffer,
+                        int length,
                         lwm2m_object_t * objectP)
 {
     int64_t value;
@@ -287,8 +289,10 @@ static uint8_t prv_exec(lwm2m_uri_t * uriP,
     case 2:
         fprintf(stdout, "\r\n-----------------\r\n"
                         "Execute on %hu/%d/%d\r\n"
-                        "-----------------\r\n\r\n",
-                        uriP->objectId, uriP->instanceId, uriP->resourceId);
+                        " Parameter (%d bytes):\r\n",
+                        uriP->objectId, uriP->instanceId, uriP->resourceId, length);
+        prv_output_buffer(buffer, length);
+        fprintf(stdout, "-----------------\r\n\r\n");
         return COAP_204_CHANGED;
     default:
         return COAP_404_NOT_FOUND;
