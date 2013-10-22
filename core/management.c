@@ -202,8 +202,7 @@ int lwm2m_dm_execute(lwm2m_context_t * contextP,
                      lwm2m_result_callback_t callback,
                      void * userData)
 {
-    if (!LWM2M_URI_IS_SET_INSTANCE(uriP)
-     || !LWM2M_URI_IS_SET_RESOURCE(uriP))
+    if (!LWM2M_URI_IS_SET_RESOURCE(uriP))
     {
         return COAP_400_BAD_REQUEST;
     }
