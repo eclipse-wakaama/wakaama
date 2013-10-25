@@ -238,8 +238,6 @@ int lwm2m_step(lwm2m_context_t * contextP,
     lwm2m_transaction_t * transacP;
     struct timeval tv;
 
-    memset(timeoutP, 0, sizeof(struct timeval));
-
     if (0 != gettimeofday(&tv, NULL)) return COAP_500_INTERNAL_SERVER_ERROR;
 
     transacP = contextP->transactionList;
@@ -267,7 +265,7 @@ int lwm2m_step(lwm2m_context_t * contextP,
                 interval = 1;
             }
 
-            if (0 == timeoutP->tv_sec || timeoutP->tv_sec > interval)
+            if (timeoutP->tv_sec > interval)
             {
                 timeoutP->tv_sec = interval;
             }

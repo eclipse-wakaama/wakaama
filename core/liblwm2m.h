@@ -376,7 +376,7 @@ lwm2m_context_t * lwm2m_init(int socket, char * endpointName, uint16_t numObject
 // close a liblwm2m context.
 void lwm2m_close(lwm2m_context_t * contextP);
 
-// perform any required pending operation and return the maximal time interval to wait.
+// perform any required pending operation and adjust timeoutP to the maximal time interval to wait.
 int lwm2m_step(lwm2m_context_t * contextP, struct timeval * timeoutP);
 // dispatch received data to liblwm2m
 int lwm2m_handle_packet(lwm2m_context_t * contextP, uint8_t * buffer, int length, struct sockaddr * fromAddr, socklen_t fromAddrLen);
