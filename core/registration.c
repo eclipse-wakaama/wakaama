@@ -141,7 +141,7 @@ void registration_deregister(lwm2m_context_t * contextP,
 
     if (serverP->status != STATE_REGISTERED) return;
 
-    coap_init_message(message, COAP_TYPE_NON, COAP_DELETE, contextP->nextMID++);
+    coap_init_message(message, COAP_TYPE_CON, COAP_DELETE, contextP->nextMID++);
     coap_set_header_uri_path(message, serverP->location);
 
     pktBufferLen = coap_serialize_message(message, pktBuffer);
