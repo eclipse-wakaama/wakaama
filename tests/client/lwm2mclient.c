@@ -180,7 +180,6 @@ static void prv_output_servers(char * buffer,
         char s[INET6_ADDRSTRLEN];
 
         fprintf(stdout, "Server ID %d:\r\n", targetP->shortID);
-        //fprintf(stdout, "\thost: \"%s\" port: %hu\r\n", targetP->host, targetP->port);
         fprintf(stdout, "\tstatus: ");
         switch(targetP->status)
         {
