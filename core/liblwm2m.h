@@ -34,8 +34,6 @@ David Navarro <david.navarro@intel.com>
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
-#include <netinet/in.h>
-#include <sys/socket.h>
 #include <sys/time.h>
 
 // expose CoAP error codes to applications
@@ -226,8 +224,8 @@ typedef struct _lwm2m_server_
     struct _lwm2m_server_ * next;   // matches lwm2m_list_t::next
     uint16_t          shortID;      // matches lwm2m_list_t::id
     lwm2m_security_t  security;
-    struct sockaddr * addr;
-    socklen_t         addrLen;
+    uint8_t * addr;
+    size_t         addrLen;
     lwm2m_status_t    status;
     char *            location;
     uint16_t          mid;
@@ -285,8 +283,8 @@ typedef struct _lwm2m_client_
     struct _lwm2m_client_ * next;       // matches lwm2m_list_t::next
     uint16_t                internalID; // matches lwm2m_list_t::id
     char * name;
-    struct sockaddr * addr;
-    socklen_t         addrLen;
+    uint8_t * addr;
+    size_t         addrLen;
     lwm2m_client_object_t * objectList;
     lwm2m_observation_t * observationList;
 } lwm2m_client_t;
@@ -350,7 +348,7 @@ typedef struct _lwm2m_observed_
     lwm2m_watcher_t * watcherList;
 } lwm2m_observed_t;
 
-typedef coap_status_t (*buffer_send_func_t)(int, uint8_t *, size_t, struct sockaddr *, socklen_t);
+typedef coap_status_t (*buffer_send_func_t)(int, uint8_t *, size_t, uint8_t *, size_t);
 
 /*
  * LWM2M Context
@@ -384,11 +382,11 @@ void lwm2m_close(lwm2m_context_t * contextP);
 // perform any required pending operation and adjust timeoutP to the maximal time interval to wait.
 int lwm2m_step(lwm2m_context_t * contextP, struct timeval * timeoutP);
 // dispatch received data to liblwm2m
-int lwm2m_handle_packet(lwm2m_context_t * contextP, uint8_t * buffer, int length, struct sockaddr * fromAddr, socklen_t fromAddrLen);
+int lwm2m_handle_packet(lwm2m_context_t * contextP, uint8_t * buffer, int length, uint8_t * fromAddr, size_t fromAddrLen);
 
 #ifdef LWM2M_CLIENT_MODE
 int lwm2m_set_bootstrap_server(lwm2m_context_t * contextP, lwm2m_bootstrap_server_t * serverP);
-int lwm2m_add_server(lwm2m_context_t * contextP, uint16_t shortID, struct sockaddr *addr, socklen_t addrLen, lwm2m_security_t * securityP);
+int lwm2m_add_server(lwm2m_context_t * contextP, uint16_t shortID, uint8_t *addr, size_t addrLen, lwm2m_security_t * securityP);
 
 // send registration message to all known LWM2M Servers.
 int lwm2m_register(lwm2m_context_t * contextP);

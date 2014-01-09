@@ -70,10 +70,10 @@ Contains code snippets which are:
 #include <stdio.h>
 
 
-static int prv_check_addr(struct sockaddr * leftAddr,
-                          socklen_t leftAddrLen,
-                          struct sockaddr * rightAddr,
-                          socklen_t rightAddrLen)
+static int prv_check_addr(uint8_t * leftAddr,
+                          size_t leftAddrLen,
+                          uint8_t * rightAddr,
+                          size_t rightAddrLen)
 {
     if (leftAddrLen != rightAddrLen) return 0;
 
@@ -83,8 +83,8 @@ static int prv_check_addr(struct sockaddr * leftAddr,
 }
 
 static void handle_reset(lwm2m_context_t * contextP,
-                         struct sockaddr * fromAddr,
-                         socklen_t fromAddrLen,
+                         uint8_t * fromAddr,
+                         size_t fromAddrLen,
                          coap_packet_t * message)
 {
 #ifdef LWM2M_CLIENT_MODE
@@ -94,12 +94,12 @@ static void handle_reset(lwm2m_context_t * contextP,
 
 static void handle_response(lwm2m_context_t * contextP,
                             lwm2m_transaction_t * transacP,
-                            struct sockaddr * fromAddr,
-                            socklen_t fromAddrLen,
+                            uint8_t * fromAddr,
+                            size_t fromAddrLen,
                             coap_packet_t * message)
 {
-    struct sockaddr * targetAddr;
-    socklen_t targetAddrLen;
+    uint8_t * targetAddr;
+    size_t targetAddrLen;
 
     switch (transacP->peerType)
     {
@@ -129,8 +129,8 @@ static void handle_response(lwm2m_context_t * contextP,
 }
 
 static coap_status_t handle_request(lwm2m_context_t * contextP,
-                                    struct sockaddr * fromAddr,
-                                    socklen_t fromAddrLen,
+                                    uint8_t * fromAddr,
+                                    size_t fromAddrLen,
                                     coap_packet_t * message,
                                     coap_packet_t * response)
 {
@@ -180,8 +180,8 @@ static coap_status_t handle_request(lwm2m_context_t * contextP,
 int lwm2m_handle_packet(lwm2m_context_t * contextP,
                         uint8_t * buffer,
                         int length,
-                        struct sockaddr * fromAddr,
-                        socklen_t fromAddrLen)
+                        uint8_t * fromAddr,
+                        size_t fromAddrLen)
 {
     coap_status_t coap_error_code = NO_ERROR;
     static coap_packet_t message[1];
@@ -335,8 +335,8 @@ int lwm2m_handle_packet(lwm2m_context_t * contextP,
 
 coap_status_t message_send(lwm2m_context_t * contextP,
                            coap_packet_t * message,
-                           struct sockaddr * addr,
-                           socklen_t addrLen)
+                           uint8_t * addr,
+                           size_t addrLen)
 {
     coap_status_t result = INTERNAL_SERVER_ERROR_5_00;
     uint8_t pktBuffer[COAP_MAX_PACKET_SIZE+1];

@@ -115,8 +115,8 @@ static void prv_unlinkObserved(lwm2m_context_t * contextP,
 }
 
 static lwm2m_server_t * prv_findServer(lwm2m_context_t * contextP,
-                                       struct sockaddr * fromAddr,
-                                       socklen_t fromAddrLen)
+                                       uint8_t * fromAddr,
+                                       size_t fromAddrLen)
 {
     lwm2m_server_t * targetP;
 
@@ -148,8 +148,8 @@ static lwm2m_watcher_t * prv_findWatcher(lwm2m_observed_t * observedP,
 
 coap_status_t handle_observe_request(lwm2m_context_t * contextP,
                                      lwm2m_uri_t * uriP,
-                                     struct sockaddr * fromAddr,
-                                     socklen_t fromAddrLen,
+                                     uint8_t * fromAddr,
+                                     size_t fromAddrLen,
                                      coap_packet_t * message,
                                      coap_packet_t * response)
 {
@@ -196,8 +196,8 @@ coap_status_t handle_observe_request(lwm2m_context_t * contextP,
 
 void cancel_observe(lwm2m_context_t * contextP,
                     uint16_t mid,
-                    struct sockaddr * fromAddr,
-                    socklen_t fromAddrLen)
+                    uint8_t * fromAddr,
+                    size_t fromAddrLen)
 {
     lwm2m_observed_t * observedP;
 
@@ -448,8 +448,8 @@ int lwm2m_observe_cancel(lwm2m_context_t * contextP,
 }
 
 void handle_observe_notify(lwm2m_context_t * contextP,
-                           struct sockaddr * fromAddr,
-                           socklen_t fromAddrLen,
+                           uint8_t * fromAddr,
+                           size_t fromAddrLen,
                            coap_packet_t * message)
 {
     uint8_t * tokenP;

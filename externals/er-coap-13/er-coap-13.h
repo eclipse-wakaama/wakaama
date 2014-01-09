@@ -46,7 +46,6 @@
 #include "contiki-net.h"
 #include "erbium.h"
 #else
-#include <netinet/in.h>
 #include <signal.h>
 #include <time.h>
 #endif
@@ -347,8 +346,6 @@ void coap_init_message(void *packet, coap_message_type_t type, uint8_t code, uin
 size_t coap_serialize_message(void *packet, uint8_t *buffer);
 #ifdef CONTIKI
 void coap_send_message(uip_ipaddr_t *addr, uint16_t port, uint8_t *data, uint16_t length);
-#else
-void coap_send_message(int sock, struct sockaddr *addr, socklen_t addrLen, uint8_t *data, uint16_t length);
 #endif
 coap_status_t coap_parse_message(void *request, uint8_t *data, uint16_t data_len);
 

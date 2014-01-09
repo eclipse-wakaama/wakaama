@@ -89,8 +89,8 @@ static int g_quit = 0;
 static coap_status_t prv_buffer_send(int sock,
                           uint8_t * buffer,
                           size_t length,
-                          struct sockaddr * addr,
-                          socklen_t addrLen)
+                          uint8_t * addr,
+                          size_t addrLen)
 {
     size_t nbSent;
     size_t offset;
@@ -98,7 +98,7 @@ static coap_status_t prv_buffer_send(int sock,
     offset = 0;
     while (offset != length)
     {
-        nbSent = sendto(sock, buffer + offset, length - offset, 0, addr, addrLen);
+        nbSent = sendto(sock, buffer + offset, length - offset, 0, (struct sockaddr *)addr, addrLen);
         if (nbSent == -1) return INTERNAL_SERVER_ERROR_5_00;
         offset += nbSent;
     }
@@ -630,7 +630,7 @@ int main(int argc, char *argv[])
                             ntohs(((struct sockaddr_in6*)&addr)->sin6_port));
                     prv_output_buffer(stderr, buffer, numBytes);
 
-                    lwm2m_handle_packet(lwm2mH, buffer, numBytes, (struct sockaddr *)&addr, addrLen);
+                    lwm2m_handle_packet(lwm2mH, buffer, numBytes, (uint8_t *)&addr, addrLen);
                 }
             }
             else if (FD_ISSET(STDIN_FILENO, &readfds))

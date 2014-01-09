@@ -166,8 +166,8 @@ int lwm2m_set_bootstrap_server(lwm2m_context_t * contextP,
 
 int lwm2m_add_server(lwm2m_context_t * contextP,
                      uint16_t shortID,
-                     struct sockaddr * addr,
-                     socklen_t addrLen,
+                     uint8_t * addr,
+                     size_t addrLen,
                      lwm2m_security_t * securityP)
 {
     lwm2m_server_t * serverP;
@@ -179,7 +179,7 @@ int lwm2m_add_server(lwm2m_context_t * contextP,
         memset(serverP, 0, sizeof(lwm2m_server_t));
         memcpy(&(serverP->security), securityP, sizeof(lwm2m_security_t));
         serverP->shortID = shortID;
-        serverP->addr = (struct sockaddr *)malloc(addrLen);
+        serverP->addr = (uint8_t *)malloc(addrLen);
         if (serverP->addr != NULL)
         {
             memcpy(serverP->addr, addr, addrLen);
