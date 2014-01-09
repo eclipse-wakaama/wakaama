@@ -41,7 +41,8 @@ David Navarro <david.navarro@intel.com>
 lwm2m_context_t * lwm2m_init(int socket,
                              char * endpointName,
                              uint16_t numObject,
-                             lwm2m_object_t * objectList[])
+                             lwm2m_object_t * objectList[],
+                             buffer_send_func_t buffer_send_func)
 {
     lwm2m_context_t * contextP;
 
@@ -50,6 +51,7 @@ lwm2m_context_t * lwm2m_init(int socket,
     {
         memset(contextP, 0, sizeof(lwm2m_context_t));
         contextP->socket = socket;
+        contextP->buffer_send_func = buffer_send_func;
 #ifdef LWM2M_CLIENT_MODE
         contextP->endpointName = strdup(endpointName);
         if (contextP->endpointName == NULL)

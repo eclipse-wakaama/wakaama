@@ -350,6 +350,8 @@ typedef struct _lwm2m_observed_
     lwm2m_watcher_t * watcherList;
 } lwm2m_observed_t;
 
+typedef coap_status_t (*buffer_send_func_t)(int, uint8_t *, size_t, struct sockaddr *, socklen_t);
+
 /*
  * LWM2M Context
  */
@@ -370,10 +372,12 @@ typedef struct
 #endif
     uint16_t          nextMID;
     lwm2m_transaction_t * transactionList;
+    // buffer send callback
+    buffer_send_func_t buffer_send_func;
 } lwm2m_context_t;
 
 // initialize a liblwm2m context. endpointName, numObject and objectList are ignored for pure servers.
-lwm2m_context_t * lwm2m_init(int socket, char * endpointName, uint16_t numObject, lwm2m_object_t * objectList[]);
+lwm2m_context_t * lwm2m_init(int socket, char * endpointName, uint16_t numObject, lwm2m_object_t * objectList[], buffer_send_func_t buffer_send_func);
 // close a liblwm2m context.
 void lwm2m_close(lwm2m_context_t * contextP);
 

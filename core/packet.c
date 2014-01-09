@@ -333,25 +333,6 @@ int lwm2m_handle_packet(lwm2m_context_t * contextP,
 }
 
 
-coap_status_t buffer_send(int sock,
-                          uint8_t * buffer,
-                          size_t length,
-                          struct sockaddr * addr,
-                          socklen_t addrLen)
-{
-    size_t nbSent;
-    size_t offset;
-
-    offset = 0;
-    while (offset != length)
-    {
-        nbSent = sendto(sock, buffer + offset, length - offset, 0, addr, addrLen);
-        if (nbSent == -1) return INTERNAL_SERVER_ERROR_5_00;
-        offset += nbSent;
-    }
-    return NO_ERROR;
-}
-
 coap_status_t message_send(lwm2m_context_t * contextP,
                            coap_packet_t * message,
                            struct sockaddr * addr,
@@ -364,7 +345,10 @@ coap_status_t message_send(lwm2m_context_t * contextP,
     pktBufferLen = coap_serialize_message(message, pktBuffer);
     if (0 != pktBufferLen)
     {
-        result = buffer_send(contextP->socket, pktBuffer, pktBufferLen, addr, addrLen);
+        if (NULL != contextP->buffer_send_func)
+            result = contextP->buffer_send_func(contextP->socket, pktBuffer, pktBufferLen, addr, addrLen);
+        else
+            LOG("ERROR No buffer send callback registered\n");
     }
 
     return result;

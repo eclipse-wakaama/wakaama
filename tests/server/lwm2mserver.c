@@ -86,6 +86,24 @@ Contains code snippets which are:
 
 static int g_quit = 0;
 
+static coap_status_t prv_buffer_send(int sock,
+                          uint8_t * buffer,
+                          size_t length,
+                          struct sockaddr * addr,
+                          socklen_t addrLen)
+{
+    size_t nbSent;
+    size_t offset;
+
+    offset = 0;
+    while (offset != length)
+    {
+        nbSent = sendto(sock, buffer + offset, length - offset, 0, addr, addrLen);
+        if (nbSent == -1) return INTERNAL_SERVER_ERROR_5_00;
+        offset += nbSent;
+    }
+    return NO_ERROR;
+}
 
 static void prv_output_buffer(FILE * fd,
                               uint8_t * buffer,
@@ -539,7 +557,7 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    lwm2mH = lwm2m_init(socket, "testlwm2mserver", 0, NULL);
+    lwm2mH = lwm2m_init(socket, "testlwm2mserver", 0, NULL, prv_buffer_send);
     if (NULL == lwm2mH)
     {
         fprintf(stderr, "lwm2m_init() failed\r\n");
