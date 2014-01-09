@@ -38,6 +38,9 @@ David Navarro <david.navarro@intel.com>
 #include <sys/socket.h>
 #include <sys/time.h>
 
+// expose CoAP error codes to applications
+#include "externals/er-coap-13/er-coap-13.h"
+
 /*
  * Error code
  */
@@ -222,8 +225,6 @@ typedef struct _lwm2m_server_
 {
     struct _lwm2m_server_ * next;   // matches lwm2m_list_t::next
     uint16_t          shortID;      // matches lwm2m_list_t::id
-    uint16_t          port;
-    char *            host;
     lwm2m_security_t  security;
     struct sockaddr * addr;
     socklen_t         addrLen;
@@ -383,7 +384,7 @@ int lwm2m_handle_packet(lwm2m_context_t * contextP, uint8_t * buffer, int length
 
 #ifdef LWM2M_CLIENT_MODE
 int lwm2m_set_bootstrap_server(lwm2m_context_t * contextP, lwm2m_bootstrap_server_t * serverP);
-int lwm2m_add_server(lwm2m_context_t * contextP, uint16_t shortID, char * host, uint16_t port, lwm2m_security_t * securityP);
+int lwm2m_add_server(lwm2m_context_t * contextP, uint16_t shortID, struct sockaddr *addr, socklen_t addrLen, lwm2m_security_t * securityP);
 
 // send registration message to all known LWM2M Servers.
 int lwm2m_register(lwm2m_context_t * contextP);
