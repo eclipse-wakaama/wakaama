@@ -75,7 +75,6 @@ Contains code snippets which are:
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <sys/stat.h>
-#include <dirent.h>
 #include <errno.h>
 #include <signal.h>
 
