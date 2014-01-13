@@ -124,12 +124,37 @@ static void prv_output_buffer(FILE * fd,
     }
 }
 
+static void prv_dump_client(lwm2m_client_t * targetP)
+{
+    lwm2m_client_object_t * objectP;
+
+    fprintf(stdout, "Client #%d:\r\n", targetP->internalID);
+    fprintf(stdout, "\tname: \"%s\"\r\n", targetP->name);
+    fprintf(stdout, "\tobjects: ");
+    for (objectP = targetP->objectList; objectP != NULL ; objectP = objectP->next)
+    {
+        if (objectP->instanceList == NULL)
+        {
+            fprintf(stdout, "%d, ", objectP->id);
+        }
+        else
+        {
+            lwm2m_list_t * instanceP;
+
+            for (instanceP = objectP->instanceList; instanceP != NULL ; instanceP = instanceP->next)
+            {
+                fprintf(stdout, "%d/%d, ", objectP->id, instanceP->id);
+            }
+        }
+    }
+    fprintf(stdout, "\r\n");
+}
+
 static void prv_output_clients(char * buffer,
                                void * user_data)
 {
     lwm2m_context_t * lwm2mH = (lwm2m_context_t *) user_data;
     lwm2m_client_t * targetP;
-    lwm2m_client_object_t * objectP;
 
     targetP = lwm2mH->clientList;
 
@@ -141,28 +166,7 @@ static void prv_output_clients(char * buffer,
 
     for (targetP = lwm2mH->clientList ; targetP != NULL ; targetP = targetP->next)
     {
-        char s[INET6_ADDRSTRLEN];
-
-        fprintf(stdout, "Client #%d:\r\n", targetP->internalID);
-        fprintf(stdout, "\tname: \"%s\"\r\n", targetP->name);
-        fprintf(stdout, "\tobjects: ");
-        for (objectP = targetP->objectList; objectP != NULL ; objectP = objectP->next)
-        {
-            if (objectP->instanceList == NULL)
-            {
-                fprintf(stdout, "%d, ", objectP->id);
-            }
-            else
-            {
-                lwm2m_list_t * instanceP;
-
-                for (instanceP = objectP->instanceList; instanceP != NULL ; instanceP = instanceP->next)
-                {
-                    fprintf(stdout, "%d/%d, ", objectP->id, instanceP->id);
-                }
-            }
-        }
-        fprintf(stdout, "\r\n");
+        prv_dump_client(targetP);
     }
 }
 
@@ -440,6 +444,41 @@ syntax_error:
     fprintf(stdout, "Syntax error !");
 }
 
+static void prv_monitor_callback(uint16_t clientID,
+                                 lwm2m_uri_t * uriP,
+                                 int status,
+                                 uint8_t * data,
+                                 int dataLength,
+                                 void * userData)
+{
+    lwm2m_context_t * lwm2mH = (lwm2m_context_t *) userData;
+    lwm2m_client_t * targetP;
+    lwm2m_client_object_t * objectP;
+
+    switch (status)
+	{
+	case CREATED_2_01:
+	    fprintf(stdout, "\r\nNew client #%d registered.\r\n", clientID);
+
+	    targetP = (lwm2m_client_t *)lwm2m_list_find((lwm2m_list_t *)lwm2mH->clientList, clientID);
+
+        prv_dump_client(targetP);
+	    break;
+
+	case DELETED_2_02:
+	    fprintf(stdout, "\r\nClient #%d unregistered.\r\n", clientID);
+	    break;
+
+	default:
+		fprintf(stdout, "\r\nMonitor callback called with an unknown status: %d.\r\n", status);
+		break;
+	}
+
+    fprintf(stdout, "\r\n> ");
+    fflush(stdout);
+}
+
+
 static void prv_quit(char * buffer,
                      void * user_data)
 {
@@ -552,6 +591,8 @@ int main(int argc, char *argv[])
         commands[i].userData = (void *)lwm2mH;
     }
     fprintf(stdout, "> "); fflush(stdout);
+
+    lwm2m_set_monitoring_callback(lwm2mH, prv_monitor_callback, lwm2mH);
 
     while (0 == g_quit)
     {

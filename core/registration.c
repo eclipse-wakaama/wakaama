@@ -402,6 +402,10 @@ coap_status_t handle_registration_request(lwm2m_context_t * contextP,
         }
         coap_set_header_location_path(response, location);
 
+        if (contextP->monitorCallback != NULL)
+        {
+            contextP->monitorCallback(clientP->internalID, NULL, CREATED_2_01, NULL, 0, contextP->monitorUserData);
+        }
         result = CREATED_2_01;
     }
     break;
@@ -418,6 +422,10 @@ coap_status_t handle_registration_request(lwm2m_context_t * contextP,
 
         contextP->clientList = (lwm2m_client_t *)LWM2M_LIST_RM(contextP->clientList, uriP->objectId, &clientP);
         if (clientP == NULL) return COAP_400_BAD_REQUEST;
+        if (contextP->monitorCallback != NULL)
+        {
+            contextP->monitorCallback(clientP->internalID, NULL, DELETED_2_02, NULL, 0, contextP->monitorUserData);
+        }
         prv_freeClient(clientP);
         result = DELETED_2_02;
     }
@@ -429,4 +437,14 @@ coap_status_t handle_registration_request(lwm2m_context_t * contextP,
 
     return result;
 }
+
+void lwm2m_set_monitoring_callback(lwm2m_context_t * contextP,
+                                   lwm2m_result_callback_t callback,
+                                   void * userData)
+{
+    contextP->monitorCallback = callback;
+    contextP->monitorUserData = userData;
+}
+
+
 #endif
