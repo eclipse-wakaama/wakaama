@@ -71,7 +71,7 @@ void print_usage(void)
     fprintf(stderr, "Launch a LWM2M client.\r\n\n");
 }
 
-static coap_status_t prv_buffer_send(int sock,
+static uint8_t prv_buffer_send(int sock,
                           uint8_t * buffer,
                           size_t length,
                           uint8_t * addr,
@@ -84,10 +84,10 @@ static coap_status_t prv_buffer_send(int sock,
     while (offset != length)
     {
         nbSent = sendto(sock, buffer + offset, length - offset, 0, (struct sockaddr *)addr, addrLen);
-        if (nbSent == -1) return INTERNAL_SERVER_ERROR_5_00;
+        if (nbSent == -1) return COAP_500_INTERNAL_SERVER_ERROR;
         offset += nbSent;
     }
-    return NO_ERROR;
+    return COAP_NO_ERROR;
 }
 
 static void prv_output_buffer(uint8_t * buffer,
@@ -227,7 +227,7 @@ static int prv_add_server(lwm2m_context_t * contextP,
     struct addrinfo *servinfo = NULL;
     struct addrinfo *p;
     int sock;
-    int status = INTERNAL_SERVER_ERROR_5_00;
+    int status = COAP_500_INTERNAL_SERVER_ERROR;
     struct sockaddr *sa;
     socklen_t sl;
 
@@ -235,8 +235,8 @@ static int prv_add_server(lwm2m_context_t * contextP,
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_DGRAM;
 
-    if (0 >= sprintf(portStr, "%hu", port)) return INTERNAL_SERVER_ERROR_5_00;
-    if (0 != getaddrinfo(host, portStr, &hints, &servinfo) || servinfo == NULL) return NOT_FOUND_4_04;
+    if (0 >= sprintf(portStr, "%hu", port)) return COAP_500_INTERNAL_SERVER_ERROR;
+    if (0 != getaddrinfo(host, portStr, &hints, &servinfo) || servinfo == NULL) return COAP_404_NOT_FOUND;
 
     // we test the various addresses
     sock = -1;

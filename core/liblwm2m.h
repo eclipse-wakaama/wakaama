@@ -36,12 +36,11 @@ David Navarro <david.navarro@intel.com>
 #include <stdbool.h>
 #include <sys/time.h>
 
-// expose CoAP error codes to applications
-#include "externals/er-coap-13/er-coap-13.h"
-
 /*
  * Error code
  */
+
+#define COAP_NO_ERROR                   (uint8_t)0x00
 
 #define COAP_201_CREATED                (uint8_t)0x41
 #define COAP_202_DELETED                (uint8_t)0x42
@@ -348,7 +347,7 @@ typedef struct _lwm2m_observed_
     lwm2m_watcher_t * watcherList;
 } lwm2m_observed_t;
 
-typedef coap_status_t (*buffer_send_func_t)(int, uint8_t *, size_t, uint8_t *, size_t);
+typedef uint8_t (*lwm2m_buffer_send_callback_t)(int, uint8_t *, size_t, uint8_t *, size_t);
 
 /*
  * LWM2M Context
@@ -373,11 +372,11 @@ typedef struct
     uint16_t          nextMID;
     lwm2m_transaction_t * transactionList;
     // buffer send callback
-    buffer_send_func_t buffer_send_func;
+    lwm2m_buffer_send_callback_t bufferSendCallback;
 } lwm2m_context_t;
 
 // initialize a liblwm2m context. endpointName, numObject and objectList are ignored for pure servers.
-lwm2m_context_t * lwm2m_init(int socket, char * endpointName, uint16_t numObject, lwm2m_object_t * objectList[], buffer_send_func_t buffer_send_func);
+lwm2m_context_t * lwm2m_init(int socket, char * endpointName, uint16_t numObject, lwm2m_object_t * objectList[], lwm2m_buffer_send_callback_t bufferSendCallback);
 // close a liblwm2m context.
 void lwm2m_close(lwm2m_context_t * contextP);
 

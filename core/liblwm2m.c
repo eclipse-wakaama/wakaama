@@ -42,16 +42,19 @@ lwm2m_context_t * lwm2m_init(int socket,
                              char * endpointName,
                              uint16_t numObject,
                              lwm2m_object_t * objectList[],
-                             buffer_send_func_t buffer_send_func)
+                             lwm2m_buffer_send_callback_t bufferSendCallback)
 {
     lwm2m_context_t * contextP;
+
+    if (NULL == bufferSendCallback)
+        return NULL;
 
     contextP = (lwm2m_context_t *)malloc(sizeof(lwm2m_context_t));
     if (NULL != contextP)
     {
         memset(contextP, 0, sizeof(lwm2m_context_t));
         contextP->socket = socket;
-        contextP->buffer_send_func = buffer_send_func;
+        contextP->bufferSendCallback = bufferSendCallback;
 #ifdef LWM2M_CLIENT_MODE
         contextP->endpointName = strdup(endpointName);
         if (contextP->endpointName == NULL)
@@ -171,7 +174,7 @@ int lwm2m_add_server(lwm2m_context_t * contextP,
                      lwm2m_security_t * securityP)
 {
     lwm2m_server_t * serverP;
-    int status = INTERNAL_SERVER_ERROR_5_00;
+    int status = COAP_500_INTERNAL_SERVER_ERROR;
 
     serverP = (lwm2m_server_t *)malloc(sizeof(lwm2m_server_t));
     if (serverP != NULL)

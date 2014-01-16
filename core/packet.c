@@ -345,10 +345,7 @@ coap_status_t message_send(lwm2m_context_t * contextP,
     pktBufferLen = coap_serialize_message(message, pktBuffer);
     if (0 != pktBufferLen)
     {
-        if (NULL != contextP->buffer_send_func)
-            result = contextP->buffer_send_func(contextP->socket, pktBuffer, pktBufferLen, addr, addrLen);
-        else
-            LOG("ERROR No buffer send callback registered\n");
+        result = contextP->bufferSendCallback(contextP->socket, pktBuffer, pktBufferLen, addr, addrLen);
     }
 
     return result;
