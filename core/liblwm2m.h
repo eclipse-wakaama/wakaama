@@ -82,7 +82,7 @@ uint16_t lwm2m_list_newId(lwm2m_list_t * head);
 
 
 /*
- *  Ressource values
+ *  Resource values
  */
 
 // defined in utils.c
@@ -250,7 +250,7 @@ typedef void (*lwm2m_result_callback_t) (uint16_t clientID, lwm2m_uri_t * uriP, 
  *
  * Used to store observation of remote clients resources.
  * status STATE_REG_PENDING means the observe request was sent to the client but not yet answered.
- * status STATE_REGISTERED means the client aclnowledged the observe request.
+ * status STATE_REGISTERED means the client acknowledged the observe request.
  */
 
 typedef struct _lwm2m_observation_
@@ -366,7 +366,9 @@ typedef struct
     lwm2m_observed_t * observedList;
 #endif
 #ifdef LWM2M_SERVER_MODE
-    lwm2m_client_t *  clientList;
+    lwm2m_client_t *        clientList;
+    lwm2m_result_callback_t monitorCallback;
+    void *                  monitorUserData;
 #endif
     uint16_t          nextMID;
     lwm2m_transaction_t * transactionList;
@@ -395,6 +397,14 @@ void lwm2m_resource_value_changed(lwm2m_context_t * contextP, lwm2m_uri_t * uriP
 #endif
 
 #ifdef LWM2M_SERVER_MODE
+// Clients registration/deregistration monitoring API.
+// When a LWM2M client registers, the callback is called with status CREATED_2_01.
+// When a LWM2M client deregisters, the callback is called with status DELETED_2_02.
+// clientID is the internal ID of the LWM2M Client.
+// The callback's parameters uri, data, dataLength are always NULL.
+// The lwm2m_client_t is present in the lwm2m_context_t's clientList when the callback is called. On a deregistration, it deleted when the callback returns.
+void lwm2m_set_monitoring_callback(lwm2m_context_t * contextP, lwm2m_result_callback_t callback, void * userData);
+
 // Device Management APIs
 int lwm2m_dm_read(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, lwm2m_result_callback_t callback, void * userData);
 int lwm2m_dm_write(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, char * buffer, int length, lwm2m_result_callback_t callback, void * userData);

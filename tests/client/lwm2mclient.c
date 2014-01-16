@@ -44,7 +44,6 @@ David Navarro <david.navarro@intel.com>
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <sys/stat.h>
-#include <dirent.h>
 #include <errno.h>
 #include <signal.h>
 
