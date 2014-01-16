@@ -32,6 +32,7 @@ David Navarro <david.navarro@intel.com>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <inttypes.h>
 
 
 int lwm2m_PlainTextToInt64(char * buffer,
@@ -100,7 +101,7 @@ int lwm2m_int64ToPlainText(int64_t data,
     char string[32];
     int len;
 
-    len = snprintf(string, 32, "%ld", data);
+    len = snprintf(string, 32, "%" PRId64, data);
     if (len > 0)
     {
         *bufferP = (char *)malloc(len);

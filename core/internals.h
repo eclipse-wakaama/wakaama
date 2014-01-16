@@ -88,22 +88,22 @@ int transaction_send(lwm2m_context_t * contextP, lwm2m_transaction_t * transacP)
 void transaction_free(lwm2m_transaction_t * transacP);
 
 // defined in management.c
-coap_status_t handle_dm_request(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, struct sockaddr * fromAddr, socklen_t fromAddrLen, coap_packet_t * message, coap_packet_t * response);
+coap_status_t handle_dm_request(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, uint8_t * fromAddr, size_t fromAddrLen, coap_packet_t * message, coap_packet_t * response);
 
 // defined in observe.c
-coap_status_t handle_observe_request(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, struct sockaddr * fromAddr, socklen_t fromAddrLen, coap_packet_t * message, coap_packet_t * response);
-void cancel_observe(lwm2m_context_t * contextP, uint16_t mid, struct sockaddr * fromAddr, socklen_t fromAddrLen);
+coap_status_t handle_observe_request(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, uint8_t * fromAddr, size_t fromAddrLen, coap_packet_t * message, coap_packet_t * response);
+void cancel_observe(lwm2m_context_t * contextP, uint16_t mid, uint8_t * fromAddr, size_t fromAddrLen);
 
 // defined in registration.c
-coap_status_t handle_registration_request(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, struct sockaddr * fromAddr, socklen_t fromAddrLen, coap_packet_t * message, coap_packet_t * response);
+coap_status_t handle_registration_request(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, uint8_t * fromAddr, size_t fromAddrLen, coap_packet_t * message, coap_packet_t * response);
 void registration_deregister(lwm2m_context_t * contextP, lwm2m_server_t * serverP);
 void prv_freeClient(lwm2m_client_t * clientP);
 
 // defined in packet.c
-coap_status_t message_send(lwm2m_context_t * contextP, coap_packet_t * message, struct sockaddr * addr, socklen_t addrLen);
-coap_status_t buffer_send(int sock, uint8_t * buffer, size_t length, struct sockaddr * addr, socklen_t addrLen);
+coap_status_t message_send(lwm2m_context_t * contextP, coap_packet_t * message, uint8_t * addr, size_t addrLen);
+coap_status_t buffer_send(int sock, uint8_t * buffer, size_t length, uint8_t * addr, size_t addrLen);
 
 // defined in observe.c
-void handle_observe_notify(lwm2m_context_t * contextP, struct sockaddr * fromAddr, socklen_t fromAddrLen, coap_packet_t * message);
+void handle_observe_notify(lwm2m_context_t * contextP, uint8_t * fromAddr, size_t fromAddrLen, coap_packet_t * message);
 
 #endif

@@ -484,12 +484,6 @@ coap_send_message(uip_ipaddr_t *addr, uint16_t port, uint8_t *data, uint16_t len
   memset(&udp_conn->ripaddr, 0, sizeof(udp_conn->ripaddr));
   udp_conn->rport = 0;
 }
-#else
-void
-coap_send_message(int sock, struct sockaddr *addr, socklen_t addrLen, uint8_t *data, uint16_t length)
-{
-    sendto(sock, data, length, 0, addr, addrLen);
-}
 #endif
 /*-----------------------------------------------------------------------------------*/
 coap_status_t

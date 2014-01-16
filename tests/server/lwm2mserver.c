@@ -85,6 +85,24 @@ Contains code snippets which are:
 
 static int g_quit = 0;
 
+static uint8_t prv_buffer_send(int sock,
+                          uint8_t * buffer,
+                          size_t length,
+                          uint8_t * addr,
+                          size_t addrLen)
+{
+    size_t nbSent;
+    size_t offset;
+
+    offset = 0;
+    while (offset != length)
+    {
+        nbSent = sendto(sock, buffer + offset, length - offset, 0, (struct sockaddr *)addr, addrLen);
+        if (nbSent == -1) return COAP_500_INTERNAL_SERVER_ERROR;
+        offset += nbSent;
+    }
+    return COAP_NO_ERROR;
+}
 
 static void prv_output_buffer(FILE * fd,
                               uint8_t * buffer,
@@ -577,7 +595,7 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    lwm2mH = lwm2m_init(socket, "testlwm2mserver", 0, NULL);
+    lwm2mH = lwm2m_init(socket, "testlwm2mserver", 0, NULL, prv_buffer_send);
     if (NULL == lwm2mH)
     {
         fprintf(stderr, "lwm2m_init() failed\r\n");
@@ -652,7 +670,7 @@ int main(int argc, char *argv[])
                             ntohs(((struct sockaddr_in6*)&addr)->sin6_port));
                     prv_output_buffer(stderr, buffer, numBytes);
 
-                    lwm2m_handle_packet(lwm2mH, buffer, numBytes, (struct sockaddr *)&addr, addrLen);
+                    lwm2m_handle_packet(lwm2mH, buffer, numBytes, (uint8_t *)&addr, addrLen);
                 }
             }
             else if (FD_ISSET(STDIN_FILENO, &readfds))

@@ -41,15 +41,20 @@ David Navarro <david.navarro@intel.com>
 lwm2m_context_t * lwm2m_init(int socket,
                              char * endpointName,
                              uint16_t numObject,
-                             lwm2m_object_t * objectList[])
+                             lwm2m_object_t * objectList[],
+                             lwm2m_buffer_send_callback_t bufferSendCallback)
 {
     lwm2m_context_t * contextP;
+
+    if (NULL == bufferSendCallback)
+        return NULL;
 
     contextP = (lwm2m_context_t *)malloc(sizeof(lwm2m_context_t));
     if (NULL != contextP)
     {
         memset(contextP, 0, sizeof(lwm2m_context_t));
         contextP->socket = socket;
+        contextP->bufferSendCallback = bufferSendCallback;
 #ifdef LWM2M_CLIENT_MODE
         contextP->endpointName = strdup(endpointName);
         if (contextP->endpointName == NULL)
@@ -164,70 +169,35 @@ int lwm2m_set_bootstrap_server(lwm2m_context_t * contextP,
 
 int lwm2m_add_server(lwm2m_context_t * contextP,
                      uint16_t shortID,
-                     char * host,
-                     uint16_t port,
+                     uint8_t * addr,
+                     size_t addrLen,
                      lwm2m_security_t * securityP)
 {
     lwm2m_server_t * serverP;
-    char portStr[6];
-    int status = INTERNAL_SERVER_ERROR_5_00;
-    struct addrinfo hints;
-    struct addrinfo *servinfo = NULL;
-    struct addrinfo *p;
-    int sock;
-
-    memset(&hints, 0, sizeof(hints));
-    hints.ai_family = AF_UNSPEC;
-    hints.ai_socktype = SOCK_DGRAM;
-
-    if (0 >= sprintf(portStr, "%hu", port)) return INTERNAL_SERVER_ERROR_5_00;
-    if (0 != getaddrinfo(host, portStr, &hints, &servinfo) || servinfo == NULL) return NOT_FOUND_4_04;
+    int status = COAP_500_INTERNAL_SERVER_ERROR;
 
     serverP = (lwm2m_server_t *)malloc(sizeof(lwm2m_server_t));
     if (serverP != NULL)
     {
         memset(serverP, 0, sizeof(lwm2m_server_t));
-
         memcpy(&(serverP->security), securityP, sizeof(lwm2m_security_t));
         serverP->shortID = shortID;
-        serverP->port = port;
-        serverP->host = strdup(host);
-
-        // we test the various addresses
-        sock = -1;
-        for(p = servinfo ; p != NULL && sock == -1 ; p = p->ai_next)
+        serverP->addr = (uint8_t *)malloc(addrLen);
+        if (serverP->addr != NULL)
         {
-            sock = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
-            if (sock >= 0)
-            {
-                if (-1 == connect(sock, p->ai_addr, p->ai_addrlen))
-                {
-                    close(sock);
-                    sock = -1;
-                }
-            }
+            memcpy(serverP->addr, addr, addrLen);
+            serverP->addrLen = addrLen;
+
+            contextP->serverList = (lwm2m_server_t*)LWM2M_LIST_ADD(contextP->serverList, serverP);
+
+            status = 0;
         }
-        if (sock >= 0)
+        else
         {
-            serverP->addr = (struct sockaddr *)malloc(servinfo->ai_addrlen);
-            if (serverP->addr != NULL)
-            {
-                memcpy(serverP->addr, servinfo->ai_addr, servinfo->ai_addrlen);
-                serverP->addrLen = servinfo->ai_addrlen;
-
-                contextP->serverList = (lwm2m_server_t*)LWM2M_LIST_ADD(contextP->serverList, serverP);
-
-                status = 0;
-            }
-            else
-            {
-                free(serverP);
-            }
-            close(sock);
+            free(serverP);
         }
     }
 
-    freeaddrinfo(servinfo);
     return status;
 }
 #endif

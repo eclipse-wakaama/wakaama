@@ -147,7 +147,7 @@ void registration_deregister(lwm2m_context_t * contextP,
     pktBufferLen = coap_serialize_message(message, pktBuffer);
     if (0 != pktBufferLen)
     {
-        coap_send_message(contextP->socket, serverP->addr, serverP->addrLen, pktBuffer, pktBufferLen);
+        contextP->bufferSendCallback(contextP->socket, pktBuffer, pktBufferLen, serverP->addr, serverP->addrLen);
     }
 
     serverP->status = STATE_UNKNOWN;
@@ -337,8 +337,8 @@ static int prv_getLocationString(uint16_t id,
 
 coap_status_t handle_registration_request(lwm2m_context_t * contextP,
                                           lwm2m_uri_t * uriP,
-                                          struct sockaddr * fromAddr,
-                                          socklen_t fromAddrLen,
+                                          uint8_t * fromAddr,
+                                          size_t fromAddrLen,
                                           coap_packet_t * message,
                                           coap_packet_t * response)
 {
@@ -386,7 +386,7 @@ coap_status_t handle_registration_request(lwm2m_context_t * contextP,
         }
         clientP->name = name;
         clientP->objectList = objects;
-        clientP->addr = (struct sockaddr *)malloc(fromAddrLen);
+        clientP->addr = (uint8_t *)malloc(fromAddrLen);
         if (clientP->addr == NULL)
         {
             prv_freeClient(clientP);

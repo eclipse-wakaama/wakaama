@@ -71,6 +71,25 @@ void print_usage(void)
     fprintf(stderr, "Launch a LWM2M client.\r\n\n");
 }
 
+static uint8_t prv_buffer_send(int sock,
+                          uint8_t * buffer,
+                          size_t length,
+                          uint8_t * addr,
+                          size_t addrLen)
+{
+    size_t nbSent;
+    size_t offset;
+
+    offset = 0;
+    while (offset != length)
+    {
+        nbSent = sendto(sock, buffer + offset, length - offset, 0, (struct sockaddr *)addr, addrLen);
+        if (nbSent == -1) return COAP_500_INTERNAL_SERVER_ERROR;
+        offset += nbSent;
+    }
+    return COAP_NO_ERROR;
+}
+
 static void prv_output_buffer(uint8_t * buffer,
                               int length)
 {
@@ -160,7 +179,6 @@ static void prv_output_servers(char * buffer,
         char s[INET6_ADDRSTRLEN];
 
         fprintf(stdout, "Server ID %d:\r\n", targetP->shortID);
-        fprintf(stdout, "\thost: \"%s\" port: %hu\r\n", targetP->host, targetP->port);
         fprintf(stdout, "\tstatus: ");
         switch(targetP->status)
         {
@@ -196,6 +214,53 @@ static void prv_change(char * buffer,
 
 syntax_error:
     fprintf(stdout, "Syntax error !");
+}
+
+static int prv_add_server(lwm2m_context_t * contextP,
+                          uint16_t shortID,
+                          char * host,
+                          uint16_t port,
+                          lwm2m_security_t * securityP)
+{
+    char portStr[6];
+    struct addrinfo hints;
+    struct addrinfo *servinfo = NULL;
+    struct addrinfo *p;
+    int sock;
+    int status = COAP_500_INTERNAL_SERVER_ERROR;
+    struct sockaddr *sa;
+    socklen_t sl;
+
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_DGRAM;
+
+    if (0 >= sprintf(portStr, "%hu", port)) return COAP_500_INTERNAL_SERVER_ERROR;
+    if (0 != getaddrinfo(host, portStr, &hints, &servinfo) || servinfo == NULL) return COAP_404_NOT_FOUND;
+
+    // we test the various addresses
+    sock = -1;
+    for(p = servinfo ; p != NULL && sock == -1 ; p = p->ai_next)
+    {
+        sock = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
+        if (sock >= 0)
+        {
+            sa = p->ai_addr;
+            sl = p->ai_addrlen;
+            if (-1 == connect(sock, p->ai_addr, p->ai_addrlen))
+            {
+                close(sock);
+                sock = -1;
+            }
+        }
+    }
+    if (sock >= 0)
+    {
+        status = lwm2m_add_server(contextP, shortID, (uint8_t *)sa, sl, securityP);
+        if (status != 0)
+            close(sock);
+    }
+    return status;
 }
 
 int main(int argc, char *argv[])
@@ -239,7 +304,7 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    lwm2mH = lwm2m_init(socket, "testlwm2mclient", 2, objArray);
+    lwm2mH = lwm2m_init(socket, "testlwm2mclient", 2, objArray, prv_buffer_send);
     if (NULL == lwm2mH)
     {
         fprintf(stderr, "lwm2m_init() failed\r\n");
@@ -249,7 +314,7 @@ int main(int argc, char *argv[])
     signal(SIGINT, handle_sigint);
 
     memset(&security, 0, sizeof(lwm2m_security_t));
-    result = lwm2m_add_server(lwm2mH, 123, "::1", 5684, &security);
+    result = prv_add_server(lwm2mH, 123, "::1", 5684, &security);
     if (result != 0)
     {
         fprintf(stderr, "lwm2m_add_server() failed: 0x%X\r\n", result);
@@ -326,7 +391,7 @@ int main(int argc, char *argv[])
                             ntohs(((struct sockaddr_in6*)&addr)->sin6_port));
                     prv_output_buffer(buffer, numBytes);
 
-                    lwm2m_handle_packet(lwm2mH, buffer, numBytes, (struct sockaddr *)&addr, addrLen);
+                    lwm2m_handle_packet(lwm2mH, buffer, numBytes, (uint8_t *)&addr, addrLen);
                 }
             }
             else if (FD_ISSET(STDIN_FILENO, &readfds))
