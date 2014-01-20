@@ -69,7 +69,7 @@ static void prv_handleRegistrationReply(lwm2m_transaction_t * transacP,
             if (packet->code == CREATED_2_01)
             {
                 targetP->status = STATE_REGISTERED;
-                targetP->location = (char *)malloc(packet->location_path_len + 1);
+                targetP->location = (char *)lwm2m_malloc(packet->location_path_len + 1);
                 if (targetP->location != NULL)
                 {
                     memcpy(targetP->location, packet->location_path, packet->location_path_len);
@@ -99,7 +99,7 @@ int lwm2m_register(lwm2m_context_t * contextP)
     payload_length = prv_getRegisterPayload(contextP, payload, sizeof(payload));
     if (payload_length == 0) return INTERNAL_SERVER_ERROR_5_00;
 
-    query = (char*)malloc(QUERY_LENGTH + strlen(contextP->endpointName) + 1);
+    query = (char*)lwm2m_malloc(QUERY_LENGTH + strlen(contextP->endpointName) + 1);
     if (query == NULL) return INTERNAL_SERVER_ERROR_5_00;
     strcpy(query, QUERY_TEMPLATE);
     strcpy(query + QUERY_LENGTH, contextP->endpointName);
@@ -169,7 +169,7 @@ static void prv_getParameters(multi_option_t * query,
         {
             if (strncmp(query->data, QUERY_TEMPLATE, QUERY_LENGTH) == 0)
             {
-                *nameP = (char *)malloc(query->len - QUERY_LENGTH + 1);
+                *nameP = (char *)lwm2m_malloc(query->len - QUERY_LENGTH + 1);
                 if (*nameP != NULL)
                 {
                     memcpy(*nameP, query->data + QUERY_LENGTH, query->len - QUERY_LENGTH);
@@ -261,7 +261,7 @@ static lwm2m_client_object_t * prv_decodeRegisterPayload(uint8_t * payload,
             objectP = (lwm2m_client_object_t *)lwm2m_list_find((lwm2m_list_t *)objList, id);
             if (objectP == NULL)
             {
-                objectP = (lwm2m_client_object_t *)malloc(sizeof(lwm2m_client_object_t));
+                objectP = (lwm2m_client_object_t *)lwm2m_malloc(sizeof(lwm2m_client_object_t));
                 memset(objectP, 0, sizeof(lwm2m_client_object_t));
                 if (objectP == NULL) return objList;
                 objectP->id = id;
@@ -274,7 +274,7 @@ static lwm2m_client_object_t * prv_decodeRegisterPayload(uint8_t * payload,
                 instanceP = lwm2m_list_find(objectP->instanceList, instance);
                 if (instanceP == NULL)
                 {
-                    instanceP = (lwm2m_list_t *)malloc(sizeof(lwm2m_list_t));
+                    instanceP = (lwm2m_list_t *)lwm2m_malloc(sizeof(lwm2m_list_t));
                     memset(instanceP, 0, sizeof(lwm2m_list_t));
                     instanceP->id = instance;
                     objectP->instanceList = LWM2M_LIST_ADD(objectP->instanceList, instanceP);
@@ -313,18 +313,18 @@ static void prv_freeClientObjectList(lwm2m_client_object_t * objects)
 
             target = objects->instanceList;
             objects->instanceList = objects->instanceList->next;
-            free(target);
+            lwm2m_free(target);
         }
 
         objP = objects;
         objects = objects->next;
-        free(objP);
+        lwm2m_free(objP);
     }
 }
 
 void prv_freeClient(lwm2m_client_t * clientP)
 {
-    if (clientP->name != NULL) free(clientP->name);
+    if (clientP->name != NULL) lwm2m_free(clientP->name);
     prv_freeClientObjectList(clientP->objectList);
     while(clientP->observationList != NULL)
     {
@@ -332,9 +332,9 @@ void prv_freeClient(lwm2m_client_t * clientP)
 
         targetP = clientP->observationList;
         clientP->observationList = clientP->observationList->next;
-        free(targetP);
+        lwm2m_free(targetP);
     }
-    free(clientP);
+    lwm2m_free(clientP);
 }
 
 static int prv_getLocationString(uint16_t id,
@@ -376,23 +376,23 @@ coap_status_t handle_registration_request(lwm2m_context_t * contextP,
         objects = prv_decodeRegisterPayload(message->payload, message->payload_len);
         if (objects == NULL)
         {
-            free(name);
+            lwm2m_free(name);
             return COAP_400_BAD_REQUEST;
         }
         clientP = prv_getClientByName(contextP, name);
         if (clientP != NULL)
         {
             // we reset this registration
-            free(clientP->name);
+            lwm2m_free(clientP->name);
             prv_freeClientObjectList(clientP->objectList);
             clientP->objectList = NULL;
         }
         else
         {
-            clientP = (lwm2m_client_t *)malloc(sizeof(lwm2m_client_t));
+            clientP = (lwm2m_client_t *)lwm2m_malloc(sizeof(lwm2m_client_t));
             if (clientP == NULL)
             {
-                free(name);
+                lwm2m_free(name);
                 prv_freeClientObjectList(objects);
                 return COAP_500_INTERNAL_SERVER_ERROR;
             }

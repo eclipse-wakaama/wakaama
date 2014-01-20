@@ -36,6 +36,16 @@ David Navarro <david.navarro@intel.com>
 #include <stdbool.h>
 #include <sys/time.h>
 
+#ifndef LWM2M_EMBEDDED_MODE
+#define lwm2m_gettimeofday gettimeofday
+#define lwm2m_malloc malloc
+#define lwm2m_free free
+#else
+int lwm2m_gettimeofday(struct timeval *tv, void *p);
+void *lwm2m_malloc(size_t s);
+void lwm2m_free(void *p);
+#endif
+
 /*
  * Error code
  */

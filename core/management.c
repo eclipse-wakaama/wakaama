@@ -144,7 +144,7 @@ static int prv_make_operation(lwm2m_context_t * contextP,
 
     if (callback != NULL)
     {
-        dataP = (dm_data_t *)malloc(sizeof(dm_data_t));
+        dataP = (dm_data_t *)lwm2m_malloc(sizeof(dm_data_t));
         if (dataP == NULL)
         {
             transaction_free(transaction);

@@ -74,7 +74,7 @@ static obs_list_t * prv_getObservedList(lwm2m_context_t * contextP,
                 {
                     obs_list_t * newP;
 
-                    newP = (obs_list_t *)malloc(sizeof(obs_list_t));
+                    newP = (obs_list_t *)lwm2m_malloc(sizeof(obs_list_t));
                     if (newP != NULL)
                     {
                         newP->item = targetP;
@@ -165,7 +165,7 @@ coap_status_t handle_observe_request(lwm2m_context_t * contextP,
     observedP = prv_findObserved(contextP, uriP);
     if (observedP == NULL)
     {
-        observedP = (lwm2m_observed_t *)malloc(sizeof(lwm2m_observed_t));
+        observedP = (lwm2m_observed_t *)lwm2m_malloc(sizeof(lwm2m_observed_t));
         if (observedP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
         memset(observedP, 0, sizeof(lwm2m_observed_t));
         memcpy(&(observedP->uri), uriP, sizeof(lwm2m_uri_t));
@@ -176,7 +176,7 @@ coap_status_t handle_observe_request(lwm2m_context_t * contextP,
     watcherP = prv_findWatcher(observedP, serverP);
     if (watcherP == NULL)
     {
-        watcherP = (lwm2m_watcher_t *)malloc(sizeof(lwm2m_watcher_t));
+        watcherP = (lwm2m_watcher_t *)lwm2m_malloc(sizeof(lwm2m_watcher_t));
         if (watcherP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
         memset(watcherP, 0, sizeof(lwm2m_watcher_t));
         watcherP->server = serverP;
@@ -230,11 +230,11 @@ void cancel_observe(lwm2m_context_t * contextP,
         }
         if (targetP != NULL)
         {
-            free(targetP);
+            lwm2m_free(targetP);
             if (observedP->watcherList == NULL)
             {
                 prv_unlinkObserved(contextP, observedP);
-                free(observedP);
+                lwm2m_free(observedP);
             }
             return;
         }
@@ -275,7 +275,7 @@ void lwm2m_resource_value_changed(lwm2m_context_t * contextP,
 
         targetP = listP;
         listP = listP->next;
-        free(targetP);
+        lwm2m_free(targetP);
     }
 
 }
@@ -327,7 +327,7 @@ static void prv_observationRemove(lwm2m_client_t * clientP,
         }
     }
 
-    free(observationP);
+    lwm2m_free(observationP);
 }
 
 static void prv_obsRequestCallback(lwm2m_transaction_t * transacP,
@@ -387,14 +387,14 @@ int lwm2m_observe(lwm2m_context_t * contextP,
     clientP = (lwm2m_client_t *)lwm2m_list_find((lwm2m_list_t *)contextP->clientList, clientID);
     if (clientP == NULL) return COAP_404_NOT_FOUND;
 
-    observationP = (lwm2m_observation_t *)malloc(sizeof(lwm2m_observation_t));
+    observationP = (lwm2m_observation_t *)lwm2m_malloc(sizeof(lwm2m_observation_t));
     if (observationP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
     memset(observationP, 0, sizeof(lwm2m_observation_t));
 
     transactionP = transaction_new(COAP_GET, uriP, contextP->nextMID++, ENDPOINT_CLIENT, (void *)clientP);
     if (transactionP == NULL)
     {
-        free(observationP);
+        lwm2m_free(observationP);
         return COAP_500_INTERNAL_SERVER_ERROR;
     }
 

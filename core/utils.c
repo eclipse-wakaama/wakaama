@@ -104,7 +104,7 @@ int lwm2m_int64ToPlainText(int64_t data,
     len = snprintf(string, 32, "%" PRId64, data);
     if (len > 0)
     {
-        *bufferP = (char *)malloc(len);
+        *bufferP = (char *)lwm2m_malloc(len);
 
         if (NULL != *bufferP)
         {
@@ -136,7 +136,7 @@ int lwm2m_float64ToPlainText(double data,
     len = snprintf(string, 64, "%lf", data);
     if (len > 0)
     {
-        *bufferP = (char *)malloc(len);
+        *bufferP = (char *)lwm2m_malloc(len);
 
         if (NULL != *bufferP)
         {

@@ -85,7 +85,7 @@ lwm2m_uri_t * lwm2m_decode_uri(multi_option_t *uriPath)
 
     if (NULL == uriPath) return NULL;
 
-    uriP = (lwm2m_uri_t *)malloc(sizeof(lwm2m_uri_t));
+    uriP = (lwm2m_uri_t *)lwm2m_malloc(sizeof(lwm2m_uri_t));
     if (NULL == uriP) return NULL;
 
     memset(uriP, 0, sizeof(lwm2m_uri_t));
@@ -147,7 +147,7 @@ lwm2m_uri_t * lwm2m_decode_uri(multi_option_t *uriPath)
     if (NULL == uriPath->next) return uriP;
 
 error:
-    free(uriP);
+    lwm2m_free(uriP);
     return NULL;
 }
 

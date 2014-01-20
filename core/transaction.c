@@ -81,12 +81,12 @@ lwm2m_transaction_t * transaction_new(coap_method_t method,
     lwm2m_transaction_t * transacP;
     int result;
 
-    transacP = (lwm2m_transaction_t *)malloc(sizeof(lwm2m_transaction_t));
+    transacP = (lwm2m_transaction_t *)lwm2m_malloc(sizeof(lwm2m_transaction_t));
 
     if (transacP == NULL) return NULL;
     memset(transacP, 0, sizeof(lwm2m_transaction_t));
 
-    transacP->message = malloc(sizeof(coap_packet_t));
+    transacP->message = lwm2m_malloc(sizeof(coap_packet_t));
     if (transacP->message == NULL) goto error;
 
     coap_init_message(transacP->message, COAP_TYPE_CON, method, mID);
@@ -126,15 +126,15 @@ lwm2m_transaction_t * transaction_new(coap_method_t method,
     return transacP;
 
 error:
-    free(transacP);
+    lwm2m_free(transacP);
     return NULL;
 }
 
 void transaction_free(lwm2m_transaction_t * transacP)
 {
-    if (transacP->message) free(transacP->message);
-    if (transacP->buffer) free(transacP->buffer);
-    free(transacP);
+    if (transacP->message) lwm2m_free(transacP->message);
+    if (transacP->buffer) lwm2m_free(transacP->buffer);
+    lwm2m_free(transacP);
 }
 
 void transaction_remove(lwm2m_context_t * contextP,
@@ -173,7 +173,7 @@ int transaction_send(lwm2m_context_t * contextP,
         length = coap_serialize_message(transacP->message, tempBuffer);
         if (length <= 0) return COAP_500_INTERNAL_SERVER_ERROR;
 
-        transacP->buffer = (uint8_t*)malloc(length);
+        transacP->buffer = (uint8_t*)lwm2m_malloc(length);
         if (transacP->buffer == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
 
         memcpy(transacP->buffer, tempBuffer, length);
@@ -200,14 +200,14 @@ int transaction_send(lwm2m_context_t * contextP,
         break;
 
     default:
-        return;
+        return 0;
     }
 
     if (transacP->retrans_counter == 0)
     {
         struct timeval tv;
 
-        if (0 == gettimeofday(&tv, NULL))
+        if (0 == lwm2m_gettimeofday(&tv, NULL))
         {
             transacP->retrans_time = tv.tv_sec;
             transacP->retrans_counter = 1;
