@@ -65,7 +65,6 @@ Contains code snippets which are:
 
 #include <stdlib.h>
 #include <string.h>
-#include <netdb.h>
 
 #include <stdio.h>
 
