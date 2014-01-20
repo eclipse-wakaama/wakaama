@@ -191,6 +191,25 @@ static int prv_getId(uint8_t * data,
     uint16_t limit;
     uint16_t end;
 
+    // Expecting application/link-format (RFC6690)
+    // strip open and close tags
+    if (length >= 1 && data[0] == '<' && data[length-1] == '>')
+    {
+        data++;
+        length-=2;
+    } 
+    else
+    {
+        return 0;
+    }
+
+    // If there is a preceding /, remove it
+    if (length >= 1 && data[0] == '/')
+    {
+        data++;
+        length-=1;
+    }
+
     limit = 0;
     while (limit < length && data[limit] != '/' && data[limit] != ' ') limit++;
     value = prv_get_number(data, limit);

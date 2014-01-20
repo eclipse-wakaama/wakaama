@@ -184,7 +184,7 @@ int prv_getRegisterPayload(lwm2m_context_t * contextP,
         {
             int result;
 
-            result = snprintf(buffer + index, length - index, "%hu, ", contextP->objectList[i]->objID);
+            result = snprintf(buffer + index, length - index, "<%hu>,", contextP->objectList[i]->objID);
             if (result > 0 && result <= length - index)
             {
                 index += result;
@@ -201,7 +201,7 @@ int prv_getRegisterPayload(lwm2m_context_t * contextP,
             {
                 int result;
 
-                result = snprintf(buffer + index, length - index, "%hu/%hu, ", contextP->objectList[i]->objID, targetP->id);
+                result = snprintf(buffer + index, length - index, "<%hu/%hu>,", contextP->objectList[i]->objID, targetP->id);
                 if (result > 0 && result <= length - index)
                 {
                     index += result;
@@ -216,7 +216,7 @@ int prv_getRegisterPayload(lwm2m_context_t * contextP,
 
     if (index > 0)
     {
-        index = index - 2;
+        index = index - 1;  // remove trailing ','
     }
 
     buffer[index] = 0;
