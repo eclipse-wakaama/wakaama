@@ -92,11 +92,11 @@ static void prv_handleRegistrationReply(lwm2m_transaction_t * transacP,
 int lwm2m_register(lwm2m_context_t * contextP)
 {
     char * query;
-    char payload[64];
+    char payload[512];
     int payload_length;
     lwm2m_server_t * targetP;
 
-    payload_length = prv_getRegisterPayload(contextP, payload, 64);
+    payload_length = prv_getRegisterPayload(contextP, payload, sizeof(payload));
     if (payload_length == 0) return INTERNAL_SERVER_ERROR_5_00;
 
     query = (char*)malloc(QUERY_LENGTH + strlen(contextP->endpointName) + 1);
