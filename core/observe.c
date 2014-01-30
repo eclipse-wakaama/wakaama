@@ -115,15 +115,13 @@ static void prv_unlinkObserved(lwm2m_context_t * contextP,
 }
 
 static lwm2m_server_t * prv_findServer(lwm2m_context_t * contextP,
-                                       uint8_t * fromAddr,
-                                       size_t fromAddrLen)
+                                       void * fromSessionH)
 {
     lwm2m_server_t * targetP;
 
     targetP = contextP->serverList;
     while (targetP != NULL
-        && targetP->addrLen != fromAddrLen
-        && memcmp(targetP->addr, fromAddr, fromAddrLen) != 0)
+        && targetP->sessionH != fromSessionH)
     {
         targetP = targetP->next;
     }
@@ -148,8 +146,7 @@ static lwm2m_watcher_t * prv_findWatcher(lwm2m_observed_t * observedP,
 
 coap_status_t handle_observe_request(lwm2m_context_t * contextP,
                                      lwm2m_uri_t * uriP,
-                                     uint8_t * fromAddr,
-                                     size_t fromAddrLen,
+                                     void * fromSessionH,
                                      coap_packet_t * message,
                                      coap_packet_t * response)
 {
@@ -162,7 +159,7 @@ coap_status_t handle_observe_request(lwm2m_context_t * contextP,
     if (!LWM2M_URI_IS_SET_INSTANCE(uriP) && LWM2M_URI_IS_SET_RESOURCE(uriP)) return COAP_400_BAD_REQUEST;
     if (message->token_len == 0) return COAP_400_BAD_REQUEST;
 
-    serverP = prv_findServer(contextP, fromAddr, fromAddrLen);
+    serverP = prv_findServer(contextP, fromSessionH);
     if (serverP == NULL || serverP->status != STATE_REGISTERED) return COAP_401_UNAUTHORIZED;
 
     observedP = prv_findObserved(contextP, uriP);
@@ -196,8 +193,7 @@ coap_status_t handle_observe_request(lwm2m_context_t * contextP,
 
 void cancel_observe(lwm2m_context_t * contextP,
                     uint16_t mid,
-                    uint8_t * fromAddr,
-                    size_t fromAddrLen)
+                    void * fromSessionH)
 {
     lwm2m_observed_t * observedP;
 
@@ -210,8 +206,7 @@ void cancel_observe(lwm2m_context_t * contextP,
         lwm2m_watcher_t * targetP = NULL;
 
         if (observedP->watcherList->lastMid == mid
-         && observedP->watcherList->server->addrLen == fromAddrLen
-         && memcmp(observedP->watcherList->server->addr, fromAddr, fromAddrLen) == 0)
+         && observedP->watcherList->server->sessionH == fromSessionH)
         {
             targetP = observedP->watcherList;
             observedP->watcherList = observedP->watcherList->next;
@@ -223,8 +218,7 @@ void cancel_observe(lwm2m_context_t * contextP,
             parentP = observedP->watcherList;
             while (parentP->next != NULL
                 && (parentP->next->lastMid != mid
-                 || parentP->next->server->addrLen != fromAddrLen
-                 || memcmp(parentP->next->server->addr, fromAddr, fromAddrLen) != 0))
+                 || parentP->next->server->sessionH != fromSessionH))
             {
                 parentP = parentP->next;
             }
@@ -275,7 +269,7 @@ void lwm2m_resource_value_changed(lwm2m_context_t * contextP,
                 message->mid = watcherP->lastMid;
                 coap_set_header_token(message, watcherP->token, watcherP->tokenLen);
                 coap_set_header_observe(message, watcherP->counter++);
-                (void)message_send(contextP, message, watcherP->server->addr, watcherP->server->addrLen);
+                (void)message_send(contextP, message, watcherP->server->sessionH);
             }
         }
 
@@ -448,8 +442,7 @@ int lwm2m_observe_cancel(lwm2m_context_t * contextP,
 }
 
 void handle_observe_notify(lwm2m_context_t * contextP,
-                           uint8_t * fromAddr,
-                           size_t fromAddrLen,
+                           void * fromSessionH,
                            coap_packet_t * message)
 {
     uint8_t * tokenP;
@@ -478,7 +471,7 @@ void handle_observe_notify(lwm2m_context_t * contextP,
 
         coap_init_message(&resetMsg, COAP_TYPE_RST, 0, message->mid);
 
-        message_send(contextP, &resetMsg, fromAddr, fromAddrLen);
+        message_send(contextP, &resetMsg, fromSessionH);
     }
     else
     {

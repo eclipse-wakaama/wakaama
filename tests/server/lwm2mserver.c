@@ -85,19 +85,65 @@ Contains code snippets which are:
 
 static int g_quit = 0;
 
-static uint8_t prv_buffer_send(int sock,
-                          uint8_t * buffer,
-                          size_t length,
-                          uint8_t * addr,
-                          size_t addrLen)
+typedef struct _connection_t
+{
+	struct _connection_t *  next;
+	int                     sock;
+	struct sockaddr_storage addr;
+	size_t                  addrLen;
+} connection_t;
+
+static connection_t * prv_newConnection(connection_t * connList,
+                                        int sock,
+                                        struct sockaddr * addr,
+                                        size_t addrLen)
+{
+    connection_t * connP;
+
+    connP = (connection_t *)malloc(sizeof(connection_t));
+    if (connP != NULL)
+    {
+        connP->sock = sock;
+        memcpy(&(connP->addr), addr, addrLen);
+        connP->addrLen = addrLen;
+        connP->next = connList;
+    }
+
+    return connP;
+}
+
+static connection_t * prv_findConnection(connection_t * connList,
+                                         struct sockaddr_storage * addr,
+                                         size_t addrLen)
+{
+    connection_t * connP;
+
+    connP = connList;
+    while (connP != NULL)
+    {
+        if ((connP->addrLen == addrLen)
+         && (memcmp(&(connP->addr), addr, addrLen) == 0))
+        {
+            return connP;
+        }
+        connP = connP->next;
+    }
+
+    return connP;
+}
+
+static uint8_t prv_buffer_send(void * sessionH,
+                               uint8_t * buffer,
+                               size_t length)
 {
     size_t nbSent;
     size_t offset;
+    connection_t * connP = (connection_t*) sessionH;
 
     offset = 0;
     while (offset != length)
     {
-        nbSent = sendto(sock, buffer + offset, length - offset, 0, (struct sockaddr *)addr, addrLen);
+        nbSent = sendto(connP->sock, buffer + offset, length - offset, 0, (struct sockaddr *)&(connP->addr), connP->addrLen);
         if (nbSent == -1) return COAP_500_INTERNAL_SERVER_ERROR;
         offset += nbSent;
     }
@@ -554,6 +600,8 @@ int main(int argc, char *argv[])
     int result;
     lwm2m_context_t * lwm2mH = NULL;
     int i;
+    connection_t * connList = NULL;
+
     command_desc_t commands[] =
     {
             {"list", "List registered clients.", NULL, prv_output_clients, NULL},
@@ -595,7 +643,7 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    lwm2mH = lwm2m_init(socket, "testlwm2mserver", 0, NULL, prv_buffer_send);
+    lwm2mH = lwm2m_init("testlwm2mserver", 0, NULL, prv_buffer_send);
     if (NULL == lwm2mH)
     {
         fprintf(stderr, "lwm2m_init() failed\r\n");
@@ -658,8 +706,7 @@ int main(int argc, char *argv[])
                 {
                     char s[INET6_ADDRSTRLEN];
                     coap_status_t coap_error_code = NO_ERROR;
-                    static coap_packet_t message[1];
-
+                    connection_t * connP;
 
                     fprintf(stderr, "%d bytes received from [%s]:%hu\r\n",
                             numBytes,
@@ -670,7 +717,16 @@ int main(int argc, char *argv[])
                             ntohs(((struct sockaddr_in6*)&addr)->sin6_port));
                     prv_output_buffer(stderr, buffer, numBytes);
 
-                    lwm2m_handle_packet(lwm2mH, buffer, numBytes, (uint8_t *)&addr, addrLen);
+                    connP = prv_findConnection(connList, &addr, addrLen);
+                    if (connP == NULL)
+                    {
+                        connList = prv_newConnection(connList, socket, (struct sockaddr *)&addr, addrLen);
+                        connP = connList;
+                    }
+                    if (connP != NULL)
+                    {
+                        lwm2m_handle_packet(lwm2mH, buffer, numBytes, connP);
+                    }
                 }
             }
             else if (FD_ISSET(STDIN_FILENO, &readfds))

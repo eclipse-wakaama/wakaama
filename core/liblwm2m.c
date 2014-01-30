@@ -38,8 +38,7 @@ David Navarro <david.navarro@intel.com>
 #include <stdio.h>
 
 
-lwm2m_context_t * lwm2m_init(int socket,
-                             char * endpointName,
+lwm2m_context_t * lwm2m_init(char * endpointName,
                              uint16_t numObject,
                              lwm2m_object_t * objectList[],
                              lwm2m_buffer_send_callback_t bufferSendCallback)
@@ -53,7 +52,6 @@ lwm2m_context_t * lwm2m_init(int socket,
     if (NULL != contextP)
     {
         memset(contextP, 0, sizeof(lwm2m_context_t));
-        contextP->socket = socket;
         contextP->bufferSendCallback = bufferSendCallback;
 #ifdef LWM2M_CLIENT_MODE
         contextP->endpointName = strdup(endpointName);
@@ -114,7 +112,6 @@ void lwm2m_close(lwm2m_context_t * contextP)
 
         registration_deregister(contextP, targetP);
 
-        if (NULL != targetP->addr) free (targetP->addr);
         if (NULL != targetP->security.privateKey) free (targetP->security.privateKey);
         if (NULL != targetP->security.publicKey) free (targetP->security.publicKey);
         free(targetP);
@@ -169,8 +166,7 @@ int lwm2m_set_bootstrap_server(lwm2m_context_t * contextP,
 
 int lwm2m_add_server(lwm2m_context_t * contextP,
                      uint16_t shortID,
-                     uint8_t * addr,
-                     size_t addrLen,
+                     void * sessionH,
                      lwm2m_security_t * securityP)
 {
     lwm2m_server_t * serverP;
@@ -182,20 +178,11 @@ int lwm2m_add_server(lwm2m_context_t * contextP,
         memset(serverP, 0, sizeof(lwm2m_server_t));
         memcpy(&(serverP->security), securityP, sizeof(lwm2m_security_t));
         serverP->shortID = shortID;
-        serverP->addr = (uint8_t *)malloc(addrLen);
-        if (serverP->addr != NULL)
-        {
-            memcpy(serverP->addr, addr, addrLen);
-            serverP->addrLen = addrLen;
+        serverP->sessionH = sessionH;
 
-            contextP->serverList = (lwm2m_server_t*)LWM2M_LIST_ADD(contextP->serverList, serverP);
+        contextP->serverList = (lwm2m_server_t*)LWM2M_LIST_ADD(contextP->serverList, serverP);
 
-            status = 0;
-        }
-        else
-        {
-            free(serverP);
-        }
+        status = COAP_NO_ERROR;
     }
 
     return status;

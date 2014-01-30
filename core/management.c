@@ -35,8 +35,7 @@ David Navarro <david.navarro@intel.com>
 #ifdef LWM2M_CLIENT_MODE
 coap_status_t handle_dm_request(lwm2m_context_t * contextP,
                                 lwm2m_uri_t * uriP,
-                                uint8_t * fromAddr,
-                                size_t fromAddrLen,
+                                void * fromSessionH,
                                 coap_packet_t * message,
                                 coap_packet_t * response)
 {
@@ -54,7 +53,7 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
             {
                 if (IS_OPTION(message, COAP_OPTION_OBSERVE))
                 {
-                    result = handle_observe_request(contextP, uriP, fromAddr, fromAddrLen, message, response);
+                    result = handle_observe_request(contextP, uriP, fromSessionH, message, response);
                 }
                 if (result == COAP_205_CONTENT)
                 {

@@ -70,50 +70,46 @@ Contains code snippets which are:
 #include <stdio.h>
 
 
-static int prv_check_addr(uint8_t * leftAddr,
-                          size_t leftAddrLen,
-                          uint8_t * rightAddr,
-                          size_t rightAddrLen)
+static int prv_check_addr(void * leftSessionH,
+                          void * rightSessionH)
 {
-    if (leftAddrLen != rightAddrLen) return 0;
-
-    if (memcmp(leftAddr, rightAddr, leftAddrLen) != 0) return 0;
+    if ((leftSessionH == NULL)
+     || (rightSessionH == NULL)
+     || (leftSessionH != rightSessionH))
+    {
+        return 0;
+    }
 
     return 1;
 }
 
 static void handle_reset(lwm2m_context_t * contextP,
-                         uint8_t * fromAddr,
-                         size_t fromAddrLen,
+                         void * fromSessionH,
                          coap_packet_t * message)
 {
 #ifdef LWM2M_CLIENT_MODE
-    cancel_observe(contextP, message->mid, fromAddr, fromAddrLen);
+    cancel_observe(contextP, message->mid, fromSessionH);
 #endif
 }
 
 static void handle_response(lwm2m_context_t * contextP,
                             lwm2m_transaction_t * transacP,
-                            uint8_t * fromAddr,
-                            size_t fromAddrLen,
+                            void * fromSessionH,
                             coap_packet_t * message)
 {
-    uint8_t * targetAddr;
-    size_t targetAddrLen;
+    void * targetSessionH;
 
     switch (transacP->peerType)
     {
 #ifdef LWM2M_SERVER_MODE
     case ENDPOINT_CLIENT:
-        targetAddr = ((lwm2m_client_t *)transacP->peerP)->addr;
-        targetAddrLen = ((lwm2m_client_t *)transacP->peerP)->addrLen;
+        targetSessionH = ((lwm2m_client_t *)transacP->peerP)->sessionH;
         break;
 #endif
 
 #ifdef LWM2M_CLIENT_MODE
     case ENDPOINT_SERVER:
-        targetAddr = ((lwm2m_server_t *)transacP->peerP)->addr;
-        targetAddrLen = ((lwm2m_server_t *)transacP->peerP)->addrLen;
+        targetSessionH = ((lwm2m_server_t *)transacP->peerP)->sessionH;
         break;
 #endif
 
@@ -121,7 +117,7 @@ static void handle_response(lwm2m_context_t * contextP,
         return;
     }
 
-    if (prv_check_addr(fromAddr, fromAddrLen, targetAddr, targetAddrLen))
+    if (prv_check_addr(fromSessionH, targetSessionH))
     {
         transacP->callback(transacP, message);
         transaction_remove(contextP, transacP);
@@ -129,8 +125,7 @@ static void handle_response(lwm2m_context_t * contextP,
 }
 
 static coap_status_t handle_request(lwm2m_context_t * contextP,
-                                    uint8_t * fromAddr,
-                                    size_t fromAddrLen,
+                                    void * fromSessionH,
                                     coap_packet_t * message,
                                     coap_packet_t * response)
 {
@@ -145,7 +140,7 @@ static coap_status_t handle_request(lwm2m_context_t * contextP,
 #ifdef LWM2M_CLIENT_MODE
     case LWM2M_URI_FLAG_DM:
         // TODO: Authentify server
-        result = handle_dm_request(contextP, uriP, fromAddr, fromAddrLen, message, response);
+        result = handle_dm_request(contextP, uriP, fromSessionH, message, response);
         break;
 
     case LWM2M_URI_FLAG_BOOTSTRAP:
@@ -155,7 +150,7 @@ static coap_status_t handle_request(lwm2m_context_t * contextP,
 
 #ifdef LWM2M_SERVER_MODE
    case LWM2M_URI_FLAG_REGISTRATION:
-        result = handle_registration_request(contextP, uriP, fromAddr, fromAddrLen, message, response);
+        result = handle_registration_request(contextP, uriP, fromSessionH, message, response);
         break;
 #endif
     default:
@@ -180,8 +175,7 @@ static coap_status_t handle_request(lwm2m_context_t * contextP,
 int lwm2m_handle_packet(lwm2m_context_t * contextP,
                         uint8_t * buffer,
                         int length,
-                        uint8_t * fromAddr,
-                        size_t fromAddrLen)
+                        void * fromSessionH)
 {
     coap_status_t coap_error_code = NO_ERROR;
     static coap_packet_t message[1];
@@ -228,7 +222,7 @@ int lwm2m_handle_packet(lwm2m_context_t * contextP,
                 new_offset = block_offset;
             }
 
-            coap_error_code = handle_request(contextP, fromAddr, fromAddrLen, message, response);
+            coap_error_code = handle_request(contextP, fromSessionH, message, response);
             if (coap_error_code==NO_ERROR)
             {
                 /* Apply blockwise transfers. */
@@ -274,7 +268,7 @@ int lwm2m_handle_packet(lwm2m_context_t * contextP,
                     coap_set_payload(response, response->payload, MIN(response->payload_len, REST_MAX_CHUNK_SIZE));
                 } /* if (blockwise request) */
 
-                coap_error_code = message_send(contextP, response, fromAddr, fromAddrLen);
+                coap_error_code = message_send(contextP, response, fromSessionH);
 
                 free(response->payload);
                 response->payload = NULL;
@@ -294,19 +288,19 @@ int lwm2m_handle_packet(lwm2m_context_t * contextP,
             {
                 LOG("Received RST\n");
                 /* Cancel possible subscriptions. */
-                handle_reset(contextP, fromAddr, fromAddrLen, message);
+                handle_reset(contextP, fromSessionH, message);
             }
 
             transaction = (lwm2m_transaction_t *)lwm2m_list_find((lwm2m_list_t *)contextP->transactionList, message->mid);
             if (NULL != transaction)
             {
-                handle_response(contextP, transaction, fromAddr, fromAddrLen, message);
+                handle_response(contextP, transaction, fromSessionH, message);
             }
 #ifdef LWM2M_SERVER_MODE
             else if (message->code = COAP_204_CHANGED
                   && IS_OPTION(message, COAP_OPTION_OBSERVE))
             {
-                handle_observe_notify(contextP, fromAddr, fromAddrLen, message);
+                handle_observe_notify(contextP, fromSessionH, message);
             }
 #endif
         } /* Request or Response */
@@ -328,15 +322,14 @@ int lwm2m_handle_packet(lwm2m_context_t * contextP,
         /* Reuse input buffer for error message. */
         coap_init_message(message, COAP_TYPE_ACK, coap_error_code, message->mid);
         coap_set_payload(message, coap_error_message, strlen(coap_error_message));
-        message_send(contextP, message, fromAddr, fromAddrLen);
+        message_send(contextP, message, fromSessionH);
     }
 }
 
 
 coap_status_t message_send(lwm2m_context_t * contextP,
                            coap_packet_t * message,
-                           uint8_t * addr,
-                           size_t addrLen)
+                           void * sessionH)
 {
     coap_status_t result = INTERNAL_SERVER_ERROR_5_00;
     uint8_t pktBuffer[COAP_MAX_PACKET_SIZE+1];
@@ -345,7 +338,7 @@ coap_status_t message_send(lwm2m_context_t * contextP,
     pktBufferLen = coap_serialize_message(message, pktBuffer);
     if (0 != pktBufferLen)
     {
-        result = contextP->bufferSendCallback(contextP->socket, pktBuffer, pktBufferLen, addr, addrLen);
+        result = contextP->bufferSendCallback(sessionH, pktBuffer, pktBufferLen);
     }
 
     return result;

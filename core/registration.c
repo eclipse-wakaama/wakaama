@@ -147,7 +147,7 @@ void registration_deregister(lwm2m_context_t * contextP,
     pktBufferLen = coap_serialize_message(message, pktBuffer);
     if (0 != pktBufferLen)
     {
-        contextP->bufferSendCallback(contextP->socket, pktBuffer, pktBufferLen, serverP->addr, serverP->addrLen);
+        contextP->bufferSendCallback(serverP->sessionH, pktBuffer, pktBufferLen);
     }
 
     serverP->status = STATE_UNKNOWN;
@@ -305,7 +305,6 @@ static void prv_freeClientObjectList(lwm2m_client_object_t * objects)
 
 void prv_freeClient(lwm2m_client_t * clientP)
 {
-    if (clientP->addr != NULL) free(clientP->addr);
     if (clientP->name != NULL) free(clientP->name);
     prv_freeClientObjectList(clientP->objectList);
     while(clientP->observationList != NULL)
@@ -337,8 +336,7 @@ static int prv_getLocationString(uint16_t id,
 
 coap_status_t handle_registration_request(lwm2m_context_t * contextP,
                                           lwm2m_uri_t * uriP,
-                                          uint8_t * fromAddr,
-                                          size_t fromAddrLen,
+                                          void * fromSessionH,
                                           coap_packet_t * message,
                                           coap_packet_t * response)
 {
@@ -367,7 +365,6 @@ coap_status_t handle_registration_request(lwm2m_context_t * contextP,
         {
             // we reset this registration
             free(clientP->name);
-            free(clientP->addr);
             prv_freeClientObjectList(clientP->objectList);
             clientP->objectList = NULL;
         }
@@ -386,14 +383,7 @@ coap_status_t handle_registration_request(lwm2m_context_t * contextP,
         }
         clientP->name = name;
         clientP->objectList = objects;
-        clientP->addr = (uint8_t *)malloc(fromAddrLen);
-        if (clientP->addr == NULL)
-        {
-            prv_freeClient(clientP);
-            return COAP_500_INTERNAL_SERVER_ERROR;
-        }
-        memcpy(clientP->addr, fromAddr, fromAddrLen);
-        clientP->addrLen = fromAddrLen;
+        clientP->sessionH = fromSessionH;
 
         if (prv_getLocationString(clientP->internalID, location) == 0)
         {
