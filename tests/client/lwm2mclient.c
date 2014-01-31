@@ -223,10 +223,23 @@ static void prv_change(char * buffer,
     lwm2m_context_t * lwm2mH = (lwm2m_context_t *) user_data;
     lwm2m_uri_t uri;
     int result;
+    int length;
 
     if (buffer[0] == 0) goto syntax_error;
 
-    result = lwm2m_stringToUri(buffer, strlen(buffer), &uri);
+    length = 0;
+    // remove white space
+    while (length < strlen(buffer) && isspace(buffer[length]))
+    {
+        length++;
+    }
+    // find end of URI
+    while (length < strlen(buffer) && !isspace(buffer[length]))
+    {
+        length++;
+    }
+
+    result = lwm2m_stringToUri(buffer, length, &uri);
     if (result == 0) goto syntax_error;
 
     lwm2m_resource_value_changed(lwm2mH, &uri);

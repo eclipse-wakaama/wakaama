@@ -132,6 +132,9 @@ lwm2m_uri_t * lwm2m_decode_uri(multi_option_t *uriPath)
     // Read resource ID
     if (uriPath->len != 0)
     {
+        // resource ID without an instance ID is not allowed
+        if ((uriP->flag & LWM2M_URI_FLAG_INSTANCE_ID) == 0) goto error;
+
         readNum = prv_get_number(uriPath->data, uriPath->len);
         if (readNum < 0 || readNum > LWM2M_MAX_ID) goto error;
         uriP->resourceId = (uint16_t)readNum;
