@@ -242,8 +242,39 @@ static void prv_change(char * buffer,
     result = lwm2m_stringToUri(buffer, length, &uri);
     if (result == 0) goto syntax_error;
 
-    lwm2m_resource_value_changed(lwm2mH, &uri);
+    buffer += length;
+    while (buffer[0] != 0 && isspace(buffer[0])) buffer++;
+    if (buffer[0] == 0)
+	{
+        lwm2m_resource_value_changed(lwm2mH, &uri);
+	}
+    else
+    {
+        int i;
 
+        i = 0;
+		while (i < lwm2mH->numObject)
+        {
+		    if (uri.objectId == lwm2mH->objectList[i]->objID)
+            {
+                if (lwm2mH->objectList[i]->writeFunc != NULL)
+                {
+					if (COAP_204_CHANGED == lwm2mH->objectList[i]->writeFunc(&uri,
+																			 buffer, strlen(buffer),
+																			 lwm2mH->objectList[i]))
+					{
+                        lwm2m_resource_value_changed(lwm2mH, &uri);
+                        return;
+					}
+                }
+                fprintf(stdout, "Failed to change value !");
+                return;
+            }
+		    i++;
+        }
+
+		fprintf(stdout, "Object not found !");
+    }
     return;
 
 syntax_error:
@@ -307,9 +338,9 @@ int main(int argc, char *argv[])
     command_desc_t commands[] =
     {
             {"list", "List known servers.", NULL, prv_output_servers, NULL},
-            {"change", "Change the value of resource.", " change URI DATA\r\n"
+            {"change", "Change the value of resource.", " change URI [DATA]\r\n"
                                                         "   URI: uri of the resource such as /3/0, /3/0/2\r\n"
-                                                        "   DATA: new value\r\n", prv_change, NULL},
+                                                        "   DATA: (optional) new value\r\n", prv_change, NULL},
             {"quit", "Quit the client gracefully.", NULL, prv_quit, NULL},
             {"^C", "Quit the client abruptly (without sending a de-register message).", NULL, NULL, NULL},
 
