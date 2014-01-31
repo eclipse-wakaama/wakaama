@@ -165,8 +165,10 @@ typedef struct
 
 #define LWM2M_STRING_ID_MAX_LEN 6
 
-// Parse an uri in LWM2M format (/3, /3//2, /3/0/) and fill the lwm2m_uri_t.
+// Parse an URI in LWM2M format and fill the lwm2m_uri_t.
 // Return the number of characters read from buffer or 0 in case of error.
+// Valid URIs: /1, /1/, /1/2, /1/2/, /1/2/3
+// Invalid URIs: /, //, //2, /1//, /1//3, /1/2/3/, /1/2/3/4
 int lwm2m_stringToUri(char * buffer, size_t buffer_len, lwm2m_uri_t * uriP);
 
 

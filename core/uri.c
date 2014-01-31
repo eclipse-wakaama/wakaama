@@ -38,22 +38,19 @@ static int prv_parse_number(const char * uriString,
                             int * headP)
 {
     int result = 0;
-    int mul = 0;
     int i = 0;
 
+    if (uriString[*headP] == '/')
+    {
+        // empty Object Instance ID with resource ID is not allowed
+        return -1;
+    }
     while (*headP < uriLength && uriString[*headP] != '/')
     {
         if ('0' <= uriString[*headP] && uriString[*headP] <= '9')
         {
-            if (0 == mul)
-            {
-                mul = 10;
-            }
-            else
-            {
-                result *= mul;
-            }
             result += uriString[*headP] - '0';
+            result *= 10;
         }
         else
         {
@@ -62,9 +59,7 @@ static int prv_parse_number(const char * uriString,
         *headP += 1;
     }
 
-    if (uriString[*headP] == '/')
-        *headP += 1;
-
+    result /= 10;
     return result;
 }
 
@@ -134,7 +129,7 @@ lwm2m_uri_t * lwm2m_decode_uri(multi_option_t *uriPath)
 
     if (uriPath == NULL) return uriP;
 
-    // Read ressource ID
+    // Read resource ID
     if (uriPath->len != 0)
     {
         readNum = prv_get_number(uriPath->data, uriPath->len);
@@ -168,41 +163,33 @@ int lwm2m_stringToUri(char * buffer,
     }
     if (head == buffer_len) return 0;
 
+    // Check the URI start with a '/'
+    if (buffer[head] != '/') return 0;
+    head++;
+    if (head == buffer_len) return 0;
+
     // Read object ID
     readNum = prv_parse_number(buffer, buffer_len, &head);
     if (readNum < 0 || readNum > LWM2M_MAX_ID) return 0;
     uriP->objectId = (uint16_t)readNum;
 
+    if (buffer[head] == '/') head += 1;
     if (head >= buffer_len) return head;
 
-    // Read object instance
-    if (buffer[head] == '/')
-    {
-        // default instance
-        head++;
-    }
-    else
-    {
-        readNum = prv_parse_number(buffer, buffer_len, &head);
-        if (readNum < 0 || readNum >= LWM2M_MAX_ID) return 0;
-        uriP->instanceId = (uint16_t)readNum;
-        uriP->flag |= LWM2M_URI_FLAG_INSTANCE_ID;
-    }
+	readNum = prv_parse_number(buffer, buffer_len, &head);
+	if (readNum < 0 || readNum >= LWM2M_MAX_ID) return 0;
+	uriP->instanceId = (uint16_t)readNum;
+	uriP->flag |= LWM2M_URI_FLAG_INSTANCE_ID;
+
+    if (buffer[head] == '/') head += 1;
     if (head >= buffer_len) return head;
 
-    // Read ressource ID
-    if (buffer[head] == '/')
-    {
-        // no ID
-        head++;
-    }
-    else
-    {
-        readNum = prv_parse_number(buffer, buffer_len, &head);
-        if (readNum < 0 || readNum >= LWM2M_MAX_ID) return 0;
-        uriP->resourceId = (uint16_t)readNum;
-        uriP->flag |= LWM2M_URI_FLAG_RESOURCE_ID;
-    }
+	readNum = prv_parse_number(buffer, buffer_len, &head);
+	if (readNum < 0 || readNum >= LWM2M_MAX_ID) return 0;
+	uriP->resourceId = (uint16_t)readNum;
+	uriP->flag |= LWM2M_URI_FLAG_RESOURCE_ID;
+
+    if (head != buffer_len) return 0;
 
     return head;
 }
