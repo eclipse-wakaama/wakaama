@@ -52,8 +52,17 @@ David Navarro <david.navarro@intel.com>
 
 #define PRV_TLV_BUFFER_SIZE 64
 
+/*
+ * Multiple instance objects can use userdata to store data that will be shared between the different instances.
+ * The lwm2m_object_t object structure - which represent every object of the liblwm2m as seen in the single instance
+ * object - contain a chained list called instanceList with the object specific structure prv_instance_t:
+ */
 typedef struct _prv_instance_
 {
+    /*
+     * The first two are mandatories and represent the pointer to the next instance and the ID of this one. The rest
+     * is the instance scope user data (uint8_t test in this case)
+     */
     struct _prv_instance_ * next;   // matches lwm2m_list_t::next
     uint16_t shortID;               // matches lwm2m_list_t::id
     uint8_t  test;
@@ -322,6 +331,13 @@ lwm2m_object_t * get_test_object()
             targetP->test = 20 + i;
             testObj->instanceList = LWM2M_LIST_ADD(testObj->instanceList, targetP);
         }
+        /*
+         * From a single instance object, two more functions are available.
+         * - The first one (createFunc) create a new instance and filled it with the provided informations. If an ID is
+         *   provided a check is done for verifying his disponibility, or a new one is generated.
+         * - The other one (deleteFunc) delete an instance by removing it from the instance list (and freeing the memory
+         *   allocated to it)
+         */
         testObj->readFunc = prv_read;
         testObj->writeFunc = prv_write;
         testObj->createFunc = prv_create;

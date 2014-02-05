@@ -28,6 +28,11 @@ David Navarro <david.navarro@intel.com>
 
 */
 
+/*
+ * This object is single instance only, and is mandatory to all LWM2M device as it describe the object such as its
+ * manufacturer, model, etc...
+ */
+
 #include "core/liblwm2m.h"
 
 #include <stdio.h>
@@ -303,7 +308,7 @@ static uint8_t prv_device_read(lwm2m_uri_t * uriP,
             return COAP_500_INTERNAL_SERVER_ERROR;
         }
     }
-    // else
+    // else a simple switch structure is used to respond at the specified resource asked
     switch (uriP->resourceId)
     {
     case 0:
@@ -577,6 +582,9 @@ static uint8_t prv_device_execute(lwm2m_uri_t * uriP,
 
 lwm2m_object_t * get_object_device()
 {
+    /*
+     * The get_object_device function create the object itself and return a pointer to the structure that represent it.
+     */
     lwm2m_object_t * deviceObj;
 
     deviceObj = (lwm2m_object_t *)malloc(sizeof(lwm2m_object_t));
@@ -585,11 +593,25 @@ lwm2m_object_t * get_object_device()
     {
         memset(deviceObj, 0, sizeof(lwm2m_object_t));
 
+        /*
+         * It assign his unique ID
+         * The 3 is the standard ID for the mandatory object "Object device".
+         */
         deviceObj->objID = 3;
+
+        /*
+         * And the private function that will access the object.
+         * Those function will be called when a read/write/execute query is made by the server. In fact the library don't need to
+         * know the resources of the object, only the server does.
+         */
         deviceObj->readFunc = prv_device_read;
         deviceObj->writeFunc = prv_device_write;
         deviceObj->executeFunc = prv_device_execute;
         deviceObj->userData = malloc(sizeof(device_data_t));
+
+        /*
+         * Also some user data can be stored in the object with a private structure containing the needed variables 
+         */
         if (NULL != deviceObj->userData)
         {
             ((device_data_t*)deviceObj->userData)->time = 1367491215;

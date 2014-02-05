@@ -335,6 +335,14 @@ int main(int argc, char *argv[])
     lwm2m_security_t security;
     int i;
     connection_t * connP;
+
+    /*
+     * The function start by setting up the command line interface (which may or not be useful depending on your project)
+     * 
+     * This is an array of commands describes as { name, description, long description, callback, userdata }.
+     * The firsts tree are easy to understand, the callback is the function that will be called when this command is typed
+     * and in the last one will be stored the lwm2m context (allowing access to the server settings and the objects).
+     */
     command_desc_t commands[] =
     {
             {"list", "List known servers.", NULL, prv_output_servers, NULL},
@@ -347,6 +355,9 @@ int main(int argc, char *argv[])
             COMMAND_END_LIST
     };
 
+    /*
+     *This call an internal function that create an IPV6 socket on the port 5683.
+     */
     socket = get_socket();
     if (socket < 0)
     {
@@ -354,6 +365,10 @@ int main(int argc, char *argv[])
         return -1;
     }
 
+    /*
+     * Now the main function fill an array with each object, this list will be later passed to liblwm2m.
+     * Those functions are located in their respective object file.
+     */
     objArray[0] = get_object_device();
     if (NULL == objArray[0])
     {
@@ -368,6 +383,11 @@ int main(int argc, char *argv[])
         return -1;
     }
 
+    /*
+     * The liblwm2m library is now initialized with the name of the client - which shall be unique for each client -
+     * the number of objects we will be passing through, the object constructor array and the function that will be in
+     * charge to send the buffer (containing the LWM2M packets) to the network
+     */
     lwm2mH = lwm2m_init("testlwm2mclient", 2, objArray, prv_buffer_send);
     if (NULL == lwm2mH)
     {
@@ -386,12 +406,22 @@ int main(int argc, char *argv[])
     connP->sock = socket;
 
     memset(&security, 0, sizeof(lwm2m_security_t));
+
+    /*
+     * This function add a server to the lwm2m context by passing an identifier, an opaque connection handler and a security
+     * context.
+     * You can add as many server as your application need and there will be thereby allowed to interact with your object
+     */
     result = lwm2m_add_server(lwm2mH, 123, (void *)connP, &security);
     if (result != 0)
     {
         fprintf(stderr, "lwm2m_add_server() failed: 0x%X\r\n", result);
         return -1;
     }
+
+    /*
+     * This function register your client to all the servers you added with the precedent one
+     */
     result = lwm2m_register(lwm2mH);
     if (result != 0)
     {
@@ -399,12 +429,19 @@ int main(int argc, char *argv[])
         return -1;
     }
 
+    /*
+     * As you now have your lwm2m context complete you can pass it as an argument to all the command line functions
+     * precedently viewed (first point)
+     */
     for (i = 0 ; commands[i].name != NULL ; i++)
     {
         commands[i].userData = (void *)lwm2mH;
     }
     fprintf(stdout, "> "); fflush(stdout);
 
+    /*
+     * We now enter in a while loop that will handle the communications from the server
+     */
     while (0 == g_quit)
     {
         struct timeval tv;
@@ -417,6 +454,12 @@ int main(int argc, char *argv[])
         tv.tv_sec = 60;
         tv.tv_usec = 0;
 
+        /*
+         * This function does two things:
+         *  - first it does the work needed by liblwm2m (eg. (re)sending some packets).
+         *  - Secondly it adjust the timeout value (default 60s) depending on the state of the transaction
+         *    (eg. retransmission) and the time between the next operation
+         */
         result = lwm2m_step(lwm2mH, &tv);
         if (result != 0)
         {
@@ -424,6 +467,10 @@ int main(int argc, char *argv[])
             return -1;
         }
 
+        /*
+         * This part will set up an interruption until an event happen on SDTIN or the socket until "tv" timed out (set
+         * with the precedent function)
+         */
         result = select(FD_SETSIZE, &readfds, NULL, NULL, &tv);
 
         if ( result < 0 )
@@ -438,12 +485,19 @@ int main(int argc, char *argv[])
             uint8_t buffer[MAX_PACKET_SIZE];
             int numBytes;
 
+            /*
+             * If an event happen on the socket
+             */
             if (FD_ISSET(socket, &readfds))
             {
                 struct sockaddr_storage addr;
                 socklen_t addrLen;
 
                 addrLen = sizeof(addr);
+
+                /*
+                 * We retrieve the data received
+                 */
                 numBytes = recvfrom(socket, buffer, MAX_PACKET_SIZE, 0, (struct sockaddr *)&addr, &addrLen);
 
                 if (numBytes == -1)
@@ -461,15 +515,26 @@ int main(int argc, char *argv[])
                                       s,
                                       INET6_ADDRSTRLEN),
                             ntohs(((struct sockaddr_in6*)&addr)->sin6_port));
+
+                    /*
+                     * Display it in the STDOUT
+                     */
                     prv_output_buffer(buffer, numBytes);
 
                     if ((connP->addrLen == addrLen)
                      && (memcmp(&(connP->addr), &addr, addrLen) == 0))
                     {
+                        /*
+                         * Let liblwm2m respond to the query depending on the context
+                         */
                         lwm2m_handle_packet(lwm2mH, buffer, numBytes, (void *)connP);
                     }
                 }
             }
+
+            /*
+             * If the event happened on the SDTIN
+             */
             else if (FD_ISSET(STDIN_FILENO, &readfds))
             {
                 numBytes = read(STDIN_FILENO, buffer, MAX_PACKET_SIZE);
@@ -477,6 +542,10 @@ int main(int argc, char *argv[])
                 if (numBytes > 1)
                 {
                     buffer[numBytes - 1] = 0;
+
+                    /*
+                     * We call the corresponding callback of the typed command passing it the buffer for further arguments
+                     */
                     handle_command(commands, buffer);
                 }
                 if (g_quit == 0)
@@ -492,6 +561,9 @@ int main(int argc, char *argv[])
         }
     }
 
+    /*
+     * Finally when the loop is left smoothly - asked by user in the command line interface - we unregister our client from it 
+     */
     if (g_quit == 1)
     {
         lwm2m_close(lwm2mH);
