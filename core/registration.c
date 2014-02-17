@@ -147,7 +147,7 @@ void registration_deregister(lwm2m_context_t * contextP,
     pktBufferLen = coap_serialize_message(message, pktBuffer);
     if (0 != pktBufferLen)
     {
-        contextP->bufferSendCallback(serverP->sessionH, pktBuffer, pktBufferLen);
+        contextP->bufferSendCallback(serverP->sessionH, pktBuffer, pktBufferLen, contextP->bufferSendUserData);
     }
 
     serverP->status = STATE_UNKNOWN;
