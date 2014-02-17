@@ -179,18 +179,18 @@ int lwm2m_stringToUri(char * buffer,
     if (buffer[head] == '/') head += 1;
     if (head >= buffer_len) return head;
 
-	readNum = prv_parse_number(buffer, buffer_len, &head);
-	if (readNum < 0 || readNum >= LWM2M_MAX_ID) return 0;
-	uriP->instanceId = (uint16_t)readNum;
-	uriP->flag |= LWM2M_URI_FLAG_INSTANCE_ID;
+    readNum = prv_parse_number(buffer, buffer_len, &head);
+    if (readNum < 0 || readNum >= LWM2M_MAX_ID) return 0;
+    uriP->instanceId = (uint16_t)readNum;
+    uriP->flag |= LWM2M_URI_FLAG_INSTANCE_ID;
 
     if (buffer[head] == '/') head += 1;
     if (head >= buffer_len) return head;
 
-	readNum = prv_parse_number(buffer, buffer_len, &head);
-	if (readNum < 0 || readNum >= LWM2M_MAX_ID) return 0;
-	uriP->resourceId = (uint16_t)readNum;
-	uriP->flag |= LWM2M_URI_FLAG_RESOURCE_ID;
+    readNum = prv_parse_number(buffer, buffer_len, &head);
+    if (readNum < 0 || readNum >= LWM2M_MAX_ID) return 0;
+    uriP->resourceId = (uint16_t)readNum;
+    uriP->flag |= LWM2M_URI_FLAG_RESOURCE_ID;
 
     if (head != buffer_len) return 0;
 

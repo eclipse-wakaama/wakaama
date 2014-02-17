@@ -87,10 +87,10 @@ static int g_quit = 0;
 
 typedef struct _connection_t
 {
-	struct _connection_t *  next;
-	int                     sock;
-	struct sockaddr_storage addr;
-	size_t                  addrLen;
+    struct _connection_t *  next;
+    int                     sock;
+    struct sockaddr_storage addr;
+    size_t                  addrLen;
 } connection_t;
 
 static connection_t * prv_newConnection(connection_t * connList,
@@ -520,23 +520,23 @@ static void prv_monitor_callback(uint16_t clientID,
     lwm2m_client_object_t * objectP;
 
     switch (status)
-	{
-	case CREATED_2_01:
-	    fprintf(stdout, "\r\nNew client #%d registered.\r\n", clientID);
+    {
+    case CREATED_2_01:
+        fprintf(stdout, "\r\nNew client #%d registered.\r\n", clientID);
 
-	    targetP = (lwm2m_client_t *)lwm2m_list_find((lwm2m_list_t *)lwm2mH->clientList, clientID);
+        targetP = (lwm2m_client_t *)lwm2m_list_find((lwm2m_list_t *)lwm2mH->clientList, clientID);
 
         prv_dump_client(targetP);
-	    break;
+        break;
 
-	case DELETED_2_02:
-	    fprintf(stdout, "\r\nClient #%d unregistered.\r\n", clientID);
-	    break;
+    case DELETED_2_02:
+        fprintf(stdout, "\r\nClient #%d unregistered.\r\n", clientID);
+        break;
 
-	default:
-		fprintf(stdout, "\r\nMonitor callback called with an unknown status: %d.\r\n", status);
-		break;
-	}
+    default:
+        fprintf(stdout, "\r\nMonitor callback called with an unknown status: %d.\r\n", status);
+        break;
+    }
 
     fprintf(stdout, "\r\n> ");
     fflush(stdout);
