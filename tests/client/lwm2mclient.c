@@ -52,6 +52,7 @@ David Navarro <david.navarro@intel.com>
 static int g_quit = 0;
 
 extern lwm2m_object_t * get_object_device();
+extern lwm2m_object_t * get_object_firmware();
 extern lwm2m_object_t * get_test_object();
 
 static void prv_quit(char * buffer,
@@ -73,9 +74,9 @@ void print_usage(void)
 
 typedef struct
 {
-	int                     sock;
-	struct sockaddr_storage addr;
-	size_t                  addrLen;
+    int                     sock;
+    struct sockaddr_storage addr;
+    size_t                  addrLen;
 } connection_t;
 
 static uint8_t prv_buffer_send(void * sessionH,
@@ -99,16 +100,16 @@ static uint8_t prv_buffer_send(void * sessionH,
 static connection_t * prv_newConnection(struct sockaddr * addr,
                                         size_t addrLen)
 {
-	connection_t * connP;
+    connection_t * connP;
 
-	connP = (connection_t *)malloc(sizeof(connection_t));
-	if (connP != NULL)
-	{
-		memcpy(&(connP->addr), addr, addrLen);
-		connP->addrLen = addrLen;
-	}
+    connP = (connection_t *)malloc(sizeof(connection_t));
+    if (connP != NULL)
+    {
+        memcpy(&(connP->addr), addr, addrLen);
+        connP->addrLen = addrLen;
+    }
 
-	return connP;
+    return connP;
 }
 
 static void prv_output_buffer(uint8_t * buffer,
@@ -245,35 +246,35 @@ static void prv_change(char * buffer,
     buffer += length;
     while (buffer[0] != 0 && isspace(buffer[0])) buffer++;
     if (buffer[0] == 0)
-	{
+    {
         lwm2m_resource_value_changed(lwm2mH, &uri);
-	}
+    }
     else
     {
         int i;
 
         i = 0;
-		while (i < lwm2mH->numObject)
+        while (i < lwm2mH->numObject)
         {
-		    if (uri.objectId == lwm2mH->objectList[i]->objID)
+            if (uri.objectId == lwm2mH->objectList[i]->objID)
             {
                 if (lwm2mH->objectList[i]->writeFunc != NULL)
                 {
-					if (COAP_204_CHANGED == lwm2mH->objectList[i]->writeFunc(&uri,
-																			 buffer, strlen(buffer),
-																			 lwm2mH->objectList[i]))
-					{
+                    if (COAP_204_CHANGED == lwm2mH->objectList[i]->writeFunc(&uri,
+                                                                             buffer, strlen(buffer),
+                                                                             lwm2mH->objectList[i]))
+                    {
                         lwm2m_resource_value_changed(lwm2mH, &uri);
                         return;
-					}
+                    }
                 }
                 fprintf(stdout, "Failed to change value !");
                 return;
             }
-		    i++;
+            i++;
         }
 
-		fprintf(stdout, "Object not found !");
+        fprintf(stdout, "Object not found !");
     }
     return;
 
@@ -331,14 +332,14 @@ int main(int argc, char *argv[])
     int socket;
     int result;
     lwm2m_context_t * lwm2mH = NULL;
-    lwm2m_object_t * objArray[2];
+    lwm2m_object_t * objArray[3];
     lwm2m_security_t security;
     int i;
     connection_t * connP;
 
     /*
      * The function start by setting up the command line interface (which may or not be useful depending on your project)
-     * 
+     *
      * This is an array of commands describes as { name, description, long description, callback, userdata }.
      * The firsts tree are easy to understand, the callback is the function that will be called when this command is typed
      * and in the last one will be stored the lwm2m context (allowing access to the server settings and the objects).
@@ -376,8 +377,15 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    objArray[1] = get_test_object();
+    objArray[1] = get_object_firmware();
     if (NULL == objArray[1])
+    {
+        fprintf(stderr, "Failed to create Firmware object\r\n");
+        return -1;
+    }
+
+    objArray[2] = get_test_object();
+    if (NULL == objArray[2])
     {
         fprintf(stderr, "Failed to create test object\r\n");
         return -1;
@@ -388,7 +396,7 @@ int main(int argc, char *argv[])
      * the number of objects we will be passing through, the object constructor array and the function that will be in
      * charge to send the buffer (containing the LWM2M packets) to the network
      */
-    lwm2mH = lwm2m_init("testlwm2mclient", 2, objArray, prv_buffer_send);
+    lwm2mH = lwm2m_init("testlwm2mclient", 3, objArray, prv_buffer_send);
     if (NULL == lwm2mH)
     {
         fprintf(stderr, "lwm2m_init() failed\r\n");
@@ -562,7 +570,7 @@ int main(int argc, char *argv[])
     }
 
     /*
-     * Finally when the loop is left smoothly - asked by user in the command line interface - we unregister our client from it 
+     * Finally when the loop is left smoothly - asked by user in the command line interface - we unregister our client from it
      */
     if (g_quit == 1)
     {
