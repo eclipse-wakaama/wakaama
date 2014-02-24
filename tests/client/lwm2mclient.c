@@ -81,7 +81,8 @@ typedef struct
 
 static uint8_t prv_buffer_send(void * sessionH,
                                uint8_t * buffer,
-                               size_t length)
+                               size_t length,
+                               void * userdata)
 {
     size_t nbSent;
     size_t offset;
@@ -396,7 +397,7 @@ int main(int argc, char *argv[])
      * the number of objects we will be passing through, the object constructor array and the function that will be in
      * charge to send the buffer (containing the LWM2M packets) to the network
      */
-    lwm2mH = lwm2m_init("testlwm2mclient", 3, objArray, prv_buffer_send);
+    lwm2mH = lwm2m_init("testlwm2mclient", 3, objArray, prv_buffer_send, NULL);
     if (NULL == lwm2mH)
     {
         fprintf(stderr, "lwm2m_init() failed\r\n");
