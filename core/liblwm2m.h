@@ -127,7 +127,7 @@ typedef enum
 } lwm2m_tlv_type_t;
 
 /*
- * These utility functions fill the buffer with a TLV record containig
+ * These utility functions fill the buffer with a TLV record containing
  * the data. They return the size in bytes of the TLV record, 0 in case
  * of error.
  */
