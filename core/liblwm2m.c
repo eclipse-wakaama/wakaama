@@ -150,7 +150,7 @@ void lwm2m_close(lwm2m_context_t * contextP)
 }
 
 #ifdef LWM2M_CLIENT_MODE
-int lwm2m_set_bootstrap_server(lwm2m_context_t * contextP,
+void lwm2m_set_bootstrap_server(lwm2m_context_t * contextP,
                                lwm2m_bootstrap_server_t * serverP)
 {
     if (NULL != contextP->bootstrapServer)

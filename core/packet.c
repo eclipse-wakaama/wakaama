@@ -171,7 +171,7 @@ static coap_status_t handle_request(lwm2m_context_t * contextP,
  * Erbium is Copyright (c) 2013, Institute for Pervasive Computing, ETH Zurich
  * All rights reserved.
  */
-int lwm2m_handle_packet(lwm2m_context_t * contextP,
+void lwm2m_handle_packet(lwm2m_context_t * contextP,
                         uint8_t * buffer,
                         int length,
                         void * fromSessionH)
