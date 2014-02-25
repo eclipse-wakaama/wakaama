@@ -31,6 +31,7 @@ David Navarro <david.navarro@intel.com>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <ctype.h>
 
 #include "commandline.h"
 

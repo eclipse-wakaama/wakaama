@@ -48,6 +48,7 @@ David Navarro <david.navarro@intel.com>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 
 
 #define PRV_TLV_BUFFER_SIZE 64
@@ -117,7 +118,7 @@ static uint8_t prv_read(lwm2m_uri_t * uriP,
 
     if (!LWM2M_URI_IS_SET_INSTANCE(uriP))
     {
-        *bufferP = (uint8_t *)malloc(PRV_TLV_BUFFER_SIZE);
+        *bufferP = (char *)malloc(PRV_TLV_BUFFER_SIZE);
         if (NULL == *bufferP) return COAP_500_INTERNAL_SERVER_ERROR;
 
         // TLV
@@ -160,7 +161,7 @@ static uint8_t prv_read(lwm2m_uri_t * uriP,
         if (!LWM2M_URI_IS_SET_RESOURCE(uriP))
         {
             // TLV
-            *bufferP = (uint8_t *)malloc(PRV_TLV_BUFFER_SIZE);
+            *bufferP = (char *)malloc(PRV_TLV_BUFFER_SIZE);
             if (NULL == *bufferP) return COAP_500_INTERNAL_SERVER_ERROR;
 
             *lengthP = lwm2m_intToTLV(TLV_RESSOURCE, targetP->test, 1, *bufferP, PRV_TLV_BUFFER_SIZE);
@@ -272,7 +273,6 @@ static uint8_t prv_delete(uint16_t id,
                           lwm2m_object_t * objectP)
 {
     prv_instance_t * targetP;
-    int64_t value;
 
     objectP->instanceList = lwm2m_list_remove(objectP->instanceList, id, (lwm2m_list_t **)&targetP);
     if (NULL == targetP) return COAP_404_NOT_FOUND;
@@ -287,7 +287,6 @@ static uint8_t prv_exec(lwm2m_uri_t * uriP,
                         int length,
                         lwm2m_object_t * objectP)
 {
-    int64_t value;
 
     if (NULL == lwm2m_list_find(objectP->instanceList, uriP->instanceId)) return COAP_404_NOT_FOUND;
 

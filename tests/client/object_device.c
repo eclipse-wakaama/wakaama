@@ -38,6 +38,7 @@ David Navarro <david.navarro@intel.com>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 
 
 #define PRV_MANUFACTURER      "Open Mobile Alliance"
