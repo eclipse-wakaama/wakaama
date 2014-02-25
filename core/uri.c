@@ -31,6 +31,7 @@ David Navarro <david.navarro@intel.com>
 #include "internals.h"
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 
 
 static int prv_parse_number(const char * uriString,
