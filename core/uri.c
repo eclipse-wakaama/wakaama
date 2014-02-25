@@ -39,7 +39,6 @@ static int prv_parse_number(const char * uriString,
                             int * headP)
 {
     int result = 0;
-    int i = 0;
 
     if (uriString[*headP] == '/')
     {

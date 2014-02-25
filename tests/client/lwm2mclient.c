@@ -83,7 +83,7 @@ static uint8_t prv_buffer_send(void * sessionH,
                                uint8_t * buffer,
                                size_t length)
 {
-    size_t nbSent;
+    ssize_t nbSent;
     size_t offset;
     connection_t * connP = (connection_t*) sessionH;
 
@@ -186,7 +186,6 @@ static void prv_output_servers(char * buffer,
 {
     lwm2m_context_t * lwm2mH = (lwm2m_context_t *) user_data;
     lwm2m_server_t * targetP;
-    lwm2m_client_object_t * objectP;
 
     targetP = lwm2mH->serverList;
 
@@ -198,8 +197,6 @@ static void prv_output_servers(char * buffer,
 
     for (targetP = lwm2mH->serverList ; targetP != NULL ; targetP = targetP->next)
     {
-        char s[INET6_ADDRSTRLEN];
-
         fprintf(stdout, "Server ID %d:\r\n", targetP->shortID);
         fprintf(stdout, "\tstatus: ");
         switch(targetP->status)
@@ -224,7 +221,7 @@ static void prv_change(char * buffer,
     lwm2m_context_t * lwm2mH = (lwm2m_context_t *) user_data;
     lwm2m_uri_t uri;
     int result;
-    int length;
+    size_t length;
 
     if (buffer[0] == 0) goto syntax_error;
 

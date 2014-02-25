@@ -46,7 +46,6 @@ David Navarro <david.navarro@intel.com>
 static void prv_handleRegistrationReply(lwm2m_transaction_t * transacP,
                                         void * message)
 {
-    lwm2m_context_t * contextP = (lwm2m_context_t *)transacP->userData;
     lwm2m_server_t * targetP;
     coap_packet_t * packet = (coap_packet_t *)message;
 
