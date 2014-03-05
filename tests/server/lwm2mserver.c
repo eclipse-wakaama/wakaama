@@ -134,7 +134,8 @@ static connection_t * prv_findConnection(connection_t * connList,
 
 static uint8_t prv_buffer_send(void * sessionH,
                                uint8_t * buffer,
-                               size_t length)
+                               size_t length,
+                               void * userdata)
 {
     size_t nbSent;
     size_t offset;
@@ -643,7 +644,7 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    lwm2mH = lwm2m_init("testlwm2mserver", 0, NULL, prv_buffer_send);
+    lwm2mH = lwm2m_init("testlwm2mserver", 0, NULL, prv_buffer_send, NULL);
     if (NULL == lwm2mH)
     {
         fprintf(stderr, "lwm2m_init() failed\r\n");

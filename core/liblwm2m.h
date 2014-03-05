@@ -363,7 +363,7 @@ typedef struct _lwm2m_observed_
  */
 
 // The session handle MUST uniquely identify a peer.
-typedef uint8_t (*lwm2m_buffer_send_callback_t)(void * sessionH, uint8_t * buffer, size_t length);
+typedef uint8_t (*lwm2m_buffer_send_callback_t)(void * sessionH, uint8_t * buffer, size_t length, void * userData);
 
 
 typedef struct
@@ -386,11 +386,12 @@ typedef struct
     lwm2m_transaction_t * transactionList;
     // buffer send callback
     lwm2m_buffer_send_callback_t bufferSendCallback;
+    void *                       bufferSendUserData;
 } lwm2m_context_t;
 
 
 // initialize a liblwm2m context. endpointName, numObject and objectList are ignored for pure servers.
-lwm2m_context_t * lwm2m_init(char * endpointName, uint16_t numObject, lwm2m_object_t * objectList[], lwm2m_buffer_send_callback_t bufferSendCallback);
+lwm2m_context_t * lwm2m_init(char * endpointName, uint16_t numObject, lwm2m_object_t * objectList[], lwm2m_buffer_send_callback_t bufferSendCallback, void * bufferSendUserData);
 // close a liblwm2m context.
 void lwm2m_close(lwm2m_context_t * contextP);
 

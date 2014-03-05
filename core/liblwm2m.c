@@ -40,7 +40,8 @@ David Navarro <david.navarro@intel.com>
 lwm2m_context_t * lwm2m_init(char * endpointName,
                              uint16_t numObject,
                              lwm2m_object_t * objectList[],
-                             lwm2m_buffer_send_callback_t bufferSendCallback)
+                             lwm2m_buffer_send_callback_t bufferSendCallback,
+                             void * bufferSendUserData)
 {
     lwm2m_context_t * contextP;
 
@@ -52,6 +53,7 @@ lwm2m_context_t * lwm2m_init(char * endpointName,
     {
         memset(contextP, 0, sizeof(lwm2m_context_t));
         contextP->bufferSendCallback = bufferSendCallback;
+        contextP->bufferSendUserData = bufferSendUserData;
 #ifdef LWM2M_CLIENT_MODE
         contextP->endpointName = strdup(endpointName);
         if (contextP->endpointName == NULL)

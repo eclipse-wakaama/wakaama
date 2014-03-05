@@ -335,7 +335,7 @@ coap_status_t message_send(lwm2m_context_t * contextP,
     pktBufferLen = coap_serialize_message(message, pktBuffer);
     if (0 != pktBufferLen)
     {
-        result = contextP->bufferSendCallback(sessionH, pktBuffer, pktBufferLen);
+        result = contextP->bufferSendCallback(sessionH, pktBuffer, pktBufferLen, contextP->bufferSendUserData);
     }
 
     return result;
