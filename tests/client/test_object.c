@@ -43,7 +43,7 @@ David Navarro <david.navarro@intel.com>
  *
  */
 
-#include "core/liblwm2m.h"
+#include "liblwm2m.h"
 
 #include <stdio.h>
 #include <stdlib.h>

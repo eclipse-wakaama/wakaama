@@ -33,7 +33,7 @@ David Navarro <david.navarro@intel.com>
  * manufacturer, model, etc...
  */
 
-#include "core/liblwm2m.h"
+#include "liblwm2m.h"
 
 #include <stdio.h>
 #include <stdlib.h>

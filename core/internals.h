@@ -40,7 +40,7 @@ David Navarro <david.navarro@intel.com>
 #include <stddef.h>
 #include <stdbool.h>
 
-#include "externals/er-coap-13/er-coap-13.h"
+#include "er-coap-13/er-coap-13.h"
 
 #define LOG(...) fprintf(stderr, __VA_ARGS__)
 

@@ -44,7 +44,7 @@ Julien Vermillard <jvermillar@sierrawireless.com>
  * 5 update result             read
  */
 
-#include "core/liblwm2m.h"
+#include "liblwm2m.h"
 
 
 #include <stdio.h>

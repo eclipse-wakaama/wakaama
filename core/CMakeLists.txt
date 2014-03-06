@@ -1,4 +1,4 @@
-SET(EXT_SOURCES ${CMAKE_CURRENT_LIST_DIR}/../externals/er-coap-13/er-coap-13.c)
+SET(EXT_SOURCES ${CMAKE_CURRENT_LIST_DIR}/er-coap-13/er-coap-13.c)
 SET(CORE_SOURCES
     ${CMAKE_CURRENT_LIST_DIR}/liblwm2m.c
     ${CMAKE_CURRENT_LIST_DIR}/uri.c
@@ -13,4 +13,3 @@ SET(CORE_SOURCES
     ${CMAKE_CURRENT_LIST_DIR}/observe.c
     ${EXT_SOURCES}
     PARENT_SCOPE)
-    

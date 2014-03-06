@@ -60,8 +60,7 @@ Contains code snippets which are:
 
 */
 
-#include "core/liblwm2m.h"
-#include "externals/er-coap-13/er-coap-13.h"
+#include "liblwm2m.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -522,7 +521,7 @@ static void prv_monitor_callback(uint16_t clientID,
 
     switch (status)
     {
-    case CREATED_2_01:
+    case COAP_201_CREATED:
         fprintf(stdout, "\r\nNew client #%d registered.\r\n", clientID);
 
         targetP = (lwm2m_client_t *)lwm2m_list_find((lwm2m_list_t *)lwm2mH->clientList, clientID);
@@ -530,7 +529,7 @@ static void prv_monitor_callback(uint16_t clientID,
         prv_dump_client(targetP);
         break;
 
-    case DELETED_2_02:
+    case COAP_202_DELETED:
         fprintf(stdout, "\r\nClient #%d unregistered.\r\n", clientID);
         break;
 
@@ -706,7 +705,6 @@ int main(int argc, char *argv[])
                 else
                 {
                     char s[INET6_ADDRSTRLEN];
-                    coap_status_t coap_error_code = NO_ERROR;
                     connection_t * connP;
 
                     fprintf(stderr, "%d bytes received from [%s]:%hu\r\n",
