@@ -5,8 +5,6 @@ Source Layout
 -------------
 
 -+- core                (the LWM2M engine)
- |
- +- externals
  |    |
  |    +- er-coap-13     (Erbium's CoAP engine from http://people.inf.ethz.ch/mkovatsc/erbium.php,
  |                       modified to run on linux)
