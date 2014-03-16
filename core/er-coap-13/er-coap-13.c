@@ -1091,7 +1091,7 @@ coap_set_header_location_path(void *packet, const char *path)
     coap_pkt->location_path_len = strlen(path);
   }
 
-  coap_pkt->location_path = path;
+  coap_pkt->location_path = strdup(path);
 
   SET_OPTION(coap_pkt, COAP_OPTION_LOCATION_PATH);
   return coap_pkt->location_path_len;
