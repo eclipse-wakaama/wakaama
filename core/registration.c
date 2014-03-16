@@ -369,7 +369,7 @@ coap_status_t handle_registration_request(lwm2m_context_t * contextP,
         lwm2m_client_t * clientP;
         char location[MAX_LOCATION_LENGTH];
 
-        if (uriP->flag & LWM2M_URI_MASK_ID != 0) return COAP_400_BAD_REQUEST;
+        if ((uriP->flag & LWM2M_URI_MASK_ID) != 0) return COAP_400_BAD_REQUEST;
         prv_getParameters(message->uri_query, &name);
         if (name == NULL) return COAP_400_BAD_REQUEST;
         objects = prv_decodeRegisterPayload(message->payload, message->payload_len);
@@ -426,7 +426,7 @@ coap_status_t handle_registration_request(lwm2m_context_t * contextP,
     {
         lwm2m_client_t * clientP;
 
-        if (uriP->flag & LWM2M_URI_MASK_ID != LWM2M_URI_FLAG_OBJECT_ID) return COAP_400_BAD_REQUEST;
+        if ((uriP->flag & LWM2M_URI_MASK_ID) != LWM2M_URI_FLAG_OBJECT_ID) return COAP_400_BAD_REQUEST;
 
         contextP->clientList = (lwm2m_client_t *)LWM2M_LIST_RM(contextP->clientList, uriP->objectId, &clientP);
         if (clientP == NULL) return COAP_400_BAD_REQUEST;
