@@ -573,7 +573,7 @@ static uint8_t prv_device_execute(lwm2m_uri_t * uriP,
     case 5:
         fprintf(stdout, "\n\t FACTORY RESET\r\n\n");
         return COAP_204_CHANGED;
-    case 10:
+    case 12:
         fprintf(stdout, "\n\t RESET ERROR CODE\r\n\n");
         return COAP_204_CHANGED;
     default:
