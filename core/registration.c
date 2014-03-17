@@ -408,7 +408,10 @@ coap_status_t handle_registration_request(lwm2m_context_t * contextP,
             prv_freeClient(clientP);
             return COAP_500_INTERNAL_SERVER_ERROR;
         }
-        coap_set_header_location_path(response, location);
+        if(coap_set_header_location_path(response, location)==0){
+            prv_freeClient(clientP);
+			return COAP_500_INTERNAL_SERVER_ERROR;
+        }
 
         if (contextP->monitorCallback != NULL)
         {

@@ -267,7 +267,10 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
 
                 coap_error_code = message_send(contextP, response, fromSessionH);
 
-                free(response->location_path);
+                if(response->location_path != NULL){
+                	lwm2m_free(response->location_path);
+                }
+
                 lwm2m_free(response->payload);
                 response->payload = NULL;
                 response->payload_len = 0;
