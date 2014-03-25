@@ -96,6 +96,8 @@ static void dm_result_callback(lwm2m_transaction_t * transacP,
 {
     dm_data_t * dataP = (dm_data_t *)transacP->userData;
 
+    if (dataP == NULL) return;
+
     if (message == NULL)
     {
         dataP->callback(((lwm2m_client_t*)transacP->peerP)->internalID,
