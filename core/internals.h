@@ -42,7 +42,11 @@ David Navarro <david.navarro@intel.com>
 
 #include "er-coap-13/er-coap-13.h"
 
+#ifdef WITH_LOGS
 #define LOG(...) fprintf(stderr, __VA_ARGS__)
+#else
+#define LOG(...)
+#endif
 
 #define LWM2M_MAX_PACKET_SIZE 198
 
