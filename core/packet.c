@@ -118,7 +118,10 @@ static void handle_response(lwm2m_context_t * contextP,
 
     if (prv_check_addr(fromSessionH, targetSessionH))
     {
-        transacP->callback(transacP, message);
+        if (transacP->callback != NULL)
+        {
+            transacP->callback(transacP, message);
+        }
         transaction_remove(contextP, transacP);
     }
 }
