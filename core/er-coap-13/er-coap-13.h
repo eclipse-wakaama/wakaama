@@ -248,7 +248,7 @@ typedef struct {
   size_t uri_host_len;
   const char *uri_host;
   size_t location_path_len;
-  const char *location_path;
+  char *location_path;
   uint16_t uri_port;
   size_t location_query_len;
   const char *location_query;
