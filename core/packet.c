@@ -118,11 +118,17 @@ static void handle_response(lwm2m_context_t * contextP,
 
     if (prv_check_addr(fromSessionH, targetSessionH))
     {
-        if (transacP->callback != NULL)
+        // HACK: If a message is sent from the monitor callback,
+        // it will arrive before the registration ACK.
+        // So we resend transaction that were denied for authentication reason.
+        if (message->code != COAP_401_UNAUTHORIZED || transacP->retrans_counter >= COAP_MAX_RETRANSMIT)
         {
-            transacP->callback(transacP, message);
+            if (transacP->callback != NULL)
+            {
+                transacP->callback(transacP, message);
+            }
+            transaction_remove(contextP, transacP);
         }
-        transaction_remove(contextP, transacP);
     }
 }
 
