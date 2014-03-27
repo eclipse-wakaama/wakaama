@@ -282,6 +282,32 @@ static void prv_result_callback(uint16_t clientID,
     fflush(stdout);
 }
 
+static void prv_notify_callback(uint16_t clientID,
+                                lwm2m_uri_t * uriP,
+                                int count,
+                                uint8_t * data,
+                                int dataLength,
+                                void * userData)
+{
+    fprintf(stdout, "\r\nNotify from client #%d %d", clientID, uriP->objectId);
+    if (LWM2M_URI_IS_SET_INSTANCE(uriP))
+        fprintf(stdout, "/%d", uriP->instanceId);
+    else if (LWM2M_URI_IS_SET_RESOURCE(uriP))
+        fprintf(stdout, "/");
+    if (LWM2M_URI_IS_SET_RESOURCE(uriP))
+            fprintf(stdout, "/%d", uriP->resourceId);
+    fprintf(stdout, " number %d\r\n", count);
+
+    if (data != NULL)
+    {
+        fprintf(stdout, "%d bytes received:\r\n", dataLength);
+        prv_output_buffer(stdout, data, dataLength);
+    }
+
+    fprintf(stdout, "\r\n> ");
+    fflush(stdout);
+}
+
 static void prv_read_client(char * buffer,
                             void * user_data)
 {
@@ -459,7 +485,7 @@ static void prv_observe_client(char * buffer,
     result = lwm2m_stringToUri(buffer, strlen(buffer), &uri);
     if (result == 0) goto syntax_error;
 
-    result = lwm2m_observe(lwm2mH, clientId, &uri, prv_result_callback, NULL);
+    result = lwm2m_observe(lwm2mH, clientId, &uri, prv_notify_callback, NULL);
 
     if (result == 0)
     {

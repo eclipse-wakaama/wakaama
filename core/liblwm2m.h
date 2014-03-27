@@ -266,11 +266,11 @@ typedef void (*lwm2m_result_callback_t) (uint16_t clientID, lwm2m_uri_t * uriP, 
 typedef struct _lwm2m_observation_
 {
     struct _lwm2m_observation_ * next;  // matches lwm2m_list_t::next
-    uint16_t                 id;        // matches lwm2m_list_t::id
-    lwm2m_uri_t uri;
-    lwm2m_status_t    status;
+    uint16_t                     id;    // matches lwm2m_list_t::id
+    struct _lwm2m_client_ * clientP;
+    lwm2m_uri_t             uri;
     lwm2m_result_callback_t callback;
-    void * userData;
+    void *                  userData;
 } lwm2m_observation_t;
 
 /*

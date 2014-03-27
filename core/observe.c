@@ -316,7 +316,8 @@ static void prv_observationRemove(lwm2m_client_t * clientP,
         lwm2m_observation_t * parentP;
 
         parentP = clientP->observationList;
-        while (parentP->next != NULL
+        while (parentP != NULL
+            && parentP->next != NULL
             && parentP->next != observationP)
         {
             parentP = parentP->next;
@@ -362,10 +363,10 @@ static void prv_obsRequestCallback(lwm2m_transaction_t * transacP,
     }
     else
     {
-        observationP->status = STATE_REGISTERED;
+        observationP->clientP->observationList = (lwm2m_observation_t *)LWM2M_LIST_ADD(observationP->clientP->observationList, observationP);
         observationP->callback(((lwm2m_client_t*)transacP->peerP)->internalID,
                                &observationP->uri,
-                               COAP_205_CONTENT,
+                               0,
                                packet->payload, packet->payload_len,
                                observationP->userData);
     }
@@ -400,10 +401,9 @@ int lwm2m_observe(lwm2m_context_t * contextP,
 
     observationP->id = lwm2m_list_newId((lwm2m_list_t *)clientP->observationList);
     memcpy(&observationP->uri, uriP, sizeof(lwm2m_uri_t));
-    observationP->status = STATE_REG_PENDING;
+    observationP->clientP = clientP;
     observationP->callback = callback;
     observationP->userData = userData;
-    clientP->observationList = (lwm2m_observation_t *)LWM2M_LIST_ADD(clientP->observationList, observationP);
 
     token[0] = clientP->internalID >> 8;
     token[1] = clientP->internalID & 0xFF;
