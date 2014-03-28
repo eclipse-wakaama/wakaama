@@ -311,13 +311,13 @@ static void prv_observationRemove(lwm2m_client_t * clientP,
     {
         clientP->observationList = clientP->observationList->next;
     }
-    else
+    else if (clientP->observationList != NULL)
     {
         lwm2m_observation_t * parentP;
 
         parentP = clientP->observationList;
-        while (parentP != NULL
-            && parentP->next != NULL
+
+        while (parentP->next != NULL
             && parentP->next != observationP)
         {
             parentP = parentP->next;
