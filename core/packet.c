@@ -173,6 +173,7 @@ static coap_status_t handle_request(lwm2m_context_t * contextP,
         result = NO_ERROR;
     }
 
+    lwm2m_free( uriP);
     return result;
 }
 
