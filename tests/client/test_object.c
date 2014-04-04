@@ -222,8 +222,8 @@ static uint8_t prv_write(lwm2m_uri_t * uriP,
 static uint8_t prv_create(lwm2m_uri_t * uriP,
                           char * rBuffer,
                           int rLength,
-                          char * wBuffer,
-						  int wLength,
+                          char ** wBuffer,
+						  int *wLength,
                           lwm2m_object_t * objectP)
 {
     prv_instance_t * targetP;
@@ -246,15 +246,17 @@ static uint8_t prv_create(lwm2m_uri_t * uriP,
         // determine a new unique ID & send it back
         newId = lwm2m_list_newId(objectP->instanceList);
 
-        wBuffer = (char *)malloc(sizeof(uint16_t));
+        *wBuffer = (char *)malloc(sizeof(uint16_t));
 		if (NULL == *wBuffer) return COAP_500_INTERNAL_SERVER_ERROR;
+		memset(*wBuffer,0,sizeof(uint16_t));
 
-		wLength = lwm2m_int16ToPlainText(newId, wBuffer);
+		*wLength = lwm2m_int16ToPlainText(newId, wBuffer);
 		if (*wLength <= 0) return COAP_500_INTERNAL_SERVER_ERROR;
+
     }
 
-    result = lwm2m_decodeTLV(buffer, length, &type, &resID, &dataIndex, &dataLen);
-    if (result != length)
+    result = lwm2m_decodeTLV(rBuffer, rLength, &type, &resID, &dataIndex, &dataLen);
+    if (result != rLength)
     {
         // decode failure or too much data for our single ressource object
         return COAP_400_BAD_REQUEST;
@@ -263,7 +265,7 @@ static uint8_t prv_create(lwm2m_uri_t * uriP,
     {
         return COAP_400_BAD_REQUEST;
     }
-    result = lwm2m_opaqueToInt(buffer + dataIndex, dataLen, &value);
+    result = lwm2m_opaqueToInt(rBuffer + dataIndex, dataLen, &value);
     if (result == 0 || value < 0 || value > 255)
         return COAP_400_BAD_REQUEST;
 
@@ -295,8 +297,8 @@ static uint8_t prv_delete(uint16_t id,
 static uint8_t prv_exec(lwm2m_uri_t * uriP,
                         char * rBuffer,
                         int rLength,
-                        char * wBuffer,
-					    int wLength,
+                        char ** wBuffer,
+					    int *wLength,
                         lwm2m_object_t * objectP)
 {
 
@@ -310,8 +312,8 @@ static uint8_t prv_exec(lwm2m_uri_t * uriP,
         fprintf(stdout, "\r\n-----------------\r\n"
                         "Execute on %hu/%d/%d\r\n"
                         " Parameter (%d bytes):\r\n",
-                        uriP->objectId, uriP->instanceId, uriP->resourceId, length);
-        prv_output_buffer(buffer, length);
+                        uriP->objectId, uriP->instanceId, uriP->resourceId, rLength);
+        prv_output_buffer(rBuffer, rLength);
         fprintf(stdout, "-----------------\r\n\r\n");
         return COAP_204_CHANGED;
     default:

@@ -68,8 +68,8 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
             char * buffer = NULL;
         	int length = 0;
 
-            result = object_create_execute(contextP, uriP, message->payload, message->payload_len, buffer, lenght);
-            if (result == COAP_205_CONTENT)
+            result = object_create_execute(contextP, uriP, message->payload, message->payload_len, &buffer, &length);
+            if (result == COAP_201_CREATED || result == COAP_204_CHANGED)
 		    {
 			    coap_set_payload(response, buffer, length);
 			    // lwm2m_handle_packet will free buffer
