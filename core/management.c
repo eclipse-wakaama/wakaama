@@ -65,7 +65,15 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
         break;
     case COAP_POST:
         {
-            result = object_create_execute(contextP, uriP, message->payload, message->payload_len);
+            char * buffer = NULL;
+        	int length = 0;
+
+            result = object_create_execute(contextP, uriP, message->payload, message->payload_len, buffer, lenght);
+            if (result == COAP_205_CONTENT)
+		    {
+			    coap_set_payload(response, buffer, length);
+			    // lwm2m_handle_packet will free buffer
+		    }
         }
         break;
     case COAP_PUT:

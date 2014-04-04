@@ -220,8 +220,10 @@ static uint8_t prv_write(lwm2m_uri_t * uriP,
 }
 
 static uint8_t prv_create(lwm2m_uri_t * uriP,
-                          char * buffer,
-                          int length,
+                          char * rBuffer,
+                          int rLength,
+                          char * wBuffer,
+						  int wLength,
                           lwm2m_object_t * objectP)
 {
     prv_instance_t * targetP;
@@ -241,8 +243,14 @@ static uint8_t prv_create(lwm2m_uri_t * uriP,
     }
     else
     {
-        // determine a new unique ID
+        // determine a new unique ID & send it back
         newId = lwm2m_list_newId(objectP->instanceList);
+
+        wBuffer = (char *)malloc(sizeof(uint16_t));
+		if (NULL == *wBuffer) return COAP_500_INTERNAL_SERVER_ERROR;
+
+		wLength = lwm2m_int16ToPlainText(newId, wBuffer);
+		if (*wLength <= 0) return COAP_500_INTERNAL_SERVER_ERROR;
     }
 
     result = lwm2m_decodeTLV(buffer, length, &type, &resID, &dataIndex, &dataLen);
@@ -266,6 +274,8 @@ static uint8_t prv_create(lwm2m_uri_t * uriP,
     targetP->test = value;
     objectP->instanceList = LWM2M_LIST_ADD(objectP->instanceList, targetP);
 
+
+
     return COAP_201_CREATED;
 }
 
@@ -283,8 +293,10 @@ static uint8_t prv_delete(uint16_t id,
 }
 
 static uint8_t prv_exec(lwm2m_uri_t * uriP,
-                        char * buffer,
-                        int length,
+                        char * rBuffer,
+                        int rLength,
+                        char * wBuffer,
+					    int wLength,
                         lwm2m_object_t * objectP)
 {
 

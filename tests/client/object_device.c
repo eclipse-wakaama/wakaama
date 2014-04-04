@@ -552,8 +552,10 @@ static uint8_t prv_device_write(lwm2m_uri_t * uriP,
 }
 
 static uint8_t prv_device_execute(lwm2m_uri_t * uriP,
-                                  char * buffer,
-                                  int length,
+								  char * rBuffer,
+								  int rLength,
+								  char * wBuffer,
+								  int wLength,
                                   lwm2m_object_t * objectP)
 {
     // this is a single instance object
