@@ -382,7 +382,7 @@ coap_free_header(void *packet)
 
     if (coap_pkt->location_path != NULL)
     {
-        free(coap_pkt->location_path);
+        lwm2m_free(coap_pkt->location_path);
     }
     free_multi_option(coap_pkt->uri_path);
     free_multi_option(coap_pkt->uri_query);
@@ -687,7 +687,7 @@ coap_parse_message(void *packet, uint8_t *data, uint16_t data_len)
           coap_merge_multi_option( &tmp_buf, &tmp_len, current_option, option_length, '/');
           if (tmp_len != 0)
           {
-            coap_pkt->location_path =(char *)malloc(tmp_len);
+            coap_pkt->location_path =(char *)lwm2m_malloc(tmp_len);
             memcpy(coap_pkt->location_path, tmp_buf, tmp_len);
             coap_pkt->location_path_len = tmp_len;
           }
