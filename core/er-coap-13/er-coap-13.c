@@ -48,6 +48,7 @@
 
 #include "er-coap-13.h"
 
+#include "liblwm2m.h" /* for lwm2m_malloc() and lwm2m_free() */
 
 #define DEBUG 0
 #if DEBUG
@@ -261,7 +262,7 @@ static
 void
 coap_add_multi_option( multi_option_t **dst, uint8_t *option, size_t option_len)
 {
-  multi_option_t *opt = (multi_option_t *)malloc(sizeof(multi_option_t));
+  multi_option_t *opt = (multi_option_t *)lwm2m_malloc(sizeof(multi_option_t));
 
   if (opt)
   {
@@ -292,7 +293,7 @@ free_multi_option( multi_option_t *dst)
   if (dst)
   {
     multi_option_t *n = dst->next;
-    free(dst);
+    lwm2m_free(dst);
     free_multi_option(n);
   }
 }
