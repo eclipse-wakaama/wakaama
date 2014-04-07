@@ -113,12 +113,31 @@ void lwm2m_close(lwm2m_context_t * contextP)
 
         registration_deregister(contextP, targetP);
 
+        if (NULL != targetP->location) lwm2m_free(targetP->location);
         if (NULL != targetP->security.privateKey) lwm2m_free (targetP->security.privateKey);
         if (NULL != targetP->security.publicKey) lwm2m_free (targetP->security.publicKey);
         lwm2m_free(targetP);
     }
 
-    if (NULL != contextP->objectList)
+    while (NULL != contextP->observedList)
+    {
+        lwm2m_observed_t * targetP;
+
+        targetP = contextP->observedList;
+        contextP->observedList = contextP->observedList->next;
+
+        while (NULL != targetP->watcherList)
+        {
+            lwm2m_watcher_t * watcherP;
+
+            watcherP = targetP->watcherList;
+            targetP->watcherList = targetP->watcherList->next;
+            lwm2m_free(watcherP);
+        }
+        lwm2m_free(targetP);
+    }
+
+   if (NULL != contextP->objectList)
     {
         lwm2m_free(contextP->objectList);
     }

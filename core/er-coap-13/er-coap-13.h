@@ -348,6 +348,7 @@ size_t coap_serialize_message(void *packet, uint8_t *buffer);
 void coap_send_message(uip_ipaddr_t *addr, uint16_t port, uint8_t *data, uint16_t length);
 #endif
 coap_status_t coap_parse_message(void *request, uint8_t *data, uint16_t data_len);
+void coap_free_header(void *packet);
 
 int coap_get_query_variable(void *packet, const char *name, const char **output);
 int coap_get_post_variable(void *packet, const char *name, const char **output);

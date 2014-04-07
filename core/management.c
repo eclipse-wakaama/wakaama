@@ -115,6 +115,7 @@ static void dm_result_callback(lwm2m_transaction_t * transacP,
                         packet->payload_len,
                         dataP->userData);
     }
+    lwm2m_free(dataP);
 }
 
 static int prv_make_operation(lwm2m_context_t * contextP,

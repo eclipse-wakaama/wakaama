@@ -128,6 +128,8 @@ int lwm2m_register(lwm2m_context_t * contextP)
         targetP = targetP->next;
     }
 
+    lwm2m_free(query);
+
     return 0;
 }
 
