@@ -509,9 +509,6 @@ coap_parse_message(void *packet, uint8_t *data, uint16_t data_len)
 {
   coap_packet_t *const coap_pkt = (coap_packet_t *) packet;
 
-  free_multi_option(coap_pkt->uri_path);
-  free_multi_option(coap_pkt->uri_query);
-
   /* Initialize packet */
   memset(coap_pkt, 0, sizeof(coap_packet_t));
 
