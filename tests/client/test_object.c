@@ -220,10 +220,8 @@ static uint8_t prv_write(lwm2m_uri_t * uriP,
 }
 
 static uint8_t prv_create(lwm2m_uri_t * uriP,
-                          char * rBuffer,
-                          int rLength,
-                          char ** wBuffer,
-						  int *wLength,
+                          char * buffer,
+                          int length,
                           lwm2m_object_t * objectP)
 {
     prv_instance_t * targetP;
@@ -246,17 +244,14 @@ static uint8_t prv_create(lwm2m_uri_t * uriP,
         // determine a new unique ID & send it back
         newId = lwm2m_list_newId(objectP->instanceList);
 
-        *wBuffer = (char *)malloc(sizeof(uint16_t));
-		if (NULL == *wBuffer) return COAP_500_INTERNAL_SERVER_ERROR;
-		memset(*wBuffer,0,sizeof(uint16_t));
-
-		*wLength = lwm2m_int16ToPlainText(newId, wBuffer);
-		if (*wLength <= 0) return COAP_500_INTERNAL_SERVER_ERROR;
+        //set instanceId & flag in order to send int back;
+        uriP->instanceId = newId;
+	    uriP->flag |= LWM2M_URI_FLAG_INSTANCE_ID;
 
     }
 
-    result = lwm2m_decodeTLV(rBuffer, rLength, &type, &resID, &dataIndex, &dataLen);
-    if (result != rLength)
+    result = lwm2m_decodeTLV(buffer, length, &type, &resID, &dataIndex, &dataLen);
+    if (result != length)
     {
         // decode failure or too much data for our single ressource object
         return COAP_400_BAD_REQUEST;
@@ -265,7 +260,7 @@ static uint8_t prv_create(lwm2m_uri_t * uriP,
     {
         return COAP_400_BAD_REQUEST;
     }
-    result = lwm2m_opaqueToInt(rBuffer + dataIndex, dataLen, &value);
+    result = lwm2m_opaqueToInt(buffer + dataIndex, dataLen, &value);
     if (result == 0 || value < 0 || value > 255)
         return COAP_400_BAD_REQUEST;
 

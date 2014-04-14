@@ -476,7 +476,7 @@ static void prv_create_client(char * buffer,
 
    /* Client dependent part   */
 
-	if(uri->objectID == 1024){
+	if(uri.objectId == 1024){
  	    result = lwm2m_PlainTextToInt64(buffer,strlen(buffer),&value);
    		temp_length = lwm2m_intToTLV(TLV_RESSOURCE, value, (uint16_t) 1, temp_buffer, MAX_PACKET_SIZE);
 	}
@@ -713,9 +713,9 @@ int main(int argc, char *argv[])
                                             "   URI: uri of the instance to delete such as /1024/11\r\n"
                                             "Result will be displayed asynchronously.", prv_delete_client, NULL},
 			{"create", "create an Object instance.", " create CLIENT# URI\r\n"
-													"   CLIENT#: client number as returned by command 'list'\r\n"
-													"   URI: uri to which create the Object Instance such as /1024, /1024/45 \r\n"
-													"Result will be displayed asynchronously.", prv_create_client, NULL},
+                                            "   CLIENT#: client number as returned by command 'list'\r\n"
+                                            "   URI: uri to which create the Object Instance such as /1024, /1024/45 \r\n"
+                                            "Result will be displayed asynchronously.", prv_create_client, NULL},
 			{"observe", "Observe from a client.", " observe CLIENT# URI\r\n"
                                             "   CLIENT#: client number as returned by command 'list'\r\n"
                                             "   URI: uri to observe such as /3, /3/0/2, /1024/11\r\n"

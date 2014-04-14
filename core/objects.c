@@ -141,7 +141,7 @@ coap_status_t object_create_execute(lwm2m_context_t * contextP,
             return METHOD_NOT_ALLOWED_4_05;
         }
 
-        return targetP->createFunc(uriP, rBuffer, rLength, wBuffer, wLength, targetP);
+        return targetP->createFunc(uriP, rBuffer, rLength, targetP);
     }
     else return BAD_REQUEST_4_00;
 }
