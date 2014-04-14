@@ -677,8 +677,8 @@ coap_parse_message(void *packet, uint8_t *data, uint16_t data_len)
 
       case COAP_OPTION_LOCATION_PATH:
         {
-          char * tmp_buf;
-          size_t tmp_len;
+          char * tmp_buf = NULL;
+          size_t tmp_len = 0;
 
           /* coap_merge_multi_option() operates in-place on the IPBUF, but final packet field should be const string -> cast to string */
           coap_merge_multi_option( &tmp_buf, &tmp_len, current_option, option_length, '/');
