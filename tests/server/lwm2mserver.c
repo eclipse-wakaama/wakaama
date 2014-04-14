@@ -78,114 +78,24 @@ Contains code snippets which are:
 #include <signal.h>
 
 #include "commandline.h"
+#include "connection.h"
 
 #define MAX_PACKET_SIZE 128
-#define SERVER_PORT "5684"
 
 static int g_quit = 0;
-
-typedef struct _connection_t
-{
-    struct _connection_t *  next;
-    int                     sock;
-    struct sockaddr_storage addr;
-    size_t                  addrLen;
-} connection_t;
-
-static connection_t * prv_newConnection(connection_t * connList,
-                                        int sock,
-                                        struct sockaddr * addr,
-                                        size_t addrLen)
-{
-    connection_t * connP;
-
-    connP = (connection_t *)malloc(sizeof(connection_t));
-    if (connP != NULL)
-    {
-        connP->sock = sock;
-        memcpy(&(connP->addr), addr, addrLen);
-        connP->addrLen = addrLen;
-        connP->next = connList;
-    }
-
-    return connP;
-}
-
-static connection_t * prv_findConnection(connection_t * connList,
-                                         struct sockaddr_storage * addr,
-                                         size_t addrLen)
-{
-    connection_t * connP;
-
-    connP = connList;
-    while (connP != NULL)
-    {
-        if ((connP->addrLen == addrLen)
-         && (memcmp(&(connP->addr), addr, addrLen) == 0))
-        {
-            return connP;
-        }
-        connP = connP->next;
-    }
-
-    return connP;
-}
 
 static uint8_t prv_buffer_send(void * sessionH,
                                uint8_t * buffer,
                                size_t length,
                                void * userdata)
 {
-    size_t nbSent;
-    size_t offset;
     connection_t * connP = (connection_t*) sessionH;
 
-    offset = 0;
-    while (offset != length)
+    if (-1 == connection_send(connP, buffer, length))
     {
-        nbSent = sendto(connP->sock, buffer + offset, length - offset, 0, (struct sockaddr *)&(connP->addr), connP->addrLen);
-        if (nbSent == -1) return COAP_500_INTERNAL_SERVER_ERROR;
-        offset += nbSent;
+        return COAP_500_INTERNAL_SERVER_ERROR;
     }
     return COAP_NO_ERROR;
-}
-
-static void prv_output_buffer(FILE * fd,
-                              uint8_t * buffer,
-                              int length)
-{
-    int i;
-    uint8_t array[16];
-
-    i = 0;
-    while (i < length)
-    {
-        int j;
-        fprintf(fd, "  ");
-
-        memcpy(array, buffer+i, 16);
-
-        for (j = 0 ; j < 16 && i+j < length; j++)
-        {
-            fprintf(fd, "%02X ", array[j]);
-        }
-        while (j < 16)
-        {
-            fprintf(fd, "   ");
-            j++;
-        }
-        fprintf(fd, "  ");
-        for (j = 0 ; j < 16 && i+j < length; j++)
-        {
-            if (isprint(array[j]))
-                fprintf(fd, "%c ", array[j]);
-            else
-                fprintf(fd, ". ");
-        }
-        fprintf(fd, "\n");
-
-        i += 16;
-    }
 }
 
 static void prv_dump_client(lwm2m_client_t * targetP)
@@ -275,7 +185,7 @@ static void prv_result_callback(uint16_t clientID,
     if (data != NULL)
     {
         fprintf(stdout, "%d bytes received:\r\n", dataLength);
-        prv_output_buffer(stdout, data, dataLength);
+        output_buffer(stdout, data, dataLength);
     }
 
     fprintf(stdout, "\r\n> ");
@@ -301,7 +211,7 @@ static void prv_notify_callback(uint16_t clientID,
     if (data != NULL)
     {
         fprintf(stdout, "%d bytes received:\r\n", dataLength);
-        prv_output_buffer(stdout, data, dataLength);
+        output_buffer(stdout, data, dataLength);
     }
 
     fprintf(stdout, "\r\n> ");
@@ -583,44 +493,13 @@ void handle_sigint(int signum)
 void print_usage(void)
 {
     fprintf(stderr, "Usage: lwm2mserver\r\n");
-    fprintf(stderr, "Launch a LWM2M server on localhost port "SERVER_PORT".\r\n\n");
+    fprintf(stderr, "Launch a LWM2M server on localhost port "LWM2M_STANDARD_PORT_STR".\r\n\n");
 }
 
-int get_socket()
-{
-    int s = -1;
-    struct addrinfo hints;
-    struct addrinfo *res;
-    struct addrinfo *p;
-
-    memset(&hints, 0, sizeof hints);
-    hints.ai_family = PF_INET6;
-    hints.ai_socktype = SOCK_DGRAM;
-    hints.ai_flags = AI_PASSIVE;
-
-    getaddrinfo(NULL, SERVER_PORT, &hints, &res);
-
-    for(p = res ; p != NULL && s == -1 ; p = p->ai_next)
-    {
-        s = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
-        if (s >= 0)
-        {
-            if (-1 == bind(s, p->ai_addr, p->ai_addrlen))
-            {
-                close(s);
-                s = -1;
-            }
-        }
-    }
-
-    freeaddrinfo(res);
-
-    return s;
-}
 
 int main(int argc, char *argv[])
 {
-    int socket;
+    int sock;
     fd_set readfds;
     struct timeval tv;
     int result;
@@ -662,8 +541,8 @@ int main(int argc, char *argv[])
             COMMAND_END_LIST
     };
 
-    socket = get_socket();
-    if (socket < 0)
+    sock = create_socket(LWM2M_STANDARD_PORT_STR);
+    if (sock < 0)
     {
         fprintf(stderr, "Error opening socket: %d\r\n", errno);
         return -1;
@@ -689,7 +568,7 @@ int main(int argc, char *argv[])
     while (0 == g_quit)
     {
         FD_ZERO(&readfds);
-        FD_SET(socket, &readfds);
+        FD_SET(sock, &readfds);
         FD_SET(STDIN_FILENO, &readfds);
 
         tv.tv_sec = 60;
@@ -716,13 +595,13 @@ int main(int argc, char *argv[])
             uint8_t buffer[MAX_PACKET_SIZE];
             int numBytes;
 
-            if (FD_ISSET(socket, &readfds))
+            if (FD_ISSET(sock, &readfds))
             {
                 struct sockaddr_storage addr;
                 socklen_t addrLen;
 
                 addrLen = sizeof(addr);
-                numBytes = recvfrom(socket, buffer, MAX_PACKET_SIZE, 0, (struct sockaddr *)&addr, &addrLen);
+                numBytes = recvfrom(sock, buffer, MAX_PACKET_SIZE, 0, (struct sockaddr *)&addr, &addrLen);
 
                 if (numBytes == -1)
                 {
@@ -740,12 +619,12 @@ int main(int argc, char *argv[])
                                       s,
                                       INET6_ADDRSTRLEN),
                             ntohs(((struct sockaddr_in6*)&addr)->sin6_port));
-                    prv_output_buffer(stderr, buffer, numBytes);
+                    output_buffer(stderr, buffer, numBytes);
 
-                    connP = prv_findConnection(connList, &addr, addrLen);
+                    connP = connection_find(connList, &addr, addrLen);
                     if (connP == NULL)
                     {
-                        connList = prv_newConnection(connList, socket, (struct sockaddr *)&addr, addrLen);
+                        connList = connection_new_incoming(connList, sock, (struct sockaddr *)&addr, addrLen);
                         connP = connList;
                     }
                     if (connP != NULL)
@@ -777,7 +656,8 @@ int main(int argc, char *argv[])
     }
 
     lwm2m_close(lwm2mH);
-    close(socket);
+    close(sock);
+    connection_free(connList);
 
     return 0;
 }

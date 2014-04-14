@@ -31,6 +31,7 @@ David Navarro <david.navarro@intel.com>
 
 #include "liblwm2m.h"
 #include "commandline.h"
+#include "connection.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -72,114 +73,18 @@ void print_usage(void)
     fprintf(stderr, "Launch a LWM2M client.\r\n\n");
 }
 
-typedef struct
-{
-    int                     sock;
-    struct sockaddr_storage addr;
-    size_t                  addrLen;
-} connection_t;
-
 static uint8_t prv_buffer_send(void * sessionH,
                                uint8_t * buffer,
                                size_t length,
                                void * userdata)
 {
-    ssize_t nbSent;
-    size_t offset;
     connection_t * connP = (connection_t*) sessionH;
 
-    offset = 0;
-    while (offset != length)
+    if (-1 == connection_send(connP, buffer, length))
     {
-        nbSent = sendto(connP->sock, buffer + offset, length - offset, 0, (struct sockaddr *)&(connP->addr), connP->addrLen);
-        if (nbSent == -1) return COAP_500_INTERNAL_SERVER_ERROR;
-        offset += nbSent;
+        return COAP_500_INTERNAL_SERVER_ERROR;
     }
     return COAP_NO_ERROR;
-}
-
-static connection_t * prv_newConnection(struct sockaddr * addr,
-                                        size_t addrLen)
-{
-    connection_t * connP;
-
-    connP = (connection_t *)malloc(sizeof(connection_t));
-    if (connP != NULL)
-    {
-        memcpy(&(connP->addr), addr, addrLen);
-        connP->addrLen = addrLen;
-    }
-
-    return connP;
-}
-
-static void prv_output_buffer(uint8_t * buffer,
-                              int length)
-{
-    int i;
-    uint8_t array[16];
-
-    i = 0;
-    while (i < length)
-    {
-        int j;
-        fprintf(stderr, "  ");
-
-        memcpy(array, buffer+i, 16);
-
-        for (j = 0 ; j < 16 && i+j < length; j++)
-        {
-            fprintf(stderr, "%02X ", array[j]);
-        }
-        while (j < 16)
-        {
-            fprintf(stderr, "   ");
-            j++;
-        }
-        fprintf(stderr, "  ");
-        for (j = 0 ; j < 16 && i+j < length; j++)
-        {
-            if (isprint(array[j]))
-                fprintf(stderr, "%c ", array[j]);
-            else
-                fprintf(stderr, ". ");
-        }
-        fprintf(stderr, "\n");
-
-        i += 16;
-    }
-}
-
-int get_socket()
-{
-    int s = -1;
-    struct addrinfo hints;
-    struct addrinfo *res;
-    struct addrinfo *p;
-
-    memset(&hints, 0, sizeof hints);
-    hints.ai_family = AF_UNSPEC;
-    hints.ai_socktype = SOCK_DGRAM;
-    hints.ai_flags = AI_PASSIVE;
-
-    getaddrinfo(NULL, "5683", &hints, &res);
-
-    for(p = res ; p != NULL && s == -1 ; p = p->ai_next)
-    {
-        s = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
-        if (s >= 0)
-        {
-            if (-1 == bind(s, p->ai_addr, p->ai_addrlen))
-            {
-                close(s);
-                s = -1;
-            }
-        }
-    }
-
-    freeaddrinfo(res);
-
-    return s;
 }
 
 static void prv_output_servers(char * buffer,
@@ -280,60 +185,17 @@ syntax_error:
     fprintf(stdout, "Syntax error !");
 }
 
-static connection_t * prv_createConnection(char * host,
-                                           uint16_t port)
-{
-    char portStr[6];
-    struct addrinfo hints;
-    struct addrinfo *servinfo = NULL;
-    struct addrinfo *p;
-    int sock;
-    struct sockaddr *sa;
-    socklen_t sl;
-    connection_t * connP = NULL;
-
-    memset(&hints, 0, sizeof(hints));
-    hints.ai_family = AF_UNSPEC;
-    hints.ai_socktype = SOCK_DGRAM;
-
-    if (0 >= sprintf(portStr, "%hu", port)) return NULL;
-    if (0 != getaddrinfo(host, portStr, &hints, &servinfo) || servinfo == NULL) return NULL;
-
-    // we test the various addresses
-    sock = -1;
-    for(p = servinfo ; p != NULL && sock == -1 ; p = p->ai_next)
-    {
-        sock = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
-        if (sock >= 0)
-        {
-            sa = p->ai_addr;
-            sl = p->ai_addrlen;
-            if (-1 == connect(sock, p->ai_addr, p->ai_addrlen))
-            {
-                close(sock);
-                sock = -1;
-            }
-        }
-    }
-    if (sock >= 0)
-    {
-        connP = prv_newConnection(sa, sl);
-        close(sock);
-    }
-
-    return connP;
-}
-
-
 int main(int argc, char *argv[])
 {
-    int socket;
+    int sock;
     int result;
     lwm2m_context_t * lwm2mH = NULL;
     lwm2m_object_t * objArray[3];
     lwm2m_security_t security;
     int i;
-    connection_t * connP;
+    connection_t * connList;
+
+    connList = NULL;
 
     /*
      * The function start by setting up the command line interface (which may or not be useful depending on your project)
@@ -357,8 +219,8 @@ int main(int argc, char *argv[])
     /*
      *This call an internal function that create an IPV6 socket on the port 5683.
      */
-    socket = get_socket();
-    if (socket < 0)
+    sock = create_socket("5683");
+    if (sock < 0)
     {
         fprintf(stderr, "Failed to open socket: %d\r\n", errno);
         return -1;
@@ -403,13 +265,12 @@ int main(int argc, char *argv[])
 
     signal(SIGINT, handle_sigint);
 
-    connP = prv_createConnection("::1", 5684);
-    if (connP == NULL)
+    connList = connection_create(connList, sock, "localhost", LWM2M_STANDARD_PORT);
+    if (connList == NULL)
     {
         fprintf(stderr, "Connection creation failed.\r\n");
         return -1;
     }
-    connP->sock = socket;
 
     memset(&security, 0, sizeof(lwm2m_security_t));
 
@@ -418,7 +279,7 @@ int main(int argc, char *argv[])
      * context.
      * You can add as many server as your application need and there will be thereby allowed to interact with your object
      */
-    result = lwm2m_add_server(lwm2mH, 123, (void *)connP, &security);
+    result = lwm2m_add_server(lwm2mH, 123, (void *)connList, &security);
     if (result != 0)
     {
         fprintf(stderr, "lwm2m_add_server() failed: 0x%X\r\n", result);
@@ -454,7 +315,7 @@ int main(int argc, char *argv[])
         fd_set readfds;
 
         FD_ZERO(&readfds);
-        FD_SET(socket, &readfds);
+        FD_SET(sock, &readfds);
         FD_SET(STDIN_FILENO, &readfds);
 
         tv.tv_sec = 60;
@@ -494,7 +355,7 @@ int main(int argc, char *argv[])
             /*
              * If an event happen on the socket
              */
-            if (FD_ISSET(socket, &readfds))
+            if (FD_ISSET(sock, &readfds))
             {
                 struct sockaddr_storage addr;
                 socklen_t addrLen;
@@ -504,7 +365,7 @@ int main(int argc, char *argv[])
                 /*
                  * We retrieve the data received
                  */
-                numBytes = recvfrom(socket, buffer, MAX_PACKET_SIZE, 0, (struct sockaddr *)&addr, &addrLen);
+                numBytes = recvfrom(sock, buffer, MAX_PACKET_SIZE, 0, (struct sockaddr *)&addr, &addrLen);
 
                 if (numBytes == -1)
                 {
@@ -513,8 +374,9 @@ int main(int argc, char *argv[])
                 else
                 {
                     char s[INET6_ADDRSTRLEN];
+                    connection_t * connP;
 
-                    fprintf(stdout, "%d bytes received from [%s]:%hu\r\n",
+                    fprintf(stderr, "%d bytes received from [%s]:%hu\r\n",
                             numBytes,
                             inet_ntop(addr.ss_family,
                                       &(((struct sockaddr_in6*)&addr)->sin6_addr),
@@ -523,17 +385,17 @@ int main(int argc, char *argv[])
                             ntohs(((struct sockaddr_in6*)&addr)->sin6_port));
 
                     /*
-                     * Display it in the STDOUT
+                     * Display it in the STDERR
                      */
-                    prv_output_buffer(buffer, numBytes);
+                    output_buffer(stderr, buffer, numBytes);
 
-                    if ((connP->addrLen == addrLen)
-                     && (memcmp(&(connP->addr), &addr, addrLen) == 0))
+                    connP = connection_find(connList, &addr, addrLen);
+                    if (connP != NULL)
                     {
                         /*
                          * Let liblwm2m respond to the query depending on the context
                          */
-                        lwm2m_handle_packet(lwm2mH, buffer, numBytes, (void *)connP);
+                        lwm2m_handle_packet(lwm2mH, buffer, numBytes, connP);
                     }
                 }
             }
@@ -574,8 +436,8 @@ int main(int argc, char *argv[])
     {
         lwm2m_close(lwm2mH);
     }
-    close(socket);
-    free(connP);
+    close(sock);
+    connection_free(connList);
 
     return 0;
 }

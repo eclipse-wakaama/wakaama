@@ -10,6 +10,6 @@ include_directories (${LIBLWM2M_DIR} ${PROJECT_SOURCE_DIR}/../utils)
 
 add_subdirectory(${LIBLWM2M_DIR} ${CMAKE_CURRENT_BINARY_DIR}/core)
 
-SET(SOURCES lwm2mserver.c ../utils/commandline.c)
+SET(SOURCES lwm2mserver.c ../utils/commandline.c ../utils/connection.c)
 
 add_executable(lwm2mserver ${SOURCES} ${CORE_SOURCES})
