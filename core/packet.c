@@ -69,19 +69,6 @@ Contains code snippets which are:
 #include <stdio.h>
 
 
-static int prv_check_addr(void * leftSessionH,
-                          void * rightSessionH)
-{
-    if ((leftSessionH == NULL)
-     || (rightSessionH == NULL)
-     || (leftSessionH != rightSessionH))
-    {
-        return 0;
-    }
-
-    return 1;
-}
-
 static void handle_reset(lwm2m_context_t * contextP,
                          void * fromSessionH,
                          coap_packet_t * message)
@@ -89,47 +76,6 @@ static void handle_reset(lwm2m_context_t * contextP,
 #ifdef LWM2M_CLIENT_MODE
     cancel_observe(contextP, message->mid, fromSessionH);
 #endif
-}
-
-static void handle_response(lwm2m_context_t * contextP,
-                            lwm2m_transaction_t * transacP,
-                            void * fromSessionH,
-                            coap_packet_t * message)
-{
-    void * targetSessionH;
-
-    switch (transacP->peerType)
-    {
-#ifdef LWM2M_SERVER_MODE
-    case ENDPOINT_CLIENT:
-        targetSessionH = ((lwm2m_client_t *)transacP->peerP)->sessionH;
-        break;
-#endif
-
-#ifdef LWM2M_CLIENT_MODE
-    case ENDPOINT_SERVER:
-        targetSessionH = ((lwm2m_server_t *)transacP->peerP)->sessionH;
-        break;
-#endif
-
-    default:
-        return;
-    }
-
-    if (prv_check_addr(fromSessionH, targetSessionH))
-    {
-        // HACK: If a message is sent from the monitor callback,
-        // it will arrive before the registration ACK.
-        // So we resend transaction that were denied for authentication reason.
-        if (message->code != COAP_401_UNAUTHORIZED || transacP->retrans_counter >= COAP_MAX_RETRANSMIT)
-        {
-            if (transacP->callback != NULL)
-            {
-                transacP->callback(transacP, message);
-            }
-            transaction_remove(contextP, transacP);
-        }
-    }
 }
 
 static coap_status_t handle_request(lwm2m_context_t * contextP,
@@ -307,11 +253,7 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
             else
 #endif
             {
-                transaction = (lwm2m_transaction_t *)lwm2m_list_find((lwm2m_list_t *)contextP->transactionList, message->mid);
-                if (NULL != transaction)
-                {
-                    handle_response(contextP, transaction, fromSessionH, message);
-                }
+                transaction_handle_response(contextP, fromSessionH, message);
             }
         } /* Request or Response */
 

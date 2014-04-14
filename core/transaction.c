@@ -71,6 +71,18 @@ Contains code snippets which are:
 #define COAP_RESPONSE_TIMEOUT_TICKS         (CLOCK_SECOND * COAP_RESPONSE_TIMEOUT)
 #define COAP_RESPONSE_TIMEOUT_BACKOFF_MASK  ((CLOCK_SECOND * COAP_RESPONSE_TIMEOUT * (COAP_RESPONSE_RANDOM_FACTOR - 1)) + 1.5)
 
+static int prv_check_addr(void * leftSessionH,
+                          void * rightSessionH)
+{
+    if ((leftSessionH == NULL)
+     || (rightSessionH == NULL)
+     || (leftSessionH != rightSessionH))
+    {
+        return 0;
+    }
+
+    return 1;
+}
 
 lwm2m_transaction_t * transaction_new(coap_method_t method,
                                       lwm2m_uri_t * uriP,
@@ -160,6 +172,62 @@ void transaction_remove(lwm2m_context_t * contextP,
         }
     }
     transaction_free(transacP);
+}
+
+
+void transaction_handle_response(lwm2m_context_t * contextP,
+                                 void * fromSessionH,
+                                 coap_packet_t * message)
+{
+    lwm2m_transaction_t * transacP;
+
+    transacP = contextP->transactionList;
+
+    while (transacP != NULL)
+    {
+        void * targetSessionH;
+
+        targetSessionH = NULL;
+        switch (transacP->peerType)
+        {
+    #ifdef LWM2M_SERVER_MODE
+        case ENDPOINT_CLIENT:
+            targetSessionH = ((lwm2m_client_t *)transacP->peerP)->sessionH;
+            break;
+    #endif
+
+    #ifdef LWM2M_CLIENT_MODE
+        case ENDPOINT_SERVER:
+            targetSessionH = ((lwm2m_server_t *)transacP->peerP)->sessionH;
+            break;
+    #endif
+
+        default:
+            break;
+        }
+
+        if (prv_check_addr(fromSessionH, targetSessionH))
+        {
+            if (transacP->mID == message->mid)
+            {
+                // HACK: If a message is sent from the monitor callback,
+                // it will arrive before the registration ACK.
+                // So we resend transaction that were denied for authentication reason.
+                if (message->code != COAP_401_UNAUTHORIZED || transacP->retrans_counter >= COAP_MAX_RETRANSMIT)
+                {
+                    if (transacP->callback != NULL)
+                    {
+                        transacP->callback(transacP, message);
+                    }
+                    transaction_remove(contextP, transacP);
+                }
+                // we found our guy, exit
+                return;
+            }
+        }
+
+        transacP = transacP->next;
+    }
 }
 
 int transaction_send(lwm2m_context_t * contextP,
