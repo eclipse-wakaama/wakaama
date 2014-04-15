@@ -133,40 +133,35 @@ static void dm_result_callback(lwm2m_transaction_t * transacP,
     else
     {
         coap_packet_t * packet = (coap_packet_t *)message;
-        char* location_path = NULL;
-		int location_path_len =0;
-
-		location_path_len = coap_get_header_location_path(packet,&location_path);
 
         //if packet is a CREATE response and the instanceId was assigned by the client
-        if ((packet->code == COAP_201_CREATED) && (location_path_len > 0))
+        if (packet->code == COAP_201_CREATED
+         && packet->location_path != NULL)
         {
-            int result =0;
-            char locationString[12]="";
+            char * locationString = NULL;
+            int result = 0;
+            lwm2m_uri_t locationUri;
+            lwm2m_uri_t * transactionUri;
 
-            //longest uri is /65535/65535 =12 + 1 (null) chars
-			snprintf(locationString,location_path_len+2,"/%s",location_path);
+            locationString = coap_get_multi_option_as_string(packet->location_path);
+            if (locationString == NULL)
+            {
+                fprintf(stderr,"Error: coap_get_multi_option_as_string() failed for Location_path option in dm_result_callback()\n");
+                return;
+            }
 
-            lwm2m_uri_t *transactionUri=NULL;
-            lwm2m_uri_t *locationUri=(lwm2m_uri_t*)lwm2m_malloc(sizeof(lwm2m_uri_t));
-            if (locationUri == NULL)
-			 {
-				 fprintf(stderr,"Error: lwm2m_malloc failed in dm_result_callback()\n");
-				 return;
-			 }
-            memset(locationUri,0,sizeof(locationUri));
-
-            result= lwm2m_stringToUri(locationString,strlen(locationString),locationUri);
+            result = lwm2m_stringToUri(locationString, strlen(locationString), &locationUri);
             if (result == 0)
             {
                 fprintf(stderr,"Error: lwm2m_stringToUri() failed for Location_path option in dm_result_callback()\n");
+                lwm2m_free(locationString);
                 return;
             }
 
             transactionUri = &((dm_data_t*)transacP->userData)->uri;
-            transactionUri->instanceId = locationUri->instanceId;
-            transactionUri->flag =locationUri->flag;
-            lwm2m_free(locationUri);
+            transactionUri->instanceId = locationUri.instanceId;
+            transactionUri->flag =locationUri.flag;
+            lwm2m_free(locationString);
         }
 
         dataP->callback(((lwm2m_client_t*)transacP->peerP)->internalID,
