@@ -271,8 +271,6 @@ static uint8_t prv_create(lwm2m_uri_t * uriP,
     targetP->test = value;
     objectP->instanceList = LWM2M_LIST_ADD(objectP->instanceList, targetP);
 
-
-
     return COAP_201_CREATED;
 }
 
@@ -290,10 +288,8 @@ static uint8_t prv_delete(uint16_t id,
 }
 
 static uint8_t prv_exec(lwm2m_uri_t * uriP,
-                        char * rBuffer,
-                        int rLength,
-                        char ** wBuffer,
-					    int *wLength,
+                        char * buffer,
+                        int length,
                         lwm2m_object_t * objectP)
 {
 
@@ -307,8 +303,8 @@ static uint8_t prv_exec(lwm2m_uri_t * uriP,
         fprintf(stdout, "\r\n-----------------\r\n"
                         "Execute on %hu/%d/%d\r\n"
                         " Parameter (%d bytes):\r\n",
-                        uriP->objectId, uriP->instanceId, uriP->resourceId, rLength);
-        prv_output_buffer(rBuffer, rLength);
+                        uriP->objectId, uriP->instanceId, uriP->resourceId, length);
+        prv_output_buffer(buffer, length);
         fprintf(stdout, "-----------------\r\n\r\n");
         return COAP_204_CHANGED;
     default:

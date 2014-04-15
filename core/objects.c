@@ -126,7 +126,7 @@ coap_status_t object_create_execute(lwm2m_context_t * contextP,
             return METHOD_NOT_ALLOWED_4_05;
         }
 
-        return targetP->executeFunc(uriP, rBuffer, rLength, wBuffer, wLength, targetP);
+        return targetP->executeFunc(uriP, rBuffer, rLength, targetP);
     }
     else if ((uriP->flag & LWM2M_URI_FLAG_RESOURCE_ID) == 0
           && rLength != 0)
