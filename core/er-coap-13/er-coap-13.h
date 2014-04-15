@@ -42,13 +42,8 @@
 #include <stdint.h>
 #include <stddef.h> /* for size_t */
 
-#ifdef CONTIKI
-#include "contiki-net.h"
-#include "erbium.h"
-#else
 #include <signal.h>
 #include <time.h>
-#endif
 
 /*
  * The maximum buffer size that is provided for resource responses and must be respected due to the limited IP buffer.
@@ -58,17 +53,8 @@
 #define REST_MAX_CHUNK_SIZE     128
 #endif
 
-#define COAP_LINK_FORMAT_FILTERING           1
-
-#define COAP_DEFAULT_PORT                    5683
-
-#ifndef COAP_SERVER_PORT
-#define COAP_SERVER_PORT                     COAP_DEFAULT_PORT
-#endif
-
 #define COAP_DEFAULT_MAX_AGE                 60
 #define COAP_RESPONSE_TIMEOUT                2
-#define COAP_RESPONSE_RANDOM_FACTOR          1.5
 #define COAP_MAX_RETRANSMIT                  4
 
 #define COAP_HEADER_LEN                      4 /* | version:0x03 type:0x0C tkl:0xF0 | code | mid:0x00FF | mid:0xFF00 | */
@@ -100,17 +86,6 @@
 //#error "UIP_CONF_BUFFER_SIZE too small for REST_MAX_CHUNK_SIZE"
 #endif
 
-/*
- * Maximum number of failed request attempts before action
- */
-#ifndef COAP_MAX_ATTEMPTS
-#define COAP_MAX_ATTEMPTS             4
-#endif /* COAP_MAX_ATTEMPTS */
-
-#ifdef CONTIKI
-#define UIP_IP_BUF    ((struct uip_ip_hdr *)&uip_buf[UIP_LLH_LEN])
-#define UIP_UDP_BUF   ((struct uip_udp_hdr *)&uip_buf[UIP_LLH_LEN + UIP_IPH_LEN])
-#endif
 
 /* Bitmap for set options */
 enum { OPTION_MAP_SIZE = sizeof(uint8_t) * 8 };
@@ -199,27 +174,27 @@ typedef enum {
 /* CoAP Content-Types */
 typedef enum {
   TEXT_PLAIN = 0,
-    TEXT_XML = 1, /* Indented types are not in the initial registry. */
-    TEXT_CSV = 2,
-    TEXT_HTML = 3,
-    IMAGE_GIF = 21,
-    IMAGE_JPEG = 22,
-    IMAGE_PNG = 23,
-    IMAGE_TIFF = 24,
-    AUDIO_RAW = 25,
-    VIDEO_RAW = 26,
+  TEXT_XML = 1, /* Indented types are not in the initial registry. */
+  TEXT_CSV = 2,
+  TEXT_HTML = 3,
+  IMAGE_GIF = 21,
+  IMAGE_JPEG = 22,
+  IMAGE_PNG = 23,
+  IMAGE_TIFF = 24,
+  AUDIO_RAW = 25,
+  VIDEO_RAW = 26,
   APPLICATION_LINK_FORMAT = 40,
   APPLICATION_XML = 41,
   APPLICATION_OCTET_STREAM = 42,
-    APPLICATION_RDF_XML = 43,
-    APPLICATION_SOAP_XML = 44,
-    APPLICATION_ATOM_XML = 45,
-    APPLICATION_XMPP_XML = 46,
+  APPLICATION_RDF_XML = 43,
+  APPLICATION_SOAP_XML = 44,
+  APPLICATION_ATOM_XML = 45,
+  APPLICATION_XMPP_XML = 46,
   APPLICATION_EXI = 47,
-    APPLICATION_FASTINFOSET = 48,
-    APPLICATION_SOAP_FASTINFOSET = 49,
+  APPLICATION_FASTINFOSET = 48,
+  APPLICATION_SOAP_FASTINFOSET = 49,
   APPLICATION_JSON = 50,
-    APPLICATION_X_OBIX_BINARY = 51
+  APPLICATION_X_OBIX_BINARY = 51
 } coap_content_type_t;
 
 typedef struct _multi_option_t {
@@ -337,16 +312,10 @@ typedef struct {
 extern coap_status_t coap_error_code;
 extern char *coap_error_message;
 
-#ifdef CONTIKI
-void coap_init_connection(uint16_t port);
-#endif
 uint16_t coap_get_mid(void);
 
 void coap_init_message(void *packet, coap_message_type_t type, uint8_t code, uint16_t mid);
 size_t coap_serialize_message(void *packet, uint8_t *buffer);
-#ifdef CONTIKI
-void coap_send_message(uip_ipaddr_t *addr, uint16_t port, uint8_t *data, uint16_t length);
-#endif
 coap_status_t coap_parse_message(void *request, uint8_t *data, uint16_t data_len);
 void coap_free_header(void *packet);
 
