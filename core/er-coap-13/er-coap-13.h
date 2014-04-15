@@ -199,8 +199,9 @@ typedef enum {
 
 typedef struct _multi_option_t {
   struct _multi_option_t *next;
-  size_t len;
-  const char *data;
+  uint8_t is_static;
+  uint8_t len;
+  char *data;
 } multi_option_t;
 
 /* Parsed message struct */
@@ -222,8 +223,7 @@ typedef struct {
   uint8_t etag[COAP_ETAG_LEN];
   size_t uri_host_len;
   const char *uri_host;
-  size_t location_path_len;
-  char *location_path;
+  multi_option_t *location_path;
   uint16_t uri_port;
   size_t location_query_len;
   const char *location_query;
@@ -318,6 +318,8 @@ void coap_init_message(void *packet, coap_message_type_t type, uint8_t code, uin
 size_t coap_serialize_message(void *packet, uint8_t *buffer);
 coap_status_t coap_parse_message(void *request, uint8_t *data, uint16_t data_len);
 void coap_free_header(void *packet);
+
+char * coap_get_multi_option_as_string(multi_option_t * option);
 
 int coap_get_query_variable(void *packet, const char *name, const char **output);
 int coap_get_post_variable(void *packet, const char *name, const char **output);

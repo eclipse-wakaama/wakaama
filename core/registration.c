@@ -62,18 +62,12 @@ static void prv_handleRegistrationReply(lwm2m_transaction_t * transacP,
         }
         else if (packet->mid == targetP->mid
               && packet->type == COAP_TYPE_ACK
-              && packet->location_path_len != 0
               && packet->location_path != NULL)
         {
             if (packet->code == CREATED_2_01)
             {
                 targetP->status = STATE_REGISTERED;
-                targetP->location = (char *)lwm2m_malloc(packet->location_path_len + 1);
-                if (targetP->location != NULL)
-                {
-                    memcpy(targetP->location, packet->location_path, packet->location_path_len);
-                    targetP->location[packet->location_path_len] = 0;
-                }
+                targetP->location = coap_get_multi_option_as_string(packet->location_path);
             }
             else if (packet->code == BAD_REQUEST_4_00)
             {
