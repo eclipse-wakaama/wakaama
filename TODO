@@ -14,6 +14,10 @@ LWM2M Features
   
  - Add token in every message
  
+ - Handle Observe parameters
+ 
+ - Keep-alive mechanism
+ 
  
  Implementation Improvments
  --------------------------
