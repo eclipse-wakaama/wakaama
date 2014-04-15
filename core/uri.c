@@ -158,6 +158,8 @@ int lwm2m_stringToUri(char * buffer,
 
     if (buffer == NULL || buffer_len == 0 || uriP == NULL) return 0;
 
+    memset(uriP, 0, sizeof(lwm2m_uri_t));
+
     // Skip any white space
     head = 0;
     while (head < buffer_len && isspace(buffer[head]))
