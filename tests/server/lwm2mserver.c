@@ -344,6 +344,7 @@ static void prv_exec_client(char * buffer,
 syntax_error:
     fprintf(stdout, "Syntax error !");
 }
+
 static void prv_create_client(char * buffer,
                               void * user_data)
 {
@@ -351,7 +352,7 @@ static void prv_create_client(char * buffer,
     uint16_t clientId;
     lwm2m_uri_t uri;
     char * uriString;
-	int i;
+    int i;
     int result;
     uint64_t value;
     char temp_buffer[MAX_PACKET_SIZE];
@@ -372,12 +373,11 @@ static void prv_create_client(char * buffer,
     buffer = get_next_arg(buffer);
     if (buffer[0] == 0) goto syntax_error;
 
-
     //Get Uri
     i = 0;
     while (uriString + i < buffer && !isspace(uriString[i]))
     {
- 	   i++;
+        i++;
     }
     result = lwm2m_stringToUri(uriString, i, &uri);
     if (result == 0) goto syntax_error;
@@ -386,14 +386,15 @@ static void prv_create_client(char * buffer,
 
    /* Client dependent part   */
 
-	if(uri.objectId == 1024){
- 	    result = lwm2m_PlainTextToInt64(buffer,strlen(buffer),&value);
-   		temp_length = lwm2m_intToTLV(TLV_RESSOURCE, value, (uint16_t) 1, temp_buffer, MAX_PACKET_SIZE);
-	}
+    if (uri.objectId == 1024)
+    {
+        result = lwm2m_PlainTextToInt64(buffer, strlen(buffer), &value);
+        temp_length = lwm2m_intToTLV(TLV_RESSOURCE, value, (uint16_t) 1, temp_buffer, MAX_PACKET_SIZE);
+    }
    /* End Client dependent part*/
 
-   //Create
-   result = lwm2m_dm_create(lwm2mH, clientId,&uri, temp_buffer, temp_length, prv_result_callback, NULL);
+    //Create
+    result = lwm2m_dm_create(lwm2mH, clientId,&uri, temp_buffer, temp_length, prv_result_callback, NULL);
 
     if (result == 0)
     {
@@ -591,11 +592,12 @@ int main(int argc, char *argv[])
                                             "   CLIENT#: client number as returned by command 'list'\r\n"
                                             "   URI: uri of the instance to delete such as /1024/11\r\n"
                                             "Result will be displayed asynchronously.", prv_delete_client, NULL},
-			{"create", "create an Object instance.", " create CLIENT# URI\r\n"
+            {"create", "create an Object instance.", " create CLIENT# URI DATA\r\n"
                                             "   CLIENT#: client number as returned by command 'list'\r\n"
                                             "   URI: uri to which create the Object Instance such as /1024, /1024/45 \r\n"
+                                            "   DATA: data to initialize the new Object Instance (0-255 for object 1024) \r\n"
                                             "Result will be displayed asynchronously.", prv_create_client, NULL},
-			{"observe", "Observe from a client.", " observe CLIENT# URI\r\n"
+            {"observe", "Observe from a client.", " observe CLIENT# URI\r\n"
                                             "   CLIENT#: client number as returned by command 'list'\r\n"
                                             "   URI: uri to observe such as /3, /3/0/2, /1024/11\r\n"
                                             "Result will be displayed asynchronously.", prv_observe_client, NULL},

@@ -246,8 +246,7 @@ static uint8_t prv_create(lwm2m_uri_t * uriP,
 
         //set instanceId & flag in order to send int back;
         uriP->instanceId = newId;
-	    uriP->flag |= LWM2M_URI_FLAG_INSTANCE_ID;
-
+        uriP->flag |= LWM2M_URI_FLAG_INSTANCE_ID;
     }
 
     result = lwm2m_decodeTLV(buffer, length, &type, &resID, &dataIndex, &dataLen);
