@@ -4,6 +4,7 @@ SET(CORE_SOURCES
     ${CMAKE_CURRENT_LIST_DIR}/uri.c
     ${CMAKE_CURRENT_LIST_DIR}/utils.c
     ${CMAKE_CURRENT_LIST_DIR}/objects.c
+    ${CMAKE_CURRENT_LIST_DIR}/object_server.c
     ${CMAKE_CURRENT_LIST_DIR}/tlv.c
     ${CMAKE_CURRENT_LIST_DIR}/list.c
     ${CMAKE_CURRENT_LIST_DIR}/packet.c

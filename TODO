@@ -4,6 +4,7 @@ LWM2M Features
  - LWM2M Security and LWM2M Server Objects:
  Implement these two objects in core as interfaces to lwm2m_server_t instances.
  Forbid clients to add objects with ID 0 or 1.
+ * dnav WORKING ON IT *
  
  - Bootstrap interface:
  Implements LWM2M Bootstap Server as a special instance of lwm2m_server_t.

@@ -48,6 +48,22 @@ lwm2m_context_t * lwm2m_init(char * endpointName,
     if (NULL == bufferSendCallback)
         return NULL;
 
+#ifdef LWM2M_CLIENT_MODE
+    if (numObject != 0)
+    {
+        int i;
+
+        for (i = 0 ; i < numObject ; i++)
+        {
+            if (objectList[i]->objID <= LWM2M_ACL_OBJECT_ID)
+            {
+                // Use of a reserved object ID
+                return NULL;
+            }
+        }
+    }
+#endif
+
     contextP = (lwm2m_context_t *)lwm2m_malloc(sizeof(lwm2m_context_t));
     if (NULL != contextP)
     {
