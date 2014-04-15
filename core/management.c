@@ -65,13 +65,10 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
         break;
     case COAP_POST:
         {
-            char * buffer = NULL;
-        	int length = 0;
-        	bool isInstanceSet=0;
-
-        	isInstanceSet =uriP->flag & LWM2M_URI_FLAG_INSTANCE_ID;
-
-            result = object_create_execute(contextP, uriP, message->payload, message->payload_len, &buffer, &length);
+            //is the instanceId set in the requested uri?
+        	bool isInstanceSet=uriP->flag & LWM2M_URI_FLAG_INSTANCE_ID;
+        	
+            result = object_create_execute(contextP, uriP, message->payload, message->payload_len);
             if (result == COAP_201_CREATED || result == COAP_204_CHANGED)
 		    {
             	//create & instanceId not in the uri before processing the request
@@ -94,9 +91,6 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
 					coap_set_header_location_path(response,location_path);
 
             	}
-
-			    coap_set_payload(response, buffer, length);
-			    // lwm2m_handle_packet will free buffer
 		    }
         }
         break;

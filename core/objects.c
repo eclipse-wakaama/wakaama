@@ -103,10 +103,8 @@ coap_status_t object_write(lwm2m_context_t * contextP,
 
 coap_status_t object_create_execute(lwm2m_context_t * contextP,
                                     lwm2m_uri_t * uriP,
-                                    char * rBuffer,
-                                    int rLength,
-                                    char ** wBuffer,
-                                    int *wLength)
+                                    char * buffer,
+                                    int length)
 {
     lwm2m_object_t * targetP;
 
@@ -126,13 +124,13 @@ coap_status_t object_create_execute(lwm2m_context_t * contextP,
             return METHOD_NOT_ALLOWED_4_05;
         }
 
-        return targetP->executeFunc(uriP, rBuffer, rLength, targetP);
+        return targetP->executeFunc(uriP, buffer, length, targetP);
     }
     else if ((uriP->flag & LWM2M_URI_FLAG_RESOURCE_ID) == 0
-          && rLength != 0)
+          && length != 0)
     {
         // This is a create
-        if (rLength == 0 || rBuffer == 0)
+        if (length == 0 || buffer == 0)
         {
             return BAD_REQUEST_4_00;
         }
@@ -141,7 +139,7 @@ coap_status_t object_create_execute(lwm2m_context_t * contextP,
             return METHOD_NOT_ALLOWED_4_05;
         }
 
-        return targetP->createFunc(uriP, rBuffer, rLength, targetP);
+        return targetP->createFunc(uriP, buffer, length, targetP);
     }
     else return BAD_REQUEST_4_00;
 }
