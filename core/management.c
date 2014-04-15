@@ -65,7 +65,33 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
         break;
     case COAP_POST:
         {
+            //is the instanceId set in the requested uri?
+        	bool isInstanceSet=uriP->flag & LWM2M_URI_FLAG_INSTANCE_ID;
+        	
             result = object_create_execute(contextP, uriP, message->payload, message->payload_len);
+            if (result == COAP_201_CREATED || result == COAP_204_CHANGED)
+		    {
+            	//create & instanceId not in the uri before processing the request
+            	//so we have assigned an Id for the new Instance & must send it back
+            	if((result == COAP_201_CREATED) && !isInstanceSet)
+            	{
+            		//longest uri is /65535/65535 =12 + 1 (null) chars
+            		char location_path[12]="";
+            		//instanceId expected
+            		if((uriP->flag & LWM2M_URI_FLAG_INSTANCE_ID)==0)
+            		{
+            			result = COAP_500_INTERNAL_SERVER_ERROR;
+            			break;
+            		}
+
+					if(sprintf(location_path,"/%d/%d",uriP->objectId,uriP->instanceId) < 0){
+						result = COAP_500_INTERNAL_SERVER_ERROR;
+						break;
+					}
+					coap_set_header_location_path(response,location_path);
+
+            	}
+		    }
         }
         break;
     case COAP_PUT:
@@ -107,6 +133,41 @@ static void dm_result_callback(lwm2m_transaction_t * transacP,
     else
     {
         coap_packet_t * packet = (coap_packet_t *)message;
+        char* location_path = NULL;
+		int location_path_len =0;
+
+		location_path_len = coap_get_header_location_path(packet,&location_path);
+
+        //if packet is a CREATE response and the instanceId was assigned by the client
+        if ((packet->code == COAP_201_CREATED) && (location_path_len > 0))
+        {
+            int result =0;
+            char locationString[12]="";
+
+            //longest uri is /65535/65535 =12 + 1 (null) chars
+			snprintf(locationString,location_path_len+2,"/%s",location_path);
+
+            lwm2m_uri_t *transactionUri=NULL;
+            lwm2m_uri_t *locationUri=(lwm2m_uri_t*)lwm2m_malloc(sizeof(lwm2m_uri_t));
+            if (locationUri == NULL)
+			 {
+				 fprintf(stderr,"Error: lwm2m_malloc failed in dm_result_callback()\n");
+				 return;
+			 }
+            memset(locationUri,0,sizeof(locationUri));
+
+            result= lwm2m_stringToUri(locationString,strlen(locationString),locationUri);
+            if (result == 0)
+            {
+                fprintf(stderr,"Error: lwm2m_stringToUri() failed for Location_path option in dm_result_callback()\n");
+                return;
+            }
+
+            transactionUri = &((dm_data_t*)transacP->userData)->uri;
+            transactionUri->instanceId = locationUri->instanceId;
+            transactionUri->flag =locationUri->flag;
+            lwm2m_free(locationUri);
+        }
 
         dataP->callback(((lwm2m_client_t*)transacP->peerP)->internalID,
                         &dataP->uri,

@@ -241,8 +241,13 @@ static uint8_t prv_create(lwm2m_uri_t * uriP,
     }
     else
     {
-        // determine a new unique ID
+        // determine a new unique ID & send it back
         newId = lwm2m_list_newId(objectP->instanceList);
+
+        //set instanceId & flag in order to send int back;
+        uriP->instanceId = newId;
+	    uriP->flag |= LWM2M_URI_FLAG_INSTANCE_ID;
+
     }
 
     result = lwm2m_decodeTLV(buffer, length, &type, &resID, &dataIndex, &dataLen);
