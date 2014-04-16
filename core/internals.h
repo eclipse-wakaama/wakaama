@@ -86,8 +86,10 @@ lwm2m_uri_t * lwm2m_decode_uri(multi_option_t *uriPath);
 // defined in objects.c
 coap_status_t object_read(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, char ** bufferP, int * lengthP);
 coap_status_t object_write(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, char * buffer, int length);
-coap_status_t object_create_execute(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, char * buffer, int length);
+coap_status_t object_create(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, char * buffer, int length);
+coap_status_t object_execute(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, char * buffer, int length);
 coap_status_t object_delete(lwm2m_context_t * contextP, lwm2m_uri_t * uriP);
+bool object_isInstanceNew(lwm2m_context_t * contextP, uint16_t objectId, uint16_t instanceId);
 int prv_getRegisterPayload(lwm2m_context_t * contextP, char * buffer, size_t length);
 
 // defined in object_server.c

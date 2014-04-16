@@ -200,7 +200,7 @@ static uint8_t prv_write(lwm2m_uri_t * uriP,
     targetP = (prv_instance_t *)lwm2m_list_find(objectP->instanceList, uriP->instanceId);
     if (NULL == targetP) return COAP_404_NOT_FOUND;
 
-    if (!LWM2M_URI_IS_SET_INSTANCE(uriP)) return COAP_501_NOT_IMPLEMENTED;
+    if (!LWM2M_URI_IS_SET_RESOURCE(uriP)) return COAP_501_NOT_IMPLEMENTED;
 
     switch (uriP->resourceId)
     {

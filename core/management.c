@@ -65,17 +65,10 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
         break;
     case COAP_POST:
         {
-            //is the instanceId set in the requested uri?
-            bool isInstanceSet = uriP->flag & LWM2M_URI_FLAG_INSTANCE_ID;
-
-            result = object_create_execute(contextP, uriP, message->payload, message->payload_len);
-            if (result == COAP_201_CREATED
-             || result == COAP_204_CHANGED)
+            if (!LWM2M_URI_IS_SET_INSTANCE(uriP))
             {
-                //create & instanceId not in the uri before processing the request
-                //so we have assigned an Id for the new Instance & must send it back
-                if ((result == COAP_201_CREATED)
-                  && !isInstanceSet)
+                result = object_create(contextP, uriP, message->payload, message->payload_len);
+                if (result == COAP_201_CREATED)
                 {
                     //longest uri is /65535/65535 =12 + 1 (null) chars
                     char location_path[12] = "";
@@ -94,16 +87,45 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
                     coap_set_header_location_path(response, location_path);
                 }
             }
+            else if (!LWM2M_URI_IS_SET_RESOURCE(uriP))
+            {
+                if (object_isInstanceNew(contextP, uriP->objectId, uriP->instanceId))
+                {
+                    result = object_create(contextP, uriP, message->payload, message->payload_len);
+                }
+                else
+                {
+                    result = object_write(contextP, uriP, message->payload, message->payload_len);
+                }
+            }
+            else
+            {
+                result = object_execute(contextP, uriP, message->payload, message->payload_len);
+            }
         }
         break;
     case COAP_PUT:
         {
-            result = object_write(contextP, uriP, message->payload, message->payload_len);
+            if (LWM2M_URI_IS_SET_INSTANCE(uriP) && LWM2M_URI_IS_SET_RESOURCE(uriP))
+            {
+                result = object_write(contextP, uriP, message->payload, message->payload_len);
+            }
+            else
+            {
+                result = BAD_REQUEST_4_00;
+            }
         }
         break;
     case COAP_DELETE:
         {
-            result = object_delete(contextP, uriP);
+            if (LWM2M_URI_IS_SET_INSTANCE(uriP) && !LWM2M_URI_IS_SET_RESOURCE(uriP))
+            {
+                result = object_delete(contextP, uriP);
+            }
+            else
+            {
+                result = BAD_REQUEST_4_00;
+            }
         }
         break;
     default:
@@ -246,9 +268,18 @@ int lwm2m_dm_write(lwm2m_context_t * contextP,
         return COAP_400_BAD_REQUEST;
     }
 
-    return prv_make_operation(contextP, clientID, uriP,
-                              COAP_PUT, buffer, length,
-                              callback, userData);
+    if (LWM2M_URI_IS_SET_RESOURCE(uriP))
+    {
+        return prv_make_operation(contextP, clientID, uriP,
+                                  COAP_PUT, buffer, length,
+                                  callback, userData);
+    }
+    else
+    {
+        return prv_make_operation(contextP, clientID, uriP,
+                                  COAP_POST, buffer, length,
+                                  callback, userData);
+    }
 }
 
 int lwm2m_dm_execute(lwm2m_context_t * contextP,
