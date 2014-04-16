@@ -203,10 +203,13 @@ void output_buffer(FILE * stream,
         {
             fprintf(stream, "%02X ", array[j]);
         }
-        while (j < 16)
+        if (i != 0)
         {
-            fprintf(stream, "   ");
-            j++;
+            while (j < 16)
+            {
+                fprintf(stream, "   ");
+                j++;
+            }
         }
         fprintf(stream, "  ");
         for (j = 0 ; j < 16 && i+j < length; j++)

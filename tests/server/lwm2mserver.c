@@ -144,6 +144,68 @@ static void prv_output_clients(char * buffer,
     }
 }
 
+static void print_indent(int num)
+{
+    int i;
+
+    for ( i = 0 ; i< num ; i++)
+        fprintf(stdout, " ");
+}
+
+static void output_tlv(char * buffer,
+                       size_t buffer_len,
+                       int indent)
+{
+    lwm2m_tlv_type_t type;
+    uint16_t id;
+    size_t dataIndex;
+    size_t dataLen;
+    int length = 0;
+    int result;
+
+    while (0 != (result = lwm2m_decodeTLV(buffer + length, buffer_len - length, &type, &id, &dataIndex, &dataLen)))
+    {
+        print_indent(indent);
+        fprintf(stdout, "ID: %d", id);
+        fprintf(stdout, "  type: ");
+        switch (type)
+        {
+        case TLV_OBJECT_INSTANCE:
+            fprintf(stdout, "Object Instance");
+            break;
+        case TLV_RESSOURCE_INSTANCE:
+            fprintf(stdout, "Ressource Instance");
+            break;
+        case TLV_MULTIPLE_INSTANCE:
+            fprintf(stdout, "Multiple Instances");
+            break;
+        case TLV_RESSOURCE:
+            fprintf(stdout, "Ressource");
+            break;
+        default:
+            printf("unknown (%d)", (int)type);
+            break;
+        }
+        fprintf(stdout, "\n");
+        print_indent(indent);
+        fprintf(stdout, "{\n");
+        if (type == TLV_OBJECT_INSTANCE || type == TLV_MULTIPLE_INSTANCE)
+        {
+            output_tlv(buffer + length + dataIndex, dataLen, indent+2);
+        }
+        else
+        {
+            print_indent(indent+2);
+            fprintf(stdout, "data (%d bytes):  ", dataLen);
+            if (dataLen >= 16) fprintf(stdout, "\n");
+            output_buffer(stdout, buffer + length + dataIndex, dataLen);
+        }
+        print_indent(indent);
+        fprintf(stdout, "}\n");
+        length += result;
+    }
+}
+
 static int prv_read_id(char * buffer,
                        uint16_t * idP)
 {
@@ -185,7 +247,14 @@ static void prv_result_callback(uint16_t clientID,
     if (data != NULL)
     {
         fprintf(stdout, "%d bytes received:\r\n", dataLength);
-        output_buffer(stdout, data, dataLength);
+        if (LWM2M_URI_IS_SET_RESOURCE(uriP))
+        {
+            output_buffer(stdout, data, dataLength);
+        }
+        else
+        {
+            output_tlv(data, dataLength, 2);
+        }
     }
 
     fprintf(stdout, "\r\n> ");
