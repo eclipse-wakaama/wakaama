@@ -35,13 +35,42 @@ David Navarro <david.navarro@intel.com>
 
 #define _PRV_64BIT_BUFFER_SIZE 8
 
+static int prv_getHeaderLength(uint16_t id,
+                               size_t dataLen)
+{
+    int length;
+
+    length = 2;
+
+    if (id > 0xFF)
+    {
+        length += 1;
+    }
+
+    if (dataLen > 0xFFFF)
+    {
+        length += 3;
+    }
+    else if (dataLen > 0xFF)
+    {
+        length += 2;
+    }
+    else if (dataLen > 7)
+    {
+        length += 1;
+    }
+
+    return length;
+}
 
 static int prv_create_header(uint8_t * header,
                              lwm2m_tlv_type_t type,
                              uint16_t id,
                              size_t data_len)
 {
-    int header_len = 2;
+    int header_len;
+
+    header_len = prv_getHeaderLength(id, data_len);
 
     header[0] = 0;
     switch (type)
@@ -66,7 +95,6 @@ static int prv_create_header(uint8_t * header,
         header[0] |= 0x20;
         header[1] = (id >> 8) & 0XFF;
         header[2] = id & 0XFF;
-        header_len += 1;
     }
     else
     {
@@ -79,23 +107,20 @@ static int prv_create_header(uint8_t * header,
     else if (data_len <= 0xFF)
     {
         header[0] |= 0x08;
-        header[header_len] = data_len;
-        header_len += 1;
+        header[2] = data_len;
     }
     else if (data_len <= 0xFFFF)
     {
         header[0] |= 0x10;
-        header[header_len] = (data_len >> 8) & 0XFF;
-        header[header_len+1] = data_len & 0XFF;
-        header_len += 2;
+        header[2] = (data_len >> 8) & 0XFF;
+        header[3] = data_len & 0XFF;
     }
     else if (data_len <= 0xFFFFFF)
     {
         header[0] |= 0x18;
-        header[header_len] = (data_len >> 16) & 0XFF;
-        header[header_len+1] = (data_len >> 8) & 0XFF;
-        header[header_len+2] = data_len & 0XFF;
-        header_len += 3;
+        header[2] = (data_len >> 16) & 0XFF;
+        header[3] = (data_len >> 8) & 0XFF;
+        header[4] = data_len & 0XFF;
     }
 
     return header_len;
@@ -368,10 +393,128 @@ int lwm2m_tlv_parse(char * buffer,
     return size;
 }
 
+static int prv_getLength(int size,
+                         lwm2m_tlv_t * tlvP)
+{
+    int length;
+    int i;
+
+    length = 0;
+
+    for (i = 0 ; i < size && length != -1 ; i++)
+    {
+        switch (LWM2M_TLV_TYPE(tlvP[i].type))
+        {
+        case LWM2M_TYPE_OBJECT_INSTANCE:
+        case LWM2M_TYPE_MULTIPLE_RESSOURCE:
+            {
+                int subLength;
+
+                subLength = prv_getLength(tlvP[i].length, (lwm2m_tlv_t *)(tlvP[i].value));
+                if (subLength == -1)
+                {
+                    length = -1;
+                }
+                else
+                {
+                    length += prv_getHeaderLength(tlvP[i].id, subLength) + subLength;
+                }
+            }
+            break;
+        case LWM2M_TYPE_RESSOURCE_INSTANCE:
+        case LWM2M_TYPE_RESSOURCE:
+            length += prv_getHeaderLength(tlvP[i].id, tlvP[i].length) + tlvP[i].length;
+            break;
+        default:
+            length = -1;
+            break;
+        }
+    }
+
+    return length;
+}
+
+
+int lwm2m_tlv_serialize(int size,
+                        lwm2m_tlv_t * tlvP,
+                        char ** bufferP)
+{
+    int length;
+    int index;
+    int i;
+
+    *bufferP = NULL;
+    length = prv_getLength(size, tlvP);
+    if (length <= 0) return length;
+
+    *bufferP = (char *)lwm2m_malloc(length);
+    if (*bufferP == NULL) return 0;
+
+    index = 0;
+    for (i = 0 ; i < size && length != 0 ; i++)
+    {
+        int headerLen;
+
+        switch (LWM2M_TLV_TYPE(tlvP[i].type))
+        {
+        case LWM2M_TYPE_OBJECT_INSTANCE:
+        case LWM2M_TYPE_MULTIPLE_RESSOURCE:
+            {
+                char * tmpBuffer;
+                int tmpLength;
+
+                tmpLength = lwm2m_tlv_serialize(tlvP[i].length, (lwm2m_tlv_t *)tlvP[i].value, &tmpBuffer);
+                if (tmpLength == 0)
+                {
+                    length = 0;
+                }
+                else
+                {
+                    headerLen = prv_create_header(*bufferP + index, LWM2M_TLV_TYPE(tlvP[i].type), tlvP[i].id, tmpLength);
+                    index += headerLen;
+                    memcpy(*bufferP + index, tmpBuffer, tmpLength);
+                    index += tmpLength;
+                    lwm2m_free(tmpBuffer);
+                }
+            }
+            break;
+
+        case LWM2M_TYPE_RESSOURCE_INSTANCE:
+        case LWM2M_TYPE_RESSOURCE:
+            {
+                headerLen = prv_create_header(*bufferP + index, LWM2M_TLV_TYPE(tlvP[i].type), tlvP[i].id, tlvP[i].length);
+                if (headerLen == 0)
+                {
+                    length = 0;
+                }
+                else
+                {
+                    index += headerLen;
+                    memcpy(*bufferP + index, tlvP[i].value, tlvP[i].length);
+                    index += tlvP[i].length;
+                }
+            }
+            break;
+
+        default:
+            length = 0;
+            break;
+        }
+    }
+
+    if (length == 0)
+    {
+        lwm2m_free(*bufferP);
+    }
+    return length;
+}
+
 void lwm2m_tlv_free(int size,
                     lwm2m_tlv_t * tlvP)
 {
     int i;
+
+    if (size == 0 || tlvP == NULL) return;
 
     for (i = 0 ; i < size ; i++)
     {

@@ -118,15 +118,6 @@ int lwm2m_boolToPlainText(bool data, char ** bufferP);
 
 #define LWM2M_TLV_HEADER_MAX_LENGTH 6
 
-typedef enum
-{
-    TLV_OBJECT_INSTANCE,
-    TLV_RESSOURCE_INSTANCE,
-    TLV_MULTIPLE_INSTANCE,
-    TLV_RESSOURCE
-} lwm2m_tlv_type_t;
-
-
 #define LWM2M_TYPE_RESSOURCE            0x00
 #define LWM2M_TYPE_MULTIPLE_RESSOURCE   0x01
 #define LWM2M_TYPE_RESSOURCE_INSTANCE   0x02
@@ -141,6 +132,14 @@ typedef enum
 #define LWM2M_IS_STATIC(type) (((type) & LWM2M_STATIC_DATA) != 0)
 #define LWM2M_TLV_TYPE(type) ((type) & LWM2M_TYPE_MASK)
 
+typedef enum
+{
+    TLV_OBJECT_INSTANCE = LWM2M_TYPE_OBJECT_INSTANCE,
+    TLV_RESSOURCE_INSTANCE = LWM2M_TYPE_RESSOURCE_INSTANCE,
+    TLV_MULTIPLE_INSTANCE = LWM2M_TYPE_MULTIPLE_RESSOURCE,
+    TLV_RESSOURCE = LWM2M_TYPE_RESSOURCE
+} lwm2m_tlv_type_t;
+
 typedef struct
 {
     uint16_t    type;
@@ -151,6 +150,7 @@ typedef struct
 
 lwm2m_tlv_t * lwm2m_tlv_new(int size);
 int lwm2m_tlv_parse(char * buffer, size_t bufferLen, lwm2m_tlv_t ** dataP);
+int lwm2m_tlv_serialize(int size, lwm2m_tlv_t * tlvP, char ** bufferP);
 void lwm2m_tlv_free(int size, lwm2m_tlv_t * tlvP);
 
 
