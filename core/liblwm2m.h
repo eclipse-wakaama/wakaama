@@ -125,12 +125,14 @@ int lwm2m_boolToPlainText(bool data, char ** bufferP);
 #define LWM2M_TYPE_MASK                 0x03
 
 /*
- * Flag for the lwm2m_tlv_t::type to specify that lwm2m_tlv_t::data
+ * Bitmask for the lwm2m_tlv_t::flag
+ * LWM2M_TLV_FLAG_STATIC_DATA specifies that lwm2m_tlv_t::value
  * points to static memory and must no be freeed by the caller.
+ * LWM2M_TLV_FLAG_TEXT_FORMAT specifies that lwm2m_tlv_t::value
+ * is expressed or requested in plain text format.
  */
-#define LWM2M_STATIC_DATA   0x10
-#define LWM2M_IS_STATIC(type) (((type) & LWM2M_STATIC_DATA) != 0)
-#define LWM2M_TLV_TYPE(type) ((type) & LWM2M_TYPE_MASK)
+#define LWM2M_TLV_FLAG_STATIC_DATA  0x01
+#define LWM2M_TLV_FLAG_TEXT_FORMAT  0x02
 
 typedef enum
 {
@@ -142,7 +144,8 @@ typedef enum
 
 typedef struct
 {
-    uint16_t    type;
+    uint8_t     flags;
+    uint8_t     type;
     uint16_t    id;
     size_t      length;
     uint8_t *   value;

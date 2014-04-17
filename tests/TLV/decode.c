@@ -95,7 +95,7 @@ void dump_tlv(int size,
     {
         print_indent(indent);
         printf("type: ");
-        switch (LWM2M_TLV_TYPE(tlvP[i].type))
+        switch (tlvP[i].type)
         {
         case LWM2M_TYPE_OBJECT_INSTANCE:
             printf("TLV_OBJECT_INSTANCE\r\n");
@@ -118,8 +118,8 @@ void dump_tlv(int size,
         print_indent(indent);
         printf("data (%d bytes): ", tlvP[i].length);
         prv_output_buffer(tlvP[i].value, tlvP[i].length);
-        if (LWM2M_TLV_TYPE(tlvP[i].type) == LWM2M_TYPE_OBJECT_INSTANCE
-         || LWM2M_TLV_TYPE(tlvP[i].type) == LWM2M_TYPE_MULTIPLE_RESSOURCE)
+        if (tlvP[i].type == LWM2M_TYPE_OBJECT_INSTANCE
+         || tlvP[i].type == LWM2M_TYPE_MULTIPLE_RESSOURCE)
         {
             dump_tlv(tlvP[i].length, (lwm2m_tlv_t *)(tlvP[i].value), indent+1);
         }
