@@ -274,3 +274,119 @@ int lwm2m_opaqueToInt(char * buffer,
 
     return i;
 }
+
+lwm2m_tlv_t * lwm2m_tlv_new(int size)
+{
+    lwm2m_tlv_t * tlvP;
+
+    if (size <= 0) return NULL;
+
+    tlvP = (lwm2m_tlv_t *)lwm2m_malloc(size * sizeof(lwm2m_tlv_t));
+
+    if (tlvP != NULL)
+    {
+        memset(tlvP, 0, size * sizeof(lwm2m_tlv_t));
+    }
+
+    return tlvP;
+}
+
+int lwm2m_tlv_parse(char * buffer,
+                    size_t bufferLen,
+                    lwm2m_tlv_t ** dataP)
+{
+    lwm2m_tlv_type_t type;
+    uint16_t id;
+    size_t dataIndex;
+    size_t dataLen;
+    int length = 0;
+    int result;
+    int size = 0;
+
+    *dataP = NULL;
+
+    while (0 != (result = lwm2m_decodeTLV(buffer + length, bufferLen - length, &type, &id, &dataIndex, &dataLen)))
+    {
+        lwm2m_tlv_t * newTlvP;
+
+        newTlvP = lwm2m_tlv_new(size + 1);
+        if (size >= 1)
+        {
+            if (newTlvP == NULL)
+            {
+                lwm2m_tlv_free(size, *dataP);
+                return 0;
+            }
+            else
+            {
+                memcpy(newTlvP, *dataP, size * sizeof(lwm2m_tlv_t));
+                lwm2m_free(*dataP);
+            }
+        }
+        *dataP = newTlvP;
+
+        switch (type)
+        {
+        case TLV_OBJECT_INSTANCE:
+            (*dataP)[size].type = LWM2M_TYPE_OBJECT_INSTANCE;
+            break;
+        case TLV_RESSOURCE_INSTANCE:
+            (*dataP)[size].type = LWM2M_STATIC_DATA | LWM2M_TYPE_RESSOURCE_INSTANCE;
+            break;
+        case TLV_MULTIPLE_INSTANCE:
+            (*dataP)[size].type = LWM2M_TYPE_MULTIPLE_RESSOURCE;
+            break;
+        case TLV_RESSOURCE:
+            (*dataP)[size].type = LWM2M_STATIC_DATA | LWM2M_TYPE_RESSOURCE;
+            break;
+        default:
+            lwm2m_tlv_free(size, *dataP);
+            return 0;
+        }
+
+        (*dataP)[size].id = id;
+        if (type == TLV_OBJECT_INSTANCE || type == TLV_MULTIPLE_INSTANCE)
+        {
+            (*dataP)[size].length = lwm2m_tlv_parse(buffer + length + dataIndex,
+                                                    dataLen,
+                                                    (lwm2m_tlv_t **)&((*dataP)[size].value));
+            if ((*dataP)[size].length == 0)
+            {
+                lwm2m_tlv_free(size + 1, *dataP);
+                return 0;
+            }
+        }
+        else
+        {
+            (*dataP)[size].length = dataLen;
+            (*dataP)[size].value = buffer + length + dataIndex;
+        }
+        size++;
+        length += result;
+    }
+
+    return size;
+}
+
+void lwm2m_tlv_free(int size,
+                    lwm2m_tlv_t * tlvP)
+{
+    int i;
+
+    for (i = 0 ; i < size ; i++)
+    {
+        if (!LWM2M_IS_STATIC(tlvP[i].type))
+        {
+            if (LWM2M_TLV_TYPE(tlvP[i].type) == LWM2M_TYPE_MULTIPLE_RESSOURCE
+             || LWM2M_TLV_TYPE(tlvP[i].type) == TLV_OBJECT_INSTANCE)
+            {
+                lwm2m_tlv_free(tlvP[i].length, (lwm2m_tlv_t *)(tlvP[i].value));
+            }
+            else
+            {
+                lwm2m_free(tlvP[i].value);
+            }
+        }
+    }
+    lwm2m_free(tlvP);
+}

@@ -126,6 +126,34 @@ typedef enum
     TLV_RESSOURCE
 } lwm2m_tlv_type_t;
 
+
+#define LWM2M_TYPE_RESSOURCE            0x00
+#define LWM2M_TYPE_MULTIPLE_RESSOURCE   0x01
+#define LWM2M_TYPE_RESSOURCE_INSTANCE   0x02
+#define LWM2M_TYPE_OBJECT_INSTANCE      0x03
+#define LWM2M_TYPE_MASK                 0x03
+
+/*
+ * Flag for the lwm2m_tlv_t::type to specify that lwm2m_tlv_t::data
+ * points to static memory and must no be freeed by the caller.
+ */
+#define LWM2M_STATIC_DATA   0x10
+#define LWM2M_IS_STATIC(type) (((type) & LWM2M_STATIC_DATA) != 0)
+#define LWM2M_TLV_TYPE(type) ((type) & LWM2M_TYPE_MASK)
+
+typedef struct
+{
+    uint16_t    type;
+    uint16_t    id;
+    size_t      length;
+    uint8_t *   value;
+} lwm2m_tlv_t;
+
+lwm2m_tlv_t * lwm2m_tlv_new(int size);
+int lwm2m_tlv_parse(char * buffer, size_t bufferLen, lwm2m_tlv_t ** dataP);
+void lwm2m_tlv_free(int size, lwm2m_tlv_t * tlvP);
+
+
 /*
  * These utility functions fill the buffer with a TLV record containing
  * the data. They return the size in bytes of the TLV record, 0 in case

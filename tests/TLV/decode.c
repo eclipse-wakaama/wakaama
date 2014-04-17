@@ -85,6 +85,56 @@ void print_indent(int num)
         printf("\t");
 }
 
+void dump_tlv(int size,
+              lwm2m_tlv_t * tlvP,
+              int indent)
+{
+    int i;
+
+    for(i= 0 ; i < size ; i++)
+    {
+        print_indent(indent);
+        printf("type: ");
+        switch (LWM2M_TLV_TYPE(tlvP[i].type))
+        {
+        case LWM2M_TYPE_OBJECT_INSTANCE:
+            printf("TLV_OBJECT_INSTANCE\r\n");
+            break;
+        case LWM2M_TYPE_RESSOURCE_INSTANCE:
+            printf("TLV_RESSOURCE_INSTANCE\r\n");
+            break;
+        case LWM2M_TYPE_MULTIPLE_RESSOURCE:
+            printf("TLV_MULTIPLE_INSTANCE\r\n");
+            break;
+        case LWM2M_TYPE_RESSOURCE:
+            printf("TLV_RESSOURCE\r\n");
+            break;
+        default:
+            printf("unknown (%d)\r\n", (int)tlvP[i].type);
+            break;
+        }
+        print_indent(indent);
+        printf("id: %d\r\n", tlvP[i].id);
+        print_indent(indent);
+        printf("data (%d bytes): ", tlvP[i].length);
+        prv_output_buffer(tlvP[i].value, tlvP[i].length);
+        if (LWM2M_TLV_TYPE(tlvP[i].type) == LWM2M_TYPE_OBJECT_INSTANCE
+         || LWM2M_TLV_TYPE(tlvP[i].type) == LWM2M_TYPE_MULTIPLE_RESSOURCE)
+        {
+            dump_tlv(tlvP[i].length, (lwm2m_tlv_t *)(tlvP[i].value), indent+1);
+        }
+        else if (tlvP[i].length <= 8)
+        {
+            int64_t value;
+            if (0 != lwm2m_opaqueToInt(tlvP[i].value, tlvP[i].length, &value))
+            {
+                print_indent(indent);
+                printf("  as int: %ld\r\n", value);
+            }
+        }
+    }
+}
+
 void decode(char * buffer,
             size_t buffer_len,
             int indent)
@@ -143,6 +193,9 @@ void decode(char * buffer,
 
 int main(int argc, char *argv[])
 {
+    lwm2m_tlv_t * tlvP;
+    int size;
+
     char buffer1[] = {0x03, 0x0A, 0xC1, 0x01, 0x14, 0x03, 0x0B, 0xC1, 0x01, 0x15, 0x03, 0x0C, 0xC1, 0x01, 0x16};
     char buffer2[] = {0xC8, 0x00, 0x14, 0x4F, 0x70, 0x65, 0x6E, 0x20, 0x4D, 0x6F, 0x62, 0x69, 0x6C, 0x65, 0x20,
                       0x41, 0x6C, 0x6C, 0x69, 0x61, 0x6E, 0x63, 0x65, 0xC8, 0x01, 0x16, 0x4C, 0x69, 0x67, 0x68,
@@ -155,8 +208,15 @@ int main(int argc, char *argv[])
 
     printf("Buffer 1: \r\r\n");
     decode(buffer1, sizeof(buffer1), 0);
-    printf("\r\rBuffer 2: \r\r\n");
+    printf("\n\nBuffer 1 using lwm2m_tlv_t: \r\r\n");
+    //size = lwm2m_tlv_parse(buffer1, sizeof(buffer1), &tlvP);
+    //dump_tlv(size, tlvP, 0);
+    //lwm2m_tlv_free(size, tlvP);
+    printf("\n\n============\n\nBuffer 2: \r\r\n");
     decode(buffer2, sizeof(buffer2), 0);
-
+    printf("\n\nBuffer 2 using lwm2m_tlv_t: \r\r\n");
+    size = lwm2m_tlv_parse(buffer2, sizeof(buffer2), &tlvP);
+    dump_tlv(size, tlvP, 0);
+    lwm2m_tlv_free(size, tlvP);
 }
 
