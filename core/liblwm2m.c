@@ -89,6 +89,8 @@ lwm2m_context_t * lwm2m_init(char * endpointName,
         memset(contextP, 0, sizeof(lwm2m_context_t));
         contextP->bufferSendCallback = bufferSendCallback;
         contextP->bufferSendUserData = bufferSendUserData;
+        srand(time(NULL));
+        contextP->nextMID = rand();
 #ifdef LWM2M_CLIENT_MODE
         contextP->endpointName = strdup(endpointName);
         if (contextP->endpointName == NULL)
