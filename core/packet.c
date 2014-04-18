@@ -180,7 +180,7 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
             else
             {
                 /* Unreliable NON requests are answered with a NON as well. */
-                coap_init_message(response, COAP_TYPE_NON, CONTENT_2_05, coap_get_mid());
+                coap_init_message(response, COAP_TYPE_NON, CONTENT_2_05, contextP->nextMID++);
             }
 
             /* mirror token */
