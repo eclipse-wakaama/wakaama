@@ -248,7 +248,7 @@ void lwm2m_resource_value_changed(lwm2m_context_t * contextP,
         {
             coap_packet_t message[1];
 
-            coap_init_message(message, COAP_TYPE_ACK, COAP_204_CHANGED, 0);
+            coap_init_message(message, COAP_TYPE_NON, COAP_204_CHANGED, 0);
             coap_set_payload(message, buffer, length);
 
             for (watcherP = listP->item->watcherList ; watcherP != NULL ; watcherP = watcherP->next)

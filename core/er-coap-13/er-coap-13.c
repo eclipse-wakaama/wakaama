@@ -347,6 +347,7 @@ char * coap_get_multi_option_as_string(multi_option_t * option)
             memmove(output + i, opt->data, opt->len);
             i += opt->len;
         }
+        output[i] = 0;
     }
 
     return output;
@@ -683,13 +684,13 @@ coap_parse_message(void *packet, uint8_t *data, uint16_t data_len)
         /* coap_merge_multi_option() operates in-place on the IPBUF, but final packet field should be const string -> cast to string */
         // coap_merge_multi_option( (char **) &(coap_pkt->uri_path), &(coap_pkt->uri_path_len), current_option, option_length, 0);
         coap_add_multi_option( &(coap_pkt->uri_path), current_option, option_length, 1);
-        PRINTF("Uri-Path [%.*s]\n", coap_pkt->uri_path_len, coap_pkt->uri_path);
+        PRINTF("Uri-Path [%.*s]\n", sizeof(multi_option_t), coap_pkt->uri_path);
         break;
       case COAP_OPTION_URI_QUERY:
         /* coap_merge_multi_option() operates in-place on the IPBUF, but final packet field should be const string -> cast to string */
         // coap_merge_multi_option( (char **) &(coap_pkt->uri_query), &(coap_pkt->uri_query_len), current_option, option_length, '&');
         coap_add_multi_option( &(coap_pkt->uri_query), current_option, option_length, 1);
-        PRINTF("Uri-Query [%.*s]\n", coap_pkt->uri_query_len, coap_pkt->uri_query);
+        PRINTF("Uri-Query [%.*s]\n", sizeof(multi_option_t), coap_pkt->uri_query);
         break;
 
       case COAP_OPTION_LOCATION_PATH:

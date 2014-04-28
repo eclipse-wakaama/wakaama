@@ -112,7 +112,6 @@ int lwm2m_boolToPlainText(bool data, char ** bufferP);
 #define LWM2M_TYPE_MULTIPLE_RESSOURCE   0x01
 #define LWM2M_TYPE_RESSOURCE_INSTANCE   0x02
 #define LWM2M_TYPE_OBJECT_INSTANCE      0x03
-#define LWM2M_TYPE_MASK                 0x03
 
 /*
  * Bitmask for the lwm2m_tlv_t::flag
@@ -146,6 +145,8 @@ int lwm2m_tlv_parse(char * buffer, size_t bufferLen, lwm2m_tlv_t ** dataP);
 int lwm2m_tlv_serialize(int size, lwm2m_tlv_t * tlvP, char ** bufferP);
 void lwm2m_tlv_free(int size, lwm2m_tlv_t * tlvP);
 
+void lwm2m_tlv_encode_int(int64_t data, lwm2m_tlv_t * tlvP);
+int lwm2m_tlv_decode_int(lwm2m_tlv_t * tlvP, int64_t * dataP);
 
 /*
  * These utility functions fill the buffer with a TLV record containing
@@ -195,15 +196,19 @@ int lwm2m_stringToUri(char * buffer, size_t buffer_len, lwm2m_uri_t * uriP);
 
 /*
  * LWM2M Objects
+ *
+ * For the read callback, if *numDataP is not zero, *dataArrayP is pre-allocated
+ * and contains the list of resources to read.
+ *
  */
 
 typedef struct _lwm2m_object_t lwm2m_object_t;
 
-typedef uint8_t (*lwm2m_read_callback_t) (lwm2m_uri_t * uriP, char ** bufferP, int * lengthP, lwm2m_object_t * objectP);
-typedef uint8_t (*lwm2m_write_callback_t) (lwm2m_uri_t * uriP, char * buffer, int length, lwm2m_object_t * objectP);
-typedef uint8_t (*lwm2m_execute_callback_t) (lwm2m_uri_t * uriP, char * buffer, int length, lwm2m_object_t * objectP);
-typedef uint8_t (*lwm2m_create_callback_t) (lwm2m_uri_t * uriP, char * buffer, int length, lwm2m_object_t * objectP);
-typedef uint8_t (*lwm2m_delete_callback_t) (uint16_t id, lwm2m_object_t * objectP);
+typedef uint8_t (*lwm2m_read_callback_t) (uint16_t instanceId, int * numDataP, lwm2m_tlv_t ** dataArrayP, lwm2m_object_t * objectP);
+typedef uint8_t (*lwm2m_write_callback_t) (uint16_t instanceId, int numData, lwm2m_tlv_t * dataArray, lwm2m_object_t * objectP);
+typedef uint8_t (*lwm2m_execute_callback_t) (uint16_t instanceId, uint16_t resourceId, char * buffer, int length, lwm2m_object_t * objectP);
+typedef uint8_t (*lwm2m_create_callback_t) (uint16_t instanceId, int numData, lwm2m_tlv_t * dataArray, lwm2m_object_t * objectP);
+typedef uint8_t (*lwm2m_delete_callback_t) (uint16_t instanceId, lwm2m_object_t * objectP);
 typedef void (*lwm2m_close_callback_t) (lwm2m_object_t * objectP);
 
 

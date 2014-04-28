@@ -156,26 +156,43 @@ static void prv_change(char * buffer,
             {
                 if (lwm2mH->objectList[i]->writeFunc != NULL)
                 {
-                    if (COAP_204_CHANGED == lwm2mH->objectList[i]->writeFunc(&uri,
-                                                                             buffer, strlen(buffer),
-                                                                             lwm2mH->objectList[i]))
+                    lwm2m_tlv_t * tlvP;
+
+                    tlvP = lwm2m_tlv_new(1);
+                    if (tlvP == NULL)
                     {
-                        lwm2m_resource_value_changed(lwm2mH, &uri);
+                        fprintf(stdout, "Internal allocation failure !\n");
                         return;
                     }
+                    tlvP->flags = LWM2M_TLV_FLAG_STATIC_DATA | LWM2M_TLV_FLAG_TEXT_FORMAT;
+                    tlvP->id = uri.resourceId;
+                    tlvP->length = strlen(buffer);
+                    tlvP->value = buffer;
+
+                    if (COAP_204_CHANGED != lwm2mH->objectList[i]->writeFunc(uri.instanceId,
+                                                                             1, tlvP,
+                                                                             lwm2mH->objectList[i]))
+                    {
+                        fprintf(stdout, "Failed to change value !\n");
+                    }
+                    else
+                    {
+                        lwm2m_resource_value_changed(lwm2mH, &uri);
+                    }
+                    lwm2m_tlv_free(1, tlvP);
+                    return;
                 }
-                fprintf(stdout, "Failed to change value !");
                 return;
             }
             i++;
         }
 
-        fprintf(stdout, "Object not found !");
+        fprintf(stdout, "Object not found !\n");
     }
     return;
 
 syntax_error:
-    fprintf(stdout, "Syntax error !");
+    fprintf(stdout, "Syntax error !\n");
 }
 
 int main(int argc, char *argv[])

@@ -59,8 +59,8 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
                 result = object_create(contextP, uriP, message->payload, message->payload_len);
                 if (result == COAP_201_CREATED)
                 {
-                    //longest uri is /65535/65535 =12 + 1 (null) chars
-                    char location_path[12] = "";
+                    //longest uri is /65535/65535 = 12 + 1 (null) chars
+                    char location_path[13] = "";
                     //instanceId expected
                     if ((uriP->flag & LWM2M_URI_FLAG_INSTANCE_ID) == 0)
                     {
