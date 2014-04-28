@@ -20,6 +20,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <inttypes.h>
 
 #define _PRV_64BIT_BUFFER_SIZE 8
 
@@ -521,4 +522,111 @@ void lwm2m_tlv_free(int size,
         }
     }
     lwm2m_free(tlvP);
+}
+
+void lwm2m_tlv_encode_int(int64_t data,
+                          lwm2m_tlv_t * tlvP)
+{
+    tlvP->length = 0;
+
+    if ((tlvP->flags & LWM2M_TLV_FLAG_TEXT_FORMAT) != 0)
+    {
+        char string[32];
+        int length;
+
+        length = snprintf(string, 32, "%" PRId64, data);
+        if (length > 0)
+        {
+            tlvP->value = (uint8_t *)malloc(length);
+            if (tlvP->value != NULL)
+            {
+                strncpy(tlvP->value, string, length);
+                tlvP->flags &= ~LWM2M_TLV_FLAG_STATIC_DATA;
+                tlvP->length = length;
+            }
+        }
+    }
+    else
+    {
+        uint8_t buffer[_PRV_64BIT_BUFFER_SIZE];
+        size_t length = 0;
+        uint64_t value;
+        int negative = 0;
+
+        memset(buffer, 0, _PRV_64BIT_BUFFER_SIZE);
+
+        if (data < 0)
+        {
+            negative = 1;
+            value = 0 - data;
+        }
+        else
+        {
+            value = data;
+        }
+
+        do
+        {
+            length++;
+            buffer[_PRV_64BIT_BUFFER_SIZE - length] = (value >> (8*(length-1))) & 0xFF;
+        } while (value > (((uint64_t)1 << ((8 * length)-1)) - 1));
+
+
+        if (1 == negative)
+        {
+            buffer[_PRV_64BIT_BUFFER_SIZE - length] |= 0x80;
+        }
+
+        tlvP->value = (uint8_t *)malloc(length);
+        if (tlvP->value != NULL)
+        {
+            memcpy(tlvP->value,
+                   buffer + (_PRV_64BIT_BUFFER_SIZE - length),
+                   length);
+            tlvP->flags &= ~LWM2M_TLV_FLAG_STATIC_DATA;
+            tlvP->length = length;
+        }
+    }
+}
+
+int lwm2m_tlv_decode_int(lwm2m_tlv_t * tlvP,
+                         int64_t * dataP)
+{
+    int i;
+
+    if (tlvP->length == 0) return 0;
+
+    if ((tlvP->flags & LWM2M_TLV_FLAG_TEXT_FORMAT) != 0)
+    {
+        char string[32];
+        int result;
+
+        // int64 is 20 digit max
+        if (tlvP->length > 32) return 0;
+
+        memcpy(string, tlvP->value, tlvP->length);
+        string[tlvP->length] = 0;
+        result = sscanf(string, "%" PRId64, dataP);
+        if (result != 1) return 0;
+    }
+    else
+    {
+        if (tlvP->length > 8) return 0;
+
+        // first bit is the sign
+        *dataP = tlvP->value[0]&0x7F;
+
+        for (i = 1 ; i < tlvP->length ; i++)
+        {
+            *dataP = (*dataP << 8) + tlvP->value[i];
+        }
+
+        // first bit is the sign
+        if ((tlvP->value[0]&0x80) == 0x80)
+        {
+            *dataP = 0 - *dataP;
+        }
+    }
+
+    return 1;
 }
