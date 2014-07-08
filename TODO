@@ -1,0 +1,54 @@
+LWM2M Features
+--------------
+  
+ - LWM2M Security and LWM2M Server Objects:
+ Implement these two objects in core as interfaces to lwm2m_server_t instances.
+ Forbid clients to add objects with ID 0 or 1.
+ * dnav WORKING ON IT *
+ 
+ - Bootstrap interface:
+ Implements LWM2M Bootstap Server as a special instance of lwm2m_server_t.
+ 
+ - Access Control List
+ 
+ - JSON support
+  
+ - Add token in every message
+ 
+ - Handle Observe parameters
+ 
+ - Keep-alive mechanism
+ 
+ 
+ Implementation Improvments
+ --------------------------
+ 
+  - Store lwm2m_transaction_t per peer
+  
+  - bufferize all CoaP messages until all callbacks returned
+  Currently if a server sends a request from its monitoring callback upon client
+  registration, the client will receive the request before the ACK to its register
+  and it will discard it.
+  
+  - Easy access to the lwm2m_context_t from objects callbacks
+  
+  - Allow object callbacks to return static buffers
+  This can be done by a flag stating if the retruned buffer must be freed or not by the core.
+  
+  - Simplify lwm2m_uri_t handling
+  Basically hide the flag member.
+  
+  - Use an unified result callback
+  Add some parameter so that the same user callback can be used for all DM operations.
+   
+  - Use lwm2m-*-t types in er-coap-13
+  To avoid multiple conversions.
+  
+  - Switch to void* parameters in lwm2m_list_* APIs
+  
+  - Change object interface to hide the whole TLV mechanism
+  Useful when the core will support JSON.
+  
+  - Utility functions to easily implements objects
+  The utility will just use read and write individual resources. Either statically or
+  throught callbacks. See [https://github.com/01org/libdmclient]/tests/mgtobj/utils/static_mo_util.h

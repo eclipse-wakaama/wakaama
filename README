@@ -1,0 +1,80 @@
+Wakaama (formerly liblwm2m) is an implementation of the Open Mobile Alliance's LightWeight M2M
+protocol (LWM2M).
+
+
+Source Layout
+-------------
+
+-+- core                (the LWM2M engine)
+ |    |
+ |    +- er-coap-13     (Erbium's CoAP engine from
+ |                       http://people.inf.ethz.ch/mkovatsc/erbium.php, modified
+ |                       to run on linux)
+ |
+ +- tests               (example and test application)
+      |
+      +- client         (a command-line LWM2M client with two test objects)
+      |
+      +- server         (a command-line LWM2M server)
+      |
+      +- TLV            (application decoding two hard-coded TLV buffers)
+      |
+      +- utils          (utility functions for connection handling and command-
+                         line interface)
+
+
+Compiling
+---------
+
+Despite its name, liblwm2m is not a library but files to be built with an
+application. liblwm2m uses CMake. Look at tests/server/CMakeLists.txt for an
+example of how to include it. 
+Two compilation switches are used: LWM2M_CLIENT_MODE and LWM2M_SERVER_MODE.
+Define LWM2M_CLIENT_MODE to enable LWM2M Client interfaces. Define
+LWM2M_SERVER_MODE to enable LWM2M Server interfaces. Both can be defined at the
+same time.
+
+
+Testing
+-------
+
+To compile the test server
+ - - - - - - - - - - - - -
+
+In the any directory, run the following commands:
+    cmake [liblwm2m directory]/tests/server
+    make
+    ./lwm2mserver
+
+The lwm2mserver listens on UDP port 5684. It features a basic command line
+interface. Type 'help' for a list of supported commands.
+
+
+To compile the test client
+ - - - - - - - - - - - - -
+  
+In the any directory, run the following commands:
+    cmake [liblwm2m directory]/tests/client
+    make
+    ./lwm2mclient
+
+The lwm2mclient features four LWM2M objects:
+    - Server Object (id: 1) provided by the core.
+    - Device Object (id: 3) containing hard-coded values from the Example LWM2M
+    Client of Appendix E of the LWM2M Technical Specification.
+    - FirmwareUpdate Object (id: 5) as a skeleton.
+    - a test object (id: 1024) with the following description:
+    
+                           Multiple
+          Object |  ID  | Instances | Mandatoty |
+           Test  | 1024 |    Yes    |    No     |
+         
+           Ressources:
+                       Supported    Multiple
+           Name | ID | Operations | Instances | Mandatory |  Type   | Range |
+           test |  1 |    R/W     |    No     |    Yes    | Integer | 0-255 |
+           exec |  2 |     E      |    No     |    Yes    |         |       |
+    
+The lwm2mclient opens udp port 5683 and tries to register to a LWM2M Server at
+127.0.0.1:5684. It features a basic command line interface. Type 'help' for a
+list of supported commands.
