@@ -414,8 +414,10 @@ static uint8_t prv_device_write(uint16_t instanceId,
 
 static uint8_t prv_device_execute(uint16_t instanceId,
                                   uint16_t resourceId,
-                                  char * buffer,
-                                  int length,
+                                  char * rBuffer,
+                                  int rLength,
+                                  char ** wBuffer,
+                                  int *wLength,
                                   lwm2m_object_t * objectP)
 {
     // this is a single instance object
@@ -424,7 +426,7 @@ static uint8_t prv_device_execute(uint16_t instanceId,
         return COAP_404_NOT_FOUND;
     }
 
-    if (length != 0) return COAP_400_BAD_REQUEST;
+    if (rLength != 0) return COAP_400_BAD_REQUEST;
 
     switch (resourceId)
     {

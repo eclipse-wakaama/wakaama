@@ -118,7 +118,12 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
             }
             else
             {
-                result = object_execute(contextP, uriP, message->payload, message->payload_len);
+                char * buffer = NULL;
+                int length = 0;
+                result = object_execute(contextP, uriP, message->payload, message->payload_len, &buffer, &length);
+
+                coap_set_payload(response, buffer, length);
+
             }
         }
         break;

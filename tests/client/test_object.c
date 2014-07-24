@@ -224,8 +224,10 @@ static uint8_t prv_create(uint16_t instanceId,
 
 static uint8_t prv_exec(uint16_t instanceId,
                         uint16_t resourceId,
-                        char * buffer,
-                        int length,
+                        char * rBuffer,
+                        int rLength,
+                        char ** wBuffer,
+                        int *wLength,
                         lwm2m_object_t * objectP)
 {
 
@@ -239,8 +241,8 @@ static uint8_t prv_exec(uint16_t instanceId,
         fprintf(stdout, "\r\n-----------------\r\n"
                         "Execute on %hu/%d/%d\r\n"
                         " Parameter (%d bytes):\r\n",
-                        objectP->objID, instanceId, resourceId, length);
-        prv_output_buffer(buffer, length);
+                        objectP->objID, instanceId, resourceId, rLength);
+        prv_output_buffer(rBuffer, rLength);
         fprintf(stdout, "-----------------\r\n\r\n");
         return COAP_204_CHANGED;
     default:

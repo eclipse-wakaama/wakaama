@@ -250,8 +250,10 @@ coap_status_t object_write(lwm2m_context_t * contextP,
 
 coap_status_t object_execute(lwm2m_context_t * contextP,
                              lwm2m_uri_t * uriP,
-                             char * buffer,
-                             int length)
+                             char * rBuffer,
+                             int rLength,
+                             char ** wBuffer,
+                             int * wLength)
 {
     switch (uriP->objectId)
     {
@@ -259,7 +261,7 @@ coap_status_t object_execute(lwm2m_context_t * contextP,
         return NOT_FOUND_4_04;
 
     case LWM2M_SERVER_OBJECT_ID:
-        return object_server_execute(contextP, uriP, buffer, length);
+        return object_server_execute(contextP, uriP, rBuffer, rLength);
 
     default:
         {
@@ -269,7 +271,7 @@ coap_status_t object_execute(lwm2m_context_t * contextP,
             if (NULL == targetP) return NOT_FOUND_4_04;
             if (NULL == targetP->executeFunc) return METHOD_NOT_ALLOWED_4_05;
 
-            return targetP->executeFunc(uriP->instanceId, uriP->resourceId, buffer, length, targetP);
+            return targetP->executeFunc(uriP->instanceId, uriP->resourceId, rBuffer, rLength, wBuffer, wLength, targetP);
         }
     }
 }
