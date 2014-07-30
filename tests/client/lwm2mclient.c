@@ -234,6 +234,11 @@ int main(int argc, char *argv[])
     lwm2m_security_t security;
     int i;
     connection_t * connList;
+    char *localPort;
+    char defaultPort[] = "5683";
+    char *remoteHost;
+    char defaultHost[] = "localhost";
+    int remotePort = LWM2M_STANDARD_PORT;
 
     connList = NULL;
 
@@ -256,10 +261,28 @@ int main(int argc, char *argv[])
             COMMAND_END_LIST
     };
 
+    localPort = defaultPort;
+    remoteHost = defaultHost;
+
+    if (argc >= 2)
+    {
+      localPort = argv[1];
+      if (argc >= 3)
+      {
+        remoteHost = argv[2];
+        if (argc >= 4)
+        {
+          char *ptr;
+          remotePort = strtol(argv[3], &ptr, 10);
+        }
+      }
+    }
+
     /*
      *This call an internal function that create an IPV6 socket on the port 5683.
      */
-    sock = create_socket("5683");
+    fprintf(stdout, "Trying to bind LWM2M Client to port %s\r\n", localPort);
+    sock = create_socket(localPort);
     if (sock < 0)
     {
         fprintf(stderr, "Failed to open socket: %d\r\n", errno);
@@ -305,7 +328,8 @@ int main(int argc, char *argv[])
 
     signal(SIGINT, handle_sigint);
 
-    connList = connection_create(connList, sock, "localhost", LWM2M_STANDARD_PORT);
+    fprintf(stdout, "Trying to connect to LWM2M Server at %s:%d\r\n", remoteHost, remotePort);
+    connList = connection_create(connList, sock, remoteHost, remotePort);
     if (connList == NULL)
     {
         fprintf(stderr, "Connection creation failed.\r\n");
