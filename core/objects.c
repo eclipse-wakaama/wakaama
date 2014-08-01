@@ -238,7 +238,7 @@ coap_status_t object_write(lwm2m_context_t * contextP,
             else
             {
                 size = lwm2m_tlv_parse(buffer, length, &tlvP);
-                if (size = 0) return COAP_500_INTERNAL_SERVER_ERROR;
+                if (size == 0) return COAP_500_INTERNAL_SERVER_ERROR;
             }
             result = targetP->writeFunc(uriP->instanceId, size, tlvP, targetP);
             lwm2m_tlv_free(size, tlvP);
