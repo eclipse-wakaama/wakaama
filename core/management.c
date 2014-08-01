@@ -124,7 +124,7 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
         break;
     case COAP_PUT:
         {
-            if (LWM2M_URI_IS_SET_INSTANCE(uriP) && LWM2M_URI_IS_SET_RESOURCE(uriP))
+            if (LWM2M_URI_IS_SET_INSTANCE(uriP))
             {
                 result = object_write(contextP, uriP, message->payload, message->payload_len);
             }
