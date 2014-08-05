@@ -282,6 +282,7 @@ coap_add_multi_option(multi_option_t **dst, uint8_t *option, size_t option_len, 
     }
     else
     {
+        opt->is_static = 0;
         opt->data = (char *)lwm2m_malloc(option_len);
         if (opt->data == NULL)
         {
