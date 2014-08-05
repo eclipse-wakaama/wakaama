@@ -283,7 +283,8 @@ typedef enum
 {
     STATE_UNKNOWN = 0,
     STATE_REG_PENDING,
-    STATE_REGISTERED
+    STATE_REGISTERED,
+    STATE_DEREG_PENDING
 } lwm2m_status_t;
 
 typedef struct _lwm2m_server_

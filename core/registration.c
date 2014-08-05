@@ -149,6 +149,44 @@ int lwm2m_register(lwm2m_context_t * contextP)
     return 0;
 }
 
+static void prv_handleDeregistrationReply(lwm2m_transaction_t * transacP,
+                                        void * message)
+{
+    lwm2m_server_t * targetP;
+    coap_packet_t * packet = (coap_packet_t *)message;
+
+    targetP = (lwm2m_server_t *)(transacP->peerP);
+
+    switch(targetP->status)
+    {
+    case STATE_DEREG_PENDING:
+    {
+        if (packet == NULL)
+        {
+            targetP->status = STATE_UNKNOWN;
+            targetP->mid = 0;
+        }
+        else if (packet->mid == targetP->mid
+              && packet->type == COAP_TYPE_ACK
+              && packet->location_path != NULL)
+        {
+            if (packet->code == DELETED_2_02)
+            {
+                targetP->status = STATE_UNKNOWN;
+            }
+            else if (packet->code == BAD_REQUEST_4_00)
+            {
+                targetP->status = STATE_UNKNOWN;
+                targetP->mid = 0;
+            }
+        }
+    }
+    break;
+    default:
+        break;
+    }
+}
+
 void registration_deregister(lwm2m_context_t * contextP,
                              lwm2m_server_t * serverP)
 {
@@ -158,16 +196,21 @@ void registration_deregister(lwm2m_context_t * contextP,
 
     if (serverP->status != STATE_REGISTERED) return;
 
-    coap_init_message(message, COAP_TYPE_CON, COAP_DELETE, contextP->nextMID++);
-    coap_set_header_uri_path(message, serverP->location);
+    lwm2m_transaction_t * transaction;
+    transaction = transaction_new(COAP_DELETE, NULL, contextP->nextMID++, ENDPOINT_SERVER, (void *)serverP);
+    if (transaction == NULL) return;
 
-    pktBufferLen = coap_serialize_message(message, pktBuffer);
-    if (0 != pktBufferLen)
+    coap_set_header_uri_path(transaction->message, serverP->location);
+
+    transaction->callback = prv_handleDeregistrationReply;
+    transaction->userData = (void *) contextP;
+
+    contextP->transactionList = (lwm2m_transaction_t *)LWM2M_LIST_ADD(contextP->transactionList, transaction);
+    if (transaction_send(contextP, transaction) == 0)
     {
-        contextP->bufferSendCallback(serverP->sessionH, pktBuffer, pktBufferLen, contextP->bufferSendUserData);
+        serverP->status = STATE_REG_PENDING;
+        serverP->mid = transaction->mID;
     }
-
-    serverP->status = STATE_UNKNOWN;
 }
 #endif
 
