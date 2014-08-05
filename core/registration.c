@@ -17,7 +17,8 @@
  *    Simon Bernard - Please refer to git log
  *    Toby Jaffey - Please refer to git log
  *    Manuel Sangoi - Please refer to git log
- *    
+ *    Julien Vermillard - Please refer to git log
+ *
  *******************************************************************************/
 
 /*
@@ -149,6 +150,81 @@ int lwm2m_register(lwm2m_context_t * contextP)
     return 0;
 }
 
+static void prv_handleRegistrationUpdateReply(lwm2m_transaction_t * transacP,
+                                        void * message)
+{
+    lwm2m_server_t * targetP;
+    coap_packet_t * packet = (coap_packet_t *)message;
+
+    targetP = (lwm2m_server_t *)(transacP->peerP);
+
+    switch(targetP->status)
+    {
+    case STATE_REG_UPDATE_PENDING:
+    {
+        if (packet == NULL)
+        {
+            targetP->status = STATE_UNKNOWN;
+            targetP->mid = 0;
+        }
+        else if (packet->mid == targetP->mid
+              && packet->type == COAP_TYPE_ACK)
+        {
+            if (packet->code == CHANGED_2_04)
+            {
+                targetP->status = STATE_REGISTERED;
+            }
+            else if (packet->code == BAD_REQUEST_4_00)
+            {
+                targetP->status = STATE_UNKNOWN;
+                targetP->mid = 0;
+            }
+        }
+    }
+    break;
+    default:
+        break;
+    }
+}
+
+int lwm2m_update_registration(lwm2m_context_t * contextP, uint16_t shortServerID)
+{
+    // look for the server
+    lwm2m_server_t * targetP;
+    targetP = contextP->serverList;
+    while (targetP != NULL)
+    {
+        if (targetP->shortID == shortServerID)
+        {
+            // found the server, trigger the update transaction
+            lwm2m_transaction_t * transaction;
+
+            transaction = transaction_new(COAP_PUT, NULL, contextP->nextMID++, ENDPOINT_SERVER, (void *)targetP);
+            if (transaction == NULL) return INTERNAL_SERVER_ERROR_5_00;
+
+            coap_set_header_uri_path(transaction->message, targetP->location);
+
+            transaction->callback = prv_handleRegistrationUpdateReply;
+            transaction->userData = (void *) contextP;
+
+            contextP->transactionList = (lwm2m_transaction_t *)LWM2M_LIST_ADD(contextP->transactionList, transaction);
+
+            if (transaction_send(contextP, transaction) == 0)
+            {
+                targetP->status = STATE_REG_UPDATE_PENDING;
+                targetP->mid = transaction->mID;
+            }
+            return 0;
+        } else {
+            // try next server
+            targetP = targetP->next;
+        }
+    }
+
+    // no server found
+    return NOT_FOUND_4_04;
+}
+
 static void prv_handleDeregistrationReply(lwm2m_transaction_t * transacP,
                                         void * message)
 {
@@ -167,8 +243,7 @@ static void prv_handleDeregistrationReply(lwm2m_transaction_t * transacP,
             targetP->mid = 0;
         }
         else if (packet->mid == targetP->mid
-              && packet->type == COAP_TYPE_ACK
-              && packet->location_path != NULL)
+              && packet->type == COAP_TYPE_ACK)
         {
             if (packet->code == DELETED_2_02)
             {
