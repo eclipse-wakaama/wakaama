@@ -18,7 +18,7 @@
  *    Julien Vermillard - Please refer to git log
  *    Axel Lorente - Please refer to git log
  *    Toby Jaffey - Please refer to git log
- *    
+ *
  *******************************************************************************/
 
 /*
@@ -150,6 +150,14 @@ static void prv_output_servers(char * buffer,
     }
 }
 
+static void prv_bootstrap(char * buffer,
+                     void * user_data)
+{
+    lwm2m_context_t * lwm2mH = (lwm2m_context_t *) user_data;
+    lwm2m_bootstrap(lwm2mH);
+}
+
+
 static void prv_change(char * buffer,
                        void * user_data)
 {
@@ -261,6 +269,8 @@ int main(int argc, char *argv[])
     char defaultPort[] = "5683";
     char *remoteHost;
     char defaultHost[] = "localhost";
+    char *bootstrapHost = "localhost";
+
     int remotePort = LWM2M_STANDARD_PORT;
 
     connList = NULL;
@@ -280,6 +290,7 @@ int main(int argc, char *argv[])
                                                         "   DATA: (optional) new value\r\n", prv_change, NULL},
             {"update", "Trigger a registration update", " update SERVER\r\n"
                                                         "   SERVER: short server id such as 123\r\n", prv_update, NULL},
+            {"bootstrap", "Start a device initiated bootstrap.", NULL, prv_bootstrap, NULL},
             {"quit", "Quit the client gracefully.", NULL, prv_quit, NULL},
             {"^C", "Quit the client abruptly (without sending a de-register message).", NULL, NULL, NULL},
 
@@ -291,16 +302,19 @@ int main(int argc, char *argv[])
 
     if (argc >= 2)
     {
-      localPort = argv[1];
-      if (argc >= 3)
-      {
-        remoteHost = argv[2];
-        if (argc >= 4)
+        localPort = argv[1];
+        if (argc >= 3)
         {
-          char *ptr;
-          remotePort = strtol(argv[3], &ptr, 10);
+            remoteHost = argv[2];
+            if (argc >= 4)
+            {
+                char *ptr;
+                remotePort = strtol(argv[3], &ptr, 10);
+                if (argc >= 5) {
+                    bootstrapHost = argv[4];
+                }
+            }
         }
-      }
     }
 
     /*
@@ -336,6 +350,7 @@ int main(int argc, char *argv[])
     if (NULL == objArray[2])
     {
         fprintf(stderr, "Failed to create test object\r\n");
+
         return -1;
     }
 
@@ -374,6 +389,19 @@ int main(int argc, char *argv[])
         fprintf(stderr, "lwm2m_add_server() failed: 0x%X\r\n", result);
         return -1;
     }
+
+    /*
+     * Add the bootstrap server
+     *
+     */
+    connList = connection_create(connList, sock, bootstrapHost, remotePort);
+    if (connList == NULL)
+    {
+        fprintf(stderr, "Connection creation failed.\r\n");
+        return -1;
+    }
+
+    lwm2m_set_bootstrap_server(lwm2mH, bootstrapHost, (void*) connList);
 
     /*
      * This function register your client to all the servers you added with the precedent one

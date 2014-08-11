@@ -317,6 +317,7 @@ typedef struct
     char *           uri;
     lwm2m_security_t security;
     uint32_t         holdOffTime;
+    void *           sessionH;
 } lwm2m_bootstrap_server_t;
 
 /*
@@ -473,7 +474,7 @@ int lwm2m_step(lwm2m_context_t * contextP, struct timeval * timeoutP);
 void lwm2m_handle_packet(lwm2m_context_t * contextP, uint8_t * buffer, int length, void * fromSessionH);
 
 #ifdef LWM2M_CLIENT_MODE
-void lwm2m_set_bootstrap_server(lwm2m_context_t * contextP, lwm2m_bootstrap_server_t * serverP);
+void lwm2m_set_bootstrap_server(lwm2m_context_t * contextP, char * uri, void * sessionH);
 int lwm2m_add_server(lwm2m_context_t * contextP, uint16_t shortID, uint32_t lifetime, char * sms, lwm2m_binding_t binding, void * sessionH, lwm2m_security_t * securityP);
 
 // send registration message to all known LWM2M Servers.
@@ -484,6 +485,9 @@ int lwm2m_update_registration(lwm2m_context_t * contextP, uint16_t shortServerID
 
 // inform liblwm2m that a resource value has changed.
 void lwm2m_resource_value_changed(lwm2m_context_t * contextP, lwm2m_uri_t * uriP);
+
+// contact the bootstrap server (if any)
+int lwm2m_bootstrap(lwm2m_context_t * contextP);
 #endif
 
 #ifdef LWM2M_SERVER_MODE

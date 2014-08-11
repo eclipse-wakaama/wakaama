@@ -12,5 +12,6 @@ SET(CORE_SOURCES
     ${CMAKE_CURRENT_LIST_DIR}/registration.c
     ${CMAKE_CURRENT_LIST_DIR}/management.c
     ${CMAKE_CURRENT_LIST_DIR}/observe.c
+    ${CMAKE_CURRENT_LIST_DIR}/bootstrap.c
     ${EXT_SOURCES}
     PARENT_SCOPE)
