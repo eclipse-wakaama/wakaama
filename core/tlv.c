@@ -277,7 +277,7 @@ int lwm2m_opaqueToInt(char * buffer,
 
     for (i = 1 ; i < buffer_len ; i++)
     {
-        *dataP = (*dataP << 8) + buffer[i];
+        *dataP = (*dataP << 8) + (buffer[i]&0xFF);
     }
 
     // first bit is the sign
