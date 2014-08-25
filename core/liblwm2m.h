@@ -288,10 +288,23 @@ typedef enum
     STATE_DEREG_PENDING
 } lwm2m_status_t;
 
+typedef enum
+{
+    U,   // UDP
+    UQ,  // UDP queue mode
+    S,   // SMS
+    SQ,  // SMS queue mode
+    US,  // UDP plus SMS
+    UQS  // UDP queue mode plus SMS
+} lwm2m_binding_t;
+
 typedef struct _lwm2m_server_
 {
     struct _lwm2m_server_ * next;   // matches lwm2m_list_t::next
     uint16_t          shortID;      // matches lwm2m_list_t::id
+    uint32_t          lifetime;     // lifetime of the registration in sec or 0 if default value (86400 sec)
+    char *            sms;          // SMS MSISDN (phone number) for this server to send SMS
+    lwm2m_binding_t   binding;      // client connection mode with this server
     lwm2m_security_t  security;
     void *            sessionH;
     lwm2m_status_t    status;
@@ -461,7 +474,7 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP, uint8_t * buffer, int lengt
 
 #ifdef LWM2M_CLIENT_MODE
 void lwm2m_set_bootstrap_server(lwm2m_context_t * contextP, lwm2m_bootstrap_server_t * serverP);
-int lwm2m_add_server(lwm2m_context_t * contextP, uint16_t shortID, void * sessionH, lwm2m_security_t * securityP);
+int lwm2m_add_server(lwm2m_context_t * contextP, uint16_t shortID, uint32_t lifetime, char * sms, lwm2m_binding_t binding, void * sessionH, lwm2m_security_t * securityP);
 
 // send registration message to all known LWM2M Servers.
 int lwm2m_register(lwm2m_context_t * contextP);

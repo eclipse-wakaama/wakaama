@@ -57,13 +57,12 @@
 #include <string.h>
 #include <stdio.h>
 
-
-#define QUERY_TEMPLATE "ep="
-#define QUERY_LENGTH 3
-#define QUERY_DELIMITER '&'
-
-#define MAX_LOCATION_LENGTH 10  // strlen("/rd/65534") + 1
-
+#define MAX_LOCATION_LENGTH 10      // strlen("/rd/65534") + 1
+#define QUERY_TEMPLATE      "ep="
+#define QUERY_LENGTH        3       // strlen("ep=")
+#define QUERY_SMS           "&sms="
+#define QUERY_SMS_LEN       5
+#define QUERY_DELIMITER     '&'
 
 #ifdef LWM2M_CLIENT_MODE
 static void prv_handleRegistrationReply(lwm2m_transaction_t * transacP,
@@ -107,22 +106,59 @@ static void prv_handleRegistrationReply(lwm2m_transaction_t * transacP,
 
 int lwm2m_register(lwm2m_context_t * contextP)
 {
-    char * query;
+    char query[200];
     char payload[512];
     int payload_length;
     lwm2m_server_t * targetP;
+    int remaining;
 
     payload_length = prv_getRegisterPayload(contextP, payload, sizeof(payload));
     if (payload_length == 0) return INTERNAL_SERVER_ERROR_5_00;
 
-    query = (char*)lwm2m_malloc(QUERY_LENGTH + strlen(contextP->endpointName) + 1);
-    if (query == NULL) return INTERNAL_SERVER_ERROR_5_00;
-    strcpy(query, QUERY_TEMPLATE);
-    strcpy(query + QUERY_LENGTH, contextP->endpointName);
-
     targetP = contextP->serverList;
     while (targetP != NULL)
     {
+        remaining = sizeof(query) - snprintf(query,sizeof(query), "?ep=%s",contextP->endpointName);
+        if (remaining <= 1)  return INTERNAL_SERVER_ERROR_5_00;
+
+        if (NULL != targetP->sms) {
+            remaining -= QUERY_SMS_LEN + strlen(targetP->sms);
+            if (remaining <= 1)  return INTERNAL_SERVER_ERROR_5_00;
+
+            strcat(query, QUERY_SMS);
+            strcat(query, targetP->sms);
+        }
+
+        if (0 != targetP->lifetime) {
+            if (remaining <=17) return INTERNAL_SERVER_ERROR_5_00;
+            char lt[16];
+            remaining -=sprintf(lt,"&lt=%d",targetP->lifetime);
+            strcat(query,lt);
+        }
+
+        switch (targetP->binding) {
+        case U:
+            strcat(query,"&b=U");
+            break;
+        case UQ:
+            strcat(query,"&b=UQ");
+            break;
+        case S:
+            strcat(query,"&b=S");
+            break;
+        case SQ:
+            strcat(query,"&b=SQ");
+            break;
+        case US:
+            strcat(query,"&b=US");
+            break;
+        case UQS:
+            strcat(query,"&b=UQS");
+            break;
+        default:
+            return INTERNAL_SERVER_ERROR_5_00;
+        }
+
         lwm2m_transaction_t * transaction;
 
         transaction = transaction_new(COAP_POST, NULL, contextP->nextMID++, ENDPOINT_SERVER, (void *)targetP);
@@ -144,9 +180,6 @@ int lwm2m_register(lwm2m_context_t * contextP)
 
         targetP = targetP->next;
     }
-
-    lwm2m_free(query);
-
     return 0;
 }
 
