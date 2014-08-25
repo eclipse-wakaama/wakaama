@@ -153,6 +153,7 @@ void lwm2m_close(lwm2m_context_t * contextP)
         if (NULL != targetP->location) lwm2m_free(targetP->location);
         if (NULL != targetP->security.privateKey) lwm2m_free (targetP->security.privateKey);
         if (NULL != targetP->security.publicKey) lwm2m_free (targetP->security.publicKey);
+        if (NULL != targetP->sms) lwm2m_free (targetP->sms);
         lwm2m_free(targetP);
     }
 
@@ -223,6 +224,9 @@ void lwm2m_set_bootstrap_server(lwm2m_context_t * contextP,
 
 int lwm2m_add_server(lwm2m_context_t * contextP,
                      uint16_t shortID,
+                     uint32_t lifetime,
+                     char * sms,
+                     lwm2m_binding_t binding,
                      void * sessionH,
                      lwm2m_security_t * securityP)
 {
@@ -235,8 +239,16 @@ int lwm2m_add_server(lwm2m_context_t * contextP,
         memset(serverP, 0, sizeof(lwm2m_server_t));
         memcpy(&(serverP->security), securityP, sizeof(lwm2m_security_t));
         serverP->shortID = shortID;
+        serverP->lifetime = lifetime;
+        serverP->binding = binding;
+        if (sms != NULL)
+        {
+            // copy the SMS number
+            int len = strlen(sms);
+            serverP->sms = (char*) lwm2m_malloc(strlen(sms)+1);
+            memcpy(serverP->sms, sms, len+1);
+        }
         serverP->sessionH = sessionH;
-
         contextP->serverList = (lwm2m_server_t*)LWM2M_LIST_ADD(contextP->serverList, serverP);
 
         status = COAP_NO_ERROR;

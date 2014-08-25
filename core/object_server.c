@@ -12,6 +12,7 @@
  *
  * Contributors:
  *    David Navarro, Intel Corporation - initial API and implementation
+ *    Julien Vermillard, Sierra Wireless
  *    
  *******************************************************************************/
 
@@ -45,6 +46,7 @@
 #define RESOURCE_BINDING_ID     7
 #define RESOURCE_UPDATE_ID      8
 
+#define LIFETIME_DEFAULT        86400
 
 coap_status_t object_server_read(lwm2m_context_t * contextP,
                                  lwm2m_uri_t * uriP,
@@ -83,7 +85,23 @@ coap_status_t object_server_read(lwm2m_context_t * contextP,
                 break;
 
             case RESOURCE_LIFETIME_ID:
-                return COAP_501_NOT_IMPLEMENTED;
+                {
+                    int lifetime = serverP->lifetime;
+                    if (lifetime == 0) lifetime = LIFETIME_DEFAULT;
+
+                    *lengthP = lwm2m_int32ToPlainText(lifetime,bufferP);
+
+                    if (0 != *lengthP)
+                    {
+                        return COAP_205_CONTENT;
+                    }
+                    else
+                    {
+                        return COAP_500_INTERNAL_SERVER_ERROR;
+                    }
+                }
+                break;
+
             case RESOURCE_MINPERIOD_ID:
                 return COAP_404_NOT_FOUND;
             case RESOURCE_MAXPERIOD_ID:
@@ -93,7 +111,42 @@ coap_status_t object_server_read(lwm2m_context_t * contextP,
             case RESOURCE_STORING_ID:
                 return COAP_501_NOT_IMPLEMENTED;
             case RESOURCE_BINDING_ID:
-                return COAP_501_NOT_IMPLEMENTED;
+                {
+                    char * value;
+                    int len;
+                    switch (serverP->binding) {
+                    case U:
+                        value = "U";
+                    *lengthP = 1;
+                        break;
+                    case UQ:
+                        value = "UQ";
+                    *lengthP = 2;
+                        break;
+                    case S:
+                        value="S";
+                    *lengthP = 1;
+                        break;
+                    case SQ:
+                        value = "SQ";
+                    *lengthP = 2;
+                        break;
+                    case US:
+                        value = "US";
+                    *lengthP = 2;
+                        break;
+                    case UQS:
+                        value = "USQ";
+                    *lengthP = 3;
+                        break;
+                    default:
+                        return COAP_500_INTERNAL_SERVER_ERROR;
+                    }
+                    *bufferP = lwm2m_malloc(*lengthP);
+                    if (NULL == *bufferP) return COAP_500_INTERNAL_SERVER_ERROR;
+                    memcpy(*bufferP, value, *lengthP);
+                    return COAP_205_CONTENT;
+                }
             default:
                 return COAP_405_METHOD_NOT_ALLOWED;
             }

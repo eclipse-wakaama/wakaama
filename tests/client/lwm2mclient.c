@@ -343,7 +343,7 @@ int main(int argc, char *argv[])
      * context.
      * You can add as many server as your application need and there will be thereby allowed to interact with your object
      */
-    result = lwm2m_add_server(lwm2mH, 123, (void *)connList, &security);
+    result = lwm2m_add_server(lwm2mH, 123, 0, NULL, U, (void *)connList, &security);
     if (result != 0)
     {
         fprintf(stderr, "lwm2m_add_server() failed: 0x%X\r\n", result);
