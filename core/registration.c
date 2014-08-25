@@ -57,9 +57,12 @@
 #include <string.h>
 #include <stdio.h>
 
-#define MAX_LOCATION_LENGTH 10  // strlen("/rd/65534") + 1
-#define QUERY_SMS "&sms="
-#define QUERY_SMS_LEN 5
+#define MAX_LOCATION_LENGTH 10      // strlen("/rd/65534") + 1
+#define QUERY_TEMPLATE      "ep="
+#define QUERY_LENGTH        3       // strlen("ep=")
+#define QUERY_SMS           "&sms="
+#define QUERY_SMS_LEN       5
+#define QUERY_DELIMITER     '&'
 
 #ifdef LWM2M_CLIENT_MODE
 static void prv_handleRegistrationReply(lwm2m_transaction_t * transacP,
