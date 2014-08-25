@@ -269,7 +269,11 @@ void registration_deregister(lwm2m_context_t * contextP,
     uint8_t pktBuffer[COAP_MAX_PACKET_SIZE+1];
     size_t pktBufferLen = 0;
 
-    if (serverP->status != STATE_REGISTERED) return;
+    if (serverP->status == STATE_UNKNOWN
+     || serverP->status == STATE_DEREG_PENDING)
+        {
+            return;
+        }
 
     lwm2m_transaction_t * transaction;
     transaction = transaction_new(COAP_DELETE, NULL, contextP->nextMID++, ENDPOINT_SERVER, (void *)serverP);
