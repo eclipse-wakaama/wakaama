@@ -15,7 +15,7 @@
  *    Fabien Fleutot - Please refer to git log
  *    Simon Bernard - Please refer to git log
  *    Toby Jaffey - Please refer to git log
- *    
+ *    Julien Vermillard - Please refer to git log
  *******************************************************************************/
 
 /*
@@ -283,7 +283,9 @@ typedef enum
 {
     STATE_UNKNOWN = 0,
     STATE_REG_PENDING,
-    STATE_REGISTERED
+    STATE_REGISTERED,
+    STATE_REG_UPDATE_PENDING,
+    STATE_DEREG_PENDING
 } lwm2m_status_t;
 
 typedef enum
@@ -419,6 +421,7 @@ typedef struct _lwm2m_watcher_
 } lwm2m_watcher_t;
 
 typedef struct _lwm2m_observed_
+
 {
     struct _lwm2m_observed_ * next;
 
@@ -475,6 +478,10 @@ int lwm2m_add_server(lwm2m_context_t * contextP, uint16_t shortID, uint32_t life
 
 // send registration message to all known LWM2M Servers.
 int lwm2m_register(lwm2m_context_t * contextP);
+
+// send a registration update to the server specified by the server short identifier
+int lwm2m_update_registration(lwm2m_context_t * contextP, uint16_t shortServerID);
+
 // inform liblwm2m that a resource value has changed.
 void lwm2m_resource_value_changed(lwm2m_context_t * contextP, lwm2m_uri_t * uriP);
 #endif
