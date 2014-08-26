@@ -4,6 +4,8 @@ LWM2M Features
  - LWM2M Security and LWM2M Server Objects:
  Implement these two objects in core as interfaces to lwm2m_server_t instances.
  Forbid clients to add objects with ID 0 or 1.
+ OR
+ Retrieve informations only from the objects provided by the client application.
  * dnav WORKING ON IT *
  
  - Bootstrap interface:
@@ -32,12 +34,6 @@ LWM2M Features
   
   - Easy access to the lwm2m_context_t from objects callbacks
   
-  - Allow object callbacks to return static buffers
-  This can be done by a flag stating if the retruned buffer must be freed or not by the core.
-  
-  - Simplify lwm2m_uri_t handling
-  Basically hide the flag member.
-  
   - Use an unified result callback
   Add some parameter so that the same user callback can be used for all DM operations.
    
@@ -45,9 +41,6 @@ LWM2M Features
   To avoid multiple conversions.
   
   - Switch to void* parameters in lwm2m_list_* APIs
-  
-  - Change object interface to hide the whole TLV mechanism
-  Useful when the core will support JSON.
   
   - Utility functions to easily implements objects
   The utility will just use read and write individual resources. Either statically or
