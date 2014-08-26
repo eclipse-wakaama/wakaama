@@ -66,13 +66,13 @@ lwm2m_list_t * lwm2m_list_remove(lwm2m_list_t * head,
 
     if (head == NULL)
     {
-        *nodeP = NULL;
+        if (nodeP) *nodeP = NULL;
         return NULL;
     }
 
     if (head->id == id)
     {
-        *nodeP = head;
+        if (nodeP) *nodeP = head;
         return head->next;
     }
 
@@ -84,12 +84,12 @@ lwm2m_list_t * lwm2m_list_remove(lwm2m_list_t * head,
 
     if (NULL != target->next && target->next->id == id)
     {
-        *nodeP = target->next;
+        if (nodeP) *nodeP = target->next;
         target->next = target->next->next;
     }
     else
     {
-        *nodeP = NULL;
+        if (nodeP) *nodeP = NULL;
     }
 
     return head;

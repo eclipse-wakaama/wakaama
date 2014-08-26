@@ -263,6 +263,9 @@ int lwm2m_step(lwm2m_context_t * contextP,
 {
     lwm2m_transaction_t * transacP;
     struct timeval tv;
+#ifdef LWM2M_SERVER_MODE
+    lwm2m_client_t * clientP;
+#endif
 
     if (0 != lwm2m_gettimeofday(&tv, NULL)) return COAP_500_INTERNAL_SERVER_ERROR;
 
@@ -299,6 +302,37 @@ int lwm2m_step(lwm2m_context_t * contextP,
 
         transacP = nextP;
     }
+
+#ifdef LWM2M_SERVER_MODE
+    // monitor clients lifetime
+    clientP = contextP->clientList;
+    while (clientP != NULL)
+    {
+        lwm2m_client_t * nextP = clientP->next;
+
+        if (clientP->endOfLife <= tv.tv_sec)
+        {
+            contextP->clientList = (lwm2m_client_t *)LWM2M_LIST_RM(contextP->clientList, clientP->internalID, NULL);
+            if (contextP->monitorCallback != NULL)
+            {
+                contextP->monitorCallback(clientP->internalID, NULL, DELETED_2_02, NULL, 0, contextP->monitorUserData);
+            }
+            prv_freeClient(clientP);
+        }
+        else
+        {
+            time_t interval;
+
+            interval = clientP->endOfLife - tv.tv_sec;
+
+            if (timeoutP->tv_sec > interval)
+            {
+                timeoutP->tv_sec = interval;
+            }
+        }
+        clientP = nextP;
+    }
+#endif
 
     return 0;
 }
