@@ -322,8 +322,8 @@ static lwm2m_observation_t * prv_findObservationByURI(lwm2m_client_t * clientP,
     return targetP;
 }
 
-static void prv_observationRemove(lwm2m_client_t * clientP,
-                                  lwm2m_observation_t * observationP)
+void observation_remove(lwm2m_client_t * clientP,
+                        lwm2m_observation_t * observationP)
 {
     if (clientP->observationList == observationP)
     {
@@ -377,7 +377,7 @@ static void prv_obsRequestCallback(lwm2m_transaction_t * transacP,
                                code,
                                NULL, 0,
                                observationP->userData);
-        prv_observationRemove(((lwm2m_client_t*)transacP->peerP), observationP);
+        observation_remove(((lwm2m_client_t*)transacP->peerP), observationP);
     }
     else
     {
@@ -454,7 +454,7 @@ int lwm2m_observe_cancel(lwm2m_context_t * contextP,
     observationP = prv_findObservationByURI(clientP, uriP);
     if (observationP == NULL) return COAP_404_NOT_FOUND;
 
-    prv_observationRemove(clientP, observationP);
+    observation_remove(clientP, observationP);
 
     return 0;
 }

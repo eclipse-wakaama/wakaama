@@ -66,6 +66,8 @@
 #define LOG(...)
 #endif
 
+#define LWM2M_DEFAULT_LIFETIME  86400
+
 #define LWM2M_MAX_PACKET_SIZE 198
 
 #define LWM2M_SECURITY_OBJECT_ID    0
@@ -143,5 +145,6 @@ coap_status_t message_send(lwm2m_context_t * contextP, coap_packet_t * message, 
 
 // defined in observe.c
 void handle_observe_notify(lwm2m_context_t * contextP, void * fromSessionH, coap_packet_t * message);
+void observation_remove(lwm2m_client_t * clientP, lwm2m_observation_t * observationP);
 
 #endif

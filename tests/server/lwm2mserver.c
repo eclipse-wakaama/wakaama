@@ -88,12 +88,38 @@ static uint8_t prv_buffer_send(void * sessionH,
     return COAP_NO_ERROR;
 }
 
+static char * prv_dump_binding(lwm2m_binding_t binding)
+{
+    switch (binding)
+    {
+    case BINDING_UNKNOWN:
+        return "Not specified";
+    case BINDING_U:
+        return "UDP";
+    case BINDING_UQ:
+        return "UDP queue mode";
+    case BINDING_S:
+        return "SMS";
+    case BINDING_SQ:
+        return "SMS queue mode";
+    case BINDING_US:
+        return "UDP plus SMS";
+    case BINDING_UQS:
+        return "UDP queue mode plus SMS";
+    default:
+        return "";
+    }
+}
+
 static void prv_dump_client(lwm2m_client_t * targetP)
 {
     lwm2m_client_object_t * objectP;
 
     fprintf(stdout, "Client #%d:\r\n", targetP->internalID);
     fprintf(stdout, "\tname: \"%s\"\r\n", targetP->name);
+    fprintf(stdout, "\tbinding: \"%s\"\r\n", prv_dump_binding(targetP->binding));
+    if (targetP->msisdn) fprintf(stdout, "\tmsisdn: \"%s\"\r\n", targetP->msisdn);
+    fprintf(stdout, "\tlifetime: %d sec\r\n", targetP->lifetime);
     fprintf(stdout, "\tobjects: ");
     for (objectP = targetP->objectList; objectP != NULL ; objectP = objectP->next)
     {
@@ -591,6 +617,14 @@ static void prv_monitor_callback(uint16_t clientID,
 
     case COAP_202_DELETED:
         fprintf(stdout, "\r\nClient #%d unregistered.\r\n", clientID);
+        break;
+
+    case COAP_204_CHANGED:
+        fprintf(stdout, "\r\nClient #%d updated.\r\n", clientID);
+
+        targetP = (lwm2m_client_t *)lwm2m_list_find((lwm2m_list_t *)lwm2mH->clientList, clientID);
+
+        prv_dump_client(targetP);
         break;
 
     default:

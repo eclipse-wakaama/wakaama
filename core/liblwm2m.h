@@ -365,6 +365,10 @@ typedef struct _lwm2m_client_
     struct _lwm2m_client_ * next;       // matches lwm2m_list_t::next
     uint16_t                internalID; // matches lwm2m_list_t::id
     char *                  name;
+    lwm2m_binding_t         binding;
+    char *                  msisdn;
+    uint32_t                lifetime;
+    time_t                  endOfLife;
     void *                  sessionH;
     lwm2m_client_object_t * objectList;
     lwm2m_observation_t *   observationList;
