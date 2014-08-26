@@ -467,8 +467,8 @@ typedef struct
 } lwm2m_context_t;
 
 
-// initialize a liblwm2m context. endpointName, numObject and objectList are ignored for pure servers.
-lwm2m_context_t * lwm2m_init(char * endpointName, uint16_t numObject, lwm2m_object_t * objectList[], lwm2m_buffer_send_callback_t bufferSendCallback, void * bufferSendUserData);
+// initialize a liblwm2m context.
+lwm2m_context_t * lwm2m_init(lwm2m_buffer_send_callback_t bufferSendCallback, void * bufferSendUserData);
 // close a liblwm2m context.
 void lwm2m_close(lwm2m_context_t * contextP);
 
@@ -478,6 +478,11 @@ int lwm2m_step(lwm2m_context_t * contextP, struct timeval * timeoutP);
 void lwm2m_handle_packet(lwm2m_context_t * contextP, uint8_t * buffer, int length, void * fromSessionH);
 
 #ifdef LWM2M_CLIENT_MODE
+// initialize the client side with the Endpoint Name and a list of objects.
+// LWM2M Security Object (ID 0) must be present with either a bootstrap server or a LWM2M server and
+// its matching LWM2M Server Object (ID 1)
+int lwm2m_set_objects(lwm2m_context_t * contextP, char * endpointName, uint16_t numObject, lwm2m_object_t * objectList[]);
+
 void lwm2m_set_bootstrap_server(lwm2m_context_t * contextP, lwm2m_bootstrap_server_t * serverP);
 int lwm2m_add_server(lwm2m_context_t * contextP, uint16_t shortID, uint32_t lifetime, char * sms, lwm2m_binding_t binding, void * sessionH, lwm2m_security_t * securityP);
 

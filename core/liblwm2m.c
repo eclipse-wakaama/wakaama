@@ -56,32 +56,13 @@
 #include <stdio.h>
 
 
-lwm2m_context_t * lwm2m_init(char * endpointName,
-                             uint16_t numObject,
-                             lwm2m_object_t * objectList[],
-                             lwm2m_buffer_send_callback_t bufferSendCallback,
+lwm2m_context_t * lwm2m_init(lwm2m_buffer_send_callback_t bufferSendCallback,
                              void * bufferSendUserData)
 {
     lwm2m_context_t * contextP;
 
     if (NULL == bufferSendCallback)
         return NULL;
-
-#ifdef LWM2M_CLIENT_MODE
-    if (numObject != 0)
-    {
-        int i;
-
-        for (i = 0 ; i < numObject ; i++)
-        {
-            if (objectList[i]->objID <= LWM2M_ACL_OBJECT_ID)
-            {
-                // Use of a reserved object ID
-                return NULL;
-            }
-        }
-    }
-#endif
 
     contextP = (lwm2m_context_t *)lwm2m_malloc(sizeof(lwm2m_context_t));
     if (NULL != contextP)
@@ -91,29 +72,6 @@ lwm2m_context_t * lwm2m_init(char * endpointName,
         contextP->bufferSendUserData = bufferSendUserData;
         srand(time(NULL));
         contextP->nextMID = rand();
-#ifdef LWM2M_CLIENT_MODE
-        contextP->endpointName = strdup(endpointName);
-        if (contextP->endpointName == NULL)
-        {
-            lwm2m_free(contextP);
-            return NULL;
-        }
-        if (numObject != 0)
-        {
-            contextP->objectList = (lwm2m_object_t **)lwm2m_malloc(numObject * sizeof(lwm2m_object_t *));
-            if (NULL != contextP->objectList)
-            {
-                memcpy(contextP->objectList, objectList, numObject * sizeof(lwm2m_object_t *));
-                contextP->numObject = numObject;
-            }
-            else
-            {
-                lwm2m_free(contextP->endpointName);
-                lwm2m_free(contextP);
-                return NULL;
-            }
-        }
-#endif
     }
 
     return contextP;
@@ -209,6 +167,36 @@ void lwm2m_close(lwm2m_context_t * contextP)
 }
 
 #ifdef LWM2M_CLIENT_MODE
+int lwm2m_set_objects(lwm2m_context_t * contextP,
+                      char * endpointName,
+                      uint16_t numObject,
+                      lwm2m_object_t * objectList[])
+{
+    if (numObject == 0) return COAP_400_BAD_REQUEST;
+
+    contextP->endpointName = strdup(endpointName);
+    if (contextP->endpointName == NULL)
+    {
+        lwm2m_close(contextP);
+        return COAP_500_INTERNAL_SERVER_ERROR;
+    }
+
+    contextP->objectList = (lwm2m_object_t **)lwm2m_malloc(numObject * sizeof(lwm2m_object_t *));
+    if (NULL != contextP->objectList)
+    {
+        memcpy(contextP->objectList, objectList, numObject * sizeof(lwm2m_object_t *));
+        contextP->numObject = numObject;
+    }
+    else
+    {
+        lwm2m_close(contextP);
+        return COAP_500_INTERNAL_SERVER_ERROR;
+    }
+
+    return COAP_NO_ERROR;
+}
+
+
 void lwm2m_set_bootstrap_server(lwm2m_context_t * contextP,
                                lwm2m_bootstrap_server_t * serverP)
 {

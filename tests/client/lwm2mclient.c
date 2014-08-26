@@ -340,14 +340,24 @@ int main(int argc, char *argv[])
     }
 
     /*
-     * The liblwm2m library is now initialized with the name of the client - which shall be unique for each client -
-     * the number of objects we will be passing through, the object constructor array and the function that will be in
-     * charge to send the buffer (containing the LWM2M packets) to the network
+     * The liblwm2m library is now initialized with the function that will be in
+     * charge of sending the buffers (containing the LWM2M packets) to the network
      */
-    lwm2mH = lwm2m_init("testlwm2mclient", 3, objArray, prv_buffer_send, NULL);
+    lwm2mH = lwm2m_init(prv_buffer_send, NULL);
     if (NULL == lwm2mH)
     {
         fprintf(stderr, "lwm2m_init() failed\r\n");
+        return -1;
+    }
+
+    /*
+     * We configure the liblwm2m library with the name of the client - which shall be unique for each client -
+     * the number of objects we will be passing through and the objects array
+     */
+    result = lwm2m_set_objects(lwm2mH, "testlwm2mclient", 3, objArray);
+    if (result != 0)
+    {
+        fprintf(stderr, "lwm2m_set_objects() failed: 0x%X\r\n", result);
         return -1;
     }
 
