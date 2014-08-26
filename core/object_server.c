@@ -115,29 +115,29 @@ coap_status_t object_server_read(lwm2m_context_t * contextP,
                     char * value;
                     int len;
                     switch (serverP->binding) {
-                    case U:
+                    case BINDING_U:
                         value = "U";
-                    *lengthP = 1;
+                        *lengthP = 1;
                         break;
-                    case UQ:
+                    case BINDING_UQ:
                         value = "UQ";
-                    *lengthP = 2;
+                        *lengthP = 2;
                         break;
-                    case S:
+                    case BINDING_S:
                         value="S";
-                    *lengthP = 1;
+                        *lengthP = 1;
                         break;
-                    case SQ:
+                    case BINDING_SQ:
                         value = "SQ";
-                    *lengthP = 2;
+                        *lengthP = 2;
                         break;
-                    case US:
+                    case BINDING_US:
                         value = "US";
-                    *lengthP = 2;
+                        *lengthP = 2;
                         break;
-                    case UQS:
+                    case BINDING_UQS:
                         value = "USQ";
-                    *lengthP = 3;
+                        *lengthP = 3;
                         break;
                     default:
                         return COAP_500_INTERNAL_SERVER_ERROR;

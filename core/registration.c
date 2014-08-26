@@ -60,9 +60,18 @@
 #define MAX_LOCATION_LENGTH 10      // strlen("/rd/65534") + 1
 #define QUERY_TEMPLATE      "ep="
 #define QUERY_LENGTH        3       // strlen("ep=")
-#define QUERY_SMS           "&sms="
-#define QUERY_SMS_LEN       5
-#define QUERY_DELIMITER     '&'
+#define QUERY_SMS           "sms="
+#define QUERY_SMS_LEN       4
+#define QUERY_LIFETIME      "lt="
+#define QUERY_LIFETIME_LEN  3
+#define QUERY_VERSION       "lwm2m="
+#define QUERY_VERSION_LEN   6
+#define QUERY_BINDING       "b="
+#define QUERY_BINDING_LEN   2
+#define QUERY_DELIMITER     "&"
+
+#define QUERY_VERSION_FULL      "lwm2m=1.0"
+#define QUERY_VERSION_FULL_LEN  9
 
 #ifdef LWM2M_CLIENT_MODE
 static void prv_handleRegistrationReply(lwm2m_transaction_t * transacP,
@@ -122,9 +131,10 @@ int lwm2m_register(lwm2m_context_t * contextP)
         if (remaining <= 1)  return INTERNAL_SERVER_ERROR_5_00;
 
         if (NULL != targetP->sms) {
-            remaining -= QUERY_SMS_LEN + strlen(targetP->sms);
+            remaining -= QUERY_SMS_LEN + 1 + strlen(targetP->sms);
             if (remaining <= 1)  return INTERNAL_SERVER_ERROR_5_00;
 
+            strcat(query, QUERY_DELIMITER);
             strcat(query, QUERY_SMS);
             strcat(query, targetP->sms);
         }
@@ -137,22 +147,22 @@ int lwm2m_register(lwm2m_context_t * contextP)
         }
 
         switch (targetP->binding) {
-        case U:
+        case BINDING_U:
             strcat(query,"&b=U");
             break;
-        case UQ:
+        case BINDING_UQ:
             strcat(query,"&b=UQ");
             break;
-        case S:
+        case BINDING_S:
             strcat(query,"&b=S");
             break;
-        case SQ:
+        case BINDING_SQ:
             strcat(query,"&b=SQ");
             break;
-        case US:
+        case BINDING_US:
             strcat(query,"&b=US");
             break;
-        case UQS:
+        case BINDING_UQS:
             strcat(query,"&b=UQS");
             break;
         default:
@@ -327,31 +337,108 @@ void registration_deregister(lwm2m_context_t * contextP,
 #endif
 
 #ifdef LWM2M_SERVER_MODE
-static void prv_getParameters(multi_option_t * query,
-                              char ** nameP)
+static int prv_getParameters(multi_option_t * query,
+                             char ** nameP,
+                             uint32_t * lifetimeP,
+                             char ** msisdnP,
+                             lwm2m_binding_t * bindingP)
 {
     const char * start;
     int length;
 
     *nameP = NULL;
+    *lifetimeP = 0;
+    *msisdnP = NULL;
+    *bindingP = BINDING_UNKNOWN;
 
     while (query != NULL)
     {
-        if (query->len > QUERY_LENGTH)
+        if (strncmp(query->data, QUERY_TEMPLATE, QUERY_LENGTH) == 0)
         {
-            if (strncmp(query->data, QUERY_TEMPLATE, QUERY_LENGTH) == 0)
+            if (*nameP != NULL) goto error;
+            if (query->len == QUERY_LENGTH) goto error;
+
+            *nameP = (char *)lwm2m_malloc(query->len - QUERY_LENGTH + 1);
+            if (*nameP != NULL)
             {
-                *nameP = (char *)lwm2m_malloc(query->len - QUERY_LENGTH + 1);
-                if (*nameP != NULL)
-                {
-                    memcpy(*nameP, query->data + QUERY_LENGTH, query->len - QUERY_LENGTH);
-                    (*nameP)[query->len - QUERY_LENGTH] = 0;
-                }
-                break;
+                memcpy(*nameP, query->data + QUERY_LENGTH, query->len - QUERY_LENGTH);
+                (*nameP)[query->len - QUERY_LENGTH] = 0;
+            }
+        }
+        else if (strncmp(query->data, QUERY_SMS, QUERY_SMS_LEN) == 0)
+        {
+            if (*msisdnP != NULL) goto error;
+            if (query->len == QUERY_SMS_LEN) goto error;
+
+            *msisdnP = (char *)lwm2m_malloc(query->len - QUERY_SMS_LEN + 1);
+            if (*msisdnP != NULL)
+            {
+                memcpy(*msisdnP, query->data + QUERY_SMS_LEN, query->len - QUERY_SMS_LEN);
+                (*msisdnP)[query->len - QUERY_SMS_LEN] = 0;
+            }
+        }
+        else if (strncmp(query->data, QUERY_LIFETIME, QUERY_LIFETIME_LEN) == 0)
+        {
+            if (*lifetimeP != 0) goto error;
+            if (query->len == QUERY_LIFETIME_LEN) goto error;
+
+
+        }
+        else if (strncmp(query->data, QUERY_VERSION, QUERY_VERSION_LEN) == 0)
+        {
+            if ((query->len != QUERY_VERSION_FULL_LEN)
+             || (strncmp(query->data, QUERY_VERSION_FULL, QUERY_VERSION_FULL_LEN) != 0))
+            {
+                goto error;
+            }
+        }
+        else if (strncmp(query->data, QUERY_BINDING, QUERY_BINDING_LEN) == 0)
+        {
+            if (*bindingP != BINDING_UNKNOWN) goto error;
+            if (query->len == QUERY_BINDING_LEN) goto error;
+
+            if (strncmp(query->data + QUERY_BINDING_LEN, "U", query->len - QUERY_BINDING_LEN) == 0)
+            {
+                *bindingP = BINDING_U;
+            }
+            else if (strncmp(query->data + QUERY_BINDING_LEN, "UQ", query->len - QUERY_BINDING_LEN) == 0)
+            {
+                *bindingP = BINDING_UQ;
+            }
+            else if (strncmp(query->data + QUERY_BINDING_LEN, "S", query->len - QUERY_BINDING_LEN) == 0)
+            {
+                *bindingP = BINDING_S;
+            }
+            else if (strncmp(query->data + QUERY_BINDING_LEN, "SQ", query->len - QUERY_BINDING_LEN) == 0)
+            {
+                *bindingP = BINDING_SQ;
+            }
+            else if (strncmp(query->data + QUERY_BINDING_LEN, "US", query->len - QUERY_BINDING_LEN) == 0)
+            {
+                *bindingP = BINDING_UQ;
+            }
+            else if (strncmp(query->data + QUERY_BINDING_LEN, "UQS", query->len - QUERY_BINDING_LEN) == 0)
+            {
+                *bindingP = BINDING_UQ;
+            }
+            else
+            {
+                goto error;
             }
         }
         query = query->next;
     }
+
+    // Endpoint client name is mandatory
+    if (*nameP == NULL) goto error;
+
+    return 0;
+
+error:
+    if (*nameP != NULL) free(*nameP);
+    if (*msisdnP != NULL) free(*msisdnP);
+
+    return -1;
 }
 
 static int prv_getId(uint8_t * data,
@@ -538,13 +625,18 @@ coap_status_t handle_registration_request(lwm2m_context_t * contextP,
     case COAP_POST:
     {
         char * name = NULL;
+        uint32_t lifetime;
+        char * msisdn;
+        lwm2m_binding_t binding;
         lwm2m_client_object_t * objects;
         lwm2m_client_t * clientP;
         char location[MAX_LOCATION_LENGTH];
 
         if ((uriP->flag & LWM2M_URI_MASK_ID) != 0) return COAP_400_BAD_REQUEST;
-        prv_getParameters(message->uri_query, &name);
-        if (name == NULL) return COAP_400_BAD_REQUEST;
+        if (0 != prv_getParameters(message->uri_query, &name, &lifetime, &msisdn, &binding))
+        {
+            return COAP_400_BAD_REQUEST;
+        }
         objects = prv_decodeRegisterPayload(message->payload, message->payload_len);
         if (objects == NULL)
         {
