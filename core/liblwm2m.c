@@ -172,12 +172,27 @@ int lwm2m_set_objects(lwm2m_context_t * contextP,
                       uint16_t numObject,
                       lwm2m_object_t * objectList[])
 {
-    if (numObject == 0) return COAP_400_BAD_REQUEST;
+    int i;
+    uint8_t found;
+
+    // This API can be called only once for now
+    if (contextP->endpointName != NULL) return COAP_400_BAD_REQUEST;
+
+    if (endpointName == NULL) return COAP_400_BAD_REQUEST;
+    if (numObject < 3) return COAP_400_BAD_REQUEST;
+    // Check that mandatory objects are present
+    found = 0;
+    for (i = 0 ; i < numObject ; i++)
+    {
+        if (objectList[i]->objID == LWM2M_SECURITY_OBJECT_ID) found |= 0x01;
+        if (objectList[i]->objID == LWM2M_SERVER_OBJECT_ID) found |= 0x02;
+        if (objectList[i]->objID == LWM2M_DEVICE_OBJECT_ID) found |= 0x04;
+    }
+    if (found != 0x07) return COAP_400_BAD_REQUEST;
 
     contextP->endpointName = strdup(endpointName);
     if (contextP->endpointName == NULL)
     {
-        lwm2m_close(contextP);
         return COAP_500_INTERNAL_SERVER_ERROR;
     }
 
@@ -189,7 +204,8 @@ int lwm2m_set_objects(lwm2m_context_t * contextP,
     }
     else
     {
-        lwm2m_close(contextP);
+        lwm2m_free(contextP->endpointName);
+        contextP->endpointName = NULL;
         return COAP_500_INTERNAL_SERVER_ERROR;
     }
 
