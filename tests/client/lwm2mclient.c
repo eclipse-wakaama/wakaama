@@ -79,6 +79,7 @@ extern lwm2m_object_t * get_object_device();
 extern lwm2m_object_t * get_object_firmware();
 extern lwm2m_object_t * get_test_object();
 extern lwm2m_object_t * get_server_object();
+extern lwm2m_object_t * get_security_object();
 
 static void prv_quit(char * buffer,
                      void * user_data)
@@ -254,7 +255,7 @@ int main(int argc, char *argv[])
     int sock;
     int result;
     lwm2m_context_t * lwm2mH = NULL;
-    lwm2m_object_t * objArray[4];
+    lwm2m_object_t * objArray[5];
     lwm2m_security_t security;
     int i;
     connection_t * connList;
@@ -347,6 +348,13 @@ int main(int argc, char *argv[])
         return -1;
     }
 
+    objArray[4] = get_security_object();
+    if (NULL == objArray[4])
+    {
+        fprintf(stderr, "Failed to create security object\r\n");
+        return -1;
+    }
+
     /*
      * The liblwm2m library is now initialized with the function that will be in
      * charge of sending the buffers (containing the LWM2M packets) to the network
@@ -362,7 +370,7 @@ int main(int argc, char *argv[])
      * We configure the liblwm2m library with the name of the client - which shall be unique for each client -
      * the number of objects we will be passing through and the objects array
      */
-    result = lwm2m_set_objects(lwm2mH, "testlwm2mclient", 4, objArray);
+    result = lwm2m_set_objects(lwm2mH, "testlwm2mclient", 5, objArray);
     if (result != 0)
     {
         fprintf(stderr, "lwm2m_set_objects() failed: 0x%X\r\n", result);

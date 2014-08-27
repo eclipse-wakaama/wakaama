@@ -267,10 +267,10 @@ struct _lwm2m_object_t
 
 typedef enum
 {
-    SEC_NONE = 0,
-    SEC_PRE_SHARED_KEY,
-    SEC_RAW_PUBLIC_KEY,
-    SEC_CERTIFICATE
+    SEC_PRE_SHARED_KEY = 0,
+    SEC_RAW_PUBLIC_KEY = 1,
+    SEC_CERTIFICATE = 2,
+    SEC_NONE = 3
 } lwm2m_security_mode_t;
 
 typedef struct

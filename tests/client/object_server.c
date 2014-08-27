@@ -346,7 +346,11 @@ lwm2m_object_t * get_server_object()
 
         // Manually create an hardcoded server
         targetP = (server_instance_t *)lwm2m_malloc(sizeof(server_instance_t));
-        if (NULL == targetP) return NULL;
+        if (NULL == targetP)
+        {
+            lwm2m_free(serverObj);
+            return NULL;
+        }
 
         memset(targetP, 0, sizeof(server_instance_t));
         targetP->instanceId = 0;
