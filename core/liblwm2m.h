@@ -85,6 +85,17 @@ void lwm2m_free(void *p);
 #define COAP_501_NOT_IMPLEMENTED        (uint8_t)0xA1
 #define COAP_503_SERVICE_UNAVAILABLE    (uint8_t)0xA3
 
+/*
+ * Standard Object IDs
+ */
+#define LWM2M_SECURITY_OBJECT_ID            0
+#define LWM2M_SERVER_OBJECT_ID              1
+#define LWM2M_ACL_OBJECT_ID                 2
+#define LWM2M_DEVICE_OBJECT_ID              3
+#define LWM2M_CONN_MONITOR_OBJECT_ID        4
+#define LWM2M_FIRMWARE_UPDATE_OBJECT_ID     5
+#define LWM2M_LOCATION_OBJECT_ID            6
+#define LWM2M_CONN_STATS_OBJECT_ID          7
 
 /*
  * Utility functions for sorted linked list

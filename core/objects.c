@@ -62,6 +62,8 @@ static lwm2m_object_t * prv_find_object(lwm2m_context_t * contextP,
 {
     int i;
 
+    if (Id == LWM2M_SECURITY_OBJECT_ID) return NULL;
+
     for (i = 0 ; i < contextP->numObject ; i++)
     {
         if (contextP->objectList[i]->objID == Id)
@@ -320,6 +322,8 @@ int prv_getRegisterPayload(lwm2m_context_t * contextP,
     index = 0;
     for (i = 0 ; i < contextP->numObject ; i++)
     {
+        if (contextP->objectList[i]->objID == LWM2M_SECURITY_OBJECT_ID) continue;
+
         if (contextP->objectList[i]->instanceList == NULL)
         {
             result = snprintf(buffer + index, length - index, "</%hu>,", contextP->objectList[i]->objID);

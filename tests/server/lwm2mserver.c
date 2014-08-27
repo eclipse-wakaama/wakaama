@@ -125,7 +125,7 @@ static void prv_dump_client(lwm2m_client_t * targetP)
     {
         if (objectP->instanceList == NULL)
         {
-            fprintf(stdout, "%d, ", objectP->id);
+            fprintf(stdout, "/%d, ", objectP->id);
         }
         else
         {
@@ -133,7 +133,7 @@ static void prv_dump_client(lwm2m_client_t * targetP)
 
             for (instanceP = objectP->instanceList; instanceP != NULL ; instanceP = instanceP->next)
             {
-                fprintf(stdout, "%d/%d, ", objectP->id, instanceP->id);
+                fprintf(stdout, "/%d/%d, ", objectP->id, instanceP->id);
             }
         }
     }
