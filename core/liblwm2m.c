@@ -210,7 +210,7 @@ void lwm2m_close(lwm2m_context_t * contextP)
 
 #ifdef LWM2M_CLIENT_MODE
 void lwm2m_set_bootstrap_server(lwm2m_context_t * contextP,
-                               lwm2m_bootstrap_server_t * serverP)
+                              char* uri, void* sessionH)
 {
     if (NULL != contextP->bootstrapServer)
     {
@@ -219,6 +219,16 @@ void lwm2m_set_bootstrap_server(lwm2m_context_t * contextP,
         if (NULL != contextP->bootstrapServer->security.publicKey) lwm2m_free (contextP->bootstrapServer->security.publicKey);
         lwm2m_free(contextP->bootstrapServer);
     }
+
+    lwm2m_bootstrap_server_t * serverP = lwm2m_malloc(sizeof(lwm2m_bootstrap_server_t ));
+    if (serverP == NULL) return;
+
+    serverP->uri = lwm2m_malloc(strlen(uri) + 1);
+    if (serverP->uri == NULL) return;
+
+    strcpy(serverP->uri, uri);
+
+    serverP->sessionH = sessionH;
     contextP->bootstrapServer = serverP;
 }
 
