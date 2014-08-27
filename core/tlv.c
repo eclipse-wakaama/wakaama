@@ -630,3 +630,75 @@ int lwm2m_tlv_decode_int(lwm2m_tlv_t * tlvP,
 
     return 1;
 }
+
+void lwm2m_tlv_encode_bool(bool data,
+                          lwm2m_tlv_t * tlvP)
+{
+    tlvP->length = 0;
+
+    tlvP->value = (uint8_t *)malloc(1);
+    if (tlvP->value != NULL)
+    {
+        if (data == true)
+        {
+            if ((tlvP->flags & LWM2M_TLV_FLAG_TEXT_FORMAT) != 0)
+            {
+                tlvP->value[0] = '1';
+            }
+            else
+            {
+                tlvP->value[0] = 1;
+            }
+        }
+        else
+        {
+            if ((tlvP->flags & LWM2M_TLV_FLAG_TEXT_FORMAT) != 0)
+            {
+                tlvP->value[0] = '0';
+            }
+            else
+            {
+                tlvP->value[0] = 0;
+            }
+        }
+        tlvP->flags &= ~LWM2M_TLV_FLAG_STATIC_DATA;
+        tlvP->length = 1;
+    }
+}
+
+int lwm2m_tlv_decode_bool(lwm2m_tlv_t * tlvP,
+                          bool * dataP)
+{
+    if (tlvP->length != 1) return 0;
+
+    if ((tlvP->flags & LWM2M_TLV_FLAG_TEXT_FORMAT) != 0)
+    {
+        switch (tlvP->value[0])
+        {
+        case '0':
+            *dataP = false;
+            break;
+        case '1':
+            *dataP = true;
+            break;
+        default:
+            return 0;
+        }
+    }
+    else
+    {
+        switch (tlvP->value[0])
+        {
+        case 0:
+            *dataP = false;
+            break;
+        case 1:
+            *dataP = true;
+            break;
+        default:
+            return 0;
+        }
+    }
+
+    return 1;
+}

@@ -53,7 +53,7 @@ typedef struct _server_instance_
     uint16_t    instanceId;            // matches lwm2m_list_t::id
     uint16_t    shortServerId;
     uint32_t    lifetime;
-    uint8_t     storing;
+    bool        storing;
     char        binding[4];
 } server_instance_t;
 
@@ -88,7 +88,7 @@ static uint8_t prv_get_value(lwm2m_tlv_t * tlvP,
         return COAP_501_NOT_IMPLEMENTED;
 
     case RESOURCE_STORING_ID:
-        lwm2m_tlv_encode_int(targetP->storing, tlvP);
+        lwm2m_tlv_encode_bool(targetP->storing, tlvP);
         if (0 != tlvP->length) return COAP_205_CONTENT;
         else return COAP_500_INTERNAL_SERVER_ERROR;
 
@@ -205,19 +205,12 @@ static uint8_t prv_server_write(uint16_t instanceId,
 
         case RESOURCE_STORING_ID:
         {
-            int64_t value;
+            bool value;
 
-            if (1 == lwm2m_tlv_decode_int(dataArray + i, &value))
+            if (1 == lwm2m_tlv_decode_bool(dataArray + i, &value))
             {
-                if (value == 0 || value == 1)
-                {
-                    targetP->storing = value;
-                    result = COAP_204_CHANGED;
-                }
-                else
-                {
-                    result = COAP_406_NOT_ACCEPTABLE;
-                }
+                targetP->storing = value;
+                result = COAP_204_CHANGED;
             }
             else
             {
@@ -359,7 +352,7 @@ lwm2m_object_t * get_server_object()
         targetP->instanceId = 0;
         targetP->shortServerId = 123;
         targetP->lifetime = 300;
-        targetP->storing = 0;
+        targetP->storing = false;
         targetP->binding[0] = 'U';
 
         serverObj->instanceList = LWM2M_LIST_ADD(serverObj->instanceList, targetP);

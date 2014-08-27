@@ -177,6 +177,9 @@ void lwm2m_tlv_free(int size, lwm2m_tlv_t * tlvP);
 
 void lwm2m_tlv_encode_int(int64_t data, lwm2m_tlv_t * tlvP);
 int lwm2m_tlv_decode_int(lwm2m_tlv_t * tlvP, int64_t * dataP);
+void lwm2m_tlv_encode_bool(bool data, lwm2m_tlv_t * tlvP);
+int lwm2m_tlv_decode_bool(lwm2m_tlv_t * tlvP, bool * dataP);
+
 
 /*
  * These utility functions fill the buffer with a TLV record containing
