@@ -398,7 +398,7 @@ lwm2m_object_t * get_security_object()
 
         memset(targetP, 0, sizeof(security_instance_t));
         targetP->instanceId = 0;
-        targetP->uri = strdup("coaps://localhost:5683");
+        targetP->uri = strdup("coaps://localhost:5684");
         targetP->isBootstrap = false;
         targetP->shortID = 123;
 
@@ -412,4 +412,21 @@ lwm2m_object_t * get_security_object()
     }
 
     return securityObj;
+}
+
+char * get_server_uri(lwm2m_object_t * objectP,
+                      uint16_t serverID)
+{
+    security_instance_t * targetP;
+
+    targetP = (security_instance_t *)objectP->instanceList;
+    while (targetP != NULL)
+    {
+        if (targetP->shortID == serverID)
+        {
+            return strdup(targetP->uri);
+        }
+    }
+
+    return NULL;
 }

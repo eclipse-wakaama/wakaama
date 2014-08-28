@@ -196,21 +196,29 @@ int lwm2m_register(lwm2m_context_t * contextP)
             }
         }
 
-        transaction = transaction_new(COAP_POST, NULL, contextP->nextMID++, ENDPOINT_SERVER, (void *)targetP);
-        if (transaction == NULL) return INTERNAL_SERVER_ERROR_5_00;
-
-        coap_set_header_uri_path(transaction->message, "/"URI_REGISTRATION_SEGMENT);
-        coap_set_header_uri_query(transaction->message, query);
-        coap_set_payload(transaction->message, payload, payload_length);
-
-        transaction->callback = prv_handleRegistrationReply;
-        transaction->userData = (void *) contextP;
-
-        contextP->transactionList = (lwm2m_transaction_t *)LWM2M_LIST_ADD(contextP->transactionList, transaction);
-        if (transaction_send(contextP, transaction) == 0)
+        if (targetP->sessionH == NULL)
         {
-            targetP->status = STATE_REG_PENDING;
-            targetP->mid = transaction->mID;
+            targetP->sessionH = contextP->connectCallback(targetP->shortID, contextP->userData);
+        }
+
+        if (targetP->sessionH != NULL)
+        {
+            transaction = transaction_new(COAP_POST, NULL, contextP->nextMID++, ENDPOINT_SERVER, (void *)targetP);
+            if (transaction == NULL) return INTERNAL_SERVER_ERROR_5_00;
+
+            coap_set_header_uri_path(transaction->message, "/"URI_REGISTRATION_SEGMENT);
+            coap_set_header_uri_query(transaction->message, query);
+            coap_set_payload(transaction->message, payload, payload_length);
+
+            transaction->callback = prv_handleRegistrationReply;
+            transaction->userData = (void *) contextP;
+
+            contextP->transactionList = (lwm2m_transaction_t *)LWM2M_LIST_ADD(contextP->transactionList, transaction);
+            if (transaction_send(contextP, transaction) == 0)
+            {
+                targetP->status = STATE_REG_PENDING;
+                targetP->mid = transaction->mID;
+            }
         }
 
         // remove the lifetime information for the next server

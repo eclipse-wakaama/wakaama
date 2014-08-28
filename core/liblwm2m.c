@@ -56,20 +56,27 @@
 #include <stdio.h>
 
 
-lwm2m_context_t * lwm2m_init(lwm2m_buffer_send_callback_t bufferSendCallback,
-                             void * bufferSendUserData)
+lwm2m_context_t * lwm2m_init(lwm2m_connect_server_callback_t connectCallback,
+                             lwm2m_buffer_send_callback_t bufferSendCallback,
+                             void * userData)
 {
     lwm2m_context_t * contextP;
 
     if (NULL == bufferSendCallback)
         return NULL;
 
+#ifdef LWM2M_CLIENT_MODE
+    if (NULL == connectCallback)
+        return NULL;
+#endif
+
     contextP = (lwm2m_context_t *)lwm2m_malloc(sizeof(lwm2m_context_t));
     if (NULL != contextP)
     {
         memset(contextP, 0, sizeof(lwm2m_context_t));
+        contextP->connectCallback = connectCallback;
         contextP->bufferSendCallback = bufferSendCallback;
-        contextP->bufferSendUserData = bufferSendUserData;
+        contextP->userData = userData;
         srand(time(NULL));
         contextP->nextMID = rand();
     }
@@ -239,33 +246,8 @@ int lwm2m_configure(lwm2m_context_t * contextP,
 
     return COAP_NO_ERROR;
 }
-
-
-int lwm2m_add_server(lwm2m_context_t * contextP,
-                     uint16_t shortID,
-                     uint32_t lifetime,
-                     lwm2m_binding_t binding,
-                     void * sessionH)
-{
-    lwm2m_server_t * serverP;
-    int status = COAP_500_INTERNAL_SERVER_ERROR;
-
-    serverP = (lwm2m_server_t *)lwm2m_malloc(sizeof(lwm2m_server_t));
-    if (serverP != NULL)
-    {
-        memset(serverP, 0, sizeof(lwm2m_server_t));
-        serverP->shortID = shortID;
-        serverP->lifetime = lifetime;
-        serverP->binding = binding;
-        serverP->sessionH = sessionH;
-        contextP->serverList = (lwm2m_server_t*)LWM2M_LIST_ADD(contextP->serverList, serverP);
-
-        status = COAP_NO_ERROR;
-    }
-
-    return status;
-}
 #endif
+
 
 int lwm2m_step(lwm2m_context_t * contextP,
                struct timeval * timeoutP)

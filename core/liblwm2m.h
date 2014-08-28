@@ -463,6 +463,8 @@ typedef struct _lwm2m_observed_
  */
 
 // The session handle MUST uniquely identify a peer.
+typedef void * (*lwm2m_connect_server_callback_t)(uint16_t serverID, void * userData);
+// The session handle MUST uniquely identify a peer.
 typedef uint8_t (*lwm2m_buffer_send_callback_t)(void * sessionH, uint8_t * buffer, size_t length, void * userData);
 
 
@@ -486,14 +488,15 @@ typedef struct
 #endif
     uint16_t                nextMID;
     lwm2m_transaction_t *   transactionList;
-    // buffer send callback
-    lwm2m_buffer_send_callback_t bufferSendCallback;
-    void *                       bufferSendUserData;
+    // communication layer callbacks
+    lwm2m_connect_server_callback_t connectCallback;
+    lwm2m_buffer_send_callback_t    bufferSendCallback;
+    void *                          userData;
 } lwm2m_context_t;
 
 
 // initialize a liblwm2m context.
-lwm2m_context_t * lwm2m_init(lwm2m_buffer_send_callback_t bufferSendCallback, void * bufferSendUserData);
+lwm2m_context_t * lwm2m_init(lwm2m_connect_server_callback_t connectCallback, lwm2m_buffer_send_callback_t bufferSendCallback, void * userData);
 // close a liblwm2m context.
 void lwm2m_close(lwm2m_context_t * contextP);
 
@@ -507,8 +510,6 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP, uint8_t * buffer, int lengt
 // LWM2M Security Object (ID 0) must be present with either a bootstrap server or a LWM2M server and
 // its matching LWM2M Server Object (ID 1) instance
 int lwm2m_configure(lwm2m_context_t * contextP, char * endpointName, lwm2m_binding_t binding, char * msisdn, uint16_t numObject, lwm2m_object_t * objectList[]);
-
-int lwm2m_add_server(lwm2m_context_t * contextP, uint16_t shortID, uint32_t lifetime, lwm2m_binding_t binding, void * sessionH);
 
 // send registration message to all known LWM2M Servers.
 int lwm2m_register(lwm2m_context_t * contextP);

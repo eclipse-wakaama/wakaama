@@ -711,7 +711,7 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    lwm2mH = lwm2m_init(prv_buffer_send, NULL);
+    lwm2mH = lwm2m_init(NULL, prv_buffer_send, NULL);
     if (NULL == lwm2mH)
     {
         fprintf(stderr, "lwm2m_init() failed\r\n");
@@ -787,8 +787,11 @@ int main(int argc, char *argv[])
                     connP = connection_find(connList, &addr, addrLen);
                     if (connP == NULL)
                     {
-                        connList = connection_new_incoming(connList, sock, (struct sockaddr *)&addr, addrLen);
-                        connP = connList;
+                        connP = connection_new_incoming(connList, sock, (struct sockaddr *)&addr, addrLen);
+                        if (connP != NULL)
+                        {
+                            connList = connP;
+                        }
                     }
                     if (connP != NULL)
                     {
