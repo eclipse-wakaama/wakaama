@@ -74,6 +74,53 @@
 #define QUERY_VERSION_FULL_LEN  9
 
 #ifdef LWM2M_CLIENT_MODE
+
+static int prv_getRegistrationQuery(lwm2m_context_t * contextP,
+                                    char * buffer,
+                                    size_t length)
+{
+    int index;
+    int res;
+
+    index = snprintf(buffer, length, "?ep=%s", contextP->endpointName);
+    if (index <= 1) return 0;
+
+    if (NULL != contextP->msisdn)
+    {
+        res = snprintf(buffer + index, length - index, QUERY_DELIMITER QUERY_SMS "%s", contextP->msisdn);
+        if (res <= 1) return 0;
+
+        index += res;
+    }
+
+    switch (contextP->binding)
+    {
+    case BINDING_U:
+        res = snprintf(buffer + index, length - index, "&b=U");
+        break;
+    case BINDING_UQ:
+        res = snprintf(buffer + index, length - index, "&b=UQ");
+        break;
+    case BINDING_S:
+        res = snprintf(buffer + index, length - index, "&b=S");
+        break;
+    case BINDING_SQ:
+        res = snprintf(buffer + index, length - index, "&b=SQ");
+        break;
+    case BINDING_US:
+        res = snprintf(buffer + index, length - index, "&b=US");
+        break;
+    case BINDING_UQS:
+        res = snprintf(buffer + index, length - index, "&b=UQS");
+        break;
+    default:
+        res = 0;
+    }
+    if (res <= 1) return 0;
+
+    return index + res;
+}
+
 static void prv_handleRegistrationReply(lwm2m_transaction_t * transacP,
                                         void * message)
 {
@@ -113,67 +160,41 @@ static void prv_handleRegistrationReply(lwm2m_transaction_t * transacP,
     }
 }
 
+#define PRV_QUERY_BUFFER_LENGTH 200
+
 int lwm2m_register(lwm2m_context_t * contextP)
 {
     char query[200];
+    int query_length;
     char payload[512];
     int payload_length;
     lwm2m_server_t * targetP;
-    int remaining;
     int result;
-
-    payload_length = prv_getRegisterPayload(contextP, payload, sizeof(payload));
-    if (payload_length == 0) return INTERNAL_SERVER_ERROR_5_00;
 
     result = object_getServers(contextP);
     if (result != 0) return result;
 
+    payload_length = prv_getRegisterPayload(contextP, payload, sizeof(payload));
+    if (payload_length == 0) return INTERNAL_SERVER_ERROR_5_00;
+
+    query_length = prv_getRegistrationQuery(contextP, query, sizeof(query));
+    if (query_length == 0) return INTERNAL_SERVER_ERROR_5_00;
+
     targetP = contextP->serverList;
     while (targetP != NULL)
     {
-        remaining = sizeof(query) - snprintf(query,sizeof(query), "?ep=%s",contextP->endpointName);
-        if (remaining <= 1)  return INTERNAL_SERVER_ERROR_5_00;
-
-        if (NULL != contextP->msisdn) {
-            remaining -= QUERY_SMS_LEN + 1 + strlen(contextP->msisdn);
-            if (remaining <= 1)  return INTERNAL_SERVER_ERROR_5_00;
-
-            strcat(query, QUERY_DELIMITER);
-            strcat(query, QUERY_SMS);
-            strcat(query, contextP->msisdn);
-        }
-
-        if (0 != targetP->lifetime) {
-            if (remaining <=17) return INTERNAL_SERVER_ERROR_5_00;
-            char lt[16];
-            remaining -=sprintf(lt,"&lt=%d",targetP->lifetime);
-            strcat(query,lt);
-        }
-
-        switch (targetP->binding) {
-        case BINDING_U:
-            strcat(query,"&b=U");
-            break;
-        case BINDING_UQ:
-            strcat(query,"&b=UQ");
-            break;
-        case BINDING_S:
-            strcat(query,"&b=S");
-            break;
-        case BINDING_SQ:
-            strcat(query,"&b=SQ");
-            break;
-        case BINDING_US:
-            strcat(query,"&b=US");
-            break;
-        case BINDING_UQS:
-            strcat(query,"&b=UQS");
-            break;
-        default:
-            return INTERNAL_SERVER_ERROR_5_00;
-        }
-
         lwm2m_transaction_t * transaction;
+
+        if (0 != targetP->lifetime)
+        {
+            if (snprintf(query + query_length,
+                         PRV_QUERY_BUFFER_LENGTH - query_length,
+                         QUERY_DELIMITER QUERY_LIFETIME "%d",
+                         targetP->lifetime) <= 0)
+            {
+                return INTERNAL_SERVER_ERROR_5_00;
+            }
+        }
 
         transaction = transaction_new(COAP_POST, NULL, contextP->nextMID++, ENDPOINT_SERVER, (void *)targetP);
         if (transaction == NULL) return INTERNAL_SERVER_ERROR_5_00;
@@ -192,6 +213,8 @@ int lwm2m_register(lwm2m_context_t * contextP)
             targetP->mid = transaction->mID;
         }
 
+        // remove the lifetime information for the next server
+        query[query_length] = 0;
         targetP = targetP->next;
     }
     return 0;
