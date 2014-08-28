@@ -176,3 +176,34 @@ int lwm2m_boolToPlainText(bool data,
     return lwm2m_int64ToPlainText((int64_t)(data?1:0), bufferP);
 }
 
+lwm2m_binding_t lwm2m_stringToBinding(uint8_t *buffer,
+                                      size_t length)
+{
+    // test order is important
+    if (strncmp(buffer, "U", length) == 0)
+    {
+        return BINDING_U;
+    }
+    if (strncmp(buffer, "S", length) == 0)
+    {
+        return BINDING_S;
+    }
+    if (strncmp(buffer, "UQ", length) == 0)
+    {
+        return BINDING_UQ;
+    }
+    if (strncmp(buffer, "SQ", length) == 0)
+    {
+        return BINDING_SQ;
+    }
+    if (strncmp(buffer, "US", length) == 0)
+    {
+        return BINDING_UQ;
+    }
+    if (strncmp(buffer, "UQS", length) == 0)
+    {
+        return BINDING_UQ;
+    }
+
+    return BINDING_UNKNOWN;
+}

@@ -365,4 +365,184 @@ int prv_getRegisterPayload(lwm2m_context_t * contextP,
 
     return index;
 }
+
+static lwm2m_list_t * prv_findServerInstance(lwm2m_object_t * objectP,
+                                             uint16_t shortID)
+{
+    lwm2m_list_t * instanceP;
+    lwm2m_tlv_t * tlvP;
+    int size;
+
+    size = 1;
+    tlvP = lwm2m_tlv_new(size);
+    if (tlvP == NULL) return NULL;
+    tlvP->id = LWM2M_SERVER_SHORT_ID_ID;
+
+    instanceP = objectP->instanceList;
+    while (instanceP != NULL)
+    {
+        int64_t value;
+
+        if (objectP->readFunc(instanceP->id, &size, &tlvP, objectP) != COAP_205_CONTENT)
+        {
+            lwm2m_free(tlvP);
+            return NULL;
+        }
+
+        if (1 == lwm2m_tlv_decode_int(tlvP, &value))
+        {
+            if (value == shortID)
+            {
+                break;
+            }
+        }
+        instanceP = instanceP->next;
+    }
+
+    lwm2m_free(tlvP);
+    return instanceP;
+}
+
+static int prv_getMandatoryInfo(lwm2m_object_t * objectP,
+                                uint16_t instanceID,
+                                lwm2m_server_t * targetP)
+{
+    lwm2m_tlv_t * tlvP;
+    int size;
+    int64_t value;
+
+    size = 2;
+    tlvP = lwm2m_tlv_new(size);
+    if (tlvP == NULL) return -1;
+    tlvP[0].id = LWM2M_SERVER_LIFETIME_ID;
+    tlvP[1].id = LWM2M_SERVER_BINDING_ID;
+
+
+    if (objectP->readFunc(instanceID, &size, &tlvP, objectP) != COAP_205_CONTENT)
+    {
+        lwm2m_free(tlvP);
+        return -1;
+    }
+
+    if (0 == lwm2m_tlv_decode_int(tlvP, &value)
+     || value < 0 || value >0xFFFFFFFF)             // This is an implementation limit
+    {
+        lwm2m_free(tlvP);
+        return -1;
+    }
+    targetP->lifetime = value;
+
+    targetP->binding = lwm2m_stringToBinding(tlvP[1].value, tlvP[1].length);
+
+    lwm2m_free(tlvP);
+
+    if (targetP->binding == BINDING_UNKNOWN)
+    {
+        return -1;
+    }
+
+    return 0;
+}
+
+int object_getServers(lwm2m_context_t * contextP)
+{
+    lwm2m_object_t * securityObjP;
+    lwm2m_object_t * serverObjP;
+    lwm2m_list_t * securityInstP;   // instanceID of the server in the LWM2M Security Object
+    int i;
+
+    for (i = 0 ; i < contextP->numObject ; i++)
+    {
+        if (contextP->objectList[i]->objID == LWM2M_SECURITY_OBJECT_ID)
+        {
+            securityObjP = contextP->objectList[i];
+        }
+        else if (contextP->objectList[i]->objID == LWM2M_SERVER_OBJECT_ID)
+        {
+            serverObjP = contextP->objectList[i];
+        }
+    }
+
+    securityInstP = securityObjP->instanceList;
+    while (securityInstP != NULL)
+    {
+        lwm2m_tlv_t * tlvP;
+        int size;
+        lwm2m_server_t * targetP;
+        bool isBootstrap;
+        int64_t value = 0;
+
+        size = 3;
+        tlvP = lwm2m_tlv_new(size);
+        if (tlvP == NULL) return -1;
+        tlvP[0].id = LWM2M_SECURITY_BOOTSTRAP_ID;
+        tlvP[1].id = LWM2M_SECURITY_SHORT_SERVER_ID;
+        tlvP[2].id = LWM2M_SECURITY_HOLD_OFF_ID;
+
+        if (securityObjP->readFunc(securityInstP->id, &size, &tlvP, securityObjP) != COAP_205_CONTENT)
+        {
+            lwm2m_free(tlvP);
+            return -1;
+        }
+
+        targetP = (lwm2m_server_t *)lwm2m_malloc(sizeof(lwm2m_server_t));
+        if (targetP == NULL) return -1;
+        memset(targetP, 0, sizeof(lwm2m_server_t));
+
+        if (0 == lwm2m_tlv_decode_bool(tlvP + 0, &isBootstrap))
+        {
+            lwm2m_free(targetP);
+            lwm2m_free(tlvP);
+            return -1;
+        }
+
+        if (0 == lwm2m_tlv_decode_int(tlvP + 1, &value)
+         || value <= 0 || value >0xFFFF)                // 0 is forbidden as a Short Server ID
+        {
+            lwm2m_free(targetP);
+            lwm2m_free(tlvP);
+            return -1;
+        }
+        targetP->shortID = value;
+
+        if (isBootstrap == true)
+        {
+            if (0 == lwm2m_tlv_decode_int(tlvP + 1, &value)
+             || value < 0 || value >0xFFFFFFFF)             // This is an implementation limit
+            {
+                lwm2m_free(targetP);
+                lwm2m_free(tlvP);
+                return -1;
+            }
+            targetP->lifetime = value;
+
+            contextP->bootstrapServerList = (lwm2m_server_t*)LWM2M_LIST_ADD(contextP->bootstrapServerList, targetP);
+        }
+        else
+        {
+            lwm2m_list_t * serverInstP;     // instanceID of the server in the LWM2M Server Object
+
+            serverInstP = prv_findServerInstance(serverObjP, targetP->shortID);
+            if (serverInstP == NULL)
+            {
+                lwm2m_free(targetP);
+                lwm2m_free(tlvP);
+                return -1;
+            }
+            if (0 != prv_getMandatoryInfo(serverObjP, serverInstP->id, targetP))
+            {
+                lwm2m_free(targetP);
+                lwm2m_free(tlvP);
+                return -1;
+            }
+
+            contextP->serverList = (lwm2m_server_t*)LWM2M_LIST_ADD(contextP->serverList, targetP);
+        }
+        lwm2m_free(tlvP);
+        securityInstP = securityInstP->next;
+    }
+
+    return 0;
+}
+
 #endif

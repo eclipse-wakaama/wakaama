@@ -37,15 +37,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define RESOURCE_SHORTID_ID     0
-#define RESOURCE_LIFETIME_ID    1
-#define RESOURCE_MINPERIOD_ID   2
-#define RESOURCE_MAXPERIOD_ID   3
-#define RESOURCE_DISABLE_ID     4
-#define RESOURCE_TIMEOUT_ID     5
-#define RESOURCE_STORING_ID     6
-#define RESOURCE_BINDING_ID     7
-#define RESOURCE_UPDATE_ID      8
 
 typedef struct _server_instance_
 {
@@ -65,40 +56,40 @@ static uint8_t prv_get_value(lwm2m_tlv_t * tlvP,
 
     switch (tlvP->id)
     {
-    case RESOURCE_SHORTID_ID:
+    case LWM2M_SERVER_SHORT_ID_ID:
         lwm2m_tlv_encode_int(targetP->shortServerId, tlvP);
         if (0 != tlvP->length) return COAP_205_CONTENT;
         else return COAP_500_INTERNAL_SERVER_ERROR;
 
-    case RESOURCE_LIFETIME_ID:
+    case LWM2M_SERVER_LIFETIME_ID:
         lwm2m_tlv_encode_int(targetP->lifetime, tlvP);
         if (0 != tlvP->length) return COAP_205_CONTENT;
         else return COAP_500_INTERNAL_SERVER_ERROR;
 
-    case RESOURCE_MINPERIOD_ID:
-        return COAP_501_NOT_IMPLEMENTED;
+    case LWM2M_SERVER_MIN_PERIOD_ID:
+        return COAP_404_NOT_FOUND;
 
-    case RESOURCE_MAXPERIOD_ID:
-        return COAP_501_NOT_IMPLEMENTED;
+    case LWM2M_SERVER_MAX_PERIOD_ID:
+        return COAP_404_NOT_FOUND;
 
-    case RESOURCE_DISABLE_ID:
+    case LWM2M_SERVER_DISABLE_ID:
         return COAP_405_METHOD_NOT_ALLOWED;
 
-    case RESOURCE_TIMEOUT_ID:
-        return COAP_501_NOT_IMPLEMENTED;
+    case LWM2M_SERVER_TIMEOUT_ID:
+        return COAP_404_NOT_FOUND;
 
-    case RESOURCE_STORING_ID:
+    case LWM2M_SERVER_STORING_ID:
         lwm2m_tlv_encode_bool(targetP->storing, tlvP);
         if (0 != tlvP->length) return COAP_205_CONTENT;
         else return COAP_500_INTERNAL_SERVER_ERROR;
 
-    case RESOURCE_BINDING_ID:
+    case LWM2M_SERVER_BINDING_ID:
         tlvP->value = targetP->binding;
         tlvP->length = strlen(targetP->binding);
         tlvP->flags = LWM2M_TLV_FLAG_STATIC_DATA;
         return COAP_205_CONTENT;
 
-    case RESOURCE_UPDATE_ID:
+    case LWM2M_SERVER_UPDATE_ID:
         return COAP_405_METHOD_NOT_ALLOWED;
 
     default:
@@ -121,7 +112,7 @@ static uint8_t prv_server_read(uint16_t instanceId,
     // is the server asking for the full instance ?
     if (*numDataP == 0)
     {
-        uint16_t resList[] = {RESOURCE_SHORTID_ID, RESOURCE_LIFETIME_ID, RESOURCE_STORING_ID, RESOURCE_BINDING_ID};
+        uint16_t resList[] = {LWM2M_SERVER_SHORT_ID_ID, LWM2M_SERVER_LIFETIME_ID, LWM2M_SERVER_STORING_ID, LWM2M_SERVER_BINDING_ID};
         int nbRes = sizeof(resList)/sizeof(uint16_t);
 
         *dataArrayP = lwm2m_tlv_new(nbRes);
@@ -160,11 +151,11 @@ static uint8_t prv_server_write(uint16_t instanceId,
     {
         switch (dataArray[i].id)
         {
-        case RESOURCE_SHORTID_ID:
+        case LWM2M_SERVER_SHORT_ID_ID:
             result = COAP_405_METHOD_NOT_ALLOWED;
             break;
 
-        case RESOURCE_LIFETIME_ID:
+        case LWM2M_SERVER_LIFETIME_ID:
         {
             int64_t value;
 
@@ -187,23 +178,23 @@ static uint8_t prv_server_write(uint16_t instanceId,
         }
         break;
 
-        case RESOURCE_MINPERIOD_ID:
-            result = COAP_501_NOT_IMPLEMENTED;
+        case LWM2M_SERVER_MIN_PERIOD_ID:
+            result = COAP_404_NOT_FOUND;
             break;
 
-        case RESOURCE_MAXPERIOD_ID:
-            result = COAP_501_NOT_IMPLEMENTED;
+        case LWM2M_SERVER_MAX_PERIOD_ID:
+            result = COAP_404_NOT_FOUND;
             break;
 
-        case RESOURCE_DISABLE_ID:
+        case LWM2M_SERVER_DISABLE_ID:
             result = COAP_405_METHOD_NOT_ALLOWED;
             break;
 
-        case RESOURCE_TIMEOUT_ID:
-            result = COAP_501_NOT_IMPLEMENTED;
+        case LWM2M_SERVER_TIMEOUT_ID:
+            result = COAP_404_NOT_FOUND;
             break;
 
-        case RESOURCE_STORING_ID:
+        case LWM2M_SERVER_STORING_ID:
         {
             bool value;
 
@@ -219,7 +210,7 @@ static uint8_t prv_server_write(uint16_t instanceId,
         }
         break;
 
-        case RESOURCE_BINDING_ID:
+        case LWM2M_SERVER_BINDING_ID:
             if ((dataArray[i].length > 0 && dataArray[i].length <= 3)
              && (strncmp(dataArray[i].value, "U", dataArray[i].length) == 0
               || strncmp(dataArray[i].value, "UQ", dataArray[i].length) == 0
@@ -237,7 +228,7 @@ static uint8_t prv_server_write(uint16_t instanceId,
             }
             break;
 
-        case RESOURCE_UPDATE_ID:
+        case LWM2M_SERVER_UPDATE_ID:
             result = COAP_405_METHOD_NOT_ALLOWED;
             break;
 
@@ -266,9 +257,9 @@ static uint8_t prv_server_execute(uint16_t instanceId,
 
     switch (resourceId)
     {
-    case RESOURCE_DISABLE_ID:
-        return COAP_501_NOT_IMPLEMENTED;
-    case RESOURCE_UPDATE_ID:
+    case LWM2M_SERVER_DISABLE_ID:
+        return COAP_404_NOT_FOUND;
+    case LWM2M_SERVER_UPDATE_ID:
         return COAP_501_NOT_IMPLEMENTED;
     default:
         return COAP_405_METHOD_NOT_ALLOWED;

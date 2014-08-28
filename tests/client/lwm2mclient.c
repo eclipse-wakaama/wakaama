@@ -105,6 +105,8 @@ static uint8_t prv_buffer_send(void * sessionH,
 {
     connection_t * connP = (connection_t*) sessionH;
 
+    if (connP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
+
     if (-1 == connection_send(connP, buffer, length))
     {
         return COAP_500_INTERNAL_SERVER_ERROR;
@@ -256,7 +258,6 @@ int main(int argc, char *argv[])
     int result;
     lwm2m_context_t * lwm2mH = NULL;
     lwm2m_object_t * objArray[5];
-    lwm2m_security_t security;
     int i;
     connection_t * connList;
     char *localPort;
@@ -387,14 +388,12 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    memset(&security, 0, sizeof(lwm2m_security_t));
-
     /*
      * This function add a server to the lwm2m context by passing an identifier, an opaque connection handler and a security
      * context.
      * You can add as many server as your application need and there will be thereby allowed to interact with your object
      */
-    result = lwm2m_add_server(lwm2mH, 123, 0, NULL, BINDING_U, (void *)connList, &security);
+    result = lwm2m_add_server(lwm2mH, 123, 0, BINDING_U, (void *)connList);
     if (result != 0)
     {
         fprintf(stderr, "lwm2m_add_server() failed: 0x%X\r\n", result);

@@ -107,6 +107,7 @@ coap_status_t object_execute(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, cha
 coap_status_t object_delete(lwm2m_context_t * contextP, lwm2m_uri_t * uriP);
 bool object_isInstanceNew(lwm2m_context_t * contextP, uint16_t objectId, uint16_t instanceId);
 int prv_getRegisterPayload(lwm2m_context_t * contextP, char * buffer, size_t length);
+int object_getServers(lwm2m_context_t * contextP);
 
 // defined in transaction.c
 lwm2m_transaction_t * transaction_new(coap_method_t method, lwm2m_uri_t * uriP, uint16_t mID, lwm2m_endpoint_type_t peerType, void * peerP);
@@ -133,5 +134,8 @@ coap_status_t message_send(lwm2m_context_t * contextP, coap_packet_t * message, 
 // defined in observe.c
 void handle_observe_notify(lwm2m_context_t * contextP, void * fromSessionH, coap_packet_t * message);
 void observation_remove(lwm2m_client_t * clientP, lwm2m_observation_t * observationP);
+
+// defined in utils.c
+lwm2m_binding_t lwm2m_stringToBinding(uint8_t *buffer, size_t length);
 
 #endif

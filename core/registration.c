@@ -120,9 +120,13 @@ int lwm2m_register(lwm2m_context_t * contextP)
     int payload_length;
     lwm2m_server_t * targetP;
     int remaining;
+    int result;
 
     payload_length = prv_getRegisterPayload(contextP, payload, sizeof(payload));
     if (payload_length == 0) return INTERNAL_SERVER_ERROR_5_00;
+
+    result = object_getServers(contextP);
+    if (result != 0) return result;
 
     targetP = contextP->serverList;
     while (targetP != NULL)
@@ -130,13 +134,13 @@ int lwm2m_register(lwm2m_context_t * contextP)
         remaining = sizeof(query) - snprintf(query,sizeof(query), "?ep=%s",contextP->endpointName);
         if (remaining <= 1)  return INTERNAL_SERVER_ERROR_5_00;
 
-        if (NULL != targetP->sms) {
-            remaining -= QUERY_SMS_LEN + 1 + strlen(targetP->sms);
+        if (NULL != contextP->msisdn) {
+            remaining -= QUERY_SMS_LEN + 1 + strlen(contextP->msisdn);
             if (remaining <= 1)  return INTERNAL_SERVER_ERROR_5_00;
 
             strcat(query, QUERY_DELIMITER);
             strcat(query, QUERY_SMS);
-            strcat(query, targetP->sms);
+            strcat(query, contextP->msisdn);
         }
 
         if (0 != targetP->lifetime) {
@@ -403,34 +407,7 @@ static int prv_getParameters(multi_option_t * query,
             if (*bindingP != BINDING_UNKNOWN) goto error;
             if (query->len == QUERY_BINDING_LEN) goto error;
 
-            if (strncmp(query->data + QUERY_BINDING_LEN, "U", query->len - QUERY_BINDING_LEN) == 0)
-            {
-                *bindingP = BINDING_U;
-            }
-            else if (strncmp(query->data + QUERY_BINDING_LEN, "UQ", query->len - QUERY_BINDING_LEN) == 0)
-            {
-                *bindingP = BINDING_UQ;
-            }
-            else if (strncmp(query->data + QUERY_BINDING_LEN, "S", query->len - QUERY_BINDING_LEN) == 0)
-            {
-                *bindingP = BINDING_S;
-            }
-            else if (strncmp(query->data + QUERY_BINDING_LEN, "SQ", query->len - QUERY_BINDING_LEN) == 0)
-            {
-                *bindingP = BINDING_SQ;
-            }
-            else if (strncmp(query->data + QUERY_BINDING_LEN, "US", query->len - QUERY_BINDING_LEN) == 0)
-            {
-                *bindingP = BINDING_UQ;
-            }
-            else if (strncmp(query->data + QUERY_BINDING_LEN, "UQS", query->len - QUERY_BINDING_LEN) == 0)
-            {
-                *bindingP = BINDING_UQ;
-            }
-            else
-            {
-                goto error;
-            }
+            *bindingP = lwm2m_stringToBinding(query->data + QUERY_BINDING_LEN, query->len - QUERY_BINDING_LEN);
         }
         query = query->next;
     }

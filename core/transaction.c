@@ -282,10 +282,6 @@ int transaction_send(lwm2m_context_t * contextP,
                                      transacP->buffer, transacP->buffer_len, contextP->bufferSendUserData);
         break;
 
-    case ENDPOINT_BOOTSTRAP:
-        // not implemented yet
-        break;
-
     default:
         return 0;
     }

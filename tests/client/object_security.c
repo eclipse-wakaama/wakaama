@@ -43,18 +43,18 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define RESOURCE_URI_ID                 0
-#define RESOURCE_BOOTSTRAP_ID           1
-#define RESOURCE_SECURITY_ID            2
-#define RESOURCE_PUBLIC_KEY_ID          3
-#define RESOURCE_SERVER_PUBLIC_KEY_ID   4
-#define RESOURCE_SECRET_KEY_ID          5
-#define RESOURCE_SMS_SECURITY_ID        6
-#define RESOURCE_SMS_KEY_PARAM_ID       7
-#define RESOURCE_SMS_SECRET_KEY_ID      8
-#define RESOURCE_SMS_SERVER_NUMBER_ID   9
-#define RESOURCE_SHORT_SERVER_ID        10
-#define RESOURCE_HOLD_OFF_ID            11
+#define LWM2M_SECURITY_URI_ID                 0
+#define LWM2M_SECURITY_BOOTSTRAP_ID           1
+#define LWM2M_SECURITY_SECURITY_ID            2
+#define LWM2M_SECURITY_PUBLIC_KEY_ID          3
+#define LWM2M_SECURITY_SERVER_PUBLIC_KEY_ID   4
+#define LWM2M_SECURITY_SECRET_KEY_ID          5
+#define LWM2M_SECURITY_SMS_SECURITY_ID        6
+#define LWM2M_SECURITY_SMS_KEY_PARAM_ID       7
+#define LWM2M_SECURITY_SMS_SECRET_KEY_ID      8
+#define LWM2M_SECURITY_SMS_SERVER_NUMBER_ID   9
+#define LWM2M_SECURITY_SHORT_SERVER_ID        10
+#define LWM2M_SECURITY_HOLD_OFF_ID            11
 
 
 typedef struct _security_instance_
@@ -74,73 +74,73 @@ static uint8_t prv_get_value(lwm2m_tlv_t * tlvP,
 
     switch (tlvP->id)
     {
-    case RESOURCE_URI_ID:
+    case LWM2M_SECURITY_URI_ID:
         tlvP->value = targetP->uri;
         tlvP->length = strlen(targetP->uri);
         tlvP->flags = LWM2M_TLV_FLAG_STATIC_DATA;
         return COAP_205_CONTENT;
 
-    case RESOURCE_BOOTSTRAP_ID:
+    case LWM2M_SECURITY_BOOTSTRAP_ID:
         lwm2m_tlv_encode_bool(targetP->isBootstrap, tlvP);
         if (0 != tlvP->length) return COAP_205_CONTENT;
         else return COAP_500_INTERNAL_SERVER_ERROR;
 
-    case RESOURCE_SECURITY_ID:
-        lwm2m_tlv_encode_int(SEC_NONE, tlvP);
+    case LWM2M_SECURITY_SECURITY_ID:
+        lwm2m_tlv_encode_int(LWM2M_SECURITY_MODE_NONE, tlvP);
         if (0 != tlvP->length) return COAP_205_CONTENT;
         else return COAP_500_INTERNAL_SERVER_ERROR;
 
-    case RESOURCE_PUBLIC_KEY_ID:
+    case LWM2M_SECURITY_PUBLIC_KEY_ID:
         // Here we return an opaque of 1 byte containing 0
         tlvP->value = "";
         tlvP->length = 1;
         tlvP->flags = LWM2M_TLV_FLAG_STATIC_DATA;
         return COAP_205_CONTENT;
 
-    case RESOURCE_SERVER_PUBLIC_KEY_ID:
+    case LWM2M_SECURITY_SERVER_PUBLIC_KEY_ID:
         // Here we return an opaque of 1 byte containing 0
         tlvP->value = "";
         tlvP->length = 1;
         tlvP->flags = LWM2M_TLV_FLAG_STATIC_DATA;
         return COAP_205_CONTENT;
 
-    case RESOURCE_SECRET_KEY_ID:
+    case LWM2M_SECURITY_SECRET_KEY_ID:
         // Here we return an opaque of 1 byte containing 0
         tlvP->value = "";
         tlvP->length = 1;
         tlvP->flags = LWM2M_TLV_FLAG_STATIC_DATA;
         return COAP_205_CONTENT;
 
-    case RESOURCE_SMS_SECURITY_ID:
-        lwm2m_tlv_encode_int(SEC_NONE, tlvP);
+    case LWM2M_SECURITY_SMS_SECURITY_ID:
+        lwm2m_tlv_encode_int(LWM2M_SECURITY_MODE_NONE, tlvP);
         if (0 != tlvP->length) return COAP_205_CONTENT;
         else return COAP_500_INTERNAL_SERVER_ERROR;
 
-    case RESOURCE_SMS_KEY_PARAM_ID:
+    case LWM2M_SECURITY_SMS_KEY_PARAM_ID:
         // Here we return an opaque of 6 bytes containing a buggy value
         tlvP->value = "12345";
         tlvP->length = 6;
         tlvP->flags = LWM2M_TLV_FLAG_STATIC_DATA;
         return COAP_205_CONTENT;
 
-    case RESOURCE_SMS_SECRET_KEY_ID:
+    case LWM2M_SECURITY_SMS_SECRET_KEY_ID:
         // Here we return an opaque of 32 bytes containing a buggy value
         tlvP->value = "1234567890abcdefghijklmnopqrstu";
         tlvP->length = 32;
         tlvP->flags = LWM2M_TLV_FLAG_STATIC_DATA;
         return COAP_205_CONTENT;
 
-    case RESOURCE_SMS_SERVER_NUMBER_ID:
+    case LWM2M_SECURITY_SMS_SERVER_NUMBER_ID:
         lwm2m_tlv_encode_int(0, tlvP);
         if (0 != tlvP->length) return COAP_205_CONTENT;
         else return COAP_500_INTERNAL_SERVER_ERROR;
 
-    case RESOURCE_SHORT_SERVER_ID:
+    case LWM2M_SECURITY_SHORT_SERVER_ID:
         lwm2m_tlv_encode_int(targetP->shortID, tlvP);
         if (0 != tlvP->length) return COAP_205_CONTENT;
         else return COAP_500_INTERNAL_SERVER_ERROR;
 
-    case RESOURCE_HOLD_OFF_ID:
+    case LWM2M_SECURITY_HOLD_OFF_ID:
         lwm2m_tlv_encode_int(30, tlvP);
         if (0 != tlvP->length) return COAP_205_CONTENT;
         else return COAP_500_INTERNAL_SERVER_ERROR;
@@ -165,18 +165,18 @@ static uint8_t prv_security_read(uint16_t instanceId,
     // is the server asking for the full instance ?
     if (*numDataP == 0)
     {
-        uint16_t resList[] = {RESOURCE_URI_ID,
-                              RESOURCE_BOOTSTRAP_ID,
-                              RESOURCE_SECURITY_ID,
-                              RESOURCE_PUBLIC_KEY_ID,
-                              RESOURCE_SERVER_PUBLIC_KEY_ID,
-                              RESOURCE_SECRET_KEY_ID,
-                              RESOURCE_SMS_SECURITY_ID,
-                              RESOURCE_SMS_KEY_PARAM_ID,
-                              RESOURCE_SMS_SECRET_KEY_ID,
-                              RESOURCE_SMS_SERVER_NUMBER_ID,
-                              RESOURCE_SHORT_SERVER_ID,
-                              RESOURCE_HOLD_OFF_ID};
+        uint16_t resList[] = {LWM2M_SECURITY_URI_ID,
+                              LWM2M_SECURITY_BOOTSTRAP_ID,
+                              LWM2M_SECURITY_SECURITY_ID,
+                              LWM2M_SECURITY_PUBLIC_KEY_ID,
+                              LWM2M_SECURITY_SERVER_PUBLIC_KEY_ID,
+                              LWM2M_SECURITY_SECRET_KEY_ID,
+                              LWM2M_SECURITY_SMS_SECURITY_ID,
+                              LWM2M_SECURITY_SMS_KEY_PARAM_ID,
+                              LWM2M_SECURITY_SMS_SECRET_KEY_ID,
+                              LWM2M_SECURITY_SMS_SERVER_NUMBER_ID,
+                              LWM2M_SECURITY_SHORT_SERVER_ID,
+                              LWM2M_SECURITY_HOLD_OFF_ID};
         int nbRes = sizeof(resList)/sizeof(uint16_t);
 
         *dataArrayP = lwm2m_tlv_new(nbRes);
@@ -215,9 +215,9 @@ static uint8_t prv_security_write(uint16_t instanceId,
     {
         switch (dataArray[i].id)
         {
-        case RESOURCE_URI_ID:
+        case LWM2M_SECURITY_URI_ID:
             if (targetP->uri != NULL) lwm2m_free(targetP->uri);
-            targetP->uri = (char *)malloc(dataArray[i].length + 1);
+            targetP->uri = (char *)lwm2m_malloc(dataArray[i].length + 1);
             if (targetP->uri != NULL)
             {
                 strncpy(targetP->uri, dataArray[i].value, dataArray[i].length);
@@ -229,7 +229,7 @@ static uint8_t prv_security_write(uint16_t instanceId,
             }
             break;
 
-        case RESOURCE_BOOTSTRAP_ID:
+        case LWM2M_SECURITY_BOOTSTRAP_ID:
             if (1 == lwm2m_tlv_decode_bool(dataArray + i, &(targetP->isBootstrap)))
             {
                 result = COAP_204_CHANGED;
@@ -240,47 +240,47 @@ static uint8_t prv_security_write(uint16_t instanceId,
             }
             break;
 
-        case RESOURCE_SECURITY_ID:
+        case LWM2M_SECURITY_SECURITY_ID:
             // Let just ignore this
             result = COAP_204_CHANGED;
             break;
 
-        case RESOURCE_PUBLIC_KEY_ID:
+        case LWM2M_SECURITY_PUBLIC_KEY_ID:
             // Let just ignore this
             result = COAP_204_CHANGED;
             break;
 
-        case RESOURCE_SERVER_PUBLIC_KEY_ID:
+        case LWM2M_SECURITY_SERVER_PUBLIC_KEY_ID:
             // Let just ignore this
             result = COAP_204_CHANGED;
             break;
 
-        case RESOURCE_SECRET_KEY_ID:
+        case LWM2M_SECURITY_SECRET_KEY_ID:
             // Let just ignore this
             result = COAP_204_CHANGED;
             break;
 
-        case RESOURCE_SMS_SECURITY_ID:
+        case LWM2M_SECURITY_SMS_SECURITY_ID:
             // Let just ignore this
             result = COAP_204_CHANGED;
             break;
 
-        case RESOURCE_SMS_KEY_PARAM_ID:
+        case LWM2M_SECURITY_SMS_KEY_PARAM_ID:
             // Let just ignore this
             result = COAP_204_CHANGED;
             break;
 
-        case RESOURCE_SMS_SECRET_KEY_ID:
+        case LWM2M_SECURITY_SMS_SECRET_KEY_ID:
             // Let just ignore this
             result = COAP_204_CHANGED;
             break;
 
-        case RESOURCE_SMS_SERVER_NUMBER_ID:
+        case LWM2M_SECURITY_SMS_SERVER_NUMBER_ID:
             // Let just ignore this
             result = COAP_204_CHANGED;
             break;
 
-        case RESOURCE_SHORT_SERVER_ID:
+        case LWM2M_SECURITY_SHORT_SERVER_ID:
         {
             int64_t value;
 
@@ -303,7 +303,7 @@ static uint8_t prv_security_write(uint16_t instanceId,
         }
         break;
 
-        case RESOURCE_HOLD_OFF_ID:
+        case LWM2M_SECURITY_HOLD_OFF_ID:
             // Let just ignore this
             result = COAP_204_CHANGED;
             break;
