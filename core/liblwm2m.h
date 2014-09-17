@@ -236,7 +236,7 @@ typedef struct _lwm2m_object_t lwm2m_object_t;
 
 typedef uint8_t (*lwm2m_read_callback_t) (uint16_t instanceId, int * numDataP, lwm2m_tlv_t ** dataArrayP, lwm2m_object_t * objectP);
 typedef uint8_t (*lwm2m_write_callback_t) (uint16_t instanceId, int numData, lwm2m_tlv_t * dataArray, lwm2m_object_t * objectP);
-typedef uint8_t (*lwm2m_execute_callback_t) (uint16_t instanceId, uint16_t resourceId, char * buffer, int length, lwm2m_object_t * objectP);
+typedef uint8_t (*lwm2m_execute_callback_t) (uint16_t instanceId, uint16_t resourceId, char * rbuffer, int rlength,char ** wbuffer, int *wlength, lwm2m_object_t * objectP);
 typedef uint8_t (*lwm2m_create_callback_t) (uint16_t instanceId, int numData, lwm2m_tlv_t * dataArray, lwm2m_object_t * objectP);
 typedef uint8_t (*lwm2m_delete_callback_t) (uint16_t instanceId, lwm2m_object_t * objectP);
 typedef void (*lwm2m_close_callback_t) (lwm2m_object_t * objectP);

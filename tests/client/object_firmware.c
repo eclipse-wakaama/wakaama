@@ -189,8 +189,10 @@ static uint8_t prv_firmware_write(uint16_t instanceId,
 
 static uint8_t prv_firmware_execute(uint16_t instanceId,
                                     uint16_t resourceId,
-                                    char * buffer,
-                                    int length,
+                                    char * rBuffer,
+                                    int rLength,
+                                    char ** wBuffer,
+                                    int *wLength,
                                     lwm2m_object_t * objectP)
 {
     firmware_data_t * data = (firmware_data_t*)(objectP->userData);
@@ -201,7 +203,7 @@ static uint8_t prv_firmware_execute(uint16_t instanceId,
         return COAP_404_NOT_FOUND;
     }
 
-    if (length != 0) return COAP_400_BAD_REQUEST;
+    if (rLength != 0) return COAP_400_BAD_REQUEST;
 
     // for execute callback, resId is always set.
     switch (resourceId)
