@@ -78,6 +78,17 @@ static int g_quit = 0;
 extern lwm2m_object_t * get_object_device();
 extern lwm2m_object_t * get_object_firmware();
 extern lwm2m_object_t * get_test_object();
+extern lwm2m_object_t * get_server_object();
+extern lwm2m_object_t * get_security_object();
+
+extern char * get_server_uri(lwm2m_object_t * objectP, uint16_t serverID);
+
+typedef struct
+{
+    lwm2m_object_t * securityObjP;
+    int sock;
+    connection_t * connList;
+} client_data_t;
 
 static void prv_quit(char * buffer,
                      void * user_data)
@@ -96,12 +107,57 @@ void print_usage(void)
     fprintf(stderr, "Launch a LWM2M client.\r\n\n");
 }
 
+static void * prv_connect_server(uint16_t serverID,
+                                 void * userData)
+{
+    client_data_t * dataP;
+    char * uri;
+    char * host;
+    char * portStr;
+    int port;
+    char * ptr;
+    connection_t * newConnP = NULL;
+
+    dataP = (client_data_t *)userData;
+
+    uri = get_server_uri(dataP->securityObjP, serverID);
+    if (uri == NULL) return NULL;
+
+    // parse uri in the form "coaps://[host]:[port]"
+    if (0 != strncmp(uri, "coaps://", strlen("coaps://"))) goto exit;
+    host = uri + strlen("coaps://");
+    portStr = strchr(host, ':');
+    if (portStr == NULL) goto exit;
+    // split strings
+    *portStr = 0;
+    portStr++;
+    port = strtol(portStr, &ptr, 10);
+    if (*ptr != 0) goto exit;
+
+    fprintf(stdout, "Trying to connect to LWM2M Server at %s:%d\r\n", host, port);
+    newConnP = connection_create(dataP->connList, dataP->sock, host, port);
+    if (newConnP == NULL)
+    {
+        fprintf(stderr, "Connection creation failed.\r\n");
+    }
+    else
+    {
+        dataP->connList = newConnP;
+    }
+
+exit:
+    free(uri);
+    return (void *)newConnP;
+}
+
 static uint8_t prv_buffer_send(void * sessionH,
                                uint8_t * buffer,
                                size_t length,
                                void * userdata)
 {
     connection_t * connP = (connection_t*) sessionH;
+
+    if (connP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
 
     if (-1 == connection_send(connP, buffer, length))
     {
@@ -250,20 +306,12 @@ syntax_error:
 
 int main(int argc, char *argv[])
 {
-    int sock;
+    client_data_t data;
     int result;
     lwm2m_context_t * lwm2mH = NULL;
-    lwm2m_object_t * objArray[3];
-    lwm2m_security_t security;
+    lwm2m_object_t * objArray[5];
     int i;
-    connection_t * connList;
     char *localPort;
-    char defaultPort[] = "5683";
-    char *remoteHost;
-    char defaultHost[] = "localhost";
-    int remotePort = LWM2M_STANDARD_PORT;
-
-    connList = NULL;
 
     /*
      * The function start by setting up the command line interface (which may or not be useful depending on your project)
@@ -286,29 +334,21 @@ int main(int argc, char *argv[])
             COMMAND_END_LIST
     };
 
-    localPort = defaultPort;
-    remoteHost = defaultHost;
+    memset(&data, 0, sizeof(client_data_t));
+
+    localPort = "5683";
 
     if (argc >= 2)
     {
-      localPort = argv[1];
-      if (argc >= 3)
-      {
-        remoteHost = argv[2];
-        if (argc >= 4)
-        {
-          char *ptr;
-          remotePort = strtol(argv[3], &ptr, 10);
-        }
-      }
+        localPort = argv[1];
     }
 
     /*
      *This call an internal function that create an IPV6 socket on the port 5683.
      */
     fprintf(stdout, "Trying to bind LWM2M Client to port %s\r\n", localPort);
-    sock = create_socket(localPort);
-    if (sock < 0)
+    data.sock = create_socket(localPort);
+    if (data.sock < 0)
     {
         fprintf(stderr, "Failed to open socket: %d\r\n", errno);
         return -1;
@@ -339,44 +379,47 @@ int main(int argc, char *argv[])
         return -1;
     }
 
+    objArray[3] = get_server_object();
+    if (NULL == objArray[3])
+    {
+        fprintf(stderr, "Failed to create server object\r\n");
+        return -1;
+    }
+
+    objArray[4] = get_security_object();
+    if (NULL == objArray[4])
+    {
+        fprintf(stderr, "Failed to create security object\r\n");
+        return -1;
+    }
+    data.securityObjP = objArray[4];
+
     /*
-     * The liblwm2m library is now initialized with the name of the client - which shall be unique for each client -
-     * the number of objects we will be passing through, the object constructor array and the function that will be in
-     * charge to send the buffer (containing the LWM2M packets) to the network
+     * The liblwm2m library is now initialized with the functions that will be in
+     * charge of communication
      */
-    lwm2mH = lwm2m_init("testlwm2mclient", 3, objArray, prv_buffer_send, NULL);
+    lwm2mH = lwm2m_init(prv_connect_server, prv_buffer_send, &data);
     if (NULL == lwm2mH)
     {
         fprintf(stderr, "lwm2m_init() failed\r\n");
         return -1;
     }
 
-    signal(SIGINT, handle_sigint);
-
-    fprintf(stdout, "Trying to connect to LWM2M Server at %s:%d\r\n", remoteHost, remotePort);
-    connList = connection_create(connList, sock, remoteHost, remotePort);
-    if (connList == NULL)
-    {
-        fprintf(stderr, "Connection creation failed.\r\n");
-        return -1;
-    }
-
-    memset(&security, 0, sizeof(lwm2m_security_t));
-
     /*
-     * This function add a server to the lwm2m context by passing an identifier, an opaque connection handler and a security
-     * context.
-     * You can add as many server as your application need and there will be thereby allowed to interact with your object
+     * We configure the liblwm2m library with the name of the client - which shall be unique for each client -
+     * the number of objects we will be passing through and the objects array
      */
-    result = lwm2m_add_server(lwm2mH, 123, 0, NULL, BINDING_U, (void *)connList, &security);
+    result = lwm2m_configure(lwm2mH, "testlwm2mclient", BINDING_U, NULL, 5, objArray);
     if (result != 0)
     {
-        fprintf(stderr, "lwm2m_add_server() failed: 0x%X\r\n", result);
+        fprintf(stderr, "lwm2m_set_objects() failed: 0x%X\r\n", result);
         return -1;
     }
 
+    signal(SIGINT, handle_sigint);
+
     /*
-     * This function register your client to all the servers you added with the precedent one
+     * This function register your client to the LWM2M servers
      */
     result = lwm2m_register(lwm2mH);
     if (result != 0)
@@ -404,7 +447,7 @@ int main(int argc, char *argv[])
         fd_set readfds;
 
         FD_ZERO(&readfds);
-        FD_SET(sock, &readfds);
+        FD_SET(data.sock, &readfds);
         FD_SET(STDIN_FILENO, &readfds);
 
         tv.tv_sec = 60;
@@ -444,7 +487,7 @@ int main(int argc, char *argv[])
             /*
              * If an event happen on the socket
              */
-            if (FD_ISSET(sock, &readfds))
+            if (FD_ISSET(data.sock, &readfds))
             {
                 struct sockaddr_storage addr;
                 socklen_t addrLen;
@@ -454,7 +497,7 @@ int main(int argc, char *argv[])
                 /*
                  * We retrieve the data received
                  */
-                numBytes = recvfrom(sock, buffer, MAX_PACKET_SIZE, 0, (struct sockaddr *)&addr, &addrLen);
+                numBytes = recvfrom(data.sock, buffer, MAX_PACKET_SIZE, 0, (struct sockaddr *)&addr, &addrLen);
 
                 if (numBytes == -1)
                 {
@@ -478,7 +521,7 @@ int main(int argc, char *argv[])
                      */
                     output_buffer(stderr, buffer, numBytes);
 
-                    connP = connection_find(connList, &addr, addrLen);
+                    connP = connection_find(data.connList, &addr, addrLen);
                     if (connP != NULL)
                     {
                         /*
@@ -525,8 +568,8 @@ int main(int argc, char *argv[])
     {
         lwm2m_close(lwm2mH);
     }
-    close(sock);
-    connection_free(connList);
+    close(data.sock);
+    connection_free(data.connList);
 
     return 0;
 }

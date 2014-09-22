@@ -56,11 +56,9 @@
 #include <stdio.h>
 
 
-lwm2m_context_t * lwm2m_init(char * endpointName,
-                             uint16_t numObject,
-                             lwm2m_object_t * objectList[],
+lwm2m_context_t * lwm2m_init(lwm2m_connect_server_callback_t connectCallback,
                              lwm2m_buffer_send_callback_t bufferSendCallback,
-                             void * bufferSendUserData)
+                             void * userData)
 {
     lwm2m_context_t * contextP;
 
@@ -68,52 +66,19 @@ lwm2m_context_t * lwm2m_init(char * endpointName,
         return NULL;
 
 #ifdef LWM2M_CLIENT_MODE
-    if (numObject != 0)
-    {
-        int i;
-
-        for (i = 0 ; i < numObject ; i++)
-        {
-            if (objectList[i]->objID <= LWM2M_ACL_OBJECT_ID)
-            {
-                // Use of a reserved object ID
-                return NULL;
-            }
-        }
-    }
+    if (NULL == connectCallback)
+        return NULL;
 #endif
 
     contextP = (lwm2m_context_t *)lwm2m_malloc(sizeof(lwm2m_context_t));
     if (NULL != contextP)
     {
         memset(contextP, 0, sizeof(lwm2m_context_t));
+        contextP->connectCallback = connectCallback;
         contextP->bufferSendCallback = bufferSendCallback;
-        contextP->bufferSendUserData = bufferSendUserData;
+        contextP->userData = userData;
         srand(time(NULL));
         contextP->nextMID = rand();
-#ifdef LWM2M_CLIENT_MODE
-        contextP->endpointName = strdup(endpointName);
-        if (contextP->endpointName == NULL)
-        {
-            lwm2m_free(contextP);
-            return NULL;
-        }
-        if (numObject != 0)
-        {
-            contextP->objectList = (lwm2m_object_t **)lwm2m_malloc(numObject * sizeof(lwm2m_object_t *));
-            if (NULL != contextP->objectList)
-            {
-                memcpy(contextP->objectList, objectList, numObject * sizeof(lwm2m_object_t *));
-                contextP->numObject = numObject;
-            }
-            else
-            {
-                lwm2m_free(contextP->endpointName);
-                lwm2m_free(contextP);
-                return NULL;
-            }
-        }
-#endif
     }
 
     return contextP;
@@ -133,14 +98,6 @@ void lwm2m_close(lwm2m_context_t * contextP)
         lwm2m_free(contextP->objectList[i]);
     }
 
-    if (NULL != contextP->bootstrapServer)
-    {
-        if (NULL != contextP->bootstrapServer->uri) lwm2m_free (contextP->bootstrapServer->uri);
-        if (NULL != contextP->bootstrapServer->security.privateKey) lwm2m_free (contextP->bootstrapServer->security.privateKey);
-        if (NULL != contextP->bootstrapServer->security.publicKey) lwm2m_free (contextP->bootstrapServer->security.publicKey);
-        lwm2m_free(contextP->bootstrapServer);
-    }
-
     while (NULL != contextP->serverList)
     {
         lwm2m_server_t * targetP;
@@ -151,9 +108,16 @@ void lwm2m_close(lwm2m_context_t * contextP)
         registration_deregister(contextP, targetP);
 
         if (NULL != targetP->location) lwm2m_free(targetP->location);
-        if (NULL != targetP->security.privateKey) lwm2m_free (targetP->security.privateKey);
-        if (NULL != targetP->security.publicKey) lwm2m_free (targetP->security.publicKey);
-        if (NULL != targetP->sms) lwm2m_free (targetP->sms);
+        lwm2m_free(targetP);
+    }
+
+    while (NULL != contextP->bootstrapServerList)
+    {
+        lwm2m_server_t * targetP;
+
+        targetP = contextP->bootstrapServerList;
+        contextP->bootstrapServerList = contextP->bootstrapServerList->next;
+
         lwm2m_free(targetP);
     }
 
@@ -209,54 +173,81 @@ void lwm2m_close(lwm2m_context_t * contextP)
 }
 
 #ifdef LWM2M_CLIENT_MODE
-void lwm2m_set_bootstrap_server(lwm2m_context_t * contextP,
-                               lwm2m_bootstrap_server_t * serverP)
+int lwm2m_configure(lwm2m_context_t * contextP,
+                    char * endpointName,
+                    lwm2m_binding_t binding,
+                    char * msisdn,
+                    uint16_t numObject,
+                    lwm2m_object_t * objectList[])
 {
-    if (NULL != contextP->bootstrapServer)
+    int i;
+    uint8_t found;
+
+    // This API can be called only once for now
+    if (contextP->endpointName != NULL) return COAP_400_BAD_REQUEST;
+
+    if (endpointName == NULL) return COAP_400_BAD_REQUEST;
+    if (numObject < 3) return COAP_400_BAD_REQUEST;
+    // Check that mandatory objects are present
+    found = 0;
+    for (i = 0 ; i < numObject ; i++)
     {
-        if (NULL != contextP->bootstrapServer->uri) lwm2m_free (contextP->bootstrapServer->uri);
-        if (NULL != contextP->bootstrapServer->security.privateKey) lwm2m_free (contextP->bootstrapServer->security.privateKey);
-        if (NULL != contextP->bootstrapServer->security.publicKey) lwm2m_free (contextP->bootstrapServer->security.publicKey);
-        lwm2m_free(contextP->bootstrapServer);
+        if (objectList[i]->objID == LWM2M_SECURITY_OBJECT_ID) found |= 0x01;
+        if (objectList[i]->objID == LWM2M_SERVER_OBJECT_ID) found |= 0x02;
+        if (objectList[i]->objID == LWM2M_DEVICE_OBJECT_ID) found |= 0x04;
     }
-    contextP->bootstrapServer = serverP;
-}
+    if (found != 0x07) return COAP_400_BAD_REQUEST;
 
-int lwm2m_add_server(lwm2m_context_t * contextP,
-                     uint16_t shortID,
-                     uint32_t lifetime,
-                     char * sms,
-                     lwm2m_binding_t binding,
-                     void * sessionH,
-                     lwm2m_security_t * securityP)
-{
-    lwm2m_server_t * serverP;
-    int status = COAP_500_INTERNAL_SERVER_ERROR;
-
-    serverP = (lwm2m_server_t *)lwm2m_malloc(sizeof(lwm2m_server_t));
-    if (serverP != NULL)
+    switch (binding)
     {
-        memset(serverP, 0, sizeof(lwm2m_server_t));
-        memcpy(&(serverP->security), securityP, sizeof(lwm2m_security_t));
-        serverP->shortID = shortID;
-        serverP->lifetime = lifetime;
-        serverP->binding = binding;
-        if (sms != NULL)
+    case BINDING_UNKNOWN:
+        return COAP_400_BAD_REQUEST;
+    case BINDING_U:
+    case BINDING_UQ:
+        break;
+    case BINDING_S:
+    case BINDING_SQ:
+    case BINDING_US:
+    case BINDING_UQS:
+        if (msisdn == NULL) return COAP_400_BAD_REQUEST;
+        break;
+    default:
+        return COAP_400_BAD_REQUEST;
+    }
+
+    contextP->endpointName = strdup(endpointName);
+    if (contextP->endpointName == NULL)
+    {
+        return COAP_500_INTERNAL_SERVER_ERROR;
+    }
+
+    contextP->binding = binding;
+    if (msisdn != NULL)
+    {
+        contextP->msisdn = strdup(msisdn);
+        if (contextP->msisdn == NULL)
         {
-            // copy the SMS number
-            int len = strlen(sms);
-            serverP->sms = (char*) lwm2m_malloc(strlen(sms)+1);
-            memcpy(serverP->sms, sms, len+1);
+            return COAP_500_INTERNAL_SERVER_ERROR;
         }
-        serverP->sessionH = sessionH;
-        contextP->serverList = (lwm2m_server_t*)LWM2M_LIST_ADD(contextP->serverList, serverP);
-
-        status = COAP_NO_ERROR;
     }
 
-    return status;
+    contextP->objectList = (lwm2m_object_t **)lwm2m_malloc(numObject * sizeof(lwm2m_object_t *));
+    if (NULL != contextP->objectList)
+    {
+        memcpy(contextP->objectList, objectList, numObject * sizeof(lwm2m_object_t *));
+        contextP->numObject = numObject;
+    }
+    else
+    {
+        lwm2m_free(contextP->endpointName);
+        contextP->endpointName = NULL;
+        return COAP_500_INTERNAL_SERVER_ERROR;
+    }
+
+    return COAP_NO_ERROR;
 }
 #endif
+
 
 int lwm2m_step(lwm2m_context_t * contextP,
                struct timeval * timeoutP)

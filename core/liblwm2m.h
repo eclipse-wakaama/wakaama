@@ -85,6 +85,52 @@ void lwm2m_free(void *p);
 #define COAP_501_NOT_IMPLEMENTED        (uint8_t)0xA1
 #define COAP_503_SERVICE_UNAVAILABLE    (uint8_t)0xA3
 
+/*
+ * Standard Object IDs
+ */
+#define LWM2M_SECURITY_OBJECT_ID            0
+#define LWM2M_SERVER_OBJECT_ID              1
+#define LWM2M_ACL_OBJECT_ID                 2
+#define LWM2M_DEVICE_OBJECT_ID              3
+#define LWM2M_CONN_MONITOR_OBJECT_ID        4
+#define LWM2M_FIRMWARE_UPDATE_OBJECT_ID     5
+#define LWM2M_LOCATION_OBJECT_ID            6
+#define LWM2M_CONN_STATS_OBJECT_ID          7
+
+/*
+ * Ressource IDs for the LWM2M Security Object
+ */
+#define LWM2M_SECURITY_URI_ID                 0
+#define LWM2M_SECURITY_BOOTSTRAP_ID           1
+#define LWM2M_SECURITY_SECURITY_ID            2
+#define LWM2M_SECURITY_PUBLIC_KEY_ID          3
+#define LWM2M_SECURITY_SERVER_PUBLIC_KEY_ID   4
+#define LWM2M_SECURITY_SECRET_KEY_ID          5
+#define LWM2M_SECURITY_SMS_SECURITY_ID        6
+#define LWM2M_SECURITY_SMS_KEY_PARAM_ID       7
+#define LWM2M_SECURITY_SMS_SECRET_KEY_ID      8
+#define LWM2M_SECURITY_SMS_SERVER_NUMBER_ID   9
+#define LWM2M_SECURITY_SHORT_SERVER_ID        10
+#define LWM2M_SECURITY_HOLD_OFF_ID            11
+
+/*
+ * Ressource IDs for the LWM2M Server Object
+ */
+#define LWM2M_SERVER_SHORT_ID_ID    0
+#define LWM2M_SERVER_LIFETIME_ID    1
+#define LWM2M_SERVER_MIN_PERIOD_ID  2
+#define LWM2M_SERVER_MAX_PERIOD_ID  3
+#define LWM2M_SERVER_DISABLE_ID     4
+#define LWM2M_SERVER_TIMEOUT_ID     5
+#define LWM2M_SERVER_STORING_ID     6
+#define LWM2M_SERVER_BINDING_ID     7
+#define LWM2M_SERVER_UPDATE_ID      8
+
+#define LWM2M_SECURITY_MODE_PRE_SHARED_KEY  0
+#define LWM2M_SECURITY_MODE_RAW_PUBLIC_KEY  1
+#define LWM2M_SECURITY_MODE_CERTIFICATE     2
+#define LWM2M_SECURITY_MODE_NONE            3
+
 
 /*
  * Utility functions for sorted linked list
@@ -177,6 +223,9 @@ void lwm2m_tlv_free(int size, lwm2m_tlv_t * tlvP);
 
 void lwm2m_tlv_encode_int(int64_t data, lwm2m_tlv_t * tlvP);
 int lwm2m_tlv_decode_int(lwm2m_tlv_t * tlvP, int64_t * dataP);
+void lwm2m_tlv_encode_bool(bool data, lwm2m_tlv_t * tlvP);
+int lwm2m_tlv_decode_bool(lwm2m_tlv_t * tlvP, bool * dataP);
+
 
 /*
  * These utility functions fill the buffer with a TLV record containing
@@ -264,23 +313,6 @@ struct _lwm2m_object_t
 
 typedef enum
 {
-    SEC_NONE = 0,
-    SEC_PRE_SHARED_KEY,
-    SEC_RAW_PUBLIC_KEY,
-    SEC_CERTIFICATE
-} lwm2m_security_mode_t;
-
-typedef struct
-{
-    lwm2m_security_mode_t mode;
-    size_t     publicKeyLength;
-    uint8_t *  publicKey;
-    size_t     privateKeyLength;
-    uint8_t *  privateKey;
-} lwm2m_security_t;
-
-typedef enum
-{
     STATE_UNKNOWN = 0,
     STATE_REG_PENDING,
     STATE_REGISTERED,
@@ -303,22 +335,14 @@ typedef struct _lwm2m_server_
 {
     struct _lwm2m_server_ * next;   // matches lwm2m_list_t::next
     uint16_t          shortID;      // matches lwm2m_list_t::id
-    uint32_t          lifetime;     // lifetime of the registration in sec or 0 if default value (86400 sec)
-    char *            sms;          // SMS MSISDN (phone number) for this server to send SMS
+    uint32_t          lifetime;     // lifetime of the registration in sec or 0 if default value (86400 sec), also used as hold off time for the bootstrap server
     lwm2m_binding_t   binding;      // client connection mode with this server
-    lwm2m_security_t  security;
     void *            sessionH;
     lwm2m_status_t    status;
     char *            location;
     uint16_t          mid;
 } lwm2m_server_t;
 
-typedef struct
-{
-    char *           uri;
-    lwm2m_security_t security;
-    uint32_t         holdOffTime;
-} lwm2m_bootstrap_server_t;
 
 /*
  * LWM2M result callback
@@ -385,8 +409,7 @@ typedef enum
 {
     ENDPOINT_UNKNOWN = 0,
     ENDPOINT_CLIENT,
-    ENDPOINT_SERVER,
-    ENDPOINT_BOOTSTRAP
+    ENDPOINT_SERVER
 } lwm2m_endpoint_type_t;
 
 typedef struct _lwm2m_transaction_ lwm2m_transaction_t;
@@ -440,6 +463,8 @@ typedef struct _lwm2m_observed_
  */
 
 // The session handle MUST uniquely identify a peer.
+typedef void * (*lwm2m_connect_server_callback_t)(uint16_t serverID, void * userData);
+// The session handle MUST uniquely identify a peer.
 typedef uint8_t (*lwm2m_buffer_send_callback_t)(void * sessionH, uint8_t * buffer, size_t length, void * userData);
 
 
@@ -447,28 +472,31 @@ typedef struct
 {
     int    socket;
 #ifdef LWM2M_CLIENT_MODE
-    char * endpointName;
-    lwm2m_bootstrap_server_t * bootstrapServer;
-    lwm2m_server_t *  serverList;
-    lwm2m_object_t ** objectList;
-    uint16_t          numObject;
-    lwm2m_observed_t * observedList;
+    char *              endpointName;
+    lwm2m_binding_t     binding;
+    char *              msisdn;
+    lwm2m_server_t *    bootstrapServerList;
+    lwm2m_server_t *    serverList;
+    lwm2m_object_t **   objectList;
+    uint16_t            numObject;
+    lwm2m_observed_t *  observedList;
 #endif
 #ifdef LWM2M_SERVER_MODE
     lwm2m_client_t *        clientList;
     lwm2m_result_callback_t monitorCallback;
     void *                  monitorUserData;
 #endif
-    uint16_t          nextMID;
-    lwm2m_transaction_t * transactionList;
-    // buffer send callback
-    lwm2m_buffer_send_callback_t bufferSendCallback;
-    void *                       bufferSendUserData;
+    uint16_t                nextMID;
+    lwm2m_transaction_t *   transactionList;
+    // communication layer callbacks
+    lwm2m_connect_server_callback_t connectCallback;
+    lwm2m_buffer_send_callback_t    bufferSendCallback;
+    void *                          userData;
 } lwm2m_context_t;
 
 
-// initialize a liblwm2m context. endpointName, numObject and objectList are ignored for pure servers.
-lwm2m_context_t * lwm2m_init(char * endpointName, uint16_t numObject, lwm2m_object_t * objectList[], lwm2m_buffer_send_callback_t bufferSendCallback, void * bufferSendUserData);
+// initialize a liblwm2m context.
+lwm2m_context_t * lwm2m_init(lwm2m_connect_server_callback_t connectCallback, lwm2m_buffer_send_callback_t bufferSendCallback, void * userData);
 // close a liblwm2m context.
 void lwm2m_close(lwm2m_context_t * contextP);
 
@@ -478,8 +506,10 @@ int lwm2m_step(lwm2m_context_t * contextP, struct timeval * timeoutP);
 void lwm2m_handle_packet(lwm2m_context_t * contextP, uint8_t * buffer, int length, void * fromSessionH);
 
 #ifdef LWM2M_CLIENT_MODE
-void lwm2m_set_bootstrap_server(lwm2m_context_t * contextP, lwm2m_bootstrap_server_t * serverP);
-int lwm2m_add_server(lwm2m_context_t * contextP, uint16_t shortID, uint32_t lifetime, char * sms, lwm2m_binding_t binding, void * sessionH, lwm2m_security_t * securityP);
+// configure the client side with the Endpoint Name, binding, MSISDN (if any) and a list of objects.
+// LWM2M Security Object (ID 0) must be present with either a bootstrap server or a LWM2M server and
+// its matching LWM2M Server Object (ID 1) instance
+int lwm2m_configure(lwm2m_context_t * contextP, char * endpointName, lwm2m_binding_t binding, char * msisdn, uint16_t numObject, lwm2m_object_t * objectList[]);
 
 // send registration message to all known LWM2M Servers.
 int lwm2m_register(lwm2m_context_t * contextP);

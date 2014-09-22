@@ -125,7 +125,7 @@ static void prv_dump_client(lwm2m_client_t * targetP)
     {
         if (objectP->instanceList == NULL)
         {
-            fprintf(stdout, "%d, ", objectP->id);
+            fprintf(stdout, "/%d, ", objectP->id);
         }
         else
         {
@@ -133,7 +133,7 @@ static void prv_dump_client(lwm2m_client_t * targetP)
 
             for (instanceP = objectP->instanceList; instanceP != NULL ; instanceP = instanceP->next)
             {
-                fprintf(stdout, "%d/%d, ", objectP->id, instanceP->id);
+                fprintf(stdout, "/%d/%d, ", objectP->id, instanceP->id);
             }
         }
     }
@@ -711,7 +711,7 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    lwm2mH = lwm2m_init("testlwm2mserver", 0, NULL, prv_buffer_send, NULL);
+    lwm2mH = lwm2m_init(NULL, prv_buffer_send, NULL);
     if (NULL == lwm2mH)
     {
         fprintf(stderr, "lwm2m_init() failed\r\n");
@@ -787,8 +787,11 @@ int main(int argc, char *argv[])
                     connP = connection_find(connList, &addr, addrLen);
                     if (connP == NULL)
                     {
-                        connList = connection_new_incoming(connList, sock, (struct sockaddr *)&addr, addrLen);
-                        connP = connList;
+                        connP = connection_new_incoming(connList, sock, (struct sockaddr *)&addr, addrLen);
+                        if (connP != NULL)
+                        {
+                            connList = connP;
+                        }
                     }
                     if (connP != NULL)
                     {

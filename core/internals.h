@@ -70,10 +70,6 @@
 
 #define LWM2M_MAX_PACKET_SIZE 198
 
-#define LWM2M_SECURITY_OBJECT_ID    0
-#define LWM2M_SERVER_OBJECT_ID      1
-#define LWM2M_ACL_OBJECT_ID         2
-
 #define URI_REGISTRATION_SEGMENT        "rd"
 #define URI_REGISTRATION_SEGMENT_LEN    2
 #define URI_BOOTSTRAP_SEGMENT           "bs"
@@ -111,15 +107,7 @@ coap_status_t object_execute(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, cha
 coap_status_t object_delete(lwm2m_context_t * contextP, lwm2m_uri_t * uriP);
 bool object_isInstanceNew(lwm2m_context_t * contextP, uint16_t objectId, uint16_t instanceId);
 int prv_getRegisterPayload(lwm2m_context_t * contextP, char * buffer, size_t length);
-
-// defined in object_server.c
-coap_status_t object_server_read(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, char ** bufferP, int * lengthP);
-coap_status_t object_server_write(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, char * buffer, int length);
-coap_status_t object_server_execute(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, char * buffer, int length);
-coap_status_t object_server_create(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, char * buffer, int length);
-coap_status_t object_server_delete(lwm2m_context_t * contextP, lwm2m_uri_t * uriP);
-coap_status_t object_security_create(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, char * buffer, int length);
-coap_status_t object_security_delete(lwm2m_context_t * contextP, lwm2m_uri_t * uriP);
+int object_getServers(lwm2m_context_t * contextP);
 
 // defined in transaction.c
 lwm2m_transaction_t * transaction_new(coap_method_t method, lwm2m_uri_t * uriP, uint16_t mID, lwm2m_endpoint_type_t peerType, void * peerP);
@@ -146,5 +134,8 @@ coap_status_t message_send(lwm2m_context_t * contextP, coap_packet_t * message, 
 // defined in observe.c
 void handle_observe_notify(lwm2m_context_t * contextP, void * fromSessionH, coap_packet_t * message);
 void observation_remove(lwm2m_client_t * clientP, lwm2m_observation_t * observationP);
+
+// defined in utils.c
+lwm2m_binding_t lwm2m_stringToBinding(uint8_t *buffer, size_t length);
 
 #endif

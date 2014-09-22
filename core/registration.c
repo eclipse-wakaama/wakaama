@@ -74,6 +74,53 @@
 #define QUERY_VERSION_FULL_LEN  9
 
 #ifdef LWM2M_CLIENT_MODE
+
+static int prv_getRegistrationQuery(lwm2m_context_t * contextP,
+                                    char * buffer,
+                                    size_t length)
+{
+    int index;
+    int res;
+
+    index = snprintf(buffer, length, "?ep=%s", contextP->endpointName);
+    if (index <= 1) return 0;
+
+    if (NULL != contextP->msisdn)
+    {
+        res = snprintf(buffer + index, length - index, QUERY_DELIMITER QUERY_SMS "%s", contextP->msisdn);
+        if (res <= 1) return 0;
+
+        index += res;
+    }
+
+    switch (contextP->binding)
+    {
+    case BINDING_U:
+        res = snprintf(buffer + index, length - index, "&b=U");
+        break;
+    case BINDING_UQ:
+        res = snprintf(buffer + index, length - index, "&b=UQ");
+        break;
+    case BINDING_S:
+        res = snprintf(buffer + index, length - index, "&b=S");
+        break;
+    case BINDING_SQ:
+        res = snprintf(buffer + index, length - index, "&b=SQ");
+        break;
+    case BINDING_US:
+        res = snprintf(buffer + index, length - index, "&b=US");
+        break;
+    case BINDING_UQS:
+        res = snprintf(buffer + index, length - index, "&b=UQS");
+        break;
+    default:
+        res = 0;
+    }
+    if (res <= 1) return 0;
+
+    return index + res;
+}
+
 static void prv_handleRegistrationReply(lwm2m_transaction_t * transacP,
                                         void * message)
 {
@@ -113,81 +160,69 @@ static void prv_handleRegistrationReply(lwm2m_transaction_t * transacP,
     }
 }
 
+#define PRV_QUERY_BUFFER_LENGTH 200
+
 int lwm2m_register(lwm2m_context_t * contextP)
 {
     char query[200];
+    int query_length;
     char payload[512];
     int payload_length;
     lwm2m_server_t * targetP;
-    int remaining;
+    int result;
+
+    result = object_getServers(contextP);
+    if (result != 0) return result;
 
     payload_length = prv_getRegisterPayload(contextP, payload, sizeof(payload));
     if (payload_length == 0) return INTERNAL_SERVER_ERROR_5_00;
 
+    query_length = prv_getRegistrationQuery(contextP, query, sizeof(query));
+    if (query_length == 0) return INTERNAL_SERVER_ERROR_5_00;
+
     targetP = contextP->serverList;
     while (targetP != NULL)
     {
-        remaining = sizeof(query) - snprintf(query,sizeof(query), "?ep=%s",contextP->endpointName);
-        if (remaining <= 1)  return INTERNAL_SERVER_ERROR_5_00;
-
-        if (NULL != targetP->sms) {
-            remaining -= QUERY_SMS_LEN + 1 + strlen(targetP->sms);
-            if (remaining <= 1)  return INTERNAL_SERVER_ERROR_5_00;
-
-            strcat(query, QUERY_DELIMITER);
-            strcat(query, QUERY_SMS);
-            strcat(query, targetP->sms);
-        }
-
-        if (0 != targetP->lifetime) {
-            if (remaining <=17) return INTERNAL_SERVER_ERROR_5_00;
-            char lt[16];
-            remaining -=sprintf(lt,"&lt=%d",targetP->lifetime);
-            strcat(query,lt);
-        }
-
-        switch (targetP->binding) {
-        case BINDING_U:
-            strcat(query,"&b=U");
-            break;
-        case BINDING_UQ:
-            strcat(query,"&b=UQ");
-            break;
-        case BINDING_S:
-            strcat(query,"&b=S");
-            break;
-        case BINDING_SQ:
-            strcat(query,"&b=SQ");
-            break;
-        case BINDING_US:
-            strcat(query,"&b=US");
-            break;
-        case BINDING_UQS:
-            strcat(query,"&b=UQS");
-            break;
-        default:
-            return INTERNAL_SERVER_ERROR_5_00;
-        }
-
         lwm2m_transaction_t * transaction;
 
-        transaction = transaction_new(COAP_POST, NULL, contextP->nextMID++, ENDPOINT_SERVER, (void *)targetP);
-        if (transaction == NULL) return INTERNAL_SERVER_ERROR_5_00;
-
-        coap_set_header_uri_path(transaction->message, "/"URI_REGISTRATION_SEGMENT);
-        coap_set_header_uri_query(transaction->message, query);
-        coap_set_payload(transaction->message, payload, payload_length);
-
-        transaction->callback = prv_handleRegistrationReply;
-        transaction->userData = (void *) contextP;
-
-        contextP->transactionList = (lwm2m_transaction_t *)LWM2M_LIST_ADD(contextP->transactionList, transaction);
-        if (transaction_send(contextP, transaction) == 0)
+        if (0 != targetP->lifetime)
         {
-            targetP->status = STATE_REG_PENDING;
-            targetP->mid = transaction->mID;
+            if (snprintf(query + query_length,
+                         PRV_QUERY_BUFFER_LENGTH - query_length,
+                         QUERY_DELIMITER QUERY_LIFETIME "%d",
+                         targetP->lifetime) <= 0)
+            {
+                return INTERNAL_SERVER_ERROR_5_00;
+            }
         }
 
+        if (targetP->sessionH == NULL)
+        {
+            targetP->sessionH = contextP->connectCallback(targetP->shortID, contextP->userData);
+        }
+
+        if (targetP->sessionH != NULL)
+        {
+            transaction = transaction_new(COAP_POST, NULL, contextP->nextMID++, ENDPOINT_SERVER, (void *)targetP);
+            if (transaction == NULL) return INTERNAL_SERVER_ERROR_5_00;
+
+            coap_set_header_uri_path(transaction->message, "/"URI_REGISTRATION_SEGMENT);
+            coap_set_header_uri_query(transaction->message, query);
+            coap_set_payload(transaction->message, payload, payload_length);
+
+            transaction->callback = prv_handleRegistrationReply;
+            transaction->userData = (void *) contextP;
+
+            contextP->transactionList = (lwm2m_transaction_t *)LWM2M_LIST_ADD(contextP->transactionList, transaction);
+            if (transaction_send(contextP, transaction) == 0)
+            {
+                targetP->status = STATE_REG_PENDING;
+                targetP->mid = transaction->mID;
+            }
+        }
+
+        // remove the lifetime information for the next server
+        query[query_length] = 0;
         targetP = targetP->next;
     }
     return 0;
@@ -403,34 +438,7 @@ static int prv_getParameters(multi_option_t * query,
             if (*bindingP != BINDING_UNKNOWN) goto error;
             if (query->len == QUERY_BINDING_LEN) goto error;
 
-            if (strncmp(query->data + QUERY_BINDING_LEN, "U", query->len - QUERY_BINDING_LEN) == 0)
-            {
-                *bindingP = BINDING_U;
-            }
-            else if (strncmp(query->data + QUERY_BINDING_LEN, "UQ", query->len - QUERY_BINDING_LEN) == 0)
-            {
-                *bindingP = BINDING_UQ;
-            }
-            else if (strncmp(query->data + QUERY_BINDING_LEN, "S", query->len - QUERY_BINDING_LEN) == 0)
-            {
-                *bindingP = BINDING_S;
-            }
-            else if (strncmp(query->data + QUERY_BINDING_LEN, "SQ", query->len - QUERY_BINDING_LEN) == 0)
-            {
-                *bindingP = BINDING_SQ;
-            }
-            else if (strncmp(query->data + QUERY_BINDING_LEN, "US", query->len - QUERY_BINDING_LEN) == 0)
-            {
-                *bindingP = BINDING_UQ;
-            }
-            else if (strncmp(query->data + QUERY_BINDING_LEN, "UQS", query->len - QUERY_BINDING_LEN) == 0)
-            {
-                *bindingP = BINDING_UQ;
-            }
-            else
-            {
-                goto error;
-            }
+            *bindingP = lwm2m_stringToBinding(query->data + QUERY_BINDING_LEN, query->len - QUERY_BINDING_LEN);
         }
         query = query->next;
     }
