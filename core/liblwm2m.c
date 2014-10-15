@@ -293,6 +293,9 @@ int lwm2m_step(lwm2m_context_t * contextP,
 
         transacP = nextP;
     }
+#ifdef LWM2M_CLIENT_MODE
+    lwm2m_update_registrations(contextP,tv.tv_sec);
+#endif
 
 #ifdef LWM2M_SERVER_MODE
     // monitor clients lifetime

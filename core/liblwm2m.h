@@ -336,6 +336,7 @@ typedef struct _lwm2m_server_
     struct _lwm2m_server_ * next;   // matches lwm2m_list_t::next
     uint16_t          shortID;      // matches lwm2m_list_t::id
     uint32_t          lifetime;     // lifetime of the registration in sec or 0 if default value (86400 sec), also used as hold off time for the bootstrap server
+    uint32_t          registration; // date of the last registration in sec
     lwm2m_binding_t   binding;      // client connection mode with this server
     void *            sessionH;
     lwm2m_status_t    status;
@@ -514,10 +515,12 @@ int lwm2m_configure(lwm2m_context_t * contextP, char * endpointName, lwm2m_bindi
 // send registration message to all known LWM2M Servers.
 int lwm2m_register(lwm2m_context_t * contextP);
 
+// check if the server registrations are outdated and needs to be renewed
+int lwm2m_update_registrations(lwm2m_context_t * contextP, uint32_t currentTime);
+
 // send a registration update to the server specified by the server short identifier
 int lwm2m_update_registration(lwm2m_context_t * contextP, uint16_t shortServerID);
 
-// inform liblwm2m that a resource value has changed.
 void lwm2m_resource_value_changed(lwm2m_context_t * contextP, lwm2m_uri_t * uriP);
 #endif
 
