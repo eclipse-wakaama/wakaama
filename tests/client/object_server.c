@@ -13,6 +13,7 @@
  * Contributors:
  *    David Navarro, Intel Corporation - initial API and implementation
  *    Julien Vermillard, Sierra Wireless
+ *    Joerg Hubschneider - Please refer to git log
  *    
  *******************************************************************************/
 
@@ -260,7 +261,7 @@ static uint8_t prv_server_execute(uint16_t instanceId,
     case LWM2M_SERVER_DISABLE_ID:
         return COAP_404_NOT_FOUND;
     case LWM2M_SERVER_UPDATE_ID:
-        return COAP_501_NOT_IMPLEMENTED;
+        return COAP_501_NOT_IMPLEMENTED;    //TODO
     default:
         return COAP_405_METHOD_NOT_ALLOWED;
     }
@@ -321,7 +322,8 @@ static void prv_server_close(lwm2m_object_t * objectP)
     }
 }
 
-lwm2m_object_t * get_server_object()
+lwm2m_object_t * get_server_object(int serverId, const char* binding, 
+                                   int lifetime, bool storing)
 {
     lwm2m_object_t * serverObj;
 
@@ -345,10 +347,15 @@ lwm2m_object_t * get_server_object()
 
         memset(targetP, 0, sizeof(server_instance_t));
         targetP->instanceId = 0;
-        targetP->shortServerId = 123;
-        targetP->lifetime = 300;
-        targetP->storing = false;
-        targetP->binding[0] = 'U';
+        targetP->shortServerId = serverId;
+        targetP->lifetime = lifetime;
+        targetP->storing = storing;
+        memcpy (targetP->binding, binding, strlen(binding)+1);
+
+//JH-        targetP->shortServerId = 123;
+//JH-        targetP->lifetime = 300;
+//JH-        targetP->storing = false;
+//JH-        targetP->binding[0] = 'U';
 
         serverObj->instanceList = LWM2M_LIST_ADD(serverObj->instanceList, targetP);
 
