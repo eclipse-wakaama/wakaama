@@ -25,8 +25,8 @@
 #include <sys/socket.h>
 #include <sys/stat.h>
 
-#define LWM2M_STANDARD_PORT_STR "5684"
-#define LWM2M_STANDARD_PORT      5684
+#define LWM2M_STANDARD_PORT_STR "5683"
+#define LWM2M_STANDARD_PORT      5683
 
 typedef struct _connection_t
 {

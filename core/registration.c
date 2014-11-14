@@ -18,6 +18,7 @@
  *    Toby Jaffey - Please refer to git log
  *    Manuel Sangoi - Please refer to git log
  *    Julien Vermillard - Please refer to git log
+ *    Joerg Hubschneider - Please refer to git log
  *
  *******************************************************************************/
 
@@ -336,13 +337,27 @@ int lwm2m_update_registrations(lwm2m_context_t * contextP, uint32_t currentTime)
             case STATE_REGISTERED:
                 if (targetP->registration + targetP->lifetime/2 <= currentTime)
                 {
+                    //printf("lwm2m_update_registrations: update registration\n");
                     prv_update_registration(contextP, targetP);
                 }
-            break;
+                break;
             case STATE_UNKNOWN:
-                // TOOD: is it disabled?
+                // TODO: is it disabled?
+                //printf("lwm2m_update_registrations: register!!\n");
                 prv_register(contextP, targetP);
-            break;
+                break;
+            case STATE_REG_PENDING:
+                //printf("lwm2m_update_registrations Reg-Status: REG_PENDING\n"); 
+                break;
+            case STATE_REG_UPDATE_PENDING:
+                //printf("lwm2m_update_registrations Reg-Status: REG_UPDATE_PENDING"); 
+                //printf( ... do re-register!!\n");
+                // TODO: is it disabled?
+                prv_register(contextP, targetP);
+                break;
+            case STATE_DEREG_PENDING:
+                //printf("lwm2m_update_registrations Reg-Status: DEREG_PENDING\n"); 
+                break;
         }
         targetP = targetP->next;
     }

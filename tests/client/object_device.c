@@ -15,6 +15,7 @@
  *    domedambrosio - Please refer to git log
  *    Fabien Fleutot - Please refer to git log
  *    Axel Lorente - Please refer to git log
+ *    Joerg Hubschneider - Please refer to git log
  *    
  *******************************************************************************/
 
@@ -63,7 +64,7 @@
 
 #define PRV_MANUFACTURER      "Open Mobile Alliance"
 #define PRV_MODEL_NUMBER      "Lightweight M2M Client"
-#define PRV_SERIAL_NUMBER     "345000123"
+#define PRV_SERIAL_NUMBER     "345000124"
 #define PRV_FIRMWARE_VERSION  "1.0"
 #define PRV_POWER_SOURCE_1    1
 #define PRV_POWER_SOURCE_2    5
@@ -74,6 +75,7 @@
 #define PRV_BATTERY_LEVEL     100
 #define PRV_MEMORY_FREE       15
 #define PRV_ERROR_CODE        0
+#define PRV_TIME_ZONE         "Europe/Berlin"
 #define PRV_BINDING_MODE      "U"
 
 #define PRV_OFFSET_MAXLEN   7 //+HH:MM\0 at max
@@ -284,17 +286,34 @@ static uint8_t prv_set_value(lwm2m_tlv_t * tlvP,
         else return COAP_500_INTERNAL_SERVER_ERROR;
 
     case 11:
-        lwm2m_tlv_encode_int(PRV_ERROR_CODE, tlvP);
-        tlvP->type = LWM2M_TYPE_RESSOURCE;
+    {
+        lwm2m_tlv_t * subTlvP;
 
-        if (0 != tlvP->length) return COAP_205_CONTENT;
-        else return COAP_500_INTERNAL_SERVER_ERROR;
+        subTlvP = lwm2m_tlv_new(1);
 
+        subTlvP[0].flags = 0;
+        subTlvP[0].id = 0;
+        subTlvP[0].type = LWM2M_TYPE_RESSOURCE_INSTANCE;
+        lwm2m_tlv_encode_int(PRV_ERROR_CODE, subTlvP);
+        if (0 == subTlvP[0].length)
+        {
+            lwm2m_tlv_free(2, subTlvP);
+            return COAP_500_INTERNAL_SERVER_ERROR;
+        }
+
+        tlvP->flags = 0;
+        tlvP->type = LWM2M_TYPE_MULTIPLE_RESSOURCE;
+        tlvP->length = 1;
+        tlvP->value = (uint8_t *)subTlvP;
+
+        return COAP_205_CONTENT;
+    }        
     case 12:
         return COAP_405_METHOD_NOT_ALLOWED;
 
     case 13:
-        lwm2m_tlv_encode_int(devDataP->time, tlvP);
+        lwm2m_tlv_encode_int(time(NULL), tlvP);
+//JH-        lwm2m_tlv_encode_int(devDataP->time, tlvP);
         tlvP->type = LWM2M_TYPE_RESSOURCE;
 
         if (0 != tlvP->length) return COAP_205_CONTENT;
@@ -308,6 +327,13 @@ static uint8_t prv_set_value(lwm2m_tlv_t * tlvP,
         return COAP_205_CONTENT;
 
     case 15:
+        tlvP->value  = PRV_TIME_ZONE;
+        tlvP->length = strlen(PRV_TIME_ZONE);
+        tlvP->flags  = LWM2M_TLV_FLAG_STATIC_DATA;
+        tlvP->type   = LWM2M_TYPE_RESSOURCE;
+        return COAP_205_CONTENT;
+      
+    case 16:
         tlvP->value = PRV_BINDING_MODE;
         tlvP->length = strlen(PRV_BINDING_MODE);
         tlvP->flags = LWM2M_TLV_FLAG_STATIC_DATA;
@@ -477,7 +503,7 @@ lwm2m_object_t * get_object_device()
         if (NULL != deviceObj->userData)
         {
             ((device_data_t*)deviceObj->userData)->time = 1367491215;
-            strcpy(((device_data_t*)deviceObj->userData)->time_offset, "+02:00");
+            strcpy(((device_data_t*)deviceObj->userData)->time_offset, "+01:00");
         }
         else
         {
