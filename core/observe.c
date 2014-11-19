@@ -259,43 +259,121 @@ void cancel_observe(lwm2m_context_t * contextP,
     }
 }
 
+void lwm2m_sendNotification(lwm2m_context_t * contextP, lwm2m_watcher_t * watcherP, lwm2m_uri_t * uriP) {
+  char * buffer = NULL;
+  int length = 0;
+  coap_status_t result;
+  coap_packet_t message[1];
+
+  result = object_read(contextP, uriP, &buffer, &length);
+  if (result == COAP_205_CONTENT) {
+    coap_init_message(message, COAP_TYPE_NON, COAP_204_CHANGED, 0);
+    coap_set_payload(message, buffer, length);
+
+    watcherP->lastMid = contextP->nextMID++;
+    message->mid = watcherP->lastMid;
+    // if (!LWM2M_URI_IS_SET_RESOURCE(uriP)) {                       //JH+ leshan awaits content-type in case of a object instance notification
+    //   //ToDo: at the moment TLV is default for object instance!  //JH+
+    //   coap_set_header_content_type(message, VND_OMA_LWM2M_TLV);  //JH+ new pre-IANA enums see: er_coap_13.h
+    // }                                                            //JH+
+    coap_set_header_token(message, watcherP->token, watcherP->tokenLen);
+    coap_set_header_observe(message, watcherP->counter++);
+    (void)message_send(contextP, message, watcherP->server->sessionH);
+  }
+  lwm2m_free(buffer);
+}
+
+time_t lwm2m_notify(lwm2m_context_t * contextP, struct timeval * tv) {
+    lwm2m_observed_t * observedP;
+    lwm2m_attribute_data_t * attributeData;
+    time_t nextTransmission = 0;
+    
+    observedP = contextP->observedList;
+
+    while (observedP != NULL)
+    {
+        lwm2m_watcher_t * watcherP = observedP->watcherList;
+        while (watcherP != NULL) {
+          attributeData = lwm2m_getAttributes(watcherP->server, &(observedP->uri));
+          if(attributeData != NULL) {
+              // check if update needed or schedule next transmission
+              if((attributeData->nextTransmission > 0) && (tv->tv_sec >= attributeData->nextTransmission)) {
+                // send data
+                lwm2m_sendNotification(contextP, watcherP, &(observedP->uri));
+                lwm2m_updateTransmissionAttributes(watcherP->server,&(observedP->uri),tv);
+              }
+              if(nextTransmission == 0) {
+                nextTransmission = attributeData->nextTransmission;
+              } else if (attributeData->nextTransmission < nextTransmission) {
+                nextTransmission = attributeData->nextTransmission;
+              }
+           }
+           watcherP = watcherP->next; 
+        }
+        observedP = observedP->next;
+    }
+    
+    return(nextTransmission);
+}
+
 void lwm2m_resource_value_changed(lwm2m_context_t * contextP,
                                   lwm2m_uri_t * uriP)
 {
-    int result;
     obs_list_t * listP;
     lwm2m_watcher_t * watcherP;
+    lwm2m_attribute_data_t * attributeData;
+    struct timeval tv;
 
     listP = prv_getObservedList(contextP, uriP);
     while (listP != NULL)
     {
-        obs_list_t * targetP;
-        char * buffer = NULL;
-        int length = 0;
-
-        result = object_read(contextP, &listP->item->uri, &buffer, &length);
-        if (result == COAP_205_CONTENT)
-        {
-            coap_packet_t message[1];
-
-            coap_init_message(message, COAP_TYPE_NON, COAP_204_CHANGED, 0);
-            coap_set_payload(message, buffer, length);
-
-            for (watcherP = listP->item->watcherList ; watcherP != NULL ; watcherP = watcherP->next)
-            {
-                watcherP->lastMid = contextP->nextMID++;
-                message->mid = watcherP->lastMid;
-                coap_set_header_token(message, watcherP->token, watcherP->tokenLen);
-                coap_set_header_observe(message, watcherP->counter++);
-                (void)message_send(contextP, message, watcherP->server->sessionH);
-            }
+      obs_list_t * targetP;
+      char * buffer = NULL;
+      int length = 0;
+      coap_status_t result;
+      uint32_t value;
+        
+      result = object_read(contextP, &(listP->item->uri), &buffer, &length); 
+      if (result == COAP_205_CONTENT) { 
+        for (watcherP = listP->item->watcherList ; watcherP != NULL ; watcherP = watcherP->next) {
+          lwm2m_gettimeofday(&tv, NULL);
+          attributeData = lwm2m_getAttributes(watcherP->server, &(listP->item->uri));
+          if(NULL != attributeData) {
+            char * endptr;
+           
+             // check integer value, greater then, less then and step attribute
+             value = (uint32_t) strtol(buffer,&endptr,0);
+             if(endptr != buffer) {
+               // data is valid, compare against greater/less threshold
+               if(((attributeData->greaterThen != 0) && (attributeData->oldValue <= attributeData->greaterThen) && (value > attributeData->greaterThen)) ||
+                  ((attributeData->lessThen != 0) && (attributeData->oldValue >= attributeData->lessThen) && (value < attributeData->lessThen)) || 
+                  ((attributeData->step != 0) && (abs(attributeData->oldValue - value) > attributeData->step)) ||
+                  ((attributeData->step == 0) && (attributeData->lessThen == 0) && (attributeData->greaterThen == 0))) {
+                 // send data or schedule transmission
+               } else {
+                 goto next;
+               }
+             }
+             // check if min period is elapsed
+             if((attributeData->lastTransmission + attributeData->minPeriod) > tv.tv_sec) {
+               // schedule transmission after min period is elapsed
+               attributeData->nextTransmission = attributeData->lastTransmission + attributeData->minPeriod;
+               goto next;
+             }
+          }
+          lwm2m_sendNotification(contextP, watcherP, &(listP->item->uri));
+          lwm2m_updateTransmissionAttributes(watcherP->server, &(listP->item->uri), &tv);
+          next:
+          if(NULL != attributeData) {
+            attributeData->oldValue = value;
+          }
         }
-
-        targetP = listP;
-        listP = listP->next;
-        lwm2m_free(targetP);
+      }
+      lwm2m_free(buffer);
+      targetP = listP;
+      listP = listP->next;
+      lwm2m_free(targetP);
     }
-
 }
 #endif
 

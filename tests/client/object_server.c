@@ -346,7 +346,7 @@ lwm2m_object_t * get_server_object()
         memset(targetP, 0, sizeof(server_instance_t));
         targetP->instanceId = 0;
         targetP->shortServerId = 123;
-        targetP->lifetime = 300;
+        targetP->lifetime = 60;
         targetP->storing = false;
         targetP->binding[0] = 'U';
 

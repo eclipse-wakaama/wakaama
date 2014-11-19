@@ -124,13 +124,14 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
         break;
     case COAP_PUT:
         {
-            if (LWM2M_URI_IS_SET_INSTANCE(uriP))
-            {
-                result = object_write(contextP, uriP, message->payload, message->payload_len);
+            if(message->payload != NULL) {
+              if (LWM2M_URI_IS_SET_INSTANCE(uriP) && LWM2M_URI_IS_SET_RESOURCE(uriP))
+              {
+                result = object_write(contextP, uriP, (char *)message->payload, message->payload_len);
+              }
             }
-            else
-            {
-                result = BAD_REQUEST_4_00;
+            if(message->uri_query != NULL) {
+              result = object_attrib(contextP, uriP, message->uri_query, fromSessionH);
             }
         }
         break;
@@ -221,6 +222,7 @@ static int prv_make_operation(lwm2m_context_t * contextP,
                               coap_method_t method,
                               char * buffer,
                               int length,
+                              char * uriQuery,
                               lwm2m_result_callback_t callback,
                               void * userData)
 {
@@ -238,6 +240,11 @@ static int prv_make_operation(lwm2m_context_t * contextP,
     {
         // TODO: Take care of fragmentation
         coap_set_payload(transaction->message, buffer, length);
+    }
+    
+    if (uriQuery != NULL)
+    {
+        coap_set_header_uri_query(transaction->message, uriQuery);
     }
 
     if (callback != NULL)
@@ -268,7 +275,7 @@ int lwm2m_dm_read(lwm2m_context_t * contextP,
                   void * userData)
 {
     return prv_make_operation(contextP, clientID, uriP,
-                              COAP_GET, NULL, 0,
+                              COAP_GET, NULL, 0, NULL,
                               callback, userData);
 }
 
@@ -289,15 +296,35 @@ int lwm2m_dm_write(lwm2m_context_t * contextP,
     if (LWM2M_URI_IS_SET_RESOURCE(uriP))
     {
         return prv_make_operation(contextP, clientID, uriP,
-                                  COAP_PUT, buffer, length,
+                                  COAP_PUT, buffer, length, NULL,
                                   callback, userData);
     }
     else
     {
         return prv_make_operation(contextP, clientID, uriP,
-                                  COAP_POST, buffer, length,
+                                  COAP_POST, buffer, length, NULL,
                                   callback, userData);
     }
+}
+
+int lwm2m_dm_attribute(lwm2m_context_t * contextP,
+                   uint16_t clientID,
+                   lwm2m_uri_t * uriP,
+                   char * buffer,
+                   int length,
+                   lwm2m_result_callback_t callback,
+                   void * userData)
+{
+/// TODO (wa20341#1#): allow attribute write for object/instance/resource
+    if (!LWM2M_URI_IS_SET_INSTANCE(uriP)
+     || length == 0)
+    {
+        return COAP_400_BAD_REQUEST;
+    }
+
+    return prv_make_operation(contextP, clientID, uriP,
+                              COAP_PUT, NULL, 0, buffer,
+                              callback, userData);
 }
 
 int lwm2m_dm_execute(lwm2m_context_t * contextP,
@@ -314,7 +341,7 @@ int lwm2m_dm_execute(lwm2m_context_t * contextP,
     }
 
     return prv_make_operation(contextP, clientID, uriP,
-                              COAP_POST, buffer, length,
+                              COAP_POST, buffer, length, NULL,
                               callback, userData);
 }
 
@@ -333,7 +360,7 @@ int lwm2m_dm_create(lwm2m_context_t * contextP,
     }
 
     return prv_make_operation(contextP, clientID, uriP,
-                              COAP_POST, buffer, length,
+                              COAP_POST, buffer, length, NULL,
                               callback, userData);
 }
 
@@ -350,7 +377,7 @@ int lwm2m_dm_delete(lwm2m_context_t * contextP,
     }
 
     return prv_make_operation(contextP, clientID, uriP,
-                              COAP_DELETE, NULL, 0,
+                              COAP_DELETE, NULL, 0, NULL,
                               callback, userData);
 }
 #endif

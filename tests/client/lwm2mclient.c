@@ -209,6 +209,7 @@ static void prv_output_servers(char * buffer,
 static void prv_change(char * buffer,
                        void * user_data)
 {
+
     lwm2m_context_t * lwm2mH = (lwm2m_context_t *) user_data;
     lwm2m_uri_t uri;
     int result;
@@ -450,7 +451,7 @@ int main(int argc, char *argv[])
         FD_SET(data.sock, &readfds);
         FD_SET(STDIN_FILENO, &readfds);
 
-        tv.tv_sec = 60;
+        tv.tv_sec = 5;
         tv.tv_usec = 0;
 
         /*

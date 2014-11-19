@@ -358,6 +358,38 @@ static uint8_t prv_device_read(uint16_t instanceId,
     return result;
 }
 
+static uint8_t prv_device_attribute(lwm2m_context_t * contextP, lwm2m_uri_t * uriP,
+                                lwm2m_attribute_type_t type,
+                                uint32_t value,
+                                lwm2m_object_t * objectP,  lwm2m_server_t * serverP)
+{
+    // this is a single instance object
+    if (LWM2M_URI_IS_SET_INSTANCE(uriP) && uriP->instanceId != 0)
+    {
+        return COAP_404_NOT_FOUND;
+    }
+
+    if (!LWM2M_URI_IS_SET_RESOURCE(uriP)) return COAP_501_NOT_IMPLEMENTED;
+
+    switch (uriP->resourceId)
+    {
+    case 9:
+        if (1 == lwm2m_setAttributes(contextP,uriP,type,value,objectP,serverP)){
+          return COAP_204_CHANGED;
+        } else {
+          return COAP_400_BAD_REQUEST;
+        }
+    case 13:
+        if (1 == lwm2m_setAttributes(contextP,uriP,type,value,objectP,serverP)){
+          return COAP_204_CHANGED;
+        } else {
+          return COAP_400_BAD_REQUEST;
+        }
+    default:
+        return COAP_405_METHOD_NOT_ALLOWED;
+    }
+}
+
 static uint8_t prv_device_write(uint16_t instanceId,
                                 int numData,
                                 lwm2m_tlv_t * dataArray,
@@ -469,6 +501,7 @@ lwm2m_object_t * get_object_device()
         deviceObj->readFunc = prv_device_read;
         deviceObj->writeFunc = prv_device_write;
         deviceObj->executeFunc = prv_device_execute;
+        deviceObj->attribFunc = prv_device_attribute;
         deviceObj->userData = malloc(sizeof(device_data_t));
 
         /*

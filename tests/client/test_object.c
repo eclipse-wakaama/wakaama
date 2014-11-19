@@ -156,6 +156,33 @@ static uint8_t prv_read(uint16_t instanceId,
     return COAP_205_CONTENT;
 }
 
+static uint8_t prv_attribute(lwm2m_context_t * contextP, lwm2m_uri_t * uriP,
+                                lwm2m_attribute_type_t type,
+                                uint32_t value,
+                                lwm2m_object_t * objectP,  lwm2m_server_t * serverP)
+{
+    // this is a single instance object
+    if (LWM2M_URI_IS_SET_INSTANCE(uriP) && uriP->instanceId < 10
+        || LWM2M_URI_IS_SET_INSTANCE(uriP) && uriP->instanceId > 12)
+    {
+        return COAP_404_NOT_FOUND;
+    }
+
+    if (!LWM2M_URI_IS_SET_RESOURCE(uriP)) return COAP_501_NOT_IMPLEMENTED;
+
+    switch (uriP->resourceId)
+    {
+    case 1:
+        if (1 == lwm2m_setAttributes(contextP,uriP,type,value,objectP,serverP)){
+          return COAP_204_CHANGED;
+        } else {
+          return COAP_400_BAD_REQUEST;
+        }
+    default:
+        return COAP_405_METHOD_NOT_ALLOWED;
+    }
+}
+
 static uint8_t prv_write(uint16_t instanceId,
                          int numData,
                          lwm2m_tlv_t * dataArray,
@@ -283,6 +310,7 @@ lwm2m_object_t * get_test_object()
         testObj->createFunc = prv_create;
         testObj->deleteFunc = prv_delete;
         testObj->executeFunc = prv_exec;
+        testObj->attribFunc = prv_attribute;
     }
 
     return testObj;

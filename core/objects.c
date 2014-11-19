@@ -183,6 +183,93 @@ coap_status_t object_read(lwm2m_context_t * contextP,
     return result;
 }
 
+coap_status_t object_attrib(lwm2m_context_t * contextP,
+                           lwm2m_uri_t * uriP,
+                            multi_option_t * uri_query,
+                            void * fromSessionH )
+{
+    lwm2m_object_t * targetP;
+    multi_option_t * queryEntry;
+    coap_status_t status = BAD_REQUEST_4_00;
+    lwm2m_attribute_type_t type;
+    uint32_t value;
+    char valueString[10];
+    lwm2m_server_t * serverP;
+
+    if (0 == (uriP->flag & LWM2M_URI_FLAG_INSTANCE_ID))   // TODO: remove this, attributes are allowed for object/instance/resource
+    {
+        return BAD_REQUEST_4_00;
+    }
+
+    targetP = prv_find_object(contextP, uriP->objectId);
+
+    if (NULL == targetP)
+    {
+        return NOT_FOUND_4_04;
+    }
+    if (NULL == targetP->attribFunc)
+    {
+        return METHOD_NOT_ALLOWED_4_05;
+    }
+    
+    queryEntry = uri_query;
+    while(queryEntry != NULL) {
+      // check if cancel is send
+      if(0 == strncmp(queryEntry->data, "cancel", queryEntry->len)) {
+        type = ATTRIBUTE_CANCEL;
+        value = 0;
+      } else {
+        int i;
+        // extract key/value
+        // find '=' character
+        for(i=0;i<queryEntry->len;i++) {
+          if(queryEntry->data[i] == '=') {
+            // extract type
+            if(0 == strncmp(queryEntry->data, "pmin", i)) {
+              type = ATTRIBUTE_MIN_PERIOD;
+              break;
+            } else if (0 == strncmp(queryEntry->data, "pmax", i)) {
+              type = ATTRIBUTE_MAX_PERIOD;
+              break;
+            } else if (0 == strncmp(queryEntry->data, "gt", i)) {
+              type = ATTRIBUTE_GREATER_THEN;
+              break;
+            } else if (0 == strncmp(queryEntry->data, "lt", i)) {
+              type = ATTRIBUTE_LESS_THEN;
+              break;
+            } else if (0 == strncmp(queryEntry->data, "st", i)) {
+              type = ATTRIBUTE_STEP;
+              break;
+            } else {
+              return BAD_REQUEST_4_00;
+            }
+          }
+        }
+        // build a string from the value
+        memcpy(valueString,&queryEntry->data[i+1],queryEntry->len-(i+1));
+        // add endmarker
+        valueString[queryEntry->len-(i+1)] = 0x00;
+        value = (uint32_t) strtol(valueString,NULL,0);
+      }
+      
+      // find attribute list for server instance
+      serverP = contextP->serverList;
+      while(serverP != NULL) {
+         if(fromSessionH == serverP->sessionH) {
+           break;
+         } else {
+           serverP = serverP->next;
+         }
+      } 
+      if(serverP != NULL) {
+        status = targetP->attribFunc(contextP, uriP, type, value, targetP, serverP);
+      }
+      queryEntry = queryEntry->next;
+    }
+    
+    return status; 
+}
+
 coap_status_t object_write(lwm2m_context_t * contextP,
                            lwm2m_uri_t * uriP,
                            char * buffer,

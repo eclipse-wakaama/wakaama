@@ -102,6 +102,7 @@ lwm2m_uri_t * lwm2m_decode_uri(multi_option_t *uriPath);
 // defined in objects.c
 coap_status_t object_read(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, char ** bufferP, int * lengthP);
 coap_status_t object_write(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, char * buffer, int length);
+coap_status_t object_attrib(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, multi_option_t * uri_query, void * fromSessionH);
 coap_status_t object_create(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, char * buffer, int length);
 coap_status_t object_execute(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, char * buffer, int length);
 coap_status_t object_delete(lwm2m_context_t * contextP, lwm2m_uri_t * uriP);
@@ -137,5 +138,9 @@ void observation_remove(lwm2m_client_t * clientP, lwm2m_observation_t * observat
 
 // defined in utils.c
 lwm2m_binding_t lwm2m_stringToBinding(uint8_t *buffer, size_t length);
+
+// defined in attributes.c
+lwm2m_attribute_data_t * lwm2m_getAttributes(lwm2m_server_t * serverP, lwm2m_uri_t * uriP);
+void lwm2m_updateTransmissionAttributes(lwm2m_server_t * serverP, lwm2m_uri_t * uriP, struct timeval *tv);
 
 #endif

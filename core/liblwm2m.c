@@ -254,6 +254,7 @@ int lwm2m_step(lwm2m_context_t * contextP,
 {
     lwm2m_transaction_t * transacP;
     struct timeval tv;
+    time_t interval;
 #ifdef LWM2M_SERVER_MODE
     lwm2m_client_t * clientP;
 #endif
@@ -274,8 +275,6 @@ int lwm2m_step(lwm2m_context_t * contextP,
 
         if (0 == removed)
         {
-            time_t interval;
-
             if (transacP->retrans_time > tv.tv_sec)
             {
                 interval = transacP->retrans_time - tv.tv_sec;
@@ -295,6 +294,12 @@ int lwm2m_step(lwm2m_context_t * contextP,
     }
 #ifdef LWM2M_CLIENT_MODE
     lwm2m_update_registrations(contextP,tv.tv_sec);
+    
+    // handle the notification from observed objects,instances, resources
+    interval = lwm2m_notify(contextP, &tv) - tv.tv_sec;
+    if ((interval > 0) && (timeoutP->tv_sec > interval)) {
+      timeoutP->tv_sec = interval;
+    }
 #endif
 
 #ifdef LWM2M_SERVER_MODE
