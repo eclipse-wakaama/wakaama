@@ -345,10 +345,10 @@ void lwm2m_resource_value_changed(lwm2m_context_t * contextP,
              value = (uint32_t) strtol(buffer,&endptr,0);
              if(endptr != buffer) {
                // data is valid, compare against greater/less threshold
-               if(((attributeData->greaterThen != 0) && (attributeData->oldValue <= attributeData->greaterThen) && (value > attributeData->greaterThen)) ||
-                  ((attributeData->lessThen != 0) && (attributeData->oldValue >= attributeData->lessThen) && (value < attributeData->lessThen)) || 
+               if(((attributeData->greaterThan != 0) && (attributeData->oldValue <= attributeData->greaterThan) && (value > attributeData->greaterThan)) ||
+                  ((attributeData->lessThan != 0) && (attributeData->oldValue >= attributeData->lessThan) && (value < attributeData->lessThan)) || 
                   ((attributeData->step != 0) && (abs(attributeData->oldValue - value) > attributeData->step)) ||
-                  ((attributeData->step == 0) && (attributeData->lessThen == 0) && (attributeData->greaterThen == 0))) {
+                  ((attributeData->step == 0) && (attributeData->lessThan == 0) && (attributeData->greaterThan == 0))) {
                  // send data or schedule transmission
                } else {
                  goto next;

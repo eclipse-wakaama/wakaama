@@ -90,10 +90,10 @@ int lwm2m_setAttributes(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_at
         break;
       }
       case ATTRIBUTE_GREATER_THEN:
-          attributeP->greaterThen = value;
+          attributeP->greaterThan = value;
         break;
       case ATTRIBUTE_LESS_THEN:
-          attributeP->lessThen = value;
+          attributeP->lessThan = value;
         break;
       case ATTRIBUTE_STEP:
           attributeP->step = value;

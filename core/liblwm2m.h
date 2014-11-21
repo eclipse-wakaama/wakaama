@@ -289,10 +289,10 @@ typedef struct _attribute_data_ {
   time_t lastTransmission;  /**< holds the time stamp of the last transmission of this object, instance or resource */
   time_t nextTransmission;  /**< holds the time for the next scheduled transmission */
   lwm2m_uri_t uri;          /**< holds the URI of the object/instance/resource the attributes are valid for */
-  uint32_t minPeriod;       /**< minimal update period, the object/instance/resource must not be sent more frequent */
+  uint32_t minPeriod;       /**< minimal update period in seconds, the object/instance/resource must not be sent more frequent */
   uint32_t maxPeriod;       /**< maximum update period, the object/instance/resource must be sent at least after this period, even if no change happend */
-  uint32_t greaterThen;     /**< the resource has to be sent if this threshold is reached */
-  uint32_t lessThen;        /**< the resource has to be sent if this threshold is underrun */
+  uint32_t greaterThan;     /**< the resource has to be sent if this threshold is reached */
+  uint32_t lessThan;        /**< the resource has to be sent if this threshold is underrun */
   uint32_t step;            /**< the resource has to be sent if it is changed by the given step */
   uint32_t oldValue;        /**< holds the last sent value of the resource if the resource is a numerical resource */
 } lwm2m_attribute_data_t;
