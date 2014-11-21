@@ -124,8 +124,8 @@ static void * prv_connect_server(uint16_t serverID,
     if (uri == NULL) return NULL;
 
     // parse uri in the form "coaps://[host]:[port]"
-    if (0 != strncmp(uri, "coaps://", strlen("coaps://"))) goto exit;
-    host = uri + strlen("coaps://");
+    if (0 != strncmp(uri, "coap://", strlen("coap://"))) goto exit;
+    host = uri + strlen("coap://");
     portStr = strchr(host, ':');
     if (portStr == NULL) goto exit;
     // split strings
@@ -337,7 +337,7 @@ int main(int argc, char *argv[])
 
     memset(&data, 0, sizeof(client_data_t));
 
-    localPort = "5683";
+    localPort = "56832";
 
     if (argc >= 2)
     {
@@ -352,6 +352,7 @@ int main(int argc, char *argv[])
     if (data.sock < 0)
     {
         fprintf(stderr, "Failed to open socket: %d\r\n", errno);
+
         return -1;
     }
 
@@ -571,6 +572,6 @@ int main(int argc, char *argv[])
     }
     close(data.sock);
     connection_free(data.connList);
-
+    
     return 0;
 }
