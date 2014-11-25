@@ -13,6 +13,7 @@
  * Contributors:
  *    David Navarro, Intel Corporation - initial API and implementation
  *    Fabien Fleutot - Please refer to git log
+ *    Bosch Software Innovations GmbH - Please refer to git log
  *    
  *******************************************************************************/
 
@@ -537,7 +538,7 @@ void lwm2m_tlv_encode_int(int64_t data,
         length = snprintf(string, 32, "%" PRId64, data);
         if (length > 0)
         {
-            tlvP->value = (uint8_t *)malloc(length);
+            tlvP->value = (uint8_t *)lwm2m_malloc(length);
             if (tlvP->value != NULL)
             {
                 strncpy(tlvP->value, string, length);
@@ -577,7 +578,7 @@ void lwm2m_tlv_encode_int(int64_t data,
             buffer[_PRV_64BIT_BUFFER_SIZE - length] |= 0x80;
         }
 
-        tlvP->value = (uint8_t *)malloc(length);
+        tlvP->value = (uint8_t *)lwm2m_malloc(length);
         if (tlvP->value != NULL)
         {
             memcpy(tlvP->value,
@@ -636,7 +637,7 @@ void lwm2m_tlv_encode_bool(bool data,
 {
     tlvP->length = 0;
 
-    tlvP->value = (uint8_t *)malloc(1);
+    tlvP->value = (uint8_t *)lwm2m_malloc(1);
     if (tlvP->value != NULL)
     {
         if (data == true)

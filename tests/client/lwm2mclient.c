@@ -18,7 +18,7 @@
  *    Julien Vermillard - Please refer to git log
  *    Axel Lorente - Please refer to git log
  *    Toby Jaffey - Please refer to git log
- *    Joerg Hubschneider - Please refer to git log
+ *    Bosch Software Innovations GmbH - Please refer to git log
  *    
  *******************************************************************************/
 
@@ -72,7 +72,7 @@
 #include <errno.h>
 #include <signal.h>
 
-#define MAX_PACKET_SIZE 128
+#define MAX_PACKET_SIZE 128 //ensure sync with: er_coap_13.h REST_MAX_CHUNK_SIZE!
 
 static int g_quit = 0;
 
@@ -346,7 +346,7 @@ int main(int argc, char *argv[])
 
     strcpy (localPort, "56830");
     strcpy (server,"localhost");
-    strcpy (serverPort,"5683");
+    strcpy (serverPort, LWM2M_STANDARD_PORT_STR);	//connction.h: "5683"
 
     if (argc >= 2) strcpy (localPort,  argv[1]);
     if (argc >= 3) strcpy (server,     argv[2]);

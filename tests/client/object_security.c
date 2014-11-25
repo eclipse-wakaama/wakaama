@@ -12,7 +12,7 @@
  *
  * Contributors:
  *    David Navarro, Intel Corporation - initial API and implementation
- *    Joerg Hubschneider - Please refer to git log
+ *    Bosch Software Innovations GmbH - Please refer to git log
  *    
  *******************************************************************************/
 
@@ -375,7 +375,7 @@ static void prv_security_close(lwm2m_object_t * objectP)
     }
 }
 
-lwm2m_object_t * get_security_object(int serverId, char* serverUri, bool isBootstrap)
+lwm2m_object_t * get_security_object(int serverId, const char* serverUri, bool isBootstrap)
 {
     lwm2m_object_t * securityObj;
 
