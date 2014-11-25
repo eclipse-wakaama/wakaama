@@ -18,7 +18,7 @@
  *    Toby Jaffey - Please refer to git log
  *    Manuel Sangoi - Please refer to git log
  *    Julien Vermillard - Please refer to git log
- *    Joerg Hubschneider - Please refer to git log
+ *    Bosch Software Innovations GmbH - Please refer to git log
  *
  *******************************************************************************/
 

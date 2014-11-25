@@ -1,10 +1,7 @@
-/*! \file
-  LWM2M object "Location" implementation
-
-  \author Joerg Hubschneider
-
-  Copyright (c) 2014 Bosch Software Innovations GmbH, Germany. All rights reserved.
-
+/*********************************************************************************
+ * 
+ * Copyright (c) 2014 Bosch Software Innovations GmbH, Germany.
+ *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * and Eclipse Distribution License v1.0 which accompany this distribution.
@@ -15,9 +12,14 @@
  *    http://www.eclipse.org/org/documents/edl-v10.php.
  *
  * Contributors:
- *    Joerg Hubschneider - Please refer to git log
+ *    Bosch Software Innovations GmbH - Please refer to git log
  *    
  *******************************************************************************/
+/*! \file
+  LWM2M object "Location" implementation
+
+  \author Joerg Hubschneider
+*/
 
 /*
  *  Object     |      | Multiple  |     | Description                   |
