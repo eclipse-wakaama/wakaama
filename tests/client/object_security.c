@@ -399,7 +399,8 @@ lwm2m_object_t * get_security_object(int serverId, const char* serverUri, bool i
 
         memset(targetP, 0, sizeof(security_instance_t));
         targetP->instanceId = 0;
-        targetP->uri = strdup(serverUri);
+        targetP->uri = (char*)lwm2m_malloc(strlen(serverUri)+1); 
+        strcpy(targetP->uri, serverUri);
         targetP->isBootstrap = isBootstrap;
         targetP->shortID = serverId;
 
