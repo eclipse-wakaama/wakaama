@@ -346,7 +346,7 @@ int main(int argc, char *argv[])
 
     strcpy (localPort, "56830");
     strcpy (server,"localhost");
-    strcpy (serverPort, LWM2M_STANDARD_PORT_STR);	//connction.h: "5683"
+    strcpy (serverPort, LWM2M_STANDARD_PORT_STR);	//see connection.h
 
     if (argc >= 2) strcpy (localPort,  argv[1]);
     if (argc >= 3) strcpy (server,     argv[2]);
@@ -430,7 +430,7 @@ int main(int argc, char *argv[])
      * We configure the liblwm2m library with the name of the client - which shall be unique for each client -
      * the number of objects we will be passing through and the objects array
      */
-    result = lwm2m_configure(lwm2mH, "testlwm2mclient", BINDING_U, NULL, 6, objArray);
+    result = lwm2m_configure(lwm2mH, "testlwm2mclient", BINDING_U, NULL, sizeof(objArray), objArray);
     if (result != 0)
     {
         fprintf(stderr, "lwm2m_set_objects() failed: 0x%X\r\n", result);

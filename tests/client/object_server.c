@@ -261,7 +261,7 @@ static uint8_t prv_server_execute(uint16_t instanceId,
     case LWM2M_SERVER_DISABLE_ID:
         return COAP_404_NOT_FOUND;
     case LWM2M_SERVER_UPDATE_ID:
-        return COAP_501_NOT_IMPLEMENTED;    //TODO
+        return COAP_501_NOT_IMPLEMENTED;
     default:
         return COAP_405_METHOD_NOT_ALLOWED;
     }
@@ -351,12 +351,6 @@ lwm2m_object_t * get_server_object(int serverId, const char* binding,
         targetP->lifetime = lifetime;
         targetP->storing = storing;
         memcpy (targetP->binding, binding, strlen(binding)+1);
-
-//JH-        targetP->shortServerId = 123;
-//JH-        targetP->lifetime = 300;
-//JH-        targetP->storing = false;
-//JH-        targetP->binding[0] = 'U';
-
         serverObj->instanceList = LWM2M_LIST_ADD(serverObj->instanceList, targetP);
 
         serverObj->readFunc = prv_server_read;

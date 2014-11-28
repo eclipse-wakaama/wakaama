@@ -343,20 +343,15 @@ int lwm2m_update_registrations(lwm2m_context_t * contextP, uint32_t currentTime)
                 break;
             case STATE_UNKNOWN:
                 // TODO: is it disabled?
-                //printf("lwm2m_update_registrations: register!!\n");
                 prv_register(contextP, targetP);
                 break;
             case STATE_REG_PENDING:
-                //printf("lwm2m_update_registrations Reg-Status: REG_PENDING\n"); 
                 break;
             case STATE_REG_UPDATE_PENDING:
-                //printf("lwm2m_update_registrations Reg-Status: REG_UPDATE_PENDING"); 
-                //printf( ... do re-register!!\n");
                 // TODO: is it disabled?
                 prv_register(contextP, targetP);
                 break;
             case STATE_DEREG_PENDING:
-                //printf("lwm2m_update_registrations Reg-Status: DEREG_PENDING\n"); 
                 break;
         }
         targetP = targetP->next;
