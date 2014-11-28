@@ -40,28 +40,6 @@
  *  Timestamp   |  5  |  R   | Single  | Yes | Time    |       |   s   | The timestamp wen the location meassurement was performed.                       |
  */
 
-/* JSON definition for leshan standalone GUI definition:
-var getModel = function(){
-    return [
-    {
-        name   : "Location",
-        id     : "6",
-        values : [ {
-            name   : "Instance 0",
-            id     : "0",
-            values : [  
-                { name: "Latitude",    id: "0", operations: "R", type: "string" },
-                { name: "Longitude",   id: "1", operations: "R", type: "string" },
-                { name: "Altitude",    id: "2", operations: "R", type: "string" },
-                { name: "Uncertainty", id: "3", operations: "R", type: "string" },
-                { name: "Velocity",    id: "4", operations: "R", type: "opaque" },
-                { name: "Timestamp",   id: "5", operations: "R", type: "string" },
-                ]
-            }
-        ]
-    }
-    ]}
-*/ 
 #include "internals.h"
 
 
