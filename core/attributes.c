@@ -19,8 +19,8 @@ void lwm2m_updateTransmissionAttributes(lwm2m_server_t * serverP, lwm2m_uri_t * 
     attributeP = lwm2m_getAttributes(serverP, uriP);
     if(NULL != attributeP) {
       attributeP->lastTransmission = tv->tv_sec;
-      if(attributeP->maxPeriod > 0 ) {
-        attributeP->nextTransmission = tv->tv_sec + attributeP->maxPeriod;
+      if(attributeP->maxPeriod != NULL ) {
+        attributeP->nextTransmission = tv->tv_sec + strtol(attributeP->maxPeriod, NULL, 10);
       } else {
         attributeP->nextTransmission = 0;
       }
@@ -48,7 +48,7 @@ lwm2m_attribute_data_t * lwm2m_getAttributes(lwm2m_server_t * serverP, lwm2m_uri
     return(attributeP);
 }
 
-int lwm2m_setAttributes(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_attribute_type_t type, uint32_t value, lwm2m_object_t * objectP,  lwm2m_server_t * serverP) {
+int lwm2m_setAttributes(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_attribute_type_t type, const char* value, lwm2m_object_t * objectP,  lwm2m_server_t * serverP) {
 
   if(LWM2M_URI_IS_SET_RESOURCE(uriP)) {
     // resource attributes are set
@@ -68,6 +68,7 @@ int lwm2m_setAttributes(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_at
     if(attributeP == NULL) {
       // add new attribute data to list
       attributeP = lwm2m_malloc(sizeof(lwm2m_attribute_data_t));
+      
       if(NULL == attributeP) {
         // TODO: error
         return(0);
@@ -80,23 +81,28 @@ int lwm2m_setAttributes(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_at
     // change resource attribute
     switch(type) {
       case ATTRIBUTE_MIN_PERIOD:
-          attributeP->minPeriod = value;
+          attributeP->minPeriod = lwm2m_malloc(strlen(value));
+          strcpy (attributeP->minPeriod, value);
         break;
       case ATTRIBUTE_MAX_PERIOD: {
+          attributeP->maxPeriod = lwm2m_malloc(strlen(value));
+          strcpy (attributeP->maxPeriod, value);
           struct timeval tv;
-          attributeP->maxPeriod = value;
-           lwm2m_gettimeofday(&tv, NULL);
-          attributeP->nextTransmission = tv.tv_sec + value;
+          lwm2m_gettimeofday(&tv, NULL);
+          attributeP->nextTransmission = tv.tv_sec + strtol(value, NULL, 10);
         break;
       }
       case ATTRIBUTE_GREATER_THEN:
-          attributeP->greaterThan = value;
+          attributeP->greaterThan = lwm2m_malloc(strlen(value));
+          strcpy (attributeP->greaterThan, value);
         break;
       case ATTRIBUTE_LESS_THEN:
-          attributeP->lessThan = value;
+          attributeP->lessThan = lwm2m_malloc(strlen(value));
+          strcpy (attributeP->lessThan, value);
         break;
       case ATTRIBUTE_STEP:
-          attributeP->step = value;
+          attributeP->step = lwm2m_malloc(strlen(value));
+          strcpy (attributeP->step, value);
         break;
       case ATTRIBUTE_CANCEL:
         // TODO: move this to a list handling function
@@ -115,6 +121,11 @@ int lwm2m_setAttributes(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_at
             }
           }
         }
+        if (attributeP->minPeriod!=NULL)   lwm2m_free(attributeP->minPeriod);
+        if (attributeP->maxPeriod!=NULL)   lwm2m_free(attributeP->maxPeriod);
+        if (attributeP->greaterThan!=NULL) lwm2m_free(attributeP->greaterThan);
+        if (attributeP->lessThan!=NULL)    lwm2m_free(attributeP->lessThan);
+        if (attributeP->step!=NULL)        lwm2m_free(attributeP->step);
         lwm2m_free(attributeP);
         cancel_observe(contextP, serverP->mid, serverP->sessionH);
         break;

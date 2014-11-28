@@ -249,7 +249,6 @@ coap_status_t object_attrib(lwm2m_context_t * contextP,
         memcpy(valueString,&queryEntry->data[i+1],queryEntry->len-(i+1));
         // add endmarker
         valueString[queryEntry->len-(i+1)] = 0x00;
-        value = (uint32_t) strtol(valueString,NULL,0);
       }
       
       // find attribute list for server instance
@@ -262,7 +261,7 @@ coap_status_t object_attrib(lwm2m_context_t * contextP,
          }
       } 
       if(serverP != NULL) {
-        status = targetP->attribFunc(contextP, uriP, type, value, targetP, serverP);
+        status = targetP->attribFunc(contextP, uriP, type, valueString, targetP, serverP);
       }
       queryEntry = queryEntry->next;
     }

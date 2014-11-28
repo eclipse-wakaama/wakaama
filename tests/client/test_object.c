@@ -158,7 +158,7 @@ static uint8_t prv_read(uint16_t instanceId,
 
 static uint8_t prv_attribute(lwm2m_context_t * contextP, lwm2m_uri_t * uriP,
                                 lwm2m_attribute_type_t type,
-                                uint32_t value,
+                                const char* value,
                                 lwm2m_object_t * objectP,  lwm2m_server_t * serverP)
 {
     // this is a single instance object
@@ -180,6 +180,18 @@ static uint8_t prv_attribute(lwm2m_context_t * contextP, lwm2m_uri_t * uriP,
         }
     default:
         return COAP_405_METHOD_NOT_ALLOWED;
+    }
+}
+
+static uint8_t prv_datatype(const lwm2m_object_t * objectP, int resourceId, lwm2m_data_type_t *resDataType)
+{
+    switch (resourceId)
+    {
+        case 1:
+            *resDataType = LWM2M_DATATYPE_INTEGER;
+            return COAP_NO_ERROR;
+        default:
+            return COAP_405_METHOD_NOT_ALLOWED;
     }
 }
 
@@ -311,6 +323,7 @@ lwm2m_object_t * get_test_object()
         testObj->deleteFunc = prv_delete;
         testObj->executeFunc = prv_exec;
         testObj->attribFunc = prv_attribute;
+        testObj->datatypeFunc = prv_datatype;
     }
 
     return testObj;

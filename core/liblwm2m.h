@@ -289,12 +289,12 @@ typedef struct _attribute_data_ {
   time_t lastTransmission;  /**< holds the time stamp of the last transmission of this object, instance or resource */
   time_t nextTransmission;  /**< holds the time for the next scheduled transmission */
   lwm2m_uri_t uri;          /**< holds the URI of the object/instance/resource the attributes are valid for */
-  uint32_t minPeriod;       /**< minimal update period in seconds, the object/instance/resource must not be sent more frequent */
-  uint32_t maxPeriod;       /**< maximum update period, the object/instance/resource must be sent at least after this period, even if no change happend */
-  uint32_t greaterThan;     /**< the resource has to be sent if this threshold is reached */
-  uint32_t lessThan;        /**< the resource has to be sent if this threshold is underrun */
-  uint32_t step;            /**< the resource has to be sent if it is changed by the given step */
-  uint32_t oldValue;        /**< holds the last sent value of the resource if the resource is a numerical resource */
+  char* minPeriod;       /**< minimal update period in seconds, the object/instance/resource must not be sent more frequent */
+  char* maxPeriod;       /**< maximum update period, the object/instance/resource must be sent at least after this period, even if no change happend */
+  char* greaterThan;     /**< the resource has to be sent if this threshold is reached */
+  char* lessThan;        /**< the resource has to be sent if this threshold is underrun */
+  char* step;            /**< the resource has to be sent if it is changed by the given step */
+  char* oldValue;        /**< holds the last sent value of the resource if the resource is a numerical resource */
 } lwm2m_attribute_data_t;
 
 /*
@@ -333,6 +333,16 @@ typedef enum
     BINDING_US,  // UDP plus SMS
     BINDING_UQS  // UDP queue mode plus SMS
 } lwm2m_binding_t;
+
+typedef enum    // data type of TLV_RESSOURCE for cond. observe
+{
+    LWM2M_DATATYPE_STRING = 0,
+    LWM2M_DATATYPE_INTEGER,
+    LWM2M_DATATYPE_FLOAT,
+    LWM2M_DATATYPE_BOOLEAN,
+    LWM2M_DATATYPE_OPAQUE,
+    LWM2M_DATATYPE_TIME
+} lwm2m_data_type_t;
 
 typedef struct _lwm2m_server_
 {
@@ -504,22 +514,24 @@ typedef uint8_t (*lwm2m_write_callback_t) (uint16_t instanceId, int numData, lwm
 typedef uint8_t (*lwm2m_execute_callback_t) (uint16_t instanceId, uint16_t resourceId, char * buffer, int length, lwm2m_object_t * objectP);
 typedef uint8_t (*lwm2m_create_callback_t) (uint16_t instanceId, int numData, lwm2m_tlv_t * dataArray, lwm2m_object_t * objectP);
 typedef uint8_t (*lwm2m_delete_callback_t) (uint16_t instanceId, lwm2m_object_t * objectP);
-typedef uint8_t (*lwm2m_attrib_callback_t) (lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_attribute_type_t type, uint32_t value, lwm2m_object_t * objectP, lwm2m_server_t * serverP);
+typedef uint8_t (*lwm2m_attrib_callback_t) (lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_attribute_type_t type, const char* value, lwm2m_object_t * objectP, lwm2m_server_t * serverP);
+typedef uint8_t (*lwm2m_datatype_callback_t) (const lwm2m_object_t * objectP, int resourceId, lwm2m_data_type_t *resDataType);
 typedef void (*lwm2m_close_callback_t) (lwm2m_object_t * objectP);
 
 
 struct _lwm2m_object_t
 {
-    uint16_t                 objID;
-    lwm2m_list_t *           instanceList;
-    lwm2m_read_callback_t    readFunc;
-    lwm2m_write_callback_t   writeFunc;
-    lwm2m_execute_callback_t executeFunc;
-    lwm2m_create_callback_t  createFunc;
-    lwm2m_delete_callback_t  deleteFunc;
-    lwm2m_close_callback_t   closeFunc;
-    lwm2m_attrib_callback_t  attribFunc;
-    void *                   userData;
+    uint16_t                    objID;
+    lwm2m_list_t *              instanceList;
+    lwm2m_read_callback_t       readFunc;
+    lwm2m_write_callback_t      writeFunc;
+    lwm2m_execute_callback_t    executeFunc;
+    lwm2m_create_callback_t     createFunc;
+    lwm2m_delete_callback_t     deleteFunc;
+    lwm2m_close_callback_t      closeFunc;
+    lwm2m_attrib_callback_t     attribFunc;
+    lwm2m_datatype_callback_t   datatypeFunc;
+    void *                      userData;
 };
 
 // initialize a liblwm2m context.
@@ -551,7 +563,7 @@ void lwm2m_resource_value_changed(lwm2m_context_t * contextP, lwm2m_uri_t * uriP
 /**
   sets the attributes of a object/instance/resource
 */
-int lwm2m_setAttributes(lwm2m_context_t * contextP, lwm2m_uri_t * uriP,lwm2m_attribute_type_t type, uint32_t value, lwm2m_object_t * objectP,  lwm2m_server_t * serverP);
+int lwm2m_setAttributes(lwm2m_context_t * contextP, lwm2m_uri_t * uriP,lwm2m_attribute_type_t type, const char* value, lwm2m_object_t * objectP,  lwm2m_server_t * serverP);
 #endif
 
 #ifdef LWM2M_SERVER_MODE

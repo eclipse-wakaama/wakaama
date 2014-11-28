@@ -49,7 +49,6 @@
 #include "internals.h"
 #include <stdio.h>
 
-
 #ifdef LWM2M_CLIENT_MODE
 static lwm2m_observed_t * prv_findObserved(lwm2m_context_t * contextP,
                                            lwm2m_uri_t * uriP)
@@ -316,63 +315,173 @@ time_t lwm2m_notify(lwm2m_context_t * contextP, struct timeval * tv) {
     return(nextTransmission);
 }
 
+uint8_t lwm2m_cmpAttributes(lwm2m_attribute_data_t *attributeData, char *buffer, bool *cmpResult, lwm2m_data_type_t type)
+{
+    switch(type)
+    {
+        case LWM2M_DATATYPE_STRING:
+            return COAP_400_BAD_REQUEST;
+            break;
+        case LWM2M_DATATYPE_INTEGER: {
+            char *endptr;
+            int value, gt, lt, st;
+            
+            if (buffer != NULL) {
+                value = (int)strtol(buffer, &endptr, 0);
+                if (endptr == buffer) {
+                    return COAP_400_BAD_REQUEST;
+                }
+            }
+            if (attributeData->greaterThan != NULL) {
+                gt = (int)strtol(attributeData->greaterThan, &endptr, 0);
+                if (endptr == attributeData->greaterThan) {
+                    return COAP_400_BAD_REQUEST;
+                }
+            }
+            if (attributeData->lessThan != NULL) {
+                lt = (int)strtol(attributeData->lessThan, &endptr, 0);
+                if (endptr == attributeData->lessThan) {
+                    return COAP_400_BAD_REQUEST;
+                }
+            }
+            if (attributeData->step != NULL) {
+                st = (int)strtol(attributeData->step, &endptr, 0);
+                if (endptr == attributeData->step) {
+                    return COAP_400_BAD_REQUEST;
+                }
+            }
+       
+            if (attributeData->lessThan != NULL && attributeData->greaterThan != NULL){
+                if (value < lt && value > gt) {
+                    *cmpResult = true; 
+                }
+                else {
+                    *cmpResult = false;
+                }
+                return COAP_NO_ERROR;
+            }
+            else if (attributeData->greaterThan != NULL && attributeData->lessThan == NULL){
+                if (value > gt) {
+                    *cmpResult = true; 
+                }
+                else {
+                    *cmpResult = false;
+                }
+                return COAP_NO_ERROR;
+            }
+            else if (attributeData->lessThan != NULL && attributeData->greaterThan == NULL){
+                if (value < lt) {
+                    *cmpResult = true; 
+                }
+                else {
+                    *cmpResult = false;
+                }
+                return COAP_NO_ERROR;
+            }
+            break; }
+        case LWM2M_DATATYPE_FLOAT:
+            return COAP_400_BAD_REQUEST;
+            break;
+        case LWM2M_DATATYPE_BOOLEAN:
+            return COAP_400_BAD_REQUEST;
+            break;
+        case LWM2M_DATATYPE_OPAQUE:
+            return COAP_400_BAD_REQUEST;
+            break;
+        case LWM2M_DATATYPE_TIME:
+            return COAP_400_BAD_REQUEST;
+            break;
+        default:
+            break;
+    }
+}
+
 void lwm2m_resource_value_changed(lwm2m_context_t * contextP,
                                   lwm2m_uri_t * uriP)
 {
-    obs_list_t * listP;
-    lwm2m_watcher_t * watcherP;
-    lwm2m_attribute_data_t * attributeData;
+    obs_list_t *listP;
+    lwm2m_watcher_t *watcherP;
+    lwm2m_attribute_data_t *attributeData;
     struct timeval tv;
 
     listP = prv_getObservedList(contextP, uriP);
     while (listP != NULL)
     {
-      obs_list_t * targetP;
-      char * buffer = NULL;
-      int length = 0;
-      coap_status_t result;
-      uint32_t value;
+        obs_list_t *targetP;
+        char *buffer = NULL;
+        coap_status_t coapResult;
+        uint8_t result;
+        int length = 0;
+        int i;
         
-      result = object_read(contextP, &(listP->item->uri), &buffer, &length); 
-      if (result == COAP_205_CONTENT) { 
-        for (watcherP = listP->item->watcherList ; watcherP != NULL ; watcherP = watcherP->next) {
-          lwm2m_gettimeofday(&tv, NULL);
-          attributeData = lwm2m_getAttributes(watcherP->server, &(listP->item->uri));
-          if(NULL != attributeData) {
-            char * endptr;
-           
-             // check integer value, greater then, less then and step attribute
-             value = (uint32_t) strtol(buffer,&endptr,0);
-             if(endptr != buffer) {
-               // data is valid, compare against greater/less threshold
-               if(((attributeData->greaterThan != 0) && (attributeData->oldValue <= attributeData->greaterThan) && (value > attributeData->greaterThan)) ||
-                  ((attributeData->lessThan != 0) && (attributeData->oldValue >= attributeData->lessThan) && (value < attributeData->lessThan)) || 
-                  ((attributeData->step != 0) && (abs(attributeData->oldValue - value) > attributeData->step)) ||
-                  ((attributeData->step == 0) && (attributeData->lessThan == 0) && (attributeData->greaterThan == 0))) {
-                 // send data or schedule transmission
-               } else {
-                 goto next;
-               }
-             }
-             // check if min period is elapsed
-             if((attributeData->lastTransmission + attributeData->minPeriod) > tv.tv_sec) {
-               // schedule transmission after min period is elapsed
-               attributeData->nextTransmission = attributeData->lastTransmission + attributeData->minPeriod;
-               goto next;
-             }
-          }
-          lwm2m_sendNotification(contextP, watcherP, &(listP->item->uri));
-          lwm2m_updateTransmissionAttributes(watcherP->server, &(listP->item->uri), &tv);
-          next:
-          if(NULL != attributeData) {
-            attributeData->oldValue = value;
+       // coapResult = object_read();
+        
+        //find object to objectId:
+        lwm2m_object_t* objectP = NULL;
+        if (uriP->objectId==LWM2M_SECURITY_OBJECT_ID) {
+            //TODO
+        } else {
+          for (i=0 ; i < contextP->numObject ; i++) {
+            if (contextP->objectList[i]->objID == uriP->objectId) {
+                objectP = contextP->objectList[i];
+                break;
+            }
           }
         }
-      }
-      lwm2m_free(buffer);
-      targetP = listP;
-      listP = listP->next;
-      lwm2m_free(targetP);
+      
+        if (objectP != NULL) {
+            for (watcherP = listP->item->watcherList ; watcherP != NULL ; watcherP = watcherP->next) {
+                lwm2m_gettimeofday(&tv, NULL);
+                attributeData = lwm2m_getAttributes(watcherP->server, &(listP->item->uri));
+                if (attributeData != NULL ) {
+                    
+                    coapResult = object_read(contextP, &(listP->item->uri), &buffer, &length);
+                    if (coapResult != CONTENT_2_05)
+                    {
+                        //TODO: Error Handling
+                    }
+                    
+                    lwm2m_data_type_t type;
+                    result = objectP->datatypeFunc(objectP, listP->item->uri.resourceId, &type);
+                    if (result != COAP_NO_ERROR)
+                    {
+                        //TODO: Error Handling
+                    }
+                    
+                    bool cmpResult;
+                    result = lwm2m_cmpAttributes(attributeData, buffer, &cmpResult, type);
+                    if (result != COAP_NO_ERROR)
+                    {
+                        //TODO: Error Handling
+                    }
+                    if (!cmpResult)
+                    {
+                        goto next;
+                    }
+
+                    // check if min period is elapsed
+                    if (attributeData->minPeriod != NULL) {
+                        int minPer = strtol(attributeData->minPeriod, NULL, 10);
+                        
+                        if((attributeData->lastTransmission + minPer) > tv.tv_sec) {
+                            // schedule transmission after min period is elapsed
+                            attributeData->nextTransmission = attributeData->lastTransmission + minPer;
+                            goto next;
+                        }
+                    }
+                }
+                lwm2m_sendNotification(contextP, watcherP, &(listP->item->uri));
+                lwm2m_updateTransmissionAttributes(watcherP->server, &(listP->item->uri), &tv);
+                next:
+                if(NULL != attributeData) {
+                    //TODO    attributeData->oldValue = value;
+                }
+            }
+        }
+        
+        targetP = listP;
+        listP = listP->next;
+        lwm2m_free(targetP);
     }
 }
 #endif

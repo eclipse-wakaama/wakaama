@@ -360,7 +360,7 @@ static uint8_t prv_device_read(uint16_t instanceId,
 
 static uint8_t prv_device_attribute(lwm2m_context_t * contextP, lwm2m_uri_t * uriP,
                                 lwm2m_attribute_type_t type,
-                                uint32_t value,
+                                const char* value,
                                 lwm2m_object_t * objectP,  lwm2m_server_t * serverP)
 {
     // this is a single instance object
@@ -388,6 +388,11 @@ static uint8_t prv_device_attribute(lwm2m_context_t * contextP, lwm2m_uri_t * ur
     default:
         return COAP_405_METHOD_NOT_ALLOWED;
     }
+}
+
+static uint8_t prv_device_datatype(const lwm2m_object_t * objectP, int resourceId, lwm2m_data_type_t *resDataType)
+{
+
 }
 
 static uint8_t prv_device_write(uint16_t instanceId,
@@ -502,6 +507,7 @@ lwm2m_object_t * get_object_device()
         deviceObj->writeFunc = prv_device_write;
         deviceObj->executeFunc = prv_device_execute;
         deviceObj->attribFunc = prv_device_attribute;
+        deviceObj->datatypeFunc = prv_device_datatype;
         deviceObj->userData = malloc(sizeof(device_data_t));
 
         /*
