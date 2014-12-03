@@ -18,6 +18,7 @@
  *    Toby Jaffey - Please refer to git log
  *    Manuel Sangoi - Please refer to git log
  *    Julien Vermillard - Please refer to git log
+ *    Bosch Software Innovations GmbH - Please refer to git log
  *
  *******************************************************************************/
 
@@ -128,6 +129,7 @@ static void prv_handleRegistrationReply(lwm2m_transaction_t * transacP,
     coap_packet_t * packet = (coap_packet_t *)message;
 
     targetP = (lwm2m_server_t *)(transacP->peerP);
+    struct timeval tv;
 
     switch(targetP->status)
     {
@@ -146,6 +148,11 @@ static void prv_handleRegistrationReply(lwm2m_transaction_t * transacP,
             {
                 targetP->status = STATE_REGISTERED;
                 targetP->location = coap_get_multi_option_as_string(packet->location_path);
+
+                if (0 == lwm2m_gettimeofday(&tv, NULL)) 
+                {
+                    targetP->registration = tv.tv_sec;
+                }
             }
             else if (packet->code == BAD_REQUEST_4_00)
             {
@@ -162,67 +169,72 @@ static void prv_handleRegistrationReply(lwm2m_transaction_t * transacP,
 
 #define PRV_QUERY_BUFFER_LENGTH 200
 
-int lwm2m_register(lwm2m_context_t * contextP)
+// send the registration for a single server
+static int prv_register(lwm2m_context_t * contextP, lwm2m_server_t * server)
 {
     char query[200];
     int query_length;
     char payload[512];
     int payload_length;
+
+    lwm2m_transaction_t * transaction;
+
+    payload_length = prv_getRegisterPayload(contextP, payload, sizeof(payload));
+    if (payload_length == 0) return INTERNAL_SERVER_ERROR_5_00;
+
+    query_length = prv_getRegistrationQuery(contextP, query, sizeof(query));
+
+    if (query_length == 0) return INTERNAL_SERVER_ERROR_5_00;
+
+    if (0 != server->lifetime)
+    {
+        if (snprintf(query + query_length,
+                        PRV_QUERY_BUFFER_LENGTH - query_length,
+                        QUERY_DELIMITER QUERY_LIFETIME "%d",
+                        server->lifetime) <= 0)
+        {
+            return INTERNAL_SERVER_ERROR_5_00;
+        }
+    }
+
+    if (server->sessionH == NULL)
+    {
+        server->sessionH = contextP->connectCallback(server->shortID, contextP->userData);
+    }
+
+    if (server->sessionH != NULL)
+    {
+        transaction = transaction_new(COAP_POST, NULL, contextP->nextMID++, ENDPOINT_SERVER, (void *)server);
+        if (transaction == NULL) return INTERNAL_SERVER_ERROR_5_00;
+
+        coap_set_header_uri_path(transaction->message, "/"URI_REGISTRATION_SEGMENT);
+        coap_set_header_uri_query(transaction->message, query);
+        coap_set_payload(transaction->message, payload, payload_length);
+
+        transaction->callback = prv_handleRegistrationReply;
+        transaction->userData = (void *) server;
+
+        contextP->transactionList = (lwm2m_transaction_t *)LWM2M_LIST_ADD(contextP->transactionList, transaction);
+        if (transaction_send(contextP, transaction) == 0)
+        {
+            server->status = STATE_REG_PENDING;
+            server->mid = transaction->mID;
+        }
+    }
+}
+
+int lwm2m_register(lwm2m_context_t * contextP)
+{
     lwm2m_server_t * targetP;
     int result;
 
     result = object_getServers(contextP);
     if (result != 0) return result;
 
-    payload_length = prv_getRegisterPayload(contextP, payload, sizeof(payload));
-    if (payload_length == 0) return INTERNAL_SERVER_ERROR_5_00;
-
-    query_length = prv_getRegistrationQuery(contextP, query, sizeof(query));
-    if (query_length == 0) return INTERNAL_SERVER_ERROR_5_00;
-
     targetP = contextP->serverList;
     while (targetP != NULL)
     {
-        lwm2m_transaction_t * transaction;
-
-        if (0 != targetP->lifetime)
-        {
-            if (snprintf(query + query_length,
-                         PRV_QUERY_BUFFER_LENGTH - query_length,
-                         QUERY_DELIMITER QUERY_LIFETIME "%d",
-                         targetP->lifetime) <= 0)
-            {
-                return INTERNAL_SERVER_ERROR_5_00;
-            }
-        }
-
-        if (targetP->sessionH == NULL)
-        {
-            targetP->sessionH = contextP->connectCallback(targetP->shortID, contextP->userData);
-        }
-
-        if (targetP->sessionH != NULL)
-        {
-            transaction = transaction_new(COAP_POST, NULL, contextP->nextMID++, ENDPOINT_SERVER, (void *)targetP);
-            if (transaction == NULL) return INTERNAL_SERVER_ERROR_5_00;
-
-            coap_set_header_uri_path(transaction->message, "/"URI_REGISTRATION_SEGMENT);
-            coap_set_header_uri_query(transaction->message, query);
-            coap_set_payload(transaction->message, payload, payload_length);
-
-            transaction->callback = prv_handleRegistrationReply;
-            transaction->userData = (void *) contextP;
-
-            contextP->transactionList = (lwm2m_transaction_t *)LWM2M_LIST_ADD(contextP->transactionList, transaction);
-            if (transaction_send(contextP, transaction) == 0)
-            {
-                targetP->status = STATE_REG_PENDING;
-                targetP->mid = transaction->mID;
-            }
-        }
-
-        // remove the lifetime information for the next server
-        query[query_length] = 0;
+        prv_register(contextP, targetP);
         targetP = targetP->next;
     }
     return 0;
@@ -233,6 +245,7 @@ static void prv_handleRegistrationUpdateReply(lwm2m_transaction_t * transacP,
 {
     lwm2m_server_t * targetP;
     coap_packet_t * packet = (coap_packet_t *)message;
+    struct timeval tv;
 
     targetP = (lwm2m_server_t *)(transacP->peerP);
 
@@ -250,12 +263,17 @@ static void prv_handleRegistrationUpdateReply(lwm2m_transaction_t * transacP,
         {
             if (packet->code == CHANGED_2_04)
             {
+                if (0 == lwm2m_gettimeofday(&tv, NULL)) 
+                {
+                    targetP->registration = tv.tv_sec;
+                }
                 targetP->status = STATE_REGISTERED;
             }
             else if (packet->code == BAD_REQUEST_4_00)
             {
                 targetP->status = STATE_UNKNOWN;
                 targetP->mid = 0;
+                // trigger a new registration? infinite loop?
             }
         }
     }
@@ -265,6 +283,28 @@ static void prv_handleRegistrationUpdateReply(lwm2m_transaction_t * transacP,
     }
 }
 
+static int prv_update_registration(lwm2m_context_t * contextP, lwm2m_server_t * server) {
+    lwm2m_transaction_t * transaction;
+
+    transaction = transaction_new(COAP_PUT, NULL, contextP->nextMID++, ENDPOINT_SERVER, (void *)server);
+    if (transaction == NULL) return INTERNAL_SERVER_ERROR_5_00;
+
+    coap_set_header_uri_path(transaction->message, server->location);
+
+    transaction->callback = prv_handleRegistrationUpdateReply;
+    transaction->userData = (void *) server;
+
+    contextP->transactionList = (lwm2m_transaction_t *)LWM2M_LIST_ADD(contextP->transactionList, transaction);
+
+    if (transaction_send(contextP, transaction) == 0)
+    {
+        server->status = STATE_REG_UPDATE_PENDING;
+        server->mid = transaction->mID;
+    }
+    return 0;
+}
+
+// update the registration of a given server
 int lwm2m_update_registration(lwm2m_context_t * contextP, uint16_t shortServerID)
 {
     // look for the server
@@ -275,24 +315,7 @@ int lwm2m_update_registration(lwm2m_context_t * contextP, uint16_t shortServerID
         if (targetP->shortID == shortServerID)
         {
             // found the server, trigger the update transaction
-            lwm2m_transaction_t * transaction;
-
-            transaction = transaction_new(COAP_PUT, NULL, contextP->nextMID++, ENDPOINT_SERVER, (void *)targetP);
-            if (transaction == NULL) return INTERNAL_SERVER_ERROR_5_00;
-
-            coap_set_header_uri_path(transaction->message, targetP->location);
-
-            transaction->callback = prv_handleRegistrationUpdateReply;
-            transaction->userData = (void *) contextP;
-
-            contextP->transactionList = (lwm2m_transaction_t *)LWM2M_LIST_ADD(contextP->transactionList, transaction);
-
-            if (transaction_send(contextP, transaction) == 0)
-            {
-                targetP->status = STATE_REG_UPDATE_PENDING;
-                targetP->mid = transaction->mID;
-            }
-            return 0;
+            return prv_update_registration(contextP, targetP);
         } else {
             // try next server
             targetP = targetP->next;
@@ -301,6 +324,39 @@ int lwm2m_update_registration(lwm2m_context_t * contextP, uint16_t shortServerID
 
     // no server found
     return NOT_FOUND_4_04;
+}
+
+// for each server update the registration if needed
+int lwm2m_update_registrations(lwm2m_context_t * contextP, uint32_t currentTime)
+{
+    lwm2m_server_t * targetP;
+    targetP = contextP->serverList;
+    while (targetP != NULL)
+    {
+        switch (targetP->status) {
+            case STATE_REGISTERED:
+                if (targetP->registration + targetP->lifetime/2 <= currentTime)
+                {
+                    //printf("lwm2m_update_registrations: update registration\n");
+                    prv_update_registration(contextP, targetP);
+                }
+                break;
+            case STATE_UNKNOWN:
+                // TODO: is it disabled?
+                prv_register(contextP, targetP);
+                break;
+            case STATE_REG_PENDING:
+                break;
+            case STATE_REG_UPDATE_PENDING:
+                // TODO: is it disabled?
+                prv_register(contextP, targetP);
+                break;
+            case STATE_DEREG_PENDING:
+                break;
+        }
+        targetP = targetP->next;
+    }
+    return 0;
 }
 
 static void prv_handleDeregistrationReply(lwm2m_transaction_t * transacP,

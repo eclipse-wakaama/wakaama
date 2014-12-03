@@ -18,6 +18,7 @@
  *    Julien Vermillard - Please refer to git log
  *    Axel Lorente - Please refer to git log
  *    Toby Jaffey - Please refer to git log
+ *    Bosch Software Innovations GmbH - Please refer to git log
  *    
  *******************************************************************************/
 
@@ -71,12 +72,13 @@
 #include <errno.h>
 #include <signal.h>
 
-#define MAX_PACKET_SIZE 128
+#define MAX_PACKET_SIZE 128 //ensure sync with: er_coap_13.h REST_MAX_CHUNK_SIZE!
 
 static int g_quit = 0;
 
 extern lwm2m_object_t * get_object_device();
 extern lwm2m_object_t * get_object_firmware();
+extern lwm2m_object_t * get_object_location();
 extern lwm2m_object_t * get_test_object();
 extern lwm2m_object_t * get_server_object();
 extern lwm2m_object_t * get_security_object();
@@ -103,7 +105,7 @@ void handle_sigint(int signum)
 
 void print_usage(void)
 {
-    fprintf(stderr, "Usage: lwm2mclient\r\n");
+    fprintf(stderr, "Usage: lwm2mclient [[[localPort] server] serverPort]\r\n");
     fprintf(stderr, "Launch a LWM2M client.\r\n\n");
 }
 
@@ -124,8 +126,13 @@ static void * prv_connect_server(uint16_t serverID,
     if (uri == NULL) return NULL;
 
     // parse uri in the form "coaps://[host]:[port]"
-    if (0 != strncmp(uri, "coaps://", strlen("coaps://"))) goto exit;
-    host = uri + strlen("coaps://");
+    if (0==strncmp(uri, "coaps://", strlen("coaps://")))
+      host = uri+strlen("coaps://");
+    else 
+    if (0==strncmp(uri, "coap://",  strlen("coap://")))
+      host = uri+strlen("coap://");
+    else goto exit;
+    
     portStr = strchr(host, ':');
     if (portStr == NULL) goto exit;
     // split strings
@@ -304,15 +311,16 @@ syntax_error:
     fprintf(stdout, "Syntax error !\n");
 }
 
+
+
 int main(int argc, char *argv[])
 {
     client_data_t data;
     int result;
     lwm2m_context_t * lwm2mH = NULL;
-    lwm2m_object_t * objArray[5];
+    lwm2m_object_t * objArray[6];
     int i;
-    char *localPort;
-
+    char localPort[7], server[30], serverPort[7];
     /*
      * The function start by setting up the command line interface (which may or not be useful depending on your project)
      *
@@ -336,12 +344,15 @@ int main(int argc, char *argv[])
 
     memset(&data, 0, sizeof(client_data_t));
 
-    localPort = "5683";
+    strcpy (localPort, "56830");
+    strcpy (server,"localhost");
+    strcpy (serverPort, LWM2M_STANDARD_PORT_STR);	//see connection.h
 
-    if (argc >= 2)
-    {
-        localPort = argv[1];
-    }
+    if (argc >= 2) strcpy (localPort,  argv[1]);
+    if (argc >= 3) strcpy (server,     argv[2]);
+    if (argc >= 4) strcpy (serverPort, argv[3]);
+
+    //printf ("localport: %s, server %s:%s\n", localPort, server, serverPort);
 
     /*
      *This call an internal function that create an IPV6 socket on the port 5683.
@@ -379,20 +390,30 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    objArray[3] = get_server_object();
+    int serverId = 123;
+    objArray[3] = get_server_object(serverId, "U", 300, false);
     if (NULL == objArray[3])
     {
         fprintf(stderr, "Failed to create server object\r\n");
         return -1;
     }
 
-    objArray[4] = get_security_object();
+    char serverUri[50];
+    sprintf (serverUri, "coap://%s:%s", server, serverPort);
+    objArray[4] = get_security_object(serverId, serverUri, false);
     if (NULL == objArray[4])
     {
         fprintf(stderr, "Failed to create security object\r\n");
         return -1;
     }
     data.securityObjP = objArray[4];
+
+    objArray[5] = get_object_location();
+    if (NULL == objArray[5])
+    {
+        fprintf(stderr, "Failed to create location object\r\n");
+        return -1;
+    }
 
     /*
      * The liblwm2m library is now initialized with the functions that will be in
@@ -409,7 +430,8 @@ int main(int argc, char *argv[])
      * We configure the liblwm2m library with the name of the client - which shall be unique for each client -
      * the number of objects we will be passing through and the objects array
      */
-    result = lwm2m_configure(lwm2mH, "testlwm2mclient", BINDING_U, NULL, 5, objArray);
+    result = lwm2m_configure(lwm2mH, "testlwm2mclient", BINDING_U, NULL, 
+                             sizeof(objArray)/sizeof(lwm2m_object_t*), objArray);
     if (result != 0)
     {
         fprintf(stderr, "lwm2m_set_objects() failed: 0x%X\r\n", result);
