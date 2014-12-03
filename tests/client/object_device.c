@@ -15,6 +15,7 @@
  *    domedambrosio - Please refer to git log
  *    Fabien Fleutot - Please refer to git log
  *    Axel Lorente - Please refer to git log
+ *    Bosch Software Innovations GmbH - Please refer to git log
  *    
  *******************************************************************************/
 
@@ -61,8 +62,8 @@
 #include <ctype.h>
 
 
-#define PRV_MANUFACTURER      "Open Mobile Alliance"
-#define PRV_MODEL_NUMBER      "Lightweight M2M Client"
+#define PRV_MANUFACTURER      "OMA"             // ... to fit in er_coap_h REST_MAX_CHUNK_SIZE "Open Mobile Alliance"
+#define PRV_MODEL_NUMBER      "LWM2M Client"    // dito: "Lightweight M2M Client"
 #define PRV_SERIAL_NUMBER     "345000123"
 #define PRV_FIRMWARE_VERSION  "1.0"
 #define PRV_POWER_SOURCE_1    1
@@ -74,6 +75,7 @@
 #define PRV_BATTERY_LEVEL     100
 #define PRV_MEMORY_FREE       15
 #define PRV_ERROR_CODE        0
+#define PRV_TIME_ZONE         "Europe/Berlin"
 #define PRV_BINDING_MODE      "U"
 
 #define PRV_OFFSET_MAXLEN   7 //+HH:MM\0 at max
@@ -244,7 +246,7 @@ static uint8_t prv_set_value(lwm2m_tlv_t * tlvP,
         subTlvP[0].flags = 0;
         subTlvP[0].id = 0;
         subTlvP[0].type = LWM2M_TYPE_RESSOURCE_INSTANCE;
-        lwm2m_tlv_encode_int(PRV_POWER_CURRENT_1, subTlvP);
+        lwm2m_tlv_encode_int(PRV_POWER_CURRENT_1, &subTlvP[0]);
         if (0 == subTlvP[0].length)
         {
             lwm2m_tlv_free(2, subTlvP);
@@ -254,7 +256,7 @@ static uint8_t prv_set_value(lwm2m_tlv_t * tlvP,
         subTlvP[1].flags = 0;
         subTlvP[1].id = 1;
         subTlvP[1].type = LWM2M_TYPE_RESSOURCE_INSTANCE;
-        lwm2m_tlv_encode_int(PRV_POWER_CURRENT_2, subTlvP + 1);
+        lwm2m_tlv_encode_int(PRV_POWER_CURRENT_2, &subTlvP[1]);
         if (0 == subTlvP[1].length)
         {
             lwm2m_tlv_free(2, subTlvP);
@@ -284,17 +286,33 @@ static uint8_t prv_set_value(lwm2m_tlv_t * tlvP,
         else return COAP_500_INTERNAL_SERVER_ERROR;
 
     case 11:
-        lwm2m_tlv_encode_int(PRV_ERROR_CODE, tlvP);
-        tlvP->type = LWM2M_TYPE_RESSOURCE;
+    {
+        lwm2m_tlv_t * subTlvP;
 
-        if (0 != tlvP->length) return COAP_205_CONTENT;
-        else return COAP_500_INTERNAL_SERVER_ERROR;
+        subTlvP = lwm2m_tlv_new(1);
 
+        subTlvP[0].flags = 0;
+        subTlvP[0].id = 0;
+        subTlvP[0].type = LWM2M_TYPE_RESSOURCE_INSTANCE;
+        lwm2m_tlv_encode_int(PRV_ERROR_CODE, subTlvP);
+        if (0 == subTlvP[0].length)
+        {
+            lwm2m_tlv_free(2, subTlvP);
+            return COAP_500_INTERNAL_SERVER_ERROR;
+        }
+
+        tlvP->flags = 0;
+        tlvP->type = LWM2M_TYPE_MULTIPLE_RESSOURCE;
+        tlvP->length = 1;
+        tlvP->value = (uint8_t *)subTlvP;
+
+        return COAP_205_CONTENT;
+    }        
     case 12:
         return COAP_405_METHOD_NOT_ALLOWED;
 
     case 13:
-        lwm2m_tlv_encode_int(devDataP->time, tlvP);
+        lwm2m_tlv_encode_int(time(NULL), tlvP);
         tlvP->type = LWM2M_TYPE_RESSOURCE;
 
         if (0 != tlvP->length) return COAP_205_CONTENT;
@@ -308,6 +326,13 @@ static uint8_t prv_set_value(lwm2m_tlv_t * tlvP,
         return COAP_205_CONTENT;
 
     case 15:
+        tlvP->value  = PRV_TIME_ZONE;
+        tlvP->length = strlen(PRV_TIME_ZONE);
+        tlvP->flags  = LWM2M_TLV_FLAG_STATIC_DATA;
+        tlvP->type   = LWM2M_TYPE_RESSOURCE;
+        return COAP_205_CONTENT;
+      
+    case 16:
         tlvP->value = PRV_BINDING_MODE;
         tlvP->length = strlen(PRV_BINDING_MODE);
         tlvP->flags = LWM2M_TLV_FLAG_STATIC_DATA;
@@ -336,7 +361,7 @@ static uint8_t prv_device_read(uint16_t instanceId,
     // is the server asking for the full object ?
     if (*numDataP == 0)
     {
-        uint16_t resList[] = {0, 1, 2, 3, 6, 7, 8, 9, 10, 11, 13, 14, 15};
+        uint16_t resList[] = {0, 1, 2, 3, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16};
         int nbRes = sizeof(resList)/sizeof(uint16_t);
 
         *dataArrayP = lwm2m_tlv_new(nbRes);
@@ -439,6 +464,8 @@ static uint8_t prv_device_write(uint16_t instanceId,
             }
             break;
 
+        case 15:    //RES_O_TIMEZONE:
+			//ToDo IANA TZ Format
         default:
             result = COAP_405_METHOD_NOT_ALLOWED;
         }
@@ -486,7 +513,7 @@ lwm2m_object_t * get_object_device()
      */
     lwm2m_object_t * deviceObj;
 
-    deviceObj = (lwm2m_object_t *)malloc(sizeof(lwm2m_object_t));
+    deviceObj = (lwm2m_object_t *)lwm2m_malloc(sizeof(lwm2m_object_t));
 
     if (NULL != deviceObj)
     {
@@ -508,7 +535,7 @@ lwm2m_object_t * get_object_device()
         deviceObj->executeFunc = prv_device_execute;
         deviceObj->attribFunc = prv_device_attribute;
         deviceObj->datatypeFunc = prv_device_datatype;
-        deviceObj->userData = malloc(sizeof(device_data_t));
+        deviceObj->userData = lwm2m_malloc(sizeof(device_data_t));
 
         /*
          * Also some user data can be stored in the object with a private structure containing the needed variables 
@@ -516,11 +543,11 @@ lwm2m_object_t * get_object_device()
         if (NULL != deviceObj->userData)
         {
             ((device_data_t*)deviceObj->userData)->time = 1367491215;
-            strcpy(((device_data_t*)deviceObj->userData)->time_offset, "+02:00");
+            strcpy(((device_data_t*)deviceObj->userData)->time_offset, "+01:00");
         }
         else
         {
-            free(deviceObj);
+            lwm2m_free(deviceObj);
             deviceObj = NULL;
         }
     }

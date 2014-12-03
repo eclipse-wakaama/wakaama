@@ -46,7 +46,7 @@ In the any directory, run the following commands:
     make
     ./lwm2mserver
 
-The lwm2mserver listens on UDP port 5684. It features a basic command line
+The lwm2mserver listens on UDP port 5683. It features a basic command line
 interface. Type 'help' for a list of supported commands.
 
 
@@ -75,6 +75,6 @@ The lwm2mclient features four LWM2M objects:
            test |  1 |    R/W     |    No     |    Yes    | Integer | 0-255 |
            exec |  2 |     E      |    No     |    Yes    |         |       |
     
-The lwm2mclient opens udp port 5683 and tries to register to a LWM2M Server at
-127.0.0.1:5684. It features a basic command line interface. Type 'help' for a
+The lwm2mclient opens udp port 56830 and tries to register to a LWM2M Server at
+127.0.0.1:5683. It features a basic command line interface. Type 'help' for a
 list of supported commands.

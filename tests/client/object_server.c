@@ -13,6 +13,7 @@
  * Contributors:
  *    David Navarro, Intel Corporation - initial API and implementation
  *    Julien Vermillard, Sierra Wireless
+ *    Bosch Software Innovations GmbH - Please refer to git log
  *    
  *******************************************************************************/
 
@@ -321,7 +322,8 @@ static void prv_server_close(lwm2m_object_t * objectP)
     }
 }
 
-lwm2m_object_t * get_server_object()
+lwm2m_object_t * get_server_object(int serverId, const char* binding, 
+                                   int lifetime, bool storing)
 {
     lwm2m_object_t * serverObj;
 
@@ -345,11 +347,10 @@ lwm2m_object_t * get_server_object()
 
         memset(targetP, 0, sizeof(server_instance_t));
         targetP->instanceId = 0;
-        targetP->shortServerId = 123;
-        targetP->lifetime = 60;
-        targetP->storing = false;
-        targetP->binding[0] = 'U';
-
+        targetP->shortServerId = serverId;
+        targetP->lifetime = lifetime;
+        targetP->storing = storing;
+        memcpy (targetP->binding, binding, strlen(binding)+1);
         serverObj->instanceList = LWM2M_LIST_ADD(serverObj->instanceList, targetP);
 
         serverObj->readFunc = prv_server_read;

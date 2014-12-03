@@ -15,6 +15,7 @@
  *    Fabien Fleutot - Please refer to git log
  *    Toby Jaffey - Please refer to git log
  *    Benjamin Cabé - Please refer to git log
+ *    Bosch Software Innovations GmbH - Please refer to git log
  *    
  *******************************************************************************/
 
@@ -47,10 +48,10 @@
  David Navarro <david.navarro@intel.com>
 
 */
+#include "internals.h"
 
 #ifdef LWM2M_CLIENT_MODE
 
-#include "internals.h"
 
 #include <stdlib.h>
 #include <string.h>
