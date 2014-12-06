@@ -348,6 +348,7 @@ void registration_deregister(lwm2m_context_t * contextP,
     size_t pktBufferLen = 0;
 
     if (serverP->status == STATE_UNKNOWN
+     || serverP->status == STATE_REG_PENDING
      || serverP->status == STATE_DEREG_PENDING)
         {
             return;
