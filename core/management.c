@@ -188,14 +188,14 @@ static void dm_result_callback(lwm2m_transaction_t * transacP,
             locationString = coap_get_multi_option_as_string(packet->location_path);
             if (locationString == NULL)
             {
-                fprintf(stderr, "Error: coap_get_multi_option_as_string() failed for Location_path option in dm_result_callback()\n");
+                LOG("Error: coap_get_multi_option_as_string() failed for Location_path option in dm_result_callback()\n");
                 return;
             }
 
             result = lwm2m_stringToUri(locationString, strlen(locationString), &locationUri);
             if (result == 0)
             {
-                fprintf(stderr, "Error: lwm2m_stringToUri() failed for Location_path option in dm_result_callback()\n");
+                LOG("Error: lwm2m_stringToUri() failed for Location_path option in dm_result_callback()\n");
                 lwm2m_free(locationString);
                 return;
             }

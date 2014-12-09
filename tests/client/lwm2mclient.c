@@ -392,7 +392,7 @@ int main(int argc, char *argv[])
     }
 
     int serverId = 123;
-    objArray[3] = get_server_object(serverId, "U", 300, false);
+    objArray[3] = get_server_object(serverId, "U", 60, false);
     if (NULL == objArray[3])
     {
         fprintf(stderr, "Failed to create server object\r\n");

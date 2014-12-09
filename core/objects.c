@@ -184,18 +184,16 @@ coap_status_t object_read(lwm2m_context_t * contextP,
     return result;
 }
 
-coap_status_t object_attrib(lwm2m_context_t * contextP,
-                           lwm2m_uri_t * uriP,
-                            multi_option_t * uri_query,
-                            void * fromSessionH )
-{
-    lwm2m_object_t * targetP;
-    multi_option_t * queryEntry;
-    coap_status_t status = BAD_REQUEST_4_00;
+coap_status_t object_attrib(lwm2m_context_t* contextP,
+                            lwm2m_uri_t*     uriP,
+                            multi_option_t*  uri_query,
+                            void*            fromSessionH ) {
+    //-------------------------------------------------------------------- JH --
+    lwm2m_object_t* targetP;
+    multi_option_t* queryEntry;
+    coap_status_t   status = BAD_REQUEST_4_00;
     lwm2m_attribute_type_t type;
-    uint32_t value;
-    char valueString[10];
-    lwm2m_server_t * serverP;
+    lwm2m_server_t* serverP;
 
     if (0 == (uriP->flag & LWM2M_URI_FLAG_INSTANCE_ID))   // TODO: remove this, attributes are allowed for object/instance/resource
     {
@@ -208,65 +206,56 @@ coap_status_t object_attrib(lwm2m_context_t * contextP,
     {
         return NOT_FOUND_4_04;
     }
-    if (NULL == targetP->attribFunc)
+    if (NULL == targetP->datatypeFunc)  //if (NULL == targetP->attribFunc)
     {
         return METHOD_NOT_ALLOWED_4_05;
     }
     
     queryEntry = uri_query;
     while(queryEntry != NULL) {
-      // check if cancel is send
-      if(0 == strncmp(queryEntry->data, "cancel", queryEntry->len)) {
-        type = ATTRIBUTE_CANCEL;
-        value = 0;
-      } else {
-        int i;
-        // extract key/value
-        // find '=' character
-        for(i=0;i<queryEntry->len;i++) {
-          if(queryEntry->data[i] == '=') {
-            // extract type
-            if(0 == strncmp(queryEntry->data, "pmin", i)) {
-              type = ATTRIBUTE_MIN_PERIOD;
-              break;
-            } else if (0 == strncmp(queryEntry->data, "pmax", i)) {
-              type = ATTRIBUTE_MAX_PERIOD;
-              break;
-            } else if (0 == strncmp(queryEntry->data, "gt", i)) {
-              type = ATTRIBUTE_GREATER_THEN;
-              break;
-            } else if (0 == strncmp(queryEntry->data, "lt", i)) {
-              type = ATTRIBUTE_LESS_THEN;
-              break;
-            } else if (0 == strncmp(queryEntry->data, "st", i)) {
-              type = ATTRIBUTE_STEP;
-              break;
+        serverP = contextP->serverList;
+        while(serverP != NULL) {
+            if(fromSessionH == serverP->sessionH) {
+                break;
             } else {
-              return BAD_REQUEST_4_00;
+                serverP = serverP->next;
             }
-          }
+        } 
+
+        if(serverP != NULL) {
+            // check if cancel is send. 
+            // TODO: "cancel" is exclusive to the other attributes?
+            if(0 == strncmp(queryEntry->data, "cancel", queryEntry->len)) {
+                status = lwm2m_setAttributes(contextP, uriP, ATTRIBUTE_CANCEL, 0, targetP, serverP);
+            } else {
+                int   aTknLen;
+                char  *aTyp, *aVal;
+                char  *aTkn = strtok (queryEntry->data, " ;");
+                while (aTkn != NULL) {
+                    //LOG("aTkn: %s\n", aTkn);
+                    aTknLen = strlen(aTkn);
+                    aTyp = strtok (aTkn, " =");
+                    //LOG("aTyp: %s\n", aTyp);
+                    if (strcasecmp(aTyp,"pmin")==0) type = ATTRIBUTE_MIN_PERIOD;
+                    else 
+                    if (strcasecmp(aTyp,"pmax")==0) type = ATTRIBUTE_MAX_PERIOD;
+                    else
+                    if (strcasecmp(aTyp,"gt")==0)   type = ATTRIBUTE_GREATER_THEN;
+                    else
+                    if (strcasecmp(aTyp,"lt")==0)   type = ATTRIBUTE_LESS_THEN;
+                    else
+                    if (strcasecmp(aTyp,"st")==0)   type = ATTRIBUTE_STEP;
+                    else                            return BAD_REQUEST_4_00;
+                    aVal = aTkn+strlen(aTyp)+1;
+                    //LOG("aVal: %s\n", aVal);
+                    status = lwm2m_setAttributes(contextP, uriP, type, aVal, targetP, serverP);
+                    aTkn = strtok (aTkn+aTknLen+1, " ;");
+                    if (status!=COAP_NO_ERROR) break;   //TODO check correctness before set!
+                }
+            }
         }
-        // build a string from the value
-        memcpy(valueString,&queryEntry->data[i+1],queryEntry->len-(i+1));
-        // add endmarker
-        valueString[queryEntry->len-(i+1)] = 0x00;
-      }
-      
-      // find attribute list for server instance
-      serverP = contextP->serverList;
-      while(serverP != NULL) {
-         if(fromSessionH == serverP->sessionH) {
-           break;
-         } else {
-           serverP = serverP->next;
-         }
-      } 
-      if(serverP != NULL) {
-        status = targetP->attribFunc(contextP, uriP, type, valueString, targetP, serverP);
-      }
-      queryEntry = queryEntry->next;
-    }
-    
+        queryEntry = queryEntry->next;
+    }    
     return status; 
 }
 

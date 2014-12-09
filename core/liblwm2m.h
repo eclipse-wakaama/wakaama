@@ -217,14 +217,14 @@ typedef struct
 } lwm2m_tlv_t;
 
 lwm2m_tlv_t * lwm2m_tlv_new(int size);
-int lwm2m_tlv_parse(char * buffer, size_t bufferLen, lwm2m_tlv_t ** dataP);
-int lwm2m_tlv_serialize(int size, lwm2m_tlv_t * tlvP, char ** bufferP);
+int  lwm2m_tlv_parse(char * buffer, size_t bufferLen, lwm2m_tlv_t ** dataP);
+int  lwm2m_tlv_serialize(int size, lwm2m_tlv_t * tlvP, char ** bufferP);
 void lwm2m_tlv_free(int size, lwm2m_tlv_t * tlvP);
 
 void lwm2m_tlv_encode_int(int64_t data, lwm2m_tlv_t * tlvP);
-int lwm2m_tlv_decode_int(lwm2m_tlv_t * tlvP, int64_t * dataP);
+int  lwm2m_tlv_decode_int(lwm2m_tlv_t * tlvP, int64_t * dataP);
 void lwm2m_tlv_encode_bool(bool data, lwm2m_tlv_t * tlvP);
-int lwm2m_tlv_decode_bool(lwm2m_tlv_t * tlvP, bool * dataP);
+int  lwm2m_tlv_decode_bool(lwm2m_tlv_t * tlvP, bool * dataP);
 
 
 /*
@@ -282,21 +282,6 @@ typedef enum
     ATTRIBUTE_CANCEL
 } lwm2m_attribute_type_t;
 
-/** holds the attributes for object, instance and resources */
-typedef struct _attribute_data_ {
-  struct _attribute_data_ * next;    // next list element
-  uint16_t shortID;
-  time_t lastTransmission;  /**< holds the time stamp of the last transmission of this object, instance or resource */
-  time_t nextTransmission;  /**< holds the time for the next scheduled transmission */
-  lwm2m_uri_t uri;          /**< holds the URI of the object/instance/resource the attributes are valid for */
-  char* minPeriod;       /**< minimal update period in seconds, the object/instance/resource must not be sent more frequent */
-  char* maxPeriod;       /**< maximum update period, the object/instance/resource must be sent at least after this period, even if no change happend */
-  char* greaterThan;     /**< the resource has to be sent if this threshold is reached */
-  char* lessThan;        /**< the resource has to be sent if this threshold is underrun */
-  char* step;            /**< the resource has to be sent if it is changed by the given step */
-  char* oldValue;        /**< holds the last sent value of the resource if the resource is a numerical resource */
-} lwm2m_attribute_data_t;
-
 /*
  * LWM2M Objects
  *
@@ -336,13 +321,30 @@ typedef enum
 
 typedef enum    // data type of TLV_RESSOURCE for cond. observe
 {
-    LWM2M_DATATYPE_STRING = 0,
+    LWM2M_DATATYPE_UNKNOWN = 0,
+    LWM2M_DATATYPE_STRING,
     LWM2M_DATATYPE_INTEGER,
     LWM2M_DATATYPE_FLOAT,
     LWM2M_DATATYPE_BOOLEAN,
     LWM2M_DATATYPE_OPAQUE,
     LWM2M_DATATYPE_TIME
 } lwm2m_data_type_t;
+
+/** holds the attributes for object, instance and resources */
+typedef struct _attribute_data_ {
+  struct _attribute_data_ * next;    // next list element
+  uint16_t shortID;
+  time_t lastTransmission;  /**< holds the time stamp of the last transmission of this object, instance or resource */
+  time_t nextTransmission;  /**< holds the time for the next scheduled transmission */
+  lwm2m_uri_t uri;          /**< holds the URI of the object/instance/resource the attributes are valid for */
+  char* minPeriod;       /**< minimal update period in seconds, the object/instance/resource must not be sent more frequent */
+  char* maxPeriod;       /**< maximum update period, the object/instance/resource must be sent at least after this period, even if no change happend */
+  char* greaterThan;     /**< the resource has to be sent if this threshold is reached */
+  char* lessThan;        /**< the resource has to be sent if this threshold is underrun */
+  char* step;            /**< the resource has to be sent if it is changed by the given step */
+  char* oldValue;        /**< holds the last sent value of the resource if the resource is a numerical resource */
+  lwm2m_data_type_t resDataType;
+} lwm2m_attribute_data_t;
 
 typedef struct _lwm2m_server_
 {
@@ -562,8 +564,9 @@ int lwm2m_update_registration(lwm2m_context_t * contextP, uint16_t shortServerID
 void lwm2m_resource_value_changed(lwm2m_context_t * contextP, lwm2m_uri_t * uriP);
 /**
   sets the attributes of a object/instance/resource
+ * @return coap result
 */
-int lwm2m_setAttributes(lwm2m_context_t * contextP, lwm2m_uri_t * uriP,lwm2m_attribute_type_t type, const char* value, lwm2m_object_t * objectP,  lwm2m_server_t * serverP);
+uint8_t lwm2m_setAttributes(lwm2m_context_t * contextP, lwm2m_uri_t * uriP,lwm2m_attribute_type_t type, const char* value, lwm2m_object_t * objectP,  lwm2m_server_t * serverP);
 #endif
 
 #ifdef LWM2M_SERVER_MODE
