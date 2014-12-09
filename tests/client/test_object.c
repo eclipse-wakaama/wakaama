@@ -156,14 +156,14 @@ static uint8_t prv_read(uint16_t instanceId,
     return COAP_205_CONTENT;
 }
 
-static uint8_t prv_attribute(lwm2m_context_t * contextP, lwm2m_uri_t * uriP,
-                                lwm2m_attribute_type_t type,
-                                const char* value,
-                                lwm2m_object_t * objectP,  lwm2m_server_t * serverP)
+static uint8_t prv_attribute(lwm2m_context_t* contextP, lwm2m_uri_t* uriP,
+                             lwm2m_attribute_type_t type,
+                             const char* value,
+                             lwm2m_object_t* objectP,  lwm2m_server_t* serverP)
 {
-    // this is a single instance object
-    if (LWM2M_URI_IS_SET_INSTANCE(uriP) && uriP->instanceId < 10
-        || LWM2M_URI_IS_SET_INSTANCE(uriP) && uriP->instanceId > 12)
+    // this is not a single instance object
+    if (LWM2M_URI_IS_SET_INSTANCE(uriP) && uriP->instanceId < 10 ||
+        LWM2M_URI_IS_SET_INSTANCE(uriP) && uriP->instanceId > 12   )
     {
         return COAP_404_NOT_FOUND;
     }
