@@ -312,13 +312,14 @@ syntax_error:
 }
 
 
+#define OBJ_COUNT 6
 
 int main(int argc, char *argv[])
 {
     client_data_t data;
     int result;
     lwm2m_context_t * lwm2mH = NULL;
-    lwm2m_object_t * objArray[6];
+    lwm2m_object_t * objArray[OBJ_COUNT];
     int i;
     char localPort[7], server[30], serverPort[7];
     /*
@@ -428,7 +429,7 @@ int main(int argc, char *argv[])
      * We configure the liblwm2m library with the name of the client - which shall be unique for each client -
      * the number of objects we will be passing through and the objects array
      */
-    result = lwm2m_configure(lwm2mH, "testlwm2mclient", BINDING_U, NULL, sizeof(objArray), objArray);
+    result = lwm2m_configure(lwm2mH, "testlwm2mclient", BINDING_U, NULL, OBJ_COUNT, objArray);
     if (result != 0)
     {
         fprintf(stderr, "lwm2m_set_objects() failed: 0x%X\r\n", result);
