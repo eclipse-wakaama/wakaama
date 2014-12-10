@@ -30,7 +30,15 @@
 #include <liblwm2m.h>
 #include "internals.h"
 
-void lwm2m_updateTransmissionAttributes(lwm2m_server_t * serverP, lwm2m_uri_t * uriP, struct timeval *tv) {
+/**
+ * 
+ * @param serverP
+ * @param uriP
+ * @param tv
+ */
+void lwm2m_updateTransmissionAttributes(lwm2m_server_t *serverP, lwm2m_uri_t *uriP, 
+                                        struct timeval *tv) {
+    //-------------------------------------------------------------------- JH --
     lwm2m_attribute_data_t * attributeP;
 
     attributeP = lwm2m_getAttributes(serverP, uriP);
@@ -43,8 +51,14 @@ void lwm2m_updateTransmissionAttributes(lwm2m_server_t * serverP, lwm2m_uri_t * 
       }
     }
 }
-
-lwm2m_attribute_data_t * lwm2m_getAttributes(lwm2m_server_t * serverP, lwm2m_uri_t * uriP) {
+/**
+ * 
+ * @param serverP
+ * @param uriP
+ * @return 
+ */
+lwm2m_attribute_data_t * lwm2m_getAttributes(lwm2m_server_t *serverP, lwm2m_uri_t *uriP) {
+    //-------------------------------------------------------------------- JH --
 
     lwm2m_attribute_data_t * attributeP;
 
@@ -117,10 +131,10 @@ uint8_t lwm2m_setAttributes(lwm2m_context_t * contextP, lwm2m_uri_t * uriP,
     case ATTRIBUTE_MIN_PERIOD:
     case ATTRIBUTE_MAX_PERIOD: {
         long v;
-        if(sscanf(value,"%d", v)==0) { // format mismatch
+        if(sscanf(value,"%d", &v)==0) { // format mismatch
             return COAP_400_BAD_REQUEST; 
         } else {    // pot. clean up
-            sprintf (valStr, "%d", v); // TODO check memsize???
+            sprintf (valStr, "%ld", v); // TODO check memsize???
         }
     }   break;
     case ATTRIBUTE_GREATER_THEN:

@@ -376,7 +376,7 @@ void lwm2m_resource_value_changed(lwm2m_context_t * contextP,
                         coapResult = lwm2m_evalAttributes(attrData, buffer, length, tv, &notifyResult);
                   
                         if (coapResult != COAP_NO_ERROR) { 
-                            printf("ERROR: lwm2m_cmpAttributes() failed!\n"); //TODO: Error Handling
+                            printf("ERROR: lwm2m_evalAttributes() failed!\n"); //TODO: Error Handling
                         } else
                         if (notifyResult == false) {
                             
