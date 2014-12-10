@@ -327,7 +327,7 @@ int lwm2m_update_registration(lwm2m_context_t * contextP, uint16_t shortServerID
 }
 
 // for each server update the registration if needed
-int lwm2m_update_registrations(lwm2m_context_t * contextP, uint32_t currentTime)
+int lwm2m_update_registrations(lwm2m_context_t * contextP, uint32_t currentTime, struct timeval * timeoutP)
 {
     lwm2m_server_t * targetP;
     targetP = contextP->serverList;
@@ -335,9 +335,8 @@ int lwm2m_update_registrations(lwm2m_context_t * contextP, uint32_t currentTime)
     {
         switch (targetP->status) {
             case STATE_REGISTERED:
-                if (targetP->registration + targetP->lifetime/2 <= currentTime)
+                if (targetP->registration + targetP->lifetime + timeoutP->tv_sec <= currentTime)
                 {
-                    //printf("lwm2m_update_registrations: update registration\n");
                     prv_update_registration(contextP, targetP);
                 }
                 break;
@@ -348,8 +347,7 @@ int lwm2m_update_registrations(lwm2m_context_t * contextP, uint32_t currentTime)
             case STATE_REG_PENDING:
                 break;
             case STATE_REG_UPDATE_PENDING:
-                // TODO: is it disabled?
-                prv_register(contextP, targetP);
+                // TODO: check for timeout and retry?
                 break;
             case STATE_DEREG_PENDING:
                 break;

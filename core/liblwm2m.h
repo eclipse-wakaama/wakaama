@@ -516,7 +516,7 @@ int lwm2m_configure(lwm2m_context_t * contextP, char * endpointName, lwm2m_bindi
 int lwm2m_register(lwm2m_context_t * contextP);
 
 // check if the server registrations are outdated and needs to be renewed
-int lwm2m_update_registrations(lwm2m_context_t * contextP, uint32_t currentTime);
+int lwm2m_update_registrations(lwm2m_context_t * contextP, uint32_t currentTime, struct timeval * timeoutP);
 
 // send a registration update to the server specified by the server short identifier
 int lwm2m_update_registration(lwm2m_context_t * contextP, uint16_t shortServerID);

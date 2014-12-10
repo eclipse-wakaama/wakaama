@@ -352,8 +352,6 @@ int main(int argc, char *argv[])
     if (argc >= 3) strcpy (server,     argv[2]);
     if (argc >= 4) strcpy (serverPort, argv[3]);
 
-    //printf ("localport: %s, server %s:%s\n", localPort, server, serverPort);
-
     /*
      *This call an internal function that create an IPV6 socket on the port 5683.
      */
