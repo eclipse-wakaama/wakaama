@@ -223,21 +223,13 @@ static int prv_register(lwm2m_context_t * contextP, lwm2m_server_t * server)
     }
 }
 
-int lwm2m_register(lwm2m_context_t * contextP)
+int lwm2m_start(lwm2m_context_t * contextP)
 {
     lwm2m_server_t * targetP;
     int result;
 
     result = object_getServers(contextP);
-    if (result != 0) return result;
-
-    targetP = contextP->serverList;
-    while (targetP != NULL)
-    {
-        prv_register(contextP, targetP);
-        targetP = targetP->next;
-    }
-    return 0;
+    return result;
 }
 
 static void prv_handleRegistrationUpdateReply(lwm2m_transaction_t * transacP,
@@ -335,7 +327,7 @@ int lwm2m_update_registrations(lwm2m_context_t * contextP, uint32_t currentTime,
     {
         switch (targetP->status) {
             case STATE_REGISTERED:
-                if (targetP->registration + targetP->lifetime + timeoutP->tv_sec <= currentTime)
+                if (targetP->registration + targetP->lifetime - timeoutP->tv_sec <= currentTime)
                 {
                     prv_update_registration(contextP, targetP);
                 }

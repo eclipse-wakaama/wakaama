@@ -439,9 +439,9 @@ int main(int argc, char *argv[])
     signal(SIGINT, handle_sigint);
 
     /*
-     * This function register your client to the LWM2M servers
+     * This function start your client to the LWM2M servers
      */
-    result = lwm2m_register(lwm2mH);
+    result = lwm2m_start(lwm2mH);
     if (result != 0)
     {
         fprintf(stderr, "lwm2m_register() failed: 0x%X\r\n", result);
