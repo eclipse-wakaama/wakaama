@@ -533,8 +533,8 @@ lwm2m_object_t * get_object_device()
         deviceObj->readFunc = prv_device_read;
         deviceObj->writeFunc = prv_device_write;
         deviceObj->executeFunc = prv_device_execute;
-        deviceObj->attribFunc = prv_device_attribute;
-        deviceObj->datatypeFunc = prv_device_datatype;
+        deviceObj->attribFunc = prv_device_attribute;   //TODO remove
+        deviceObj->datatypeFunc = prv_device_datatype;  
         deviceObj->userData = lwm2m_malloc(sizeof(device_data_t));
 
         /*

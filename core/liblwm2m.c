@@ -293,7 +293,7 @@ int lwm2m_step(lwm2m_context_t * contextP,
         transacP = nextP;
     }
 #ifdef LWM2M_CLIENT_MODE
-    lwm2m_update_registrations(contextP,tv.tv_sec);
+    lwm2m_update_registrations(contextP, tv.tv_sec, timeoutP);
     
     // handle the notification from observed objects,instances, resources
     interval = lwm2m_notify(contextP, &tv) - tv.tv_sec;

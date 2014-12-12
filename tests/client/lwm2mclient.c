@@ -132,6 +132,7 @@ static void * prv_connect_server(uint16_t serverID,
     if (0==strncmp(uri, "coap://",  strlen("coap://")))
       host = uri+strlen("coap://");
     else goto exit;
+    
     portStr = strchr(host, ':');
     if (portStr == NULL) goto exit;
     // split strings
@@ -312,13 +313,14 @@ syntax_error:
 }
 
 
+#define OBJ_COUNT 6
 
 int main(int argc, char *argv[])
 {
     client_data_t data;
     int result;
     lwm2m_context_t * lwm2mH = NULL;
-    lwm2m_object_t * objArray[6];
+    lwm2m_object_t * objArray[OBJ_COUNT];
     int i;
     char localPort[7], server[30], serverPort[7];
     /*
@@ -351,8 +353,6 @@ int main(int argc, char *argv[])
     if (argc >= 2) strcpy (localPort,  argv[1]);
     if (argc >= 3) strcpy (server,     argv[2]);
     if (argc >= 4) strcpy (serverPort, argv[3]);
-
-    //printf ("localport: %s, server %s:%s\n", localPort, server, serverPort);
 
     /*
      *This call an internal function that create an IPV6 socket on the port 5683.
@@ -392,6 +392,7 @@ int main(int argc, char *argv[])
     }
 
     int serverId = 123;
+//JH-    objArray[3] = get_server_object(serverId, "U", 300, false);    //ACTIVATE FOR PR!
     objArray[3] = get_server_object(serverId, "U", 60, false);
     if (NULL == objArray[3])
     {
@@ -431,8 +432,7 @@ int main(int argc, char *argv[])
      * We configure the liblwm2m library with the name of the client - which shall be unique for each client -
      * the number of objects we will be passing through and the objects array
      */
-    result = lwm2m_configure(lwm2mH, "testlwm2mclient", BINDING_U, NULL, 
-                             sizeof(objArray)/sizeof(lwm2m_object_t*), objArray);
+    result = lwm2m_configure(lwm2mH, "testlwm2mclient", BINDING_U, NULL, OBJ_COUNT, objArray);
     if (result != 0)
     {
         fprintf(stderr, "lwm2m_set_objects() failed: 0x%X\r\n", result);
@@ -442,9 +442,9 @@ int main(int argc, char *argv[])
     signal(SIGINT, handle_sigint);
 
     /*
-     * This function register your client to the LWM2M servers
+     * This function start your client to the LWM2M servers
      */
-    result = lwm2m_register(lwm2mH);
+    result = lwm2m_start(lwm2mH);
     if (result != 0)
     {
         fprintf(stderr, "lwm2m_register() failed: 0x%X\r\n", result);

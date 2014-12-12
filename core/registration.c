@@ -237,7 +237,15 @@ int lwm2m_register(lwm2m_context_t * contextP)
         prv_register(contextP, targetP);
         targetP = targetP->next;
     }
-    return 0;
+}
+
+int lwm2m_start(lwm2m_context_t * contextP)
+{
+    lwm2m_server_t * targetP;
+    int result;
+
+    result = object_getServers(contextP);
+    return result;
 }
 
 static void prv_handleRegistrationUpdateReply(lwm2m_transaction_t * transacP,
@@ -327,7 +335,7 @@ int lwm2m_update_registration(lwm2m_context_t * contextP, uint16_t shortServerID
 }
 
 // for each server update the registration if needed
-int lwm2m_update_registrations(lwm2m_context_t * contextP, uint32_t currentTime)
+int lwm2m_update_registrations(lwm2m_context_t * contextP, uint32_t currentTime, struct timeval * timeoutP)
 {
     lwm2m_server_t * targetP;
     targetP = contextP->serverList;
@@ -335,9 +343,8 @@ int lwm2m_update_registrations(lwm2m_context_t * contextP, uint32_t currentTime)
     {
         switch (targetP->status) {
             case STATE_REGISTERED:
-                if (targetP->registration + targetP->lifetime/2 <= currentTime)
+                if (targetP->registration + targetP->lifetime - timeoutP->tv_sec <= currentTime)
                 {
-                    //LOG("lwm2m_update_registrations: update registration\n");
                     prv_update_registration(contextP, targetP);
                 }
                 break;
@@ -348,8 +355,8 @@ int lwm2m_update_registrations(lwm2m_context_t * contextP, uint32_t currentTime)
             case STATE_REG_PENDING:
                 break;
             case STATE_REG_UPDATE_PENDING:
-                // TODO: is it disabled?
-                prv_register(contextP, targetP);
+                // TODO: check for timeout and retry?   
+                //prv_register(contextP, targetP);    //JH: REMOVE BEFORE PR!!
                 break;
             case STATE_DEREG_PENDING:
                 break;
@@ -404,6 +411,7 @@ void registration_deregister(lwm2m_context_t * contextP,
     size_t pktBufferLen = 0;
 
     if (serverP->status == STATE_UNKNOWN
+     || serverP->status == STATE_REG_PENDING
      || serverP->status == STATE_DEREG_PENDING)
         {
             return;
