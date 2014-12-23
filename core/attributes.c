@@ -116,7 +116,7 @@ uint8_t lwm2m_setAttributes(lwm2m_context_t * contextP, lwm2m_uri_t * uriP,
             if (objectP==NULL || objectP->datatypeFunc==NULL) {
                 return COAP_501_NOT_IMPLEMENTED;
             }
-            if (COAP_NO_ERROR != objectP->datatypeFunc(objectP, uriP->resourceId, &resDataType)) {
+            if (COAP_NO_ERROR != objectP->datatypeFunc(uriP->resourceId, &resDataType)) {
                 return COAP_501_NOT_IMPLEMENTED;
             }                                                        
             break;
