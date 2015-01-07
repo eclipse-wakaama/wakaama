@@ -193,8 +193,8 @@ static void prv_output_servers(char * buffer,
         fprintf(stdout, "\tstatus: ");
         switch(targetP->status)
         {
-        case STATE_UNKNOWN:
-            fprintf(stdout, "UNKNOWN\r\n");
+        case STATE_DEREGISTERED:
+            fprintf(stdout, "DEREGISTERED\r\n");
             break;
         case STATE_REG_PENDING:
             fprintf(stdout, "REGISTRATION PENDING\r\n");

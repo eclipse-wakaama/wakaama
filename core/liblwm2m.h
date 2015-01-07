@@ -313,11 +313,12 @@ struct _lwm2m_object_t
 
 typedef enum
 {
-    STATE_UNKNOWN = 0,
-    STATE_REG_PENDING,
-    STATE_REGISTERED,
-    STATE_REG_UPDATE_PENDING,
-    STATE_DEREG_PENDING
+    STATE_DEREGISTERED = 0,          // not registered
+    STATE_REG_PENDING,        // registration pending
+    STATE_REGISTERED,         // sucesfully registered
+    STATE_REG_FAILED,         // last registration failed
+    STATE_REG_UPDATE_PENDING, // registration update pending
+    STATE_DEREG_PENDING       // deregistration pending
 } lwm2m_status_t;
 
 typedef enum

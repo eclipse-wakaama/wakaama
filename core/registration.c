@@ -137,7 +137,7 @@ static void prv_handleRegistrationReply(lwm2m_transaction_t * transacP,
     {
         if (packet == NULL)
         {
-            targetP->status = STATE_UNKNOWN;
+            targetP->status = STATE_DEREGISTERED;
             targetP->mid = 0;
         }
         else if (packet->mid == targetP->mid
@@ -156,7 +156,7 @@ static void prv_handleRegistrationReply(lwm2m_transaction_t * transacP,
             }
             else if (packet->code == BAD_REQUEST_4_00)
             {
-                targetP->status = STATE_UNKNOWN;
+                targetP->status = STATE_DEREGISTERED;
                 targetP->mid = 0;
             }
         }
@@ -247,7 +247,7 @@ static void prv_handleRegistrationUpdateReply(lwm2m_transaction_t * transacP,
     {
         if (packet == NULL)
         {
-            targetP->status = STATE_UNKNOWN;
+            targetP->status = STATE_DEREGISTERED;
             targetP->mid = 0;
         }
         else if (packet->mid == targetP->mid
@@ -263,7 +263,7 @@ static void prv_handleRegistrationUpdateReply(lwm2m_transaction_t * transacP,
             }
             else if (packet->code == BAD_REQUEST_4_00)
             {
-                targetP->status = STATE_UNKNOWN;
+                targetP->status = STATE_DEREGISTERED;
                 targetP->mid = 0;
                 // trigger a new registration? infinite loop?
             }
@@ -332,7 +332,7 @@ int lwm2m_update_registrations(lwm2m_context_t * contextP, uint32_t currentTime,
                     prv_update_registration(contextP, targetP);
                 }
                 break;
-            case STATE_UNKNOWN:
+            case STATE_DEREGISTERED:
                 // TODO: is it disabled?
                 prv_register(contextP, targetP);
                 break;
@@ -363,7 +363,7 @@ static void prv_handleDeregistrationReply(lwm2m_transaction_t * transacP,
     {
         if (packet == NULL)
         {
-            targetP->status = STATE_UNKNOWN;
+            targetP->status = STATE_DEREGISTERED;
             targetP->mid = 0;
         }
         else if (packet->mid == targetP->mid
@@ -371,11 +371,11 @@ static void prv_handleDeregistrationReply(lwm2m_transaction_t * transacP,
         {
             if (packet->code == DELETED_2_02)
             {
-                targetP->status = STATE_UNKNOWN;
+                targetP->status = STATE_DEREGISTERED;
             }
             else if (packet->code == BAD_REQUEST_4_00)
             {
-                targetP->status = STATE_UNKNOWN;
+                targetP->status = STATE_DEREGISTERED;
                 targetP->mid = 0;
             }
         }
@@ -393,7 +393,7 @@ void registration_deregister(lwm2m_context_t * contextP,
     uint8_t pktBuffer[COAP_MAX_PACKET_SIZE+1];
     size_t pktBufferLen = 0;
 
-    if (serverP->status == STATE_UNKNOWN
+    if (serverP->status == STATE_DEREGISTERED
      || serverP->status == STATE_REG_PENDING
      || serverP->status == STATE_DEREG_PENDING)
         {
