@@ -5,6 +5,7 @@
 *.pc
 *.tgz
 *.gz
+*.stackdump
 .dirstamp
 
 Makefile
