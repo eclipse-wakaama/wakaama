@@ -426,48 +426,6 @@ syntax_error:
     fprintf(stdout, "Syntax error !");
 }
 
-static void prv_write_attrib_client(char * buffer, void * user_data) {
-    lwm2m_context_t * lwm2mH = (lwm2m_context_t *) user_data;
-    uint16_t clientId;
-    lwm2m_uri_t uri;
-    char * uriString;
-    int i;
-    int result;
-
-    result = prv_read_id(buffer, &clientId);
-    if (result != 1) goto syntax_error;
-
-    buffer = get_next_arg(buffer);
-    if (buffer[0] == 0) goto syntax_error;
-    uriString = buffer;
-
-    buffer = get_next_arg(buffer);
-    if (buffer[0] == 0) goto syntax_error;
-
-    i = 0;
-    while (uriString + i < buffer && !isspace(uriString[i]))
-    {
-        i++;
-    }
-    result = lwm2m_stringToUri(uriString, i, &uri);
-    if (result == 0) goto syntax_error;
-
-    result = lwm2m_dm_attribute(lwm2mH, clientId, &uri, buffer, strlen(buffer), prv_result_callback, NULL);
-
-    if (result == 0)
-    {
-        fprintf(stdout, "OK");
-    }
-    else
-    {
-        fprintf(stdout, "Error %d.%2d", (result&0xE0)>>5, result&0x1F);
-    }
-    return;
-
-syntax_error:
-    fprintf(stdout, "Syntax error !");
-}
-
 static void prv_exec_client(char * buffer,
                             void * user_data)
 {
