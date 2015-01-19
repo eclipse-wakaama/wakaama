@@ -15,6 +15,7 @@ Makefile
 CMakeCache.txt
 CMakeFiles
 Debug
+DebugServer
 Release
 cmake_install.cmake
 core/CMakeCache.txt
