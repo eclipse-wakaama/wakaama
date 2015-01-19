@@ -86,9 +86,9 @@ lwm2m_context_t * lwm2m_init(lwm2m_connect_server_callback_t connectCallback,
 
 void lwm2m_close(lwm2m_context_t * contextP)
 {
+#ifdef LWM2M_CLIENT_MODE
     int i;
 
-#ifdef LWM2M_CLIENT_MODE
     for (i = 0 ; i < contextP->numObject ; i++)
     {
         if (NULL != contextP->objectList[i]->closeFunc)
@@ -174,7 +174,7 @@ void lwm2m_close(lwm2m_context_t * contextP)
 
 #ifdef LWM2M_CLIENT_MODE
 int lwm2m_configure(lwm2m_context_t * contextP,
-                    char * endpointName,
+                    const char * endpointName,
                     lwm2m_binding_t binding,
                     char * msisdn,
                     uint16_t numObject,
@@ -254,12 +254,13 @@ int lwm2m_step(lwm2m_context_t * contextP,
 {
     lwm2m_transaction_t * transacP;
     struct timeval tv;
-    time_t interval;
 #ifdef LWM2M_SERVER_MODE
     lwm2m_client_t * clientP;
 #endif
 
     if (0 != lwm2m_gettimeofday(&tv, NULL)) return COAP_500_INTERNAL_SERVER_ERROR;
+
+    blockwise_free(contextP, tv.tv_sec);
 
     transacP = contextP->transactionList;
     while (transacP != NULL)
@@ -275,31 +276,16 @@ int lwm2m_step(lwm2m_context_t * contextP,
 
         if (0 == removed)
         {
-            if (transacP->retrans_time > tv.tv_sec)
-            {
-                interval = transacP->retrans_time - tv.tv_sec;
-            }
-            else
-            {
-                interval = 1;
-            }
-
-            if (timeoutP->tv_sec > interval)
-            {
-                timeoutP->tv_sec = interval;
-            }
+            lwm2m_adjustTimeout(transacP->retrans_time, tv.tv_sec, timeoutP);
         }
 
         transacP = nextP;
     }
 #ifdef LWM2M_CLIENT_MODE
     lwm2m_update_registrations(contextP, tv.tv_sec, timeoutP);
-    
+
     // handle the notification from observed objects,instances, resources
-    interval = lwm2m_notify(contextP, &tv) - tv.tv_sec;
-    if ((interval > 0) && (timeoutP->tv_sec > interval)) {
-      timeoutP->tv_sec = interval;
-    }
+    lwm2m_adjustTimeout(lwm2m_notify(contextP, &tv), tv.tv_sec, timeoutP);
 #endif
 
 #ifdef LWM2M_SERVER_MODE

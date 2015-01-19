@@ -36,12 +36,9 @@
  * @param uriP
  * @param tv
  */
-void lwm2m_updateTransmissionAttributes(lwm2m_server_t *serverP, lwm2m_uri_t *uriP, 
+void lwm2m_updateTransmissionAttributes(lwm2m_attribute_data_t * attributeP,
                                         struct timeval *tv) {
     //-------------------------------------------------------------------- JH --
-    lwm2m_attribute_data_t * attributeP;
-
-    attributeP = lwm2m_getAttributes(serverP, uriP);
     if(NULL != attributeP) {
       attributeP->lastTransmission = tv->tv_sec;
       if(attributeP->maxPeriod != NULL ) {
@@ -152,10 +149,10 @@ uint8_t lwm2m_setAttributes(lwm2m_context_t * contextP, lwm2m_uri_t * uriP,
         }   break;
         case LWM2M_DATATYPE_FLOAT:    {
             double v;
-            if(sscanf(value, "%f", &v)==0) { // format mismatch
+            if(sscanf(value, "%lf", &v)==0) { // format mismatch
                 return COAP_400_BAD_REQUEST; 
             } else {    // pot. clean up!
-              sprintf (valStr, "%f", v); // TODO check memsize???
+              sprintf (valStr, "%lf", v); // TODO check memsize???
             }
         }   break;
         default:
@@ -282,7 +279,7 @@ uint8_t lwm2m_evalAttributes(lwm2m_attribute_data_t* attrData,
         
   if (attrData->maxPeriod != NULL) { // check if max period is elapsed
         int maxPer;
-        if (sscanf(attrData->maxPeriod, "%ld", &maxPer)!=0) {
+        if (sscanf(attrData->maxPeriod, "%d", &maxPer)!=0) {
             if((attrData->lastTransmission + maxPer) < tv.tv_sec) {
                 // schedule transmission after min period is elapsed
                 attrData->nextTransmission = attrData->lastTransmission + maxPer;
@@ -340,16 +337,16 @@ uint8_t lwm2m_evalAttributes(lwm2m_attribute_data_t* attrData,
     }   break;
     case LWM2M_DATATYPE_FLOAT: {
         double value, gt, lt, st, ov;   
-        if (sscanf(resValStr , "%f", &value)==0)            break;
+        if (sscanf(resValStr , "%lf", &value)==0)            break;
         if (attrData->greaterThan != NULL) {
-          if (sscanf(attrData->greaterThan, "%f", &gt)==0)  break;
+          if (sscanf(attrData->greaterThan, "%lf", &gt)==0)  break;
         }
         if (attrData->lessThan != NULL) {
-          if (sscanf(attrData->lessThan, "%f", &lt)==0)     break;
+          if (sscanf(attrData->lessThan, "%lf", &lt)==0)     break;
         }
         if (attrData->step != NULL && attrData->oldValue!=NULL) {
-          if (sscanf(attrData->step,    "%f", &st)==0)      break;
-          if (sscanf(attrData->oldValue,"%f", &ov)==0)      break;
+          if (sscanf(attrData->step,    "%lf", &st)==0)      break;
+          if (sscanf(attrData->oldValue,"%lf", &ov)==0)      break;
         }       
         if (attrData->lessThan!=NULL    && attrData->greaterThan!=NULL){
             cmp = (value < lt) && (value > gt);
@@ -398,5 +395,3 @@ uint8_t lwm2m_evalAttributes(lwm2m_attribute_data_t* attrData,
 }
 
 #endif // LWM2M_CLIENT_MODE
-
-

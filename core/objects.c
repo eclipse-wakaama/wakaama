@@ -283,7 +283,7 @@ coap_status_t object_write(lwm2m_context_t * contextP,
         tlvP->type = LWM2M_TYPE_RESSOURCE;
         tlvP->id = uriP->resourceId;
         tlvP->length = length;
-        tlvP->value = buffer;
+        tlvP->value = (uint8_t*)buffer;
     }
     else
     {
@@ -508,7 +508,7 @@ static int prv_getMandatoryInfo(lwm2m_object_t * objectP,
     }
     targetP->lifetime = value;
 
-    targetP->binding = lwm2m_stringToBinding(tlvP[1].value, tlvP[1].length);
+    targetP->binding = lwm2m_stringToBinding((const char*)tlvP[1].value, tlvP[1].length);
 
     lwm2m_free(tlvP);
 

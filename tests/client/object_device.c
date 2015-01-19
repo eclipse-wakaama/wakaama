@@ -404,7 +404,6 @@ static uint8_t prv_device_read(uint16_t instanceId,
     return result;
 }
 
-
 static uint8_t prv_device_datatype(int resourceId, lwm2m_data_type_t *rDataType) {
     //-------------------------------------------------------------------- JH --
     uint8_t ret = COAP_NO_ERROR;

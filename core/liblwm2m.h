@@ -463,16 +463,23 @@ typedef struct _lwm2m_watcher_
     size_t tokenLen;
     uint32_t counter;
     uint16_t lastMid;
+    uint16_t blockSize;
+    uint8_t changed;
 } lwm2m_watcher_t;
 
 typedef struct _lwm2m_observed_
-
 {
     struct _lwm2m_observed_ * next;
 
     lwm2m_uri_t uri;
     lwm2m_watcher_t * watcherList;
 } lwm2m_observed_t;
+
+/**
+ * resource for blockwise transfer
+ */
+typedef struct _lwm2m_blockwise_ lwm2m_blockwise_t;
+
 
 
 /*
@@ -505,6 +512,7 @@ typedef struct
 #endif
     uint16_t                nextMID;
     lwm2m_transaction_t *   transactionList;
+    lwm2m_blockwise_t *     blockwiseList;
     // communication layer callbacks
     lwm2m_connect_server_callback_t connectCallback;
     lwm2m_buffer_send_callback_t    bufferSendCallback;
@@ -546,11 +554,13 @@ int lwm2m_step(lwm2m_context_t * contextP, struct timeval * timeoutP);
 // dispatch received data to liblwm2m
 void lwm2m_handle_packet(lwm2m_context_t * contextP, uint8_t * buffer, int length, void * fromSessionH);
 
+const char* lwm2m_statusToString(int status);
+
 #ifdef LWM2M_CLIENT_MODE
 // configure the client side with the Endpoint Name, binding, MSISDN (if any) and a list of objects.
 // LWM2M Security Object (ID 0) must be present with either a bootstrap server or a LWM2M server and
 // its matching LWM2M Server Object (ID 1) instance
-int lwm2m_configure(lwm2m_context_t * contextP, char * endpointName, lwm2m_binding_t binding, char * msisdn, uint16_t numObject, lwm2m_object_t * objectList[]);
+int lwm2m_configure(lwm2m_context_t * contextP, const char * endpointName, lwm2m_binding_t binding, char * msisdn, uint16_t numObject, lwm2m_object_t * objectList[]);
 
 // create objects for known LWM2M Servers.
 int lwm2m_start(lwm2m_context_t * contextP);
@@ -581,6 +591,7 @@ void lwm2m_set_monitoring_callback(lwm2m_context_t * contextP, lwm2m_result_call
 // Device Management APIs
 int lwm2m_dm_read(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, lwm2m_result_callback_t callback, void * userData);
 int lwm2m_dm_write(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, char * buffer, int length, lwm2m_result_callback_t callback, void * userData);
+int lwm2m_dm_attribute(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, char * buffer, int length, lwm2m_result_callback_t callback, void * userData);
 int lwm2m_dm_execute(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, char * buffer, int length, lwm2m_result_callback_t callback, void * userData);
 int lwm2m_dm_create(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, char * buffer, int length, lwm2m_result_callback_t callback, void * userData);
 int lwm2m_dm_delete(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, lwm2m_result_callback_t callback, void * userData);

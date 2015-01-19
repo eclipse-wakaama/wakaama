@@ -11,6 +11,7 @@ Makefile
 
 .cproject
 .project
+.settings
 
 CMakeCache.txt
 CMakeFiles
