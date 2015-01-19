@@ -67,16 +67,14 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
             int length = 0;
 
             result = object_read(contextP, uriP, &buffer, &length);
+            /* always set buffer as payload to omit memory leaks! */
+            coap_set_payload(response, buffer, length);
+            // lwm2m_handle_packet will free buffer
             if (result == COAP_205_CONTENT)
             {
                 if (IS_OPTION(message, COAP_OPTION_OBSERVE))
                 {
                     result = handle_observe_request(contextP, uriP, fromSessionH, message, response);
-                }
-                if (result == COAP_205_CONTENT)
-                {
-                    coap_set_payload(response, buffer, length);
-                    // lwm2m_handle_packet will free buffer
                 }
             }
         }
@@ -85,7 +83,7 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
         {
             if (!LWM2M_URI_IS_SET_INSTANCE(uriP))
             {
-                result = object_create(contextP, uriP, message->payload, message->payload_len);
+                result = object_create(contextP, uriP, (char*) message->payload, message->payload_len);
                 if (result == COAP_201_CREATED)
                 {
                     //longest uri is /65535/65535 = 12 + 1 (null) chars
@@ -109,24 +107,28 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
             {
                 if (object_isInstanceNew(contextP, uriP->objectId, uriP->instanceId))
                 {
-                    result = object_create(contextP, uriP, message->payload, message->payload_len);
+                    result = object_create(contextP, uriP, (char*) message->payload, message->payload_len);
                 }
                 else
                 {
-                    result = object_write(contextP, uriP, message->payload, message->payload_len);
+                    result = object_write(contextP, uriP, (char*)message->payload, message->payload_len);
                 }
             }
             else
             {
-                result = object_execute(contextP, uriP, message->payload, message->payload_len);
+                result = object_execute(contextP, uriP, (char*)message->payload, message->payload_len);
             }
         }
         break;
     case COAP_PUT:
         {
+            if(message->uri_query != NULL) {
+              result = object_attrib(contextP, uriP, message->uri_query, fromSessionH);
+            }
+        
             if (LWM2M_URI_IS_SET_INSTANCE(uriP))
             {
-                result = object_write(contextP, uriP, message->payload, message->payload_len);
+                result = object_write(contextP, uriP, (char*)message->payload, message->payload_len);
             }
             else
             {
@@ -187,14 +189,14 @@ static void dm_result_callback(lwm2m_transaction_t * transacP,
             locationString = coap_get_multi_option_as_string(packet->location_path);
             if (locationString == NULL)
             {
-                fprintf(stderr, "Error: coap_get_multi_option_as_string() failed for Location_path option in dm_result_callback()\n");
+                LOG("Error: coap_get_multi_option_as_string() failed for Location_path option in dm_result_callback()\n");
                 return;
             }
 
             result = lwm2m_stringToUri(locationString, strlen(locationString), &locationUri);
             if (result == 0)
             {
-                fprintf(stderr, "Error: lwm2m_stringToUri() failed for Location_path option in dm_result_callback()\n");
+                LOG("Error: lwm2m_stringToUri() failed for Location_path option in dm_result_callback()\n");
                 lwm2m_free(locationString);
                 return;
             }
@@ -221,6 +223,7 @@ static int prv_make_operation(lwm2m_context_t * contextP,
                               coap_method_t method,
                               char * buffer,
                               int length,
+                              char * uriQuery,
                               lwm2m_result_callback_t callback,
                               void * userData)
 {
@@ -238,6 +241,11 @@ static int prv_make_operation(lwm2m_context_t * contextP,
     {
         // TODO: Take care of fragmentation
         coap_set_payload(transaction->message, buffer, length);
+    }
+
+    if (uriQuery != NULL)
+    {
+        coap_set_header_uri_query(transaction->message, uriQuery);
     }
 
     if (callback != NULL)
@@ -268,7 +276,7 @@ int lwm2m_dm_read(lwm2m_context_t * contextP,
                   void * userData)
 {
     return prv_make_operation(contextP, clientID, uriP,
-                              COAP_GET, NULL, 0,
+                              COAP_GET, NULL, 0, NULL,
                               callback, userData);
 }
 
@@ -289,15 +297,35 @@ int lwm2m_dm_write(lwm2m_context_t * contextP,
     if (LWM2M_URI_IS_SET_RESOURCE(uriP))
     {
         return prv_make_operation(contextP, clientID, uriP,
-                                  COAP_PUT, buffer, length,
+                                  COAP_PUT, buffer, length, NULL,
                                   callback, userData);
     }
     else
     {
         return prv_make_operation(contextP, clientID, uriP,
-                                  COAP_POST, buffer, length,
+                                  COAP_POST, buffer, length, NULL,
                                   callback, userData);
     }
+}
+
+int lwm2m_dm_attribute(lwm2m_context_t * contextP,
+                   uint16_t clientID,
+                   lwm2m_uri_t * uriP,
+                   char * buffer,
+                   int length,
+                   lwm2m_result_callback_t callback,
+                   void * userData)
+{
+/// TODO (wa20341#1#): allow attribute write for object/instance/resource
+    if (!LWM2M_URI_IS_SET_INSTANCE(uriP)
+     || length == 0)
+    {
+        return COAP_400_BAD_REQUEST;
+    }
+
+    return prv_make_operation(contextP, clientID, uriP,
+                              COAP_PUT, NULL, 0, buffer,
+                              callback, userData);
 }
 
 int lwm2m_dm_execute(lwm2m_context_t * contextP,
@@ -314,7 +342,7 @@ int lwm2m_dm_execute(lwm2m_context_t * contextP,
     }
 
     return prv_make_operation(contextP, clientID, uriP,
-                              COAP_POST, buffer, length,
+                              COAP_POST, buffer, length, NULL,
                               callback, userData);
 }
 
@@ -333,7 +361,7 @@ int lwm2m_dm_create(lwm2m_context_t * contextP,
     }
 
     return prv_make_operation(contextP, clientID, uriP,
-                              COAP_POST, buffer, length,
+                              COAP_POST, buffer, length, NULL,
                               callback, userData);
 }
 
@@ -350,7 +378,7 @@ int lwm2m_dm_delete(lwm2m_context_t * contextP,
     }
 
     return prv_make_operation(contextP, clientID, uriP,
-                              COAP_DELETE, NULL, 0,
+                              COAP_DELETE, NULL, 0, NULL,
                               callback, userData);
 }
 #endif

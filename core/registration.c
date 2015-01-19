@@ -137,6 +137,7 @@ static void prv_handleRegistrationReply(lwm2m_transaction_t * transacP,
     {
         if (packet == NULL)
         {
+            LOG("server %d status UNKNOWN (no packet)\n", targetP->shortID);
             targetP->status = STATE_UNKNOWN;
             targetP->mid = 0;
         }
@@ -146,6 +147,7 @@ static void prv_handleRegistrationReply(lwm2m_transaction_t * transacP,
         {
             if (packet->code == CREATED_2_01)
             {
+                LOG("server %d status REGISTERED\n", targetP->shortID);
                 targetP->status = STATE_REGISTERED;
                 targetP->location = coap_get_multi_option_as_string(packet->location_path);
 
@@ -156,6 +158,13 @@ static void prv_handleRegistrationReply(lwm2m_transaction_t * transacP,
             }
             else if (packet->code == BAD_REQUEST_4_00)
             {
+            	LOG("server %d status UNKNOWN (bad request)\n", targetP->shortID);
+                targetP->status = STATE_UNKNOWN;
+                targetP->mid = 0;
+            }
+            else
+            {
+            	LOG("server %d status UNKNOWN\n", targetP->shortID);
                 targetP->status = STATE_UNKNOWN;
                 targetP->mid = 0;
             }
@@ -221,11 +230,11 @@ static int prv_register(lwm2m_context_t * contextP, lwm2m_server_t * server)
             server->mid = transaction->mID;
         }
     }
+    return NO_ERROR;
 }
 
 int lwm2m_start(lwm2m_context_t * contextP)
 {
-    lwm2m_server_t * targetP;
     int result;
 
     result = object_getServers(contextP);
@@ -247,6 +256,7 @@ static void prv_handleRegistrationUpdateReply(lwm2m_transaction_t * transacP,
     {
         if (packet == NULL)
         {
+        	LOG("server %d status UNKNOWN (no packet)\n", targetP->shortID);
             targetP->status = STATE_UNKNOWN;
             targetP->mid = 0;
         }
@@ -260,13 +270,26 @@ static void prv_handleRegistrationUpdateReply(lwm2m_transaction_t * transacP,
                     targetP->registration = tv.tv_sec;
                 }
                 targetP->status = STATE_REGISTERED;
+                LOG("server %d status REGISTERED\n", targetP->shortID);
             }
             else if (packet->code == BAD_REQUEST_4_00)
             {
+            	LOG("server %d status UNKNOWN (bad request)\n", targetP->shortID);
                 targetP->status = STATE_UNKNOWN;
                 targetP->mid = 0;
                 // trigger a new registration? infinite loop?
             }
+            else 
+            {
+            	LOG("server %d status UNKNOWN (general error)\n", targetP->shortID);
+                targetP->status = STATE_UNKNOWN;
+                targetP->mid = 0;
+                // trigger a new registration? infinite loop?
+            }
+
+        }
+        else {
+        	LOG("server %d received unexpected data\n", targetP->shortID);
         }
     }
     break;
@@ -321,27 +344,38 @@ int lwm2m_update_registration(lwm2m_context_t * contextP, uint16_t shortServerID
 // for each server update the registration if needed
 int lwm2m_update_registrations(lwm2m_context_t * contextP, uint32_t currentTime, struct timeval * timeoutP)
 {
+    int32_t interval;
     lwm2m_server_t * targetP;
     targetP = contextP->serverList;
     while (targetP != NULL)
     {
         switch (targetP->status) {
             case STATE_REGISTERED:
-                if (targetP->registration + targetP->lifetime - timeoutP->tv_sec <= currentTime)
+            	LOG("server %d status REGISTERED\n", targetP->shortID);
+                interval = targetP->lifetime - (COAP_RESPONSE_TIMEOUT << 2);
+                if (interval < (COAP_RESPONSE_TIMEOUT << 1)) {
+                    interval = (COAP_RESPONSE_TIMEOUT << 1);
+                }
+                if (0 == lwm2m_adjustTimeout(targetP->registration + interval, currentTime, timeoutP))
                 {
                     prv_update_registration(contextP, targetP);
                 }
                 break;
             case STATE_UNKNOWN:
+            	LOG("server %d status UNKNOWN\n", targetP->shortID);
                 // TODO: is it disabled?
                 prv_register(contextP, targetP);
+                timeoutP->tv_sec = 1;
                 break;
             case STATE_REG_PENDING:
+            	LOG("server %d status REG_PENDING\n", targetP->shortID);
                 break;
             case STATE_REG_UPDATE_PENDING:
+            	LOG("server %d status REG_UPDATE_PENDING\n", targetP->shortID);
                 // TODO: check for timeout and retry?
                 break;
             case STATE_DEREG_PENDING:
+            	LOG("server %d status DEREG_PENDING\n", targetP->shortID);
                 break;
         }
         targetP = targetP->next;
@@ -363,6 +397,7 @@ static void prv_handleDeregistrationReply(lwm2m_transaction_t * transacP,
     {
         if (packet == NULL)
         {
+        	LOG("server %d status UNKNOWN (deregister)\n", targetP->shortID);
             targetP->status = STATE_UNKNOWN;
             targetP->mid = 0;
         }
@@ -371,10 +406,12 @@ static void prv_handleDeregistrationReply(lwm2m_transaction_t * transacP,
         {
             if (packet->code == DELETED_2_02)
             {
+            	LOG("server %d status UNKNOWN (deregister)\n", targetP->shortID);
                 targetP->status = STATE_UNKNOWN;
             }
             else if (packet->code == BAD_REQUEST_4_00)
             {
+            	LOG("server %d status UNKNOWN (deregister)\n", targetP->shortID);
                 targetP->status = STATE_UNKNOWN;
                 targetP->mid = 0;
             }
@@ -389,10 +426,6 @@ static void prv_handleDeregistrationReply(lwm2m_transaction_t * transacP,
 void registration_deregister(lwm2m_context_t * contextP,
                              lwm2m_server_t * serverP)
 {
-    coap_packet_t message[1];
-    uint8_t pktBuffer[COAP_MAX_PACKET_SIZE+1];
-    size_t pktBufferLen = 0;
-
     if (serverP->status == STATE_UNKNOWN
      || serverP->status == STATE_REG_PENDING
      || serverP->status == STATE_DEREG_PENDING)
@@ -425,9 +458,6 @@ static int prv_getParameters(multi_option_t * query,
                              char ** msisdnP,
                              lwm2m_binding_t * bindingP)
 {
-    const char * start;
-    int length;
-
     *nameP = NULL;
     *lifetimeP = 0;
     *msisdnP = NULL;
@@ -529,7 +559,7 @@ static int prv_getId(uint8_t * data,
 
     limit = 0;
     while (limit < length && data[limit] != '/' && data[limit] != ' ') limit++;
-    value = prv_get_number(data, limit);
+    value = lwm2m_get_number((const char*)data, limit);
     if (value < 0 || value >= LWM2M_MAX_ID) return 0;
     *objId = value;
 
@@ -540,7 +570,7 @@ static int prv_getId(uint8_t * data,
         while (end < length && data[end] != ' ') end++;
         if (end != limit)
         {
-            value = prv_get_number(data + limit, end - limit);
+            value = lwm2m_get_number((const char*)data + limit, end - limit);
             if (value >= 0 && value < LWM2M_MAX_ID)
             {
                 *instanceId = value;

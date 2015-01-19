@@ -234,11 +234,52 @@ void transaction_handle_response(lwm2m_context_t * contextP,
                 // So we resend transaction that were denied for authentication reason.
                 if (message->code != COAP_401_UNAUTHORIZED || transacP->retrans_counter >= COAP_MAX_RETRANSMIT)
                 {
-                    if (transacP->callback != NULL)
-                    {
-                        transacP->callback(transacP, message);
-                    }
-                    transaction_remove(contextP, transacP);
+                	void* messageData = message->payload;
+                	size_t messageDataLength =  message->payload_len;
+
+                	if (false && IS_OPTION(message, COAP_OPTION_BLOCK2)) {
+               			uint8_t more = 0;
+            			uint32_t block_num = 0;
+            			uint32_t block_offset = 0;
+               			uint16_t block_size = LWM2M_MAX_PAYLOAD_SIZE /* REST_MAX_CHUNK_SIZE*/;
+                    	lwm2m_blockwise_t * blockwiseP = NULL;
+            			lwm2m_uri_t * uriP = NULL;
+                		coap_packet_t* transRequest = (coap_packet_t*) transacP->message;
+
+            			coap_get_header_block2(message, &block_num, &more, &block_size, &block_offset);
+            				LOG("Blockwise: block response %u (%u/%u) %s @ %u bytes\n", block_num, block_size, REST_MAX_CHUNK_SIZE,
+            						more ? "more..." : "last", block_offset);
+           				block_size = MIN(block_size, REST_MAX_CHUNK_SIZE);
+
+           				uriP = lwm2m_decode_uri(transRequest->uri_path);
+    					blockwiseP = blockwise_get(contextP, uriP);
+    					if (NULL == blockwiseP) {
+    						blockwiseP = blockwise_new(contextP, uriP, message, true);
+    					}
+    					else {
+    						blockwise_append(blockwiseP, block_offset, message);
+    					}
+                    	if (more) {
+                    		free(transacP->buffer);
+                    		transacP->buffer = NULL;
+                    		transRequest->type = COAP_TYPE_CON;
+                    		transRequest->code = COAP_GET;
+                    		transRequest->mid = contextP->nextMID++;
+                    		transRequest->payload_len = 0;
+                    		coap_set_header_block2(transRequest, block_num + 1, 1, block_size);
+    						transaction_send(contextP, transacP);
+    						return;
+                    	}
+                    	message->payload = blockwiseP->data;
+                    	message->payload_len = blockwiseP->length;
+                	}
+					if (transacP->callback != NULL)
+					{
+						transacP->callback(transacP, message);
+					}
+					transaction_remove(contextP, transacP);
+                	message->payload = messageData;
+                	message->payload_len = messageDataLength;
                 }
                 // we found our guy, exit
                 return;

@@ -70,8 +70,10 @@
 #include <string.h>
 #include <ctype.h>
 
+#define PRV_RESOURCE_3_SIZE 190
 
 #define PRV_TLV_BUFFER_SIZE 64
+
 
 /*
  * Multiple instance objects can use userdata to store data that will be shared between the different instances.
@@ -87,6 +89,7 @@ typedef struct _prv_instance_
     struct _prv_instance_ * next;   // matches lwm2m_list_t::next
     uint16_t shortID;               // matches lwm2m_list_t::id
     uint8_t  test;
+    int counter;
 } prv_instance_t;
 
 static void prv_output_buffer(uint8_t * buffer,
@@ -131,7 +134,7 @@ static uint8_t prv_read(uint16_t instanceId,
                         lwm2m_tlv_t ** dataArrayP,
                         lwm2m_object_t * objectP)
 {
-    prv_instance_t * targetP;
+	prv_instance_t * targetP;
     int i;
 
     targetP = (prv_instance_t *)lwm2m_list_find(objectP->instanceList, instanceId);
@@ -146,10 +149,20 @@ static uint8_t prv_read(uint16_t instanceId,
     }
 
     if (*numDataP != 1) return COAP_404_NOT_FOUND;
-    if ((*dataArrayP)->id != 1) return COAP_404_NOT_FOUND;
+
+    if ((*dataArrayP)->id == 1) {
+    	lwm2m_tlv_encode_int(targetP->test, *dataArrayP);
+    }
+    else if ((*dataArrayP)->id == 3) {
+    	(*dataArrayP)->value = malloc(PRV_RESOURCE_3_SIZE);
+    	(*dataArrayP)->length = PRV_RESOURCE_3_SIZE;
+    	memset((*dataArrayP)->value, '0' + targetP->counter, PRV_RESOURCE_3_SIZE);
+    }
+    else {
+        return COAP_404_NOT_FOUND;
+    }
 
     (*dataArrayP)->type = LWM2M_TYPE_RESSOURCE;
-    lwm2m_tlv_encode_int(targetP->test, *dataArrayP);
 
     if ((*dataArrayP)->length == 0) return COAP_500_INTERNAL_SERVER_ERROR;
 
@@ -167,14 +180,25 @@ static uint8_t prv_write(uint16_t instanceId,
     targetP = (prv_instance_t *)lwm2m_list_find(objectP->instanceList, instanceId);
     if (NULL == targetP) return COAP_404_NOT_FOUND;
 
-    if (numData != 1 || dataArray->id != 1) return COAP_404_NOT_FOUND;
+    if (numData != 1) return COAP_404_NOT_FOUND;
 
-    if (1 != lwm2m_tlv_decode_int(dataArray, &value)
-     || value < 0 || value > 0xFF)
-    {
-        return COAP_400_BAD_REQUEST;
+    if (dataArray->id == 1) {
+    	if (1 != lwm2m_tlv_decode_int(dataArray, &value) || value < 0 || value > 0xFF)
+    	{
+    		return COAP_400_BAD_REQUEST;
+    	}
+        targetP->test = (uint8_t)value;
     }
-    targetP->test = (uint8_t)value;
+    else if (dataArray->id == 3) {
+    	if (1 != lwm2m_tlv_decode_int(dataArray, &value) || value < 0 || value > 9)
+    	{
+    		return COAP_400_BAD_REQUEST;
+    	}
+        targetP->counter = (uint8_t)value;
+    }
+    else {
+        return COAP_404_NOT_FOUND;
+    }
 
     return COAP_204_CHANGED;
 }
@@ -269,6 +293,7 @@ lwm2m_object_t * get_test_object()
             memset(targetP, 0, sizeof(prv_instance_t));
             targetP->shortID = 10 + i;
             targetP->test = 20 + i;
+            targetP->counter = i;
             testObj->instanceList = LWM2M_LIST_ADD(testObj->instanceList, targetP);
         }
         /*

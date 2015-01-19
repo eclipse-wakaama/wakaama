@@ -17,10 +17,11 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 #include "connection.h"
 
 
-int create_socket(char * portStr)
+int create_socket(const char * portStr)
 {
     int s = -1;
     struct addrinfo hints;
@@ -68,6 +69,16 @@ connection_t * connection_find(connection_t * connList,
          && (memcmp(&(connP->addr), addr, addrLen) == 0))
         {
             return connP;
+        }
+        else {
+          if (connP->addrLen != addrLen) {
+            fprintf(stderr, "%lu != %lu\n", connP->addrLen, addrLen);
+          }
+          else {
+            fprintf(stderr, "sockaddr ne\n");
+            output_buffer(stderr, (uint8_t*)&(connP->addr), addrLen);
+            output_buffer(stderr, (uint8_t*)addr, addrLen);
+          }
         }
         connP = connP->next;
     }
@@ -177,18 +188,18 @@ void output_buffer(FILE * stream,
 {
     int i;
     int j;
-    uint8_t array[16];
+//    uint8_t array[16];
 
     i = 0;
     while (i < length)
     {
 
         fprintf(stream, "  ");
-        memcpy(array, buffer+i, 16);
+//        memcpy(array, buffer+i, 16);
 
         for (j = 0 ; j < 16 && i+j < length; j++)
         {
-            fprintf(stream, "%02X ", array[j]);
+            fprintf(stream, "%02X ", buffer[i+j]);
         }
         if (i != 0)
         {
@@ -201,9 +212,9 @@ void output_buffer(FILE * stream,
         fprintf(stream, "  ");
         for (j = 0 ; j < 16 && i+j < length; j++)
         {
-            if (isprint(array[j]))
+            if (isprint(buffer[i+j]))
             {
-                fprintf(stream, "%c ", array[j]);
+                fprintf(stream, "%c ", buffer[i+j]);
             }
             else
             {

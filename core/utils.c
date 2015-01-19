@@ -176,7 +176,7 @@ int lwm2m_boolToPlainText(bool data,
     return lwm2m_int64ToPlainText((int64_t)(data?1:0), bufferP);
 }
 
-lwm2m_binding_t lwm2m_stringToBinding(uint8_t *buffer,
+lwm2m_binding_t lwm2m_stringToBinding(const char *buffer,
                                       size_t length)
 {
     // test order is important
@@ -206,4 +206,50 @@ lwm2m_binding_t lwm2m_stringToBinding(uint8_t *buffer,
     }
 
     return BINDING_UNKNOWN;
+}
+
+#define CODE_TO_STRING(X) 	case X : return "(" #X ")"
+
+const char* lwm2m_statusToString(int status)
+{
+	switch(status) {
+	CODE_TO_STRING(COAP_201_CREATED);
+	CODE_TO_STRING(COAP_202_DELETED);
+	CODE_TO_STRING(COAP_204_CHANGED);
+	CODE_TO_STRING(COAP_205_CONTENT);
+	CODE_TO_STRING(COAP_400_BAD_REQUEST);
+	CODE_TO_STRING(COAP_401_UNAUTHORIZED);
+	CODE_TO_STRING(COAP_404_NOT_FOUND);
+	CODE_TO_STRING(COAP_405_METHOD_NOT_ALLOWED);
+	CODE_TO_STRING(COAP_406_NOT_ACCEPTABLE);
+	CODE_TO_STRING(COAP_500_INTERNAL_SERVER_ERROR);
+	CODE_TO_STRING(COAP_501_NOT_IMPLEMENTED);
+	CODE_TO_STRING(COAP_503_SERVICE_UNAVAILABLE);
+	default: return "";
+	}
+}
+
+int lwm2m_adjustTimeout(time_t nextTime, time_t currentTime, struct timeval* timeoutP)
+{
+    int left = 0; 
+    time_t interval;
+
+    if (nextTime > currentTime)
+    {
+        interval = nextTime - currentTime;
+        left = interval;
+    }
+    else
+    {
+        interval = 1;
+    }
+
+    if (timeoutP->tv_sec > interval)
+    {
+        
+        timeoutP->tv_sec = interval;
+    }
+    LOG("time %ld, next %ld, timeout %ld, left %d\n", currentTime, nextTime, timeoutP->tv_sec, left);
+
+    return left;
 }

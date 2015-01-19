@@ -265,7 +265,7 @@ coap_add_multi_option(multi_option_t **dst, uint8_t *option, size_t option_len, 
     opt->len = option_len;
     if (is_static)
     {
-      opt->data = option;
+      opt->data = (char*)option;
       opt->is_static = 1;
     }
     else
@@ -484,8 +484,8 @@ coap_serialize_message(void *packet, uint8_t *buffer)
       *option = 0xFF;
       ++option;
     }
-
-    memmove(option, coap_pkt->payload, coap_pkt->payload_len);
+    /* move truncating payload from coap_set_payload for block transfer */
+    memmove(option, coap_pkt->payload, MIN(REST_MAX_CHUNK_SIZE, coap_pkt->payload_len));
   }
   else
   {
@@ -1276,7 +1276,9 @@ coap_set_payload(void *packet, const void *payload, size_t length)
   //PRINTF("setting payload (%u/%u)\n", length, REST_MAX_CHUNK_SIZE);
 
   coap_pkt->payload = (uint8_t *) payload;
-  coap_pkt->payload_len = MIN(REST_MAX_CHUNK_SIZE, length);
+
+  /* move truncating payload to coap_serialize_message for block transfer */
+  coap_pkt->payload_len = length;
 
   return coap_pkt->payload_len;
 }
