@@ -15,7 +15,6 @@
  *    domedambrosio - Please refer to git log
  *    Fabien Fleutot - Please refer to git log
  *    Axel Lorente - Please refer to git log
- *    Bosch Software Innovatios GmbH - Please refer to git log
  *    
  *******************************************************************************/
 
@@ -58,15 +57,9 @@
  *
  *  Ressources:
  *              Supported    Multiple
- *  Name   | ID | Operations | Instances | Mandatory |  Type   | Range | Units | Description        |
- *  test   |  1 |    R/W     |    No     |    Yes    | Integer | 0-255 |       |                    |
- *  exec   |  2 |     E      |    No     |    Yes    |         |       |       |  execute test res. |
- *  integer|  3 |    R/W     |    No     |    Yes    | Integer |       |       |  integer test res. |
- *  float  |  4 |    R/W     |    No     |    Yes    | Float   |       |       |  float   test res. |
- *  string |  5 |    R/W     |    No     |    Yes    | String  |       |       |  String  test res. |
- *  time   |  6 |    R/W     |    No     |    Yes    | Time    |       | sec   |  time    test res. |
- *  bool   |  7 |    R/W     |    No     |    Yes    | boolean |       |       |  bool    test res. |
- *  opaque |  8 |    R/W     |    No     |    Yes    | opaque  |       |       |  opaque  test res. |
+ *  Name | ID | Operations | Instances | Mandatory |  Type   | Range | Units | Description |
+ *  test |  1 |    R/W     |    No     |    Yes    | Integer | 0-255 |       |             |
+ *  exec |  2 |     E      |    No     |    Yes    |         |       |       |             |
  *
  */
 
@@ -79,19 +72,6 @@
 
 
 #define PRV_TLV_BUFFER_SIZE 64
-
-/*
- * Ressource IDs for the Test Object
- */
-#define TEST_TEST_ID    1
-#define TEST_EXEC_ID    2
-
-#define TEST_INTEGER_ID 3
-#define TEST_FLOAT_ID   4
-#define TEST_STRING_ID  5
-#define TEST_TIME_ID    6
-#define TEST_BOOLEAN_ID 7
-#define TEST_OPAQUE_ID  8
 
 /*
  * Multiple instance objects can use userdata to store data that will be shared between the different instances.
@@ -107,14 +87,6 @@ typedef struct _prv_instance_
     struct _prv_instance_ * next;   // matches lwm2m_list_t::next
     uint16_t shortID;               // matches lwm2m_list_t::id
     uint8_t  test;
-    // new resources:
-    int32_t  rInteger;
-    float    rFloat;
-    char*    rString;
-    time_t   rTime;
-    bool     rBoolean;
-    uint8_t* rOpaque;
-    uint16_t lOpaque;               // opaque length!
 } prv_instance_t;
 
 static void prv_output_buffer(uint8_t * buffer,
@@ -154,82 +126,6 @@ static void prv_output_buffer(uint8_t * buffer,
     }
 }
 
-static uint8_t prv_set_tlv_value(lwm2m_tlv_t * tlvP, prv_instance_t * targetP) {
-    //-------------------------------------------------------------------- JH --
-    uint8_t ret = COAP_205_CONTENT;
-    // a simple switch structure is used to respond at the specified resource asked
-    switch (tlvP->id) {
-    case TEST_TEST_ID:
-        lwm2m_tlv_encode_int(targetP->test, tlvP);
-        if (tlvP->length==0) ret = COAP_500_INTERNAL_SERVER_ERROR;
-        break;
-    case TEST_INTEGER_ID:
-        lwm2m_tlv_encode_int(targetP->rInteger, tlvP);
-        if (tlvP->length==0) ret = COAP_500_INTERNAL_SERVER_ERROR;
-        break;
-    case TEST_FLOAT_ID:
-        //TODO lwm2m_tlv_encode_float(targetP->rFloat, tlvP);
-        if (tlvP->length==0) ret = COAP_500_INTERNAL_SERVER_ERROR;
-        break;
-    case TEST_STRING_ID:
-        //TODO lwm2m_tlv_encode_string(targetP->rString, tlvP);
-        if (tlvP->length==0) ret = COAP_500_INTERNAL_SERVER_ERROR;
-        break;
-    case TEST_TIME_ID:
-        lwm2m_tlv_encode_int(targetP->rTime, tlvP);
-        if (tlvP->length==0) ret = COAP_500_INTERNAL_SERVER_ERROR;
-        break;
-    case TEST_BOOLEAN_ID:
-        lwm2m_tlv_encode_bool(targetP->rBoolean, tlvP);
-        if (tlvP->length==0) ret = COAP_500_INTERNAL_SERVER_ERROR;
-        break;
-    case TEST_OPAQUE_ID:
-        //TODO lwm2m_tlv_encode_opaque(targetP->rOpaque, tlvP);
-        if (tlvP->length==0) ret = COAP_500_INTERNAL_SERVER_ERROR;
-        break;
-    default:
-        ret = COAP_404_NOT_FOUND;
-        break;
-    }
-    return ret;
-}
-
-static uint8_t prv_read(uint16_t instanceId,
-                               int * numDataP,
-                               lwm2m_tlv_t ** dataArrayP,
-                               lwm2m_object_t * objectP) {
-    //-------------------------------------------------------------------- JH --
-    uint8_t         result;
-    prv_instance_t  *targetP;
-    int             i;
-    
-    targetP = (prv_instance_t *)lwm2m_list_find(objectP->instanceList, instanceId);
-
-    if (NULL == targetP) return COAP_404_NOT_FOUND;
-
-    // is the server asking for the full object ?
-    if (*numDataP == 0) {
-        uint16_t resList[] = {TEST_TEST_ID,  TEST_INTEGER_ID, 
-                              TEST_FLOAT_ID, TEST_STRING_ID, TEST_TIME_ID};
-        int nbRes = sizeof(resList)/sizeof(uint16_t);
-
-        *dataArrayP = lwm2m_tlv_new(nbRes);
-        if (*dataArrayP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
-        *numDataP = nbRes;
-        for (i = 0 ; i < nbRes ; i++) {
-            (*dataArrayP)[i].id = resList[i];
-        }
-    }
-    i = 0;
-    do {
-        result = prv_set_tlv_value((*dataArrayP) + i, targetP);
-        i++;
-    } while (i < *numDataP && result == COAP_205_CONTENT);
-
-    return result;
-}
-
-/* JH
 static uint8_t prv_read(uint16_t instanceId,
                         int * numDataP,
                         lwm2m_tlv_t ** dataArrayP,
@@ -237,14 +133,18 @@ static uint8_t prv_read(uint16_t instanceId,
 {
     prv_instance_t * targetP;
     int i;
+
     targetP = (prv_instance_t *)lwm2m_list_find(objectP->instanceList, instanceId);
     if (NULL == targetP) return COAP_404_NOT_FOUND;
-    if (*numDataP == 0) {
+
+    if (*numDataP == 0)
+    {
         *dataArrayP = lwm2m_tlv_new(1);
         if (*dataArrayP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
         *numDataP = 1;
         (*dataArrayP)->id = 1;
     }
+
     if (*numDataP != 1) return COAP_404_NOT_FOUND;
     if ((*dataArrayP)->id != 1) return COAP_404_NOT_FOUND;
 
@@ -252,27 +152,8 @@ static uint8_t prv_read(uint16_t instanceId,
     lwm2m_tlv_encode_int(targetP->test, *dataArrayP);
 
     if ((*dataArrayP)->length == 0) return COAP_500_INTERNAL_SERVER_ERROR;
- * 
-    return COAP_205_CONTENT;
-}
- JH */
 
-// TODO remove object param! (const lwm2m_object_t * objectP, ))
-static uint8_t prv_datatype(int resourceId, lwm2m_data_type_t *resDataType) {
-    //-------------------------------------------------------------------- JH --
-    uint8_t ret = COAP_NO_ERROR;
-    switch (resourceId) {
-    case TEST_TEST_ID:      *resDataType = LWM2M_DATATYPE_INTEGER;  break;
-    
-    case TEST_INTEGER_ID:   *resDataType = LWM2M_DATATYPE_INTEGER;  break;
-    case TEST_FLOAT_ID:     *resDataType = LWM2M_DATATYPE_FLOAT;    break;
-    case TEST_STRING_ID:    *resDataType = LWM2M_DATATYPE_STRING;   break;
-    case TEST_TIME_ID:      *resDataType = LWM2M_DATATYPE_TIME;     break;
-    case TEST_BOOLEAN_ID:   *resDataType = LWM2M_DATATYPE_BOOLEAN;  break;
-    case TEST_OPAQUE_ID:    *resDataType = LWM2M_DATATYPE_OPAQUE;   break;
-    default:                ret =  COAP_405_METHOD_NOT_ALLOWED;     break;
-    }
-    return ret;
+    return COAP_205_CONTENT;
 }
 
 static uint8_t prv_write(uint16_t instanceId,
@@ -286,44 +167,15 @@ static uint8_t prv_write(uint16_t instanceId,
     targetP = (prv_instance_t *)lwm2m_list_find(objectP->instanceList, instanceId);
     if (NULL == targetP) return COAP_404_NOT_FOUND;
 
-//    if (numData != 1 || dataArray->id != 1) return COAP_404_NOT_FOUND;
-//    if (1 != lwm2m_tlv_decode_int(dataArray, &value) || value<0 || value>0xFF){
-//        return COAP_400_BAD_REQUEST;
-//    }
-    int i = 0;
-    uint8_t result;
-    do {
-        switch (dataArray->id) {
-        case TEST_TEST_ID:
-            if (lwm2m_tlv_decode_int(dataArray, &value)!=1 || value<0 || value>0xFF){
-                result = COAP_400_BAD_REQUEST;
-            } else {
-                targetP->test = (uint8_t)value;
-                result = COAP_204_CHANGED;
-            }
-            break;    
-        case TEST_INTEGER_ID:
-            if (lwm2m_tlv_decode_int(dataArray, &value)!=1 ){ //TODO limits?
-                result = COAP_400_BAD_REQUEST;
-            } else {
-                targetP->rInteger = (int32_t)value;
-                result = COAP_204_CHANGED;
-            }
-            break;            
-        case TEST_FLOAT_ID:     
-        case TEST_STRING_ID:
-        case TEST_TIME_ID:
-        case TEST_BOOLEAN_ID:
-        case TEST_OPAQUE_ID:
-            //TODOs for each missing!
-            result = COAP_501_NOT_IMPLEMENTED;
-            break;
-        default:
-            result = COAP_405_METHOD_NOT_ALLOWED;
-            break;
-        }
-        i++;
-    } while (i < numData && result == COAP_204_CHANGED);
+    if (numData != 1 || dataArray->id != 1) return COAP_404_NOT_FOUND;
+
+    if (1 != lwm2m_tlv_decode_int(dataArray, &value)
+     || value < 0 || value > 0xFF)
+    {
+        return COAP_400_BAD_REQUEST;
+    }
+    targetP->test = (uint8_t)value;
+
     return COAP_204_CHANGED;
 }
 
@@ -335,8 +187,6 @@ static uint8_t prv_delete(uint16_t id,
     objectP->instanceList = lwm2m_list_remove(objectP->instanceList, id, (lwm2m_list_t **)&targetP);
     if (NULL == targetP) return COAP_404_NOT_FOUND;
 
-    if (targetP->rString!=NULL) lwm2m_free(targetP->rString);
-    if (targetP->rOpaque!=NULL) lwm2m_free(targetP->rOpaque);
     free(targetP);
 
     return COAP_202_DELETED;
@@ -383,15 +233,9 @@ static uint8_t prv_exec(uint16_t instanceId,
 
     switch (resourceId)
     {
-    case TEST_TEST_ID:
-    case TEST_INTEGER_ID:
-    case TEST_FLOAT_ID:
-    case TEST_STRING_ID:
-    case TEST_TIME_ID:
-    case TEST_BOOLEAN_ID:
-    case TEST_OPAQUE_ID:
+    case 1:
         return COAP_405_METHOD_NOT_ALLOWED;
-    case TEST_EXEC_ID:
+    case 2:
         fprintf(stdout, "\r\n-----------------\r\n"
                         "Execute on %hu/%d/%d\r\n"
                         " Parameter (%d bytes):\r\n",
@@ -404,40 +248,27 @@ static uint8_t prv_exec(uint16_t instanceId,
     }
 }
 
-lwm2m_object_t * get_test_object() {
-    //-------------------------------------------------------------------- JH --
+lwm2m_object_t * get_test_object()
+{
     lwm2m_object_t * testObj;
 
     testObj = (lwm2m_object_t *)malloc(sizeof(lwm2m_object_t));
 
     if (NULL != testObj)
     {
-        int i, oi;
+        int i;
         prv_instance_t * targetP;
 
         memset(testObj, 0, sizeof(lwm2m_object_t));
 
         testObj->objID = 1024;
-        for (i=0 ; i < 3 ; i++) {
+        for (i=0 ; i < 3 ; i++)
+        {
             targetP = (prv_instance_t *)malloc(sizeof(prv_instance_t));
             if (NULL == targetP) return NULL;
             memset(targetP, 0, sizeof(prv_instance_t));
             targetP->shortID = 10 + i;
-            targetP->test    = 20 + i;
-            targetP->rInteger= 1111111 *i;
-            targetP->rFloat  = 1010101.*i;
-            
-            char str[20]; sprintf(str,"String-%d",i);
-            targetP->rString = lwm2m_malloc(strlen(str)+1);
-            strcpy(targetP->rString, str);
-            
-            targetP->rTime   = time(NULL);
-            targetP->rBoolean= (i%2==1)? true:false;
-            
-            targetP->lOpaque = 10;
-            targetP->rOpaque = lwm2m_malloc(targetP->lOpaque);
-            for (oi=0; oi<targetP->lOpaque; oi++) targetP->rOpaque[oi] = oi+i;
-            
+            targetP->test = 20 + i;
             testObj->instanceList = LWM2M_LIST_ADD(testObj->instanceList, targetP);
         }
         /*
@@ -447,12 +278,11 @@ lwm2m_object_t * get_test_object() {
          * - The other one (deleteFunc) delete an instance by removing it from the instance list (and freeing the memory
          *   allocated to it)
          */
-        testObj->readFunc     = prv_read;
-        testObj->writeFunc    = prv_write;
-        testObj->createFunc   = prv_create;
-        testObj->deleteFunc   = prv_delete;
-        testObj->executeFunc  = prv_exec;
-        testObj->datatypeFunc = prv_datatype;
+        testObj->readFunc = prv_read;
+        testObj->writeFunc = prv_write;
+        testObj->createFunc = prv_create;
+        testObj->deleteFunc = prv_delete;
+        testObj->executeFunc = prv_exec;
     }
 
     return testObj;

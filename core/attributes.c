@@ -129,7 +129,7 @@ uint8_t lwm2m_setAttributes(lwm2m_context_t * contextP, lwm2m_uri_t * uriP,
     case ATTRIBUTE_MIN_PERIOD:
     case ATTRIBUTE_MAX_PERIOD: {
         long v;
-        if(sscanf(value,"%d", &v)==0) { // format mismatch
+        if(sscanf(value,"%ld", &v)==0) { // format mismatch
             return COAP_400_BAD_REQUEST; 
         } else {    // pot. clean up
             sprintf (valStr, "%ld", v); // TODO check memsize???
@@ -144,7 +144,7 @@ uint8_t lwm2m_setAttributes(lwm2m_context_t * contextP, lwm2m_uri_t * uriP,
             break;
         case LWM2M_DATATYPE_INTEGER: {
             long v;
-            if(sscanf(value,"%d", &v)==0) { // format mismatch
+            if(sscanf(value,"%ld", &v)==0) { // format mismatch
                 return COAP_400_BAD_REQUEST; 
             } else {    // pot. clean up
               sprintf (valStr, "%ld", v); // TODO check memsize???
