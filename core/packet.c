@@ -277,7 +277,9 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
 
 	if (coap_error_code != NO_ERROR)
 	{
-		LOG("ERROR %u: %s\n", coap_error_code, coap_error_message);
+#ifdef WITH_LOGS
+		lwm2m_print_status("ERROR", coap_error_code, coap_error_message);
+#endif
 
 		/* Set to sendable error code. */
 		if (coap_error_code >= 192)
@@ -303,9 +305,9 @@ coap_status_t message_send(lwm2m_context_t * contextP,
 	pktBufferLen = coap_serialize_message(message, pktBuffer);
 	if (0 != pktBufferLen)
 	{
-		LOG("Send message mid %u, %lu bytes, %u payload\r\n", message->mid, pktBufferLen, message->payload_len);
+		LOG("Send message mid %u, %lu bytes, %u payload, code %d.%02d %s\r\n", message->mid, pktBufferLen, message->payload_len, (message->code&0xE0)>>5, message->code&0x1F, lwm2m_statusToString(message->code));
 		result = contextP->bufferSendCallback(sessionH, pktBuffer, pktBufferLen, contextP->userData);
-		LOG("Send message result: %d\r\n", result);
+		LOG("Send message result: %d.%02d %s\r\n", (result&0xE0)>>5, result&0x1F, lwm2m_statusToString(result));
 	}
 
 	return result;

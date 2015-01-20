@@ -325,7 +325,7 @@ int main(int argc, char *argv[])
     const char* server = "localhost";
     const char* serverPort = LWM2M_STANDARD_PORT_STR;
     const char* name = "testlwm2mclient";
-    int livetime = 30;
+    int livetime = 300;
 
     /*
      * The function start by setting up the command line interface (which may or not be useful depending on your project)

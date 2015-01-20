@@ -239,7 +239,7 @@ coap_status_t handle_observe_request(lwm2m_context_t * contextP,
 }
 
 void cancel_observe(lwm2m_context_t * contextP,
-                    uint16_t mid,
+                    int32_t mid,
                     void * fromSessionH)
 {
 	lwm2m_observed_t * observedP;
@@ -252,7 +252,7 @@ void cancel_observe(lwm2m_context_t * contextP,
 	{
 		lwm2m_watcher_t * targetP = NULL;
 
-        if (observedP->watcherList->lastMid == mid
+        if ((0 > mid || observedP->watcherList->lastMid == mid)
          && observedP->watcherList->server->sessionH == fromSessionH)
 		{
 			targetP = observedP->watcherList;
@@ -264,7 +264,7 @@ void cancel_observe(lwm2m_context_t * contextP,
 
 			parentP = observedP->watcherList;
 			while (parentP->next != NULL
-                && (parentP->next->lastMid != mid
+                && ((0 > mid || parentP->next->lastMid != mid)
                  || parentP->next->server->sessionH != fromSessionH))
 			{
 				parentP = parentP->next;
@@ -353,6 +353,7 @@ time_t lwm2m_notify(lwm2m_context_t * contextP, struct timeval * tv) {
               // check if update needed or schedule next transmission
               if(tv->tv_sec >= attributeData->nextTransmission) {
                 // send data
+  				LOG("min period %s expired!\n", attributeData->minPeriod);
                 if (COAP_205_CONTENT == lwm2m_sendNotification(contextP, watcherP, &(observedP->uri), &data)) {
                 	lwm2m_updateTransmissionAttributes(attributeData, tv);
                 }

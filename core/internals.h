@@ -148,7 +148,7 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, 
 
 // defined in observe.c
 coap_status_t handle_observe_request(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, void * fromSessionH, coap_packet_t * message, coap_packet_t * response);
-void cancel_observe(lwm2m_context_t * contextP, uint16_t mid, void * fromSessionH);
+void cancel_observe(lwm2m_context_t * contextP, int32_t mid, void * fromSessionH);
 time_t lwm2m_notify(lwm2m_context_t * contextP, struct timeval * tv);
 
 // defined in registration.c
@@ -169,7 +169,7 @@ lwm2m_binding_t lwm2m_stringToBinding(const char *buffer, size_t length);
 // defined in attributes.c
 lwm2m_attribute_data_t * lwm2m_getAttributes(lwm2m_server_t * serverP, lwm2m_uri_t * uriP);
 void lwm2m_updateTransmissionAttributes(lwm2m_attribute_data_t * attributeP, struct timeval *tv);
-uint8_t lwm2m_evalAttributes(lwm2m_attribute_data_t* attrData, uint8_t* resValBuf, int bufLen, struct timeval tv, bool *notifyResult);
+uint8_t lwm2m_evalAttributes(lwm2m_attribute_data_t* attrData, const char* resValBuf, int bufLen, struct timeval tv, bool *notifyResult);
 int lwm2m_adjustTimeout(time_t nextTime, time_t currentTime, struct timeval* timeoutP);
 
 #endif

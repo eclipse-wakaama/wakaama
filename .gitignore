@@ -19,6 +19,7 @@ CMakeFiles
 Debug
 DebugServer
 Release
+ReleaseServer
 cmake_install.cmake
 core/CMakeCache.txt
 core/CMakeFiles

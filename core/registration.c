@@ -356,7 +356,7 @@ int lwm2m_update_registrations(lwm2m_context_t * contextP, uint32_t currentTime,
     {
         switch (targetP->status) {
             case STATE_REGISTERED:
-            	LOG("server %d status REGISTERED\n", targetP->shortID);
+//            	LOG("server %d status REGISTERED\n", targetP->shortID);
                 interval = targetP->lifetime - (COAP_RESPONSE_TIMEOUT << 2);
                 if (interval < (COAP_RESPONSE_TIMEOUT << 1)) {
                     interval = (COAP_RESPONSE_TIMEOUT << 1);

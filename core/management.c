@@ -123,12 +123,12 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
     case COAP_PUT:
         {
             if(message->payload != NULL) {
-              if (LWM2M_URI_IS_SET_INSTANCE(uriP) && LWM2M_URI_IS_SET_RESOURCE(uriP))
+              if (LWM2M_URI_IS_SET_INSTANCE(uriP))
               {
                 result = object_write(contextP, uriP, (char *)message->payload, message->payload_len);
               }
             }
-            if(message->uri_query != NULL) {
+            else if(message->uri_query != NULL) {
               result = object_attrib(contextP, uriP, message->uri_query, fromSessionH);
             }
         }

@@ -208,11 +208,12 @@ lwm2m_binding_t lwm2m_stringToBinding(const char *buffer,
     return BINDING_UNKNOWN;
 }
 
-#define CODE_TO_STRING(X) 	case X : return "(" #X ")"
+#define CODE_TO_STRING(X) 	case X : return "(" #X ") "
 
 const char* lwm2m_statusToString(int status)
 {
 	switch(status) {
+	CODE_TO_STRING(COAP_NO_ERROR);
 	CODE_TO_STRING(COAP_201_CREATED);
 	CODE_TO_STRING(COAP_202_DELETED);
 	CODE_TO_STRING(COAP_204_CHANGED);
@@ -227,6 +228,11 @@ const char* lwm2m_statusToString(int status)
 	CODE_TO_STRING(COAP_503_SERVICE_UNAVAILABLE);
 	default: return "";
 	}
+}
+
+void lwm2m_print_status(const char* head, int status, const char* message)
+{
+    fprintf(stdout, "%s %d.%02d %s%s!\r\n", head, (status&0xE0)>>5, status&0x1F, lwm2m_statusToString(status), message);
 }
 
 int lwm2m_adjustTimeout(time_t nextTime, time_t currentTime, struct timeval* timeoutP)
@@ -249,7 +255,7 @@ int lwm2m_adjustTimeout(time_t nextTime, time_t currentTime, struct timeval* tim
         
         timeoutP->tv_sec = interval;
     }
-    LOG("time %ld, next %ld, timeout %ld, left %d\n", currentTime, nextTime, timeoutP->tv_sec, left);
+    // LOG("time %ld, next %ld, timeout %ld, left %d\n", currentTime, nextTime, timeoutP->tv_sec, left);
 
     return left;
 }

@@ -555,6 +555,7 @@ int lwm2m_step(lwm2m_context_t * contextP, struct timeval * timeoutP);
 void lwm2m_handle_packet(lwm2m_context_t * contextP, uint8_t * buffer, int length, void * fromSessionH);
 
 const char* lwm2m_statusToString(int status);
+void lwm2m_print_status(const char* head, int status, const char* message);
 
 #ifdef LWM2M_CLIENT_MODE
 // configure the client side with the Endpoint Name, binding, MSISDN (if any) and a list of objects.
@@ -576,7 +577,7 @@ void lwm2m_resource_value_changed(lwm2m_context_t * contextP, lwm2m_uri_t * uriP
   sets the attributes of a object/instance/resource
  * @return coap result
 */
-uint8_t lwm2m_setAttributes(lwm2m_context_t * contextP, lwm2m_uri_t * uriP,lwm2m_attribute_type_t type, const char* value, lwm2m_object_t * objectP,  lwm2m_server_t * serverP);
+uint8_t lwm2m_setAttributes(lwm2m_context_t * contextP, lwm2m_uri_t * uriP,lwm2m_attribute_type_t type, const char* value, int length, lwm2m_object_t * objectP,  lwm2m_server_t * serverP);
 #endif
 
 #ifdef LWM2M_SERVER_MODE

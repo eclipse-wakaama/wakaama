@@ -250,8 +250,6 @@ static uint8_t prv_server_execute(uint16_t instanceId,
 
 {
     server_instance_t * targetP;
-    uint8_t result;
-    int i;
 
     targetP = (server_instance_t *)lwm2m_list_find(objectP->instanceList, instanceId);
     if (NULL == targetP) return COAP_404_NOT_FOUND;

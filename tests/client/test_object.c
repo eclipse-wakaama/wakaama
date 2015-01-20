@@ -135,7 +135,6 @@ static uint8_t prv_read(uint16_t instanceId,
                         lwm2m_object_t * objectP)
 {
 	prv_instance_t * targetP;
-    int i;
 
     targetP = (prv_instance_t *)lwm2m_list_find(objectP->instanceList, instanceId);
     if (NULL == targetP) return COAP_404_NOT_FOUND;
@@ -168,6 +167,18 @@ static uint8_t prv_read(uint16_t instanceId,
 
     return COAP_205_CONTENT;
 }
+
+static uint8_t prv_datatype(int resourceId, lwm2m_data_type_t *rDataType) {
+    //-------------------------------------------------------------------- JH --
+    uint8_t ret = COAP_NO_ERROR;
+    switch (resourceId) {
+    case 3: *rDataType = LWM2M_DATATYPE_STRING;  break;
+    case 1: *rDataType = LWM2M_DATATYPE_INTEGER; break;
+    default: ret = COAP_405_METHOD_NOT_ALLOWED;   break;
+    }
+    return ret;
+}
+
 
 static uint8_t prv_write(uint16_t instanceId,
                          int numData,
@@ -264,7 +275,7 @@ static uint8_t prv_exec(uint16_t instanceId,
                         "Execute on %hu/%d/%d\r\n"
                         " Parameter (%d bytes):\r\n",
                         objectP->objID, instanceId, resourceId, length);
-        prv_output_buffer(buffer, length);
+        prv_output_buffer((uint8_t*)buffer, length);
         fprintf(stdout, "-----------------\r\n\r\n");
         return COAP_204_CHANGED;
     default:
@@ -308,6 +319,7 @@ lwm2m_object_t * get_test_object()
         testObj->createFunc = prv_create;
         testObj->deleteFunc = prv_delete;
         testObj->executeFunc = prv_exec;
+        testObj->datatypeFunc = prv_datatype;
     }
 
     return testObj;
