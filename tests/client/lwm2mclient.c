@@ -82,6 +82,7 @@ extern lwm2m_object_t * get_object_location();
 extern lwm2m_object_t * get_test_object();
 extern lwm2m_object_t * get_server_object();
 extern lwm2m_object_t * get_security_object();
+extern lwm2m_object_t * get_object_conn_m();
 
 extern char * get_server_uri(lwm2m_object_t * objectP, uint16_t serverID);
 
@@ -312,7 +313,7 @@ syntax_error:
 }
 
 
-#define OBJ_COUNT 6
+#define OBJ_COUNT 7
 
 int main(int argc, char *argv[])
 {
@@ -413,6 +414,13 @@ int main(int argc, char *argv[])
 
     objArray[5] = get_object_location();
     if (NULL == objArray[5])
+    {
+        fprintf(stderr, "Failed to create location object\r\n");
+        return -1;
+    }
+
+    objArray[6] = get_object_conn_m();
+    if (NULL == objArray[6])
     {
         fprintf(stderr, "Failed to create location object\r\n");
         return -1;
