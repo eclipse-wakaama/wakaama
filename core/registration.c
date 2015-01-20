@@ -280,7 +280,7 @@ static void prv_handleRegistrationUpdateReply(lwm2m_transaction_t * transacP,
                 // trigger a new registration? infinite loop?
             } 
             else if (packet->code == NOT_FOUND_4_04) {
-                printf ("UPDATE response from leshan Server: NOT_FOUND_4_04\n");
+            	LOG ("UPDATE response from leshan Server: NOT_FOUND_4_04\n");
                 targetP->status = STATE_UNKNOWN;    // do re-register!
                 targetP->mid = 0;            
             }
