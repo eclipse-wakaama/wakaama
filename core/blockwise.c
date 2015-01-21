@@ -111,7 +111,7 @@ lwm2m_blockwise_t* blockwise_get(lwm2m_context_t * contextP, const lwm2m_uri_t *
 }
 
 lwm2m_blockwise_t * blockwise_new(lwm2m_context_t * contextP, const lwm2m_uri_t * uriP, coap_packet_t * responseP,
-        bool detach)
+bool detach)
 {
     lwm2m_blockwise_t* result = (lwm2m_blockwise_t *) lwm2m_malloc(sizeof(lwm2m_blockwise_t));
     if (NULL == result)
