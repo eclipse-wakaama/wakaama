@@ -73,12 +73,9 @@ static lwm2m_observed_t * prv_findObserved(lwm2m_context_t * contextP,
 static obs_list_t * prv_getObservedList(lwm2m_context_t * contextP,
                                         lwm2m_uri_t * uriP)
 {
-	obs_list_t * resultP;
-	lwm2m_observed_t * targetP;
+	obs_list_t * resultP = NULL;
+	lwm2m_observed_t * targetP = contextP->observedList;
 
-	resultP = NULL;
-
-	targetP = contextP->observedList;
 	while (targetP != NULL)
 	{
 		if (targetP->uri.objectId == uriP->objectId)
