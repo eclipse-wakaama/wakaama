@@ -241,7 +241,7 @@ void transaction_handle_response(lwm2m_context_t * contextP,
                			uint8_t more = 0;
             			uint32_t block_num = 0;
             			uint32_t block_offset = 0;
-               			uint16_t block_size = LWM2M_MAX_PAYLOAD_SIZE /* REST_MAX_CHUNK_SIZE*/;
+               			uint16_t block_size = REST_MAX_CHUNK_SIZE;
                     	lwm2m_blockwise_t * blockwiseP = NULL;
             			lwm2m_uri_t * uriP = NULL;
                 		coap_packet_t* transRequest = (coap_packet_t*) transacP->message;

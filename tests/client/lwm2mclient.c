@@ -83,6 +83,8 @@ extern lwm2m_object_t * get_test_object();
 extern lwm2m_object_t * get_server_object();
 extern lwm2m_object_t * get_security_object();
 extern lwm2m_object_t * get_object_conn_m();
+extern void handle_valueChanged(lwm2m_context_t* lwm2mH, lwm2m_uri_t* uri, const char * value, size_t valueLength);
+extern void init_value_change(lwm2m_context_t * lwm2m);
 
 extern char * get_server_uri(lwm2m_object_t * objectP, uint16_t serverID);
 
@@ -243,51 +245,7 @@ static void prv_change(char * buffer,
     }
     else
     {
-        int i;
-
-        i = 0;
-        while (i < lwm2mH->numObject)
-        {
-            if (uri.objectId == lwm2mH->objectList[i]->objID)
-            {
-                if (lwm2mH->objectList[i]->writeFunc != NULL)
-                {
-                    lwm2m_tlv_t * tlvP;
-
-                    tlvP = lwm2m_tlv_new(1);
-                    if (tlvP == NULL)
-                    {
-                        fprintf(stderr, "Internal allocation failure !\n");
-                        return;
-                    }
-                    tlvP->flags = LWM2M_TLV_FLAG_STATIC_DATA | LWM2M_TLV_FLAG_TEXT_FORMAT;
-                    tlvP->id = uri.resourceId;
-                    tlvP->length = strlen(buffer);
-                    tlvP->value = (uint8_t*) buffer;
-
-                    if (COAP_204_CHANGED != lwm2mH->objectList[i]->writeFunc(uri.instanceId,
-                                                                             1, tlvP,
-                                                                             lwm2mH->objectList[i]))
-                    {
-                        fprintf(stderr, "Failed to change value!\n");
-                    }
-                    else
-                    {
-                        fprintf(stderr, "value changed!\n");
-                        lwm2m_resource_value_changed(lwm2mH, &uri);
-                    }
-                    lwm2m_tlv_free(1, tlvP);
-                    return;
-                }
-                else {
-                    fprintf(stderr, "write not supported for specified resource!\n");
-                }
-                return;
-            }
-            i++;
-        }
-
-        fprintf(stderr, "Object not found !\n");
+    	handle_valueChanged(lwm2mH, &uri, buffer, end - buffer);
     }
     return;
 
@@ -459,6 +417,11 @@ int main(int argc, char *argv[])
         fprintf(stderr, "lwm2m_register() failed: 0x%X\r\n", result);
         return -1;
     }
+
+    /**
+     * Initialize value changed callback.
+     */
+    init_value_change(lwm2mH);
 
     /*
      * As you now have your lwm2m context complete you can pass it as an argument to all the command line functions

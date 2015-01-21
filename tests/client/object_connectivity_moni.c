@@ -81,224 +81,238 @@
 
 typedef struct
 {
-    char    ipAddresses[2][16];         // limited to 2!
-    char    routerIpAddresses[2][16];	// limited to 2!
-    long    cellId;
-    int     signalStrength;
-    int     linkQuality;
-    int     linkUtilization;
+	char ipAddresses[2][16];         // limited to 2!
+	char routerIpAddresses[2][16];	// limited to 2!
+	long cellId;
+	int signalStrength;
+	int linkQuality;
+	int linkUtilization;
 } conn_m_data_t;
 
-
-static uint8_t prv_set_value(lwm2m_tlv_t * tlvP,
-                             conn_m_data_t * connDataP)
+static uint8_t prv_set_value(lwm2m_tlv_t * tlvP, conn_m_data_t * connDataP)
 {   //------------------------------------------------------------------- JH --
-    switch (tlvP->id) {
-        case RES_M_NETWORK_BEARER: //s-int
-            lwm2m_tlv_encode_int(VALUE_NETWORK_BEARER_GSM, tlvP);
-            tlvP->type = LWM2M_TYPE_RESSOURCE;
-            if (0 != tlvP->length) return COAP_205_CONTENT;
-            else return COAP_500_INTERNAL_SERVER_ERROR;
-            break;
-        case RES_M_AVL_NETWORK_BEARER:
-        { //m-int
-            lwm2m_tlv_t * subTlvP;
-            subTlvP = lwm2m_tlv_new(2);
-            subTlvP[0].flags = 0;
-            subTlvP[0].id = 0;
-            subTlvP[0].type = LWM2M_TYPE_RESSOURCE_INSTANCE;
-            lwm2m_tlv_encode_int(VALUE_AVL_NETWORK_BEARER_1, subTlvP);
-            if (0 == subTlvP[0].length) {
-                lwm2m_tlv_free(2, subTlvP);
-                return COAP_500_INTERNAL_SERVER_ERROR;
-            }
-            subTlvP[1].flags = 0;
-            subTlvP[1].id = 1;
-            subTlvP[1].type = LWM2M_TYPE_RESSOURCE_INSTANCE;
-            lwm2m_tlv_encode_int(VALUE_AVL_NETWORK_BEARER_2, subTlvP + 1);
-            if (0 == subTlvP[1].length) {
-                lwm2m_tlv_free(2, subTlvP);
-                return COAP_500_INTERNAL_SERVER_ERROR;
-            }
-            tlvP->flags = 0;
-            tlvP->type = LWM2M_TYPE_MULTIPLE_RESSOURCE;
-            tlvP->length = 2;
-            tlvP->value = (uint8_t *) subTlvP;
-            return COAP_205_CONTENT;
-        }
-        break;
-        case RES_M_RADIO_SIGNAL_STRENGTH: //s-int
-            lwm2m_tlv_encode_int(connDataP->signalStrength, tlvP);
-            tlvP->type = LWM2M_TYPE_RESSOURCE;
-            if (0 != tlvP->length) return COAP_205_CONTENT;
-            else return COAP_500_INTERNAL_SERVER_ERROR;
-            break;
-        case RES_O_LINK_QUALITY: //s-int
-            lwm2m_tlv_encode_int(connDataP->linkQuality, tlvP);
-            tlvP->type = LWM2M_TYPE_RESSOURCE;
-            if (0 != tlvP->length) return COAP_205_CONTENT;
-            else return COAP_500_INTERNAL_SERVER_ERROR;
-            break;
-        case RES_M_IP_ADDRESSES:
-        { //m-string
-            lwm2m_tlv_t * subTlvP;
-            subTlvP = lwm2m_tlv_new(2);
-            subTlvP[0].flags = LWM2M_TLV_FLAG_STATIC_DATA;
-            subTlvP[0].id = 0;
-            subTlvP[0].type = LWM2M_TYPE_RESSOURCE_INSTANCE;
-            subTlvP[0].value = connDataP->ipAddresses[0];
-            subTlvP[0].length = strlen(connDataP->ipAddresses[0]);
-            if (0 == subTlvP[0].length) {
-                lwm2m_tlv_free(2, subTlvP);
-                return COAP_500_INTERNAL_SERVER_ERROR;
-            }
-            subTlvP[1].flags = LWM2M_TLV_FLAG_STATIC_DATA;
-            subTlvP[1].id = 1;
-            subTlvP[1].type = LWM2M_TYPE_RESSOURCE_INSTANCE;
-            subTlvP[1].value = connDataP->ipAddresses[1];
-            subTlvP[1].length = strlen(connDataP->ipAddresses[1]);
-            if (0 == subTlvP[1].length) {
-                lwm2m_tlv_free(2, subTlvP);
-                return COAP_500_INTERNAL_SERVER_ERROR;
-            }
-            tlvP->flags = 0;
-            tlvP->type = LWM2M_TYPE_MULTIPLE_RESSOURCE;
-            tlvP->length = 2;
-            tlvP->value = (uint8_t *) subTlvP;
-            return COAP_205_CONTENT;
-        }
-        break;
-        case RES_O_ROUTER_IP_ADDRESS:
-        { //m-string
-            lwm2m_tlv_t * subTlvP;
-            subTlvP = lwm2m_tlv_new(2);
-            subTlvP[0].flags = LWM2M_TLV_FLAG_STATIC_DATA;
-            subTlvP[0].id = 0;
-            subTlvP[0].type = LWM2M_TYPE_RESSOURCE_INSTANCE;
-            subTlvP[0].value = connDataP->routerIpAddresses[0];
-            subTlvP[0].length = strlen(connDataP->routerIpAddresses[0]);
-            if (0 == subTlvP[0].length) {
-                lwm2m_tlv_free(2, subTlvP);
-                return COAP_500_INTERNAL_SERVER_ERROR;
-            }
-            subTlvP[1].flags = LWM2M_TLV_FLAG_STATIC_DATA;
-            subTlvP[1].id = 1;
-            subTlvP[1].type = LWM2M_TYPE_RESSOURCE_INSTANCE;
-            subTlvP[1].value = connDataP->routerIpAddresses[1];
-            subTlvP[1].length = strlen(connDataP->routerIpAddresses[1]);
-            if (0 == subTlvP[1].length) {
-                lwm2m_tlv_free(2, subTlvP);
-                return COAP_500_INTERNAL_SERVER_ERROR;
-            }
-            tlvP->flags = 0;
-            tlvP->type = LWM2M_TYPE_MULTIPLE_RESSOURCE;
-            tlvP->length = 2;
-            tlvP->value = (uint8_t *) subTlvP;
-            return COAP_205_CONTENT;
-        }
-        break;
-        case RES_O_LINK_UTILIZATION: //s-int
-            lwm2m_tlv_encode_int(connDataP->linkUtilization, tlvP);
-            tlvP->type = LWM2M_TYPE_RESSOURCE;
-            if (0 != tlvP->length) return COAP_205_CONTENT;
-            else return COAP_500_INTERNAL_SERVER_ERROR;
-            break;
-        case RES_O_APN: //m-string
-        {
-            lwm2m_tlv_t * subTlvP;
-            subTlvP = lwm2m_tlv_new(2);
-            subTlvP[0].flags = LWM2M_TLV_FLAG_STATIC_DATA;
-            subTlvP[0].id = 0;
-            subTlvP[0].type = LWM2M_TYPE_RESSOURCE_INSTANCE;
-            subTlvP[0].value = VALUE_APN_1;
-            subTlvP[0].length = strlen(VALUE_APN_1);
-            if (0 == subTlvP[0].length) {
-                lwm2m_tlv_free(2, subTlvP);
-                return COAP_500_INTERNAL_SERVER_ERROR;
-            }
-            subTlvP[1].flags = LWM2M_TLV_FLAG_STATIC_DATA;
-            subTlvP[1].id = 1;
-            subTlvP[1].type = LWM2M_TYPE_RESSOURCE_INSTANCE;
-            subTlvP[1].value = VALUE_APN_2;
-            subTlvP[1].length = strlen(VALUE_APN_2);
-            if (0 == subTlvP[1].length) {
-                lwm2m_tlv_free(2, subTlvP);
-                return COAP_500_INTERNAL_SERVER_ERROR;
-            }
-            tlvP->flags = 0;
-            tlvP->type = LWM2M_TYPE_MULTIPLE_RESSOURCE;
-            tlvP->length = 2;
-            tlvP->value = (uint8_t *) subTlvP;
-            return COAP_205_CONTENT;
-        }
-            break;
-        case RES_O_CELL_ID: //s-int
-            lwm2m_tlv_encode_int(connDataP->cellId, tlvP);
-            tlvP->type = LWM2M_TYPE_RESSOURCE;
-            if (0 != tlvP->length) return COAP_205_CONTENT;
-            else return COAP_500_INTERNAL_SERVER_ERROR;
-            break;
-        case RES_O_SMNC: //s-int
-            lwm2m_tlv_encode_int(VALUE_SMNC, tlvP);
-            tlvP->type = LWM2M_TYPE_RESSOURCE;
-            if (0 != tlvP->length) return COAP_205_CONTENT;
-            else return COAP_500_INTERNAL_SERVER_ERROR;
-            break;
-        case RES_O_SMCC: //s-int
-            lwm2m_tlv_encode_int(VALUE_SMCC, tlvP);
-            tlvP->type = LWM2M_TYPE_RESSOURCE;
-            if (0 != tlvP->length) return COAP_205_CONTENT;
-            else return COAP_500_INTERNAL_SERVER_ERROR;
-            break;
-        default:
-            return COAP_404_NOT_FOUND;
-    }
+	switch (tlvP->id) {
+	case RES_M_NETWORK_BEARER: //s-int
+		lwm2m_tlv_encode_int(VALUE_NETWORK_BEARER_GSM, tlvP);
+		tlvP->type = LWM2M_TYPE_RESSOURCE;
+		if (0 != tlvP->length)
+			return COAP_205_CONTENT ;
+		else
+			return COAP_500_INTERNAL_SERVER_ERROR ;
+		break;
+	case RES_M_AVL_NETWORK_BEARER: { //m-int
+		lwm2m_tlv_t * subTlvP;
+		subTlvP = lwm2m_tlv_new(2);
+		subTlvP[0].flags = 0;
+		subTlvP[0].id = 0;
+		subTlvP[0].type = LWM2M_TYPE_RESSOURCE_INSTANCE;
+		lwm2m_tlv_encode_int(VALUE_AVL_NETWORK_BEARER_1, subTlvP);
+		if (0 == subTlvP[0].length)
+		{
+			lwm2m_tlv_free(2, subTlvP);
+			return COAP_500_INTERNAL_SERVER_ERROR ;
+		}
+		subTlvP[1].flags = 0;
+		subTlvP[1].id = 1;
+		subTlvP[1].type = LWM2M_TYPE_RESSOURCE_INSTANCE;
+		lwm2m_tlv_encode_int(VALUE_AVL_NETWORK_BEARER_2, subTlvP + 1);
+		if (0 == subTlvP[1].length)
+		{
+			lwm2m_tlv_free(2, subTlvP);
+			return COAP_500_INTERNAL_SERVER_ERROR ;
+		}
+		tlvP->flags = 0;
+		tlvP->type = LWM2M_TYPE_MULTIPLE_RESSOURCE;
+		tlvP->length = 2;
+		tlvP->value = (uint8_t *) subTlvP;
+		return COAP_205_CONTENT ;
+	}
+		break;
+	case RES_M_RADIO_SIGNAL_STRENGTH: //s-int
+		lwm2m_tlv_encode_int(connDataP->signalStrength, tlvP);
+		tlvP->type = LWM2M_TYPE_RESSOURCE;
+		if (0 != tlvP->length)
+			return COAP_205_CONTENT ;
+		else
+			return COAP_500_INTERNAL_SERVER_ERROR ;
+		break;
+	case RES_O_LINK_QUALITY: //s-int
+		lwm2m_tlv_encode_int(connDataP->linkQuality, tlvP);
+		tlvP->type = LWM2M_TYPE_RESSOURCE;
+		if (0 != tlvP->length)
+			return COAP_205_CONTENT ;
+		else
+			return COAP_500_INTERNAL_SERVER_ERROR ;
+		break;
+	case RES_M_IP_ADDRESSES: { //m-string
+		lwm2m_tlv_t * subTlvP;
+		subTlvP = lwm2m_tlv_new(2);
+		subTlvP[0].flags = LWM2M_TLV_FLAG_STATIC_DATA;
+		subTlvP[0].id = 0;
+		subTlvP[0].type = LWM2M_TYPE_RESSOURCE_INSTANCE;
+		subTlvP[0].value = (uint8_t*) connDataP->ipAddresses[0];
+		subTlvP[0].length = strlen(connDataP->ipAddresses[0]);
+		if (0 == subTlvP[0].length)
+		{
+			lwm2m_tlv_free(2, subTlvP);
+			return COAP_500_INTERNAL_SERVER_ERROR ;
+		}
+		subTlvP[1].flags = LWM2M_TLV_FLAG_STATIC_DATA;
+		subTlvP[1].id = 1;
+		subTlvP[1].type = LWM2M_TYPE_RESSOURCE_INSTANCE;
+		subTlvP[1].value = (uint8_t*) connDataP->ipAddresses[1];
+		subTlvP[1].length = strlen(connDataP->ipAddresses[1]);
+		if (0 == subTlvP[1].length)
+		{
+			lwm2m_tlv_free(2, subTlvP);
+			return COAP_500_INTERNAL_SERVER_ERROR ;
+		}
+		tlvP->flags = 0;
+		tlvP->type = LWM2M_TYPE_MULTIPLE_RESSOURCE;
+		tlvP->length = 2;
+		tlvP->value = (uint8_t *) subTlvP;
+		return COAP_205_CONTENT ;
+	}
+		break;
+	case RES_O_ROUTER_IP_ADDRESS: { //m-string
+		lwm2m_tlv_t * subTlvP;
+		subTlvP = lwm2m_tlv_new(2);
+		subTlvP[0].flags = LWM2M_TLV_FLAG_STATIC_DATA;
+		subTlvP[0].id = 0;
+		subTlvP[0].type = LWM2M_TYPE_RESSOURCE_INSTANCE;
+		subTlvP[0].value = (uint8_t*) connDataP->routerIpAddresses[0];
+		subTlvP[0].length = strlen(connDataP->routerIpAddresses[0]);
+		if (0 == subTlvP[0].length)
+		{
+			lwm2m_tlv_free(2, subTlvP);
+			return COAP_500_INTERNAL_SERVER_ERROR ;
+		}
+		subTlvP[1].flags = LWM2M_TLV_FLAG_STATIC_DATA;
+		subTlvP[1].id = 1;
+		subTlvP[1].type = LWM2M_TYPE_RESSOURCE_INSTANCE;
+		subTlvP[1].value = (uint8_t*) connDataP->routerIpAddresses[1];
+		subTlvP[1].length = strlen(connDataP->routerIpAddresses[1]);
+		if (0 == subTlvP[1].length)
+		{
+			lwm2m_tlv_free(2, subTlvP);
+			return COAP_500_INTERNAL_SERVER_ERROR ;
+		}
+		tlvP->flags = 0;
+		tlvP->type = LWM2M_TYPE_MULTIPLE_RESSOURCE;
+		tlvP->length = 2;
+		tlvP->value = (uint8_t *) subTlvP;
+		return COAP_205_CONTENT ;
+	}
+		break;
+	case RES_O_LINK_UTILIZATION: //s-int
+		lwm2m_tlv_encode_int(connDataP->linkUtilization, tlvP);
+		tlvP->type = LWM2M_TYPE_RESSOURCE;
+		if (0 != tlvP->length)
+			return COAP_205_CONTENT ;
+		else
+			return COAP_500_INTERNAL_SERVER_ERROR ;
+		break;
+	case RES_O_APN: //m-string
+	{
+		lwm2m_tlv_t * subTlvP;
+		subTlvP = lwm2m_tlv_new(2);
+		subTlvP[0].flags = LWM2M_TLV_FLAG_STATIC_DATA;
+		subTlvP[0].id = 0;
+		subTlvP[0].type = LWM2M_TYPE_RESSOURCE_INSTANCE;
+		subTlvP[0].value = (uint8_t*) VALUE_APN_1;
+		subTlvP[0].length = strlen(VALUE_APN_1);
+		if (0 == subTlvP[0].length)
+		{
+			lwm2m_tlv_free(2, subTlvP);
+			return COAP_500_INTERNAL_SERVER_ERROR ;
+		}
+		subTlvP[1].flags = LWM2M_TLV_FLAG_STATIC_DATA;
+		subTlvP[1].id = 1;
+		subTlvP[1].type = LWM2M_TYPE_RESSOURCE_INSTANCE;
+		subTlvP[1].value = (uint8_t*) VALUE_APN_2;
+		subTlvP[1].length = strlen(VALUE_APN_2);
+		if (0 == subTlvP[1].length)
+		{
+			lwm2m_tlv_free(2, subTlvP);
+			return COAP_500_INTERNAL_SERVER_ERROR ;
+		}
+		tlvP->flags = 0;
+		tlvP->type = LWM2M_TYPE_MULTIPLE_RESSOURCE;
+		tlvP->length = 2;
+		tlvP->value = (uint8_t *) subTlvP;
+		return COAP_205_CONTENT ;
+	}
+		break;
+	case RES_O_CELL_ID: //s-int
+		lwm2m_tlv_encode_int(connDataP->cellId, tlvP);
+		tlvP->type = LWM2M_TYPE_RESSOURCE;
+		if (0 != tlvP->length)
+			return COAP_205_CONTENT ;
+		else
+			return COAP_500_INTERNAL_SERVER_ERROR ;
+		break;
+	case RES_O_SMNC: //s-int
+		lwm2m_tlv_encode_int(VALUE_SMNC, tlvP);
+		tlvP->type = LWM2M_TYPE_RESSOURCE;
+		if (0 != tlvP->length)
+			return COAP_205_CONTENT ;
+		else
+			return COAP_500_INTERNAL_SERVER_ERROR ;
+		break;
+	case RES_O_SMCC: //s-int
+		lwm2m_tlv_encode_int(VALUE_SMCC, tlvP);
+		tlvP->type = LWM2M_TYPE_RESSOURCE;
+		if (0 != tlvP->length)
+			return COAP_205_CONTENT ;
+		else
+			return COAP_500_INTERNAL_SERVER_ERROR ;
+		break;
+	default:
+		return COAP_404_NOT_FOUND ;
+	}
 }
 
-static uint8_t prv_read(uint16_t instanceId,
-                        int * numDataP,
-                        lwm2m_tlv_t ** dataArrayP,
-                        lwm2m_object_t * objectP)
+static uint8_t prv_read(uint16_t instanceId, int * numDataP, lwm2m_tlv_t ** dataArrayP, lwm2m_object_t * objectP)
 {   //------------------------------------------------------------------- JH --
-    uint8_t result;
-    int i;
+	uint8_t result;
+	int i;
 
-    // this is a single instance object
-    if (instanceId != 0)
-    {
-        return COAP_404_NOT_FOUND;
-    }
+	// this is a single instance object
+	if (instanceId != 0)
+	{
+		return COAP_404_NOT_FOUND ;
+	}
 
-    // is the server asking for the full object ?
-    if (*numDataP == 0)
-    {
-        uint16_t resList[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
-        int nbRes = sizeof(resList)/sizeof(uint16_t);
+	// is the server asking for the full object ?
+	if (*numDataP == 0)
+	{
+		uint16_t resList[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+		int nbRes = sizeof(resList) / sizeof(uint16_t);
 
-        *dataArrayP = lwm2m_tlv_new(nbRes);
-        if (*dataArrayP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
-        *numDataP = nbRes;
-        for (i = 0 ; i < nbRes ; i++)
-        {
-            (*dataArrayP)[i].id = resList[i];
-        }
-    }
+		*dataArrayP = lwm2m_tlv_new(nbRes);
+		if (*dataArrayP == NULL)
+			return COAP_500_INTERNAL_SERVER_ERROR ;
+		*numDataP = nbRes;
+		for (i = 0; i < nbRes; i++)
+		{
+			(*dataArrayP)[i].id = resList[i];
+		}
+	}
 
-    i = 0;
-    do
-    {
-        result = prv_set_value((*dataArrayP) + i, (conn_m_data_t*)(objectP->userData));
-        i++;
-    } while (i < *numDataP && result == COAP_205_CONTENT);
+	i = 0;
+	do
+	{
+		result = prv_set_value((*dataArrayP) + i, (conn_m_data_t*) (objectP->userData));
+		i++;
+	} while (i < *numDataP && result == COAP_205_CONTENT );
 
-    return result;
+	return result;
 }
 
-
-static uint8_t prv_datatype(int resourceId, lwm2m_data_type_t *rDataType) 
+static uint8_t prv_datatype(int resourceId, lwm2m_data_type_t *rDataType)
 {   //------------------------------------------------------------------ JH --
-    uint8_t ret = COAP_NO_ERROR;
-    switch (resourceId) {
+	uint8_t ret = COAP_NO_ERROR;
+	switch (resourceId) {
 	case RES_M_NETWORK_BEARER:
 	case RES_M_AVL_NETWORK_BEARER:
 	case RES_M_RADIO_SIGNAL_STRENGTH:
@@ -307,68 +321,151 @@ static uint8_t prv_datatype(int resourceId, lwm2m_data_type_t *rDataType)
 	case RES_O_CELL_ID:
 	case RES_O_SMNC:
 	case RES_O_SMCC:
-		*rDataType = LWM2M_DATATYPE_INTEGER;  
+		*rDataType = LWM2M_DATATYPE_INTEGER;
 		break;
-	case RES_M_IP_ADDRESSES:
-	case RES_O_ROUTER_IP_ADDRESS:
-	case RES_O_APN:
-		*rDataType = LWM2M_DATATYPE_STRING;  
+	default:
+		ret = COAP_405_METHOD_NOT_ALLOWED;
 		break;
-    default:                        
-	    ret = COAP_405_METHOD_NOT_ALLOWED;   
-		break;
-    }
-    return ret;
+	}
+	return ret;
 }
 
+static uint8_t prv_write(uint16_t instanceId, int numData, lwm2m_tlv_t * dataArray, lwm2m_object_t * objectP)
+{
+	int i;
+	int64_t value;
+	uint8_t result;
+	conn_m_data_t* data;
+	// this is a single instance object
+	if (instanceId != 0)
+	{
+		return COAP_404_NOT_FOUND ;
+	}
+	if (0 == (dataArray[0].flags & LWM2M_TLV_FLAG_INTERNAL_WRITE))
+	{
+		return COAP_405_METHOD_NOT_ALLOWED ;
+	}
+
+	i = 0;
+	data = (conn_m_data_t*) (objectP->userData);
+
+	do
+	{
+		switch (dataArray[i].id) {
+		case RES_M_RADIO_SIGNAL_STRENGTH:
+			if (1 == lwm2m_tlv_decode_int(&dataArray[i], &value))
+			{
+				data->signalStrength = value;
+				result = COAP_204_CHANGED;
+			}
+			else
+			{
+				result = COAP_400_BAD_REQUEST;
+			}
+			break;
+		case RES_O_LINK_QUALITY:
+			if (1 == lwm2m_tlv_decode_int(&dataArray[i], &value))
+			{
+				data->linkQuality = value;
+				result = COAP_204_CHANGED;
+			}
+			else
+			{
+				result = COAP_400_BAD_REQUEST;
+			}
+			break;
+		case RES_M_IP_ADDRESSES:
+			if (1 == lwm2m_tlv_decode_string(&dataArray[i], data->ipAddresses[0], sizeof(data->ipAddresses[0])))
+			{
+				result = COAP_204_CHANGED;
+			}
+			else
+			{
+				result = COAP_400_BAD_REQUEST;
+			}
+			break;
+		case RES_O_ROUTER_IP_ADDRESS:
+			if (1
+					== lwm2m_tlv_decode_string(&dataArray[i], data->routerIpAddresses[0],
+							sizeof(data->routerIpAddresses[0])))
+			{
+				result = COAP_204_CHANGED;
+			}
+			else
+			{
+				result = COAP_400_BAD_REQUEST;
+			}
+			break;
+		case RES_O_CELL_ID:
+			if (1 == lwm2m_tlv_decode_int(&dataArray[i], &value))
+			{
+				data->cellId = value;
+				result = COAP_204_CHANGED;
+			}
+			else
+			{
+				result = COAP_400_BAD_REQUEST;
+			}
+			break;
+		default:
+			result = COAP_405_METHOD_NOT_ALLOWED;
+		}
+		i++;
+	} while (i < numData && result == COAP_204_CHANGED );
+
+	return result;
+}
 
 lwm2m_object_t * get_object_conn_m()
 {   //------------------------------------------------------------------- JH --
-    /*
-     * The get_object_conn_moni function create the object itself and return a pointer to the structure that represent it.
-     */
-    lwm2m_object_t * connObj;
+	/*
+	 * The get_object_conn_moni function create the object itself and return a pointer to the structure that represent it.
+	 */
+	lwm2m_object_t * connObj;
 
-    connObj = (lwm2m_object_t *)lwm2m_malloc(sizeof(lwm2m_object_t));
+	connObj = (lwm2m_object_t *) lwm2m_malloc(sizeof(lwm2m_object_t));
 
-    if (NULL != connObj)
-    {
-        memset(connObj, 0, sizeof(lwm2m_object_t));
+	if (NULL != connObj)
+	{
+		memset(connObj, 0, sizeof(lwm2m_object_t));
 
-        /*
-         * It assign his unique ID
-         * The 3 is the standard ID for the mandatory object "Object device".
-         */
-        connObj->objID = OBJ_DEVICE_ID;
+		/*
+		 * It assign his unique ID
+		 * The 3 is the standard ID for the mandatory object "Object device".
+		 */
+		connObj->objID = OBJ_DEVICE_ID;
 
-        /*
-         * And the private function that will access the object.
-         * Those function will be called when a read/write/execute query is made by the server. In fact the library don't need to
-         * know the resources of the object, only the server does.
-         */
-        connObj->readFunc = prv_read;
-        connObj->writeFunc = NULL;
-        connObj->executeFunc = NULL;
-        connObj->datatypeFunc = prv_datatype;  
-        connObj->userData = lwm2m_malloc(sizeof(conn_m_data_t));
+		/*
+		 * And the private function that will access the object.
+		 * Those function will be called when a read/write/execute query is made by the server. In fact the library don't need to
+		 * know the resources of the object, only the server does.
+		 */
+		connObj->readFunc = prv_read;
+		connObj->writeFunc = prv_write;
+		connObj->executeFunc = NULL;
+		connObj->datatypeFunc = prv_datatype;
+		connObj->userData = lwm2m_malloc(sizeof(conn_m_data_t));
 
-        /*
-         * Also some user data can be stored in the object with a private structure containing the needed variables 
-         */
-        if (NULL != connObj->userData){
-            conn_m_data_t *myData = (conn_m_data_t*)connObj->userData;
-            myData->cellId          = VALUE_CELL_ID;
-            myData->signalStrength  = VALUE_RADIO_SIGNAL_STRENGTH;
-            myData->linkQuality     = VALUE_LINK_QUALITY;
-            myData->linkUtilization = VALUE_LINK_UTILIZATION;
-            strcpy(myData->ipAddresses[0], VALUE_IP_ADDRESS_1);
-            strcpy(myData->ipAddresses[1], VALUE_IP_ADDRESS_1);
-            strcpy(myData->routerIpAddresses[0], VALUE_ROUTER_IP_ADDRESS_1);
-            strcpy(myData->routerIpAddresses[1], VALUE_ROUTER_IP_ADDRESS_1);
-        } else {
-            lwm2m_free(connObj);
-            connObj = NULL;
-        }
-    }
-    return connObj;
+		/*
+		 * Also some user data can be stored in the object with a private structure containing the needed variables
+		 */
+		if (NULL != connObj->userData)
+		{
+			conn_m_data_t *myData = (conn_m_data_t*) connObj->userData;
+			myData->cellId = VALUE_CELL_ID;
+			myData->signalStrength = VALUE_RADIO_SIGNAL_STRENGTH;
+			myData->linkQuality = VALUE_LINK_QUALITY;
+			myData->linkUtilization = VALUE_LINK_UTILIZATION;
+			strcpy(myData->ipAddresses[0], VALUE_IP_ADDRESS_1);
+			strcpy(myData->ipAddresses[1], VALUE_IP_ADDRESS_1);
+			strcpy(myData->routerIpAddresses[0], VALUE_ROUTER_IP_ADDRESS_1);
+			strcpy(myData->routerIpAddresses[1], VALUE_ROUTER_IP_ADDRESS_1);
+		}
+		else
+		{
+			lwm2m_free(connObj);
+			connObj = NULL;
+		}
+	}
+	return connObj;
 }

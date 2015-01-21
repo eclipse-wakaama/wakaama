@@ -57,13 +57,10 @@
 #include <string.h>
 #include <stdio.h>
 
-
-static lwm2m_object_t * prv_find_object(lwm2m_context_t * contextP,
+lwm2m_object_t * lwm2m_find_object(lwm2m_context_t * contextP,
                                         uint16_t Id)
 {
     int i;
-
-    if (Id == LWM2M_SECURITY_OBJECT_ID) return NULL;
 
     for (i = 0 ; i < contextP->numObject ; i++)
     {
@@ -74,6 +71,15 @@ static lwm2m_object_t * prv_find_object(lwm2m_context_t * contextP,
     }
 
     return NULL;
+}
+
+
+static lwm2m_object_t * prv_find_object(lwm2m_context_t * contextP,
+                                        uint16_t Id)
+{
+    if (Id == LWM2M_SECURITY_OBJECT_ID) return NULL;
+
+    return lwm2m_find_object(contextP, Id);
 }
 
 coap_status_t object_read(lwm2m_context_t * contextP,

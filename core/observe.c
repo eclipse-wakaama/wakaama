@@ -229,9 +229,9 @@ coap_status_t handle_observe_request(lwm2m_context_t * contextP,
 		watcherP->changed = false;
 		watcherP->tokenLen = message->token_len;
 		memcpy(watcherP->token, message->token, message->token_len);
-		watcherP->blockSize = LWM2M_MAX_PAYLOAD_SIZE /* REST_MAX_CHUNK_SIZE*/;
+		watcherP->blockSize = REST_MAX_CHUNK_SIZE;
 		coap_get_header_block2(message, NULL, NULL, &watcherP->blockSize, NULL);
-		watcherP->blockSize = MIN(watcherP->blockSize, LWM2M_MAX_PAYLOAD_SIZE); /* REST_MAX_CHUNK_SIZE*/
+		watcherP->blockSize = MIN(watcherP->blockSize, REST_MAX_CHUNK_SIZE);
 		coap_set_header_observe(response, watcherP->counter++);
 	}
 

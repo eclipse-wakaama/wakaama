@@ -168,7 +168,7 @@ error:
     return NULL;
 }
 
-int lwm2m_stringToUri(char * buffer,
+int lwm2m_stringToUri(const char * buffer,
                       size_t buffer_len,
                       lwm2m_uri_t * uriP)
 {

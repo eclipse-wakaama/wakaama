@@ -12,10 +12,11 @@
  *
  * Contributors:
  *    Bosch Software Innovations GmbH - Please refer to git log
- *    
+ *
  *******************************************************************************/
 /*
- * blockwise.c
+ *  blockwise.c
+ *  basic functions for blockwise data transfer.
  *
  *  Created on: 19.12.2014
  *  Author: Achim Kraus

@@ -154,7 +154,7 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
 		if (message->code >= COAP_GET && message->code <= COAP_DELETE)
 		{
 			uint32_t block_num = 0;
-			uint16_t block_size = LWM2M_MAX_PAYLOAD_SIZE /* REST_MAX_CHUNK_SIZE*/;
+			uint16_t block_size = REST_MAX_CHUNK_SIZE;
 			uint32_t block_offset = 0;
 			uint8_t *payload = NULL;
 			lwm2m_uri_t * uriP = NULL;

@@ -703,3 +703,13 @@ int lwm2m_tlv_decode_bool(lwm2m_tlv_t * tlvP,
 
     return 1;
 }
+
+int lwm2m_tlv_decode_string(lwm2m_tlv_t * tlvP,
+                         char * dataP, size_t size)
+{
+    if (tlvP->length >= size) return 0;
+    memset(dataP, 0, size);
+    memcpy(dataP, tlvP->value, tlvP->length);
+    return 1;
+}
+

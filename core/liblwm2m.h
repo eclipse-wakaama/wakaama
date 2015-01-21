@@ -199,6 +199,7 @@ int lwm2m_boolToPlainText(bool data, char ** bufferP);
  */
 #define LWM2M_TLV_FLAG_STATIC_DATA  0x01
 #define LWM2M_TLV_FLAG_TEXT_FORMAT  0x02
+#define LWM2M_TLV_FLAG_INTERNAL_WRITE  0x04
 
 typedef enum
 {
@@ -226,6 +227,7 @@ void lwm2m_tlv_encode_int(int64_t data, lwm2m_tlv_t * tlvP);
 int  lwm2m_tlv_decode_int(lwm2m_tlv_t * tlvP, int64_t * dataP);
 void lwm2m_tlv_encode_bool(bool data, lwm2m_tlv_t * tlvP);
 int  lwm2m_tlv_decode_bool(lwm2m_tlv_t * tlvP, bool * dataP);
+int  lwm2m_tlv_decode_string(lwm2m_tlv_t * tlvP, char * dataP, size_t size);
 
 
 /*
@@ -271,7 +273,7 @@ typedef struct
 // Return the number of characters read from buffer or 0 in case of error.
 // Valid URIs: /1, /1/, /1/2, /1/2/, /1/2/3
 // Invalid URIs: /, //, //2, /1//, /1//3, /1/2/3/, /1/2/3/4
-int lwm2m_stringToUri(char * buffer, size_t buffer_len, lwm2m_uri_t * uriP);
+int lwm2m_stringToUri(const char * buffer, size_t buffer_len, lwm2m_uri_t * uriP);
 
 typedef enum
 {
@@ -476,6 +478,7 @@ typedef struct _lwm2m_observed_
     lwm2m_watcher_t * watcherList;
 } lwm2m_observed_t;
 
+
 /**
  * resource for blockwise transfer
  */
@@ -525,7 +528,6 @@ typedef uint8_t (*lwm2m_write_callback_t) (uint16_t instanceId, int numData, lwm
 typedef uint8_t (*lwm2m_execute_callback_t) (uint16_t instanceId, uint16_t resourceId, char * buffer, int length, lwm2m_object_t * objectP);
 typedef uint8_t (*lwm2m_create_callback_t) (uint16_t instanceId, int numData, lwm2m_tlv_t * dataArray, lwm2m_object_t * objectP);
 typedef uint8_t (*lwm2m_delete_callback_t) (uint16_t instanceId, lwm2m_object_t * objectP);
-//typedef uint8_t (*lwm2m_attrib_callback_t) (lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_attribute_type_t type, const char* value, lwm2m_object_t * objectP, lwm2m_server_t * serverP);
 typedef uint8_t (*lwm2m_datatype_callback_t) (int resourceId, lwm2m_data_type_t *resDataType);
 typedef void (*lwm2m_close_callback_t) (lwm2m_object_t * objectP);
 
@@ -573,11 +575,9 @@ int lwm2m_update_registrations(lwm2m_context_t * contextP, uint32_t currentTime,
 int lwm2m_update_registration(lwm2m_context_t * contextP, uint16_t shortServerID);
 
 void lwm2m_resource_value_changed(lwm2m_context_t * contextP, lwm2m_uri_t * uriP);
-/**
-  sets the attributes of a object/instance/resource
- * @return coap result
-*/
-uint8_t lwm2m_setAttributes(lwm2m_context_t * contextP, lwm2m_uri_t * uriP,lwm2m_attribute_type_t type, const char* value, int length, lwm2m_object_t * objectP,  lwm2m_server_t * serverP);
+
+lwm2m_object_t* lwm2m_find_object(lwm2m_context_t * contextP, uint16_t Id);
+
 #endif
 
 #ifdef LWM2M_SERVER_MODE

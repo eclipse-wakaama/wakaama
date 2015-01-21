@@ -68,8 +68,6 @@
 
 #define LWM2M_DEFAULT_LIFETIME  86400
 
-#define LWM2M_MAX_PAYLOAD_SIZE 64
-
 #define LWM2M_MAX_PACKET_SIZE 198
 
 #define URI_REGISTRATION_SEGMENT        "rd"
@@ -97,11 +95,11 @@ typedef struct _obs_list_
 	lwm2m_observed_t * item;
 } obs_list_t;
 
-
 /**
  * resource for blockwise transfer
  */
-typedef struct _lwm2m_blockwise_ {
+struct _lwm2m_blockwise_
+{
 	struct _lwm2m_blockwise_ * next;
 	lwm2m_uri_t uri;
 	uint32_t time;
@@ -110,7 +108,7 @@ typedef struct _lwm2m_blockwise_ {
 	uint16_t size;
 	uint16_t length;
 	uint8_t* data;
-} lwm2m_blockwise_t;
+};
 
 // defined in uri.c
 int lwm2m_get_number(const char * uriString, size_t uriLength);
@@ -171,5 +169,10 @@ lwm2m_attribute_data_t * lwm2m_getAttributes(lwm2m_server_t * serverP, lwm2m_uri
 void lwm2m_updateTransmissionAttributes(lwm2m_attribute_data_t * attributeP, struct timeval *tv);
 uint8_t lwm2m_evalAttributes(lwm2m_attribute_data_t* attrData, const char* resValBuf, int bufLen, struct timeval tv, bool *notifyResult);
 int lwm2m_adjustTimeout(time_t nextTime, time_t currentTime, struct timeval* timeoutP);
+/**
+  sets the attributes of a object/instance/resource
+ * @return coap result
+*/
+uint8_t lwm2m_setAttributes(lwm2m_context_t * contextP, lwm2m_uri_t * uriP,lwm2m_attribute_type_t type, const char* value, int length, lwm2m_object_t * objectP,  lwm2m_server_t * serverP);
 
 #endif
