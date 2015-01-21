@@ -212,7 +212,6 @@ void location_setLocationAtTime(lwm2m_object_t* locationObj,
   dtostrf (longitude, -8, 6, pData->longitude);
   dtostrf (altitude,  -8, 4, pData->altitude);
 #else
-//#elif defined(SPARK)
   snprintf(pData->latitude, 5+DEG_DECIMAL_PLACES, "%-8.6f", (double)latitude);
   snprintf(pData->longitude,5+DEG_DECIMAL_PLACES, "%-8.6f", (double)longitude);
   snprintf(pData->altitude, 5+DEG_DECIMAL_PLACES, "%-8.4f", (double)altitude);

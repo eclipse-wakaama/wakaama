@@ -17,18 +17,17 @@
 /** \file
  handles the attributes of objects, instances and resources
 
- \author Carsten Merkle, Tobias Kurzweg
- \author Joerg Hubschneider
-
+ \author Carsten Merkle, Tobias Kurzweg, Joerg Hubschneider, Achim Kraus
  Copyright (c) 2014 Bosch Software Innovations GmbH, Germany. All rights reserved.
 
  */
+
+#include "internals.h"
 
 #ifdef LWM2M_CLIENT_MODE
 
 #include <string.h>
 #include <liblwm2m.h>
-#include "internals.h"
 
 /**
  * 

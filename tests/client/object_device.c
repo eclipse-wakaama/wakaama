@@ -170,7 +170,7 @@ static uint8_t prv_set_value(lwm2m_tlv_t * tlvP,
         tlvP->type = LWM2M_TYPE_RESSOURCE;
         return COAP_205_CONTENT;
 
-    case RES_O_SERIAL_NUMBER:       //2:
+    case RES_O_SERIAL_NUMBER:
         tlvP->value = PRV_SERIAL_NUMBER;
         tlvP->length = strlen(PRV_SERIAL_NUMBER);
         tlvP->flags = LWM2M_TLV_FLAG_STATIC_DATA;

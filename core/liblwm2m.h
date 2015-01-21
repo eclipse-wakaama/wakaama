@@ -16,6 +16,7 @@
  *    Simon Bernard - Please refer to git log
  *    Toby Jaffey - Please refer to git log
  *    Julien Vermillard - Please refer to git log
+ *    Bosch Software Innovations GmbH - Please refer to git log
  *******************************************************************************/
 
 /*
@@ -539,7 +540,6 @@ struct _lwm2m_object_t
     lwm2m_create_callback_t     createFunc;
     lwm2m_delete_callback_t     deleteFunc;
     lwm2m_close_callback_t      closeFunc;
-//JH    lwm2m_attrib_callback_t     attribFunc;
     lwm2m_datatype_callback_t   datatypeFunc;
     void *                      userData;
 };

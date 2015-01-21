@@ -68,8 +68,8 @@ static uint8_t prv_firmware_read(uint16_t instanceId,
     // is the server asking for the full object ?
     if (*numDataP == 0)
     {
-        uint16_t resList[] = {0, 1, 2, 3, 6, 7, 8, 9, 10, 11, 13, 14, 15};
-        int nbRes = sizeof(resList)/sizeof(uint16_t);
+        //uint16_t resList[] = {0, 1, 2, 3, 5};
+        //int nbRes = sizeof(resList)/sizeof(uint16_t);
 
         *dataArrayP = lwm2m_tlv_new(3);
         if (*dataArrayP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
@@ -229,7 +229,7 @@ lwm2m_object_t * get_object_firmware()
      */
     lwm2m_object_t * firmwareObj;
 
-    firmwareObj = (lwm2m_object_t *)malloc(sizeof(lwm2m_object_t));
+    firmwareObj = (lwm2m_object_t *)lwm2m_malloc(sizeof(lwm2m_object_t));
 
     if (NULL != firmwareObj)
     {
@@ -249,7 +249,7 @@ lwm2m_object_t * get_object_firmware()
         firmwareObj->readFunc = prv_firmware_read;
         firmwareObj->writeFunc = prv_firmware_write;
         firmwareObj->executeFunc = prv_firmware_execute;
-        firmwareObj->userData = malloc(sizeof(firmware_data_t));
+        firmwareObj->userData = lwm2m_malloc(sizeof(firmware_data_t));
 
         /*
          * Also some user data can be stored in the object with a private structure containing the needed variables
