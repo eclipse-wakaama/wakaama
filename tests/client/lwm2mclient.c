@@ -305,6 +305,29 @@ static void prv_update(char * buffer, void * user_data)
     syntax_error: fprintf(stdout, "Syntax error !\n");
 }
 
+static void update_batterylevel(lwm2m_context_t * context, int enable) {
+    if (enable) {
+        static time_t next_change_time = 0;
+        struct timeval tv;
+        lwm2m_gettimeofday(&tv, NULL);
+        if (next_change_time < tv.tv_sec) {
+            char value[15];
+            int valueLength;
+            lwm2m_uri_t uri;
+            int level = rand() % 100;
+            if (0>level) level = -level;
+            if (lwm2m_stringToUri("/3/0/9", 6, &uri)) {
+                valueLength = sprintf(value, "%d", level);
+                printf(stderr, "New Battery Level: %d\n", level);
+                handle_value_changed(context, &uri, value, valueLength);
+            }
+            level = rand() % 20;
+            if (0>level) level = -level;
+            next_change_time = tv.tv_sec + level + 10;
+        }
+    }
+}
+
 #define OBJ_COUNT 7
 
 int main(int argc, char *argv[])
@@ -319,6 +342,7 @@ int main(int argc, char *argv[])
     const char* serverPort = LWM2M_STANDARD_PORT_STR;
     const char* name = "testlwm2mclient";
     int livetime = 300;
+    int batterylevelchanging = 1;
     time_t reboot_time = 0;
 
     /*
@@ -351,6 +375,8 @@ int main(int argc, char *argv[])
         name = argv[4];
     if (argc >= 6)
         sscanf(argv[5], "%d", &livetime);
+    if (argc >= 7)
+        batterylevelchanging = argv[6][0] == '1' ? 1 : 0;
 
     /*
      *This call an internal function that create an IPV6 socket on the port 5683.
@@ -502,6 +528,7 @@ int main(int argc, char *argv[])
                 lwm2m_update_servers_info(lwm2mH);
                 g_server_changed = 0;
             }
+            update_batterylevel(lwm2mH, batterylevelchanging);
             tv.tv_sec = 5;
         }
         tv.tv_usec = 0;
