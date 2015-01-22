@@ -34,6 +34,7 @@
  */
 
 #include "liblwm2m.h"
+#include "lwm2mclient.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -164,6 +165,7 @@ static uint8_t prv_server_write(uint16_t instanceId,
             {
                 if (value >= 0 && value <= 0xFFFFFFFF)
                 {
+                    g_server_changed = 1;
                     targetP->lifetime = value;
                     result = COAP_204_CHANGED;
                 }

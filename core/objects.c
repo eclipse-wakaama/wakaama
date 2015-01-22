@@ -597,7 +597,7 @@ int object_getServers(lwm2m_context_t * contextP)
 
         if (isBootstrap == true)
         {
-            if (0 == lwm2m_tlv_decode_int(tlvP + 1, &value)
+            if (0 == lwm2m_tlv_decode_int(tlvP + 2, &value)
              || value < 0 || value >0xFFFFFFFF)             // This is an implementation limit
             {
                 lwm2m_free(targetP);
@@ -633,6 +633,34 @@ int object_getServers(lwm2m_context_t * contextP)
     }
 
     return 0;
+}
+
+int lwm2m_update_servers_info(lwm2m_context_t * contextP)
+{
+        lwm2m_object_t * serverObjP = lwm2m_find_object(contextP, LWM2M_SERVER_OBJECT_ID);
+        lwm2m_list_t * serverInstP;     // instanceID of the server in the LWM2M Server Object
+        lwm2m_server_t * targetP;
+
+        if (serverObjP == NULL)
+        {
+            return -1;
+        }
+        serverInstP = serverObjP->instanceList;
+        while (NULL != serverInstP) {
+            targetP = contextP->serverList;
+            while (NULL != targetP) {
+                if (targetP->shortID == serverInstP->id) {
+                    if (0 != prv_getMandatoryInfo(serverObjP, serverInstP->id, targetP))
+                    {
+                        return -1;
+                    }
+                }
+                targetP = targetP->next;
+            }
+            serverInstP = serverInstP->next;
+        }
+
+        return 0;
 }
 
 #endif
