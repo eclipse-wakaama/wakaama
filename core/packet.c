@@ -300,12 +300,12 @@ coap_status_t message_send(lwm2m_context_t * contextP,
 {
 	coap_status_t result = INTERNAL_SERVER_ERROR_5_00;
 	uint8_t pktBuffer[COAP_MAX_PACKET_SIZE + 1];
-	size_t pktBufferLen = 0;
+	uint32_t pktBufferLen = 0;
 
 	pktBufferLen = coap_serialize_message(message, pktBuffer);
 	if (0 != pktBufferLen)
 	{
-		LOG("Send message mid %u, %lu bytes, %u payload, code %d.%02d %s\r\n", message->mid, pktBufferLen, message->payload_len, (message->code&0xE0)>>5, message->code&0x1F, lwm2m_statusToString(message->code));
+		LOG("Send message mid %u, %u bytes, %u payload, code %d.%02d %s\r\n", message->mid, pktBufferLen, message->payload_len, (message->code&0xE0)>>5, message->code&0x1F, lwm2m_statusToString(message->code));
 		result = contextP->bufferSendCallback(sessionH, pktBuffer, pktBufferLen, contextP->userData);
 		LOG("Send message result: %d.%02d %s\r\n", (result&0xE0)>>5, result&0x1F, lwm2m_statusToString(result));
 	}
