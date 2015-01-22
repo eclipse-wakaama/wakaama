@@ -485,18 +485,26 @@ int main(int argc, char *argv[])
             {
                 reboot_time = tv.tv_sec + 5;
             }
-            else if (reboot_time < tv.tv_sec) {
+            if (reboot_time < tv.tv_sec) {
+                /*
+                 * Message should normally be lost with reboot ...
+                 */
                 fprintf(stderr, "reboot time expired, rebooting ...");
                 system_reboot();
             }
+            else {
+                tv.tv_sec = reboot_time - tv.tv_sec;
+            }
         }
+        else {
+            tv.tv_sec = 5;
+        }
+        tv.tv_usec = 0;
 
         FD_ZERO(&readfds);
         FD_SET(data.sock, &readfds);
         FD_SET(STDIN_FILENO, &readfds);
 
-        tv.tv_sec = 5;
-        tv.tv_usec = 0;
 
         /*
          * This function does two things:

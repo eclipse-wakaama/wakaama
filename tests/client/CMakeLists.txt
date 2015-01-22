@@ -14,7 +14,7 @@ SET(SOURCES
     lwm2mclient.c
     ../utils/commandline.c
     ../utils/connection.c
-    event_handler.c
+    system_api.c
     object_security.c
     object_server.c
     object_device.c

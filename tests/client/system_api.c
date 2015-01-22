@@ -28,6 +28,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 #ifdef LWM2M_EMBEDDED_MODE
 
@@ -49,6 +50,7 @@ void init_value_change(lwm2m_context_t * lwm2m)
 }
 
 void system_reboot() {
+    exit(1);
 }
 
 #endif
