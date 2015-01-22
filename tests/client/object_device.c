@@ -55,6 +55,7 @@
  */
 
 #include "liblwm2m.h"
+#include "lwm2mclient.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -105,6 +106,8 @@
 
 typedef struct
 {
+    int64_t free_memeory;
+    int64_t error;
     int64_t time;
     char time_offset[PRV_OFFSET_MAXLEN];
 } device_data_t;
@@ -300,7 +303,7 @@ static uint8_t prv_set_value(lwm2m_tlv_t * tlvP,
         else return COAP_500_INTERNAL_SERVER_ERROR;
 
     case RES_O_MEMORY_FREE:
-        lwm2m_tlv_encode_int(PRV_MEMORY_FREE, tlvP);
+        lwm2m_tlv_encode_int(devDataP->free_memeory, tlvP);
         tlvP->type = LWM2M_TYPE_RESSOURCE;
 
         if (0 != tlvP->length) return COAP_205_CONTENT;
@@ -315,7 +318,7 @@ static uint8_t prv_set_value(lwm2m_tlv_t * tlvP,
         subTlvP[0].flags = 0;
         subTlvP[0].id = 0;
         subTlvP[0].type = LWM2M_TYPE_RESSOURCE_INSTANCE;
-        lwm2m_tlv_encode_int(PRV_ERROR_CODE, subTlvP);
+        lwm2m_tlv_encode_int(devDataP->error, subTlvP);
         if (0 == subTlvP[0].length)
         {
             lwm2m_tlv_free(2, subTlvP);
@@ -333,7 +336,7 @@ static uint8_t prv_set_value(lwm2m_tlv_t * tlvP,
         return COAP_405_METHOD_NOT_ALLOWED;
 
     case RES_O_CURRENT_TIME:
-        lwm2m_tlv_encode_int(time(NULL), tlvP);
+        lwm2m_tlv_encode_int(time(NULL) + devDataP->time, tlvP);
         tlvP->type = LWM2M_TYPE_RESSOURCE;
 
         if (0 != tlvP->length) return COAP_205_CONTENT;
@@ -450,9 +453,40 @@ static uint8_t prv_device_write(uint16_t instanceId,
     {
         switch (dataArray[i].id)
         {
+        case RES_M_ERROR_CODE:
+            if (dataArray[i].flags & LWM2M_TLV_FLAG_INTERNAL_WRITE) {
+                if (1 == lwm2m_tlv_decode_int(dataArray + i, &((device_data_t*)(objectP->userData))->error))
+                {
+                    result = COAP_204_CHANGED;
+                }
+                else
+                {
+                    result = COAP_400_BAD_REQUEST;
+                }
+            }
+            else {
+                result = COAP_405_METHOD_NOT_ALLOWED;
+            }
+            break;
+        case RES_O_MEMORY_FREE:
+            if (dataArray[i].flags & LWM2M_TLV_FLAG_INTERNAL_WRITE) {
+                if (1 == lwm2m_tlv_decode_int(dataArray + i, &((device_data_t*)(objectP->userData))->free_memeory))
+                {
+                    result = COAP_204_CHANGED;
+                }
+                else
+                {
+                    result = COAP_400_BAD_REQUEST;
+                }
+            }
+            else {
+                result = COAP_405_METHOD_NOT_ALLOWED;
+            }
+            break;
         case RES_O_CURRENT_TIME:
             if (1 == lwm2m_tlv_decode_int(dataArray + i, &((device_data_t*)(objectP->userData))->time))
             {
+                ((device_data_t*)(objectP->userData))->time -= time(NULL);
                 result = COAP_204_CHANGED;
             }
             else
@@ -504,12 +538,14 @@ static uint8_t prv_device_execute(uint16_t instanceId,
     {
     case RES_M_REBOOT:
         fprintf(stdout, "\n\t REBOOT\r\n\n");
+        g_reboot = 1;
         return COAP_204_CHANGED;
     case RES_O_FACTORY_RESET:
         fprintf(stdout, "\n\t FACTORY RESET\r\n\n");
         return COAP_204_CHANGED;
     case RES_O_RESET_ERROR_CODE:
         fprintf(stdout, "\n\t RESET ERROR CODE\r\n\n");
+        ((device_data_t*)(objectP->userData))->error = 0;
         return COAP_204_CHANGED;
     default:
         return COAP_405_METHOD_NOT_ALLOWED;
@@ -551,6 +587,8 @@ lwm2m_object_t * get_object_device()
          */
         if (NULL != deviceObj->userData)
         {
+            ((device_data_t*)deviceObj->userData)->free_memeory = PRV_MEMORY_FREE;
+            ((device_data_t*)deviceObj->userData)->error = PRV_ERROR_CODE;
             ((device_data_t*)deviceObj->userData)->time = 1367491215;
             strcpy(((device_data_t*)deviceObj->userData)->time_offset, "+01:00");
         }
