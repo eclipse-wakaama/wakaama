@@ -137,7 +137,7 @@ static void prv_handleRegistrationReply(lwm2m_transaction_t * transacP,
     {
         if (packet == NULL)
         {
-            targetP->status = STATE_DEREGISTERED;
+            targetP->status = STATE_REG_FAILED;
             targetP->mid = 0;
         }
         else if (packet->mid == targetP->mid
@@ -156,7 +156,7 @@ static void prv_handleRegistrationReply(lwm2m_transaction_t * transacP,
             }
             else if (packet->code == BAD_REQUEST_4_00)
             {
-                targetP->status = STATE_DEREGISTERED;
+                targetP->status = STATE_REG_FAILED;
                 targetP->mid = 0;
             }
         }
@@ -247,7 +247,7 @@ static void prv_handleRegistrationUpdateReply(lwm2m_transaction_t * transacP,
     {
         if (packet == NULL)
         {
-            targetP->status = STATE_DEREGISTERED;
+            targetP->status = STATE_REG_FAILED;
             targetP->mid = 0;
         }
         else if (packet->mid == targetP->mid
@@ -263,9 +263,8 @@ static void prv_handleRegistrationUpdateReply(lwm2m_transaction_t * transacP,
             }
             else if (packet->code == BAD_REQUEST_4_00)
             {
-                targetP->status = STATE_DEREGISTERED;
+                targetP->status = STATE_REG_FAILED;
                 targetP->mid = 0;
-                // trigger a new registration? infinite loop?
             }
         }
     }
@@ -318,33 +317,79 @@ int lwm2m_update_registration(lwm2m_context_t * contextP, uint16_t shortServerID
     return NOT_FOUND_4_04;
 }
 
+// start a device initiated bootstrap
+// reach 
+static int lwm2m_bootstrap(lwm2m_context_t * contextP) {
+    // find the first bootstrap server
+    /*lwm2m_server_t * targetP = contextP->bootstrapServerList;
+    while (targetP != NULL)
+    {
+
+        transaction = transaction_new(COAP_PUT, NULL, contextP->nextMID++, ENDPOINT_SERVER, (void *)server);
+        if (transaction == NULL) return INTERNAL_SERVER_ERROR_5_00;
+
+        coap_set_header_uri_path(transaction->message, server->location);
+
+        transaction->callback = prv_handleBootstrapReply;
+        transaction->userData = (void *) targetP;
+
+        contextP->transactionList = (lwm2m_transaction_t *)LWM2M_LIST_ADD(contextP->transactionList, transaction);
+
+        if (transaction_send(contextP, transaction) == 0)
+        {
+            server->mid = transaction->mID;
+
+        }
+        break;
+    }*/
+    return 0;
+}
+
 // for each server update the registration if needed
 int lwm2m_update_registrations(lwm2m_context_t * contextP, uint32_t currentTime, struct timeval * timeoutP)
 {
     lwm2m_server_t * targetP;
-    targetP = contextP->serverList;
-    while (targetP != NULL)
+    bool needBootstrap = true;
+
+    if (contextP->bsState == BOOTSTRAPED)
     {
-        switch (targetP->status) {
-            case STATE_REGISTERED:
-                if (targetP->registration + targetP->lifetime - timeoutP->tv_sec <= currentTime)
-                {
-                    prv_update_registration(contextP, targetP);
-                }
-                break;
-            case STATE_DEREGISTERED:
-                // TODO: is it disabled?
-                prv_register(contextP, targetP);
-                break;
-            case STATE_REG_PENDING:
-                break;
-            case STATE_REG_UPDATE_PENDING:
-                // TODO: check for timeout and retry?
-                break;
-            case STATE_DEREG_PENDING:
-                break;
+        targetP = contextP->serverList;
+        while (targetP != NULL)
+        {
+            switch (targetP->status)
+            {
+                case STATE_REGISTERED:
+                    needBootstrap = false;
+                    if (targetP->registration + targetP->lifetime - timeoutP->tv_sec <= currentTime)
+                    {
+                        prv_update_registration(contextP, targetP);
+                    }
+                    break;
+                case STATE_DEREGISTERED:
+                    // TODO: is it disabled?
+                    prv_register(contextP, targetP);
+                    break;
+                case STATE_REG_PENDING:
+                    needBootstrap = false;
+                    break;
+                case STATE_REG_UPDATE_PENDING:
+                    needBootstrap = false;
+                    // TODO: check for timeout and retry?
+                    break;
+                case STATE_DEREG_PENDING:
+                    break;
+                case STATE_REG_FAILED:
+                    break;
+            }
+            targetP = targetP->next;
         }
-        targetP = targetP->next;
+    }
+
+    if (needBootstrap)
+    {
+        // no DM server currently able to register
+        // let's trigger a device initiated bootstrap
+        lwm2m_bootstrap(contextP);
     }
     return 0;
 }

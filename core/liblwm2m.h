@@ -459,6 +459,10 @@ typedef struct _lwm2m_observed_
     lwm2m_watcher_t * watcherList;
 } lwm2m_observed_t;
 
+typedef enum {
+    BOOTSTRAPED = 0,
+    BOOTSTRAPING
+} lwm2m_bootstrap_state_t;
 
 /*
  * LWM2M Context
@@ -474,6 +478,7 @@ typedef struct
 {
     int    socket;
 #ifdef LWM2M_CLIENT_MODE
+    lwm2m_bootstrap_state_t bsState;
     char *              endpointName;
     lwm2m_binding_t     binding;
     char *              msisdn;

@@ -498,7 +498,7 @@ int object_getServers(lwm2m_context_t * contextP)
         }
 
         if (0 == lwm2m_tlv_decode_int(tlvP + 1, &value)
-         || value <= 0 || value >0xFFFF)                // 0 is forbidden as a Short Server ID
+         || value <= 0 || value > 0xFFFF)                // 0 is forbidden as a Short Server ID
         {
             lwm2m_free(targetP);
             lwm2m_free(tlvP);
@@ -509,7 +509,7 @@ int object_getServers(lwm2m_context_t * contextP)
         if (isBootstrap == true)
         {
             if (0 == lwm2m_tlv_decode_int(tlvP + 1, &value)
-             || value < 0 || value >0xFFFFFFFF)             // This is an implementation limit
+             || value < 0 || value > 0xFFFFFFFF)             // This is an implementation limit
             {
                 lwm2m_free(targetP);
                 lwm2m_free(tlvP);
