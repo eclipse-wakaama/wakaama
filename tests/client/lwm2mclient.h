@@ -50,7 +50,7 @@ extern lwm2m_object_t * get_test_object();
 /*
  * object_server.c
  */
-extern lwm2m_object_t * get_server_object();
+extern lwm2m_object_t * get_server_object(int serverId, const char* binding, int lifetime, bool storing);
 /*
  * object_connectivity_moni.c
  */

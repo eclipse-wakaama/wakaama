@@ -106,9 +106,10 @@
 
 typedef struct
 {
-    int64_t free_memeory;
+    int64_t free_memory;
     int64_t error;
     int64_t time;
+    uint8_t battery_level;
     char time_offset[PRV_OFFSET_MAXLEN];
 } device_data_t;
 
@@ -296,14 +297,14 @@ static uint8_t prv_set_value(lwm2m_tlv_t * tlvP,
     }
 
     case RES_O_BATTERY_LEVEL:
-        lwm2m_tlv_encode_int(PRV_BATTERY_LEVEL, tlvP);
+        lwm2m_tlv_encode_int(devDataP->battery_level, tlvP);
         tlvP->type = LWM2M_TYPE_RESSOURCE;
 
         if (0 != tlvP->length) return COAP_205_CONTENT;
         else return COAP_500_INTERNAL_SERVER_ERROR;
 
     case RES_O_MEMORY_FREE:
-        lwm2m_tlv_encode_int(devDataP->free_memeory, tlvP);
+        lwm2m_tlv_encode_int(devDataP->free_memory, tlvP);
         tlvP->type = LWM2M_TYPE_RESSOURCE;
 
         if (0 != tlvP->length) return COAP_205_CONTENT;
@@ -453,6 +454,30 @@ static uint8_t prv_device_write(uint16_t instanceId,
     {
         switch (dataArray[i].id)
         {
+        case RES_O_BATTERY_LEVEL:
+            if (dataArray[i].flags & LWM2M_TLV_FLAG_INTERNAL_WRITE) {
+                int64_t value;
+                if (1 == lwm2m_tlv_decode_int(dataArray + i, &value))
+                {
+                    if ((0 <= value) && (100 >= value))
+                    {
+                        ((device_data_t*)(objectP->userData))->battery_level = value;
+                        result = COAP_204_CHANGED;
+                    }
+                    else
+                    {
+                        result = COAP_400_BAD_REQUEST;
+                    }
+                }
+                else
+                {
+                    result = COAP_400_BAD_REQUEST;
+                }
+            }
+            else {
+                result = COAP_405_METHOD_NOT_ALLOWED;
+            }
+            break;
         case RES_M_ERROR_CODE:
             if (dataArray[i].flags & LWM2M_TLV_FLAG_INTERNAL_WRITE) {
                 if (1 == lwm2m_tlv_decode_int(dataArray + i, &((device_data_t*)(objectP->userData))->error))
@@ -470,7 +495,7 @@ static uint8_t prv_device_write(uint16_t instanceId,
             break;
         case RES_O_MEMORY_FREE:
             if (dataArray[i].flags & LWM2M_TLV_FLAG_INTERNAL_WRITE) {
-                if (1 == lwm2m_tlv_decode_int(dataArray + i, &((device_data_t*)(objectP->userData))->free_memeory))
+                if (1 == lwm2m_tlv_decode_int(dataArray + i, &((device_data_t*)(objectP->userData))->free_memory))
                 {
                     result = COAP_204_CHANGED;
                 }
@@ -587,7 +612,8 @@ lwm2m_object_t * get_object_device()
          */
         if (NULL != deviceObj->userData)
         {
-            ((device_data_t*)deviceObj->userData)->free_memeory = PRV_MEMORY_FREE;
+            ((device_data_t*)deviceObj->userData)->battery_level = PRV_BATTERY_LEVEL;
+            ((device_data_t*)deviceObj->userData)->free_memory = PRV_MEMORY_FREE;
             ((device_data_t*)deviceObj->userData)->error = PRV_ERROR_CODE;
             ((device_data_t*)deviceObj->userData)->time = 1367491215;
             strcpy(((device_data_t*)deviceObj->userData)->time_offset, "+01:00");

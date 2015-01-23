@@ -304,12 +304,18 @@ static void prv_handleRegistrationUpdateReply(lwm2m_transaction_t * transacP,
 }
 
 static int prv_update_registration(lwm2m_context_t * contextP, lwm2m_server_t * server) {
+    char query[20];
+    int query_length;
     lwm2m_transaction_t * transaction;
 
     transaction = transaction_new(COAP_PUT, NULL, contextP->nextMID++, ENDPOINT_SERVER, (void *)server);
     if (transaction == NULL) return INTERNAL_SERVER_ERROR_5_00;
 
+    query_length = snprintf(query, sizeof(query), QUERY_LIFETIME "%d", server->lifetime);
+    if (query_length <= 1) return 0;
+
     coap_set_header_uri_path(transaction->message, server->location);
+    coap_set_header_uri_query(transaction->message, query);
 
     transaction->callback = prv_handleRegistrationUpdateReply;
     transaction->userData = (void *) server;

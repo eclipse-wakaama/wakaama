@@ -124,6 +124,7 @@ coap_status_t object_delete(lwm2m_context_t * contextP, lwm2m_uri_t * uriP);
 bool object_isInstanceNew(lwm2m_context_t * contextP, uint16_t objectId, uint16_t instanceId);
 int prv_getRegisterPayload(lwm2m_context_t * contextP, char * buffer, size_t length);
 int object_getServers(lwm2m_context_t * contextP);
+int object_updateServersInfo(lwm2m_context_t * contextP, lwm2m_uri_t * uriP);
 
 // defined in transaction.c
 lwm2m_transaction_t * transaction_new(coap_method_t method, lwm2m_uri_t * uriP, uint16_t mID, lwm2m_endpoint_type_t peerType, void * peerP);
@@ -142,7 +143,7 @@ void blockwise_remove(lwm2m_context_t * contextP, const lwm2m_uri_t * uriP);
 void blockwise_free(lwm2m_context_t * contextP, uint32_t time);
 
 // defined in management.c
-coap_status_t handle_dm_request(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, void * fromSessionH, coap_packet_t * message, coap_packet_t * response);
+coap_status_t handle_dm_request(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, void * fromSessionH, coap_packet_t * message, coap_packet_t * response, bool* notify_change);
 
 // defined in observe.c
 coap_status_t handle_observe_request(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, void * fromSessionH, coap_packet_t * message, coap_packet_t * response);

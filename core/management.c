@@ -55,7 +55,8 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
                                 lwm2m_uri_t * uriP,
                                 void * fromSessionH,
                                 coap_packet_t * message,
-                                coap_packet_t * response)
+                                coap_packet_t * response,
+                                bool* notify_change)
 {
     coap_status_t result;
 
@@ -112,6 +113,10 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
                 else
                 {
                     result = object_write(contextP, uriP, (char*)message->payload, message->payload_len);
+                    if (COAP_204_CHANGED == result && NULL != notify_change)
+                    {
+                        *notify_change = true;
+                    }
                 }
             }
             else
@@ -126,6 +131,10 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
               if (LWM2M_URI_IS_SET_INSTANCE(uriP))
               {
                 result = object_write(contextP, uriP, (char *)message->payload, message->payload_len);
+                if (COAP_204_CHANGED == result && NULL != notify_change)
+                {
+                    *notify_change = true;
+                }
               }
             }
             else if(message->uri_query != NULL) {

@@ -382,6 +382,11 @@ void lwm2m_resource_value_changed(lwm2m_context_t * contextP,
 {
 	obs_list_t * listP;
 
+	/* check for changes of server values */
+	if (LWM2M_SERVER_OBJECT_ID == uriP->objectId) {
+	    object_updateServersInfo(contextP, uriP);
+	}
+
 	listP = prv_getObservedList(contextP, uriP);
 	while (listP != NULL)
 	{
