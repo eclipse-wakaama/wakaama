@@ -579,11 +579,11 @@ int main(int argc, char *argv[])
                  */
                 numBytes = recvfrom(data.sock, buffer, MAX_PACKET_SIZE, 0, (struct sockaddr *) &addr, &addrLen);
 
-                if (numBytes == -1)
+                if (0 > numBytes)
                 {
                     fprintf(stderr, "Error in recvfrom(): %d\r\n", errno);
                 }
-                else
+                else if (0 < numBytes)
                 {
                     char s[INET6_ADDRSTRLEN];
                     in_port_t port;
