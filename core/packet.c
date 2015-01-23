@@ -100,7 +100,7 @@ static void handle_reset(lwm2m_context_t * contextP,
 }
 
 static coap_status_t handle_request(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, void * fromSessionH,
-		coap_packet_t * message, coap_packet_t * response)
+		coap_packet_t * message, coap_packet_t * response, bool* notify_change)
 {
 	coap_status_t result = NOT_FOUND_4_04;
 
@@ -108,7 +108,7 @@ static coap_status_t handle_request(lwm2m_context_t * contextP, lwm2m_uri_t * ur
 #ifdef LWM2M_CLIENT_MODE
 	case LWM2M_URI_FLAG_DM :
 		// TODO: Authentify server
-		result = handle_dm_request(contextP, uriP, fromSessionH, message, response);
+		result = handle_dm_request(contextP, uriP, fromSessionH, message, response, notify_change);
 		break;
 
 	case LWM2M_URI_FLAG_BOOTSTRAP :
@@ -153,6 +153,7 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
 
 		if (message->code >= COAP_GET && message->code <= COAP_DELETE)
 		{
+		    bool notify_change = false;
 			uint32_t block_num = 0;
 			uint16_t block_size = REST_MAX_CHUNK_SIZE;
 			uint32_t block_offset = 0;
@@ -191,13 +192,13 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
 			else
 			{
 				// check for pending blockwise transfer
-				if (!IS_OPTION(message, COAP_OPTION_OBSERVE))
+				if (message->code == COAP_GET && !IS_OPTION(message, COAP_OPTION_OBSERVE))
 				{
 					blockwiseP = blockwise_get(contextP, uriP);
 				}
 				if (NULL == blockwiseP)
 				{
-					coap_error_code = handle_request(contextP, uriP, fromSessionH, message, response);
+					coap_error_code = handle_request(contextP, uriP, fromSessionH, message, response, &notify_change);
 					payload = response->payload;
 					if (coap_error_code < BAD_REQUEST_4_00 && block_size < response->payload_len)
 					{
@@ -226,7 +227,7 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
 					}
 
 					if ( IS_OPTION(message,
-							COAP_OPTION_BLOCK1) && response->code<BAD_REQUEST_4_00 && !IS_OPTION(response, COAP_OPTION_BLOCK1))
+							COAP_OPTION_BLOCK1) && response->code < BAD_REQUEST_4_00 && !IS_OPTION(response, COAP_OPTION_BLOCK1))
 					{
 						LOG("Block1 NOT IMPLEMENTED\n");
 
@@ -235,6 +236,11 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
 					}
 
 					coap_error_code = message_send(contextP, response, fromSessionH);
+#ifdef LWM2M_CLIENT_MODE
+					if (notify_change) {
+					    lwm2m_resource_value_changed(contextP, uriP);
+					}
+#endif
 				}
 				lwm2m_free(uriP);
 				lwm2m_free(payload);

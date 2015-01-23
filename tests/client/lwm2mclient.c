@@ -80,7 +80,6 @@
 
 
 int g_reboot = 0;
-int g_server_changed = 0;
 static int g_quit = 0;
 
 typedef struct
@@ -524,10 +523,6 @@ int main(int argc, char *argv[])
             }
         }
         else {
-            if (g_server_changed) {
-                lwm2m_update_servers_info(lwm2mH);
-                g_server_changed = 0;
-            }
             update_batterylevel(lwm2mH, batterylevelchanging);
             tv.tv_sec = 5;
         }

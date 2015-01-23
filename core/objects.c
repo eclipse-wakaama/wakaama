@@ -475,8 +475,8 @@ static lwm2m_list_t * prv_findServerInstance(lwm2m_object_t * objectP,
 
         if (objectP->readFunc(instanceP->id, &size, &tlvP, objectP) != COAP_205_CONTENT)
         {
-            lwm2m_free(tlvP);
-            return NULL;
+            instanceP = NULL;
+            break;
         }
 
         if (1 == lwm2m_tlv_decode_int(tlvP, &value))
@@ -520,7 +520,11 @@ static int prv_getMandatoryInfo(lwm2m_object_t * objectP,
         lwm2m_free(tlvP);
         return -1;
     }
-    targetP->lifetime = value;
+    if (targetP->lifetime != value) {
+        targetP->lifetime = value;
+        targetP->registration = 0;
+        LOG("Server %d: update lifetime %d\n", targetP->shortID, (int)value);
+    }
 
     targetP->binding = lwm2m_stringToBinding((const char*)tlvP[1].value, tlvP[1].length);
 
@@ -635,32 +639,42 @@ int object_getServers(lwm2m_context_t * contextP)
     return 0;
 }
 
-int lwm2m_update_servers_info(lwm2m_context_t * contextP)
+int object_updateServersInfo(lwm2m_context_t * contextP, lwm2m_uri_t * uriP)
 {
-        lwm2m_object_t * serverObjP = lwm2m_find_object(contextP, LWM2M_SERVER_OBJECT_ID);
-        lwm2m_list_t * serverInstP;     // instanceID of the server in the LWM2M Server Object
-        lwm2m_server_t * targetP;
+    int result = COAP_NO_ERROR;
+    lwm2m_list_t * serverInstP;     // instanceID of the server in the LWM2M Server Object
+    lwm2m_object_t * serverObjP = lwm2m_find_object(contextP, LWM2M_SERVER_OBJECT_ID);
 
-        if (serverObjP == NULL)
-        {
-            return -1;
-        }
-        serverInstP = serverObjP->instanceList;
-        while (NULL != serverInstP) {
-            targetP = contextP->serverList;
-            while (NULL != targetP) {
-                if (targetP->shortID == serverInstP->id) {
-                    if (0 != prv_getMandatoryInfo(serverObjP, serverInstP->id, targetP))
-                    {
-                        return -1;
+    if (serverObjP == NULL)
+    {
+        return -1;
+    }
+
+    serverInstP = serverObjP->instanceList;
+    while (NULL != serverInstP && COAP_NO_ERROR == result) {
+        if (!LWM2M_URI_IS_SET_INSTANCE(uriP) || serverInstP->id == uriP->instanceId) {
+            int size = 1;
+            lwm2m_tlv_t * tlvP = lwm2m_tlv_new(size);
+            if (tlvP == NULL) return -1;
+            tlvP[0].id = LWM2M_SERVER_SHORT_ID_ID;
+            if (serverObjP->readFunc(serverInstP->id, &size, &tlvP, serverObjP) == COAP_205_CONTENT) {
+                int64_t value;
+                if (1 == lwm2m_tlv_decode_int(tlvP, &value)) {
+                    lwm2m_server_t *targetP = (lwm2m_server_t *)LWM2M_LIST_FIND(contextP->serverList, value);
+                    if (NULL != targetP) {
+                        if (0 != prv_getMandatoryInfo(serverObjP, serverInstP->id, targetP))
+                        {
+                            result = COAP_500_INTERNAL_SERVER_ERROR;
+                        }
                     }
                 }
-                targetP = targetP->next;
             }
-            serverInstP = serverInstP->next;
+            lwm2m_free(tlvP);
         }
+        serverInstP = serverInstP->next;
+    }
 
-        return 0;
+    return result;
 }
 
 #endif

@@ -155,6 +155,7 @@ uint16_t lwm2m_list_newId(lwm2m_list_t * head);
 
 #define LWM2M_LIST_ADD(H,N) lwm2m_list_add((lwm2m_list_t *)H, (lwm2m_list_t *)N);
 #define LWM2M_LIST_RM(H,I,N) lwm2m_list_remove((lwm2m_list_t *)H, I, (lwm2m_list_t **)N);
+#define LWM2M_LIST_FIND(H,I) lwm2m_list_find((lwm2m_list_t *)H, I)
 
 
 /*
@@ -575,7 +576,6 @@ int lwm2m_update_registrations(lwm2m_context_t * contextP, uint32_t currentTime,
 int lwm2m_update_registration(lwm2m_context_t * contextP, uint16_t shortServerID);
 
 void lwm2m_resource_value_changed(lwm2m_context_t * contextP, lwm2m_uri_t * uriP);
-int lwm2m_update_servers_info(lwm2m_context_t * contextP);
 
 lwm2m_object_t* lwm2m_find_object(lwm2m_context_t * contextP, uint16_t Id);
 

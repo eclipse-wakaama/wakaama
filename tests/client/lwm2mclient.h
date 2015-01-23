@@ -30,7 +30,6 @@
 #include "liblwm2m.h"
 
 extern int g_reboot;
-extern int g_server_changed;
 
 /*
  * object_device.c
