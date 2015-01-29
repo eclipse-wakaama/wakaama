@@ -76,9 +76,8 @@
 
 #ifdef LWM2M_CLIENT_MODE
 
-static int prv_getRegistrationQuery(lwm2m_context_t * contextP,
-                                    char * buffer,
-                                    size_t length)
+static int prv_getRegistrationQuery(lwm2m_context_t * contextP, lwm2m_server_t * server,
+                                    char * buffer, size_t length)
 {
     int index;
     int res;
@@ -94,7 +93,7 @@ static int prv_getRegistrationQuery(lwm2m_context_t * contextP,
         index += res;
     }
 
-    switch (contextP->binding)
+    switch (server->binding)
     {
     case BINDING_U:
         res = snprintf(buffer + index, length - index, "&b=U");
@@ -182,7 +181,7 @@ static int prv_register(lwm2m_context_t * contextP, lwm2m_server_t * server)
     payload_length = prv_getRegisterPayload(contextP, payload, sizeof(payload));
     if (payload_length == 0) return INTERNAL_SERVER_ERROR_5_00;
 
-    query_length = prv_getRegistrationQuery(contextP, query, sizeof(query));
+    query_length = prv_getRegistrationQuery(contextP, server, query, sizeof(query));
 
     if (query_length == 0) return INTERNAL_SERVER_ERROR_5_00;
 

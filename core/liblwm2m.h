@@ -475,7 +475,6 @@ typedef struct
     int    socket;
 #ifdef LWM2M_CLIENT_MODE
     char *              endpointName;
-    lwm2m_binding_t     binding;
     char *              msisdn;
     lwm2m_server_t *    bootstrapServerList;
     lwm2m_server_t *    serverList;
@@ -511,7 +510,7 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP, uint8_t * buffer, int lengt
 // configure the client side with the Endpoint Name, binding, MSISDN (if any) and a list of objects.
 // LWM2M Security Object (ID 0) must be present with either a bootstrap server or a LWM2M server and
 // its matching LWM2M Server Object (ID 1) instance
-int lwm2m_configure(lwm2m_context_t * contextP, char * endpointName, lwm2m_binding_t binding, char * msisdn, uint16_t numObject, lwm2m_object_t * objectList[]);
+int lwm2m_configure(lwm2m_context_t * contextP, char * endpointName, char * msisdn, uint16_t numObject, lwm2m_object_t * objectList[]);
 
 // create objects for known LWM2M Servers.
 int lwm2m_start(lwm2m_context_t * contextP);
