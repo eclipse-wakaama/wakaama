@@ -271,7 +271,7 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
             }
 
 #ifdef LWM2M_SERVER_MODE
-            if (message->code == COAP_204_CHANGED
+            if ( (message->code == COAP_204_CHANGED || message->code == COAP_205_CONTENT)
              && IS_OPTION(message, COAP_OPTION_OBSERVE))
             {
                 handle_observe_notify(contextP, fromSessionH, message);
