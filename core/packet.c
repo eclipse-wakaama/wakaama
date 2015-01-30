@@ -213,12 +213,7 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
 						}
 					}
 				}
-#ifdef LWM2M_CLIENT_MODE
-				else if (COAP_204_CHANGED == handle_observe_request(contextP, uriP, fromSessionH, message, response))
-				{
-					coap_set_status_code(response, COAP_204_CHANGED);
-				}
-#endif
+
 				if (coap_error_code < BAD_REQUEST_4_00)
 				{
 					if (NULL != blockwiseP)

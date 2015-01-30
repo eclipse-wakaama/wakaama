@@ -169,16 +169,10 @@ coap_status_t handle_observe_request(lwm2m_context_t * contextP,
 	lwm2m_observed_t * observedP;
 	lwm2m_watcher_t * watcherP;
 	lwm2m_server_t * serverP;
-	bool checkForBlockwiseChange = !IS_OPTION(message, COAP_OPTION_OBSERVE);
 
-	if (checkForBlockwiseChange)
-	{
-		LOG("check_observe_for_blockwise_change()\r\n");
-	} else
-	{
-		LOG("handle_observe_request()\r\n");
-	}
-    if (!LWM2M_URI_IS_SET_INSTANCE(uriP) && LWM2M_URI_IS_SET_RESOURCE(uriP)) return COAP_400_BAD_REQUEST;
+	LOG("handle_observe_request()\r\n");
+
+	if (!LWM2M_URI_IS_SET_INSTANCE(uriP) && LWM2M_URI_IS_SET_RESOURCE(uriP)) return COAP_400_BAD_REQUEST;
     if (message->token_len == 0) return COAP_400_BAD_REQUEST;
 
 	serverP = prv_findServer(contextP, fromSessionH);
@@ -188,8 +182,6 @@ coap_status_t handle_observe_request(lwm2m_context_t * contextP,
 	observedP = prv_findObserved(contextP, uriP);
 	if (observedP == NULL)
 	{
-		if (checkForBlockwiseChange)
-			return COAP_205_CONTENT ;
 		observedP = (lwm2m_observed_t *) lwm2m_malloc(sizeof(lwm2m_observed_t));
         if (observedP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
 		memset(observedP, 0, sizeof(lwm2m_observed_t));
@@ -201,8 +193,6 @@ coap_status_t handle_observe_request(lwm2m_context_t * contextP,
 	watcherP = prv_findWatcher(observedP, serverP);
 	if (watcherP == NULL)
 	{
-		if (checkForBlockwiseChange)
-			return COAP_205_CONTENT ;
 		watcherP = (lwm2m_watcher_t *) lwm2m_malloc(sizeof(lwm2m_watcher_t));
 		if (watcherP == NULL) return COAP_500_INTERNAL_SERVER_ERROR ;
 		memset(watcherP, 0, sizeof(lwm2m_watcher_t));
@@ -211,26 +201,12 @@ coap_status_t handle_observe_request(lwm2m_context_t * contextP,
 		observedP->watcherList = watcherP;
 	}
 
-	if (checkForBlockwiseChange)
-	{
-		if (watcherP->changed && 0 < watcherP->tokenLen && watcherP->tokenLen == message->token_len)
-		{
-			if (memcmp(watcherP->token, message->token, watcherP->tokenLen) == 0)
-			{
-				// blockwise transfer of notify for changed value
-				return COAP_204_CHANGED ;
-			}
-		}
-	} else
-	{
-		watcherP->changed = false;
-		watcherP->tokenLen = message->token_len;
-		memcpy(watcherP->token, message->token, message->token_len);
-		watcherP->blockSize = REST_MAX_CHUNK_SIZE;
-		coap_get_header_block2(message, NULL, NULL, &watcherP->blockSize, NULL);
-		watcherP->blockSize = MIN(watcherP->blockSize, REST_MAX_CHUNK_SIZE);
-		coap_set_header_observe(response, watcherP->counter++);
-	}
+    watcherP->tokenLen = message->token_len;
+    memcpy(watcherP->token, message->token, message->token_len);
+    watcherP->blockSize = REST_MAX_CHUNK_SIZE;
+    coap_get_header_block2(message, NULL, NULL, &watcherP->blockSize, NULL);
+    watcherP->blockSize = MIN(watcherP->blockSize, REST_MAX_CHUNK_SIZE);
+    coap_set_header_observe(response, watcherP->counter++);
 
 	return COAP_205_CONTENT ;
 }
@@ -306,10 +282,9 @@ coap_status_t lwm2m_sendNotification(lwm2m_context_t * contextP, lwm2m_watcher_t
   }
   if (result == COAP_205_CONTENT) {
 	coap_packet_t message;
-	watcherP->changed = true;
 	watcherP->lastMid = contextP->nextMID++;
 
-    coap_init_message(&message, COAP_TYPE_NON, COAP_204_CHANGED, watcherP->lastMid);
+    coap_init_message(&message, COAP_TYPE_NON, COAP_205_CONTENT, watcherP->lastMid);
     coap_set_payload(&message, data->buffer, data->length);
 
     // if (!LWM2M_URI_IS_SET_RESOURCE(uriP)) {                      //JH+ leshan awaits content-type in case of a object instance notification

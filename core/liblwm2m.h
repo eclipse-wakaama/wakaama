@@ -469,7 +469,6 @@ typedef struct _lwm2m_watcher_
     uint32_t counter;
     uint16_t lastMid;
     uint16_t blockSize;
-    uint8_t changed;
 } lwm2m_watcher_t;
 
 typedef struct _lwm2m_observed_
