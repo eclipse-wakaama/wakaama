@@ -305,11 +305,12 @@ typedef struct _lwm2m_object_t lwm2m_object_t;
 
 typedef enum
 {
-    STATE_UNKNOWN = 0,
-    STATE_REG_PENDING,
-    STATE_REGISTERED,
-    STATE_REG_UPDATE_PENDING,
-    STATE_DEREG_PENDING
+    STATE_DEREGISTERED = 0,          // not registered
+    STATE_REG_PENDING,        // registration pending
+    STATE_REGISTERED,         // sucesfully registered
+    STATE_REG_FAILED,         // last registration failed
+    STATE_REG_UPDATE_PENDING, // registration update pending
+    STATE_DEREG_PENDING       // deregistration pending
 } lwm2m_status_t;
 
 typedef enum
@@ -502,7 +503,6 @@ typedef struct
     int    socket;
 #ifdef LWM2M_CLIENT_MODE
     char *              endpointName;
-    lwm2m_binding_t     binding;
     char *              msisdn;
     lwm2m_server_t *    bootstrapServerList;
     lwm2m_server_t *    serverList;
@@ -564,7 +564,7 @@ void lwm2m_print_status(const char* head, int status, const char* message);
 // configure the client side with the Endpoint Name, binding, MSISDN (if any) and a list of objects.
 // LWM2M Security Object (ID 0) must be present with either a bootstrap server or a LWM2M server and
 // its matching LWM2M Server Object (ID 1) instance
-int lwm2m_configure(lwm2m_context_t * contextP, const char * endpointName, lwm2m_binding_t binding, char * msisdn, uint16_t numObject, lwm2m_object_t * objectList[]);
+int lwm2m_configure(lwm2m_context_t * contextP, const char * endpointName, char * msisdn, uint16_t numObject, lwm2m_object_t * objectList[]);
 
 // create objects for known LWM2M Servers.
 int lwm2m_start(lwm2m_context_t * contextP);

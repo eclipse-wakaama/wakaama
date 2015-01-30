@@ -175,7 +175,6 @@ void lwm2m_close(lwm2m_context_t * contextP)
 #ifdef LWM2M_CLIENT_MODE
 int lwm2m_configure(lwm2m_context_t * contextP,
                     const char * endpointName,
-                    lwm2m_binding_t binding,
                     char * msisdn,
                     uint16_t numObject,
                     lwm2m_object_t * objectList[])
@@ -198,30 +197,12 @@ int lwm2m_configure(lwm2m_context_t * contextP,
     }
     if (found != 0x07) return COAP_400_BAD_REQUEST;
 
-    switch (binding)
-    {
-    case BINDING_UNKNOWN:
-        return COAP_400_BAD_REQUEST;
-    case BINDING_U:
-    case BINDING_UQ:
-        break;
-    case BINDING_S:
-    case BINDING_SQ:
-    case BINDING_US:
-    case BINDING_UQS:
-        if (msisdn == NULL) return COAP_400_BAD_REQUEST;
-        break;
-    default:
-        return COAP_400_BAD_REQUEST;
-    }
-
     contextP->endpointName = strdup(endpointName);
     if (contextP->endpointName == NULL)
     {
         return COAP_500_INTERNAL_SERVER_ERROR;
     }
 
-    contextP->binding = binding;
     if (msisdn != NULL)
     {
         contextP->msisdn = strdup(msisdn);

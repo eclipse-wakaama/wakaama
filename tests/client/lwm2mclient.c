@@ -234,9 +234,21 @@ static void prv_output_servers(char * buffer, void * user_data)
     {
         fprintf(stdout, "Server ID %d:\r\n", targetP->shortID);
         fprintf(stdout, "\tstatus: ");
+<<<<<<< HEAD
         switch (targetP->status) {
         case STATE_UNKNOWN:
             fprintf(stdout, "UNKNOWN\r\n");
+||||||| merged common ancestors
+        switch(targetP->status)
+        {
+        case STATE_UNKNOWN:
+            fprintf(stdout, "UNKNOWN\r\n");
+=======
+        switch(targetP->status)
+        {
+        case STATE_DEREGISTERED:
+            fprintf(stdout, "DEREGISTERED\r\n");
+>>>>>>> eclipse/master
             break;
         case STATE_REG_PENDING:
             fprintf(stdout, "REGISTRATION PENDING\r\n");
@@ -461,7 +473,7 @@ int main(int argc, char *argv[])
      * We configure the liblwm2m library with the name of the client - which shall be unique for each client -
      * the number of objects we will be passing through and the objects array
      */
-    result = lwm2m_configure(lwm2mH, name, BINDING_U, NULL, OBJ_COUNT, objArray);
+    result = lwm2m_configure(lwm2mH, "testlwm2mclient", NULL, OBJ_COUNT, objArray);
     if (result != 0)
     {
         fprintf(stderr, "lwm2m_set_objects() failed: 0x%X\r\n", result);

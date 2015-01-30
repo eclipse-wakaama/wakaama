@@ -76,9 +76,8 @@
 
 #ifdef LWM2M_CLIENT_MODE
 
-static int prv_getRegistrationQuery(lwm2m_context_t * contextP,
-                                    char * buffer,
-                                    size_t length)
+static int prv_getRegistrationQuery(lwm2m_context_t * contextP, lwm2m_server_t * server,
+                                    char * buffer, size_t length)
 {
     int index;
     int res;
@@ -94,7 +93,7 @@ static int prv_getRegistrationQuery(lwm2m_context_t * contextP,
         index += res;
     }
 
-    switch (contextP->binding)
+    switch (server->binding)
     {
     case BINDING_U:
         res = snprintf(buffer + index, length - index, "&b=U");
@@ -137,8 +136,8 @@ static void prv_handleRegistrationReply(lwm2m_transaction_t * transacP,
     {
         if (packet == NULL)
         {
-            LOG("server %d status UNKNOWN (no packet)\n", targetP->shortID);
-            targetP->status = STATE_UNKNOWN;
+            LOG("server %d status DEREGISTERED (no packet)\n", targetP->shortID);
+            targetP->status = STATE_DEREGISTERED;
             targetP->mid = 0;
         }
         else if (packet->mid == targetP->mid
@@ -158,14 +157,14 @@ static void prv_handleRegistrationReply(lwm2m_transaction_t * transacP,
             }
             else if (packet->code == BAD_REQUEST_4_00)
             {
-            	LOG("server %d status UNKNOWN (bad request)\n", targetP->shortID);
-                targetP->status = STATE_UNKNOWN;
+            	LOG("server %d status DEREGISTERED (bad request)\n", targetP->shortID);
+                targetP->status = STATE_DEREGISTERED;
                 targetP->mid = 0;
             }
             else
             {
-            	LOG("server %d status UNKNOWN\n", targetP->shortID);
-                targetP->status = STATE_UNKNOWN;
+            	LOG("server %d status DEREGISTERED\n", targetP->shortID);
+                targetP->status = STATE_DEREGISTERED;
                 targetP->mid = 0;
             }
         }
@@ -191,7 +190,7 @@ static int prv_register(lwm2m_context_t * contextP, lwm2m_server_t * server)
     payload_length = prv_getRegisterPayload(contextP, payload, sizeof(payload));
     if (payload_length == 0) return INTERNAL_SERVER_ERROR_5_00;
 
-    query_length = prv_getRegistrationQuery(contextP, query, sizeof(query));
+    query_length = prv_getRegistrationQuery(contextP, server, query, sizeof(query));
 
     if (query_length == 0) return INTERNAL_SERVER_ERROR_5_00;
 
@@ -256,8 +255,7 @@ static void prv_handleRegistrationUpdateReply(lwm2m_transaction_t * transacP,
     {
         if (packet == NULL)
         {
-        	LOG("server %d status UNKNOWN (no packet)\n", targetP->shortID);
-            targetP->status = STATE_UNKNOWN;
+            targetP->status = STATE_DEREGISTERED;
             targetP->mid = 0;
         }
         else if (packet->mid == targetP->mid
@@ -274,20 +272,20 @@ static void prv_handleRegistrationUpdateReply(lwm2m_transaction_t * transacP,
             }
             else if (packet->code == BAD_REQUEST_4_00)
             {
-            	LOG("server %d status UNKNOWN (bad request)\n", targetP->shortID);
-                targetP->status = STATE_UNKNOWN;
+            	LOG("server %d status DEREGISTERED (bad request)\n", targetP->shortID);
+                targetP->status = STATE_DEREGISTERED;
                 targetP->mid = 0;
                 // trigger a new registration? infinite loop?
             } 
             else if (packet->code == NOT_FOUND_4_04) {
             	LOG ("UPDATE response from leshan Server: NOT_FOUND_4_04\n");
-                targetP->status = STATE_UNKNOWN;    // do re-register!
+                targetP->status = STATE_DEREGISTERED;
                 targetP->mid = 0;            
             }
             else 
             {
-            	LOG("server %d status UNKNOWN (general error)\n", targetP->shortID);
-                targetP->status = STATE_UNKNOWN;
+            	LOG("server %d status DEREGISTERED (general error)\n", targetP->shortID);
+                targetP->status = STATE_DEREGISTERED;
                 targetP->mid = 0;
                 // trigger a new registration? infinite loop?
             }
@@ -372,8 +370,8 @@ int lwm2m_update_registrations(lwm2m_context_t * contextP, uint32_t currentTime,
                     prv_update_registration(contextP, targetP);
                 }
                 break;
-            case STATE_UNKNOWN:
-            	LOG("server %d status UNKNOWN\n", targetP->shortID);
+            case STATE_DEREGISTERED:
+            	LOG("server %d status DEREGISTERED\n", targetP->shortID);
                 // TODO: is it disabled?
                 prv_register(contextP, targetP);
                 timeoutP->tv_sec = 1;
@@ -408,8 +406,8 @@ static void prv_handleDeregistrationReply(lwm2m_transaction_t * transacP,
     {
         if (packet == NULL)
         {
-        	LOG("server %d status UNKNOWN (deregister)\n", targetP->shortID);
-            targetP->status = STATE_UNKNOWN;
+        	LOG("server %d status DEREGISTERED (deregister)\n", targetP->shortID);
+            targetP->status = STATE_DEREGISTERED;
             targetP->mid = 0;
         }
         else if (packet->mid == targetP->mid
@@ -417,13 +415,13 @@ static void prv_handleDeregistrationReply(lwm2m_transaction_t * transacP,
         {
             if (packet->code == DELETED_2_02)
             {
-            	LOG("server %d status UNKNOWN (deregister)\n", targetP->shortID);
-                targetP->status = STATE_UNKNOWN;
+            	LOG("server %d status DEREGISTERED (deregister)\n", targetP->shortID);
+                targetP->status = STATE_DEREGISTERED;
             }
             else if (packet->code == BAD_REQUEST_4_00)
             {
-            	LOG("server %d status UNKNOWN (deregister)\n", targetP->shortID);
-                targetP->status = STATE_UNKNOWN;
+            	LOG("server %d status DEREGISTERED (deregister)\n", targetP->shortID);
+                targetP->status = STATE_DEREGISTERED;
                 targetP->mid = 0;
             }
         }
@@ -437,7 +435,11 @@ static void prv_handleDeregistrationReply(lwm2m_transaction_t * transacP,
 void registration_deregister(lwm2m_context_t * contextP,
                              lwm2m_server_t * serverP)
 {
-    if (serverP->status == STATE_UNKNOWN
+    coap_packet_t message[1];
+    uint8_t pktBuffer[COAP_MAX_PACKET_SIZE+1];
+    size_t pktBufferLen = 0;
+
+    if (serverP->status == STATE_DEREGISTERED
      || serverP->status == STATE_REG_PENDING
      || serverP->status == STATE_DEREG_PENDING)
         {
