@@ -144,6 +144,7 @@ static void prv_handleRegistrationReply(lwm2m_transaction_t * transacP,
               && packet->type == COAP_TYPE_ACK
               && packet->location_path != NULL)
         {
+            // TODO: use token, not mid
             if (packet->code == CREATED_2_01)
             {
                 LOG("server %d status REGISTERED\n", targetP->shortID);
@@ -167,6 +168,9 @@ static void prv_handleRegistrationReply(lwm2m_transaction_t * transacP,
                 targetP->status = STATE_DEREGISTERED;
                 targetP->mid = 0;
             }
+        }
+        else {
+
         }
     }
     break;
@@ -255,6 +259,7 @@ static void prv_handleRegistrationUpdateReply(lwm2m_transaction_t * transacP,
     {
         if (packet == NULL)
         {
+        	LOG("server %d status DEREGISTERED (no packet)\n", targetP->shortID);
             targetP->status = STATE_DEREGISTERED;
             targetP->mid = 0;
         }
@@ -279,7 +284,7 @@ static void prv_handleRegistrationUpdateReply(lwm2m_transaction_t * transacP,
             } 
             else if (packet->code == NOT_FOUND_4_04) {
             	LOG ("UPDATE response from leshan Server: NOT_FOUND_4_04\n");
-                targetP->status = STATE_DEREGISTERED;
+                targetP->status = STATE_DEREGISTERED;    // do re-register!
                 targetP->mid = 0;            
             }
             else 
@@ -386,6 +391,9 @@ int lwm2m_update_registrations(lwm2m_context_t * contextP, uint32_t currentTime,
             case STATE_DEREG_PENDING:
             	LOG("server %d status DEREG_PENDING\n", targetP->shortID);
                 break;
+            case STATE_REG_FAILED:
+                LOG("server %d status REG_FAILED\n", targetP->shortID);
+                break;
         }
         targetP = targetP->next;
     }
@@ -435,10 +443,6 @@ static void prv_handleDeregistrationReply(lwm2m_transaction_t * transacP,
 void registration_deregister(lwm2m_context_t * contextP,
                              lwm2m_server_t * serverP)
 {
-    coap_packet_t message[1];
-    uint8_t pktBuffer[COAP_MAX_PACKET_SIZE+1];
-    size_t pktBufferLen = 0;
-
     if (serverP->status == STATE_DEREGISTERED
      || serverP->status == STATE_REG_PENDING
      || serverP->status == STATE_DEREG_PENDING)
