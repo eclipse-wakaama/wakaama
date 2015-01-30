@@ -136,15 +136,13 @@ static void prv_handleRegistrationReply(lwm2m_transaction_t * transacP,
     {
         if (packet == NULL)
         {
-            LOG("server %d status DEREGISTERED (no packet)\n", targetP->shortID);
+            LOG("server %d status DEREGISTERED, register timeout\n", targetP->shortID);
             targetP->status = STATE_DEREGISTERED;
             targetP->mid = 0;
         }
-        else if (packet->mid == targetP->mid
-              && packet->type == COAP_TYPE_ACK
+        else if (packet->type == COAP_TYPE_ACK
               && packet->location_path != NULL)
         {
-            // TODO: use token, not mid
             if (packet->code == CREATED_2_01)
             {
                 LOG("server %d status REGISTERED\n", targetP->shortID);
@@ -156,21 +154,12 @@ static void prv_handleRegistrationReply(lwm2m_transaction_t * transacP,
                     targetP->registration = tv.tv_sec;
                 }
             }
-            else if (packet->code == BAD_REQUEST_4_00)
-            {
-            	LOG("server %d status DEREGISTERED (bad request)\n", targetP->shortID);
-                targetP->status = STATE_DEREGISTERED;
-                targetP->mid = 0;
-            }
             else
             {
-            	LOG("server %d status DEREGISTERED\n", targetP->shortID);
+            	LOG("server %d status DEREGISTERED, register failed\n", targetP->shortID);
                 targetP->status = STATE_DEREGISTERED;
                 targetP->mid = 0;
             }
-        }
-        else {
-
         }
     }
     break;
@@ -182,7 +171,7 @@ static void prv_handleRegistrationReply(lwm2m_transaction_t * transacP,
 #define PRV_QUERY_BUFFER_LENGTH 200
 
 // send the registration for a single server
-static int prv_register(lwm2m_context_t * contextP, lwm2m_server_t * server)
+static int prv_register(lwm2m_context_t * contextP, lwm2m_server_t * server, uint32_t currentTime)
 {
     char query[200];
     int query_length;
@@ -219,8 +208,16 @@ static int prv_register(lwm2m_context_t * contextP, lwm2m_server_t * server)
         transaction = transaction_new(COAP_POST, NULL, contextP->nextMID++, ENDPOINT_SERVER, (void *)server);
         if (transaction == NULL) return INTERNAL_SERVER_ERROR_5_00;
 
+        server->token[0] = server->shortID;
+        server->token[1] = server->shortID >> 8;
+        server->token[2] = transaction->mID;
+        server->token[3] = transaction->mID >> 8;
+        server->token_len = 4;
+
         coap_set_header_uri_path(transaction->message, "/"URI_REGISTRATION_SEGMENT);
         coap_set_header_uri_query(transaction->message, query);
+        coap_set_header_token(transaction->message, server->token, server->token_len);
+
         coap_set_payload(transaction->message, payload, payload_length);
 
         transaction->callback = prv_handleRegistrationReply;
@@ -231,6 +228,8 @@ static int prv_register(lwm2m_context_t * contextP, lwm2m_server_t * server)
         {
             server->status = STATE_REG_PENDING;
             server->mid = transaction->mID;
+            server->registration = currentTime;
+            server->changes = 0;
         }
     }
     return NO_ERROR;
@@ -259,7 +258,7 @@ static void prv_handleRegistrationUpdateReply(lwm2m_transaction_t * transacP,
     {
         if (packet == NULL)
         {
-        	LOG("server %d status DEREGISTERED (no packet)\n", targetP->shortID);
+        	LOG("server %d status DEREGISTERED, update timeout\n", targetP->shortID);
             targetP->status = STATE_DEREGISTERED;
             targetP->mid = 0;
         }
@@ -273,31 +272,20 @@ static void prv_handleRegistrationUpdateReply(lwm2m_transaction_t * transacP,
                     targetP->registration = tv.tv_sec;
                 }
                 targetP->status = STATE_REGISTERED;
-                LOG("server %d status REGISTERED\n", targetP->shortID);
-            }
-            else if (packet->code == BAD_REQUEST_4_00)
-            {
-            	LOG("server %d status DEREGISTERED (bad request)\n", targetP->shortID);
-                targetP->status = STATE_DEREGISTERED;
-                targetP->mid = 0;
-                // trigger a new registration? infinite loop?
-            } 
-            else if (packet->code == NOT_FOUND_4_04) {
-            	LOG ("UPDATE response from leshan Server: NOT_FOUND_4_04\n");
-                targetP->status = STATE_DEREGISTERED;    // do re-register!
-                targetP->mid = 0;            
+                LOG("server %d status REGISTERED, updated\n", targetP->shortID);
             }
             else 
             {
-            	LOG("server %d status DEREGISTERED (general error)\n", targetP->shortID);
+            	LOG("server %d status DEREGISTERED, update failed\n", targetP->shortID);
                 targetP->status = STATE_DEREGISTERED;
                 targetP->mid = 0;
                 // trigger a new registration? infinite loop?
             }
-
         }
         else {
-        	LOG("server %d received unexpected data\n", targetP->shortID);
+        	LOG("server %d status DEREGISTERED, update error\n", targetP->shortID);
+            targetP->status = STATE_DEREGISTERED;
+            targetP->mid = 0;
         }
     }
     break;
@@ -307,18 +295,23 @@ static void prv_handleRegistrationUpdateReply(lwm2m_transaction_t * transacP,
 }
 
 static int prv_update_registration(lwm2m_context_t * contextP, lwm2m_server_t * server) {
-    char query[20];
-    int query_length;
     lwm2m_transaction_t * transaction;
 
     transaction = transaction_new(COAP_PUT, NULL, contextP->nextMID++, ENDPOINT_SERVER, (void *)server);
     if (transaction == NULL) return INTERNAL_SERVER_ERROR_5_00;
 
-    query_length = snprintf(query, sizeof(query), QUERY_LIFETIME "%d", server->lifetime);
-    if (query_length <= 1) return 0;
+
 
     coap_set_header_uri_path(transaction->message, server->location);
-    coap_set_header_uri_query(transaction->message, query);
+
+    if (server->lifetimeChanged) {
+        char query[20];
+        int query_length;
+        query_length = snprintf(query, sizeof(query), QUERY_LIFETIME "%d", server->lifetime);
+        if (query_length <= 1) return 0;
+        coap_set_header_uri_query(transaction->message, query);
+        server->lifetimeChanged = 0;
+    }
 
     transaction->callback = prv_handleRegistrationUpdateReply;
     transaction->userData = (void *) server;
@@ -333,11 +326,40 @@ static int prv_update_registration(lwm2m_context_t * contextP, lwm2m_server_t * 
     return 0;
 }
 
+void handle_registration_response(lwm2m_context_t * contextP, void * fromSessionH, coap_packet_t * message)
+{
+    lwm2m_server_t * targetP;
+    struct timeval tv;
+
+    targetP = contextP->serverList;
+    while (targetP != NULL)
+    {
+        if (targetP->sessionH == fromSessionH)
+        {
+            if (message->token_len == targetP->token_len) {
+                if (memcmp(message->token, targetP->token, message->token_len) == 0) {
+                    targetP->status = STATE_REGISTERED;
+                    targetP->location = coap_get_multi_option_as_string(message->location_path);
+                    if (0 == lwm2m_gettimeofday(&tv, NULL))
+                    {
+                        targetP->registration = tv.tv_sec;
+                    }
+                    break;
+                }
+            }
+        }
+        // try next server
+        targetP = targetP->next;
+    }
+}
+
+
 // update the registration of a given server
 int lwm2m_update_registration(lwm2m_context_t * contextP, uint16_t shortServerID)
 {
     // look for the server
     lwm2m_server_t * targetP;
+
     targetP = contextP->serverList;
     while (targetP != NULL)
     {
@@ -366,10 +388,9 @@ int lwm2m_update_registrations(lwm2m_context_t * contextP, uint32_t currentTime,
         switch (targetP->status) {
             case STATE_REGISTERED:
 //            	LOG("server %d status REGISTERED\n", targetP->shortID);
+                // update earlier to get the chance to retry before getting unregistered
                 interval = targetP->lifetime - (COAP_RESPONSE_TIMEOUT << 2);
-                if (interval < (COAP_RESPONSE_TIMEOUT << 1)) {
-                    interval = (COAP_RESPONSE_TIMEOUT << 1);
-                }
+                if (interval < 1) interval = 1;
                 if (0 == lwm2m_adjustTimeout(targetP->registration + interval, currentTime, timeoutP))
                 {
                     prv_update_registration(contextP, targetP);
@@ -378,11 +399,16 @@ int lwm2m_update_registrations(lwm2m_context_t * contextP, uint32_t currentTime,
             case STATE_DEREGISTERED:
             	LOG("server %d status DEREGISTERED\n", targetP->shortID);
                 // TODO: is it disabled?
-                prv_register(contextP, targetP);
+                prv_register(contextP, targetP, currentTime);
                 timeoutP->tv_sec = 1;
                 break;
             case STATE_REG_PENDING:
             	LOG("server %d status REG_PENDING\n", targetP->shortID);
+                if (0 == lwm2m_adjustTimeout(targetP->registration + targetP->lifetime, currentTime, timeoutP))
+                {
+                    LOG("server %d status retry registration\n", targetP->shortID);
+                    prv_register(contextP, targetP, currentTime);
+                }
                 break;
             case STATE_REG_UPDATE_PENDING:
             	LOG("server %d status REG_UPDATE_PENDING\n", targetP->shortID);
@@ -414,7 +440,7 @@ static void prv_handleDeregistrationReply(lwm2m_transaction_t * transacP,
     {
         if (packet == NULL)
         {
-        	LOG("server %d status DEREGISTERED (deregister)\n", targetP->shortID);
+        	LOG("server %d status DEREGISTERED, deregister timeout\n", targetP->shortID);
             targetP->status = STATE_DEREGISTERED;
             targetP->mid = 0;
         }
@@ -423,15 +449,20 @@ static void prv_handleDeregistrationReply(lwm2m_transaction_t * transacP,
         {
             if (packet->code == DELETED_2_02)
             {
-            	LOG("server %d status DEREGISTERED (deregister)\n", targetP->shortID);
+            	LOG("server %d status DEREGISTERED, deregister\n", targetP->shortID);
                 targetP->status = STATE_DEREGISTERED;
             }
-            else if (packet->code == BAD_REQUEST_4_00)
+            else
             {
-            	LOG("server %d status DEREGISTERED (deregister)\n", targetP->shortID);
+            	LOG("server %d status DEREGISTERED, deregister failed\n", targetP->shortID);
                 targetP->status = STATE_DEREGISTERED;
                 targetP->mid = 0;
             }
+        }
+        else {
+            LOG("server %d status DEREGISTERED, deregister error)\n", targetP->shortID);
+            targetP->status = STATE_DEREGISTERED;
+            targetP->mid = 0;
         }
     }
     break;

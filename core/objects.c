@@ -521,6 +521,7 @@ static int prv_getMandatoryInfo(lwm2m_object_t * objectP,
         return -1;
     }
     if (targetP->lifetime != value) {
+        targetP->lifetimeChanged = 1;
         targetP->lifetime = value;
         targetP->registration = 0;
         LOG("Server %d: update lifetime %d\n", targetP->shortID, (int)value);

@@ -305,9 +305,9 @@ typedef struct _lwm2m_object_t lwm2m_object_t;
 
 typedef enum
 {
-    STATE_DEREGISTERED = 0,          // not registered
+    STATE_DEREGISTERED = 0,   // not registered
     STATE_REG_PENDING,        // registration pending
-    STATE_REGISTERED,         // sucesfully registered
+    STATE_REGISTERED,         // successfully registered
     STATE_REG_FAILED,         // last registration failed
     STATE_REG_UPDATE_PENDING, // registration update pending
     STATE_DEREG_PENDING       // deregistration pending
@@ -355,6 +355,13 @@ typedef struct _lwm2m_server_
 {
     struct _lwm2m_server_ * next;   // matches lwm2m_list_t::next
     uint16_t          shortID;      // matches lwm2m_list_t::id
+    union {
+        uint16_t          changes;      // changed values
+        struct {
+            uint16_t      lifetimeChanged:1;
+            uint16_t      bindingChanged:1;
+        };
+    };
     uint32_t          lifetime;     // lifetime of the registration in sec or 0 if default value (86400 sec), also used as hold off time for the bootstrap server
     uint32_t          registration; // date of the last registration in sec
     lwm2m_binding_t   binding;      // client connection mode with this server
@@ -362,6 +369,8 @@ typedef struct _lwm2m_server_
     lwm2m_status_t    status;
     char *            location;
     uint16_t          mid;
+    uint8_t           token_len;
+    uint8_t           token[8];
     lwm2m_attribute_data_t * attributeData; /**< list of attribute data */
 } lwm2m_server_t;
 

@@ -153,6 +153,7 @@ time_t lwm2m_notify(lwm2m_context_t * contextP, struct timeval * tv);
 // defined in registration.c
 coap_status_t handle_registration_request(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, void * fromSessionH, coap_packet_t * message, coap_packet_t * response);
 void registration_deregister(lwm2m_context_t * contextP, lwm2m_server_t * serverP);
+void handle_registration_response(lwm2m_context_t * contextP, void * fromSessionH, coap_packet_t * message);
 void prv_freeClient(lwm2m_client_t * clientP);
 
 // defined in packet.c

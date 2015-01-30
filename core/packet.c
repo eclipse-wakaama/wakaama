@@ -243,29 +243,43 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
 		}
         else
 		{
-			/* Responses */
-			if (message->type == COAP_TYPE_ACK)
-			{
-				LOG("Received ACK\n");
-            }
-            else if (message->type==COAP_TYPE_RST)
-			{
-				LOG("Received RST\n");
-				/* Cancel possible subscriptions. */
-				handle_reset(contextP, fromSessionH, message);
-			}
+            if (message->type == COAP_TYPE_NON || message->type == COAP_TYPE_CON ) {
 
 #ifdef LWM2M_SERVER_MODE
-            if ( (message->code == COAP_204_CHANGED || message->code == COAP_205_CONTENT)
-					&& IS_OPTION(message, COAP_OPTION_OBSERVE))
-			{
-				handle_observe_notify(contextP, fromSessionH, message);
-			}
-			else
+                if ( (message->code == COAP_204_CHANGED || message->code == COAP_205_CONTENT)
+                        && IS_OPTION(message, COAP_OPTION_OBSERVE))
+                {
+                    handle_observe_notify(contextP, fromSessionH, message);
+                }
+                else
 #endif
-			{
-				transaction_handle_response(contextP, fromSessionH, message);
-			}
+#ifdef LWM2M_CLIENT_MODE
+                if (IS_OPTION(message, COAP_OPTION_LOCATION_PATH)) {
+                    multi_option_t *location_path = message->location_path;
+                    if ((location_path->len == 2) && (memcmp(location_path->data, "rd", 2) == 0)) {
+                        handle_registration_response(contextP, fromSessionH, message);
+                    }
+                }
+#endif
+
+                if (message->type == COAP_TYPE_CON ) {
+                    coap_init_message(response, COAP_TYPE_ACK, 0, message->mid);
+                    coap_error_code = message_send(contextP, response, fromSessionH);
+                }
+            }
+            else if (message->type == COAP_TYPE_ACK || message->type == COAP_TYPE_RST ) {
+			/* Responses */
+                if (message->type==COAP_TYPE_RST)
+                {
+                    LOG("Received RST\n");
+                    /* Cancel possible subscriptions. */
+                    handle_reset(contextP, fromSessionH, message);
+                }
+                else {
+                    LOG("Received ACK\n");
+                }
+                transaction_handle_response(contextP, fromSessionH, message);
+            }
 		} /* Request or Response */
 
 		coap_free_header(message);
