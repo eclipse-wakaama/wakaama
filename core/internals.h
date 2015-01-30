@@ -14,7 +14,7 @@
  *    David Navarro, Intel Corporation - initial API and implementation
  *    Fabien Fleutot - Please refer to git log
  *    Toby Jaffey - Please refer to git log
- *    
+ *    Bosch Software Innovations GmbH - Please refer to git log
  *******************************************************************************/
 /*
  Copyright (c) 2013, 2014 Intel Corporation
