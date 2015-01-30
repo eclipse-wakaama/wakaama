@@ -459,7 +459,7 @@ lwm2m_object_t * get_object_conn_m()
 			strcpy(myData->ipAddresses[0], VALUE_IP_ADDRESS_1);
 			strcpy(myData->ipAddresses[1], VALUE_IP_ADDRESS_1);
 			strcpy(myData->routerIpAddresses[0], VALUE_ROUTER_IP_ADDRESS_1);
-			strcpy(myData->routerIpAddresses[1], VALUE_ROUTER_IP_ADDRESS_1);
+			strcpy(myData->routerIpAddresses[1], VALUE_ROUTER_IP_ADDRESS_2);
 		}
 		else
 		{

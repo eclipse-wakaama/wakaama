@@ -268,6 +268,6 @@ void blockwise_free(lwm2m_context_t * contextP, uint32_t time)
     }
     if (pending || removed)
     {
-        LOG("Blockwise %u time: %d pending, %d removed\n", time, pending, removed);
+        LOG("Blockwise %lu time, %d pending, %d removed\n", time, pending, removed);
     }
 }
