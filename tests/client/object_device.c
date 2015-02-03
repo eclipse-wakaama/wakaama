@@ -534,7 +534,7 @@ static uint8_t prv_device_write(uint16_t instanceId,
             break;
 
         case RES_O_TIMEZONE:
-			//ToDo IANA TZ Format
+            //ToDo IANA TZ Format
         default:
             result = COAP_405_METHOD_NOT_ALLOWED;
         }

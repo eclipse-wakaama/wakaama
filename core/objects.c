@@ -228,46 +228,46 @@ coap_status_t object_attrib(lwm2m_context_t* contextP,
     
     queryEntry = uri_query;
     while(queryEntry != NULL) {
-		// check if cancel is send.
-		// TODO: "cancel" is exclusive to the other attributes?
-		if(0 == strncmp(queryEntry->data, "cancel", queryEntry->len)) {
-			status = lwm2m_setAttributes(contextP, uriP, ATTRIBUTE_CANCEL, 0, 0, targetP, serverP);
-			break;
-		} else {
-			int    aHead = 0;
-			char  *aTkn = queryEntry->data;
-			char  *aVal = aTkn;
+        // check if cancel is send.
+        // TODO: "cancel" is exclusive to the other attributes?
+        if(0 == strncmp(queryEntry->data, "cancel", queryEntry->len)) {
+            status = lwm2m_setAttributes(contextP, uriP, ATTRIBUTE_CANCEL, 0, 0, targetP, serverP);
+            break;
+        } else {
+            int    aHead = 0;
+            char  *aTkn = queryEntry->data;
+            char  *aVal = aTkn;
 
-			//LOG("aTyp: %s\n", aTyp);
-			if (strncasecmp(aTkn,"pmin=", 5)==0) {
-				type = ATTRIBUTE_MIN_PERIOD;
-				aHead = 5;
-			}
-			else if (strncasecmp(aTkn,"pmax=", 5)==0) {
-				type = ATTRIBUTE_MAX_PERIOD;
-				aHead = 5;
-			}
-			else if (strncasecmp(aTkn,"gt=", 3)==0) {
-				type = ATTRIBUTE_GREATER_THEN;
-				aHead = 3;
-			}
-			else if (strncasecmp(aTkn,"lt=", 3)==0) {
-				type = ATTRIBUTE_LESS_THEN;
-				aHead = 3;
-			}
-			else if (strncasecmp(aTkn,"st=", 3)==0) {
-				type = ATTRIBUTE_STEP;
-				aHead = 3;
-			}
-			else   {
-				return COAP_400_BAD_REQUEST;
-			}
-			aVal += aHead;
-			aHead = queryEntry->len -aHead;
+            //LOG("aTyp: %s\n", aTyp);
+            if (strncasecmp(aTkn,"pmin=", 5)==0) {
+                type = ATTRIBUTE_MIN_PERIOD;
+                aHead = 5;
+            }
+            else if (strncasecmp(aTkn,"pmax=", 5)==0) {
+                type = ATTRIBUTE_MAX_PERIOD;
+                aHead = 5;
+            }
+            else if (strncasecmp(aTkn,"gt=", 3)==0) {
+                type = ATTRIBUTE_GREATER_THEN;
+                aHead = 3;
+            }
+            else if (strncasecmp(aTkn,"lt=", 3)==0) {
+                type = ATTRIBUTE_LESS_THEN;
+                aHead = 3;
+            }
+            else if (strncasecmp(aTkn,"st=", 3)==0) {
+                type = ATTRIBUTE_STEP;
+                aHead = 3;
+            }
+            else   {
+                return COAP_400_BAD_REQUEST;
+            }
+            aVal += aHead;
+            aHead = queryEntry->len -aHead;
 
-			status = lwm2m_setAttributes(contextP, uriP, type, aVal, aHead, targetP, serverP);
-			if (status >= COAP_400_BAD_REQUEST) break;   //TODO check correctness before set!
-		}
+            status = lwm2m_setAttributes(contextP, uriP, type, aVal, aHead, targetP, serverP);
+            if (status >= COAP_400_BAD_REQUEST) break;   //TODO check correctness before set!
+        }
         queryEntry = queryEntry->next;
     }    
     return status; 

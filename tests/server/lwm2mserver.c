@@ -339,7 +339,7 @@ static void prv_read_client(char * buffer,
     }
     else
     {
-    	prv_print_error(result);
+        prv_print_error(result);
     }
     return;
 
@@ -378,7 +378,7 @@ static void prv_write_client(char * buffer,
     }
     else
     {
-    	prv_print_error(result);
+        prv_print_error(result);
     }
     return;
 
@@ -418,7 +418,7 @@ static void prv_write_attrib_client(char * buffer, void * user_data) {
     }
     else
     {
-    	prv_print_error(result);
+        prv_print_error(result);
     }
     return;
 
@@ -464,7 +464,7 @@ static void prv_exec_client(char * buffer,
     }
     else
     {
-    	prv_print_error(result);
+        prv_print_error(result);
     }
     return;
 
@@ -522,7 +522,7 @@ static void prv_create_client(char * buffer,
     }
     else
     {
-    	prv_print_error(result);
+        prv_print_error(result);
     }
     return;
 
@@ -558,7 +558,7 @@ static void prv_delete_client(char * buffer,
     }
     else
     {
-    	prv_print_error(result);
+        prv_print_error(result);
     }
     return;
 
@@ -594,7 +594,7 @@ static void prv_observe_client(char * buffer,
     }
     else
     {
-    	prv_print_error(result);
+        prv_print_error(result);
     }
     return;
 
@@ -630,7 +630,7 @@ static void prv_cancel_client(char * buffer,
     }
     else
     {
-    	prv_print_error(result);
+        prv_print_error(result);
     }
     return;
 

@@ -156,7 +156,7 @@ static void prv_handleRegistrationReply(lwm2m_transaction_t * transacP,
             }
             else
             {
-            	LOG("server %d status DEREGISTERED, register failed\n", targetP->shortID);
+                LOG("server %d status DEREGISTERED, register failed\n", targetP->shortID);
                 targetP->status = STATE_DEREGISTERED;
                 targetP->mid = 0;
             }
@@ -258,7 +258,7 @@ static void prv_handleRegistrationUpdateReply(lwm2m_transaction_t * transacP,
     {
         if (packet == NULL)
         {
-        	LOG("server %d status DEREGISTERED, update timeout\n", targetP->shortID);
+            LOG("server %d status DEREGISTERED, update timeout\n", targetP->shortID);
             targetP->status = STATE_DEREGISTERED;
             targetP->mid = 0;
         }
@@ -276,14 +276,14 @@ static void prv_handleRegistrationUpdateReply(lwm2m_transaction_t * transacP,
             }
             else 
             {
-            	LOG("server %d status DEREGISTERED, update failed\n", targetP->shortID);
+                LOG("server %d status DEREGISTERED, update failed\n", targetP->shortID);
                 targetP->status = STATE_DEREGISTERED;
                 targetP->mid = 0;
                 // trigger a new registration? infinite loop?
             }
         }
         else {
-        	LOG("server %d status DEREGISTERED, update error\n", targetP->shortID);
+            LOG("server %d status DEREGISTERED, update error\n", targetP->shortID);
             targetP->status = STATE_DEREGISTERED;
             targetP->mid = 0;
         }
@@ -387,7 +387,7 @@ int lwm2m_update_registrations(lwm2m_context_t * contextP, uint32_t currentTime,
     {
         switch (targetP->status) {
             case STATE_REGISTERED:
-//            	LOG("server %d status REGISTERED\n", targetP->shortID);
+//              LOG("server %d status REGISTERED\n", targetP->shortID);
                 // update earlier to get the chance to retry before getting unregistered
                 interval = targetP->lifetime - (COAP_RESPONSE_TIMEOUT << 2);
                 if (interval < 1) interval = 1;
@@ -397,13 +397,13 @@ int lwm2m_update_registrations(lwm2m_context_t * contextP, uint32_t currentTime,
                 }
                 break;
             case STATE_DEREGISTERED:
-            	LOG("server %d status DEREGISTERED\n", targetP->shortID);
+                LOG("server %d status DEREGISTERED\n", targetP->shortID);
                 // TODO: is it disabled?
                 prv_register(contextP, targetP, currentTime);
                 timeoutP->tv_sec = 1;
                 break;
             case STATE_REG_PENDING:
-            	LOG("server %d status REG_PENDING\n", targetP->shortID);
+                LOG("server %d status REG_PENDING\n", targetP->shortID);
                 if (0 == lwm2m_adjustTimeout(targetP->registration + targetP->lifetime, currentTime, timeoutP))
                 {
                     LOG("server %d status retry registration\n", targetP->shortID);
@@ -411,11 +411,11 @@ int lwm2m_update_registrations(lwm2m_context_t * contextP, uint32_t currentTime,
                 }
                 break;
             case STATE_REG_UPDATE_PENDING:
-            	LOG("server %d status REG_UPDATE_PENDING\n", targetP->shortID);
+                LOG("server %d status REG_UPDATE_PENDING\n", targetP->shortID);
                 // TODO: check for timeout and retry?
                 break;
             case STATE_DEREG_PENDING:
-            	LOG("server %d status DEREG_PENDING\n", targetP->shortID);
+                LOG("server %d status DEREG_PENDING\n", targetP->shortID);
                 break;
             case STATE_REG_FAILED:
                 LOG("server %d status REG_FAILED\n", targetP->shortID);
@@ -440,7 +440,7 @@ static void prv_handleDeregistrationReply(lwm2m_transaction_t * transacP,
     {
         if (packet == NULL)
         {
-        	LOG("server %d status DEREGISTERED, deregister timeout\n", targetP->shortID);
+            LOG("server %d status DEREGISTERED, deregister timeout\n", targetP->shortID);
             targetP->status = STATE_DEREGISTERED;
             targetP->mid = 0;
         }
@@ -449,12 +449,12 @@ static void prv_handleDeregistrationReply(lwm2m_transaction_t * transacP,
         {
             if (packet->code == DELETED_2_02)
             {
-            	LOG("server %d status DEREGISTERED, deregister\n", targetP->shortID);
+                LOG("server %d status DEREGISTERED, deregister\n", targetP->shortID);
                 targetP->status = STATE_DEREGISTERED;
             }
             else
             {
-            	LOG("server %d status DEREGISTERED, deregister failed\n", targetP->shortID);
+                LOG("server %d status DEREGISTERED, deregister failed\n", targetP->shortID);
                 targetP->status = STATE_DEREGISTERED;
                 targetP->mid = 0;
             }

@@ -84,15 +84,15 @@
 
 typedef struct
 {
-	lwm2m_uri_t uri;
-	lwm2m_result_callback_t callback;
-	void * userData;
+    lwm2m_uri_t uri;
+    lwm2m_result_callback_t callback;
+    void * userData;
 } dm_data_t;
 
 typedef struct _obs_list_
 {
-	struct _obs_list_ * next;
-	lwm2m_observed_t * item;
+    struct _obs_list_ * next;
+    lwm2m_observed_t * item;
 } obs_list_t;
 
 /**
@@ -100,14 +100,14 @@ typedef struct _obs_list_
  */
 struct _lwm2m_blockwise_
 {
-	struct _lwm2m_blockwise_ * next;
-	lwm2m_uri_t uri;
-	uint32_t time;
-	uint8_t etag_len;
-	uint8_t etag[COAP_ETAG_LEN];
-	uint16_t size;
-	uint16_t length;
-	uint8_t* data;
+    struct _lwm2m_blockwise_ * next;
+    lwm2m_uri_t uri;
+    uint32_t time;
+    uint8_t etag_len;
+    uint8_t etag[COAP_ETAG_LEN];
+    uint16_t size;
+    uint16_t length;
+    uint8_t* data;
 };
 
 // defined in uri.c
@@ -137,7 +137,7 @@ void transaction_handle_response(lwm2m_context_t * contextP, void * fromSessionH
 lwm2m_blockwise_t* blockwise_get(lwm2m_context_t * contextP, const lwm2m_uri_t * uriP);
 lwm2m_blockwise_t * blockwise_new(lwm2m_context_t * contextP, const lwm2m_uri_t * uriP, coap_packet_t * messageP, bool detach);
 void blockwise_prepare(lwm2m_blockwise_t * blockwiseP, uint32_t block_num, uint16_t block_size,
-		coap_packet_t * response);
+        coap_packet_t * response);
 void blockwise_append(lwm2m_blockwise_t * blockwiseP, uint32_t block_offset, coap_packet_t * response);
 void blockwise_remove(lwm2m_context_t * contextP, const lwm2m_uri_t * uriP);
 void blockwise_free(lwm2m_context_t * contextP, uint32_t time);

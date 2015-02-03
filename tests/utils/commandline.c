@@ -130,10 +130,10 @@ char* get_end_of_arg(char* buffer) {
 
 char * get_next_arg(char * buffer, char** end)
 {
-	// skip arg
-	buffer = get_end_of_arg(buffer);
-	// skip space
-	buffer = prv_end_of_space(buffer);
+    // skip arg
+    buffer = get_end_of_arg(buffer);
+    // skip space
+    buffer = prv_end_of_space(buffer);
     if (NULL != end) {
         *end = get_end_of_arg(buffer);
     }
@@ -142,7 +142,7 @@ char * get_next_arg(char * buffer, char** end)
 }
 
 int check_end_of_args(char* buffer) {
-	buffer = prv_end_of_space(buffer);
+    buffer = prv_end_of_space(buffer);
     return 0 == buffer[0];
 }
 

@@ -158,7 +158,7 @@ static uint8_t prv_firmware_write(uint16_t instanceId,
             break;
 
         case 4:
-        	if (lwm2m_tlv_decode_bool(&dataArray[i], &bvalue) == 1) {
+            if (lwm2m_tlv_decode_bool(&dataArray[i], &bvalue) == 1) {
                 data->supported = bvalue ? 1 : 0;
                 result = COAP_204_CHANGED;
             }
