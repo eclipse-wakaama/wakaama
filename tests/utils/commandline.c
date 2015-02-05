@@ -20,6 +20,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <unistd.h>
 
 #include "commandline.h"
 
@@ -61,7 +62,7 @@ static void prv_displayHelp(command_desc_t * commandArray,
 
     // find end of first argument
     length = 0;
-    while (buffer[length] != 0 && !isspace(buffer[length]))
+    while (buffer[length] != 0 && !isspace(buffer[length]&0xff))
         length++;
 
     cmdP = prv_find_command(commandArray, buffer, length);
@@ -92,13 +93,13 @@ void handle_command(command_desc_t * commandArray,
 
     // find end of command name
     length = 0;
-    while (buffer[length] != 0 && !isspace(buffer[length]))
+    while (buffer[length] != 0 && !isspace(buffer[length]&0xff))
         length++;
 
     cmdP = prv_find_command(commandArray, buffer, length);
     if (cmdP != NULL)
     {
-        while (buffer[length] != 0 && isspace(buffer[length]))
+        while (buffer[length] != 0 && isspace(buffer[length]&0xff))
             length++;
         cmdP->callback(buffer + length, cmdP->userData);
     }
@@ -106,7 +107,7 @@ void handle_command(command_desc_t * commandArray,
     {
         if (!strncmp(buffer, HELP_COMMAND, length))
         {
-            while (buffer[length] != 0 && isspace(buffer[length]))
+            while (buffer[length] != 0 && isspace(buffer[length]&0xff))
                 length++;
             prv_displayHelp(commandArray, buffer + length);
         }
@@ -117,11 +118,31 @@ void handle_command(command_desc_t * commandArray,
     }
 }
 
-char * get_next_arg(char * buffer)
+static char* prv_end_of_space(char* buffer) {
+    while (isspace(buffer[0]&0xff)) buffer++;
+    return buffer;
+}
+
+char* get_end_of_arg(char* buffer) {
+    while (buffer[0] != 0 && !isspace(buffer[0]&0xff)) buffer++;
+    return buffer;
+}
+
+char * get_next_arg(char * buffer, char** end)
 {
-    while (buffer[0] != 0 && !isspace(buffer[0])) buffer++;
-    while (buffer[0] != 0 && isspace(buffer[0])) buffer++;
+    // skip arg
+    buffer = get_end_of_arg(buffer);
+    // skip space
+    buffer = prv_end_of_space(buffer);
+    if (NULL != end) {
+        *end = get_end_of_arg(buffer);
+    }
 
     return buffer;
+}
+
+int check_end_of_args(char* buffer) {
+    buffer = prv_end_of_space(buffer);
+    return 0 == buffer[0];
 }
 

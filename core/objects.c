@@ -57,13 +57,10 @@
 #include <string.h>
 #include <stdio.h>
 
-
-static lwm2m_object_t * prv_find_object(lwm2m_context_t * contextP,
+lwm2m_object_t * lwm2m_find_object(lwm2m_context_t * contextP,
                                         uint16_t Id)
 {
     int i;
-
-    if (Id == LWM2M_SECURITY_OBJECT_ID) return NULL;
 
     for (i = 0 ; i < contextP->numObject ; i++)
     {
@@ -74,6 +71,15 @@ static lwm2m_object_t * prv_find_object(lwm2m_context_t * contextP,
     }
 
     return NULL;
+}
+
+
+static lwm2m_object_t * prv_find_object(lwm2m_context_t * contextP,
+                                        uint16_t Id)
+{
+    if (Id == LWM2M_SECURITY_OBJECT_ID) return NULL;
+
+    return lwm2m_find_object(contextP, Id);
 }
 
 coap_status_t object_read(lwm2m_context_t * contextP,
@@ -184,6 +190,89 @@ coap_status_t object_read(lwm2m_context_t * contextP,
     return result;
 }
 
+coap_status_t object_attrib(lwm2m_context_t* contextP,
+                            lwm2m_uri_t*     uriP,
+                            multi_option_t*  uri_query,
+                            void*            fromSessionH ) {
+    //-------------------------------------------------------------------- JH --
+    lwm2m_object_t* targetP;
+    multi_option_t* queryEntry;
+    coap_status_t   status = COAP_400_BAD_REQUEST;
+    lwm2m_attribute_type_t type;
+    lwm2m_server_t* serverP;
+
+    if (!LWM2M_URI_IS_SET_INSTANCE(uriP))   // TODO: remove this, attributes are allowed for object/instance/resource
+    {
+        return COAP_400_BAD_REQUEST;
+    }
+
+    targetP = prv_find_object(contextP, uriP->objectId);
+
+    if (NULL == targetP)
+    {
+        return COAP_404_NOT_FOUND;
+    }
+
+    serverP = contextP->serverList;
+    while(serverP != NULL) {
+        if(fromSessionH == serverP->sessionH) {
+            break;
+        } else {
+            serverP = serverP->next;
+        }
+    }
+
+    if(NULL == serverP) {
+        return COAP_401_UNAUTHORIZED;
+    }
+    
+    queryEntry = uri_query;
+    while(queryEntry != NULL) {
+        // check if cancel is send.
+        // TODO: "cancel" is exclusive to the other attributes?
+        if(0 == strncmp(queryEntry->data, "cancel", queryEntry->len)) {
+            status = lwm2m_setAttributes(contextP, uriP, ATTRIBUTE_CANCEL, 0, 0, targetP, serverP);
+            break;
+        } else {
+            int    aHead = 0;
+            char  *aTkn = queryEntry->data;
+            char  *aVal = aTkn;
+
+            //LOG("aTyp: %s\n", aTyp);
+            if (strncasecmp(aTkn,"pmin=", 5)==0) {
+                type = ATTRIBUTE_MIN_PERIOD;
+                aHead = 5;
+            }
+            else if (strncasecmp(aTkn,"pmax=", 5)==0) {
+                type = ATTRIBUTE_MAX_PERIOD;
+                aHead = 5;
+            }
+            else if (strncasecmp(aTkn,"gt=", 3)==0) {
+                type = ATTRIBUTE_GREATER_THEN;
+                aHead = 3;
+            }
+            else if (strncasecmp(aTkn,"lt=", 3)==0) {
+                type = ATTRIBUTE_LESS_THEN;
+                aHead = 3;
+            }
+            else if (strncasecmp(aTkn,"st=", 3)==0) {
+                type = ATTRIBUTE_STEP;
+                aHead = 3;
+            }
+            else   {
+                return COAP_400_BAD_REQUEST;
+            }
+            aVal += aHead;
+            aHead = queryEntry->len -aHead;
+
+            status = lwm2m_setAttributes(contextP, uriP, type, aVal, aHead, targetP, serverP);
+            if (status >= COAP_400_BAD_REQUEST) break;   //TODO check correctness before set!
+        }
+        queryEntry = queryEntry->next;
+    }    
+    return status; 
+}
+
 coap_status_t object_write(lwm2m_context_t * contextP,
                            lwm2m_uri_t * uriP,
                            char * buffer,
@@ -208,7 +297,7 @@ coap_status_t object_write(lwm2m_context_t * contextP,
         tlvP->type = LWM2M_TYPE_RESSOURCE;
         tlvP->id = uriP->resourceId;
         tlvP->length = length;
-        tlvP->value = buffer;
+        tlvP->value = (uint8_t*)buffer;
     }
     else
     {
@@ -386,8 +475,8 @@ static lwm2m_list_t * prv_findServerInstance(lwm2m_object_t * objectP,
 
         if (objectP->readFunc(instanceP->id, &size, &tlvP, objectP) != COAP_205_CONTENT)
         {
-            lwm2m_free(tlvP);
-            return NULL;
+            instanceP = NULL;
+            break;
         }
 
         if (1 == lwm2m_tlv_decode_int(tlvP, &value))
@@ -431,9 +520,14 @@ static int prv_getMandatoryInfo(lwm2m_object_t * objectP,
         lwm2m_free(tlvP);
         return -1;
     }
-    targetP->lifetime = value;
+    if (targetP->lifetime != value) {
+        targetP->lifetimeChanged = 1;
+        targetP->lifetime = value;
+        targetP->registration = 0;
+        LOG("Server %d: update lifetime %d\n", targetP->shortID, (int)value);
+    }
 
-    targetP->binding = lwm2m_stringToBinding(tlvP[1].value, tlvP[1].length);
+    targetP->binding = lwm2m_stringToBinding((const char*)tlvP[1].value, tlvP[1].length);
 
     lwm2m_free(tlvP);
 
@@ -508,7 +602,7 @@ int object_getServers(lwm2m_context_t * contextP)
 
         if (isBootstrap == true)
         {
-            if (0 == lwm2m_tlv_decode_int(tlvP + 1, &value)
+            if (0 == lwm2m_tlv_decode_int(tlvP + 2, &value)
              || value < 0 || value >0xFFFFFFFF)             // This is an implementation limit
             {
                 lwm2m_free(targetP);
@@ -544,6 +638,44 @@ int object_getServers(lwm2m_context_t * contextP)
     }
 
     return 0;
+}
+
+int object_updateServersInfo(lwm2m_context_t * contextP, lwm2m_uri_t * uriP)
+{
+    int result = COAP_NO_ERROR;
+    lwm2m_list_t * serverInstP;     // instanceID of the server in the LWM2M Server Object
+    lwm2m_object_t * serverObjP = lwm2m_find_object(contextP, LWM2M_SERVER_OBJECT_ID);
+
+    if (serverObjP == NULL)
+    {
+        return -1;
+    }
+
+    serverInstP = serverObjP->instanceList;
+    while (NULL != serverInstP && COAP_NO_ERROR == result) {
+        if (!LWM2M_URI_IS_SET_INSTANCE(uriP) || serverInstP->id == uriP->instanceId) {
+            int size = 1;
+            lwm2m_tlv_t * tlvP = lwm2m_tlv_new(size);
+            if (tlvP == NULL) return -1;
+            tlvP[0].id = LWM2M_SERVER_SHORT_ID_ID;
+            if (serverObjP->readFunc(serverInstP->id, &size, &tlvP, serverObjP) == COAP_205_CONTENT) {
+                int64_t value;
+                if (1 == lwm2m_tlv_decode_int(tlvP, &value)) {
+                    lwm2m_server_t *targetP = (lwm2m_server_t *)LWM2M_LIST_FIND(contextP->serverList, value);
+                    if (NULL != targetP) {
+                        if (0 != prv_getMandatoryInfo(serverObjP, serverInstP->id, targetP))
+                        {
+                            result = COAP_500_INTERNAL_SERVER_ERROR;
+                        }
+                    }
+                }
+            }
+            lwm2m_free(tlvP);
+        }
+        serverInstP = serverInstP->next;
+    }
+
+    return result;
 }
 
 #endif

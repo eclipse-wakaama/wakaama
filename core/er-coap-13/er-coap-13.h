@@ -57,7 +57,7 @@
 #endif
 
 #define COAP_DEFAULT_MAX_AGE                 60
-#define COAP_RESPONSE_TIMEOUT                2
+#define COAP_RESPONSE_TIMEOUT                5
 #define COAP_MAX_RETRANSMIT                  4
 
 #define COAP_HEADER_LEN                      4 /* | version:0x03 type:0x0C tkl:0xF0 | code | mid:0x00FF | mid:0xFF00 | */
@@ -165,7 +165,7 @@ typedef enum {
   COAP_OPTION_CONTENT_TYPE = 12,  /* 0-2 B */
   COAP_OPTION_MAX_AGE = 14,       /* 0-4 B */
   COAP_OPTION_URI_QUERY = 15,     /* 0-270 B */
-  COAP_OPTION_ACCEPT = 16,        /* 0-2 B */
+  COAP_OPTION_ACCEPT = 17,        /* 0-2 B */
   COAP_OPTION_TOKEN = 19,         /* 1-8 B */
   COAP_OPTION_LOCATION_QUERY = 20, /* 1-270 B */
   COAP_OPTION_BLOCK2 = 23,        /* 1-3 B */

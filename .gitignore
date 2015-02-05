@@ -5,17 +5,21 @@
 *.pc
 *.tgz
 *.gz
+*.stackdump
 .dirstamp
 
 Makefile
 
 .cproject
 .project
+.settings
 
 CMakeCache.txt
 CMakeFiles
 Debug
+DebugServer
 Release
+ReleaseServer
 cmake_install.cmake
 core/CMakeCache.txt
 core/CMakeFiles
@@ -24,3 +28,6 @@ core/cmake_install.cmake
 lwm2mclient
 lwm2mserver
 tlvdecode
+nbproject/
+
+

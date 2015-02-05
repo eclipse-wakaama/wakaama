@@ -14,11 +14,13 @@ SET(SOURCES
     lwm2mclient.c
     ../utils/commandline.c
     ../utils/connection.c
+    system_api.c
     object_security.c
     object_server.c
     object_device.c
     object_firmware.c
     object_location.c
+    object_connectivity_moni.c
     test_object.c)
 
 add_executable(lwm2mclient ${SOURCES} ${CORE_SOURCES})
