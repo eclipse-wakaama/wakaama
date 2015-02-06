@@ -16,6 +16,7 @@
  *    Simon Bernard - Please refer to git log
  *    Toby Jaffey - Please refer to git log
  *    Julien Vermillard - Please refer to git log
+ *    Bosch Software Innovations GmbH - Please refer to git log
  *******************************************************************************/
 
 /*
@@ -154,6 +155,7 @@ uint16_t lwm2m_list_newId(lwm2m_list_t * head);
 
 #define LWM2M_LIST_ADD(H,N) lwm2m_list_add((lwm2m_list_t *)H, (lwm2m_list_t *)N);
 #define LWM2M_LIST_RM(H,I,N) lwm2m_list_remove((lwm2m_list_t *)H, I, (lwm2m_list_t **)N);
+#define LWM2M_LIST_FIND(H,I) lwm2m_list_find((lwm2m_list_t *)H, I)
 
 
 /*
@@ -270,7 +272,7 @@ typedef struct
 // Return the number of characters read from buffer or 0 in case of error.
 // Valid URIs: /1, /1/, /1/2, /1/2/, /1/2/3
 // Invalid URIs: /, //, //2, /1//, /1//3, /1/2/3/, /1/2/3/4
-int lwm2m_stringToUri(char * buffer, size_t buffer_len, lwm2m_uri_t * uriP);
+int lwm2m_stringToUri(const char * buffer, size_t buffer_len, lwm2m_uri_t * uriP);
 
 
 /*
@@ -313,9 +315,9 @@ struct _lwm2m_object_t
 
 typedef enum
 {
-    STATE_DEREGISTERED = 0,          // not registered
+    STATE_DEREGISTERED = 0,   // not registered
     STATE_REG_PENDING,        // registration pending
-    STATE_REGISTERED,         // sucesfully registered
+    STATE_REGISTERED,         // successfully registered
     STATE_REG_FAILED,         // last registration failed
     STATE_REG_UPDATE_PENDING, // registration update pending
     STATE_DEREG_PENDING       // deregistration pending

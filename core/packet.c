@@ -159,7 +159,7 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
     static coap_packet_t response[1];
 
     coap_error_code = coap_parse_message(message, buffer, (uint16_t)length);
-    if (coap_error_code==NO_ERROR)
+    if (coap_error_code == NO_ERROR)
     {
         LOG("  Parsed: ver %u, type %u, tkl %u, code %u, mid %u\r\n", message->version, message->type, message->token_len, message->code, message->mid);
         LOG("  Payload: %.*s\r\n\n", message->payload_len, message->payload);
@@ -172,7 +172,7 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
             int32_t new_offset = 0;
 
             /* prepare response */
-            if (message->type==COAP_TYPE_CON)
+            if (message->type == COAP_TYPE_CON)
             {
                 /* Reliable CON requests are answered with an ACK. */
                 coap_init_message(response, COAP_TYPE_ACK, CONTENT_2_05, message->mid);
@@ -259,11 +259,11 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
             /* Responses */
             lwm2m_transaction_t * transaction;
 
-            if (message->type==COAP_TYPE_ACK)
+            if (message->type == COAP_TYPE_ACK)
             {
                 LOG("Received ACK\n");
             }
-            else if (message->type==COAP_TYPE_RST)
+            else if (message->type == COAP_TYPE_RST)
             {
                 LOG("Received RST\n");
                 /* Cancel possible subscriptions. */

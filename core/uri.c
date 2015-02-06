@@ -168,7 +168,7 @@ error:
     return NULL;
 }
 
-int lwm2m_stringToUri(char * buffer,
+int lwm2m_stringToUri(const char * buffer,
                       size_t buffer_len,
                       lwm2m_uri_t * uriP)
 {
@@ -181,7 +181,7 @@ int lwm2m_stringToUri(char * buffer,
 
     // Skip any white space
     head = 0;
-    while (head < buffer_len && isspace(buffer[head]))
+    while (head < buffer_len && isspace(buffer[head]&0xFF))
     {
         head++;
     }

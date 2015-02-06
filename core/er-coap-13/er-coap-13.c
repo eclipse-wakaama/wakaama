@@ -265,7 +265,7 @@ coap_add_multi_option(multi_option_t **dst, uint8_t *option, size_t option_len, 
     opt->len = option_len;
     if (is_static)
     {
-      opt->data = option;
+      opt->data = (char*)option;
       opt->is_static = 1;
     }
     else
