@@ -30,4 +30,6 @@ typedef struct
 
 
 void handle_command(command_desc_t * commandArray, char * buffer);
-char * get_next_arg(char * buffer);
+char* get_end_of_arg(char* buffer);
+char * get_next_arg(char * buffer, char **end);
+int check_end_of_args(char* buffer);

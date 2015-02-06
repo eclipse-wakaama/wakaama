@@ -68,9 +68,6 @@ static uint8_t prv_firmware_read(uint16_t instanceId,
     // is the server asking for the full object ?
     if (*numDataP == 0)
     {
-        uint16_t resList[] = {0, 1, 2, 3, 6, 7, 8, 9, 10, 11, 13, 14, 15};
-        int nbRes = sizeof(resList)/sizeof(uint16_t);
-
         *dataArrayP = lwm2m_tlv_new(3);
         if (*dataArrayP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
         *numDataP = 3;
@@ -134,6 +131,7 @@ static uint8_t prv_firmware_write(uint16_t instanceId,
                                   lwm2m_object_t * objectP)
 {
     int i;
+    bool bvalue;
     uint8_t result;
     firmware_data_t * data = (firmware_data_t*)(objectP->userData);
 
@@ -160,16 +158,10 @@ static uint8_t prv_firmware_write(uint16_t instanceId,
             break;
 
         case 4:
-            if (1 == dataArray[i].length && dataArray[i].value[0] == '0')
+            if (lwm2m_tlv_decode_bool(&dataArray[i], &bvalue) == 1)
             {
-                data->supported = 0;
+                data->supported = bvalue ? 1 : 0;
                 result = COAP_204_CHANGED;
-            }
-            else if (1 == dataArray[i].length && dataArray[i].value[0] == '1')
-            {
-                data->supported = 1;
-                result = COAP_204_CHANGED;
-
             }
             else
             {
@@ -229,7 +221,7 @@ lwm2m_object_t * get_object_firmware()
      */
     lwm2m_object_t * firmwareObj;
 
-    firmwareObj = (lwm2m_object_t *)malloc(sizeof(lwm2m_object_t));
+    firmwareObj = (lwm2m_object_t *)lwm2m_malloc(sizeof(lwm2m_object_t));
 
     if (NULL != firmwareObj)
     {
@@ -249,7 +241,7 @@ lwm2m_object_t * get_object_firmware()
         firmwareObj->readFunc = prv_firmware_read;
         firmwareObj->writeFunc = prv_firmware_write;
         firmwareObj->executeFunc = prv_firmware_execute;
-        firmwareObj->userData = malloc(sizeof(firmware_data_t));
+        firmwareObj->userData = lwm2m_malloc(sizeof(firmware_data_t));
 
         /*
          * Also some user data can be stored in the object with a private structure containing the needed variables

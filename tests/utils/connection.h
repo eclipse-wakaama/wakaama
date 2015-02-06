@@ -19,6 +19,7 @@
 #define CONNECTION_H_
 
 #include <stdio.h>
+#include <unistd.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
@@ -36,7 +37,7 @@ typedef struct _connection_t
     size_t                  addrLen;
 } connection_t;
 
-int create_socket(char * portStr);
+int create_socket(const char * portStr);
 
 connection_t * connection_find(connection_t * connList, struct sockaddr_storage * addr, size_t addrLen);
 connection_t * connection_new_incoming(connection_t * connList, int sock, struct sockaddr * addr, size_t addrLen);
