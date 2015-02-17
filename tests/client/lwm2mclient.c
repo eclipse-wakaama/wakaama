@@ -385,7 +385,7 @@ int main(int argc, char *argv[])
     const char * server = "localhost";
     const char * serverPort = LWM2M_STANDARD_PORT_STR;
     char * name = "testlwm2mclient";
-    int livetime = 300;
+    int lifetime = 300;
     int batterylevelchanging = 1;
     time_t reboot_time = 0;
 
@@ -416,7 +416,7 @@ int main(int argc, char *argv[])
     if (argc >= 3) server = argv[2];
     if (argc >= 4) serverPort = argv[3];
     if (argc >= 5) name = argv[4];
-    if (argc >= 6) sscanf(argv[5], "%d", &livetime);
+    if (argc >= 6) sscanf(argv[5], "%d", &lifetime);
     if (argc >= 7) batterylevelchanging = argv[6][0] == '1' ? 1 : 0;
 
     /*
@@ -456,7 +456,7 @@ int main(int argc, char *argv[])
     }
 
     int serverId = 123;
-    objArray[3] = get_server_object(serverId, "U", livetime, false);
+    objArray[3] = get_server_object(serverId, "U", lifetime, false);
     if (NULL == objArray[3])
     {
         fprintf(stderr, "Failed to create server object\r\n");
