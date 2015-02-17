@@ -86,9 +86,9 @@ lwm2m_context_t * lwm2m_init(lwm2m_connect_server_callback_t connectCallback,
 
 void lwm2m_close(lwm2m_context_t * contextP)
 {
+#ifdef LWM2M_CLIENT_MODE
     int i;
 
-#ifdef LWM2M_CLIENT_MODE
     for (i = 0 ; i < contextP->numObject ; i++)
     {
         if (NULL != contextP->objectList[i]->closeFunc)

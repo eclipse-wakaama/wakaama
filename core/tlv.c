@@ -314,13 +314,13 @@ int lwm2m_tlv_parse(char * buffer,
     uint16_t id;
     size_t dataIndex;
     size_t dataLen;
-    int length = 0;
+    int index = 0;
     int result;
     int size = 0;
 
     *dataP = NULL;
 
-    while (0 != (result = lwm2m_decodeTLV(buffer + length, bufferLen - length, &type, &id, &dataIndex, &dataLen)))
+    while (0 != (result = lwm2m_decodeTLV(buffer + index, bufferLen - index, &type, &id, &dataIndex, &dataLen)))
     {
         lwm2m_tlv_t * newTlvP;
 
@@ -362,7 +362,7 @@ int lwm2m_tlv_parse(char * buffer,
         (*dataP)[size].id = id;
         if (type == TLV_OBJECT_INSTANCE || type == TLV_MULTIPLE_INSTANCE)
         {
-            (*dataP)[size].length = lwm2m_tlv_parse(buffer + length + dataIndex,
+            (*dataP)[size].length = lwm2m_tlv_parse(buffer + index + dataIndex,
                                                     dataLen,
                                                     (lwm2m_tlv_t **)&((*dataP)[size].value));
             if ((*dataP)[size].length == 0)
@@ -375,10 +375,10 @@ int lwm2m_tlv_parse(char * buffer,
         {
             (*dataP)[size].flags = LWM2M_TLV_FLAG_STATIC_DATA;
             (*dataP)[size].length = dataLen;
-            (*dataP)[size].value = buffer + length + dataIndex;
+            (*dataP)[size].value = buffer + index + dataIndex;
         }
         size++;
-        length += result;
+        index += result;
     }
 
     return size;

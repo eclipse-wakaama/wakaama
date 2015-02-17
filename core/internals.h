@@ -14,7 +14,7 @@
  *    David Navarro, Intel Corporation - initial API and implementation
  *    Fabien Fleutot - Please refer to git log
  *    Toby Jaffey - Please refer to git log
- *    
+ *    Bosch Software Innovations GmbH - Please refer to git log
  *******************************************************************************/
 /*
  Copyright (c) 2013, 2014 Intel Corporation
@@ -96,7 +96,7 @@ typedef struct _obs_list_
 } obs_list_t;
 
 // defined in uri.c
-int prv_get_number(const char * uriString, size_t uriLength);
+int lwm2m_get_number(const char * uriString, size_t uriLength);
 lwm2m_uri_t * lwm2m_decode_uri(multi_option_t *uriPath);
 
 // defined in objects.c

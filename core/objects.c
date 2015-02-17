@@ -208,7 +208,7 @@ coap_status_t object_write(lwm2m_context_t * contextP,
         tlvP->type = LWM2M_TYPE_RESSOURCE;
         tlvP->id = uriP->resourceId;
         tlvP->length = length;
-        tlvP->value = buffer;
+        tlvP->value = (uint8_t*)buffer;
     }
     else
     {
@@ -508,7 +508,7 @@ int object_getServers(lwm2m_context_t * contextP)
 
         if (isBootstrap == true)
         {
-            if (0 == lwm2m_tlv_decode_int(tlvP + 1, &value)
+            if (0 == lwm2m_tlv_decode_int(tlvP + 2, &value)
              || value < 0 || value >0xFFFFFFFF)             // This is an implementation limit
             {
                 lwm2m_free(targetP);

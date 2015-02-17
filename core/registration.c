@@ -388,10 +388,6 @@ static void prv_handleDeregistrationReply(lwm2m_transaction_t * transacP,
 void registration_deregister(lwm2m_context_t * contextP,
                              lwm2m_server_t * serverP)
 {
-    coap_packet_t message[1];
-    uint8_t pktBuffer[COAP_MAX_PACKET_SIZE+1];
-    size_t pktBufferLen = 0;
-
     if (serverP->status == STATE_DEREGISTERED
      || serverP->status == STATE_REG_PENDING
      || serverP->status == STATE_DEREG_PENDING)
@@ -424,9 +420,6 @@ static int prv_getParameters(multi_option_t * query,
                              char ** msisdnP,
                              lwm2m_binding_t * bindingP)
 {
-    const char * start;
-    int length;
-
     *nameP = NULL;
     *lifetimeP = 0;
     *msisdnP = NULL;

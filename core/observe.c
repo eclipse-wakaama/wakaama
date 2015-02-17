@@ -13,6 +13,7 @@
  * Contributors:
  *    David Navarro, Intel Corporation - initial API and implementation
  *    Toby Jaffey - Please refer to git log
+ *    Bosch Software Innovations GmbH - Please refer to git log
  *    
  *******************************************************************************/
 
@@ -198,11 +199,12 @@ coap_status_t handle_observe_request(lwm2m_context_t * contextP,
         if (watcherP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
         memset(watcherP, 0, sizeof(lwm2m_watcher_t));
         watcherP->server = serverP;
-        watcherP->tokenLen = message->token_len;
-        memcpy(watcherP->token, message->token, message->token_len);
         watcherP->next = observedP->watcherList;
         observedP->watcherList = watcherP;
     }
+
+    watcherP->tokenLen = message->token_len;
+    memcpy(watcherP->token, message->token, message->token_len);
 
     coap_set_header_observe(response, watcherP->counter++);
 
