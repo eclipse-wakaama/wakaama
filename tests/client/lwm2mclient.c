@@ -52,7 +52,7 @@
 
 */
 
-
+#include "lwm2mclient.h"
 #include "liblwm2m.h"
 #include "commandline.h"
 #include "connection.h"
@@ -74,16 +74,9 @@
 
 #define MAX_PACKET_SIZE 128 //ensure sync with: er_coap_13.h REST_MAX_CHUNK_SIZE!
 
+int g_reboot = 0;
 static int g_quit = 0;
 
-extern lwm2m_object_t * get_object_device();
-extern lwm2m_object_t * get_object_firmware();
-extern lwm2m_object_t * get_object_location();
-extern lwm2m_object_t * get_test_object();
-extern lwm2m_object_t * get_server_object();
-extern lwm2m_object_t * get_security_object();
-
-extern char * get_server_uri(lwm2m_object_t * objectP, uint16_t serverID);
 
 typedef struct
 {
@@ -109,8 +102,85 @@ void print_usage(void)
     fprintf(stderr, "Launch a LWM2M client.\r\n\n");
 }
 
-static void * prv_connect_server(uint16_t serverID,
-                                 void * userData)
+static lwm2m_object_t * prv_find_object(lwm2m_context_t * contextP,
+                                        uint16_t Id)
+{
+    int i;
+
+    for (i = 0 ; i < contextP->numObject ; i++)
+    {
+        if (contextP->objectList[i]->objID == Id)
+        {
+            return contextP->objectList[i];
+        }
+    }
+
+    return NULL;
+}
+
+void handle_value_changed(lwm2m_context_t * lwm2mH,
+                          lwm2m_uri_t * uri,
+                          const char * value,
+                          size_t valueLength)
+{
+    lwm2m_object_t * object = prv_find_object(lwm2mH, uri->objectId);
+
+    if (NULL != object)
+    {
+        if (object->writeFunc != NULL)
+        {
+            lwm2m_tlv_t * tlvP;
+            int result;
+            
+            tlvP = lwm2m_tlv_new(1);
+            if (tlvP == NULL)
+            {
+                fprintf(stderr, "Internal allocation failure !\n");
+                return;
+            }
+            tlvP->flags = LWM2M_TLV_FLAG_STATIC_DATA | LWM2M_TLV_FLAG_TEXT_FORMAT;
+            tlvP->id = uri->resourceId;
+            tlvP->length = valueLength;
+            tlvP->value = (uint8_t*) value;
+
+            result = object->writeFunc(uri->instanceId, 1, tlvP, object);
+            if (COAP_405_METHOD_NOT_ALLOWED == result)
+            {
+                switch (uri->objectId)
+                {
+                case LWM2M_DEVICE_OBJECT_ID:
+                    result = device_change(tlvP, object);
+                    break;
+                default:
+                    break;
+                }
+            }
+            
+            if (COAP_204_CHANGED != result)
+            {
+                fprintf(stderr, "Failed to change value!\n");
+            }
+            else
+            {
+                fprintf(stderr, "value changed!\n");
+                lwm2m_resource_value_changed(lwm2mH, uri);
+            }
+            lwm2m_tlv_free(1, tlvP);
+            return;
+        }
+        else
+        {
+            fprintf(stderr, "write not supported for specified resource!\n");
+        }
+        return;
+    }
+    else
+    {
+        fprintf(stderr, "Object not found !\n");
+    }
+}
+
+static void * prv_connect_server(uint16_t serverID, void * userData)
 {
     client_data_t * dataP;
     char * uri;
@@ -126,13 +196,12 @@ static void * prv_connect_server(uint16_t serverID,
     if (uri == NULL) return NULL;
 
     // parse uri in the form "coaps://[host]:[port]"
-    if (0==strncmp(uri, "coaps://", strlen("coaps://")))
-      host = uri+strlen("coaps://");
-    else 
-    if (0==strncmp(uri, "coap://",  strlen("coap://")))
-      host = uri+strlen("coap://");
+    if (0 == strncmp(uri, "coaps://", strlen("coaps://")))
+        host = uri + strlen("coaps://");
+    else if (0 == strncmp(uri, "coap://", strlen("coap://")))
+        host = uri + strlen("coap://");
     else goto exit;
-    
+
     portStr = strchr(host, ':');
     if (portStr == NULL) goto exit;
     // split strings
@@ -164,12 +233,19 @@ static uint8_t prv_buffer_send(void * sessionH,
 {
     connection_t * connP = (connection_t*) sessionH;
 
-    if (connP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
+    if (connP == NULL)
+    {
+        fprintf(stderr, "#> failed sending %lu bytes, missing connection\r\n", length);
+        return COAP_500_INTERNAL_SERVER_ERROR ;
+    }
 
     if (-1 == connection_send(connP, buffer, length))
     {
-        return COAP_500_INTERNAL_SERVER_ERROR;
+        fprintf(stderr, "#> failed sending %lu bytes\r\n", length);
+        return COAP_500_INTERNAL_SERVER_ERROR ;
     }
+
+    fprintf(stderr, "#> sent %lu bytes\r\n", length);
     return COAP_NO_ERROR;
 }
 
@@ -208,6 +284,9 @@ static void prv_output_servers(char * buffer,
         case STATE_DEREG_PENDING:
             fprintf(stdout, "DEREGISTRATION PENDING\r\n");
             break;
+        case STATE_REG_FAILED:
+            fprintf(stdout, "REGISTRATION FAILED\r\n");
+            break;
         }
         fprintf(stdout, "\r\n");
     }
@@ -218,75 +297,25 @@ static void prv_change(char * buffer,
 {
     lwm2m_context_t * lwm2mH = (lwm2m_context_t *) user_data;
     lwm2m_uri_t uri;
+    char * end = NULL;
     int result;
-    size_t length;
 
-    if (buffer[0] == 0) goto syntax_error;
+    end = get_end_of_arg(buffer);
+    if (end[0] == 0) goto syntax_error;
 
-    length = 0;
-    // remove white space
-    while (length < strlen(buffer) && isspace(buffer[length]))
-    {
-        length++;
-    }
-    // find end of URI
-    while (length < strlen(buffer) && !isspace(buffer[length]))
-    {
-        length++;
-    }
-
-    result = lwm2m_stringToUri(buffer, length, &uri);
+    result = lwm2m_stringToUri(buffer, end - buffer, &uri);
     if (result == 0) goto syntax_error;
 
-    buffer += length;
-    while (buffer[0] != 0 && isspace(buffer[0])) buffer++;
+    buffer = get_next_arg(end, &end);
+
     if (buffer[0] == 0)
     {
+        fprintf(stderr, "report change!\n");
         lwm2m_resource_value_changed(lwm2mH, &uri);
     }
     else
     {
-        int i;
-
-        i = 0;
-        while (i < lwm2mH->numObject)
-        {
-            if (uri.objectId == lwm2mH->objectList[i]->objID)
-            {
-                if (lwm2mH->objectList[i]->writeFunc != NULL)
-                {
-                    lwm2m_tlv_t * tlvP;
-
-                    tlvP = lwm2m_tlv_new(1);
-                    if (tlvP == NULL)
-                    {
-                        fprintf(stdout, "Internal allocation failure !\n");
-                        return;
-                    }
-                    tlvP->flags = LWM2M_TLV_FLAG_STATIC_DATA | LWM2M_TLV_FLAG_TEXT_FORMAT;
-                    tlvP->id = uri.resourceId;
-                    tlvP->length = strlen(buffer);
-                    tlvP->value = buffer;
-
-                    if (COAP_204_CHANGED != lwm2mH->objectList[i]->writeFunc(uri.instanceId,
-                                                                             1, tlvP,
-                                                                             lwm2mH->objectList[i]))
-                    {
-                        fprintf(stdout, "Failed to change value !\n");
-                    }
-                    else
-                    {
-                        lwm2m_resource_value_changed(lwm2mH, &uri);
-                    }
-                    lwm2m_tlv_free(1, tlvP);
-                    return;
-                }
-                return;
-            }
-            i++;
-        }
-
-        fprintf(stdout, "Object not found !\n");
+        handle_value_changed(lwm2mH, &uri, buffer, end - buffer);
     }
     return;
 
@@ -302,8 +331,9 @@ static void prv_update(char * buffer,
 
     uint16_t serverId = (uint16_t) atoi(buffer);
     int res = lwm2m_update_registration(lwm2mH, serverId);
-    if (res != 0) {
-        fprintf(stdout, "Registration update error: %d\n",res);
+    if (res != 0)
+    {
+        fprintf(stdout, "Registration update error: %d\n", res);
     }
     return;
 
@@ -311,8 +341,38 @@ syntax_error:
     fprintf(stdout, "Syntax error !\n");
 }
 
+static void update_battery_level(lwm2m_context_t * context,
+                                int enable)
+{
+    if (enable)
+    {
+        static time_t next_change_time = 0;
+        struct timeval tv;
 
-#define OBJ_COUNT 6
+        lwm2m_gettimeofday(&tv, NULL);
+
+        if (next_change_time < tv.tv_sec)
+        {
+            char value[15];
+            int valueLength;
+            lwm2m_uri_t uri;
+            int level = rand() % 100;
+
+            if (0 > level) level = -level;
+            if (lwm2m_stringToUri("/3/0/9", 6, &uri))
+            {
+                valueLength = sprintf(value, "%d", level);
+                fprintf(stderr, "New Battery Level: %d\n", level);
+                handle_value_changed(context, &uri, value, valueLength);
+            }
+            level = rand() % 20;
+            if (0 > level) level = -level;
+            next_change_time = tv.tv_sec + level + 10;
+        }
+    }
+}
+
+#define OBJ_COUNT 7
 
 int main(int argc, char *argv[])
 {
@@ -321,7 +381,14 @@ int main(int argc, char *argv[])
     lwm2m_context_t * lwm2mH = NULL;
     lwm2m_object_t * objArray[OBJ_COUNT];
     int i;
-    char localPort[7], server[30], serverPort[7];
+    const char * localPort = "56830";
+    const char * server = "localhost";
+    const char * serverPort = LWM2M_STANDARD_PORT_STR;
+    char * name = "testlwm2mclient";
+    int lifetime = 300;
+    int batterylevelchanging = 1;
+    time_t reboot_time = 0;
+
     /*
      * The function start by setting up the command line interface (which may or not be useful depending on your project)
      *
@@ -345,13 +412,12 @@ int main(int argc, char *argv[])
 
     memset(&data, 0, sizeof(client_data_t));
 
-    strcpy (localPort, "56830");
-    strcpy (server,"localhost");
-    strcpy (serverPort, LWM2M_STANDARD_PORT_STR);	//see connection.h
-
-    if (argc >= 2) strcpy (localPort,  argv[1]);
-    if (argc >= 3) strcpy (server,     argv[2]);
-    if (argc >= 4) strcpy (serverPort, argv[3]);
+    if (argc >= 2) localPort = argv[1];
+    if (argc >= 3) server = argv[2];
+    if (argc >= 4) serverPort = argv[3];
+    if (argc >= 5) name = argv[4];
+    if (argc >= 6) sscanf(argv[5], "%d", &lifetime);
+    if (argc >= 7) batterylevelchanging = argv[6][0] == '1' ? 1 : 0;
 
     /*
      *This call an internal function that create an IPV6 socket on the port 5683.
@@ -390,7 +456,7 @@ int main(int argc, char *argv[])
     }
 
     int serverId = 123;
-    objArray[3] = get_server_object(serverId, "U", 300, false);
+    objArray[3] = get_server_object(serverId, "U", lifetime, false);
     if (NULL == objArray[3])
     {
         fprintf(stderr, "Failed to create server object\r\n");
@@ -398,7 +464,7 @@ int main(int argc, char *argv[])
     }
 
     char serverUri[50];
-    sprintf (serverUri, "coap://%s:%s", server, serverPort);
+    sprintf(serverUri, "coap://%s:%s", server, serverPort);
     objArray[4] = get_security_object(serverId, serverUri, false);
     if (NULL == objArray[4])
     {
@@ -409,6 +475,13 @@ int main(int argc, char *argv[])
 
     objArray[5] = get_object_location();
     if (NULL == objArray[5])
+    {
+        fprintf(stderr, "Failed to create location object\r\n");
+        return -1;
+    }
+
+    objArray[6] = get_object_conn_m();
+    if (NULL == objArray[6])
     {
         fprintf(stderr, "Failed to create location object\r\n");
         return -1;
@@ -429,7 +502,7 @@ int main(int argc, char *argv[])
      * We configure the liblwm2m library with the name of the client - which shall be unique for each client -
      * the number of objects we will be passing through and the objects array
      */
-    result = lwm2m_configure(lwm2mH, "testlwm2mclient", NULL, OBJ_COUNT, objArray);
+    result = lwm2m_configure(lwm2mH, name, NULL, OBJ_COUNT, objArray);
     if (result != 0)
     {
         fprintf(stderr, "lwm2m_set_objects() failed: 0x%X\r\n", result);
@@ -448,6 +521,11 @@ int main(int argc, char *argv[])
         return -1;
     }
 
+    /**
+     * Initialize value changed callback.
+     */
+    init_value_change(lwm2mH);
+
     /*
      * As you now have your lwm2m context complete you can pass it as an argument to all the command line functions
      * precedently viewed (first point)
@@ -465,6 +543,30 @@ int main(int argc, char *argv[])
     {
         struct timeval tv;
         fd_set readfds;
+
+        if (g_reboot)
+        {
+            lwm2m_gettimeofday(&tv, NULL);
+            if (0 == reboot_time)
+            {
+                reboot_time = tv.tv_sec + 5;
+            }
+            if (reboot_time < tv.tv_sec) {
+                /*
+                 * Message should normally be lost with reboot ...
+                 */
+                fprintf(stderr, "reboot time expired, rebooting ...");
+                system_reboot();
+            }
+            else {
+                tv.tv_sec = reboot_time - tv.tv_sec;
+            }
+        }
+        else {
+            update_battery_level(lwm2mH, batterylevelchanging);
+            tv.tv_sec = 5;
+        }
+        tv.tv_usec = 0;
 
         FD_ZERO(&readfds);
         FD_SET(data.sock, &readfds);
@@ -492,7 +594,7 @@ int main(int argc, char *argv[])
          */
         result = select(FD_SETSIZE, &readfds, NULL, NULL, &tv);
 
-        if ( result < 0 )
+        if (result < 0)
         {
             if (errno != EINTR)
             {
@@ -519,22 +621,29 @@ int main(int argc, char *argv[])
                  */
                 numBytes = recvfrom(data.sock, buffer, MAX_PACKET_SIZE, 0, (struct sockaddr *)&addr, &addrLen);
 
-                if (numBytes == -1)
+                if (0 > numBytes)
                 {
                     fprintf(stderr, "Error in recvfrom(): %d\r\n", errno);
                 }
-                else
+                else if (0 < numBytes)
                 {
                     char s[INET6_ADDRSTRLEN];
+                    in_port_t port;
                     connection_t * connP;
 
-                    fprintf(stderr, "%d bytes received from [%s]:%hu\r\n",
-                            numBytes,
-                            inet_ntop(addr.ss_family,
-                                      &(((struct sockaddr_in6*)&addr)->sin6_addr),
-                                      s,
-                                      INET6_ADDRSTRLEN),
-                            ntohs(((struct sockaddr_in6*)&addr)->sin6_port));
+                    if (AF_INET == addr.ss_family)
+                    {
+                        struct sockaddr_in *saddr = (struct sockaddr_in *)&addr;
+                        inet_ntop(saddr->sin_family, &saddr->sin_addr, s, INET6_ADDRSTRLEN);
+                        port = saddr->sin_port;
+                    }
+                    else if (AF_INET6 == addr.ss_family)
+                    {
+                        struct sockaddr_in6 *saddr = (struct sockaddr_in6 *)&addr;
+                        inet_ntop(saddr->sin6_family, &saddr->sin6_addr, s, INET6_ADDRSTRLEN);
+                        port = saddr->sin6_port;
+                    }
+                    fprintf(stderr, "%d bytes received from [%s]:%hu\r\n", numBytes, s, port);
 
                     /*
                      * Display it in the STDERR
@@ -549,6 +658,10 @@ int main(int argc, char *argv[])
                          */
                         lwm2m_handle_packet(lwm2mH, buffer, numBytes, connP);
                     }
+                    else
+                    {
+                        fprintf(stderr, "received bytes ignored!\r\n");
+                    }
                 }
             }
 
@@ -557,11 +670,12 @@ int main(int argc, char *argv[])
              */
             else if (FD_ISSET(STDIN_FILENO, &readfds))
             {
-                numBytes = read(STDIN_FILENO, buffer, MAX_PACKET_SIZE);
+                numBytes = read(STDIN_FILENO, buffer, MAX_PACKET_SIZE - 1);
 
                 if (numBytes > 1)
                 {
-                    buffer[numBytes - 1] = 0;
+                    buffer[numBytes] = 0;
+                    fprintf(stdout, "STDIN %d bytes '%s'\r\n> ", numBytes, buffer);
 
                     /*
                      * We call the corresponding callback of the typed command passing it the buffer for further arguments

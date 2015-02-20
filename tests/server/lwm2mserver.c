@@ -111,6 +111,29 @@ static char * prv_dump_binding(lwm2m_binding_t binding)
     }
 }
 
+#define CODE_TO_STRING(X)   case X : return "(" #X ") "
+
+const char* prv_status_to_string(int status)
+{
+    switch(status)
+	{
+    CODE_TO_STRING(COAP_NO_ERROR);
+    CODE_TO_STRING(COAP_201_CREATED);
+    CODE_TO_STRING(COAP_202_DELETED);
+    CODE_TO_STRING(COAP_204_CHANGED);
+    CODE_TO_STRING(COAP_205_CONTENT);
+    CODE_TO_STRING(COAP_400_BAD_REQUEST);
+    CODE_TO_STRING(COAP_401_UNAUTHORIZED);
+    CODE_TO_STRING(COAP_404_NOT_FOUND);
+    CODE_TO_STRING(COAP_405_METHOD_NOT_ALLOWED);
+    CODE_TO_STRING(COAP_406_NOT_ACCEPTABLE);
+    CODE_TO_STRING(COAP_500_INTERNAL_SERVER_ERROR);
+    CODE_TO_STRING(COAP_501_NOT_IMPLEMENTED);
+    CODE_TO_STRING(COAP_503_SERVICE_UNAVAILABLE);
+    default: return "";
+    }
+}
+
 static void prv_dump_client(lwm2m_client_t * targetP)
 {
     lwm2m_client_object_t * objectP;
@@ -212,9 +235,9 @@ static void output_tlv(char * buffer,
         else
         {
             print_indent(indent+2);
-            fprintf(stdout, "data (%d bytes):  ", dataLen);
+            fprintf(stdout, "data (%ld bytes):  ", dataLen);
             if (dataLen >= 16) fprintf(stdout, "\n");
-            output_buffer(stdout, buffer + length + dataIndex, dataLen);
+            output_buffer(stdout, (uint8_t*)buffer + length + dataIndex, dataLen);
         }
         print_indent(indent);
         fprintf(stdout, "}\n");
@@ -244,6 +267,16 @@ static int prv_read_id(char * buffer,
     return nb;
 }
 
+static void prv_print_result(int status)
+{
+    fprintf(stdout, "  returned status %d.%02d %s\r\n", (status&0xE0)>>5, status&0x1F, prv_status_to_string(status));
+}
+
+static void prv_print_error(int status)
+{
+    fprintf(stdout, "Error %d.%02d %s!\r\n", (status&0xE0)>>5, status&0x1F, prv_status_to_string(status));
+}
+
 static void prv_result_callback(uint16_t clientID,
                                 lwm2m_uri_t * uriP,
                                 int status,
@@ -258,7 +291,7 @@ static void prv_result_callback(uint16_t clientID,
         fprintf(stdout, "/");
     if (LWM2M_URI_IS_SET_RESOURCE(uriP))
             fprintf(stdout, "/%d", uriP->resourceId);
-    fprintf(stdout, " returned status %d.%2d\r\n", (status&0xE0)>>5, status&0x1F);
+    prv_print_result(status);
 
     if (data != NULL)
     {
@@ -269,7 +302,7 @@ static void prv_result_callback(uint16_t clientID,
         }
         else
         {
-            output_tlv(data, dataLength, 2);
+            output_tlv((char*)data, dataLength, 2);
         }
     }
 
@@ -309,16 +342,19 @@ static void prv_read_client(char * buffer,
     lwm2m_context_t * lwm2mH = (lwm2m_context_t *) user_data;
     uint16_t clientId;
     lwm2m_uri_t uri;
+    char* end = NULL;
     int result;
 
     result = prv_read_id(buffer, &clientId);
     if (result != 1) goto syntax_error;
 
-    buffer = get_next_arg(buffer);
+    buffer = get_next_arg(buffer, &end);
     if (buffer[0] == 0) goto syntax_error;
 
-    result = lwm2m_stringToUri(buffer, strlen(buffer), &uri);
+    result = lwm2m_stringToUri(buffer, end - buffer, &uri);
     if (result == 0) goto syntax_error;
+
+    if (!check_end_of_args(end)) goto syntax_error;
 
     result = lwm2m_dm_read(lwm2mH, clientId, &uri, prv_result_callback, NULL);
 
@@ -328,7 +364,7 @@ static void prv_read_client(char * buffer,
     }
     else
     {
-        fprintf(stdout, "Error %d.%2d", (result&0xE0)>>5, result&0x1F);
+        prv_print_error(result);
     }
     return;
 
@@ -342,29 +378,24 @@ static void prv_write_client(char * buffer,
     lwm2m_context_t * lwm2mH = (lwm2m_context_t *) user_data;
     uint16_t clientId;
     lwm2m_uri_t uri;
-    char * uriString;
-    int i;
+    char * end = NULL;
     int result;
 
     result = prv_read_id(buffer, &clientId);
     if (result != 1) goto syntax_error;
 
-    buffer = get_next_arg(buffer);
-    if (buffer[0] == 0) goto syntax_error;
-    uriString = buffer;
-
-    buffer = get_next_arg(buffer);
+    buffer = get_next_arg(buffer, &end);
     if (buffer[0] == 0) goto syntax_error;
 
-    i = 0;
-    while (uriString + i < buffer && !isspace(uriString[i]))
-    {
-        i++;
-    }
-    result = lwm2m_stringToUri(uriString, i, &uri);
+    result = lwm2m_stringToUri(buffer, end - buffer, &uri);
     if (result == 0) goto syntax_error;
 
-    result = lwm2m_dm_write(lwm2mH, clientId, &uri, buffer, strlen(buffer), prv_result_callback, NULL);
+    buffer = get_next_arg(end, &end);
+    if (buffer[0] == 0) goto syntax_error;
+
+    if (!check_end_of_args(end)) goto syntax_error;
+
+    result = lwm2m_dm_write(lwm2mH, clientId, &uri, buffer, end - buffer, prv_result_callback, NULL);
 
     if (result == 0)
     {
@@ -372,7 +403,7 @@ static void prv_write_client(char * buffer,
     }
     else
     {
-        fprintf(stdout, "Error %d.%2d", (result&0xE0)>>5, result&0x1F);
+        prv_print_error(result);
     }
     return;
 
@@ -380,32 +411,27 @@ syntax_error:
     fprintf(stdout, "Syntax error !");
 }
 
+
 static void prv_exec_client(char * buffer,
                             void * user_data)
 {
     lwm2m_context_t * lwm2mH = (lwm2m_context_t *) user_data;
     uint16_t clientId;
     lwm2m_uri_t uri;
-    char * uriString;
-    int i;
+    char * end = NULL;
     int result;
 
     result = prv_read_id(buffer, &clientId);
     if (result != 1) goto syntax_error;
 
-    buffer = get_next_arg(buffer);
+    buffer = get_next_arg(buffer, &end);
     if (buffer[0] == 0) goto syntax_error;
-    uriString = buffer;
 
-    buffer = get_next_arg(buffer);
-
-    i = 0;
-    while (uriString + i < buffer && !isspace(uriString[i]))
-    {
-        i++;
-    }
-    result = lwm2m_stringToUri(uriString, i, &uri);
+    result = lwm2m_stringToUri(buffer, end - buffer, &uri);
     if (result == 0) goto syntax_error;
+
+    buffer = get_next_arg(end, &end);
+
 
     if (buffer[0] == 0)
     {
@@ -413,7 +439,9 @@ static void prv_exec_client(char * buffer,
     }
     else
     {
-        result = lwm2m_dm_execute(lwm2mH, clientId, &uri, buffer, strlen(buffer), prv_result_callback, NULL);
+        if (!check_end_of_args(end)) goto syntax_error;
+
+        result = lwm2m_dm_execute(lwm2mH, clientId, &uri, buffer, end - buffer, prv_result_callback, NULL);
     }
 
     if (result == 0)
@@ -422,7 +450,7 @@ static void prv_exec_client(char * buffer,
     }
     else
     {
-        fprintf(stdout, "Error %d.%2d", (result&0xE0)>>5, result&0x1F);
+        prv_print_error(result);
     }
     return;
 
@@ -436,10 +464,9 @@ static void prv_create_client(char * buffer,
     lwm2m_context_t * lwm2mH = (lwm2m_context_t *) user_data;
     uint16_t clientId;
     lwm2m_uri_t uri;
-    char * uriString;
-    int i;
+    char * end = NULL;
     int result;
-    uint64_t value;
+    int64_t value;
     char temp_buffer[MAX_PACKET_SIZE];
     int temp_length = 0;
 
@@ -448,24 +475,18 @@ static void prv_create_client(char * buffer,
     result = prv_read_id(buffer, &clientId);
     if (result != 1) goto syntax_error;
 
-    buffer = get_next_arg(buffer);
+    //Get Uri
+    buffer = get_next_arg(buffer, &end);
     if (buffer[0] == 0) goto syntax_error;
 
-    //save Uri start address
-    uriString = buffer;
+    result = lwm2m_stringToUri(buffer, end - buffer, &uri);
+    if (result == 0) goto syntax_error;
 
     //Get Data to Post
-    buffer = get_next_arg(buffer);
+    buffer = get_next_arg(end, &end);
     if (buffer[0] == 0) goto syntax_error;
 
-    //Get Uri
-    i = 0;
-    while (uriString + i < buffer && !isspace(uriString[i]))
-    {
-        i++;
-    }
-    result = lwm2m_stringToUri(uriString, i, &uri);
-    if (result == 0) goto syntax_error;
+    if (!check_end_of_args(end)) goto syntax_error;
 
    // TLV
 
@@ -473,7 +494,7 @@ static void prv_create_client(char * buffer,
 
     if (uri.objectId == 1024)
     {
-        result = lwm2m_PlainTextToInt64(buffer, strlen(buffer), &value);
+        result = lwm2m_PlainTextToInt64(buffer, end - buffer, &value);
         temp_length = lwm2m_intToTLV(TLV_RESSOURCE, value, (uint16_t) 1, temp_buffer, MAX_PACKET_SIZE);
     }
    /* End Client dependent part*/
@@ -487,7 +508,7 @@ static void prv_create_client(char * buffer,
     }
     else
     {
-        fprintf(stdout, "Error %d.%2d", (result&0xE0)>>5, result&0x1F);
+        prv_print_error(result);
     }
     return;
 
@@ -501,16 +522,19 @@ static void prv_delete_client(char * buffer,
     lwm2m_context_t * lwm2mH = (lwm2m_context_t *) user_data;
     uint16_t clientId;
     lwm2m_uri_t uri;
+    char* end = NULL;
     int result;
 
     result = prv_read_id(buffer, &clientId);
     if (result != 1) goto syntax_error;
 
-    buffer = get_next_arg(buffer);
+    buffer = get_next_arg(buffer, &end);
     if (buffer[0] == 0) goto syntax_error;
 
-    result = lwm2m_stringToUri(buffer, strlen(buffer), &uri);
+    result = lwm2m_stringToUri(buffer, end - buffer, &uri);
     if (result == 0) goto syntax_error;
+
+    if (!check_end_of_args(end)) goto syntax_error;
 
     result = lwm2m_dm_delete(lwm2mH, clientId, &uri, prv_result_callback, NULL);
 
@@ -520,7 +544,7 @@ static void prv_delete_client(char * buffer,
     }
     else
     {
-        fprintf(stdout, "Error %d.%2d", (result&0xE0)>>5, result&0x1F);
+        prv_print_error(result);
     }
     return;
 
@@ -534,16 +558,19 @@ static void prv_observe_client(char * buffer,
     lwm2m_context_t * lwm2mH = (lwm2m_context_t *) user_data;
     uint16_t clientId;
     lwm2m_uri_t uri;
+    char* end = NULL;
     int result;
 
     result = prv_read_id(buffer, &clientId);
     if (result != 1) goto syntax_error;
 
-    buffer = get_next_arg(buffer);
+    buffer = get_next_arg(buffer, &end);
     if (buffer[0] == 0) goto syntax_error;
 
-    result = lwm2m_stringToUri(buffer, strlen(buffer), &uri);
+    result = lwm2m_stringToUri(buffer, end - buffer, &uri);
     if (result == 0) goto syntax_error;
+
+    if (!check_end_of_args(end)) goto syntax_error;
 
     result = lwm2m_observe(lwm2mH, clientId, &uri, prv_notify_callback, NULL);
 
@@ -553,7 +580,7 @@ static void prv_observe_client(char * buffer,
     }
     else
     {
-        fprintf(stdout, "Error %d.%2d", (result&0xE0)>>5, result&0x1F);
+        prv_print_error(result);
     }
     return;
 
@@ -567,16 +594,19 @@ static void prv_cancel_client(char * buffer,
     lwm2m_context_t * lwm2mH = (lwm2m_context_t *) user_data;
     uint16_t clientId;
     lwm2m_uri_t uri;
+    char* end = NULL;
     int result;
 
     result = prv_read_id(buffer, &clientId);
     if (result != 1) goto syntax_error;
 
-    buffer = get_next_arg(buffer);
+    buffer = get_next_arg(buffer, &end);
     if (buffer[0] == 0) goto syntax_error;
 
-    result = lwm2m_stringToUri(buffer, strlen(buffer), &uri);
+    result = lwm2m_stringToUri(buffer, end - buffer, &uri);
     if (result == 0) goto syntax_error;
+
+    if (!check_end_of_args(end)) goto syntax_error;
 
     result = lwm2m_observe_cancel(lwm2mH, clientId, &uri, prv_result_callback, NULL);
 
@@ -586,7 +616,7 @@ static void prv_cancel_client(char * buffer,
     }
     else
     {
-        fprintf(stdout, "Error %d.%2d", (result&0xE0)>>5, result&0x1F);
+        prv_print_error(result);
     }
     return;
 
@@ -603,7 +633,6 @@ static void prv_monitor_callback(uint16_t clientID,
 {
     lwm2m_context_t * lwm2mH = (lwm2m_context_t *) userData;
     lwm2m_client_t * targetP;
-    lwm2m_client_object_t * objectP;
 
     switch (status)
     {
@@ -773,15 +802,25 @@ int main(int argc, char *argv[])
                 else
                 {
                     char s[INET6_ADDRSTRLEN];
+                    in_port_t port;
                     connection_t * connP;
 
-                    fprintf(stderr, "%d bytes received from [%s]:%hu\r\n",
-                            numBytes,
-                            inet_ntop(addr.ss_family,
-                                      &(((struct sockaddr_in6*)&addr)->sin6_addr),
-                                      s,
-                                      INET6_ADDRSTRLEN),
-                            ntohs(((struct sockaddr_in6*)&addr)->sin6_port));
+					s[0] = 0;
+                    if (AF_INET == addr.ss_family)
+                    {
+                        struct sockaddr_in *saddr = (struct sockaddr_in *)&addr;
+                        inet_ntop(saddr->sin_family, &saddr->sin_addr, s, INET6_ADDRSTRLEN);
+                        port = saddr->sin_port;
+                    }
+                    else if (AF_INET6 == addr.ss_family)
+                    {
+                        struct sockaddr_in6 *saddr = (struct sockaddr_in6 *)&addr;
+                        inet_ntop(saddr->sin6_family, &saddr->sin6_addr, s, INET6_ADDRSTRLEN);
+                        port = saddr->sin6_port;
+                    }
+
+                    fprintf(stderr, "%d bytes received from [%s]:%hu\r\n", numBytes, s, port);
+
                     output_buffer(stderr, buffer, numBytes);
 
                     connP = connection_find(connList, &addr, addrLen);
@@ -801,12 +840,13 @@ int main(int argc, char *argv[])
             }
             else if (FD_ISSET(STDIN_FILENO, &readfds))
             {
-                numBytes = read(STDIN_FILENO, buffer, MAX_PACKET_SIZE);
+                numBytes = read(STDIN_FILENO, buffer, MAX_PACKET_SIZE - 1);
 
                 if (numBytes > 1)
                 {
-                    buffer[numBytes - 1] = 0;
-                    handle_command(commands, buffer);
+                    buffer[numBytes] = 0;
+                    fprintf(stdout, "STDIN %d bytes '%s'\r\n> ", numBytes, buffer);
+                    handle_command(commands, (char*)buffer);
                 }
                 if (g_quit == 0)
                 {

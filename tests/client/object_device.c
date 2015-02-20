@@ -55,6 +55,7 @@
  */
 
 #include "liblwm2m.h"
+#include "lwm2mclient.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -81,9 +82,34 @@
 #define PRV_OFFSET_MAXLEN   7 //+HH:MM\0 at max
 #define PRV_TLV_BUFFER_SIZE 128
 
+// related to TS RC 20131210-C (ATTENTION changes in -D!)
+// Object Id
+#define OBJ_DEVICE_ID              3
+// Resource Id's:
+#define RES_O_MANUFACTURER         0
+#define RES_O_MODEL_NUMBER         1
+#define RES_O_SERIAL_NUMBER        2
+#define RES_O_FIRMWARE_VERSION     3
+#define RES_M_REBOOT               4
+#define RES_O_FACTORY_RESET        5
+#define RES_O_AVL_POWER_SOURCES    6
+#define RES_O_POWER_SOURCE_VOLTAGE 7
+#define RES_O_POWER_SOURCE_CURRENT 8
+#define RES_O_BATTERY_LEVEL        9
+#define RES_O_MEMORY_FREE          10
+#define RES_M_ERROR_CODE           11
+#define RES_O_RESET_ERROR_CODE     12
+#define RES_O_CURRENT_TIME         13
+#define RES_O_UTC_OFFSET           14
+#define RES_O_TIMEZONE             15
+#define RES_M_BINDING_MODES        16
+
 typedef struct
 {
+    int64_t free_memory;
+    int64_t error;
     int64_t time;
+    uint8_t battery_level;
     char time_offset[PRV_OFFSET_MAXLEN];
 } device_data_t;
 
@@ -135,41 +161,41 @@ static uint8_t prv_set_value(lwm2m_tlv_t * tlvP,
     // a simple switch structure is used to respond at the specified resource asked
     switch (tlvP->id)
     {
-    case 0:
+    case RES_O_MANUFACTURER:
         tlvP->value = PRV_MANUFACTURER;
         tlvP->length = strlen(PRV_MANUFACTURER);
         tlvP->flags = LWM2M_TLV_FLAG_STATIC_DATA;
         tlvP->type = LWM2M_TYPE_RESSOURCE;
         return COAP_205_CONTENT;
 
-    case 1:
+    case RES_O_MODEL_NUMBER:
         tlvP->value = PRV_MODEL_NUMBER;
         tlvP->length = strlen(PRV_MODEL_NUMBER);
         tlvP->flags = LWM2M_TLV_FLAG_STATIC_DATA;
         tlvP->type = LWM2M_TYPE_RESSOURCE;
         return COAP_205_CONTENT;
 
-    case 2:
+    case RES_O_SERIAL_NUMBER:
         tlvP->value = PRV_SERIAL_NUMBER;
         tlvP->length = strlen(PRV_SERIAL_NUMBER);
         tlvP->flags = LWM2M_TLV_FLAG_STATIC_DATA;
         tlvP->type = LWM2M_TYPE_RESSOURCE;
         return COAP_205_CONTENT;
 
-    case 3:
+    case RES_O_FIRMWARE_VERSION:
         tlvP->value = PRV_FIRMWARE_VERSION;
         tlvP->length = strlen(PRV_FIRMWARE_VERSION);
         tlvP->flags = LWM2M_TLV_FLAG_STATIC_DATA;
         tlvP->type = LWM2M_TYPE_RESSOURCE;
         return COAP_205_CONTENT;
 
-    case 4:
+    case RES_M_REBOOT:
         return COAP_405_METHOD_NOT_ALLOWED;
 
-    case 5:
+    case RES_O_FACTORY_RESET:
         return COAP_405_METHOD_NOT_ALLOWED;
 
-    case 6:
+    case RES_O_AVL_POWER_SOURCES: 
     {
         lwm2m_tlv_t * subTlvP;
 
@@ -203,7 +229,7 @@ static uint8_t prv_set_value(lwm2m_tlv_t * tlvP,
         return COAP_205_CONTENT;
     }
 
-    case 7:
+    case RES_O_POWER_SOURCE_VOLTAGE:
     {
         lwm2m_tlv_t * subTlvP;
 
@@ -237,7 +263,7 @@ static uint8_t prv_set_value(lwm2m_tlv_t * tlvP,
         return COAP_205_CONTENT;
     }
 
-    case 8:
+    case RES_O_POWER_SOURCE_CURRENT:
     {
         lwm2m_tlv_t * subTlvP;
 
@@ -271,21 +297,21 @@ static uint8_t prv_set_value(lwm2m_tlv_t * tlvP,
         return COAP_205_CONTENT;
     }
 
-    case 9:
-        lwm2m_tlv_encode_int(PRV_BATTERY_LEVEL, tlvP);
+    case RES_O_BATTERY_LEVEL:
+        lwm2m_tlv_encode_int(devDataP->battery_level, tlvP);
         tlvP->type = LWM2M_TYPE_RESSOURCE;
 
         if (0 != tlvP->length) return COAP_205_CONTENT;
         else return COAP_500_INTERNAL_SERVER_ERROR;
 
-    case 10:
-        lwm2m_tlv_encode_int(PRV_MEMORY_FREE, tlvP);
+    case RES_O_MEMORY_FREE:
+        lwm2m_tlv_encode_int(devDataP->free_memory, tlvP);
         tlvP->type = LWM2M_TYPE_RESSOURCE;
 
         if (0 != tlvP->length) return COAP_205_CONTENT;
         else return COAP_500_INTERNAL_SERVER_ERROR;
 
-    case 11:
+    case RES_M_ERROR_CODE:
     {
         lwm2m_tlv_t * subTlvP;
 
@@ -294,7 +320,7 @@ static uint8_t prv_set_value(lwm2m_tlv_t * tlvP,
         subTlvP[0].flags = 0;
         subTlvP[0].id = 0;
         subTlvP[0].type = LWM2M_TYPE_RESSOURCE_INSTANCE;
-        lwm2m_tlv_encode_int(PRV_ERROR_CODE, subTlvP);
+        lwm2m_tlv_encode_int(devDataP->error, subTlvP);
         if (0 == subTlvP[0].length)
         {
             lwm2m_tlv_free(2, subTlvP);
@@ -308,31 +334,31 @@ static uint8_t prv_set_value(lwm2m_tlv_t * tlvP,
 
         return COAP_205_CONTENT;
     }        
-    case 12:
+    case RES_O_RESET_ERROR_CODE:
         return COAP_405_METHOD_NOT_ALLOWED;
 
-    case 13:
-        lwm2m_tlv_encode_int(time(NULL), tlvP);
+    case RES_O_CURRENT_TIME:
+        lwm2m_tlv_encode_int(time(NULL) + devDataP->time, tlvP);
         tlvP->type = LWM2M_TYPE_RESSOURCE;
 
         if (0 != tlvP->length) return COAP_205_CONTENT;
         else return COAP_500_INTERNAL_SERVER_ERROR;
 
-    case 14:
+    case RES_O_UTC_OFFSET:
         tlvP->value = devDataP->time_offset;
         tlvP->length = strlen(devDataP->time_offset);
         tlvP->flags = LWM2M_TLV_FLAG_STATIC_DATA;
         tlvP->type = LWM2M_TYPE_RESSOURCE;
         return COAP_205_CONTENT;
 
-    case 15:
+    case RES_O_TIMEZONE:
         tlvP->value  = PRV_TIME_ZONE;
         tlvP->length = strlen(PRV_TIME_ZONE);
         tlvP->flags  = LWM2M_TLV_FLAG_STATIC_DATA;
         tlvP->type   = LWM2M_TYPE_RESSOURCE;
         return COAP_205_CONTENT;
       
-    case 16:
+    case RES_M_BINDING_MODES:
         tlvP->value = PRV_BINDING_MODE;
         tlvP->length = strlen(PRV_BINDING_MODE);
         tlvP->flags = LWM2M_TLV_FLAG_STATIC_DATA;
@@ -403,9 +429,10 @@ static uint8_t prv_device_write(uint16_t instanceId,
     {
         switch (dataArray[i].id)
         {
-        case 13:
+        case RES_O_CURRENT_TIME:
             if (1 == lwm2m_tlv_decode_int(dataArray + i, &((device_data_t*)(objectP->userData))->time))
             {
+                ((device_data_t*)(objectP->userData))->time -= time(NULL);
                 result = COAP_204_CHANGED;
             }
             else
@@ -414,7 +441,7 @@ static uint8_t prv_device_write(uint16_t instanceId,
             }
             break;
 
-        case 14:
+        case RES_O_UTC_OFFSET:
             if (1 == prv_check_time_offset(dataArray[i].value, dataArray[i].length))
             {
                 strncpy(((device_data_t*)(objectP->userData))->time_offset, dataArray[i].value, dataArray[i].length);
@@ -427,8 +454,11 @@ static uint8_t prv_device_write(uint16_t instanceId,
             }
             break;
 
-        case 15:    //RES_O_TIMEZONE:
-			//ToDo IANA TZ Format
+        case RES_O_TIMEZONE:
+            //ToDo IANA TZ Format
+            result = COAP_501_NOT_IMPLEMENTED;
+            break;
+            
         default:
             result = COAP_405_METHOD_NOT_ALLOWED;
         }
@@ -455,14 +485,16 @@ static uint8_t prv_device_execute(uint16_t instanceId,
 
     switch (resourceId)
     {
-    case 4:
+    case RES_M_REBOOT:
         fprintf(stdout, "\n\t REBOOT\r\n\n");
+        g_reboot = 1;
         return COAP_204_CHANGED;
-    case 5:
+    case RES_O_FACTORY_RESET:
         fprintf(stdout, "\n\t FACTORY RESET\r\n\n");
         return COAP_204_CHANGED;
-    case 12:
+    case RES_O_RESET_ERROR_CODE:
         fprintf(stdout, "\n\t RESET ERROR CODE\r\n\n");
+        ((device_data_t*)(objectP->userData))->error = 0;
         return COAP_204_CHANGED;
     default:
         return COAP_405_METHOD_NOT_ALLOWED;
@@ -486,7 +518,7 @@ lwm2m_object_t * get_object_device()
          * It assign his unique ID
          * The 3 is the standard ID for the mandatory object "Object device".
          */
-        deviceObj->objID = 3;
+        deviceObj->objID = OBJ_DEVICE_ID;
 
         /*
          * And the private function that will access the object.
@@ -503,6 +535,9 @@ lwm2m_object_t * get_object_device()
          */
         if (NULL != deviceObj->userData)
         {
+            ((device_data_t*)deviceObj->userData)->battery_level = PRV_BATTERY_LEVEL;
+            ((device_data_t*)deviceObj->userData)->free_memory = PRV_MEMORY_FREE;
+            ((device_data_t*)deviceObj->userData)->error = PRV_ERROR_CODE;
             ((device_data_t*)deviceObj->userData)->time = 1367491215;
             strcpy(((device_data_t*)deviceObj->userData)->time_offset, "+01:00");
         }
@@ -514,4 +549,60 @@ lwm2m_object_t * get_object_device()
     }
 
     return deviceObj;
+}
+
+uint8_t device_change(lwm2m_tlv_t * dataArray,
+                      lwm2m_object_t * objectP)
+{
+    uint8_t result;
+
+    switch (dataArray->id)
+    {
+    case RES_O_BATTERY_LEVEL:
+            {
+                int64_t value;
+                if (1 == lwm2m_tlv_decode_int(dataArray, &value))
+                {
+                    if ((0 <= value) && (100 >= value))
+                    {
+                        ((device_data_t*)(objectP->userData))->battery_level = value;
+                        result = COAP_204_CHANGED;
+                    }
+                    else
+                    {
+                        result = COAP_400_BAD_REQUEST;
+                    }
+                }
+                else
+                {
+                    result = COAP_400_BAD_REQUEST;
+                }
+            }
+            break;
+        case RES_M_ERROR_CODE:
+            if (1 == lwm2m_tlv_decode_int(dataArray, &((device_data_t*)(objectP->userData))->error))
+            {
+                result = COAP_204_CHANGED;
+            }
+            else
+            {
+                result = COAP_400_BAD_REQUEST;
+            }
+            break;
+        case RES_O_MEMORY_FREE:
+            if (1 == lwm2m_tlv_decode_int(dataArray, &((device_data_t*)(objectP->userData))->free_memory))
+            {
+                result = COAP_204_CHANGED;
+            }
+            else
+            {
+                result = COAP_400_BAD_REQUEST;
+            }
+            break;
+        default:
+            result = COAP_405_METHOD_NOT_ALLOWED;
+            break;
+        }
+    
+    return result;
 }
