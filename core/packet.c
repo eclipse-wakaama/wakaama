@@ -270,16 +270,15 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
                 handle_reset(contextP, fromSessionH, message);
             }
 
+            if (!transaction_handle_response(contextP, fromSessionH, message))
+            {
 #ifdef LWM2M_SERVER_MODE
-            if ( (message->code == COAP_204_CHANGED || message->code == COAP_205_CONTENT)
-             && IS_OPTION(message, COAP_OPTION_OBSERVE))
-            {
-                handle_observe_notify(contextP, fromSessionH, message);
-            }
-            else
+                if ( (message->code == COAP_204_CHANGED || message->code == COAP_205_CONTENT)
+                 && IS_OPTION(message, COAP_OPTION_OBSERVE))
+                {
+                    handle_observe_notify(contextP, fromSessionH, message);
+                }
 #endif
-            {
-                transaction_handle_response(contextP, fromSessionH, message);
             }
         } /* Request or Response */
 
