@@ -67,16 +67,14 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
             int length = 0;
 
             result = object_read(contextP, uriP, &buffer, &length);
+            coap_set_payload(response, buffer, length);
             if (result == COAP_205_CONTENT)
             {
+                coap_set_payload(response, buffer, length);
+                // lwm2m_handle_packet will free buffer
                 if (IS_OPTION(message, COAP_OPTION_OBSERVE))
                 {
                     result = handle_observe_request(contextP, uriP, fromSessionH, message, response);
-                }
-                if (result == COAP_205_CONTENT)
-                {
-                    coap_set_payload(response, buffer, length);
-                    // lwm2m_handle_packet will free buffer
                 }
             }
         }
