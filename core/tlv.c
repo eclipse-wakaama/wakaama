@@ -187,7 +187,7 @@ int lwm2m_intToTLV(lwm2m_tlv_type_t type,
     return lwm2m_opaqueToTLV(type, data_buffer + (_PRV_64BIT_BUFFER_SIZE - length), length, id, buffer, buffer_len);
 }
 
-int lwm2m_decodeTLV(char * buffer,
+int lwm2m_decodeTLV(uint8_t * buffer,
                     size_t buffer_len,
                     lwm2m_tlv_type_t * oType,
                     uint16_t * oID,
@@ -218,7 +218,7 @@ int lwm2m_decodeTLV(char * buffer,
         return 0;
     }
 
-    if ((uint8_t)(buffer[0]&0x20) == 0x20)
+    if ((buffer[0]&0x20) == 0x20)
     {
         // id is 16 bits long
         if (buffer_len < 3) return 0;
