@@ -72,7 +72,12 @@
 #include <errno.h>
 #include <signal.h>
 
-#define MAX_PACKET_SIZE 128 //ensure sync with: er_coap_13.h REST_MAX_CHUNK_SIZE!
+/*
+ * Bugfix: REST_MAX_CHUNK_SIZE is the size of the payload!
+ * ensure sync with: er_coap_13.h COAP_MAX_PACKET_SIZE!
+ * or internals.h LWM2M_MAX_PACKET_SIZE!
+ */
+#define MAX_PACKET_SIZE 198
 
 int g_reboot = 0;
 static int g_quit = 0;
