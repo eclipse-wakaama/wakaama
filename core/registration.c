@@ -410,7 +410,7 @@ void registration_deregister(lwm2m_context_t * contextP,
     contextP->transactionList = (lwm2m_transaction_t *)LWM2M_LIST_ADD(contextP->transactionList, transaction);
     if (transaction_send(contextP, transaction) == 0)
     {
-        serverP->status = STATE_REG_PENDING;
+        serverP->status = STATE_DEREG_PENDING;
         serverP->mid = transaction->mID;
     }
 }
