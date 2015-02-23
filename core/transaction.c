@@ -194,7 +194,7 @@ void transaction_remove(lwm2m_context_t * contextP,
 }
 
 
-void transaction_handle_response(lwm2m_context_t * contextP,
+int transaction_handle_response(lwm2m_context_t * contextP,
                                  void * fromSessionH,
                                  coap_packet_t * message)
 {
@@ -241,12 +241,13 @@ void transaction_handle_response(lwm2m_context_t * contextP,
                     transaction_remove(contextP, transacP);
                 }
                 // we found our guy, exit
-                return;
+                return 1;
             }
         }
 
         transacP = transacP->next;
     }
+    return 0;
 }
 
 int transaction_send(lwm2m_context_t * contextP,
