@@ -146,6 +146,9 @@ static void prv_handleRegistrationReply(lwm2m_transaction_t * transacP,
             if (packet->code == CREATED_2_01)
             {
                 targetP->status = STATE_REGISTERED;
+                if (NULL != targetP->location) {
+                    lwm2m_free(targetP->location);
+                }
                 targetP->location = coap_get_multi_option_as_string(packet->location_path);
 
                 if (0 == lwm2m_gettimeofday(&tv, NULL)) 
