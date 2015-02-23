@@ -79,6 +79,7 @@
  */
 #define MAX_PACKET_SIZE 198
 
+
 int g_reboot = 0;
 static int g_quit = 0;
 
@@ -346,34 +347,30 @@ syntax_error:
     fprintf(stdout, "Syntax error !\n");
 }
 
-static void update_battery_level(lwm2m_context_t * context,
-                                int enable)
+static void update_battery_level(lwm2m_context_t * context)
 {
-    if (enable)
+    static time_t next_change_time = 0;
+    struct timeval tv;
+
+    lwm2m_gettimeofday(&tv, NULL);
+
+    if (next_change_time < tv.tv_sec)
     {
-        static time_t next_change_time = 0;
-        struct timeval tv;
+        char value[15];
+        int valueLength;
+        lwm2m_uri_t uri;
+        int level = rand() % 100;
 
-        lwm2m_gettimeofday(&tv, NULL);
-
-        if (next_change_time < tv.tv_sec)
+        if (0 > level) level = -level;
+        if (lwm2m_stringToUri("/3/0/9", 6, &uri))
         {
-            char value[15];
-            int valueLength;
-            lwm2m_uri_t uri;
-            int level = rand() % 100;
-
-            if (0 > level) level = -level;
-            if (lwm2m_stringToUri("/3/0/9", 6, &uri))
-            {
-                valueLength = sprintf(value, "%d", level);
-                fprintf(stderr, "New Battery Level: %d\n", level);
-                handle_value_changed(context, &uri, value, valueLength);
-            }
-            level = rand() % 20;
-            if (0 > level) level = -level;
-            next_change_time = tv.tv_sec + level + 10;
+            valueLength = sprintf(value, "%d", level);
+            fprintf(stderr, "New Battery Level: %d\n", level);
+            handle_value_changed(context, &uri, value, valueLength);
         }
+        level = rand() % 20;
+        if (0 > level) level = -level;
+        next_change_time = tv.tv_sec + level + 10;
     }
 }
 
@@ -569,10 +566,14 @@ int main(int argc, char *argv[])
                 tv.tv_sec = reboot_time - tv.tv_sec;
             }
         }
-        else
+        else if (batterylevelchanging) 
         {
-            update_battery_level(lwm2mH, batterylevelchanging);
+            update_battery_level(lwm2mH);
             tv.tv_sec = 5;
+        }
+        else 
+        {
+            tv.tv_sec = 60;
         }
         tv.tv_usec = 0;
 
@@ -580,8 +581,6 @@ int main(int argc, char *argv[])
         FD_SET(data.sock, &readfds);
         FD_SET(STDIN_FILENO, &readfds);
 
-        tv.tv_sec = 60;
-        tv.tv_usec = 0;
 
         /*
          * This function does two things:
