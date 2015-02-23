@@ -179,7 +179,8 @@ coap_status_t handle_observe_request(lwm2m_context_t * contextP,
     if (message->token_len == 0) return COAP_400_BAD_REQUEST;
 
     serverP = prv_findServer(contextP, fromSessionH);
-    if (serverP == NULL || serverP->status != STATE_REGISTERED) return COAP_401_UNAUTHORIZED;
+    if (serverP == NULL) return COAP_401_UNAUTHORIZED ;
+    if (serverP->status != STATE_REGISTERED && serverP->status != STATE_REG_UPDATE_PENDING) return COAP_401_UNAUTHORIZED ;
 
     observedP = prv_findObserved(contextP, uriP);
     if (observedP == NULL)
