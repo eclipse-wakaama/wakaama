@@ -17,6 +17,7 @@
  *    Toby Jaffey - Please refer to git log
  *    Julien Vermillard - Please refer to git log
  *    Bosch Software Innovations GmbH - Please refer to git log
+ *    Pascal Rieux - Please refer to git log
  *******************************************************************************/
 
 /*
@@ -299,11 +300,13 @@ int lwm2m_stringToUri(const char * buffer, size_t buffer_len, lwm2m_uri_t * uriP
 typedef struct _lwm2m_object_t lwm2m_object_t;
 
 typedef uint8_t (*lwm2m_read_callback_t) (uint16_t instanceId, int * numDataP, lwm2m_tlv_t ** dataArrayP, lwm2m_object_t * objectP);
-typedef uint8_t (*lwm2m_write_callback_t) (uint16_t instanceId, int numData, lwm2m_tlv_t * dataArray, lwm2m_object_t * objectP);
+typedef uint8_t (*lwm2m_write_callback_t) (uint16_t instanceId, int numData, lwm2m_tlv_t * dataArray, lwm2m_object_t * objectP, bool bootstrapPending);
 typedef uint8_t (*lwm2m_execute_callback_t) (uint16_t instanceId, uint16_t resourceId, char * buffer, int length, lwm2m_object_t * objectP);
 typedef uint8_t (*lwm2m_create_callback_t) (uint16_t instanceId, int numData, lwm2m_tlv_t * dataArray, lwm2m_object_t * objectP);
 typedef uint8_t (*lwm2m_delete_callback_t) (uint16_t instanceId, lwm2m_object_t * objectP);
 typedef void (*lwm2m_close_callback_t) (lwm2m_object_t * objectP);
+typedef void (*lwm2m_copy_callback_t) (lwm2m_object_t * objectDest, lwm2m_object_t * objectSrc);
+typedef void (*lwm2m_print_callback_t) (lwm2m_object_t * objectP);
 
 
 struct _lwm2m_object_t
@@ -316,6 +319,8 @@ struct _lwm2m_object_t
     lwm2m_create_callback_t  createFunc;
     lwm2m_delete_callback_t  deleteFunc;
     lwm2m_close_callback_t   closeFunc;
+    lwm2m_copy_callback_t    copyFunc;
+    lwm2m_print_callback_t   printFunc;
     void *                   userData;
 };
 
@@ -333,7 +338,8 @@ typedef enum
     STATE_REGISTERED,         // successfully registered
     STATE_REG_FAILED,         // last registration failed
     STATE_REG_UPDATE_PENDING, // registration update pending
-    STATE_DEREG_PENDING       // deregistration pending
+    STATE_DEREG_PENDING,      // deregistration pending
+    STATE_NOT_BOOTSTRAPED
 } lwm2m_status_t;
 
 typedef enum
@@ -466,7 +472,6 @@ typedef struct _lwm2m_watcher_
 } lwm2m_watcher_t;
 
 typedef struct _lwm2m_observed_
-
 {
     struct _lwm2m_observed_ * next;
 
@@ -474,6 +479,14 @@ typedef struct _lwm2m_observed_
     lwm2m_watcher_t * watcherList;
 } lwm2m_observed_t;
 
+typedef enum {
+    NOT_BOOTSTRAPPED = 0,
+    BOOTSTRAP_REQUESTED,
+    BOOTSTRAP_CLIENT_HOLD_OFF,
+    BOOTSTRAP_PENDING,
+    BOOTSTRAP_FAILED,
+    BOOTSTRAPPED
+} lwm2m_bootstrap_state_t;
 
 /*
  * LWM2M Context
@@ -489,12 +502,16 @@ typedef struct
 {
     int    socket;
 #ifdef LWM2M_CLIENT_MODE
+    lwm2m_bootstrap_state_t bsState;
+    struct timeval      bsStart;
     char *              endpointName;
     char *              msisdn;
     lwm2m_server_t *    bootstrapServerList;
     lwm2m_server_t *    serverList;
     lwm2m_object_t **   objectList;
+    lwm2m_object_t **   objectListBackup;
     uint16_t            numObject;
+    uint16_t            numObjectBackup;
     lwm2m_observed_t *  observedList;
 #endif
 #ifdef LWM2M_SERVER_MODE
@@ -513,6 +530,7 @@ typedef struct
 
 // initialize a liblwm2m context.
 lwm2m_context_t * lwm2m_init(lwm2m_connect_server_callback_t connectCallback, lwm2m_buffer_send_callback_t bufferSendCallback, void * userData);
+
 // close a liblwm2m context.
 void lwm2m_close(lwm2m_context_t * contextP);
 
@@ -529,6 +547,12 @@ int lwm2m_configure(lwm2m_context_t * contextP, char * endpointName, char * msis
 
 // create objects for known LWM2M Servers.
 int lwm2m_start(lwm2m_context_t * contextP);
+
+// manage a bootstrap session
+int lwm2m_bootstrap(lwm2m_context_t * contextP);
+
+// check if the server registrations are outdated and needs to be renewed
+int lwm2m_update_registrations(lwm2m_context_t * contextP, uint32_t currentTime, struct timeval * timeoutP);
 
 // send a registration update to the server specified by the server short identifier
 int lwm2m_update_registration(lwm2m_context_t * contextP, uint16_t shortServerID);

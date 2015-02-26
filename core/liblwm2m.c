@@ -15,6 +15,7 @@
  *    Fabien Fleutot - Please refer to git log
  *    Simon Bernard - Please refer to git log
  *    Toby Jaffey - Please refer to git log
+ *    Pascal Rieux - Please refer to git log
  *    
  *******************************************************************************/
 
@@ -84,51 +85,130 @@ lwm2m_context_t * lwm2m_init(lwm2m_connect_server_callback_t connectCallback,
     return contextP;
 }
 
-void lwm2m_close(lwm2m_context_t * contextP)
-{
 #ifdef LWM2M_CLIENT_MODE
-    int i;
-
-    for (i = 0 ; i < contextP->numObject ; i++)
-    {
-        if (NULL != contextP->objectList[i]->closeFunc)
-        {
-            contextP->objectList[i]->closeFunc(contextP->objectList[i]);
+void lwm2m_delete_object_list_content(lwm2m_context_t * context,
+        bool isBackup,
+        bool securityAndServerOnly) {
+    lwm2m_object_t ** objectList = isBackup ? context->objectListBackup : context->objectList;
+    int objectCount = isBackup ? context->numObjectBackup : context->numObject;
+    if (NULL != objectList) {
+        int i;
+        for (i = 0 ; i < objectCount ; i++) {
+            if (NULL != objectList[i]) {
+                if (!securityAndServerOnly ||
+                        (securityAndServerOnly && ((objectList[i]->objID == 0) || objectList[i]->objID == 1))) {
+                    if (NULL != objectList[i]->closeFunc) {
+                        objectList[i]->closeFunc(objectList[i]);
+                    }
+                }
+                /*
+                 * Let's assume that if we want to delete ALL objects
+                 * we need to free objects as well
+                 */
+                if (!securityAndServerOnly) {
+                    lwm2m_free(objectList[i]);
+                    objectList[i] = NULL;
+                }
+            }
         }
-        lwm2m_free(contextP->objectList[i]);
     }
+}
 
-    while (NULL != contextP->serverList)
-    {
-        lwm2m_server_t * targetP;
-
-        targetP = contextP->serverList;
-        contextP->serverList = contextP->serverList->next;
-
-        registration_deregister(contextP, targetP);
-
-        if (NULL != targetP->location) lwm2m_free(targetP->location);
-        lwm2m_free(targetP);
+void lwm2m_deregister(lwm2m_context_t * context) {
+    lwm2m_server_t * server = context->serverList;
+    while (NULL != server){
+        registration_deregister(context, server);
+        server = server->next;
     }
+}
 
+void delete_server_list(lwm2m_context_t * context) {
+    while (NULL != context->serverList){
+        lwm2m_server_t * server;
+        server = context->serverList;
+        context->serverList = context->serverList->next;
+        if (NULL != server->location) {
+            lwm2m_free(server->location);
+        }
+        lwm2m_free(server);
+        server = NULL;
+    }
+    lwm2m_free(context->serverList);
+    context->serverList = NULL;
+}
+
+<<<<<<< HEAD
     LWM2M_LIST_FREE(contextP->bootstrapServerList);
+=======
+void delete_bootstrap_server_list(lwm2m_context_t * contextP) {
+    if (NULL != contextP->bootstrapServerList) {
+        while (NULL != contextP->bootstrapServerList) {
+            lwm2m_server_t * targetP;
 
-    while (NULL != contextP->observedList)
-    {
+            targetP = contextP->bootstrapServerList;
+            contextP->bootstrapServerList = contextP->bootstrapServerList->next;
+
+            lwm2m_free(targetP);
+            targetP = NULL;
+        }
+        lwm2m_free(contextP->bootstrapServerList);
+        contextP->bootstrapServerList = NULL;
+    }
+}
+>>>>>>> device initiated bootstrap
+
+void delete_observed_list(lwm2m_context_t * contextP) {
+    while (NULL != contextP->observedList) {
         lwm2m_observed_t * targetP;
 
         targetP = contextP->observedList;
         contextP->observedList = contextP->observedList->next;
 
+<<<<<<< HEAD
         LWM2M_LIST_FREE(targetP->watcherList);
 
-        lwm2m_free(targetP);
-    }
+=======
+        while (NULL != targetP->watcherList) {
+            lwm2m_watcher_t * watcherP;
 
-   if (NULL != contextP->objectList)
-    {
-        lwm2m_free(contextP->objectList);
+            watcherP = targetP->watcherList;
+            targetP->watcherList = targetP->watcherList->next;
+            lwm2m_free(watcherP);
+            watcherP = NULL;
+        }
+>>>>>>> device initiated bootstrap
+        lwm2m_free(targetP);
+        targetP = NULL;
     }
+}
+#endif
+
+void delete_transaction_list(lwm2m_context_t * context) {
+    while (NULL != context->transactionList) {
+        lwm2m_transaction_t * transaction;
+
+        transaction = context->transactionList;
+        context->transactionList = context->transactionList->next;
+        transaction_free(transaction);
+    }
+}
+
+void lwm2m_close(lwm2m_context_t * contextP)
+{
+    int i;
+
+#ifdef LWM2M_CLIENT_MODE
+
+    lwm2m_deregister(contextP);
+    delete_server_list(contextP);
+    delete_bootstrap_server_list(contextP);
+
+    delete_observed_list(contextP);
+
+    lwm2m_delete_object_list_content(contextP, false, false);
+    lwm2m_free(contextP->objectList);
+    lwm2m_delete_object_list_content(contextP, true, false);
+    lwm2m_free(contextP->objectListBackup);
 
     lwm2m_free(contextP->endpointName);
 #endif
@@ -145,16 +225,7 @@ void lwm2m_close(lwm2m_context_t * contextP)
     }
 #endif
 
-    while (NULL != contextP->transactionList)
-    {
-        lwm2m_transaction_t * transacP;
-
-        transacP = contextP->transactionList;
-        contextP->transactionList = contextP->transactionList->next;
-
-        transaction_free(transacP);
-    }
-
+    delete_transaction_list(contextP);
     lwm2m_free(contextP);
 }
 
@@ -210,8 +281,61 @@ int lwm2m_configure(lwm2m_context_t * contextP,
         contextP->endpointName = NULL;
         return COAP_500_INTERNAL_SERVER_ERROR;
     }
-
+    contextP->objectListBackup = NULL;
     return COAP_NO_ERROR;
+}
+
+void lwm2m_backup_objects(lwm2m_context_t * context)
+{
+    uint16_t i;
+    lwm2m_object_t * objectListBackup[context->numObject];
+
+    if (NULL == context->objectListBackup) {
+        context->objectListBackup = (lwm2m_object_t **)lwm2m_malloc(context->numObject * sizeof(lwm2m_object_t *));
+        for (i = 0; i < context->numObject; i++) {
+            context->objectListBackup[i] = (lwm2m_object_t *)lwm2m_malloc(sizeof(lwm2m_object_t));
+            memset(context->objectListBackup[i], 0, sizeof(lwm2m_object_t));
+        }
+    }
+
+    /*
+     * Delete previous backup content of objects 0 (security) and 1 (server)
+     */
+    lwm2m_delete_object_list_content(context, true, true);
+
+    /*
+     * Backup content of objects 0 (security) and 1 (server)
+     */
+    for (i = 0; i < context->numObject; i++) {
+        if ((context->objectList[i]->objID == 0) || (context->objectList[i]->objID == 1)) {
+            context->objectList[i]->copyFunc(context->objectListBackup[i], context->objectList[i]);
+        }
+    }
+
+    context->numObjectBackup = context->numObject;
+}
+
+void lwm2m_restore_objects(lwm2m_context_t * context)
+{
+    uint16_t i;
+    lwm2m_object_t * objectList[context->numObjectBackup];
+
+    /*
+     * Delete current content of objects 0 (security) and 1 (server)
+     */
+    lwm2m_delete_object_list_content(context, false, true);
+
+    /*
+     * Restore content  of objects 0 (security) and 1 (server)
+     */
+    for (i = 0; i < context->numObjectBackup; i++) {
+        if ((context->objectList[i]->objID == 0) || (context->objectList[i]->objID == 1)) {
+            context->objectList[i]->copyFunc(context->objectList[i], context->objectListBackup[i]);
+        }
+    }
+
+    object_getServers(context);
+    LOG("[BOOTSTRAP] ObjectList restored\r\n");
 }
 #endif
 
@@ -263,7 +387,11 @@ int lwm2m_step(lwm2m_context_t * contextP,
     }
 
 #ifdef LWM2M_CLIENT_MODE
-    registration_update(contextP, tv_sec, timeoutP);
+    if ((contextP->bsState != BOOTSTRAP_CLIENT_HOLD_OFF) && (contextP->bsState != BOOTSTRAP_PENDING)) {
+        registration_update(contextP, tv_sec, timeoutP);
+//        lwm2m_update_registrations(contextP, currentTime.tv_sec, timeoutP);
+    }
+    lwm2m_update_bootstrap_state(contextP, tv_sec, timeoutP);
 #endif
 
 #ifdef LWM2M_SERVER_MODE
@@ -286,7 +414,11 @@ int lwm2m_step(lwm2m_context_t * contextP,
         {
             time_t interval;
 
+<<<<<<< HEAD
             interval = clientP->endOfLife - tv_sec;
+=======
+            interval = clientP->endOfLife - currentTime.tv_sec;
+>>>>>>> device initiated bootstrap
 
             if (*timeoutP > interval)
             {

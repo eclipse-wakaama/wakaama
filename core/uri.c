@@ -15,6 +15,7 @@
  *    Fabien Fleutot - Please refer to git log
  *    Toby Jaffey - Please refer to git log
  *    Bosch Software Innovations GmbH - Please refer to git log
+ *    Pascal Rieux - Please refer to git log
  *    
  *******************************************************************************/
 
@@ -117,6 +118,14 @@ lwm2m_uri_t * lwm2m_decode_uri(multi_option_t *uriPath)
      && 0 == strncmp(URI_BOOTSTRAP_SEGMENT, uriPath->data, uriPath->len))
     {
         uriP->flag |= LWM2M_URI_FLAG_BOOTSTRAP;
+        uriPath = uriPath->next;
+        if (uriPath != NULL) goto error;
+        return uriP;
+    }
+    else if (URI_DELETE_ALL_SEGMENT_LEN == uriPath->len
+     && 0 == strncmp(URI_DELETE_ALL_SEGMENT, uriPath->data, uriPath->len))
+    {
+        uriP->flag |= LWM2M_URI_FLAG_DELETE_ALL;
         uriPath = uriPath->next;
         if (uriPath != NULL) goto error;
         return uriP;

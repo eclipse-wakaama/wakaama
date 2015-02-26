@@ -16,6 +16,7 @@
  *    Fabien Fleutot - Please refer to git log
  *    Axel Lorente - Please refer to git log
  *    Bosch Software Innovations GmbH - Please refer to git log
+ *    Pascal Rieux - Please refer to git log
  *    
  *******************************************************************************/
 
@@ -56,6 +57,7 @@
 
 #include "liblwm2m.h"
 #include "lwm2mclient.h"
+#include "internals.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -434,7 +436,8 @@ static uint8_t prv_device_read(uint16_t instanceId,
 static uint8_t prv_device_write(uint16_t instanceId,
                                 int numData,
                                 lwm2m_tlv_t * dataArray,
-                                lwm2m_object_t * objectP)
+                                lwm2m_object_t * objectP,
+                                bool bootstrapPending)
 {
     int i;
     uint8_t result;
@@ -523,10 +526,24 @@ static uint8_t prv_device_execute(uint16_t instanceId,
     }
 }
 
-static void prv_device_close(lwm2m_object_t * objectP)
+static void prv_device_close(lwm2m_object_t * objectP) {
+    if (NULL != objectP->userData) {
+        lwm2m_free(objectP->userData);
+        objectP->userData = NULL;
+    }
+}
+
+static void prv_device_print(lwm2m_object_t * objectP)
 {
-    lwm2m_free(objectP->userData);
-    lwm2m_free(objectP->instanceList);
+#ifdef WITH_LOGS
+    device_data_t * data = (device_data_t *)objectP->userData;
+    LOG("  /%u: Device object:\r\n", objectP->objID);
+    if (NULL != data)
+    {
+        LOG("    time: %d, time_offset: %s\r\n",
+                data->time, data->time_offset);
+    }
+#endif
 }
 
 lwm2m_object_t * get_object_device()
@@ -571,8 +588,9 @@ lwm2m_object_t * get_object_device()
         deviceObj->readFunc    = prv_device_read;
         deviceObj->writeFunc   = prv_device_write;
         deviceObj->executeFunc = prv_device_execute;
-        deviceObj->closeFunc   = prv_device_close;
-        deviceObj->userData    = lwm2m_malloc(sizeof(device_data_t));
+        deviceObj->closeFunc = prv_device_close;
+        deviceObj->printFunc = prv_device_print;
+        deviceObj->userData = lwm2m_malloc(sizeof(device_data_t));
 
         /*
          * Also some user data can be stored in the object with a private structure containing the needed variables 
