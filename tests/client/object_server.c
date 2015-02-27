@@ -35,7 +35,6 @@
  */
 
 #include "liblwm2m.h"
-#include "lwm2mclient.h"
 #include "internals.h"
 
 #include <stdlib.h>
@@ -386,14 +385,14 @@ static void prv_server_copy(lwm2m_object_t * objectDest, lwm2m_object_t * object
     }
 }
 
-static void prv_server_print(lwm2m_object_t * objectP)
+void display_server_object(lwm2m_object_t * object)
 {
 #ifdef WITH_LOGS
-    LOG("  /%u: Server object, instances:\r\n", objectP->objID);
-    server_instance_t * serverInstance = (server_instance_t *)objectP->instanceList;
+    LOG("  /%u: Server object, instances:\r\n", object->objID);
+    server_instance_t * serverInstance = (server_instance_t *)object->instanceList;
     while (serverInstance != NULL) {
         LOG("    /%u/%u: instanceId: %u, shortServerId: %u, lifetime: %u, storing: %s, binding: %s\r\n",
-                objectP->objID, serverInstance->instanceId,
+                object->objID, serverInstance->instanceId,
                 serverInstance->instanceId, serverInstance->shortServerId, serverInstance->lifetime,
                 serverInstance->storing ? "true" : "false", serverInstance->binding);
         serverInstance = (server_instance_t *)serverInstance->next;
@@ -439,7 +438,6 @@ lwm2m_object_t * get_server_object(int serverId, const char* binding,
         serverObj->executeFunc = prv_server_execute;
         serverObj->closeFunc = prv_server_close;
         serverObj->copyFunc = prv_server_copy;
-        serverObj->printFunc = prv_server_print;
     }
 
     return serverObj;

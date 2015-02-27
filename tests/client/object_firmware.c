@@ -234,11 +234,11 @@ static void prv_firmware_close(lwm2m_object_t * objectP) {
     }
 }
 
-static void prv_firmware_print(lwm2m_object_t * objectP)
+void display_firmware_object(lwm2m_object_t * object)
 {
 #ifdef WITH_LOGS
-    firmware_data_t * data = (firmware_data_t *)objectP->userData;
-    LOG("  /%u: Firmware object:\r\n", objectP->objID);
+    firmware_data_t * data = (firmware_data_t *)object->userData;
+    LOG("  /%u: Firmware object:\r\n", object->objID);
     if (NULL != data)
     {
         LOG("    state: %u, supported: %u, result: %u\r\n",
@@ -292,7 +292,6 @@ lwm2m_object_t * get_object_firmware()
         firmwareObj->userData = lwm2m_malloc(sizeof(firmware_data_t));
 
         firmwareObj->closeFunc = prv_firmware_close;
-        firmwareObj->printFunc = prv_firmware_print;
 
         /*
          * Also some user data can be stored in the object with a private structure containing the needed variables

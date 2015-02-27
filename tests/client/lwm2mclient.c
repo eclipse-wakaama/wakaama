@@ -407,8 +407,34 @@ static void prv_display_objects(char * buffer,
     if (NULL != lwm2mH->objectList) {
         for (i = 0; i < lwm2mH->numObject; i++) {
             lwm2m_object_t * object = lwm2mH->objectList[i];
-            if ((NULL != object) && (NULL != object->printFunc)) {
-                object->printFunc(object);
+            if (NULL != object) {
+                switch (object->objID)
+                {
+                case LWM2M_SECURITY_OBJECT_ID:
+                    display_security_object(object);
+                    break;
+                case LWM2M_SERVER_OBJECT_ID:
+                    display_server_object(object);
+                    break;
+                case LWM2M_ACL_OBJECT_ID:
+                    break;
+                case LWM2M_DEVICE_OBJECT_ID:
+                    display_device_object(object);
+                    break;
+                case LWM2M_CONN_MONITOR_OBJECT_ID:
+                    break;
+                case LWM2M_FIRMWARE_UPDATE_OBJECT_ID:
+                    display_firmware_object(object);
+                    break;
+                case LWM2M_LOCATION_OBJECT_ID:
+                    display_location_object(object);
+                    break;
+                case LWM2M_CONN_STATS_OBJECT_ID:
+                    break;
+                case TEST_OBJECT_ID:
+                    display_test_object(object);
+                    break;
+                }
             }
         }
     }
@@ -422,8 +448,24 @@ static void prv_display_backup(char * buffer,
     if (NULL != lwm2mH->objectListBackup) {
         for (i = 0; i < lwm2mH->numObjectBackup; i++) {
             lwm2m_object_t * object = lwm2mH->objectListBackup[i];
-            if ((NULL != object) && (NULL != object->printFunc)) {
-                object->printFunc(object);
+            if (NULL != object) {
+                switch (object->objID)
+                {
+                case LWM2M_SECURITY_OBJECT_ID:
+                    display_security_object(object);
+                    break;
+                case LWM2M_SERVER_OBJECT_ID:
+                    display_server_object(object);
+                    break;
+                case LWM2M_ACL_OBJECT_ID:
+                case LWM2M_DEVICE_OBJECT_ID:
+                case LWM2M_CONN_MONITOR_OBJECT_ID:
+                case LWM2M_FIRMWARE_UPDATE_OBJECT_ID:
+                case LWM2M_LOCATION_OBJECT_ID:
+                case LWM2M_CONN_STATS_OBJECT_ID:
+                case TEST_OBJECT_ID:
+                    break;
+                }
             }
         }
     }

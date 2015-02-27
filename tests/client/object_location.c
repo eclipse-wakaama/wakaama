@@ -188,8 +188,8 @@ static uint8_t prv_location_read(uint16_t objInstId,
 static void prv_location_print(lwm2m_object_t * objectP)
 {
 #ifdef WITH_LOGS
-    location_data_t * data = (location_data_t *)objectP->userData;
-    LOG("  /%u: Location object:\r\n", objectP->objID);
+    location_data_t * data = (location_data_t *)object->userData;
+    LOG("  /%u: Location object:\r\n", object->objID);
     if (NULL != data)
     {
         LOG("    latitude: %s, longitude: %s, altitude: %s, uncertainty: %s, timestamp: %u\r\n",

@@ -66,6 +66,7 @@
  */
 
 #include "liblwm2m.h"
+#include "lwm2mclient.h"
 #include "internals.h"
 
 #include <stdio.h>
@@ -288,14 +289,14 @@ static void prv_test_close(lwm2m_object_t * object)
     }
 }
 
-static void prv_test_print(lwm2m_object_t * objectP)
+void display_test_object(lwm2m_object_t * object)
 {
 #ifdef WITH_LOGS
-    LOG("  /%u: Test object, instances:\r\n", objectP->objID);
-    prv_instance_t * instance = (prv_instance_t *)objectP->instanceList;
+    LOG("  /%u: Test object, instances:\r\n", object->objID);
+    prv_instance_t * instance = (prv_instance_t *)object->instanceList;
     while (instance != NULL) {
         LOG("    /%u/%u: shortId: %u, test: %u\r\n",
-                objectP->objID, instance->shortID,
+                object->objID, instance->shortID,
                 instance->shortID, instance->test);
         instance = (prv_instance_t *)instance->next;
     }
@@ -315,7 +316,7 @@ lwm2m_object_t * get_test_object()
 
         memset(testObj, 0, sizeof(lwm2m_object_t));
 
-        testObj->objID = 1024;
+        testObj->objID = TEST_OBJECT_ID;
         for (i=0 ; i < 3 ; i++)
         {
             targetP = (prv_instance_t *)lwm2m_malloc(sizeof(prv_instance_t));
@@ -339,7 +340,6 @@ lwm2m_object_t * get_test_object()
         testObj->createFunc = prv_create;
         testObj->deleteFunc = prv_delete;
         testObj->closeFunc = prv_test_close;
-        testObj->printFunc = prv_test_print;
     }
 
     return testObj;

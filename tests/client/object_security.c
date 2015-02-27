@@ -423,14 +423,14 @@ static void prv_security_copy(lwm2m_object_t * objectDest, lwm2m_object_t * obje
     }
 }
 
-static void prv_security_print(lwm2m_object_t * objectP)
+void display_security_object(lwm2m_object_t * object)
 {
 #ifdef WITH_LOGS
-    LOG("  /%u: Security object, instances:\r\n", objectP->objID);
-    security_instance_t * instance = (security_instance_t *)objectP->instanceList;
+    LOG("  /%u: Security object, instances:\r\n", object->objID);
+    security_instance_t * instance = (security_instance_t *)object->instanceList;
     while (instance != NULL) {
         LOG("    /%u/%u: instanceId: %u, uri: %s, isBootstrap: %s, shortId: %u, clientHoldOffTime: %u\r\n",
-                objectP->objID, instance->instanceId,
+                object->objID, instance->instanceId,
                 instance->instanceId, instance->uri, instance->isBootstrap ? "true" : "false",
                 instance->shortID, instance->clientHoldOffTime);
         instance = (security_instance_t *)instance->next;
@@ -476,7 +476,6 @@ lwm2m_object_t * get_security_object(int serverId, const char* serverUri, bool i
         securityObj->deleteFunc = prv_security_delete;
         securityObj->closeFunc = prv_security_close;
         securityObj->copyFunc = prv_security_copy;
-        securityObj->printFunc = prv_security_print;
     }
 
     return securityObj;

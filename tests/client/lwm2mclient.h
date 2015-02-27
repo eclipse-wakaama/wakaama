@@ -36,22 +36,28 @@ extern int g_reboot;
  */
 extern lwm2m_object_t * get_object_device();
 uint8_t device_change(lwm2m_tlv_t * dataArray, lwm2m_object_t * objectP);
+extern void display_device_object(lwm2m_object_t * objectP);
 /*
  * object_firmware.c
  */
 extern lwm2m_object_t * get_object_firmware();
+extern void display_firmware_object(lwm2m_object_t * objectP);
 /*
  * object_location.c
  */
 extern lwm2m_object_t * get_object_location();
+extern void display_location_object(lwm2m_object_t * objectP);
 /*
  * object_test.c
  */
+#define TEST_OBJECT_ID 1024
 extern lwm2m_object_t * get_test_object();
+extern void display_test_object(lwm2m_object_t * objectP);
 /*
  * object_server.c
  */
 extern lwm2m_object_t * get_server_object(int serverId, const char* binding, int lifetime, bool storing);
+extern void display_server_object(lwm2m_object_t * objectP);
 /*
  * object_connectivity_moni.c
  */
@@ -88,5 +94,6 @@ extern void system_reboot();
  */
 extern lwm2m_object_t * get_security_object();
 extern char * get_server_uri(lwm2m_object_t * objectP, uint16_t serverID);
+extern void display_security_object(lwm2m_object_t * objectP);
 
 #endif /* LWM2MCLIENT_H_ */
