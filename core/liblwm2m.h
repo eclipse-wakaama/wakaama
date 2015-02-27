@@ -339,8 +339,7 @@ typedef enum
     STATE_REGISTERED,         // successfully registered
     STATE_REG_FAILED,         // last registration failed
     STATE_REG_UPDATE_PENDING, // registration update pending
-    STATE_DEREG_PENDING,      // deregistration pending
-    STATE_NOT_BOOTSTRAPED
+    STATE_DEREG_PENDING       // deregistration pending
 } lwm2m_status_t;
 
 typedef enum
