@@ -204,13 +204,14 @@ static uint8_t prv_security_read(uint16_t instanceId,
 static uint8_t prv_security_write(uint16_t instanceId,
                                   int numData,
                                   lwm2m_tlv_t * dataArray,
-                                  lwm2m_object_t * objectP,
-                                  bool bootstrapPending)
+                                  lwm2m_object_t * objectP)
 {
     security_instance_t * targetP;
     int i;
     uint8_t result = COAP_204_CHANGED;
+    bool bootstrapPending;
 
+    bootstrapPending = dataArray->flags & LWM2M_TLV_FLAG_BOOTSTRAPPING != 0;
     targetP = (security_instance_t *)lwm2m_list_find(objectP->instanceList, instanceId);
     if (NULL == targetP) {
         LOG("    >>>> Object with instanceID: %u not found\r\n", instanceId);
@@ -368,7 +369,7 @@ static uint8_t prv_security_create(uint16_t instanceId,
     targetP->instanceId = instanceId;
     objectP->instanceList = LWM2M_LIST_ADD(objectP->instanceList, targetP);
 
-    result = prv_security_write(instanceId, numData, dataArray, objectP, false);
+    result = prv_security_write(instanceId, numData, dataArray, objectP);
 
     if (result != COAP_204_CHANGED)
     {

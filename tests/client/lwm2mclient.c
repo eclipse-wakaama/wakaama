@@ -151,11 +151,14 @@ void handle_value_changed(lwm2m_context_t * lwm2mH,
                 return;
             }
             tlvP->flags = LWM2M_TLV_FLAG_STATIC_DATA | LWM2M_TLV_FLAG_TEXT_FORMAT;
+            if (lwm2mH->bsState == BOOTSTRAP_PENDING) {
+                tlvP->flags |= LWM2M_TLV_FLAG_BOOTSTRAPPING;
+            }
             tlvP->id = uri->resourceId;
             tlvP->length = valueLength;
             tlvP->value = (uint8_t*) value;
 
-            result = object->writeFunc(uri->instanceId, 1, tlvP, object, lwm2mH->bsState == BOOTSTRAP_PENDING);
+            result = object->writeFunc(uri->instanceId, 1, tlvP, object);
             if (COAP_405_METHOD_NOT_ALLOWED == result)
             {
                 switch (uri->objectId)

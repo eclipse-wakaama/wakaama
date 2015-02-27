@@ -222,7 +222,9 @@ coap_status_t object_write(lwm2m_context_t * contextP,
         {
             size = 1;
             tlvP = lwm2m_tlv_new(size);
-            if (tlvP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
+            if (tlvP == NULL) {
+                return COAP_500_INTERNAL_SERVER_ERROR;
+            }
 
             tlvP->flags = LWM2M_TLV_FLAG_TEXT_FORMAT | LWM2M_TLV_FLAG_STATIC_DATA;
             tlvP->type = LWM2M_TYPE_RESSOURCE;
@@ -239,7 +241,10 @@ coap_status_t object_write(lwm2m_context_t * contextP,
         }
     }
     if (result == NO_ERROR) {
-        result = targetP->writeFunc(uriP->instanceId, size, tlvP, targetP, contextP->bsState == BOOTSTRAP_PENDING);
+        if (contextP->bsState == BOOTSTRAP_PENDING) {
+            tlvP->flags |= LWM2M_TLV_FLAG_BOOTSTRAPPING;
+        }
+        result = targetP->writeFunc(uriP->instanceId, size, tlvP, targetP);
         lwm2m_tlv_free(size, tlvP);
     }
     if (contextP->bsState == BOOTSTRAP_PENDING) {

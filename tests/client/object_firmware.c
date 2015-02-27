@@ -139,8 +139,7 @@ static uint8_t prv_firmware_read(uint16_t instanceId,
 static uint8_t prv_firmware_write(uint16_t instanceId,
                                   int numData,
                                   lwm2m_tlv_t * dataArray,
-                                  lwm2m_object_t * objectP,
-                                  bool bootstrapPending)
+                                  lwm2m_object_t * objectP)
 {
     int i;
     bool bvalue;

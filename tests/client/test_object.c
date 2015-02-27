@@ -176,8 +176,7 @@ static uint8_t prv_read(uint16_t instanceId,
 static uint8_t prv_write(uint16_t instanceId,
                          int numData,
                          lwm2m_tlv_t * dataArray,
-                         lwm2m_object_t * objectP,
-                         bool bootstrapPending)
+                         lwm2m_object_t * objectP)
 {
     prv_instance_t * targetP;
     int64_t value;
@@ -240,7 +239,7 @@ static uint8_t prv_create(uint16_t instanceId,
     targetP->shortID = instanceId;
     objectP->instanceList = LWM2M_LIST_ADD(objectP->instanceList, targetP);
 
-    result = prv_write(instanceId, numData, dataArray, objectP, false);
+    result = prv_write(instanceId, numData, dataArray, objectP);
 
     if (result != COAP_204_CHANGED)
     {

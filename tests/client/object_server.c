@@ -176,13 +176,14 @@ static uint8_t prv_set_int_value(lwm2m_tlv_t * dataArray, uint32_t * data) {
 static uint8_t prv_server_write(uint16_t instanceId,
                                 int numData,
                                 lwm2m_tlv_t * dataArray,
-                                lwm2m_object_t * objectP,
-                                bool bootstrapPending)
+                                lwm2m_object_t * objectP)
 {
     server_instance_t * targetP;
     int i;
     uint8_t result;
+    bool bootstrapPending;
 
+    bootstrapPending = dataArray->flags & LWM2M_TLV_FLAG_BOOTSTRAPPING != 0;
     targetP = (server_instance_t *)lwm2m_list_find(objectP->instanceList, instanceId);
     if (NULL == targetP) {
         LOG("    >>>> Object with instanceID: %u not found\r\n", instanceId);
@@ -337,7 +338,7 @@ static uint8_t prv_server_create(uint16_t instanceId,
     serverInstance->instanceId = instanceId;
     objectP->instanceList = LWM2M_LIST_ADD(objectP->instanceList, serverInstance);
 
-    result = prv_server_write(instanceId, numData, dataArray, objectP, false);
+    result = prv_server_write(instanceId, numData, dataArray, objectP);
 
     if (result != COAP_204_CHANGED)
     {

@@ -436,8 +436,7 @@ static uint8_t prv_device_read(uint16_t instanceId,
 static uint8_t prv_device_write(uint16_t instanceId,
                                 int numData,
                                 lwm2m_tlv_t * dataArray,
-                                lwm2m_object_t * objectP,
-                                bool bootstrapPending)
+                                lwm2m_object_t * objectP)
 {
     int i;
     uint8_t result;
