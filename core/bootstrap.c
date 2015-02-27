@@ -52,7 +52,7 @@ int lwm2m_bootstrap(lwm2m_context_t * context) {
 
     // find the first bootstrap server
     lwm2m_server_t * bootstrapServer = context->bootstrapServerList;
-    if (bootstrapServer != NULL) {
+    while (bootstrapServer != NULL) {
         if (bootstrapServer->sessionH == NULL) {
             bootstrapServer->sessionH = context->connectCallback(bootstrapServer->shortID, context->userData);
         }
@@ -78,6 +78,7 @@ int lwm2m_bootstrap(lwm2m_context_t * context) {
         else {
             LOG("No bootstrap session handler found\r\n");
         }
+        bootstrapServer = bootstrapServer->next;
     }
     return NO_ERROR;
 }
