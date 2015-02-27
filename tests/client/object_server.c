@@ -35,8 +35,8 @@
  */
 
 #include "liblwm2m.h"
-#include "internals.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -185,7 +185,9 @@ static uint8_t prv_server_write(uint16_t instanceId,
     bootstrapPending = dataArray->flags & LWM2M_TLV_FLAG_BOOTSTRAPPING != 0;
     targetP = (server_instance_t *)lwm2m_list_find(objectP->instanceList, instanceId);
     if (NULL == targetP) {
-        LOG("    >>>> Object with instanceID: %u not found\r\n", instanceId);
+#ifdef WITH_LOGS
+        fprintf(stderr, "    >>>> Object with instanceID: %u not found\r\n", instanceId);
+#endif
         if (bootstrapPending == true) {
             targetP = (server_instance_t *)lwm2m_malloc(sizeof(server_instance_t));
             if (NULL == targetP) {
@@ -194,7 +196,9 @@ static uint8_t prv_server_write(uint16_t instanceId,
             memset(targetP, 0, sizeof(server_instance_t));
             targetP->instanceId = instanceId;
             objectP->instanceList = LWM2M_LIST_ADD(objectP->instanceList, targetP);
-            LOG("    >>>> new instance created: /%u/%u\r\n", objectP->objID, targetP->instanceId);
+#ifdef WITH_LOGS
+            fprintf(stderr, "    >>>> new instance created: /%u/%u\r\n", objectP->objID, targetP->instanceId);
+#endif
         }
         else {
             return COAP_404_NOT_FOUND;
@@ -211,7 +215,9 @@ static uint8_t prv_server_write(uint16_t instanceId,
                 result = prv_set_int_value(dataArray + i, (uint32_t *)&(targetP->shortServerId));
             }
             else {
-                LOG("    >>>> server is not allowed to write short ID\r\n");
+#ifdef WITH_LOGS
+                fprintf(stderr, "    >>>> server is not allowed to write short ID\r\n");
+#endif
                 result = COAP_405_METHOD_NOT_ALLOWED;
             }
             break;
@@ -388,10 +394,10 @@ static void prv_server_copy(lwm2m_object_t * objectDest, lwm2m_object_t * object
 void display_server_object(lwm2m_object_t * object)
 {
 #ifdef WITH_LOGS
-    LOG("  /%u: Server object, instances:\r\n", object->objID);
+    fprintf(stdout, "  /%u: Server object, instances:\r\n", object->objID);
     server_instance_t * serverInstance = (server_instance_t *)object->instanceList;
     while (serverInstance != NULL) {
-        LOG("    /%u/%u: instanceId: %u, shortServerId: %u, lifetime: %u, storing: %s, binding: %s\r\n",
+        fprintf(stdout, "    /%u/%u: instanceId: %u, shortServerId: %u, lifetime: %u, storing: %s, binding: %s\r\n",
                 object->objID, serverInstance->instanceId,
                 serverInstance->instanceId, serverInstance->shortServerId, serverInstance->lifetime,
                 serverInstance->storing ? "true" : "false", serverInstance->binding);

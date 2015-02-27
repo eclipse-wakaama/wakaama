@@ -57,7 +57,6 @@
 
 #include "liblwm2m.h"
 #include "lwm2mclient.h"
-#include "internals.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -536,10 +535,10 @@ void display_device_object(lwm2m_object_t * object)
 {
 #ifdef WITH_LOGS
     device_data_t * data = (device_data_t *)object->userData;
-    LOG("  /%u: Device object:\r\n", object->objID);
+    fprintf(stdout, "  /%u: Device object:\r\n", object->objID);
     if (NULL != data)
     {
-        LOG("    time: %d, time_offset: %s\r\n",
+        fprintf(stdout, "    time: %d, time_offset: %s\r\n",
                 data->time, data->time_offset);
     }
 #endif

@@ -67,7 +67,6 @@
 
 #include "liblwm2m.h"
 #include "lwm2mclient.h"
-#include "internals.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -292,10 +291,10 @@ static void prv_test_close(lwm2m_object_t * object)
 void display_test_object(lwm2m_object_t * object)
 {
 #ifdef WITH_LOGS
-    LOG("  /%u: Test object, instances:\r\n", object->objID);
+    fprintf(stdout, "  /%u: Test object, instances:\r\n", object->objID);
     prv_instance_t * instance = (prv_instance_t *)object->instanceList;
     while (instance != NULL) {
-        LOG("    /%u/%u: shortId: %u, test: %u\r\n",
+        fprintf(stdout, "    /%u/%u: shortId: %u, test: %u\r\n",
                 object->objID, instance->shortID,
                 instance->shortID, instance->test);
         instance = (prv_instance_t *)instance->next;

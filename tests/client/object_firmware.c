@@ -35,7 +35,6 @@
  */
 
 #include "liblwm2m.h"
-#include "internals.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -238,10 +237,10 @@ void display_firmware_object(lwm2m_object_t * object)
 {
 #ifdef WITH_LOGS
     firmware_data_t * data = (firmware_data_t *)object->userData;
-    LOG("  /%u: Firmware object:\r\n", object->objID);
+    fprintf(stdout, "  /%u: Firmware object:\r\n", object->objID);
     if (NULL != data)
     {
-        LOG("    state: %u, supported: %u, result: %u\r\n",
+        fprintf(stdout, "    state: %u, supported: %u, result: %u\r\n",
                 data->state, data->supported, data->result);
     }
 #endif

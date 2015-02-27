@@ -41,10 +41,10 @@
  */
 
 #include "liblwm2m.h"
-#include "internals.h"
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 #define LWM2M_SECURITY_URI_ID                 0
 #define LWM2M_SECURITY_BOOTSTRAP_ID           1
@@ -214,7 +214,7 @@ static uint8_t prv_security_write(uint16_t instanceId,
     bootstrapPending = dataArray->flags & LWM2M_TLV_FLAG_BOOTSTRAPPING != 0;
     targetP = (security_instance_t *)lwm2m_list_find(objectP->instanceList, instanceId);
     if (NULL == targetP) {
-        LOG("    >>>> Object with instanceID: %u not found\r\n", instanceId);
+        fprintf(stdout, "    >>>> Object with instanceID: %u not found\r\n", instanceId);
         if (bootstrapPending == true) {
             targetP = (security_instance_t *)lwm2m_malloc(sizeof(security_instance_t));
             if (NULL == targetP) {
@@ -223,7 +223,7 @@ static uint8_t prv_security_write(uint16_t instanceId,
             memset(targetP, 0, sizeof(security_instance_t));
             targetP->instanceId = instanceId;
             objectP->instanceList = LWM2M_LIST_ADD(objectP->instanceList, targetP);
-            LOG("    >>>> new instance created: /%u/%u\r\n", objectP->objID, targetP->instanceId);
+            fprintf(stdout, "    >>>> new instance created: /%u/%u\r\n", objectP->objID, targetP->instanceId);
         }
         else {
             return COAP_404_NOT_FOUND;
@@ -426,10 +426,10 @@ static void prv_security_copy(lwm2m_object_t * objectDest, lwm2m_object_t * obje
 void display_security_object(lwm2m_object_t * object)
 {
 #ifdef WITH_LOGS
-    LOG("  /%u: Security object, instances:\r\n", object->objID);
+    fprintf(stdout, "  /%u: Security object, instances:\r\n", object->objID);
     security_instance_t * instance = (security_instance_t *)object->instanceList;
     while (instance != NULL) {
-        LOG("    /%u/%u: instanceId: %u, uri: %s, isBootstrap: %s, shortId: %u, clientHoldOffTime: %u\r\n",
+        fprintf(stdout, "    /%u/%u: instanceId: %u, uri: %s, isBootstrap: %s, shortId: %u, clientHoldOffTime: %u\r\n",
                 object->objID, instance->instanceId,
                 instance->instanceId, instance->uri, instance->isBootstrap ? "true" : "false",
                 instance->shortID, instance->clientHoldOffTime);
