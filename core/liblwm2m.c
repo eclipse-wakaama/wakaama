@@ -137,25 +137,9 @@ void delete_server_list(lwm2m_context_t * context) {
     context->serverList = NULL;
 }
 
-<<<<<<< HEAD
-    LWM2M_LIST_FREE(contextP->bootstrapServerList);
-=======
 void delete_bootstrap_server_list(lwm2m_context_t * contextP) {
-    if (NULL != contextP->bootstrapServerList) {
-        while (NULL != contextP->bootstrapServerList) {
-            lwm2m_server_t * targetP;
-
-            targetP = contextP->bootstrapServerList;
-            contextP->bootstrapServerList = contextP->bootstrapServerList->next;
-
-            lwm2m_free(targetP);
-            targetP = NULL;
-        }
-        lwm2m_free(contextP->bootstrapServerList);
-        contextP->bootstrapServerList = NULL;
-    }
+    LWM2M_LIST_FREE(contextP->bootstrapServerList);
 }
->>>>>>> device initiated bootstrap
 
 void delete_observed_list(lwm2m_context_t * contextP) {
     while (NULL != contextP->observedList) {
@@ -164,19 +148,8 @@ void delete_observed_list(lwm2m_context_t * contextP) {
         targetP = contextP->observedList;
         contextP->observedList = contextP->observedList->next;
 
-<<<<<<< HEAD
         LWM2M_LIST_FREE(targetP->watcherList);
 
-=======
-        while (NULL != targetP->watcherList) {
-            lwm2m_watcher_t * watcherP;
-
-            watcherP = targetP->watcherList;
-            targetP->watcherList = targetP->watcherList->next;
-            lwm2m_free(watcherP);
-            watcherP = NULL;
-        }
->>>>>>> device initiated bootstrap
         lwm2m_free(targetP);
         targetP = NULL;
     }
@@ -414,11 +387,7 @@ int lwm2m_step(lwm2m_context_t * contextP,
         {
             time_t interval;
 
-<<<<<<< HEAD
             interval = clientP->endOfLife - tv_sec;
-=======
-            interval = clientP->endOfLife - currentTime.tv_sec;
->>>>>>> device initiated bootstrap
 
             if (*timeoutP > interval)
             {

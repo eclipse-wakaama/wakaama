@@ -110,7 +110,7 @@ void reset_bootstrap_timer(lwm2m_context_t * context) {
     context->bsStart.tv_sec = currentTime.tv_sec;
 }
 
-void lwm2m_update_bootstrap_state(lwm2m_context_t * context,
+void update_bootstrap_state(lwm2m_context_t * context,
         uint32_t currentTime,
         struct timeval * timeout) {
     if (context->bsState == BOOTSTRAP_REQUESTED) {
