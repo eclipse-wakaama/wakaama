@@ -40,8 +40,11 @@
  *  Timestamp   |  5  |  R   | Single  | Yes | Time    |       |   s   | The timestamp wen the location meassurement was performed.                       |
  */
 
-#include "internals.h"
+#include "liblwm2m.h"
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #ifdef LWM2M_CLIENT_MODE
 
@@ -65,13 +68,14 @@
 #define VELOCITY_OCTETS                      5  // for HORITZOL_VELOCITY_WITH_UNCERTAINTY 
 #define DEG_DECIMAL_PLACES                   6  // configuration: degree decimals implementation
 
-typedef struct {
-  char     latitude   [5 + DEG_DECIMAL_PLACES]; //"359.12345" frag=5, 9+1=10! degrees +\0
-  char     longitude  [5 + DEG_DECIMAL_PLACES];
-  char     altitude   [5 + DEG_DECIMAL_PLACES];
-  char     uncertainty[5 + DEG_DECIMAL_PLACES];
-  uint8_t  velocity   [VELOCITY_OCTETS];        //3GPP notation 1st step: HORITZOL_VELOCITY_WITH_UNCERTAINTY
-  unsigned long timestamp;
+typedef struct
+{
+    char     latitude   [5 + DEG_DECIMAL_PLACES]; //"359.12345" frag=5, 9+1=10! degrees +\0
+    char     longitude  [5 + DEG_DECIMAL_PLACES];
+    char     altitude   [5 + DEG_DECIMAL_PLACES];
+    char     uncertainty[5 + DEG_DECIMAL_PLACES];
+    uint8_t  velocity   [VELOCITY_OCTETS];        //3GPP notation 1st step: HORITZOL_VELOCITY_WITH_UNCERTAINTY
+    unsigned long timestamp;
 } location_data_t;
 
 // => TLV buffer len: 4x11 + 5 + 4 + .. < 64
@@ -80,49 +84,53 @@ typedef struct {
 /**
 implementtaion for all read-able resources
 */
-static uint8_t prv_res2tlv(lwm2m_tlv_t* tlvP, location_data_t* locDataP){
-//----------------------------------------------------------------------- JH --
-  uint8_t ret = COAP_205_CONTENT;  
-  switch (tlvP->id) {   // location resourceId
-  case RES_LATITUDE:    //0
-    tlvP->value  = locDataP->latitude;
-    tlvP->length = strlen(locDataP->latitude);
-    tlvP->flags  = LWM2M_TLV_FLAG_STATIC_DATA;
-    tlvP->type   = LWM2M_TYPE_RESSOURCE;
-    break;
-  case RES_LONGITUDE:   //1
-    tlvP->value  = locDataP->longitude;
-    tlvP->length = strlen(locDataP->latitude);
-    tlvP->flags  = LWM2M_TLV_FLAG_STATIC_DATA;
-    tlvP->type   = LWM2M_TYPE_RESSOURCE;
-    break;
-  case RES_ALTITUDE:    //2
-    tlvP->value  = locDataP->altitude;
-    tlvP->length = strlen(locDataP->altitude);
-    tlvP->flags  = LWM2M_TLV_FLAG_STATIC_DATA;
-    tlvP->type   = LWM2M_TYPE_RESSOURCE;
-    break;
-  case RES_UNCERTAINTY: //3
-    tlvP->value  = locDataP->uncertainty;
-    tlvP->length = strlen(locDataP->uncertainty);
-    tlvP->flags  = LWM2M_TLV_FLAG_STATIC_DATA;
-    tlvP->type   = LWM2M_TYPE_RESSOURCE;
-    break;
-  case RES_VELOCITY:    //4
-    tlvP->value  = locDataP->velocity;
-    tlvP->length = VELOCITY_OCTETS;
-    tlvP->flags  = LWM2M_TLV_FLAG_STATIC_DATA;
-    tlvP->type   = LWM2M_TYPE_RESSOURCE;
-    break;
-  case RES_TIMESTAMP:   //6
-    lwm2m_tlv_encode_int(locDataP->timestamp, tlvP);
-    tlvP->type   = LWM2M_TYPE_RESSOURCE;    
-    break;
-  default:
-    ret = COAP_404_NOT_FOUND;  
-    break;
-  }
-  return ret;
+static uint8_t prv_res2tlv(lwm2m_tlv_t* tlvP,
+                           location_data_t* locDataP)
+{
+    //----------------------------------------------------------------------- JH --
+    uint8_t ret = COAP_205_CONTENT;  
+    switch (tlvP->id)     // location resourceId
+    {
+    case RES_LATITUDE:    //0
+        tlvP->value  = locDataP->latitude;
+        tlvP->length = strlen(locDataP->latitude);
+        tlvP->flags  = LWM2M_TLV_FLAG_STATIC_DATA;
+        tlvP->type   = LWM2M_TYPE_RESSOURCE;
+        break;
+    case RES_LONGITUDE:   //1
+        tlvP->value  = locDataP->longitude;
+        tlvP->length = strlen(locDataP->latitude);
+        tlvP->flags  = LWM2M_TLV_FLAG_STATIC_DATA;
+        tlvP->type   = LWM2M_TYPE_RESSOURCE;
+        break;
+    case RES_ALTITUDE:    //2
+        tlvP->value  = locDataP->altitude;
+        tlvP->length = strlen(locDataP->altitude);
+        tlvP->flags  = LWM2M_TLV_FLAG_STATIC_DATA;
+        tlvP->type   = LWM2M_TYPE_RESSOURCE;
+        break;
+    case RES_UNCERTAINTY: //3
+        tlvP->value  = locDataP->uncertainty;
+        tlvP->length = strlen(locDataP->uncertainty);
+        tlvP->flags  = LWM2M_TLV_FLAG_STATIC_DATA;
+        tlvP->type   = LWM2M_TYPE_RESSOURCE;
+        break;
+    case RES_VELOCITY:    //4
+        tlvP->value  = locDataP->velocity;
+        tlvP->length = VELOCITY_OCTETS;
+        tlvP->flags  = LWM2M_TLV_FLAG_STATIC_DATA;
+        tlvP->type   = LWM2M_TYPE_RESSOURCE;
+        break;
+    case RES_TIMESTAMP:   //6
+        lwm2m_tlv_encode_int(locDataP->timestamp, tlvP);
+        tlvP->type   = LWM2M_TYPE_RESSOURCE;    
+        break;
+    default:
+        ret = COAP_404_NOT_FOUND;  
+        break;
+    }
+  
+    return ret;
 }
 
 
@@ -138,9 +146,10 @@ static uint8_t prv_res2tlv(lwm2m_tlv_t* tlvP, location_data_t* locDataP){
   * @param objectP      in,     private location data structure
   */
 static uint8_t prv_location_read(uint16_t objInstId,
-                                    int*  numDataP,
-                            lwm2m_tlv_t** tlvArrayP,
-                         lwm2m_object_t*  objectP) {   
+                                 int*  numDataP,
+                                 lwm2m_tlv_t** tlvArrayP,
+                                 lwm2m_object_t*  objectP)
+{   
     //------------------------------------------------------------------- JH --
     int     i;
     uint8_t result = COAP_500_INTERNAL_SERVER_ERROR;
@@ -149,23 +158,27 @@ static uint8_t prv_location_read(uint16_t objInstId,
     // defined as single instance object!
     if (objInstId != 0) return COAP_404_NOT_FOUND;
 
-    if (*numDataP == 0) { // full object, readable resources!
+    if (*numDataP == 0)     // full object, readable resources!
+    {
         uint16_t readResIds[] = {0,1,2,3,4,5}; // readable resources!
+        
         *numDataP  = sizeof(readResIds)/sizeof(uint16_t);
         *tlvArrayP = lwm2m_tlv_new(*numDataP);
-        if (*tlvArrayP == NULL) 
-            return COAP_500_INTERNAL_SERVER_ERROR;
+        if (*tlvArrayP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
+        
         // init readable resource id's
-        for (i=0; i<*numDataP; i++) {
+        for (i = 0 ; i < *numDataP ; i++)
+        {
             (*tlvArrayP)[i].id = readResIds[i];
         }
     }
     
-    for (i=0; i<*numDataP; i++) {
+    for (i = 0 ; i < *numDataP ; i++)
+    {
         result = prv_res2tlv ((*tlvArrayP)+i, locDataP);
-        if (result!=COAP_205_CONTENT) 
-            break;
-    }    
+        if (result!=COAP_205_CONTENT) break;
+    }
+    
     return result;
 }
 
@@ -178,16 +191,19 @@ static uint8_t prv_location_read(uint16_t objInstId,
   * @param horizontalSpeed  [km/h] 1 - s^16-1 resolution: 1 km/h steps
   * @param speedUncertainty [km/h] 1-254      resolution: 1 km/h (255=undefined!)
   */
-void location_setVelocity (lwm2m_object_t* locationObj, uint16_t bearing,
-                           uint16_t horizontalSpeed, uint8_t speedUncertainty) {
-  //------------------------------------------------------------------------ JH --
-  location_data_t* pData = locationObj->userData;
-  pData->velocity[0] = HORIZONTAL_VELOCITY_WITH_UNCERTAINTY << 4;
-  pData->velocity[0] = (bearing & 0x100) >> 8;
-  pData->velocity[1] = (bearing & 0x0FF);
-  pData->velocity[2] = horizontalSpeed >> 8;
-  pData->velocity[3] = horizontalSpeed & 0xff;
-  pData->velocity[4] = speedUncertainty;
+void location_setVelocity(lwm2m_object_t* locationObj,
+                          uint16_t bearing,
+                          uint16_t horizontalSpeed,
+                          uint8_t speedUncertainty)
+{
+    //------------------------------------------------------------------------ JH --
+    location_data_t* pData = locationObj->userData;
+    pData->velocity[0] = HORIZONTAL_VELOCITY_WITH_UNCERTAINTY << 4;
+    pData->velocity[0] = (bearing & 0x100) >> 8;
+    pData->velocity[1] = (bearing & 0x0FF);
+    pData->velocity[2] = horizontalSpeed >> 8;
+    pData->velocity[3] = horizontalSpeed & 0xff;
+    pData->velocity[4] = speedUncertainty;
 }
 
 /**
@@ -200,23 +216,26 @@ void location_setVelocity (lwm2m_object_t* locationObj, uint16_t bearing,
   * @param limestamp the related timestamp. Seconds since 1970.
   */
 void location_setLocationAtTime(lwm2m_object_t* locationObj,
-                             float latitude, float longitude, float altitude,
-                             uint64_t timestamp) {
-  //------------------------------------------------------------------------ JH --
-  location_data_t* pData = locationObj->userData;
+                             float latitude,
+                             float longitude,
+                             float altitude,
+                             uint64_t timestamp)
+{
+    //------------------------------------------------------------------------ JH --
+    location_data_t* pData = locationObj->userData;
 
 #if defined(ARDUINO)
-  dtostrf (latitude,  -8, 6, pData->latitude);
-  dtostrf (longitude, -8, 6, pData->longitude);
-  dtostrf (altitude,  -8, 4, pData->altitude);
+    dtostrf (latitude,  -8, 6, pData->latitude);
+    dtostrf (longitude, -8, 6, pData->longitude);
+    dtostrf (altitude,  -8, 4, pData->altitude);
 #else
 //#elif defined(SPARK)
-  snprintf(pData->latitude, 5+DEG_DECIMAL_PLACES, "%-8.6f", (double)latitude);
-  snprintf(pData->longitude,5+DEG_DECIMAL_PLACES, "%-8.6f", (double)longitude);
-  snprintf(pData->altitude, 5+DEG_DECIMAL_PLACES, "%-8.4f", (double)altitude);
+    snprintf(pData->latitude, 5+DEG_DECIMAL_PLACES, "%-8.6f", (double)latitude);
+    snprintf(pData->longitude,5+DEG_DECIMAL_PLACES, "%-8.6f", (double)longitude);
+    snprintf(pData->altitude, 5+DEG_DECIMAL_PLACES, "%-8.4f", (double)altitude);
 #endif
 
-  pData->timestamp = timestamp;
+    pData->timestamp = timestamp;
 }
 
 /**
@@ -224,55 +243,61 @@ void location_setLocationAtTime(lwm2m_object_t* locationObj,
   * @return gives back allocated LWM2M data object structure pointer. On error, 
   * NULL value is returned.
   */
-lwm2m_object_t * get_object_location() {
-  //---------------------------------------------------------------------- JH --
-  lwm2m_object_t * locationObj;
+lwm2m_object_t * get_object_location()
+{
+    //---------------------------------------------------------------------- JH --
+    lwm2m_object_t * locationObj;
 
-  locationObj = (lwm2m_object_t *)lwm2m_malloc(sizeof(lwm2m_object_t));
-  if (NULL != locationObj) {
-    memset(locationObj, 0, sizeof(lwm2m_object_t));
+    locationObj = (lwm2m_object_t *)lwm2m_malloc(sizeof(lwm2m_object_t));
+    if (NULL != locationObj)
+    {
+        memset(locationObj, 0, sizeof(lwm2m_object_t));
 
-    // It assigns its unique ID
-    // The 6 is the standard ID for the optional object "Object location".
-    locationObj->objID = LWM2M_LOCATION_OBJECT_ID;
+        // It assigns its unique ID
+        // The 6 is the standard ID for the optional object "Object location".
+        locationObj->objID = LWM2M_LOCATION_OBJECT_ID;
         
-    // and its unique instance
-    locationObj->instanceList = (lwm2m_list_t *)lwm2m_malloc(sizeof(lwm2m_list_t));
-    if (NULL != locationObj->instanceList)
-    {
-        memset(locationObj->instanceList, 0, sizeof(lwm2m_list_t));
-    }
-    else
-    {
-        lwm2m_free(locationObj);
-        return NULL;
-    }
+        // and its unique instance
+        locationObj->instanceList = (lwm2m_list_t *)lwm2m_malloc(sizeof(lwm2m_list_t));
+        if (NULL != locationObj->instanceList)
+        {
+            memset(locationObj->instanceList, 0, sizeof(lwm2m_list_t));
+        }
+        else
+        {
+            lwm2m_free(locationObj);
+            return NULL;
+        }
 
-    // And the private function that will access the object.
-    // Those function will be called when a read/write/execute query is made by the server.
-    // In fact the library don't need to know the resources of the object, only the server does.
-    //
-    locationObj->readFunc    = prv_location_read;
-    //locationObj->writeFunc   = prv_location_write;
-    //locationObj->executeFunc = prv_location_execute;
-    //locationObj->createFunc  = prv_location_create;
-    //locationObj->deleteFunc  = prv_location_delete;
-    locationObj->userData    = lwm2m_malloc(sizeof(location_data_t));
+        // And the private function that will access the object.
+        // Those function will be called when a read/write/execute query is made by the server.
+        // In fact the library don't need to know the resources of the object, only the server does.
+        //
+        locationObj->readFunc    = prv_location_read;
+        //locationObj->writeFunc   = prv_location_write;
+        //locationObj->executeFunc = prv_location_execute;
+        //locationObj->createFunc  = prv_location_create;
+        //locationObj->deleteFunc  = prv_location_delete;
+        locationObj->userData    = lwm2m_malloc(sizeof(location_data_t));
 
-    // initialize private data structure containing the needed variables
-    if (NULL != locationObj->userData) {
-      location_data_t* data = (location_data_t*)locationObj->userData;
-      strcpy (data->latitude,     "27.986065");  // Mount Everest :)
-      strcpy (data->longitude,    "86.922623");
-      strcpy (data->altitude,     "8495.0000");
-      strcpy (data->uncertainty,  "0.01");
-      location_setVelocity(locationObj, 0, 0, 255); // 255: speedUncertainty not supported!
-      data->timestamp   = time(NULL);
-    } else {
-      lwm2m_free(locationObj);
-      locationObj = NULL;
+        // initialize private data structure containing the needed variables
+        if (NULL != locationObj->userData)
+        {
+            location_data_t* data = (location_data_t*)locationObj->userData;
+            strcpy (data->latitude,     "27.986065");  // Mount Everest :)
+            strcpy (data->longitude,    "86.922623");
+            strcpy (data->altitude,     "8495.0000");
+            strcpy (data->uncertainty,  "0.01");
+            location_setVelocity(locationObj, 0, 0, 255); // 255: speedUncertainty not supported!
+            data->timestamp   = time(NULL);
+        }
+        else
+        {
+            lwm2m_free(locationObj);
+            locationObj = NULL;
+        }
     }
-  }
-  return locationObj;
+    
+    return locationObj;
 }
 #endif  //LWM2M_CLIENT_MODE

@@ -551,18 +551,21 @@ int main(int argc, char *argv[])
             {
                 reboot_time = tv.tv_sec + 5;
             }
-            if (reboot_time < tv.tv_sec) {
+            if (reboot_time < tv.tv_sec)
+            {
                 /*
                  * Message should normally be lost with reboot ...
                  */
                 fprintf(stderr, "reboot time expired, rebooting ...");
                 system_reboot();
             }
-            else {
+            else
+            {
                 tv.tv_sec = reboot_time - tv.tv_sec;
             }
         }
-        else {
+        else
+        {
             update_battery_level(lwm2mH, batterylevelchanging);
             tv.tv_sec = 5;
         }

@@ -147,15 +147,18 @@ static uint8_t prv_read(uint16_t instanceId,
 
     if (*numDataP != 1) return COAP_404_NOT_FOUND;
 
-    if ((*dataArrayP)->id == 1) {
+    if ((*dataArrayP)->id == 1)
+    {
         lwm2m_tlv_encode_int(targetP->test, *dataArrayP);
     }
-    else if ((*dataArrayP)->id == 3) {
+    else if ((*dataArrayP)->id == 3)
+    {
         (*dataArrayP)->value = malloc(PRV_RESOURCE_3_SIZE);
         (*dataArrayP)->length = PRV_RESOURCE_3_SIZE;
         memset((*dataArrayP)->value, '0' + targetP->counter, PRV_RESOURCE_3_SIZE);
     }
-    else {
+    else
+    {
         return COAP_404_NOT_FOUND;
     }
 
@@ -188,14 +191,16 @@ static uint8_t prv_write(uint16_t instanceId,
         }
         targetP->test = (uint8_t)value;
     }
-    else if (dataArray->id == 3) {
+    else if (dataArray->id == 3)
+    {
         if (1 != lwm2m_tlv_decode_int(dataArray, &value) || value < 0 || value > 9)
         {
             return COAP_400_BAD_REQUEST;
         }
         targetP->counter = (uint8_t)value;
     }
-    else {
+    else
+    {
         return COAP_404_NOT_FOUND;
     }
 

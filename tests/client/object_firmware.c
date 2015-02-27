@@ -205,7 +205,9 @@ static uint8_t prv_firmware_execute(uint16_t instanceId,
             // trigger your firmware download and update logic
             data->state = 2;
             return COAP_204_CHANGED;
-        } else {
+        }
+        else
+        {
             // firmware update already running
             return COAP_400_BAD_REQUEST;
         }
