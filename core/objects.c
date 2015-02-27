@@ -68,15 +68,10 @@ static lwm2m_object_t * prv_find_object(lwm2m_context_t * contextP,
         return NULL;
     }
 
-    if (NULL != contextP->objectList) {
-        for (i = 0 ; i < contextP->numObject ; i++) {
-            if ((NULL != contextP->objectList[i]) && (contextP->objectList[i]->objID == Id)) {
-                return contextP->objectList[i];
-            }
+    for (i = 0 ; i < contextP->numObject ; i++) {
+        if (contextP->objectList[i]->objID == Id) {
+            return contextP->objectList[i];
         }
-    }
-    else {
-        return NULL;
     }
     return NULL;
 }
