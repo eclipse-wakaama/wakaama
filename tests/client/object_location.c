@@ -47,8 +47,6 @@
 
 
 // ---- private "object location" specific defines ----
-// Object Id
-#define OBJ_LOCATION       6
 // Resource Id's:
 #define RES_LATITUDE       0
 #define RES_LONGITUDE      1
@@ -236,7 +234,19 @@ lwm2m_object_t * get_object_location() {
 
     // It assigns its unique ID
     // The 6 is the standard ID for the optional object "Object location".
-    locationObj->objID = OBJ_LOCATION;
+    locationObj->objID = LWM2M_LOCATION_OBJECT_ID;
+        
+    // and its unique instance
+    locationObj->instanceList = (lwm2m_list_t *)lwm2m_malloc(sizeof(lwm2m_list_t));
+    if (NULL != locationObj->instanceList)
+    {
+        memset(locationObj->instanceList, 0, sizeof(lwm2m_list_t));
+    }
+    else
+    {
+        lwm2m_free(locationObj);
+        return NULL;
+    }
 
     // And the private function that will access the object.
     // Those function will be called when a read/write/execute query is made by the server.
