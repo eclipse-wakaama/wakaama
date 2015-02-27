@@ -54,18 +54,6 @@
 #ifdef LWM2M_CLIENT_MODE
 #define PRV_QUERY_BUFFER_LENGTH 200
 
-static int prv_getBootstrapQuery(lwm2m_context_t * context,
-        char * buffer,
-        size_t length) {
-    int index = 0;
-
-    index = snprintf(buffer, length, "?ep=%s", context->endpointName);
-    if (index <= 1) {
-        return 0;
-    }
-    return index;
-}
-
 static void prv_handleBootstrapReply(lwm2m_transaction_t * transaction, void * message) {
     lwm2m_server_t * targetP;
     
@@ -86,8 +74,9 @@ int lwm2m_bootstrap(lwm2m_context_t * context) {
     int query_length = 0;
     lwm2m_transaction_t * transaction = NULL;
 
-    query_length = prv_getBootstrapQuery(context, query, sizeof(query));
-    if (query_length == 0) {
+    //query_length = prv_getBootstrapQuery(context, query, sizeof(query));
+    query_length = snprintf(query, sizeof(query), "?ep=%s", context->endpointName);
+    if (query_length <= 1) {
         return INTERNAL_SERVER_ERROR_5_00;
     }
 

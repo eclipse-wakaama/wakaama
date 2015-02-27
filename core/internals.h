@@ -14,10 +14,7 @@
  *    David Navarro, Intel Corporation - initial API and implementation
  *    Fabien Fleutot - Please refer to git log
  *    Toby Jaffey - Please refer to git log
-<<<<<<< HEAD
  *    Bosch Software Innovations GmbH - Please refer to git log
-=======
->>>>>>> 921c42433134893b75146a7dd5d75af756bb6e1c
  *    Pascal Rieux - Please refer to git log
  *    
  *******************************************************************************/
