@@ -72,7 +72,6 @@ int lwm2m_bootstrap(lwm2m_context_t * context) {
                 LOG("[BOOTSTRAP] DI bootstrap requested to BS server\r\n");
                 // Backup the object configuration in case of network or bootstrap server failure
                 lwm2m_backup_objects(context);
-                lwm2m_deregister(context);
             }
         }
         else {
