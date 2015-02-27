@@ -191,6 +191,7 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
             uint32_t block_offset = 0;
             int32_t new_offset = 0;
 
+#ifdef WITH_LOGS
 #ifdef LWM2M_CLIENT_MODE
             switch (message->code)
             {
@@ -200,6 +201,7 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
                 case COAP_PUT:    LOG("    => Received PUT\n");    break;
                 default:                                           break;
             }
+#endif
 #endif
             /* prepare response */
             if (message->type == COAP_TYPE_CON)
