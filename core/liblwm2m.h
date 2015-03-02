@@ -497,8 +497,12 @@ typedef void * (*lwm2m_connect_server_callback_t)(uint16_t serverID, void * user
 // The session handle MUST uniquely identify a peer.
 typedef uint8_t (*lwm2m_buffer_send_callback_t)(void * sessionH, uint8_t * buffer, size_t length, void * userData);
 
+typedef struct _lwm2m_context_ lwm2m_context_t;
 
-typedef struct
+typedef void (*backup_objects_callback_t)(lwm2m_context_t * context);
+typedef void (*restore_objects_callback_t)(lwm2m_context_t * context);
+
+struct _lwm2m_context_
 {
     int    socket;
 #ifdef LWM2M_CLIENT_MODE
@@ -513,6 +517,8 @@ typedef struct
     uint16_t            numObject;
     uint16_t            numObjectBackup;
     lwm2m_observed_t *  observedList;
+    backup_objects_callback_t backupObjectsCallback;
+    restore_objects_callback_t restoreObjectsCallback;
 #endif
 #ifdef LWM2M_SERVER_MODE
     lwm2m_client_t *        clientList;
@@ -525,11 +531,15 @@ typedef struct
     lwm2m_connect_server_callback_t connectCallback;
     lwm2m_buffer_send_callback_t    bufferSendCallback;
     void *                          userData;
-} lwm2m_context_t;
+};
 
 
 // initialize a liblwm2m context.
-lwm2m_context_t * lwm2m_init(lwm2m_connect_server_callback_t connectCallback, lwm2m_buffer_send_callback_t bufferSendCallback, void * userData);
+lwm2m_context_t * lwm2m_init(lwm2m_connect_server_callback_t connectCallback,
+        lwm2m_buffer_send_callback_t bufferSendCallback,
+        backup_objects_callback_t backupObjectsCallback,
+        restore_objects_callback_t restoreObjectsCallback,
+        void * userData);
 
 // close a liblwm2m context.
 void lwm2m_close(lwm2m_context_t * contextP);

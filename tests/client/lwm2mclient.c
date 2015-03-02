@@ -471,6 +471,84 @@ static void prv_display_backup(char * buffer,
     }
 }
 
+static void prv_display_bootstrap_state(lwm2m_context_t * context) {
+    switch (context->bsState) {
+    case NOT_BOOTSTRAPPED:
+        fprintf(stdout, "NOT BOOTSTRAPPED\r\n");
+        break;
+    case BOOTSTRAP_REQUESTED:
+        fprintf(stdout, "BOOTSTRAP REQUESTED\r\n");
+        break;
+    case BOOTSTRAP_CLIENT_HOLD_OFF:
+        fprintf(stdout, "BOOTSTRAP CLIENT HOLD OFF\r\n");
+        break;
+    case BOOTSTRAP_PENDING:
+        fprintf(stdout, "BOOTSTRAP PENDING\r\n");
+        break;
+    case BOOTSTRAP_FAILED:
+        fprintf(stdout, "BOOTSTRAP FAILED\r\n");
+        break;
+    case BOOTSTRAPPED:
+        fprintf(stdout, "BOOTSTRAPPED\r\n");
+        break;
+    default:
+        break;
+    }
+}
+
+static void prv_backup_objects(lwm2m_context_t * context)
+{
+    uint16_t i;
+    lwm2m_object_t * objectListBackup[context->numObject];
+
+    if (NULL == context->objectListBackup) {
+        context->objectListBackup = (lwm2m_object_t **)lwm2m_malloc(context->numObject * sizeof(lwm2m_object_t *));
+        for (i = 0; i < context->numObject; i++) {
+            context->objectListBackup[i] = (lwm2m_object_t *)lwm2m_malloc(sizeof(lwm2m_object_t));
+            memset(context->objectListBackup[i], 0, sizeof(lwm2m_object_t));
+        }
+    }
+
+    /*
+     * Delete previous backup content of objects 0 (security) and 1 (server)
+     */
+    lwm2m_delete_object_list_content(context, true, true);
+
+    /*
+     * Backup content of objects 0 (security) and 1 (server)
+     */
+    for (i = 0; i < context->numObject; i++) {
+        if ((context->objectList[i]->objID == 0) || (context->objectList[i]->objID == 1)) {
+            context->objectList[i]->copyFunc(context->objectListBackup[i], context->objectList[i]);
+        }
+    }
+
+    context->numObjectBackup = context->numObject;
+}
+
+static void prv_restore_objects(lwm2m_context_t * context)
+{
+    uint16_t i;
+    lwm2m_object_t * objectList[context->numObjectBackup];
+
+    /*
+     * Delete current content of objects 0 (security) and 1 (server)
+     */
+    lwm2m_delete_object_list_content(context, false, true);
+
+    /*
+     * Restore content  of objects 0 (security) and 1 (server)
+     */
+    for (i = 0; i < context->numObjectBackup; i++) {
+        if ((context->objectList[i]->objID == 0) || (context->objectList[i]->objID == 1)) {
+            context->objectList[i]->copyFunc(context->objectList[i], context->objectListBackup[i]);
+        }
+    }
+
+    object_getServers(context);
+    fprintf(stdout, "[BOOTSTRAP] ObjectList restored\r\n");
+}
+
 int main(int argc, char *argv[])
 {
     client_data_t data;
@@ -622,7 +700,7 @@ int main(int argc, char *argv[])
      * The liblwm2m library is now initialized with the functions that will be in
      * charge of communication
      */
-    lwm2mH = lwm2m_init(prv_connect_server, prv_buffer_send, &data);
+    lwm2mH = lwm2m_init(prv_connect_server, prv_buffer_send, prv_backup_objects, prv_restore_objects, &data);
     if (NULL == lwm2mH)
     {
         fprintf(stderr, "lwm2m_init() failed\r\n");
@@ -724,6 +802,10 @@ int main(int argc, char *argv[])
         FD_SET(data.sock, &readfds);
         FD_SET(STDIN_FILENO, &readfds);
 
+
+#ifdef WITH_LOGS
+        prv_display_bootstrap_state(lwm2mH);
+#endif
         /*
          * This function does two things:
          *  - first it does the work needed by liblwm2m (eg. (re)sending some packets).

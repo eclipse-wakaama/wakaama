@@ -58,8 +58,10 @@
 
 
 lwm2m_context_t * lwm2m_init(lwm2m_connect_server_callback_t connectCallback,
-                             lwm2m_buffer_send_callback_t bufferSendCallback,
-                             void * userData)
+        lwm2m_buffer_send_callback_t bufferSendCallback,
+        backup_objects_callback_t backupObjectsCallback,
+        restore_objects_callback_t restoreObjectsCallback,
+        void * userData)
 {
     lwm2m_context_t * contextP;
 
@@ -80,6 +82,10 @@ lwm2m_context_t * lwm2m_init(lwm2m_connect_server_callback_t connectCallback,
         contextP->userData = userData;
         srand(time(NULL));
         contextP->nextMID = rand();
+#ifdef LWM2M_CLIENT_MODE
+        contextP->backupObjectsCallback = backupObjectsCallback;
+        contextP->restoreObjectsCallback = restoreObjectsCallback;
+#endif
     }
 
     return contextP;
@@ -256,59 +262,6 @@ int lwm2m_configure(lwm2m_context_t * contextP,
     }
     contextP->objectListBackup = NULL;
     return COAP_NO_ERROR;
-}
-
-void lwm2m_backup_objects(lwm2m_context_t * context)
-{
-    uint16_t i;
-    lwm2m_object_t * objectListBackup[context->numObject];
-
-    if (NULL == context->objectListBackup) {
-        context->objectListBackup = (lwm2m_object_t **)lwm2m_malloc(context->numObject * sizeof(lwm2m_object_t *));
-        for (i = 0; i < context->numObject; i++) {
-            context->objectListBackup[i] = (lwm2m_object_t *)lwm2m_malloc(sizeof(lwm2m_object_t));
-            memset(context->objectListBackup[i], 0, sizeof(lwm2m_object_t));
-        }
-    }
-
-    /*
-     * Delete previous backup content of objects 0 (security) and 1 (server)
-     */
-    lwm2m_delete_object_list_content(context, true, true);
-
-    /*
-     * Backup content of objects 0 (security) and 1 (server)
-     */
-    for (i = 0; i < context->numObject; i++) {
-        if ((context->objectList[i]->objID == 0) || (context->objectList[i]->objID == 1)) {
-            context->objectList[i]->copyFunc(context->objectListBackup[i], context->objectList[i]);
-        }
-    }
-
-    context->numObjectBackup = context->numObject;
-}
-
-void lwm2m_restore_objects(lwm2m_context_t * context)
-{
-    uint16_t i;
-    lwm2m_object_t * objectList[context->numObjectBackup];
-
-    /*
-     * Delete current content of objects 0 (security) and 1 (server)
-     */
-    lwm2m_delete_object_list_content(context, false, true);
-
-    /*
-     * Restore content  of objects 0 (security) and 1 (server)
-     */
-    for (i = 0; i < context->numObjectBackup; i++) {
-        if ((context->objectList[i]->objID == 0) || (context->objectList[i]->objID == 1)) {
-            context->objectList[i]->copyFunc(context->objectList[i], context->objectListBackup[i]);
-        }
-    }
-
-    object_getServers(context);
-    LOG("[BOOTSTRAP] ObjectList restored\r\n");
 }
 #endif
 

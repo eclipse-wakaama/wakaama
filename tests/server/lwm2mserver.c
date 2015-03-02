@@ -745,7 +745,7 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    lwm2mH = lwm2m_init(NULL, prv_buffer_send, NULL);
+    lwm2mH = lwm2m_init(NULL, prv_buffer_send, NULL, NULL, NULL);
     if (NULL == lwm2mH)
     {
         fprintf(stderr, "lwm2m_init() failed\r\n");

@@ -71,7 +71,9 @@ int lwm2m_bootstrap(lwm2m_context_t * context) {
                 bootstrapServer->mid = transaction->mID;
                 LOG("[BOOTSTRAP] DI bootstrap requested to BS server\r\n");
                 // Backup the object configuration in case of network or bootstrap server failure
-                lwm2m_backup_objects(context);
+                if (NULL != context->backupObjectsCallback) {
+                    context->backupObjectsCallback(context);
+                }
             }
         }
         else {
@@ -99,7 +101,9 @@ void handle_bootstrap_ack(lwm2m_context_t * context,
 void bootstrap_failed(lwm2m_context_t * context) {
     context->bsState = BOOTSTRAP_FAILED;
     LOG("[BOOTSTRAP] Bootstrap failed\r\n");
-    lwm2m_restore_objects(context);
+    if (NULL != context->restoreObjectsCallback) {
+        context->restoreObjectsCallback(context);
+    }
 }
 
 void reset_bootstrap_timer(lwm2m_context_t * context) {
@@ -134,6 +138,11 @@ void update_bootstrap_state(lwm2m_context_t * context,
     if (context->bsState == BOOTSTRAP_PENDING) {
         if ((currentTime - context->bsStart.tv_sec) > timeout->tv_sec) {
             // Time out and no error => bootstrap OK
+            // TODO: add smarter condition for bootstrap success:
+            // 1) security object contains at least one bootstrap server
+            // 2) there are coherent configurations for provisioned DM servers
+            // if these conditions are not met, then bootstrap has failed and previous security
+            // and server object configurations must be restored
             LOG("\r\n[BOOTSTRAP] Bootstrapped at: %u (difftime: %u s)\r\n",
                     currentTime, currentTime - context->bsStart.tv_sec);
             context->bsState = BOOTSTRAPPED;
