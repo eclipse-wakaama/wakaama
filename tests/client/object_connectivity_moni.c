@@ -43,8 +43,6 @@
 #include <ctype.h>
 
 // related to TS RC 20131210-C (ATTENTION changes in -D!)
-// Object Id
-#define OBJ_DEVICE_ID                   4
 // Resource Id's:
 #define RES_M_NETWORK_BEARER            0
 #define RES_M_AVL_NETWORK_BEARER        1
@@ -334,11 +332,25 @@ lwm2m_object_t * get_object_conn_m()
         memset(connObj, 0, sizeof(lwm2m_object_t));
 
         /*
-         * It assign his unique ID
-         * The 3 is the standard ID for the mandatory object "Object device".
+         * It assigns his unique ID
          */
-        connObj->objID = OBJ_DEVICE_ID;
-
+        connObj->objID = LWM2M_CONN_MONITOR_OBJECT_ID;
+        
+        /*
+         * and its unique instance
+         *
+         */
+        connObj->instanceList = (lwm2m_list_t *)lwm2m_malloc(sizeof(lwm2m_list_t));
+        if (NULL != connObj->instanceList)
+        {
+            memset(connObj->instanceList, 0, sizeof(lwm2m_list_t));
+        }
+        else
+        {
+            lwm2m_free(connObj);
+            return NULL;
+        }
+        
         /*
          * And the private function that will access the object.
          * Those function will be called when a read/write/execute query is made by the server. In fact the library don't need to

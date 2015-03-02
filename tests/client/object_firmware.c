@@ -205,7 +205,9 @@ static uint8_t prv_firmware_execute(uint16_t instanceId,
             // trigger your firmware download and update logic
             data->state = 2;
             return COAP_204_CHANGED;
-        } else {
+        }
+        else
+        {
             // firmware update already running
             return COAP_400_BAD_REQUEST;
         }
@@ -228,10 +230,25 @@ lwm2m_object_t * get_object_firmware()
         memset(firmwareObj, 0, sizeof(lwm2m_object_t));
 
         /*
-         * It assign his unique ID
+         * It assigns its unique ID
          * The 5 is the standard ID for the optional object "Object firmware".
          */
-        firmwareObj->objID = 5;
+        firmwareObj->objID = LWM2M_FIRMWARE_UPDATE_OBJECT_ID;
+
+        /*
+         * and its unique instance
+         *
+         */
+        firmwareObj->instanceList = (lwm2m_list_t *)lwm2m_malloc(sizeof(lwm2m_list_t));
+        if (NULL != firmwareObj->instanceList)
+        {
+            memset(firmwareObj->instanceList, 0, sizeof(lwm2m_list_t));
+        }
+        else
+        {
+            lwm2m_free(firmwareObj);
+            return NULL;
+        }
 
         /*
          * And the private function that will access the object.
