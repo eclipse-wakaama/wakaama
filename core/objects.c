@@ -196,18 +196,7 @@ coap_status_t object_write(lwm2m_context_t * contextP,
 
     targetP = prv_find_object(contextP, uriP->objectId);
     if (NULL == targetP) {
-        LOG("    Object with objectId: %u not found\r\n", uriP->objectId);
-        if (contextP->bsState == BOOTSTRAP_PENDING) {
-            LOG("    Trying to create object with objectId: %u...\r\n", uriP->objectId);
-            // try to create unexisting object
-            result = object_create(contextP, uriP, buffer, length);
-            if (result == COAP_201_CREATED) {
-                result = COAP_204_CHANGED;
-            }
-        }
-        else {
-            result = NOT_FOUND_4_04;
-        }
+        result = NOT_FOUND_4_04;
     }
     if ((result == NO_ERROR) && (NULL == targetP->writeFunc)) {
         result = METHOD_NOT_ALLOWED_4_05;
