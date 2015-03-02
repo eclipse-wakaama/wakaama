@@ -14,6 +14,7 @@
  *    David Navarro, Intel Corporation - initial API and implementation
  *    Fabien Fleutot - Please refer to git log
  *    Toby Jaffey - Please refer to git log
+ *    Bosch Software Innovations GmbH - Please refer to git log
  *    
  *******************************************************************************/
 
@@ -196,6 +197,7 @@ int lwm2m_stringToUri(const char * buffer,
     readNum = prv_parse_number(buffer, buffer_len, &head);
     if (readNum < 0 || readNum > LWM2M_MAX_ID) return 0;
     uriP->objectId = (uint16_t)readNum;
+    uriP->flag |= LWM2M_URI_FLAG_OBJECT_ID;
 
     if (buffer[head] == '/') head += 1;
     if (head >= buffer_len) return head;

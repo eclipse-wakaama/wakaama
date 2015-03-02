@@ -11,11 +11,14 @@ Makefile
 
 .cproject
 .project
+.settings
 
 CMakeCache.txt
 CMakeFiles
 Debug
 Release
+DebugServer
+ReleaseServer
 cmake_install.cmake
 core/CMakeCache.txt
 core/CMakeFiles

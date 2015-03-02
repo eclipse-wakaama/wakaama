@@ -146,6 +146,9 @@ static void prv_handleRegistrationReply(lwm2m_transaction_t * transacP,
             if (packet->code == CREATED_2_01)
             {
                 targetP->status = STATE_REGISTERED;
+                if (NULL != targetP->location) {
+                    lwm2m_free(targetP->location);
+                }
                 targetP->location = coap_get_multi_option_as_string(packet->location_path);
 
                 if (0 == lwm2m_gettimeofday(&tv, NULL)) 
@@ -407,7 +410,7 @@ void registration_deregister(lwm2m_context_t * contextP,
     contextP->transactionList = (lwm2m_transaction_t *)LWM2M_LIST_ADD(contextP->transactionList, transaction);
     if (transaction_send(contextP, transaction) == 0)
     {
-        serverP->status = STATE_REG_PENDING;
+        serverP->status = STATE_DEREG_PENDING;
         serverP->mid = transaction->mID;
     }
 }

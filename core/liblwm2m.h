@@ -237,7 +237,7 @@ int lwm2m_tlv_decode_bool(lwm2m_tlv_t * tlvP, bool * dataP);
 int lwm2m_intToTLV(lwm2m_tlv_type_t type, int64_t data, uint16_t id, char * buffer, size_t buffer_len);
 int lwm2m_boolToTLV(lwm2m_tlv_type_t type, bool value, uint16_t id, char * buffer, size_t buffer_len);
 int lwm2m_opaqueToTLV(lwm2m_tlv_type_t type, uint8_t * dataP, size_t data_len, uint16_t id, char * buffer, size_t buffer_len);
-int lwm2m_decodeTLV(char * buffer, size_t buffer_len, lwm2m_tlv_type_t * oType, uint16_t * oID, size_t * oDataIndex, size_t * oDataLen);
+int lwm2m_decodeTLV(uint8_t * buffer, size_t buffer_len, lwm2m_tlv_type_t * oType, uint16_t * oID, size_t * oDataIndex, size_t * oDataLen);
 int lwm2m_opaqueToInt(char * buffer, size_t buffer_len, int64_t * dataP);
 
 /*

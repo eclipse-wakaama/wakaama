@@ -14,6 +14,7 @@
  *    David Navarro, Intel Corporation - initial API and implementation
  *    domedambrosio - Please refer to git log
  *    Toby Jaffey - Please refer to git log
+ *    Bosch Software Innovations GmbH - Please refer to git log
  *    
  *******************************************************************************/
 /*
@@ -67,16 +68,20 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
             int length = 0;
 
             result = object_read(contextP, uriP, &buffer, &length);
-            if (result == COAP_205_CONTENT)
+            if (COAP_205_CONTENT == result)
             {
                 if (IS_OPTION(message, COAP_OPTION_OBSERVE))
                 {
                     result = handle_observe_request(contextP, uriP, fromSessionH, message, response);
                 }
-                if (result == COAP_205_CONTENT)
+                if (COAP_205_CONTENT == result)
                 {
                     coap_set_payload(response, buffer, length);
                     // lwm2m_handle_packet will free buffer
+                }
+                else
+                {
+                    lwm2m_free(buffer);
                 }
             }
         }
