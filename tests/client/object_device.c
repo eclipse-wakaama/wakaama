@@ -529,6 +529,10 @@ static void prv_device_close(lwm2m_object_t * objectP) {
         lwm2m_free(objectP->userData);
         objectP->userData = NULL;
     }
+    if (NULL != objectP->instanceList) {
+        lwm2m_free(objectP->instanceList);
+        objectP->instanceList = NULL;
+    }
 }
 
 void display_device_object(lwm2m_object_t * object)
