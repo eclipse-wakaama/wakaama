@@ -71,6 +71,12 @@ lwm2m_context_t * lwm2m_init(lwm2m_connect_server_callback_t connectCallback,
 #ifdef LWM2M_CLIENT_MODE
     if (NULL == connectCallback)
         return NULL;
+    if (NULL == backupObjectsCallback) {
+        return NULL;
+    }
+    if (NULL == restoreObjectsCallback) {
+        return NULL;
+    }
 #endif
 
     contextP = (lwm2m_context_t *)lwm2m_malloc(sizeof(lwm2m_context_t));

@@ -321,7 +321,6 @@ struct _lwm2m_object_t
     lwm2m_create_callback_t  createFunc;
     lwm2m_delete_callback_t  deleteFunc;
     lwm2m_close_callback_t   closeFunc;
-    lwm2m_copy_callback_t    copyFunc;
     void *                   userData;
 };
 

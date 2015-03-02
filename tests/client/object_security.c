@@ -397,7 +397,7 @@ static void prv_security_close(lwm2m_object_t * objectP)
     }
 }
 
-static void prv_security_copy(lwm2m_object_t * objectDest, lwm2m_object_t * objectSrc)
+void copy_security_object(lwm2m_object_t * objectDest, lwm2m_object_t * objectSrc)
 {
     memcpy(objectDest, objectSrc, sizeof(lwm2m_object_t));
     objectDest->instanceList = NULL;
@@ -475,7 +475,6 @@ lwm2m_object_t * get_security_object(int serverId, const char* serverUri, bool i
         securityObj->createFunc = prv_security_create;
         securityObj->deleteFunc = prv_security_delete;
         securityObj->closeFunc = prv_security_close;
-        securityObj->copyFunc = prv_security_copy;
     }
 
     return securityObj;

@@ -365,7 +365,7 @@ static void prv_server_close(lwm2m_object_t * object) {
     }
 }
 
-static void prv_server_copy(lwm2m_object_t * objectDest, lwm2m_object_t * objectSrc)
+void copy_server_object(lwm2m_object_t * objectDest, lwm2m_object_t * objectSrc)
 {
     memcpy(objectDest, objectSrc, sizeof(lwm2m_object_t));
     objectDest->instanceList = NULL;
@@ -443,7 +443,6 @@ lwm2m_object_t * get_server_object(int serverId, const char* binding,
         serverObj->deleteFunc = prv_server_delete;
         serverObj->executeFunc = prv_server_execute;
         serverObj->closeFunc = prv_server_close;
-        serverObj->copyFunc = prv_server_copy;
     }
 
     return serverObj;

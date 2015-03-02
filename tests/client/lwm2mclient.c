@@ -518,8 +518,26 @@ static void prv_backup_objects(lwm2m_context_t * context)
      * Backup content of objects 0 (security) and 1 (server)
      */
     for (i = 0; i < context->numObject; i++) {
-        if ((context->objectList[i]->objID == 0) || (context->objectList[i]->objID == 1)) {
-            context->objectList[i]->copyFunc(context->objectListBackup[i], context->objectList[i]);
+        lwm2m_object_t * object = context->objectList[i];
+        lwm2m_object_t * objectBackup = context->objectListBackup[i];
+        if (NULL != object) {
+            switch (object->objID)
+            {
+            case LWM2M_SECURITY_OBJECT_ID:
+                copy_security_object(objectBackup, object);
+                break;
+            case LWM2M_SERVER_OBJECT_ID:
+                copy_server_object(objectBackup, object);
+                break;
+            case LWM2M_ACL_OBJECT_ID:
+            case LWM2M_DEVICE_OBJECT_ID:
+            case LWM2M_CONN_MONITOR_OBJECT_ID:
+            case LWM2M_FIRMWARE_UPDATE_OBJECT_ID:
+            case LWM2M_LOCATION_OBJECT_ID:
+            case LWM2M_CONN_STATS_OBJECT_ID:
+            case TEST_OBJECT_ID:
+                break;
+            }
         }
     }
 
@@ -540,8 +558,26 @@ static void prv_restore_objects(lwm2m_context_t * context)
      * Restore content  of objects 0 (security) and 1 (server)
      */
     for (i = 0; i < context->numObjectBackup; i++) {
-        if ((context->objectList[i]->objID == 0) || (context->objectList[i]->objID == 1)) {
-            context->objectList[i]->copyFunc(context->objectList[i], context->objectListBackup[i]);
+        lwm2m_object_t * object = context->objectList[i];
+        lwm2m_object_t * objectBackup = context->objectListBackup[i];
+        if (NULL != object) {
+            switch (object->objID)
+            {
+            case LWM2M_SECURITY_OBJECT_ID:
+                copy_security_object(object, objectBackup);
+                break;
+            case LWM2M_SERVER_OBJECT_ID:
+                copy_server_object(object, objectBackup);
+                break;
+            case LWM2M_ACL_OBJECT_ID:
+            case LWM2M_DEVICE_OBJECT_ID:
+            case LWM2M_CONN_MONITOR_OBJECT_ID:
+            case LWM2M_FIRMWARE_UPDATE_OBJECT_ID:
+            case LWM2M_LOCATION_OBJECT_ID:
+            case LWM2M_CONN_STATS_OBJECT_ID:
+            case TEST_OBJECT_ID:
+                break;
+            }
         }
     }
 

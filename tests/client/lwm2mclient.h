@@ -58,6 +58,8 @@ extern void display_test_object(lwm2m_object_t * objectP);
  */
 extern lwm2m_object_t * get_server_object(int serverId, const char* binding, int lifetime, bool storing);
 extern void display_server_object(lwm2m_object_t * objectP);
+extern void copy_server_object(lwm2m_object_t * objectDest, lwm2m_object_t * objectSrc);
+
 /*
  * object_connectivity_moni.c
  */
@@ -95,5 +97,6 @@ extern void system_reboot();
 extern lwm2m_object_t * get_security_object();
 extern char * get_server_uri(lwm2m_object_t * objectP, uint16_t serverID);
 extern void display_security_object(lwm2m_object_t * objectP);
+extern void copy_security_object(lwm2m_object_t * objectDest, lwm2m_object_t * objectSrc);
 
 #endif /* LWM2MCLIENT_H_ */
