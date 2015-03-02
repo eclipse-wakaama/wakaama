@@ -416,10 +416,6 @@ static lwm2m_list_t * prv_findServerInstance(lwm2m_object_t * objectP,
 
         size = 1;
         tlvP = lwm2m_tlv_new(size);
-        if (tlvP == NULL) return NULL;
-        tlvP->id = LWM2M_SERVER_SHORT_ID_ID;
-
-        tlvP = lwm2m_tlv_new(size);
         if (tlvP == NULL) {
             return NULL;
         }
