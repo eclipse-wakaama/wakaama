@@ -86,7 +86,7 @@ typedef struct
 
 static uint8_t prv_set_value(lwm2m_tlv_t * tlvP,
                              conn_m_data_t * connDataP)
-{   //-------------------------------------------------------------------- JH --
+{
     switch (tlvP->id)
     {
     case RES_M_NETWORK_BEARER:
@@ -110,17 +110,6 @@ static uint8_t prv_set_value(lwm2m_tlv_t * tlvP,
             lwm2m_tlv_free(riCnt, subTlvP);
             return COAP_500_INTERNAL_SERVER_ERROR ;
         }
-        /*
-        subTlvP[1].flags = 0;
-        subTlvP[1].id    = 1;
-        subTlvP[1].type  = LWM2M_TYPE_RESSOURCE_INSTANCE;
-        lwm2m_tlv_encode_int(VALUE_AVL_NETWORK_BEARER_2, subTlvP + 1);
-        if (0 == subTlvP[1].length)
-        {
-            lwm2m_tlv_free(riCnt, subTlvP);
-            return COAP_500_INTERNAL_SERVER_ERROR ;
-        }
-        */
         tlvP->flags  = 0;
         tlvP->type   = LWM2M_TYPE_MULTIPLE_RESSOURCE;
         tlvP->length = riCnt;
@@ -219,18 +208,6 @@ static uint8_t prv_set_value(lwm2m_tlv_t * tlvP,
             lwm2m_tlv_free(riCnt, subTlvP);
             return COAP_500_INTERNAL_SERVER_ERROR ;
         }
-        /* wait for blockwise implementation!
-        subTlvP[1].flags  = LWM2M_TLV_FLAG_STATIC_DATA;
-        subTlvP[1].id     = 1;
-        subTlvP[1].type   = LWM2M_TYPE_RESSOURCE_INSTANCE;
-        subTlvP[1].value  = (uint8_t*) VALUE_APN_2;
-        subTlvP[1].length = strlen(VALUE_APN_2);
-        if (0 == subTlvP[1].length)
-        {
-            lwm2m_tlv_free(riCnt, subTlvP);
-            return COAP_500_INTERNAL_SERVER_ERROR ;
-        }
-        */
         tlvP->flags  = 0;
         tlvP->type   = LWM2M_TYPE_MULTIPLE_RESSOURCE;
         tlvP->length = riCnt;
@@ -269,7 +246,7 @@ static uint8_t prv_read(uint16_t instanceId,
                         int * numDataP,
                         lwm2m_tlv_t ** dataArrayP,
                         lwm2m_object_t * objectP)
-{   //-------------------------------------------------------------------- JH --
+{
     uint8_t result;
     int i;
 
@@ -318,12 +295,12 @@ static uint8_t prv_read(uint16_t instanceId,
 }
 
 static void prv_close(lwm2m_object_t * objectP)
-{	//-------------------------------------------------------------------- JH --
+{
     lwm2m_free(objectP->userData);
 }
 
 lwm2m_object_t * get_object_conn_m()
-{   //-------------------------------------------------------------------- JH --
+{
     /*
      * The get_object_conn_m() function create the object itself and return a pointer to the structure that represent it.
      */

@@ -380,14 +380,12 @@ static void update_battery_level(lwm2m_context_t * context)
     }
 }
 
-//#define OBJ_COUNT 8
 
 int main(int argc, char *argv[])
 {
     client_data_t data;
     int result;
     lwm2m_context_t * lwm2mH = NULL;
-//  lwm2m_object_t * objArray[OBJ_COUNT];   // now global defined for conn_s!
     int i;
     const char * localPort = "56830";
     const char * server = "localhost";

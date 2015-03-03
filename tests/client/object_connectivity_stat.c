@@ -59,7 +59,7 @@ typedef struct
 } conn_s_data_t;
 
 static uint8_t prv_set_tlv(lwm2m_tlv_t * tlvP, conn_s_data_t * connStDataP)
-{   //-------------------------------------------------------------------- JH --
+{
     switch (tlvP->id) {
     case RES_O_SMS_TX_COUNTER:
         lwm2m_tlv_encode_int(connStDataP->smsTxCounter, tlvP);
@@ -97,7 +97,7 @@ static uint8_t prv_set_tlv(lwm2m_tlv_t * tlvP, conn_s_data_t * connStDataP)
 }
 
 static uint8_t prv_read(uint16_t instanceId, int * numDataP, lwm2m_tlv_t** dataArrayP, lwm2m_object_t * objectP)
-{   //-------------------------------------------------------------------- JH --
+{
     uint8_t result;
     int i;
 
@@ -141,7 +141,7 @@ static uint8_t prv_read(uint16_t instanceId, int * numDataP, lwm2m_tlv_t** dataA
 }
 
 static void prv_resetCounter(lwm2m_object_t* objectP, bool start)
-{   //-------------------------------------------------------------------- JH --
+{
     conn_s_data_t *myData = (conn_s_data_t*) objectP->userData;
     myData->smsTxCounter        = 0;
     myData->smsRxCounter        = 0;
@@ -155,7 +155,7 @@ static void prv_resetCounter(lwm2m_object_t* objectP, bool start)
 
 static uint8_t prv_exec(uint16_t instanceId, uint16_t resourceId,
                         char * buffer, int length, lwm2m_object_t * objectP)
-{   //-------------------------------------------------------------------- JH --
+{
     // this is a single instance object
     if (instanceId != 0)
     {
@@ -175,12 +175,12 @@ static uint8_t prv_exec(uint16_t instanceId, uint16_t resourceId,
 }
 
 static void prv_close(lwm2m_object_t * objectP)
-{   //-------------------------------------------------------------------- JH --
+{
     lwm2m_free(objectP->userData);
 }
 
 void conn_s_updateTxStatistic(lwm2m_object_t * objectP, uint txDataByte, bool smsBased)
-{   //-------------------------------------------------------------------- JH --
+{
     conn_s_data_t* myData = (conn_s_data_t*) (objectP->userData);
     if (myData->collectDataStarted) {
         myData->txDataByte += txDataByte;
@@ -194,7 +194,7 @@ void conn_s_updateTxStatistic(lwm2m_object_t * objectP, uint txDataByte, bool sm
 }
 
 void conn_s_updateRxStatistic(lwm2m_object_t * objectP, uint rxDataByte, bool smsBased)
-{   //-------------------------------------------------------------------- JH --
+{
     conn_s_data_t* myData = (conn_s_data_t*) (objectP->userData);
     if (myData->collectDataStarted) {
         myData->rxDataByte += rxDataByte;
@@ -210,7 +210,7 @@ void conn_s_updateRxStatistic(lwm2m_object_t * objectP, uint rxDataByte, bool sm
 
 
 lwm2m_object_t * get_object_conn_s()
-{   //-------------------------------------------------------------------- JH --
+{
     /*
      * The get_object_conn_s() function create the object itself and return
      * a pointer to the structure that represent it.

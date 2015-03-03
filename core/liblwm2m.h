@@ -64,6 +64,7 @@
 #define lwm2m_strdup strdup
 #else
 int lwm2m_gettimeofday(struct timeval *tv, void *p);
+char *lwm2m_strdup(const char* str);
 void *lwm2m_malloc(size_t s);
 void lwm2m_free(void *p);
 #endif
