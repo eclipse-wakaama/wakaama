@@ -49,6 +49,7 @@
  THE POSSIBILITY OF SUCH DAMAGE.
 
  David Navarro <david.navarro@intel.com>
+ Bosch Software Innovations GmbH - Please refer to git log
 
 */
 
@@ -82,6 +83,9 @@
 
 int g_reboot = 0;
 static int g_quit = 0;
+
+#define OBJ_COUNT 8
+lwm2m_object_t * objArray[OBJ_COUNT];
 
 
 typedef struct
@@ -228,7 +232,7 @@ static void * prv_connect_server(uint16_t serverID, void * userData)
     }
 
 exit:
-    free(uri);
+    lwm2m_free(uri);
     return (void *)newConnP;
 }
 
@@ -249,6 +253,8 @@ static uint8_t prv_buffer_send(void * sessionH,
     {
         fprintf(stderr, "#> failed sending %lu bytes\r\n", length);
         return COAP_500_INTERNAL_SERVER_ERROR ;
+    } else {
+        conn_s_updateTxStatistic(objArray[7], length, false);
     }
 
     fprintf(stderr, "#> sent %lu bytes\r\n", length);
@@ -374,14 +380,14 @@ static void update_battery_level(lwm2m_context_t * context)
     }
 }
 
-#define OBJ_COUNT 7
+//#define OBJ_COUNT 8
 
 int main(int argc, char *argv[])
 {
     client_data_t data;
     int result;
     lwm2m_context_t * lwm2mH = NULL;
-    lwm2m_object_t * objArray[OBJ_COUNT];
+//  lwm2m_object_t * objArray[OBJ_COUNT];   // now global defined for conn_s!
     int i;
     const char * localPort = "56830";
     const char * server = "localhost";
@@ -414,10 +420,10 @@ int main(int argc, char *argv[])
 
     memset(&data, 0, sizeof(client_data_t));
 
-    if (argc >= 2) localPort = argv[1];
-    if (argc >= 3) server = argv[2];
+    if (argc >= 2) localPort  = argv[1];
+    if (argc >= 3) server     = argv[2];
     if (argc >= 4) serverPort = argv[3];
-    if (argc >= 5) name = argv[4];
+    if (argc >= 5) name       = argv[4];
     if (argc >= 6) sscanf(argv[5], "%d", &lifetime);
     if (argc >= 7) batterylevelchanging = argv[6][0] == '1' ? 1 : 0;
 
@@ -485,7 +491,14 @@ int main(int argc, char *argv[])
     objArray[6] = get_object_conn_m();
     if (NULL == objArray[6])
     {
-        fprintf(stderr, "Failed to create location object\r\n");
+        fprintf(stderr, "Failed to create connectivity monitoring object\r\n");
+        return -1;
+    }
+
+    objArray[7] = get_object_conn_s();
+    if (NULL == objArray[7])
+    {
+        fprintf(stderr, "Failed to create connectivity statistics object\r\n");
         return -1;
     }
 
@@ -664,6 +677,7 @@ int main(int argc, char *argv[])
                          * Let liblwm2m respond to the query depending on the context
                          */
                         lwm2m_handle_packet(lwm2mH, buffer, numBytes, connP);
+                        conn_s_updateRxStatistic(objArray[7], numBytes, false);
                     }
                     else
                     {
@@ -687,7 +701,7 @@ int main(int argc, char *argv[])
                     /*
                      * We call the corresponding callback of the typed command passing it the buffer for further arguments
                      */
-                    handle_command(commands, buffer);
+                    handle_command(commands, (char*)buffer);
                 }
                 if (g_quit == 0)
                 {

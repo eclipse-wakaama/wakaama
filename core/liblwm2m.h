@@ -61,6 +61,7 @@
 #define lwm2m_gettimeofday gettimeofday
 #define lwm2m_malloc malloc
 #define lwm2m_free free
+#define lwm2m_strdup strdup
 #else
 int lwm2m_gettimeofday(struct timeval *tv, void *p);
 void *lwm2m_malloc(size_t s);
