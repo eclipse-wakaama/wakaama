@@ -22,6 +22,7 @@ SET(SOURCES
     object_location.c
     object_connectivity_moni.c
     object_connectivity_stat.c
+    object_access_control.c
     test_object.c)
 
 add_executable(lwm2mclient ${SOURCES} ${CORE_SOURCES})

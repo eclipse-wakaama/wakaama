@@ -84,7 +84,7 @@
 int g_reboot = 0;
 static int g_quit = 0;
 
-#define OBJ_COUNT 8
+#define OBJ_COUNT 9
 lwm2m_object_t * objArray[OBJ_COUNT];
 
 
@@ -500,6 +500,23 @@ int main(int argc, char *argv[])
         return -1;
     }
 
+    int instId = 0;
+    objArray[8] = acc_ctrl_create_object();
+    if (NULL == objArray[8])
+    {
+        fprintf(stderr, "Failed to create Access Control object\r\n");
+        return -1;
+    }
+    else if (acc_ctrl_obj_add_inst(objArray[8], instId, 3, 0, serverId)==false)
+    {
+        fprintf(stderr, "Failed to create Access Control object instance\r\n");
+        return -1;
+    }
+    else if (acc_ctrl_oi_add_ac_val(objArray[8], instId, 123, 0b000000000001111)==false)
+    {
+        fprintf(stderr, "Failed to create Access Control ACL resource\r\n");
+        return -1;
+    }
     /*
      * The liblwm2m library is now initialized with the functions that will be in
      * charge of communication

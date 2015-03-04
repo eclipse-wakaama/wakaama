@@ -64,6 +64,15 @@ uint8_t connectivity_moni_change(lwm2m_tlv_t * dataArray, lwm2m_object_t * objec
 extern lwm2m_object_t * get_object_conn_s();
 extern void conn_s_updateTxStatistic(lwm2m_object_t * objectP, uint16_t txDataByte, bool smsBased);
 extern void conn_s_updateRxStatistic(lwm2m_object_t * objectP, uint16_t rxDataByte, bool smsBased);
+
+/*
+ * object_access_control.c
+ */
+extern lwm2m_object_t* acc_ctrl_create_object();
+extern bool  acc_ctrl_obj_add_inst (lwm2m_object_t* accCtrlObjP, uint16_t instId,
+                 uint16_t acObjectId, uint16_t acObjInstId, uint16_t acOwner);
+extern bool  acc_ctrl_oi_add_ac_val(lwm2m_object_t* accCtrlObjP, uint16_t instId,
+                 uint16_t aclResId, uint16_t acValue);
 /*
  * lwm2mclient.c
  */
