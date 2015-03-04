@@ -179,7 +179,7 @@ static void prv_close(lwm2m_object_t * objectP)
     lwm2m_free(objectP->userData);
 }
 
-void conn_s_updateTxStatistic(lwm2m_object_t * objectP, uint txDataByte, bool smsBased)
+void conn_s_updateTxStatistic(lwm2m_object_t * objectP, uint16_t txDataByte, bool smsBased)
 {
     conn_s_data_t* myData = (conn_s_data_t*) (objectP->userData);
     if (myData->collectDataStarted) {
@@ -193,7 +193,7 @@ void conn_s_updateTxStatistic(lwm2m_object_t * objectP, uint txDataByte, bool sm
     }
 }
 
-void conn_s_updateRxStatistic(lwm2m_object_t * objectP, uint rxDataByte, bool smsBased)
+void conn_s_updateRxStatistic(lwm2m_object_t * objectP, uint16_t rxDataByte, bool smsBased)
 {
     conn_s_data_t* myData = (conn_s_data_t*) (objectP->userData);
     if (myData->collectDataStarted) {

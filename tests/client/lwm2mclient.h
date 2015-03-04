@@ -62,8 +62,8 @@ uint8_t connectivity_moni_change(lwm2m_tlv_t * dataArray, lwm2m_object_t * objec
  * object_connectivity_stat.c
  */
 extern lwm2m_object_t * get_object_conn_s();
-extern void conn_s_updateTxStatistic(lwm2m_object_t * objectP, uint txDataByte, bool smsBased);
-extern void conn_s_updateRxStatistic(lwm2m_object_t * objectP, uint rxDataByte, bool smsBased);
+extern void conn_s_updateTxStatistic(lwm2m_object_t * objectP, uint16_t txDataByte, bool smsBased);
+extern void conn_s_updateRxStatistic(lwm2m_object_t * objectP, uint16_t rxDataByte, bool smsBased);
 /*
  * lwm2mclient.c
  */
