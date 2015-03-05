@@ -15,6 +15,7 @@
  *    domedambrosio - Please refer to git log
  *    Fabien Fleutot - Please refer to git log
  *    Axel Lorente - Please refer to git log
+ *    Achim Kraus, Bosch Software Innovations GmbH - Please refer to git log
  *    
  *******************************************************************************/
 
@@ -215,7 +216,7 @@ static uint8_t prv_delete(uint16_t id,
     objectP->instanceList = lwm2m_list_remove(objectP->instanceList, id, (lwm2m_list_t **)&targetP);
     if (NULL == targetP) return COAP_404_NOT_FOUND;
 
-    free(targetP);
+    lwm2m_free(targetP);
 
     return COAP_202_DELETED;
 }
@@ -229,7 +230,7 @@ static uint8_t prv_create(uint16_t instanceId,
     uint8_t result;
 
 
-    targetP = (prv_instance_t *)malloc(sizeof(prv_instance_t));
+    targetP = (prv_instance_t *)lwm2m_malloc(sizeof(prv_instance_t));
     if (NULL == targetP) return COAP_500_INTERNAL_SERVER_ERROR;
     memset(targetP, 0, sizeof(prv_instance_t));
 
@@ -276,11 +277,24 @@ static uint8_t prv_exec(uint16_t instanceId,
     }
 }
 
+static void prv_close(lwm2m_object_t * objectP)
+{
+    while (objectP->instanceList != NULL)
+    {
+        prv_instance_t * targetP;
+
+        targetP = (prv_instance_t *)objectP->instanceList;
+        objectP->instanceList = objectP->instanceList->next;
+
+        lwm2m_free(targetP);
+    }
+}
+
 lwm2m_object_t * get_test_object()
 {
     lwm2m_object_t * testObj;
 
-    testObj = (lwm2m_object_t *)malloc(sizeof(lwm2m_object_t));
+    testObj = (lwm2m_object_t *)lwm2m_malloc(sizeof(lwm2m_object_t));
 
     if (NULL != testObj)
     {
@@ -292,11 +306,11 @@ lwm2m_object_t * get_test_object()
         testObj->objID = 1024;
         for (i=0 ; i < 3 ; i++)
         {
-            targetP = (prv_instance_t *)malloc(sizeof(prv_instance_t));
+            targetP = (prv_instance_t *)lwm2m_malloc(sizeof(prv_instance_t));
             if (NULL == targetP) return NULL;
             memset(targetP, 0, sizeof(prv_instance_t));
             targetP->shortID = 10 + i;
-            targetP->test = 20 + i;
+            targetP->test    = 20 + i;
             targetP->counter = i;
             testObj->instanceList = LWM2M_LIST_ADD(testObj->instanceList, targetP);
         }
@@ -307,11 +321,12 @@ lwm2m_object_t * get_test_object()
          * - The other one (deleteFunc) delete an instance by removing it from the instance list (and freeing the memory
          *   allocated to it)
          */
-        testObj->readFunc = prv_read;
-        testObj->writeFunc = prv_write;
-        testObj->createFunc = prv_create;
-        testObj->deleteFunc = prv_delete;
+        testObj->readFunc    = prv_read;
+        testObj->writeFunc   = prv_write;
+        testObj->createFunc  = prv_create;
+        testObj->deleteFunc  = prv_delete;
         testObj->executeFunc = prv_exec;
+        testObj->closeFunc   = prv_close;
     }
 
     return testObj;

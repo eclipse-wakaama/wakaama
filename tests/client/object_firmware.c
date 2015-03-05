@@ -14,6 +14,7 @@
  *    Julien Vermillard - initial implementation
  *    Fabien Fleutot - Please refer to git log
  *    David Navarro, Intel Corporation - Please refer to git log
+ *    Bosch Software Innovations GmbH - Please refer to git log
  *    
  *******************************************************************************/
 
@@ -40,7 +41,16 @@
 #include <string.h>
 #include <ctype.h>
 
-#define PRV_TLV_BUFFER_SIZE 128
+// ---- private object "Firmware" specific defines ----
+// Resource Id's:
+#define RES_M_PACKAGE                   0
+#define RES_M_PACKAGE_URI               1
+#define RES_M_UPDATE                    2
+#define RES_M_STATE                     3
+#define RES_O_UPDATE_SUPPORTED_OPJECTS  4
+#define RES_M_UPDATE_RESULT             5
+#define RES_O_PKG_NAME                  6
+#define RES_O_PKG_VERSION               7
 
 typedef struct
 {
@@ -81,13 +91,13 @@ static uint8_t prv_firmware_read(uint16_t instanceId,
     {
         switch ((*dataArrayP)[i].id)
         {
-        case 0:
-        case 1:
-        case 2:
+        case RES_M_PACKAGE:
+        case RES_M_PACKAGE_URI:
+        case RES_M_UPDATE:
             result = COAP_405_METHOD_NOT_ALLOWED;
             break;
 
-        case 3:
+        case RES_M_STATE:
             // firmware update state (int)
             lwm2m_tlv_encode_int(data->state, *dataArrayP + i);
             (*dataArrayP)[i].type = LWM2M_TYPE_RESSOURCE;
@@ -97,7 +107,7 @@ static uint8_t prv_firmware_read(uint16_t instanceId,
 
             break;
 
-        case 4:
+        case RES_O_UPDATE_SUPPORTED_OPJECTS:
             lwm2m_tlv_encode_int(data->supported, *dataArrayP + i);
             (*dataArrayP)[i].type = LWM2M_TYPE_RESSOURCE;
 
@@ -106,7 +116,7 @@ static uint8_t prv_firmware_read(uint16_t instanceId,
 
             break;
 
-        case 5:
+        case RES_M_UPDATE_RESULT:
             lwm2m_tlv_encode_int(data->result, *dataArrayP + i);
             (*dataArrayP)[i].type = LWM2M_TYPE_RESSOURCE;
 
@@ -147,17 +157,17 @@ static uint8_t prv_firmware_write(uint16_t instanceId,
     {
         switch (dataArray[i].id)
         {
-        case 0:
+        case RES_M_PACKAGE:
             // inline firmware binary
             result = COAP_204_CHANGED;
             break;
 
-        case 1:
+        case RES_M_PACKAGE_URI:
             // URL for download the firmware
             result = COAP_204_CHANGED;
             break;
 
-        case 4:
+        case RES_O_UPDATE_SUPPORTED_OPJECTS:
             if (lwm2m_tlv_decode_bool(&dataArray[i], &bvalue) == 1)
             {
                 data->supported = bvalue ? 1 : 0;
@@ -198,7 +208,7 @@ static uint8_t prv_firmware_execute(uint16_t instanceId,
     // for execute callback, resId is always set.
     switch (resourceId)
     {
-    case 2:
+    case RES_M_UPDATE:
         if (data->state == 1)
         {
             fprintf(stdout, "\n\t FIRMWARE UPDATE\r\n\n");
@@ -214,6 +224,11 @@ static uint8_t prv_firmware_execute(uint16_t instanceId,
     default:
         return COAP_405_METHOD_NOT_ALLOWED;
     }
+}
+
+static void prv_firmware_close(lwm2m_object_t * objectP)
+{
+    lwm2m_free(objectP->userData);
 }
 
 lwm2m_object_t * get_object_firmware()
@@ -255,10 +270,11 @@ lwm2m_object_t * get_object_firmware()
          * Those function will be called when a read/write/execute query is made by the server. In fact the library don't need to
          * know the resources of the object, only the server does.
          */
-        firmwareObj->readFunc = prv_firmware_read;
-        firmwareObj->writeFunc = prv_firmware_write;
+        firmwareObj->readFunc    = prv_firmware_read;
+        firmwareObj->writeFunc   = prv_firmware_write;
         firmwareObj->executeFunc = prv_firmware_execute;
-        firmwareObj->userData = lwm2m_malloc(sizeof(firmware_data_t));
+        firmwareObj->closeFunc   = prv_firmware_close;
+        firmwareObj->userData    = lwm2m_malloc(sizeof(firmware_data_t));
 
         /*
          * Also some user data can be stored in the object with a private structure containing the needed variables
@@ -271,7 +287,7 @@ lwm2m_object_t * get_object_firmware()
         }
         else
         {
-            free(firmwareObj);
+            lwm2m_free(firmwareObj);
             firmwareObj = NULL;
         }
     }

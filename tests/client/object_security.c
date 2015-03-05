@@ -76,7 +76,7 @@ static uint8_t prv_get_value(lwm2m_tlv_t * tlvP,
     switch (tlvP->id)
     {
     case LWM2M_SECURITY_URI_ID:
-        tlvP->value = targetP->uri;
+        tlvP->value = (uint8_t*)targetP->uri;
         tlvP->length = strlen(targetP->uri);
         tlvP->flags = LWM2M_TLV_FLAG_STATIC_DATA;
         return COAP_205_CONTENT;
@@ -93,21 +93,21 @@ static uint8_t prv_get_value(lwm2m_tlv_t * tlvP,
 
     case LWM2M_SECURITY_PUBLIC_KEY_ID:
         // Here we return an opaque of 1 byte containing 0
-        tlvP->value = "";
+        tlvP->value = (uint8_t*)"";
         tlvP->length = 1;
         tlvP->flags = LWM2M_TLV_FLAG_STATIC_DATA;
         return COAP_205_CONTENT;
 
     case LWM2M_SECURITY_SERVER_PUBLIC_KEY_ID:
         // Here we return an opaque of 1 byte containing 0
-        tlvP->value = "";
+        tlvP->value = (uint8_t*)"";
         tlvP->length = 1;
         tlvP->flags = LWM2M_TLV_FLAG_STATIC_DATA;
         return COAP_205_CONTENT;
 
     case LWM2M_SECURITY_SECRET_KEY_ID:
         // Here we return an opaque of 1 byte containing 0
-        tlvP->value = "";
+        tlvP->value = (uint8_t*)"";
         tlvP->length = 1;
         tlvP->flags = LWM2M_TLV_FLAG_STATIC_DATA;
         return COAP_205_CONTENT;
@@ -119,14 +119,14 @@ static uint8_t prv_get_value(lwm2m_tlv_t * tlvP,
 
     case LWM2M_SECURITY_SMS_KEY_PARAM_ID:
         // Here we return an opaque of 6 bytes containing a buggy value
-        tlvP->value = "12345";
+        tlvP->value = (uint8_t*)"12345";
         tlvP->length = 6;
         tlvP->flags = LWM2M_TLV_FLAG_STATIC_DATA;
         return COAP_205_CONTENT;
 
     case LWM2M_SECURITY_SMS_SECRET_KEY_ID:
         // Here we return an opaque of 32 bytes containing a buggy value
-        tlvP->value = "1234567890abcdefghijklmnopqrstu";
+        tlvP->value = (uint8_t*)"1234567890abcdefghijklmnopqrstu";
         tlvP->length = 32;
         tlvP->flags = LWM2M_TLV_FLAG_STATIC_DATA;
         return COAP_205_CONTENT;
@@ -221,7 +221,7 @@ static uint8_t prv_security_write(uint16_t instanceId,
             targetP->uri = (char *)lwm2m_malloc(dataArray[i].length + 1);
             if (targetP->uri != NULL)
             {
-                strncpy(targetP->uri, dataArray[i].value, dataArray[i].length);
+                strncpy(targetP->uri, (char*)dataArray[i].value, dataArray[i].length);
                 result = COAP_204_CHANGED;
             }
             else
@@ -426,8 +426,9 @@ char * get_server_uri(lwm2m_object_t * objectP,
     {
         if (targetP->shortID == serverID)
         {
-            return strdup(targetP->uri);
+            return lwm2m_strdup(targetP->uri);
         }
+        targetP = (security_instance_t*)targetP->next;
     }
 
     return NULL;
