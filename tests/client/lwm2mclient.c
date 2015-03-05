@@ -253,10 +253,8 @@ static uint8_t prv_buffer_send(void * sessionH,
     {
         fprintf(stderr, "#> failed sending %lu bytes\r\n", length);
         return COAP_500_INTERNAL_SERVER_ERROR ;
-    } else {
-        conn_s_updateTxStatistic(objArray[7], length, false);
     }
-
+    conn_s_updateTxStatistic(objArray[7], (uint16_t)length, false);
     fprintf(stderr, "#> sent %lu bytes\r\n", length);
     return COAP_NO_ERROR;
 }
@@ -512,9 +510,14 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Failed to create Access Control object instance\r\n");
         return -1;
     }
-    else if (acc_ctrl_oi_add_ac_val(objArray[8], instId, 123, 0b000000000001111)==false)
+    else if (acc_ctrl_oi_add_ac_val(objArray[8], instId, 0, 0b000000000001111)==false)
     {
-        fprintf(stderr, "Failed to create Access Control ACL resource\r\n");
+        fprintf(stderr, "Failed to create Access Control ACL default resource\r\n");
+        return -1;
+    }
+    else if (acc_ctrl_oi_add_ac_val(objArray[8], instId, 999, 0b000000000000001)==false)
+    {
+        fprintf(stderr, "Failed to create Access Control ACL resource for serverId: 999\r\n");
         return -1;
     }
     /*
