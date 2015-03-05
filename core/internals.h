@@ -76,11 +76,8 @@
 #define URI_REGISTRATION_SEGMENT_LEN    2
 #define URI_BOOTSTRAP_SEGMENT           "bs"
 #define URI_BOOTSTRAP_SEGMENT_LEN       2
-#define URI_DELETE_ALL_SEGMENT          "/"
-#define URI_DELETE_ALL_SEGMENT_LEN      1
 
 #define LWM2M_URI_FLAG_DM           (uint8_t)0x00
-#define LWM2M_URI_FLAG_DELETE_ALL   (uint8_t)0x10
 #define LWM2M_URI_FLAG_REGISTRATION (uint8_t)0x20
 #define LWM2M_URI_FLAG_BOOTSTRAP    (uint8_t)0x40
 

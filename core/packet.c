@@ -111,38 +111,42 @@ static coap_status_t handle_request(lwm2m_context_t * contextP,
 
     uriP = lwm2m_decode_uri(message->uri_path);
     if (uriP == NULL) {
-        return BAD_REQUEST_4_00;
-    }
-    switch(uriP->flag & LWM2M_URI_MASK_TYPE)
-    {
 #ifdef LWM2M_CLIENT_MODE
-    case LWM2M_URI_FLAG_DM:
-        // TODO: Authentify server
-        result = handle_dm_request(contextP, uriP, fromSessionH, message, response);
-        break;
+        if ((contextP->bsState == BOOTSTRAP_PENDING) && (message->type == COAP_DELETE)) {
+            result = handle_delete_all(contextP, fromSessionH, message, response);
+        }
+        else
+#endif
+            return BAD_REQUEST_4_00;
+    }
+    else {
+        switch(uriP->flag & LWM2M_URI_MASK_TYPE)
+        {
+#ifdef LWM2M_CLIENT_MODE
+        case LWM2M_URI_FLAG_DM:
+            // TODO: Authentify server
+            result = handle_dm_request(contextP, uriP, fromSessionH, message, response);
+            break;
 
-    case LWM2M_URI_FLAG_DELETE_ALL:
-        result = handle_delete_all(contextP, fromSessionH, message, response);
-        break;
-
-    case LWM2M_URI_FLAG_BOOTSTRAP:
-        result = NOT_IMPLEMENTED_5_01;
-        break;
+        case LWM2M_URI_FLAG_BOOTSTRAP:
+            result = NOT_IMPLEMENTED_5_01;
+            break;
 #endif
 
 #ifdef LWM2M_SERVER_MODE
-    case LWM2M_URI_FLAG_REGISTRATION:
-        result = handle_registration_request(contextP, uriP, fromSessionH, message, response);
-        break;
+        case LWM2M_URI_FLAG_REGISTRATION:
+            result = handle_registration_request(contextP, uriP, fromSessionH, message, response);
+            break;
 
-    case LWM2M_URI_FLAG_BOOTSTRAP:
-        LOG("Client initiated bootstrap. Not implemented.\r\n");
-        result = NOT_IMPLEMENTED_5_01;
-        break;
+        case LWM2M_URI_FLAG_BOOTSTRAP:
+            LOG("Client initiated bootstrap. Not implemented.\r\n");
+            result = NOT_IMPLEMENTED_5_01;
+            break;
 #endif
-    default:
-        result = BAD_REQUEST_4_00;
-        break;
+        default:
+            result = BAD_REQUEST_4_00;
+            break;
+        }
     }
 
     LOG("    Request result: %d.%.2d\r\n", result >> 5, result & 0x1F);

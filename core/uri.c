@@ -122,14 +122,6 @@ lwm2m_uri_t * lwm2m_decode_uri(multi_option_t *uriPath)
         if (uriPath != NULL) goto error;
         return uriP;
     }
-    else if (URI_DELETE_ALL_SEGMENT_LEN == uriPath->len
-     && 0 == strncmp(URI_DELETE_ALL_SEGMENT, uriPath->data, uriPath->len))
-    {
-        uriP->flag |= LWM2M_URI_FLAG_DELETE_ALL;
-        uriPath = uriPath->next;
-        if (uriPath != NULL) goto error;
-        return uriP;
-    }
 
     readNum = prv_get_number(uriPath->data, uriPath->len);
     if (readNum < 0 || readNum > LWM2M_MAX_ID) goto error;
