@@ -84,10 +84,13 @@ static uint8_t prv_set_tlv(lwm2m_tlv_t* tlvP, acc_ctrl_oi_t* accCtrlOiP)
              accCtrlRiP!=NULL;
              accCtrlRiP = accCtrlRiP->next, ri++);
 
-        lwm2m_tlv_t* subTlvP = NULL;
-        if (ri > 0)
+        if (ri==0)  // no values!
         {
-            subTlvP = lwm2m_tlv_new(ri);
+            return COAP_404_NOT_FOUND;
+        }
+        else
+        {
+            lwm2m_tlv_t* subTlvP = lwm2m_tlv_new(ri);
             for (accCtrlRiP = accCtrlOiP->accCtrlValList, ri = 0;
                  accCtrlRiP!= NULL;
                  accCtrlRiP = accCtrlRiP->next, ri++)
@@ -100,12 +103,12 @@ static uint8_t prv_set_tlv(lwm2m_tlv_t* tlvP, acc_ctrl_oi_t* accCtrlOiP)
                     return COAP_500_INTERNAL_SERVER_ERROR ;
                 }
             }
+            tlvP->flags  = 0;
+            tlvP->type   = LWM2M_TYPE_MULTIPLE_RESSOURCE;
+            tlvP->length = ri;
+            tlvP->value  = (uint8_t*)subTlvP;
+            return COAP_205_CONTENT;
         }
-        tlvP->flags  = 0;
-        tlvP->type   = LWM2M_TYPE_MULTIPLE_RESSOURCE;
-        tlvP->length = ri;
-        tlvP->value  = (uint8_t*)subTlvP;
-        return COAP_205_CONTENT;
     }   break;
     case RES_M_ACCESS_CONTROL_OWNER:
         lwm2m_tlv_encode_int(accCtrlOiP->accCtrlOwner, tlvP);
@@ -121,8 +124,8 @@ static uint8_t prv_set_tlv(lwm2m_tlv_t* tlvP, acc_ctrl_oi_t* accCtrlOiP)
 static uint8_t prv_read(uint16_t instanceId, int * numDataP,
                         lwm2m_tlv_t** dataArrayP, lwm2m_object_t * objectP)
 {
-    uint8_t result;
-    int i;
+    uint8_t result, tmpRes;
+    int     ri, ni;
 
     // multi-instance object: search instance
     acc_ctrl_oi_t* accCtrlOiP =
@@ -138,7 +141,7 @@ static uint8_t prv_read(uint16_t instanceId, int * numDataP,
         uint16_t resList[] = {
                 RES_M_OBJECT_ID,
                 RES_M_OBJECT_INSTANCE_ID,
-                RES_O_ACL,
+                RES_O_ACL,  // prv_set_tlv will return COAP_NOT_IMPLEMENTED if zero values!
                 RES_M_ACCESS_CONTROL_OWNER
         };
         int nbRes = sizeof(resList) / sizeof(uint16_t);
@@ -147,18 +150,32 @@ static uint8_t prv_read(uint16_t instanceId, int * numDataP,
         if (*dataArrayP == NULL)
             return COAP_500_INTERNAL_SERVER_ERROR ;
         *numDataP = nbRes;
-        for (i = 0; i < nbRes; i++)
+        for (ri = 0; ri < nbRes; ri++)
         {
-            (*dataArrayP)[i].id = resList[i];
+            (*dataArrayP)[ri].id = resList[ri];
         }
     }
 
-    i = 0;
+    ri = 0;
+    result = COAP_205_CONTENT;
     do
     {
-        result = prv_set_tlv((*dataArrayP) + i, accCtrlOiP);
-        i++;
-    } while (i < *numDataP && result == COAP_205_CONTENT );
+        tmpRes = prv_set_tlv((*dataArrayP)+ni, accCtrlOiP);
+        ri++;
+        // skip on tmpRes==COAP_404_NOT_FOUND:
+        if (tmpRes == COAP_205_CONTENT)
+        {
+            result = tmpRes;
+            ni++;
+        }
+        else if (*numDataP<=1 || tmpRes != COAP_404_NOT_FOUND)
+        {
+            result = tmpRes;
+        }
+
+    } while (ri < *numDataP && result == COAP_205_CONTENT);
+
+    if (*numDataP!=1) *numDataP = ni;
 
     return result;
 }
