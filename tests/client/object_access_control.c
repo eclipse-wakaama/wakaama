@@ -141,7 +141,7 @@ static uint8_t prv_read(uint16_t instanceId, int * numDataP,
         uint16_t resList[] = {
                 RES_M_OBJECT_ID,
                 RES_M_OBJECT_INSTANCE_ID,
-                RES_O_ACL,  // prv_set_tlv will return COAP_NOT_IMPLEMENTED if zero values!
+                RES_O_ACL,  // prv_set_tlv will return COAP_404_NOT_FOUND w/o values!
                 RES_M_ACCESS_CONTROL_OWNER
         };
         int nbRes = sizeof(resList) / sizeof(uint16_t);
