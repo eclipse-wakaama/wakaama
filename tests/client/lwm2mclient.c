@@ -84,7 +84,7 @@
 int g_reboot = 0;
 static int g_quit = 0;
 
-#define OBJ_COUNT 8
+#define OBJ_COUNT 9
 lwm2m_object_t * objArray[OBJ_COUNT];
 
 
@@ -253,10 +253,8 @@ static uint8_t prv_buffer_send(void * sessionH,
     {
         fprintf(stderr, "#> failed sending %lu bytes\r\n", length);
         return COAP_500_INTERNAL_SERVER_ERROR ;
-    } else {
-        conn_s_updateTxStatistic(objArray[7], length, false);
     }
-
+    conn_s_updateTxStatistic(objArray[7], (uint16_t)length, false);
     fprintf(stderr, "#> sent %lu bytes\r\n", length);
     return COAP_NO_ERROR;
 }
@@ -500,6 +498,28 @@ int main(int argc, char *argv[])
         return -1;
     }
 
+    int instId = 0;
+    objArray[8] = acc_ctrl_create_object();
+    if (NULL == objArray[8])
+    {
+        fprintf(stderr, "Failed to create Access Control object\r\n");
+        return -1;
+    }
+    else if (acc_ctrl_obj_add_inst(objArray[8], instId, 3, 0, serverId)==false)
+    {
+        fprintf(stderr, "Failed to create Access Control object instance\r\n");
+        return -1;
+    }
+    else if (acc_ctrl_oi_add_ac_val(objArray[8], instId, 0, 0b000000000001111)==false)
+    {
+        fprintf(stderr, "Failed to create Access Control ACL default resource\r\n");
+        return -1;
+    }
+    else if (acc_ctrl_oi_add_ac_val(objArray[8], instId, 999, 0b000000000000001)==false)
+    {
+        fprintf(stderr, "Failed to create Access Control ACL resource for serverId: 999\r\n");
+        return -1;
+    }
     /*
      * The liblwm2m library is now initialized with the functions that will be in
      * charge of communication

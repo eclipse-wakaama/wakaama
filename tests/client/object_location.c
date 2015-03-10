@@ -31,7 +31,8 @@
  *  Name        | ID  | Oper.|Instances|Mand.|  Type   | Range | Units | Description                                                                      |
  * -------------+-----+------+---------+-----+---------+-------+-------+----------------------------------------------------------------------------------+
  *  Latitude    |  0  |  R   | Single  | Yes | String  |       |  Deg  | The decimal notation of latitude  e.g. -  45.5723  [Worlds Geodetic System 1984].|
- *  Longitude   |  1  |  R   | Single  | Yes | String  |       |  Deg  | The decimal notation of longitude e.g. - 153.21760 [Worlds Geodetic System 1984].| *  Altidude    |  2  |  R   | Single  | No  | String  |       |   m   | The decimal notation of altidude in meters above sea level.                      |
+ *  Longitude   |  1  |  R   | Single  | Yes | String  |       |  Deg  | The decimal notation of longitude e.g. - 153.21760 [Worlds Geodetic System 1984].|
+ *  Altidude    |  2  |  R   | Single  | No  | String  |       |   m   | The decimal notation of altidude in meters above sea level.                      |
  *  Uncertainty |  3  |  R   | Single  | No  | Integer |       |   m   | The accuracy of the position in meters.                                          |
  *  Velocity    |  4  |  R   | Single  | No  | Opaque  |       |   *   | The velocity of the device as defined in 3GPP 23.032 GAD specification(*).       |
  *              |     |      |         |     |         |       |       | This set of values may not be available if the device is static.                 |
@@ -210,6 +211,7 @@ void location_setVelocity(lwm2m_object_t* locationObj,
 static void prv_location_close(lwm2m_object_t * objectP)
 {
     lwm2m_free(objectP->userData);
+    lwm2m_free(objectP->instanceList);
 }
 
 /**
