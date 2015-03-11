@@ -111,3 +111,15 @@ uint16_t lwm2m_list_newId(lwm2m_list_t * head)
 
     return id;
 }
+
+void lwm2m_list_free(lwm2m_list_t * head)
+{
+    if (head != NULL)
+    {
+        lwm2m_list_t * nextP;
+
+        nextP = head->next;
+        lwm2m_free(head);
+        lwm2m_list_free(nextP);
+    }
+}

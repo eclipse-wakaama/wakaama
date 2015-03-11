@@ -279,15 +279,7 @@ static uint8_t prv_exec(uint16_t instanceId,
 
 static void prv_close(lwm2m_object_t * objectP)
 {
-    while (objectP->instanceList != NULL)
-    {
-        prv_instance_t * targetP;
-
-        targetP = (prv_instance_t *)objectP->instanceList;
-        objectP->instanceList = objectP->instanceList->next;
-
-        lwm2m_free(targetP);
-    }
+    LWM2M_LIST_FREE(objectP->instanceList);
 }
 
 lwm2m_object_t * get_test_object()

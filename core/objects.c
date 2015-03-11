@@ -422,14 +422,14 @@ static int prv_getMandatoryInfo(lwm2m_object_t * objectP,
 
     if (objectP->readFunc(instanceID, &size, &tlvP, objectP) != COAP_205_CONTENT)
     {
-        lwm2m_free(tlvP);
+        lwm2m_tlv_free(size, tlvP);
         return -1;
     }
 
     if (0 == lwm2m_tlv_decode_int(tlvP, &value)
      || value < 0 || value >0xFFFFFFFF)             // This is an implementation limit
     {
-        lwm2m_free(tlvP);
+        lwm2m_tlv_free(size, tlvP);
         return -1;
     }
     targetP->lifetime = value;

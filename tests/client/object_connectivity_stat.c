@@ -177,7 +177,7 @@ static uint8_t prv_exec(uint16_t instanceId, uint16_t resourceId,
 static void prv_close(lwm2m_object_t * objectP)
 {
     lwm2m_free(objectP->userData);
-    lwm2m_free(objectP->instanceList);
+    lwm2m_list_free(objectP->instanceList);
 }
 
 void conn_s_updateTxStatistic(lwm2m_object_t * objectP, uint16_t txDataByte, bool smsBased)
