@@ -150,22 +150,17 @@ static lwm2m_watcher_t * prv_findWatcher(lwm2m_observed_t * observedP,
 
 coap_status_t handle_observe_request(lwm2m_context_t * contextP,
                                      lwm2m_uri_t * uriP,
-                                     void * fromSessionH,
+                                     lwm2m_server_t * serverP,
                                      coap_packet_t * message,
                                      coap_packet_t * response)
 {
     lwm2m_observed_t * observedP;
     lwm2m_watcher_t * watcherP;
-    lwm2m_server_t * serverP;
 
     LOG("handle_observe_request()\r\n");
 
     if (!LWM2M_URI_IS_SET_INSTANCE(uriP) && LWM2M_URI_IS_SET_RESOURCE(uriP)) return COAP_400_BAD_REQUEST;
     if (message->token_len == 0) return COAP_400_BAD_REQUEST;
-
-    serverP = prv_findServer(contextP, fromSessionH);
-    if (serverP == NULL) return COAP_401_UNAUTHORIZED ;
-    if (serverP->status != STATE_REGISTERED && serverP->status != STATE_REG_UPDATE_PENDING) return COAP_401_UNAUTHORIZED ;
 
     observedP = prv_findObserved(contextP, uriP);
     if (observedP == NULL)
