@@ -133,21 +133,6 @@ static void prv_unlinkObserved(lwm2m_context_t * contextP,
     }
 }
 
-static lwm2m_server_t * prv_findServer(lwm2m_context_t * contextP,
-                                       void * fromSessionH)
-{
-    lwm2m_server_t * targetP;
-
-    targetP = contextP->serverList;
-    while (targetP != NULL
-        && targetP->sessionH != fromSessionH)
-    {
-        targetP = targetP->next;
-    }
-
-    return targetP;
-}
-
 static lwm2m_watcher_t * prv_findWatcher(lwm2m_observed_t * observedP,
                                          lwm2m_server_t * serverP)
 {
