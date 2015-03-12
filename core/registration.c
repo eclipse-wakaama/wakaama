@@ -279,7 +279,9 @@ static void prv_handleRegistrationUpdateReply(lwm2m_transaction_t * transacP,
     }
 }
 
-static int prv_update_registration(lwm2m_context_t * contextP, lwm2m_server_t * server) {
+static int prv_update_registration(lwm2m_context_t * contextP,
+                                   lwm2m_server_t * server)
+{
     lwm2m_transaction_t * transaction;
 
     transaction = transaction_new(COAP_PUT, NULL, contextP->nextMID++, ENDPOINT_SERVER, (void *)server);
@@ -297,11 +299,13 @@ static int prv_update_registration(lwm2m_context_t * contextP, lwm2m_server_t * 
         server->status = STATE_REG_UPDATE_PENDING;
         server->mid = transaction->mID;
     }
+
     return 0;
 }
 
 // update the registration of a given server
-int lwm2m_update_registration(lwm2m_context_t * contextP, uint16_t shortServerID)
+int lwm2m_update_registration(lwm2m_context_t * contextP,
+                              uint16_t shortServerID)
 {
     // look for the server
     lwm2m_server_t * targetP;
@@ -323,9 +327,9 @@ int lwm2m_update_registration(lwm2m_context_t * contextP, uint16_t shortServerID
 }
 
 // for each server update the registration if needed
-int lwm2m_update_registrations(lwm2m_context_t * contextP,
-                               time_t currentTime,
-                               time_t * timeoutP)
+void registration_update(lwm2m_context_t * contextP,
+                         time_t currentTime,
+                         time_t * timeoutP)
 {
     lwm2m_server_t * targetP;
     targetP = contextP->serverList;
@@ -333,26 +337,39 @@ int lwm2m_update_registrations(lwm2m_context_t * contextP,
     {
         switch (targetP->status) {
             case STATE_REGISTERED:
-                if (targetP->registration + targetP->lifetime - *timeoutP <= currentTime)
+                if (targetP->registration + targetP->lifetime <= currentTime)
                 {
                     prv_update_registration(contextP, targetP);
                 }
+                else
+                {
+                    time_t interval;
+
+                    interval = targetP->registration + targetP->lifetime - currentTime;
+                    if (interval < *timeoutP)
+                    {
+                        *timeoutP = interval;
+                    }
+                }
                 break;
+
             case STATE_DEREGISTERED:
                 // TODO: is it disabled?
                 prv_register(contextP, targetP);
                 break;
+
             case STATE_REG_PENDING:
                 break;
+
             case STATE_REG_UPDATE_PENDING:
                 // TODO: check for timeout and retry?
                 break;
+
             case STATE_DEREG_PENDING:
                 break;
         }
         targetP = targetP->next;
     }
-    return 0;
 }
 
 static void prv_handleDeregistrationReply(lwm2m_transaction_t * transacP,

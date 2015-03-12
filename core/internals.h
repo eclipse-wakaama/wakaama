@@ -127,6 +127,7 @@ void cancel_observe(lwm2m_context_t * contextP, uint16_t mid, void * fromSession
 coap_status_t handle_registration_request(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, void * fromSessionH, coap_packet_t * message, coap_packet_t * response);
 void registration_deregister(lwm2m_context_t * contextP, lwm2m_server_t * serverP);
 void prv_freeClient(lwm2m_client_t * clientP);
+void registration_update(lwm2m_context_t * contextP, time_t currentTime, time_t * timeoutP);
 
 // defined in packet.c
 coap_status_t message_send(lwm2m_context_t * contextP, coap_packet_t * message, void * sessionH);
