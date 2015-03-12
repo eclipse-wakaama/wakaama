@@ -58,16 +58,22 @@
 #include <sys/time.h>
 
 #ifndef LWM2M_EMBEDDED_MODE
-#define lwm2m_gettimeofday gettimeofday
 #define lwm2m_malloc malloc
 #define lwm2m_free free
 #define lwm2m_strdup strdup
 #else
-int lwm2m_gettimeofday(struct timeval *tv, void *p);
 char *lwm2m_strdup(const char* str);
 void *lwm2m_malloc(size_t s);
 void lwm2m_free(void *p);
 #endif
+// This function must return the number of seconds elapsed since origin.
+// The origin (Epoch, system boot, etc...) does not matter as this
+// function is used only to determine the elapsed time since the last
+// call to it.
+// In case of error, this must return a negative value.
+// Per POSIX specifications, time_t is a signed integer.
+// An implementation for POSIX systems is provided in utils.c
+time_t lwm2m_gettime();
 
 /*
  * Error code

@@ -207,3 +207,18 @@ lwm2m_binding_t lwm2m_stringToBinding(uint8_t *buffer,
 
     return BINDING_UNKNOWN;
 }
+
+#ifndef LWM2M_EMBEDDED_MODE
+time_t lwm2m_gettime()
+{
+    struct timeval tv;
+
+    if (0 != gettimeofday(&tv, NULL))
+    {
+        return -1;
+    }
+
+    return tv.tv_sec;
+}
+#endif
+

@@ -289,11 +289,12 @@ int transaction_send(lwm2m_context_t * contextP,
 
     if (transacP->retrans_counter == 0)
     {
-        struct timeval tv;
+        time_t tv_sec;
 
-        if (0 == lwm2m_gettimeofday(&tv, NULL))
+        tv_sec = lwm2m_gettime();
+        if (tv_sec >= 0)
         {
-            transacP->retrans_time = tv.tv_sec;
+            transacP->retrans_time = tv_sec;
             transacP->retrans_counter = 1;
         }
         else
