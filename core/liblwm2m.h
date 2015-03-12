@@ -511,8 +511,8 @@ lwm2m_context_t * lwm2m_init(lwm2m_connect_server_callback_t connectCallback, lw
 // close a liblwm2m context.
 void lwm2m_close(lwm2m_context_t * contextP);
 
-// perform any required pending operation and adjust timeoutP to the maximal time interval to wait.
-int lwm2m_step(lwm2m_context_t * contextP, struct timeval * timeoutP);
+// perform any required pending operation and adjust timeoutP to the maximal time interval to wait in seconds.
+int lwm2m_step(lwm2m_context_t * contextP, time_t * timeoutP);
 // dispatch received data to liblwm2m
 void lwm2m_handle_packet(lwm2m_context_t * contextP, uint8_t * buffer, int length, void * fromSessionH);
 
@@ -526,7 +526,7 @@ int lwm2m_configure(lwm2m_context_t * contextP, char * endpointName, char * msis
 int lwm2m_start(lwm2m_context_t * contextP);
 
 // check if the server registrations are outdated and needs to be renewed
-int lwm2m_update_registrations(lwm2m_context_t * contextP, uint32_t currentTime, struct timeval * timeoutP);
+int lwm2m_update_registrations(lwm2m_context_t * contextP, time_t currentTime, time_t * timeoutP);
 
 // send a registration update to the server specified by the server short identifier
 int lwm2m_update_registration(lwm2m_context_t * contextP, uint16_t shortServerID);

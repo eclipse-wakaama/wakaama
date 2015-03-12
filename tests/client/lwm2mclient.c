@@ -623,7 +623,7 @@ int main(int argc, char *argv[])
          *  - Secondly it adjust the timeout value (default 60s) depending on the state of the transaction
          *    (eg. retransmission) and the time between the next operation
          */
-        result = lwm2m_step(lwm2mH, &tv);
+        result = lwm2m_step(lwm2mH, &(tv.tv_sec));
         if (result != 0)
         {
             fprintf(stderr, "lwm2m_step() failed: 0x%X\r\n", result);

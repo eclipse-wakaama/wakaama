@@ -231,7 +231,7 @@ int lwm2m_configure(lwm2m_context_t * contextP,
 
 
 int lwm2m_step(lwm2m_context_t * contextP,
-               struct timeval * timeoutP)
+               time_t * timeoutP)
 {
     lwm2m_transaction_t * transacP;
     time_t tv_sec;
@@ -267,9 +267,9 @@ int lwm2m_step(lwm2m_context_t * contextP,
                 interval = 1;
             }
 
-            if (timeoutP->tv_sec > interval)
+            if (*timeoutP > interval)
             {
-                timeoutP->tv_sec = interval;
+                *timeoutP = interval;
             }
         }
 
@@ -301,9 +301,9 @@ int lwm2m_step(lwm2m_context_t * contextP,
 
             interval = clientP->endOfLife - tv_sec;
 
-            if (timeoutP->tv_sec > interval)
+            if (*timeoutP > interval)
             {
-                timeoutP->tv_sec = interval;
+                *timeoutP = interval;
             }
         }
         clientP = nextP;
