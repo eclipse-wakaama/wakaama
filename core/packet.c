@@ -109,16 +109,12 @@ static coap_status_t handle_request(lwm2m_context_t * contextP,
     lwm2m_uri_t * uriP;
     coap_status_t result = NOT_FOUND_4_04;
 
-    uriP = lwm2m_decode_uri(message->uri_path);
+    uriP = lwm2m_decode_uri(message);
     if (uriP == NULL) {
-#ifdef LWM2M_CLIENT_MODE
-        if ((contextP->bsState == BOOTSTRAP_PENDING) && (message->type == COAP_DELETE)) {
-            result = handle_delete_all(contextP, fromSessionH, message, response);
-        }
-        else
-#endif
-            return BAD_REQUEST_4_00;
+        return BAD_REQUEST_4_00;
     }
+#ifdef LWM2M_CLIENT_MODE
+#endif
     else {
         switch(uriP->flag & LWM2M_URI_MASK_TYPE)
         {
@@ -126,6 +122,15 @@ static coap_status_t handle_request(lwm2m_context_t * contextP,
         case LWM2M_URI_FLAG_DM:
             // TODO: Authentify server
             result = handle_dm_request(contextP, uriP, fromSessionH, message, response);
+            break;
+
+        case LWM2M_URI_FLAG_DELETE_ALL:
+            if (contextP->bsState == BOOTSTRAP_PENDING) {
+                result = handle_delete_all(contextP);
+            }
+            else {
+                result = BAD_REQUEST_4_00;
+            }
             break;
 
         case LWM2M_URI_FLAG_BOOTSTRAP:

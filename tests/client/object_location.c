@@ -222,12 +222,6 @@ void location_setVelocity(lwm2m_object_t* locationObj,
     pData->velocity[4] = speedUncertainty;
 }
 
-static void prv_location_close(lwm2m_object_t * objectP)
-{
-    lwm2m_free(objectP->userData);
-    lwm2m_free(objectP->instanceList);
-}
-
 /**
   * A convenience function to set the location coordinates with its timestamp.
   * @see testMe()
