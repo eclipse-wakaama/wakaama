@@ -203,17 +203,6 @@ static bool prv_add_ac_val(acc_ctrl_oi_t* accCtrlOiP,
     return ret;
 }
 
-static void prv_free_ac_list(acc_ctrl_ri_t* accCtrlRiP)
-{
-    acc_ctrl_ri_t* accCtrlRiT;
-    while(accCtrlRiP!=NULL)
-    {
-        accCtrlRiT = accCtrlRiP;
-        accCtrlRiP = accCtrlRiT->next;
-        lwm2m_free(accCtrlRiT);
-    }
-}
-
 static uint8_t prv_write_resources(uint16_t instanceId, int numData,
                lwm2m_tlv_t* tlvArray, lwm2m_object_t* objectP, bool doCreate)
 {
@@ -331,14 +320,14 @@ static uint8_t prv_write_resources(uint16_t instanceId, int numData,
                 if (result != COAP_204_CHANGED)
                 {
                     // free pot. partial created new ones
-                    prv_free_ac_list(accCtrlOiP->accCtrlValList);
+                    LWM2M_LIST_FREE(accCtrlOiP->accCtrlValList);
                     // restore old values:
                     accCtrlOiP->accCtrlValList = acValListSave;
                 }
                 else
                 {
                     // final free saved value list
-                    prv_free_ac_list(acValListSave);
+                    LWM2M_LIST_FREE(acValListSave);
                 }
             }
         }   break;
@@ -385,7 +374,7 @@ static void prv_close(lwm2m_object_t * objectP)
     while (accCtrlOiP != NULL)
     {
         // first free acl (multiple resource!):
-        prv_free_ac_list(accCtrlOiP->accCtrlValList);
+        LWM2M_LIST_FREE(accCtrlOiP->accCtrlValList);
         accCtrlOiT = accCtrlOiP;
         accCtrlOiP = accCtrlOiP->next;
         lwm2m_free(accCtrlOiT);
@@ -400,7 +389,7 @@ static uint8_t prv_delete(uint16_t id, lwm2m_object_t * objectP)
                                               (lwm2m_list_t**)&targetP);
     if (NULL == targetP) return COAP_404_NOT_FOUND;
 
-    prv_free_ac_list(targetP->accCtrlValList);
+    LWM2M_LIST_FREE(targetP->accCtrlValList);
     lwm2m_free(targetP);
 
     return COAP_202_DELETED;

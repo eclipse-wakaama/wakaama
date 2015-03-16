@@ -111,15 +111,7 @@ void lwm2m_close(lwm2m_context_t * contextP)
         lwm2m_free(targetP);
     }
 
-    while (NULL != contextP->bootstrapServerList)
-    {
-        lwm2m_server_t * targetP;
-
-        targetP = contextP->bootstrapServerList;
-        contextP->bootstrapServerList = contextP->bootstrapServerList->next;
-
-        lwm2m_free(targetP);
-    }
+    LWM2M_LIST_FREE(contextP->bootstrapServerList);
 
     while (NULL != contextP->observedList)
     {
@@ -128,14 +120,8 @@ void lwm2m_close(lwm2m_context_t * contextP)
         targetP = contextP->observedList;
         contextP->observedList = contextP->observedList->next;
 
-        while (NULL != targetP->watcherList)
-        {
-            lwm2m_watcher_t * watcherP;
+        LWM2M_LIST_FREE(targetP->watcherList);
 
-            watcherP = targetP->watcherList;
-            targetP->watcherList = targetP->watcherList->next;
-            lwm2m_free(watcherP);
-        }
         lwm2m_free(targetP);
     }
 

@@ -297,7 +297,7 @@ static uint8_t prv_read(uint16_t instanceId,
 static void prv_close(lwm2m_object_t * objectP)
 {
     lwm2m_free(objectP->userData);
-    lwm2m_free(objectP->instanceList);
+    lwm2m_list_free(objectP->instanceList);
 }
 
 lwm2m_object_t * get_object_conn_m()
