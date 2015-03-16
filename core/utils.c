@@ -230,3 +230,17 @@ lwm2m_server_t * prv_findServer(lwm2m_context_t * contextP,
 
 #endif
 }
+
+#ifndef LWM2M_EMBEDDED_MODE
+time_t lwm2m_gettime()
+{
+    struct timeval tv;
+
+    if (0 != gettimeofday(&tv, NULL))
+    {
+        return -1;
+    }
+
+    return tv.tv_sec;
+}
+#endif

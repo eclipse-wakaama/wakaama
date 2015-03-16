@@ -354,11 +354,12 @@ syntax_error:
 static void update_battery_level(lwm2m_context_t * context)
 {
     static time_t next_change_time = 0;
-    struct timeval tv;
+    time_t tv_sec;
 
-    lwm2m_gettimeofday(&tv, NULL);
+    tv_sec = lwm2m_gettime();
+    if (tv_sec < 0) return;
 
-    if (next_change_time < tv.tv_sec)
+    if (next_change_time < tv_sec)
     {
         char value[15];
         int valueLength;
@@ -374,7 +375,7 @@ static void update_battery_level(lwm2m_context_t * context)
         }
         level = rand() % 20;
         if (0 > level) level = -level;
-        next_change_time = tv.tv_sec + level + 10;
+        next_change_time = tv_sec + level + 10;
     }
 }
 
@@ -579,12 +580,15 @@ int main(int argc, char *argv[])
 
         if (g_reboot)
         {
-            lwm2m_gettimeofday(&tv, NULL);
+            time_t tv_sec;
+
+            tv_sec = lwm2m_gettime();
+
             if (0 == reboot_time)
             {
-                reboot_time = tv.tv_sec + 5;
+                reboot_time = tv_sec + 5;
             }
-            if (reboot_time < tv.tv_sec)
+            if (reboot_time < tv_sec)
             {
                 /*
                  * Message should normally be lost with reboot ...
@@ -594,7 +598,7 @@ int main(int argc, char *argv[])
             }
             else
             {
-                tv.tv_sec = reboot_time - tv.tv_sec;
+                tv.tv_sec = reboot_time - tv_sec;
             }
         }
         else if (batterylevelchanging) 
@@ -619,7 +623,7 @@ int main(int argc, char *argv[])
          *  - Secondly it adjust the timeout value (default 60s) depending on the state of the transaction
          *    (eg. retransmission) and the time between the next operation
          */
-        result = lwm2m_step(lwm2mH, &tv);
+        result = lwm2m_step(lwm2mH, &(tv.tv_sec));
         if (result != 0)
         {
             fprintf(stderr, "lwm2m_step() failed: 0x%X\r\n", result);

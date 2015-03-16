@@ -128,7 +128,7 @@ static void prv_handleRegistrationReply(lwm2m_transaction_t * transacP,
     coap_packet_t * packet = (coap_packet_t *)message;
 
     targetP = (lwm2m_server_t *)(transacP->peerP);
-    struct timeval tv;
+    time_t tv_sec;
 
     switch(targetP->status)
     {
@@ -151,9 +151,10 @@ static void prv_handleRegistrationReply(lwm2m_transaction_t * transacP,
                 }
                 targetP->location = coap_get_multi_option_as_string(packet->location_path);
 
-                if (0 == lwm2m_gettimeofday(&tv, NULL)) 
+                tv_sec = lwm2m_gettime();
+                if (tv_sec >= 0)
                 {
-                    targetP->registration = tv.tv_sec;
+                    targetP->registration = tv_sec;
                 }
             }
             else if (packet->code == BAD_REQUEST_4_00)
@@ -235,11 +236,11 @@ int lwm2m_start(lwm2m_context_t * contextP)
 }
 
 static void prv_handleRegistrationUpdateReply(lwm2m_transaction_t * transacP,
-                                        void * message)
+                                              void * message)
 {
     lwm2m_server_t * targetP;
     coap_packet_t * packet = (coap_packet_t *)message;
-    struct timeval tv;
+    time_t tv_sec;
 
     targetP = (lwm2m_server_t *)(transacP->peerP);
 
@@ -257,9 +258,10 @@ static void prv_handleRegistrationUpdateReply(lwm2m_transaction_t * transacP,
         {
             if (packet->code == CHANGED_2_04)
             {
-                if (0 == lwm2m_gettimeofday(&tv, NULL)) 
+                tv_sec = lwm2m_gettime();
+                if (tv_sec >= 0)
                 {
-                    targetP->registration = tv.tv_sec;
+                    targetP->registration = tv_sec;
                 }
                 targetP->status = STATE_REGISTERED;
             }
@@ -277,7 +279,9 @@ static void prv_handleRegistrationUpdateReply(lwm2m_transaction_t * transacP,
     }
 }
 
-static int prv_update_registration(lwm2m_context_t * contextP, lwm2m_server_t * server) {
+static int prv_update_registration(lwm2m_context_t * contextP,
+                                   lwm2m_server_t * server)
+{
     lwm2m_transaction_t * transaction;
 
     transaction = transaction_new(COAP_PUT, NULL, contextP->nextMID++, ENDPOINT_SERVER, (void *)server);
@@ -295,11 +299,13 @@ static int prv_update_registration(lwm2m_context_t * contextP, lwm2m_server_t * 
         server->status = STATE_REG_UPDATE_PENDING;
         server->mid = transaction->mID;
     }
+
     return 0;
 }
 
 // update the registration of a given server
-int lwm2m_update_registration(lwm2m_context_t * contextP, uint16_t shortServerID)
+int lwm2m_update_registration(lwm2m_context_t * contextP,
+                              uint16_t shortServerID)
 {
     // look for the server
     lwm2m_server_t * targetP;
@@ -321,7 +327,9 @@ int lwm2m_update_registration(lwm2m_context_t * contextP, uint16_t shortServerID
 }
 
 // for each server update the registration if needed
-int lwm2m_update_registrations(lwm2m_context_t * contextP, uint32_t currentTime, struct timeval * timeoutP)
+void registration_update(lwm2m_context_t * contextP,
+                         time_t currentTime,
+                         time_t * timeoutP)
 {
     lwm2m_server_t * targetP;
     targetP = contextP->serverList;
@@ -329,26 +337,39 @@ int lwm2m_update_registrations(lwm2m_context_t * contextP, uint32_t currentTime,
     {
         switch (targetP->status) {
             case STATE_REGISTERED:
-                if (targetP->registration + targetP->lifetime - timeoutP->tv_sec <= currentTime)
+                if (targetP->registration + targetP->lifetime <= currentTime)
                 {
                     prv_update_registration(contextP, targetP);
                 }
+                else
+                {
+                    time_t interval;
+
+                    interval = targetP->registration + targetP->lifetime - currentTime;
+                    if (interval < *timeoutP)
+                    {
+                        *timeoutP = interval;
+                    }
+                }
                 break;
+
             case STATE_DEREGISTERED:
                 // TODO: is it disabled?
                 prv_register(contextP, targetP);
                 break;
+
             case STATE_REG_PENDING:
                 break;
+
             case STATE_REG_UPDATE_PENDING:
                 // TODO: check for timeout and retry?
                 break;
+
             case STATE_DEREG_PENDING:
                 break;
         }
         targetP = targetP->next;
     }
-    return 0;
 }
 
 static void prv_handleDeregistrationReply(lwm2m_transaction_t * transacP,
@@ -673,12 +694,10 @@ coap_status_t handle_registration_request(lwm2m_context_t * contextP,
                                           coap_packet_t * response)
 {
     coap_status_t result;
-    struct timeval tv;
+    time_t tv_sec;
 
-    if (lwm2m_gettimeofday(&tv, NULL) != 0)
-    {
-        return COAP_500_INTERNAL_SERVER_ERROR;
-    }
+    tv_sec = lwm2m_gettime();
+    if (tv_sec < 0) return COAP_500_INTERNAL_SERVER_ERROR;
 
     switch(message->code)
     {
@@ -742,7 +761,7 @@ coap_status_t handle_registration_request(lwm2m_context_t * contextP,
         clientP->binding = binding;
         clientP->msisdn = msisdn;
         clientP->lifetime = lifetime;
-        clientP->endOfLife = tv.tv_sec + lifetime;
+        clientP->endOfLife = tv_sec + lifetime;
         clientP->objectList = objects;
         clientP->sessionH = fromSessionH;
 
@@ -855,7 +874,7 @@ coap_status_t handle_registration_request(lwm2m_context_t * contextP,
             clientP->objectList = objects;
         }
 
-        clientP->endOfLife = tv.tv_sec + clientP->lifetime;
+        clientP->endOfLife = tv_sec + clientP->lifetime;
 
         if (contextP->monitorCallback != NULL)
         {

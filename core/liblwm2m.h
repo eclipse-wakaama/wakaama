@@ -58,16 +58,22 @@
 #include <sys/time.h>
 
 #ifndef LWM2M_EMBEDDED_MODE
-#define lwm2m_gettimeofday gettimeofday
 #define lwm2m_malloc malloc
 #define lwm2m_free free
 #define lwm2m_strdup strdup
 #else
-int lwm2m_gettimeofday(struct timeval *tv, void *p);
 char *lwm2m_strdup(const char* str);
 void *lwm2m_malloc(size_t s);
 void lwm2m_free(void *p);
 #endif
+// This function must return the number of seconds elapsed since origin.
+// The origin (Epoch, system boot, etc...) does not matter as this
+// function is used only to determine the elapsed time since the last
+// call to it.
+// In case of error, this must return a negative value.
+// Per POSIX specifications, time_t is a signed integer.
+// An implementation for POSIX systems is provided in utils.c
+time_t lwm2m_gettime();
 
 /*
  * Error code
@@ -345,8 +351,8 @@ typedef struct _lwm2m_server_
 {
     struct _lwm2m_server_ * next;   // matches lwm2m_list_t::next
     uint16_t          shortID;      // matches lwm2m_list_t::id
-    uint32_t          lifetime;     // lifetime of the registration in sec or 0 if default value (86400 sec), also used as hold off time for the bootstrap server
-    uint32_t          registration; // date of the last registration in sec
+    time_t            lifetime;     // lifetime of the registration in sec or 0 if default value (86400 sec), also used as hold off time for the bootstrap server
+    time_t            registration; // date of the last registration in sec
     lwm2m_binding_t   binding;      // client connection mode with this server
     void *            sessionH;
     lwm2m_status_t    status;
@@ -510,8 +516,8 @@ lwm2m_context_t * lwm2m_init(lwm2m_connect_server_callback_t connectCallback, lw
 // close a liblwm2m context.
 void lwm2m_close(lwm2m_context_t * contextP);
 
-// perform any required pending operation and adjust timeoutP to the maximal time interval to wait.
-int lwm2m_step(lwm2m_context_t * contextP, struct timeval * timeoutP);
+// perform any required pending operation and adjust timeoutP to the maximal time interval to wait in seconds.
+int lwm2m_step(lwm2m_context_t * contextP, time_t * timeoutP);
 // dispatch received data to liblwm2m
 void lwm2m_handle_packet(lwm2m_context_t * contextP, uint8_t * buffer, int length, void * fromSessionH);
 
@@ -523,9 +529,6 @@ int lwm2m_configure(lwm2m_context_t * contextP, char * endpointName, char * msis
 
 // create objects for known LWM2M Servers.
 int lwm2m_start(lwm2m_context_t * contextP);
-
-// check if the server registrations are outdated and needs to be renewed
-int lwm2m_update_registrations(lwm2m_context_t * contextP, uint32_t currentTime, struct timeval * timeoutP);
 
 // send a registration update to the server specified by the server short identifier
 int lwm2m_update_registration(lwm2m_context_t * contextP, uint16_t shortServerID);

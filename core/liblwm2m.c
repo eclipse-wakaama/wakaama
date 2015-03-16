@@ -217,15 +217,16 @@ int lwm2m_configure(lwm2m_context_t * contextP,
 
 
 int lwm2m_step(lwm2m_context_t * contextP,
-               struct timeval * timeoutP)
+               time_t * timeoutP)
 {
     lwm2m_transaction_t * transacP;
-    struct timeval tv;
+    time_t tv_sec;
 #ifdef LWM2M_SERVER_MODE
     lwm2m_client_t * clientP;
 #endif
 
-    if (0 != lwm2m_gettimeofday(&tv, NULL)) return COAP_500_INTERNAL_SERVER_ERROR;
+    tv_sec = lwm2m_gettime();
+    if (tv_sec < 0) return COAP_500_INTERNAL_SERVER_ERROR;
 
     transacP = contextP->transactionList;
     while (transacP != NULL)
@@ -234,7 +235,7 @@ int lwm2m_step(lwm2m_context_t * contextP,
         lwm2m_transaction_t * nextP = transacP->next;
         int removed = 0;
 
-        if (transacP->retrans_time <= tv.tv_sec)
+        if (transacP->retrans_time <= tv_sec)
         {
             removed = transaction_send(contextP, transacP);
         }
@@ -243,25 +244,26 @@ int lwm2m_step(lwm2m_context_t * contextP,
         {
             time_t interval;
 
-            if (transacP->retrans_time > tv.tv_sec)
+            if (transacP->retrans_time > tv_sec)
             {
-                interval = transacP->retrans_time - tv.tv_sec;
+                interval = transacP->retrans_time - tv_sec;
             }
             else
             {
                 interval = 1;
             }
 
-            if (timeoutP->tv_sec > interval)
+            if (*timeoutP > interval)
             {
-                timeoutP->tv_sec = interval;
+                *timeoutP = interval;
             }
         }
 
         transacP = nextP;
     }
+
 #ifdef LWM2M_CLIENT_MODE
-    lwm2m_update_registrations(contextP, tv.tv_sec, timeoutP);
+    registration_update(contextP, tv_sec, timeoutP);
 #endif
 
 #ifdef LWM2M_SERVER_MODE
@@ -271,7 +273,7 @@ int lwm2m_step(lwm2m_context_t * contextP,
     {
         lwm2m_client_t * nextP = clientP->next;
 
-        if (clientP->endOfLife <= tv.tv_sec)
+        if (clientP->endOfLife <= tv_sec)
         {
             contextP->clientList = (lwm2m_client_t *)LWM2M_LIST_RM(contextP->clientList, clientP->internalID, NULL);
             if (contextP->monitorCallback != NULL)
@@ -284,11 +286,11 @@ int lwm2m_step(lwm2m_context_t * contextP,
         {
             time_t interval;
 
-            interval = clientP->endOfLife - tv.tv_sec;
+            interval = clientP->endOfLife - tv_sec;
 
-            if (timeoutP->tv_sec > interval)
+            if (*timeoutP > interval)
             {
-                timeoutP->tv_sec = interval;
+                *timeoutP = interval;
             }
         }
         clientP = nextP;

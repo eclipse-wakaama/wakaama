@@ -771,7 +771,7 @@ int main(int argc, char *argv[])
         tv.tv_sec = 60;
         tv.tv_usec = 0;
 
-        result = lwm2m_step(lwm2mH, &tv);
+        result = lwm2m_step(lwm2mH, &(tv.tv_sec));
         if (result != 0)
         {
             fprintf(stderr, "lwm2m_step() failed: 0x%X\r\n", result);
