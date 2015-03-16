@@ -123,6 +123,7 @@ void delete_server_list(lwm2m_context_t * context) {
 
 void delete_bootstrap_server_list(lwm2m_context_t * contextP) {
     LWM2M_LIST_FREE(contextP->bootstrapServerList);
+    contextP->bootstrapServerList = NULL;
 }
 
 void delete_observed_list(lwm2m_context_t * contextP) {
@@ -292,7 +293,7 @@ int lwm2m_step(lwm2m_context_t * contextP,
         registration_update(contextP, tv_sec, timeoutP);
 //        lwm2m_update_registrations(contextP, currentTime.tv_sec, timeoutP);
     }
-    lwm2m_update_bootstrap_state(contextP, tv_sec, timeoutP);
+    update_bootstrap_state(contextP, tv_sec, *timeoutP);
 #endif
 
 #ifdef LWM2M_SERVER_MODE

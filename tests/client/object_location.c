@@ -185,7 +185,7 @@ static uint8_t prv_location_read(uint16_t objInstId,
     return result;
 }
 
-static void prv_location_print(lwm2m_object_t * objectP)
+void display_location_object(lwm2m_object_t * object)
 {
 #ifdef WITH_LOGS
     location_data_t * data = (location_data_t *)object->userData;
@@ -196,6 +196,12 @@ static void prv_location_print(lwm2m_object_t * objectP)
                 data->latitude, data->longitude, data->altitude, data->uncertainty, data->timestamp);
     }
 #endif
+}
+
+static void prv_location_close(lwm2m_object_t * object)
+{
+    lwm2m_list_free(object->instanceList);
+    lwm2m_free(object->userData);
 }
 
 /**

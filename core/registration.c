@@ -349,7 +349,7 @@ void registration_update(lwm2m_context_t * contextP,
         switch (targetP->status)
         {
             case STATE_REGISTERED:
-                if (targetP->registration + targetP->lifetime <= currentTime)
+                if (targetP->registration + targetP->lifetime - *timeoutP <= currentTime)
                 {
                     LOG("Updating registration...\r\n");
                     prv_update_registration(contextP, targetP);

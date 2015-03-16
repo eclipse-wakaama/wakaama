@@ -113,8 +113,6 @@ static coap_status_t handle_request(lwm2m_context_t * contextP,
     if (uriP == NULL) {
         return BAD_REQUEST_4_00;
     }
-#ifdef LWM2M_CLIENT_MODE
-#endif
     else {
         switch(uriP->flag & LWM2M_URI_MASK_TYPE)
         {

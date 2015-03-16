@@ -63,8 +63,13 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
     lwm2m_server_t * serverP;
 
     serverP = prv_findServer(contextP, fromSessionH);
-    if (serverP == NULL) return COAP_IGNORE;
-    if (serverP->status != STATE_REGISTERED && serverP->status != STATE_REG_UPDATE_PENDING) return COAP_IGNORE;
+    if (contextP->bsState != BOOTSTRAP_PENDING) {
+        if (serverP == NULL) return COAP_IGNORE;
+        if ( serverP->status != STATE_REGISTERED &&
+                serverP->status != STATE_REG_UPDATE_PENDING) {
+            return COAP_IGNORE;
+        }
+    }
 
     switch (message->code)
     {

@@ -100,15 +100,12 @@ void bootstrap_failed(lwm2m_context_t * context) {
 }
 
 void reset_bootstrap_timer(lwm2m_context_t * context) {
-    struct timeval currentTime;
-
-    lwm2m_gettimeofday(&currentTime, NULL);
-    context->bsStart.tv_sec = currentTime.tv_sec;
+    context->bsStart.tv_sec = lwm2m_gettime();
 }
 
 void update_bootstrap_state(lwm2m_context_t * context,
         uint32_t currentTime,
-        struct timeval * timeout) {
+        time_t timeout) {
     if (context->bsState == BOOTSTRAP_REQUESTED) {
         context->bsState = BOOTSTRAP_CLIENT_HOLD_OFF;
         context->bsStart.tv_sec = currentTime;
@@ -130,7 +127,7 @@ void update_bootstrap_state(lwm2m_context_t * context,
         }
     }
     if (context->bsState == BOOTSTRAP_PENDING) {
-        if ((currentTime - context->bsStart.tv_sec) > timeout->tv_sec) {
+        if ((currentTime - context->bsStart.tv_sec) > timeout) {
             // Time out and no error => bootstrap OK
             // TODO: add smarter condition for bootstrap success:
             // 1) security object contains at least one bootstrap server
