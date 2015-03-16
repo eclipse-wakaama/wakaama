@@ -15,6 +15,7 @@
  *    Fabien Fleutot - Please refer to git log
  *    Toby Jaffey - Please refer to git log
  *    Bosch Software Innovations GmbH - Please refer to git log
+ *    Pascal Rieux - Please refer to git log
  *    
  *******************************************************************************/
 
@@ -93,17 +94,27 @@ int prv_get_number(const char * uriString,
 }
 
 
-lwm2m_uri_t * lwm2m_decode_uri(multi_option_t *uriPath)
+lwm2m_uri_t * lwm2m_decode_uri(coap_packet_t * message)
 {
     lwm2m_uri_t * uriP;
     int readNum;
-
-    if (NULL == uriPath) return NULL;
+    multi_option_t *uriPath = message->uri_path;
 
     uriP = (lwm2m_uri_t *)lwm2m_malloc(sizeof(lwm2m_uri_t));
     if (NULL == uriP) return NULL;
 
     memset(uriP, 0, sizeof(lwm2m_uri_t));
+
+    if (NULL == uriPath) {
+        if (message->code == COAP_DELETE) {
+            uriP->flag |= LWM2M_URI_FLAG_DELETE_ALL;
+            return uriP;
+        }
+        else {
+            lwm2m_free(uriP);
+            return NULL;
+        }
+    }
 
     // Read object ID
     if (URI_REGISTRATION_SEGMENT_LEN == uriPath->len

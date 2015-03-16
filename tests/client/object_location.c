@@ -13,6 +13,7 @@
  *
  * Contributors:
  *    Bosch Software Innovations GmbH - Please refer to git log
+ *    Pascal Rieux - Please refer to git log
  *    
  ******************************************************************************/
 /*! \file
@@ -184,8 +185,27 @@ static uint8_t prv_location_read(uint16_t objInstId,
     return result;
 }
 
+void display_location_object(lwm2m_object_t * object)
+{
+#ifdef WITH_LOGS
+    location_data_t * data = (location_data_t *)object->userData;
+    fprintf(stdout, "  /%u: Location object:\r\n", object->objID);
+    if (NULL != data)
+    {
+        fprintf(stdout, "    latitude: %s, longitude: %s, altitude: %s, uncertainty: %s, timestamp: %u\r\n",
+                data->latitude, data->longitude, data->altitude, data->uncertainty, data->timestamp);
+    }
+#endif
+}
+
+static void prv_location_close(lwm2m_object_t * object)
+{
+    lwm2m_list_free(object->instanceList);
+    lwm2m_free(object->userData);
+}
+
 /**
-  * Convenience functon to set the velocity attributes.
+  * Convenience function to set the velocity attributes.
   * see 3GPP TS 23.032 V11.0.0(2012-09) page 23,24.
   * implemented for: HORIZONTAL_VELOCITY_WITH_UNCERTAINTY
   * @param locationObj location object reference (to be casted!)
@@ -206,12 +226,6 @@ void location_setVelocity(lwm2m_object_t* locationObj,
     pData->velocity[2] = horizontalSpeed >> 8;
     pData->velocity[3] = horizontalSpeed & 0xff;
     pData->velocity[4] = speedUncertainty;
-}
-
-static void prv_location_close(lwm2m_object_t * objectP)
-{
-    lwm2m_free(objectP->userData);
-    lwm2m_free(objectP->instanceList);
 }
 
 /**
