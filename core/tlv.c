@@ -116,6 +116,55 @@ static int prv_create_header(uint8_t * header,
     return header_len;
 }
 
+static void prv_encodeInt(int64_t data,
+                          uint8_t data_buffer[_PRV_64BIT_BUFFER_SIZE],
+                          size_t * lengthP)
+{
+    uint64_t value;
+    int negative = 0;
+    size_t length = 0;
+
+    memset(data_buffer, 0, _PRV_64BIT_BUFFER_SIZE);
+
+    if (data < 0)
+    {
+        negative = 1;
+        value = 0 - data;
+    }
+    else
+    {
+        value = data;
+    }
+
+    do
+    {
+        length++;
+        data_buffer[_PRV_64BIT_BUFFER_SIZE - length] = (value >> (8*(length-1))) & 0xFF;
+    } while (value > (((uint64_t)1 << ((8 * length)-1)) - 1));
+
+    // TLV integer length is 1, 2, 4 or 8
+    switch (length)
+    {
+    case 3:
+        length = 4;
+        break;
+    case 5:
+    case 6:
+    case 7:
+        length = 8;
+        break;
+    default:
+        break;
+    }
+
+    if (1 == negative)
+    {
+        data_buffer[_PRV_64BIT_BUFFER_SIZE - length] |= 0x80;
+    }
+
+    *lengthP = length;
+}
+
 int lwm2m_opaqueToTLV(lwm2m_tlv_type_t type,
                       uint8_t* dataP,
                       size_t data_len,
@@ -154,35 +203,11 @@ int lwm2m_intToTLV(lwm2m_tlv_type_t type,
 {
     uint8_t data_buffer[_PRV_64BIT_BUFFER_SIZE];
     size_t length = 0;
-    uint64_t value;
-    int negative = 0;
 
     if (type != TLV_RESSOURCE_INSTANCE && type != TLV_RESSOURCE)
         return 0;
 
-    memset(data_buffer, 0, 8);
-
-    if (data < 0)
-    {
-        negative = 1;
-        value = 0 - data;
-    }
-    else
-    {
-        value = data;
-    }
-
-    do
-    {
-        length++;
-        data_buffer[_PRV_64BIT_BUFFER_SIZE - length] = (value >> (8*(length-1))) & 0xFF;
-    } while (value > (((uint64_t)1 << ((8 * length)-1)) - 1));
-
-
-    if (1 == negative)
-    {
-        data_buffer[_PRV_64BIT_BUFFER_SIZE - length] |= 0x80;
-    }
+    prv_encodeInt(data, data_buffer, &length);
 
     return lwm2m_opaqueToTLV(type, data_buffer + (_PRV_64BIT_BUFFER_SIZE - length), length, id, buffer, buffer_len);
 }
@@ -551,32 +576,8 @@ void lwm2m_tlv_encode_int(int64_t data,
     {
         uint8_t buffer[_PRV_64BIT_BUFFER_SIZE];
         size_t length = 0;
-        uint64_t value;
-        int negative = 0;
 
-        memset(buffer, 0, _PRV_64BIT_BUFFER_SIZE);
-
-        if (data < 0)
-        {
-            negative = 1;
-            value = 0 - data;
-        }
-        else
-        {
-            value = data;
-        }
-
-        do
-        {
-            length++;
-            buffer[_PRV_64BIT_BUFFER_SIZE - length] = (value >> (8*(length-1))) & 0xFF;
-        } while (value > (((uint64_t)1 << ((8 * length)-1)) - 1));
-
-
-        if (1 == negative)
-        {
-            buffer[_PRV_64BIT_BUFFER_SIZE - length] |= 0x80;
-        }
+        prv_encodeInt(data, buffer, &length);
 
         tlvP->value = (uint8_t *)lwm2m_malloc(length);
         if (tlvP->value != NULL)
