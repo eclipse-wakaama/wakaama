@@ -88,6 +88,9 @@ static int g_quit = 0;
 #define OBJ_COUNT 9
 lwm2m_object_t * objArray[OBJ_COUNT];
 
+// only backup security and server objects
+# define BACKUP_OBJECT_COUNT 2
+lwm2m_object_t * backupObjectArray[BACKUP_OBJECT_COUNT];
 
 typedef struct
 {
@@ -110,7 +113,7 @@ void handle_sigint(int signum)
 
 void print_usage(void)
 {
-    fprintf(stderr, "Usage: lwm2mclient [[[localPort] server] serverPort]\r\n");
+    fprintf(stderr, "Usage: lwm2mclient [..[localPort] server] serverPort] name] lifetime] batChg] bootstrap\r\n");
     fprintf(stderr, "Launch a LWM2M client.\r\n\n");
 }
 
@@ -441,13 +444,12 @@ static void prv_display_objects(char * buffer,
 }
 
 static void prv_display_backup(char * buffer,
-                               void * user_data)
+        void * user_data)
 {
-    lwm2m_context_t * lwm2mH = (lwm2m_context_t *)user_data;
-    int i;
-    if (NULL != lwm2mH->objectListBackup) {
-        for (i = 0; i < lwm2mH->numObjectBackup; i++) {
-            lwm2m_object_t * object = lwm2mH->objectListBackup[i];
+    if (NULL != backupObjectArray) {
+        int i;
+        for (i = 0 ; i < BACKUP_OBJECT_COUNT ; i++) {
+            lwm2m_object_t * object = backupObjectArray[i];
             if (NULL != object) {
                 switch (object->objID)
                 {
@@ -457,13 +459,7 @@ static void prv_display_backup(char * buffer,
                 case LWM2M_SERVER_OBJECT_ID:
                     display_server_object(object);
                     break;
-                case LWM2M_ACL_OBJECT_ID:
-                case LWM2M_DEVICE_OBJECT_ID:
-                case LWM2M_CONN_MONITOR_OBJECT_ID:
-                case LWM2M_FIRMWARE_UPDATE_OBJECT_ID:
-                case LWM2M_LOCATION_OBJECT_ID:
-                case LWM2M_CONN_STATS_OBJECT_ID:
-                case TEST_OBJECT_ID:
+                default:
                     break;
                 }
             }
@@ -471,22 +467,23 @@ static void prv_display_backup(char * buffer,
     }
 }
 
-static void prv_display_bootstrap_state(lwm2m_context_t * context) {
-    switch (context->bsState) {
+static void prv_display_bootstrap_state(lwm2m_bootstrap_state_t bootstrapState)
+{
+    switch (bootstrapState) {
     case NOT_BOOTSTRAPPED:
         fprintf(stdout, "NOT BOOTSTRAPPED\r\n");
         break;
     case BOOTSTRAP_REQUESTED:
-        fprintf(stdout, "BOOTSTRAP REQUESTED\r\n");
+        fprintf(stdout, "DI BOOTSTRAP REQUESTED\r\n");
         break;
     case BOOTSTRAP_CLIENT_HOLD_OFF:
-        fprintf(stdout, "BOOTSTRAP CLIENT HOLD OFF\r\n");
+        fprintf(stdout, "DI BOOTSTRAP CLIENT HOLD OFF\r\n");
         break;
     case BOOTSTRAP_PENDING:
-        fprintf(stdout, "BOOTSTRAP PENDING\r\n");
+        fprintf(stdout, "DI BOOTSTRAP PENDING\r\n");
         break;
     case BOOTSTRAP_FAILED:
-        fprintf(stdout, "BOOTSTRAP FAILED\r\n");
+        fprintf(stdout, "DI BOOTSTRAP FAILED\r\n");
         break;
     case BOOTSTRAPPED:
         fprintf(stdout, "BOOTSTRAPPED\r\n");
@@ -499,83 +496,62 @@ static void prv_display_bootstrap_state(lwm2m_context_t * context) {
 static void prv_backup_objects(lwm2m_context_t * context)
 {
     uint16_t i;
-    lwm2m_object_t * objectListBackup[context->numObject];
 
-    if (NULL == context->objectListBackup) {
-        context->objectListBackup = (lwm2m_object_t **)lwm2m_malloc(context->numObject * sizeof(lwm2m_object_t *));
-        for (i = 0; i < context->numObject; i++) {
-            context->objectListBackup[i] = (lwm2m_object_t *)lwm2m_malloc(sizeof(lwm2m_object_t));
-            memset(context->objectListBackup[i], 0, sizeof(lwm2m_object_t));
+    for (i = 0; i < BACKUP_OBJECT_COUNT; i++) {
+        if (NULL != backupObjectArray[i]) {
+            backupObjectArray[i]->closeFunc(backupObjectArray[i]);
+            lwm2m_free(backupObjectArray[i]);
         }
+        backupObjectArray[i] = (lwm2m_object_t *)lwm2m_malloc(sizeof(lwm2m_object_t));
+        memset(backupObjectArray[i], 0, sizeof(lwm2m_object_t));
     }
-
-    /*
-     * Delete previous backup content of objects 0 (security) and 1 (server)
-     */
-    lwm2m_delete_object_list_content(context, true, true);
 
     /*
      * Backup content of objects 0 (security) and 1 (server)
      */
     for (i = 0; i < context->numObject; i++) {
         lwm2m_object_t * object = context->objectList[i];
-        lwm2m_object_t * objectBackup = context->objectListBackup[i];
         if (NULL != object) {
             switch (object->objID)
             {
             case LWM2M_SECURITY_OBJECT_ID:
-                copy_security_object(objectBackup, object);
+                copy_security_object(backupObjectArray[0], object);
                 break;
             case LWM2M_SERVER_OBJECT_ID:
-                copy_server_object(objectBackup, object);
+                copy_server_object(backupObjectArray[1], object);
                 break;
-            case LWM2M_ACL_OBJECT_ID:
-            case LWM2M_DEVICE_OBJECT_ID:
-            case LWM2M_CONN_MONITOR_OBJECT_ID:
-            case LWM2M_FIRMWARE_UPDATE_OBJECT_ID:
-            case LWM2M_LOCATION_OBJECT_ID:
-            case LWM2M_CONN_STATS_OBJECT_ID:
-            case TEST_OBJECT_ID:
+            default:
                 break;
             }
         }
     }
-
-    context->numObjectBackup = context->numObject;
 }
 
 static void prv_restore_objects(lwm2m_context_t * context)
 {
     uint16_t i;
-    lwm2m_object_t * objectList[context->numObjectBackup];
-
-    /*
-     * Delete current content of objects 0 (security) and 1 (server)
-     */
-    lwm2m_delete_object_list_content(context, false, true);
 
     /*
      * Restore content  of objects 0 (security) and 1 (server)
      */
-    for (i = 0; i < context->numObjectBackup; i++) {
+    for (i = 0; i < context->numObject; i++) {
         lwm2m_object_t * object = context->objectList[i];
-        lwm2m_object_t * objectBackup = context->objectListBackup[i];
         if (NULL != object) {
             switch (object->objID)
             {
             case LWM2M_SECURITY_OBJECT_ID:
-                copy_security_object(object, objectBackup);
+                // first delete internal content
+                object->closeFunc(object);
+                // then restore previous object
+                copy_security_object(object, backupObjectArray[0]);
                 break;
             case LWM2M_SERVER_OBJECT_ID:
-                copy_server_object(object, objectBackup);
+                // first delete internal content
+                object->closeFunc(object);
+                // then restore previous object
+                copy_server_object(object, backupObjectArray[1]);
                 break;
-            case LWM2M_ACL_OBJECT_ID:
-            case LWM2M_DEVICE_OBJECT_ID:
-            case LWM2M_CONN_MONITOR_OBJECT_ID:
-            case LWM2M_FIRMWARE_UPDATE_OBJECT_ID:
-            case LWM2M_LOCATION_OBJECT_ID:
-            case LWM2M_CONN_STATS_OBJECT_ID:
-            case TEST_OBJECT_ID:
+            default:
                 break;
             }
         }
@@ -583,6 +559,31 @@ static void prv_restore_objects(lwm2m_context_t * context)
 
     object_getServers(context);
     fprintf(stdout, "[BOOTSTRAP] ObjectList restored\r\n");
+}
+
+static void update_bootstrap_info(lwm2m_bootstrap_state_t previousBootstrapState,
+        lwm2m_context_t * context)
+{
+    if ((previousBootstrapState == BOOTSTRAP_REQUESTED) && (context->bsState == BOOTSTRAP_CLIENT_HOLD_OFF)) {
+        prv_backup_objects(context);
+    }
+    else if ((previousBootstrapState == BOOTSTRAP_CLIENT_HOLD_OFF) && (context->bsState == BOOTSTRAP_FAILED)) {
+        prv_restore_objects(context);
+    }
+#ifdef WITH_LOGS
+    prv_display_bootstrap_state(context->bsState);
+#endif
+}
+
+static void close_backup_object()
+{
+    int i;
+    for (i = 0; i < BACKUP_OBJECT_COUNT; i++) {
+        if (NULL != backupObjectArray[i]) {
+            backupObjectArray[i]->closeFunc(backupObjectArray[i]);
+            lwm2m_free(backupObjectArray[i]);
+        }
+    }
 }
 
 int main(int argc, char *argv[])
@@ -615,7 +616,7 @@ int main(int argc, char *argv[])
                                                         "   DATA: (optional) new value\r\n", prv_change, NULL},
             {"update", "Trigger a registration update", " update SERVER\r\n"
                                                         "   SERVER: short server id such as 123\r\n", prv_update, NULL},
-            {"boots", "Initiate a DI bootstrap process", NULL, prv_initiate_bootstrap, NULL},
+            {"bootstrap", "Initiate a DI bootstrap process", NULL, prv_initiate_bootstrap, NULL},
             {"disp", "Display current objects/instances/resources", NULL, prv_display_objects, NULL},
             {"dispb", "Display current backup of objects/instances/resources\r\n"
                     "\t(only security and server objects are backupped)", NULL, prv_display_backup, NULL},
@@ -736,7 +737,7 @@ int main(int argc, char *argv[])
      * The liblwm2m library is now initialized with the functions that will be in
      * charge of communication
      */
-    lwm2mH = lwm2m_init(prv_connect_server, prv_buffer_send, prv_backup_objects, prv_restore_objects, &data);
+    lwm2mH = lwm2m_init(prv_connect_server, prv_buffer_send, &data);
     if (NULL == lwm2mH)
     {
         fprintf(stderr, "lwm2m_init() failed\r\n");
@@ -799,6 +800,7 @@ int main(int argc, char *argv[])
     {
         struct timeval tv;
         fd_set readfds;
+        lwm2m_bootstrap_state_t previousBootstrapState;
 
         if (g_reboot)
         {
@@ -838,10 +840,7 @@ int main(int argc, char *argv[])
         FD_SET(data.sock, &readfds);
         FD_SET(STDIN_FILENO, &readfds);
 
-
-#ifdef WITH_LOGS
-        prv_display_bootstrap_state(lwm2mH);
-#endif
+        previousBootstrapState = lwm2mH->bsState;
         /*
          * This function does two things:
          *  - first it does the work needed by liblwm2m (eg. (re)sending some packets).
@@ -854,6 +853,7 @@ int main(int argc, char *argv[])
             fprintf(stderr, "lwm2m_step() failed: 0x%X\r\n", result);
             return -1;
         }
+        update_bootstrap_info(previousBootstrapState, lwm2mH);
 
         /*
          * This part will set up an interruption until an event happen on SDTIN or the socket until "tv" timed out (set
@@ -966,8 +966,8 @@ int main(int argc, char *argv[])
     /*
      * Finally when the loop is left smoothly - asked by user in the command line interface - we unregister our client from it
      */
-    if (g_quit == 1)
-    {
+    if (g_quit == 1) {
+        close_backup_object();
         lwm2m_close(lwm2mH);
     }
     close(data.sock);

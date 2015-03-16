@@ -70,10 +70,6 @@ int lwm2m_bootstrap(lwm2m_context_t * context) {
             if (transaction_send(context, transaction) == 0) {
                 bootstrapServer->mid = transaction->mID;
                 LOG("[BOOTSTRAP] DI bootstrap requested to BS server\r\n");
-                // Backup the object configuration in case of network or bootstrap server failure
-                if (NULL != context->backupObjectsCallback) {
-                    context->backupObjectsCallback(context);
-                }
             }
         }
         else {
@@ -101,9 +97,6 @@ void handle_bootstrap_ack(lwm2m_context_t * context,
 void bootstrap_failed(lwm2m_context_t * context) {
     context->bsState = BOOTSTRAP_FAILED;
     LOG("[BOOTSTRAP] Bootstrap failed\r\n");
-    if (NULL != context->restoreObjectsCallback) {
-        context->restoreObjectsCallback(context);
-    }
 }
 
 void reset_bootstrap_timer(lwm2m_context_t * context) {
@@ -127,7 +120,8 @@ void update_bootstrap_state(lwm2m_context_t * context,
         if (bootstrapServer != NULL) {
             // get ClientHoldOffTime from bootstrapServer->lifetime
             // (see objects.c => object_getServers())
-            if ((currentTime - context->bsStart.tv_sec) > bootstrapServer->lifetime) {
+            uint32_t clientHoldOffTime = bootstrapServer->lifetime;
+            if ((currentTime - context->bsStart.tv_sec) > clientHoldOffTime) {
                 lwm2m_bootstrap(context);
             }
         }
@@ -142,7 +136,7 @@ void update_bootstrap_state(lwm2m_context_t * context,
             // 1) security object contains at least one bootstrap server
             // 2) there are coherent configurations for provisioned DM servers
             // if these conditions are not met, then bootstrap has failed and previous security
-            // and server object configurations must be restored
+            // and server object configurations might be restored by client
             LOG("\r\n[BOOTSTRAP] Bootstrapped at: %u (difftime: %u s)\r\n",
                     currentTime, currentTime - context->bsStart.tv_sec);
             context->bsState = BOOTSTRAPPED;

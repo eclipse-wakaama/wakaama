@@ -512,12 +512,12 @@ struct _lwm2m_context_
     lwm2m_server_t *    bootstrapServerList;
     lwm2m_server_t *    serverList;
     lwm2m_object_t **   objectList;
-    lwm2m_object_t **   objectListBackup;
+//    lwm2m_object_t **   objectListBackup;
     uint16_t            numObject;
-    uint16_t            numObjectBackup;
+//    uint16_t            numObjectBackup;
     lwm2m_observed_t *  observedList;
-    backup_objects_callback_t backupObjectsCallback;
-    restore_objects_callback_t restoreObjectsCallback;
+//    backup_objects_callback_t backupObjectsCallback;
+//    restore_objects_callback_t restoreObjectsCallback;
 #endif
 #ifdef LWM2M_SERVER_MODE
     lwm2m_client_t *        clientList;
@@ -536,8 +536,8 @@ struct _lwm2m_context_
 // initialize a liblwm2m context.
 lwm2m_context_t * lwm2m_init(lwm2m_connect_server_callback_t connectCallback,
         lwm2m_buffer_send_callback_t bufferSendCallback,
-        backup_objects_callback_t backupObjectsCallback,
-        restore_objects_callback_t restoreObjectsCallback,
+//        backup_objects_callback_t backupObjectsCallback,
+//        restore_objects_callback_t restoreObjectsCallback,
         void * userData);
 
 // close a liblwm2m context.

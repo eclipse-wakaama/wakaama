@@ -59,8 +59,6 @@
 
 lwm2m_context_t * lwm2m_init(lwm2m_connect_server_callback_t connectCallback,
         lwm2m_buffer_send_callback_t bufferSendCallback,
-        backup_objects_callback_t backupObjectsCallback,
-        restore_objects_callback_t restoreObjectsCallback,
         void * userData)
 {
     lwm2m_context_t * contextP;
@@ -71,12 +69,6 @@ lwm2m_context_t * lwm2m_init(lwm2m_connect_server_callback_t connectCallback,
 #ifdef LWM2M_CLIENT_MODE
     if (NULL == connectCallback)
         return NULL;
-    if (NULL == backupObjectsCallback) {
-        return NULL;
-    }
-    if (NULL == restoreObjectsCallback) {
-        return NULL;
-    }
 #endif
 
     contextP = (lwm2m_context_t *)lwm2m_malloc(sizeof(lwm2m_context_t));
@@ -88,39 +80,19 @@ lwm2m_context_t * lwm2m_init(lwm2m_connect_server_callback_t connectCallback,
         contextP->userData = userData;
         srand(time(NULL));
         contextP->nextMID = rand();
-#ifdef LWM2M_CLIENT_MODE
-        contextP->backupObjectsCallback = backupObjectsCallback;
-        contextP->restoreObjectsCallback = restoreObjectsCallback;
-#endif
     }
 
     return contextP;
 }
 
 #ifdef LWM2M_CLIENT_MODE
-void lwm2m_delete_object_list_content(lwm2m_context_t * context,
-        bool isBackup,
-        bool securityAndServerOnly) {
-    lwm2m_object_t ** objectList = isBackup ? context->objectListBackup : context->objectList;
-    int objectCount = isBackup ? context->numObjectBackup : context->numObject;
+void lwm2m_delete_object_list_content(lwm2m_context_t * context) {
+    lwm2m_object_t ** objectList = context->objectList;
     if (NULL != objectList) {
         int i;
-        for (i = 0 ; i < objectCount ; i++) {
+        for (i = 0 ; i < context->numObject ; i++) {
             if (NULL != objectList[i]) {
-                if (!securityAndServerOnly ||
-                        (securityAndServerOnly && ((objectList[i]->objID == 0) || objectList[i]->objID == 1))) {
-                    if (NULL != objectList[i]->closeFunc) {
-                        objectList[i]->closeFunc(objectList[i]);
-                    }
-                }
-                /*
-                 * Let's assume that if we want to delete ALL objects
-                 * we need to free objects as well
-                 */
-                if (!securityAndServerOnly) {
-                    lwm2m_free(objectList[i]);
-                    objectList[i] = NULL;
-                }
+                objectList[i]->closeFunc(objectList[i]);
             }
         }
     }
@@ -180,21 +152,18 @@ void delete_transaction_list(lwm2m_context_t * context) {
 
 void lwm2m_close(lwm2m_context_t * contextP)
 {
-    int i;
-
 #ifdef LWM2M_CLIENT_MODE
+    int i;
 
     lwm2m_deregister(contextP);
     delete_server_list(contextP);
     delete_bootstrap_server_list(contextP);
-
     delete_observed_list(contextP);
-
-    lwm2m_delete_object_list_content(contextP, false, false);
+    lwm2m_delete_object_list_content(contextP);
+    for (i = 0 ; i < contextP->numObject ; i++) {
+        lwm2m_free(contextP->objectList[i]);
+    }
     lwm2m_free(contextP->objectList);
-    lwm2m_delete_object_list_content(contextP, true, false);
-    lwm2m_free(contextP->objectListBackup);
-
     lwm2m_free(contextP->endpointName);
 #endif
 
@@ -266,7 +235,7 @@ int lwm2m_configure(lwm2m_context_t * contextP,
         contextP->endpointName = NULL;
         return COAP_500_INTERNAL_SERVER_ERROR;
     }
-    contextP->objectListBackup = NULL;
+//    contextP->objectListBackup = NULL;
     return COAP_NO_ERROR;
 }
 #endif

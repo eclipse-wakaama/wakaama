@@ -169,9 +169,24 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
     return result;
 }
 
-coap_status_t handle_delete_all(lwm2m_context_t * contextP)
-{
-    return object_delete_all(contextP);
+coap_status_t handle_delete_all(lwm2m_context_t * context) {
+    lwm2m_object_t ** objectList = context->objectList;
+    if (NULL != objectList) {
+        int i;
+        for (i = 0 ; i < context->numObject ; i++) {
+            // Only security and server objects are deleted upon a DEL /
+            switch (objectList[i]->objID)
+            {
+            case LWM2M_SECURITY_OBJECT_ID:
+            case LWM2M_SERVER_OBJECT_ID:
+                objectList[i]->closeFunc(objectList[i]);
+                break;
+            default:
+                break;
+            }
+        }
+    }
+    return DELETED_2_02;
 }
 #endif
 
