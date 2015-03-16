@@ -208,6 +208,29 @@ lwm2m_binding_t lwm2m_stringToBinding(uint8_t *buffer,
     return BINDING_UNKNOWN;
 }
 
+lwm2m_server_t * prv_findServer(lwm2m_context_t * contextP,
+                                void * fromSessionH)
+{
+#ifdef LWM2M_CLIENT_MODE
+
+    lwm2m_server_t * targetP;
+
+    targetP = contextP->serverList;
+    while (targetP != NULL
+        && targetP->sessionH != fromSessionH)
+    {
+        targetP = targetP->next;
+    }
+
+    return targetP;
+
+#else
+
+    return NULL;
+
+#endif
+}
+
 #ifndef LWM2M_EMBEDDED_MODE
 time_t lwm2m_gettime()
 {
@@ -221,4 +244,3 @@ time_t lwm2m_gettime()
     return tv.tv_sec;
 }
 #endif
-

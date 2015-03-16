@@ -249,7 +249,7 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
                 response->payload = NULL;
                 response->payload_len = 0;
             }
-            else
+            else if (coap_error_code != COAP_IGNORE)
             {
             	coap_error_code = message_send(contextP, response, fromSessionH);
             }
