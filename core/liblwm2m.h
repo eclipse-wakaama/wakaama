@@ -74,6 +74,7 @@ void lwm2m_free(void *p);
  */
 
 #define COAP_NO_ERROR                   (uint8_t)0x00
+#define COAP_IGNORE                     (uint8_t)0x01
 
 #define COAP_201_CREATED                (uint8_t)0x41
 #define COAP_202_DELETED                (uint8_t)0x42

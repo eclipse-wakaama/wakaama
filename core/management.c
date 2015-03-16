@@ -59,6 +59,11 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
                                 coap_packet_t * response)
 {
     coap_status_t result;
+    lwm2m_server_t * serverP;
+
+    serverP = prv_findServer(contextP, fromSessionH);
+    if (serverP == NULL) return COAP_IGNORE;
+    if (serverP->status != STATE_REGISTERED && serverP->status != STATE_REG_UPDATE_PENDING) return COAP_IGNORE;
 
     switch (message->code)
     {
@@ -72,7 +77,7 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
             {
                 if (IS_OPTION(message, COAP_OPTION_OBSERVE))
                 {
-                    result = handle_observe_request(contextP, uriP, fromSessionH, message, response);
+                    result = handle_observe_request(contextP, uriP, serverP, message, response);
                 }
                 if (COAP_205_CONTENT == result)
                 {
@@ -86,6 +91,7 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
             }
         }
         break;
+
     case COAP_POST:
         {
             if (!LWM2M_URI_IS_SET_INSTANCE(uriP))
@@ -127,6 +133,7 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
             }
         }
         break;
+
     case COAP_PUT:
         {
             if (LWM2M_URI_IS_SET_INSTANCE(uriP))
@@ -139,6 +146,7 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
             }
         }
         break;
+
     case COAP_DELETE:
         {
             if (LWM2M_URI_IS_SET_INSTANCE(uriP) && !LWM2M_URI_IS_SET_RESOURCE(uriP))
@@ -151,6 +159,7 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
             }
         }
         break;
+
     default:
         result = BAD_REQUEST_4_00;
         break;

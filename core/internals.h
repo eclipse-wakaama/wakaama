@@ -120,7 +120,7 @@ int transaction_handle_response(lwm2m_context_t * contextP, void * fromSessionH,
 coap_status_t handle_dm_request(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, void * fromSessionH, coap_packet_t * message, coap_packet_t * response);
 
 // defined in observe.c
-coap_status_t handle_observe_request(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, void * fromSessionH, coap_packet_t * message, coap_packet_t * response);
+coap_status_t handle_observe_request(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_server_t * serverP, coap_packet_t * message, coap_packet_t * response);
 void cancel_observe(lwm2m_context_t * contextP, uint16_t mid, void * fromSessionH);
 
 // defined in registration.c
@@ -137,5 +137,6 @@ void observation_remove(lwm2m_client_t * clientP, lwm2m_observation_t * observat
 
 // defined in utils.c
 lwm2m_binding_t lwm2m_stringToBinding(uint8_t *buffer, size_t length);
+lwm2m_server_t * prv_findServer(lwm2m_context_t * contextP, void * fromSessionH);
 
 #endif
