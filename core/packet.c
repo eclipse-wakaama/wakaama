@@ -136,7 +136,7 @@ static coap_status_t handle_request(lwm2m_context_t * contextP,
 
     coap_set_status_code(response, result);
 
-    if (result < BAD_REQUEST_4_00)
+    if (COAP_IGNORE < result && result < BAD_REQUEST_4_00)
     {
         result = NO_ERROR;
     }
@@ -290,7 +290,7 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
         LOG("Message parsing failed %d\r\n", coap_error_code);
     }
 
-    if (coap_error_code != NO_ERROR)
+    if (coap_error_code != NO_ERROR && coap_error_code != COAP_IGNORE)
     {
         LOG("ERROR %u: %s\n", coap_error_code, coap_error_message);
 
