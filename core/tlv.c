@@ -59,6 +59,7 @@ static int prv_create_header(uint8_t * header,
                              size_t data_len)
 {
     int header_len;
+    int offset = 0;
 
     header_len = prv_getHeaderLength(id, data_len);
 
@@ -85,10 +86,12 @@ static int prv_create_header(uint8_t * header,
         header[0] |= 0x20;
         header[1] = (id >> 8) & 0XFF;
         header[2] = id & 0XFF;
+        offset = 2;
     }
     else
     {
         header[1] = id;
+        offset = 1;
     }
     if (data_len <= 7)
     {
@@ -97,20 +100,20 @@ static int prv_create_header(uint8_t * header,
     else if (data_len <= 0xFF)
     {
         header[0] |= 0x08;
-        header[2] = data_len;
+        header[++offset] = data_len;
     }
     else if (data_len <= 0xFFFF)
     {
         header[0] |= 0x10;
-        header[2] = (data_len >> 8) & 0XFF;
-        header[3] = data_len & 0XFF;
+        header[++offset] = (data_len >> 8) & 0XFF;
+        header[++offset] = data_len & 0XFF;
     }
     else if (data_len <= 0xFFFFFF)
     {
         header[0] |= 0x18;
-        header[2] = (data_len >> 16) & 0XFF;
-        header[3] = (data_len >> 8) & 0XFF;
-        header[4] = data_len & 0XFF;
+        header[++offset] = (data_len >> 16) & 0XFF;
+        header[++offset] = (data_len >> 8) & 0XFF;
+        header[++offset] = data_len & 0XFF;
     }
 
     return header_len;
