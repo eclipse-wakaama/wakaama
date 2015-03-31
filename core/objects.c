@@ -321,13 +321,28 @@ int prv_getRegisterPayload(lwm2m_context_t * contextP,
 
     // index can not be greater than length
     index = 0;
+
+    if (contextP->altPath[0] != 0)
+    {
+        result = snprintf(buffer, length, REG_ALT_PATH_LINK, contextP->altPath);
+        if (result > 0 && result <= length)
+        {
+            index = result;
+        }
+        else
+        {
+            return 0;
+        }
+    }
     for (i = 0 ; i < contextP->numObject ; i++)
     {
         if (contextP->objectList[i]->objID == LWM2M_SECURITY_OBJECT_ID) continue;
 
         if (contextP->objectList[i]->instanceList == NULL)
         {
-            result = snprintf(buffer + index, length - index, "</%hu>,", contextP->objectList[i]->objID);
+            result = snprintf(buffer + index, length - index,
+                              REG_OBJECT_PATH,
+                              contextP->altPath, contextP->objectList[i]->objID);
             if (result > 0 && result <= length - index)
             {
                 index += result;
@@ -344,7 +359,9 @@ int prv_getRegisterPayload(lwm2m_context_t * contextP,
             {
                 int result;
 
-                result = snprintf(buffer + index, length - index, "</%hu/%hu>,", contextP->objectList[i]->objID, targetP->id);
+                result = snprintf(buffer + index, length - index,
+                                  REG_OBJECT_INSTANCE_PATH,
+                                  contextP->altPath, contextP->objectList[i]->objID, targetP->id);
                 if (result > 0 && result <= length - index)
                 {
                     index += result;

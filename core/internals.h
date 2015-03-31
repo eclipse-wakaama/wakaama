@@ -70,6 +70,10 @@
 
 #define LWM2M_MAX_PACKET_SIZE 198
 
+#define REG_ALT_PATH_LINK         "<%s>;rt=\"oma.lwm2m\","
+#define REG_OBJECT_PATH           "<%s/%hu>,"
+#define REG_OBJECT_INSTANCE_PATH  "<%s/%hu/%hu>,"
+
 #define URI_REGISTRATION_SEGMENT        "rd"
 #define URI_REGISTRATION_SEGMENT_LEN    2
 #define URI_BOOTSTRAP_SEGMENT           "bs"
