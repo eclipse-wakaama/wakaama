@@ -131,6 +131,15 @@ void lwm2m_close(lwm2m_context_t * contextP)
     }
 
     lwm2m_free(contextP->endpointName);
+    if (contextP->msisdn != NULL)
+    {
+        lwm2m_free(contextP->msisdn);
+    }
+    if (contextP->altPath != NULL)
+    {
+        lwm2m_free(contextP->altPath);
+    }
+
 #endif
 
 #ifdef LWM2M_SERVER_MODE
@@ -162,6 +171,7 @@ void lwm2m_close(lwm2m_context_t * contextP)
 int lwm2m_configure(lwm2m_context_t * contextP,
                     char * endpointName,
                     char * msisdn,
+                    char * altPath,
                     uint16_t numObject,
                     lwm2m_object_t * objectList[])
 {
@@ -193,6 +203,15 @@ int lwm2m_configure(lwm2m_context_t * contextP,
     {
         contextP->msisdn = strdup(msisdn);
         if (contextP->msisdn == NULL)
+        {
+            return COAP_500_INTERNAL_SERVER_ERROR;
+        }
+    }
+
+    if (altPath != NULL)
+    {
+        contextP->altPath = strdup(altPath);
+        if (contextP->altPath == NULL)
         {
             return COAP_500_INTERNAL_SERVER_ERROR;
         }
