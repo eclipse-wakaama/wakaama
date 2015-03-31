@@ -193,7 +193,7 @@ int lwm2m_configure(lwm2m_context_t * contextP,
     }
     if (found != 0x07) return COAP_400_BAD_REQUEST;
 
-    contextP->endpointName = strdup(endpointName);
+    contextP->endpointName = lwm2m_strdup(endpointName);
     if (contextP->endpointName == NULL)
     {
         return COAP_500_INTERNAL_SERVER_ERROR;
@@ -201,7 +201,7 @@ int lwm2m_configure(lwm2m_context_t * contextP,
 
     if (msisdn != NULL)
     {
-        contextP->msisdn = strdup(msisdn);
+        contextP->msisdn = lwm2m_strdup(msisdn);
         if (contextP->msisdn == NULL)
         {
             return COAP_500_INTERNAL_SERVER_ERROR;
@@ -210,7 +210,7 @@ int lwm2m_configure(lwm2m_context_t * contextP,
 
     if (altPath != NULL)
     {
-        contextP->altPath = strdup(altPath);
+        contextP->altPath = lwm2m_strdup(altPath);
         if (contextP->altPath == NULL)
         {
             return COAP_500_INTERNAL_SERVER_ERROR;
