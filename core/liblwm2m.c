@@ -211,10 +211,14 @@ int lwm2m_configure(lwm2m_context_t * contextP,
     if (altPath != NULL)
     {
         contextP->altPath = lwm2m_strdup(altPath);
-        if (contextP->altPath == NULL)
-        {
-            return COAP_500_INTERNAL_SERVER_ERROR;
-        }
+    }
+    else
+    {
+        contextP->altPath = lwm2m_strdup("");
+    }
+    if (contextP->altPath == NULL)
+    {
+        return COAP_500_INTERNAL_SERVER_ERROR;
     }
 
     contextP->objectList = (lwm2m_object_t **)lwm2m_malloc(numObject * sizeof(lwm2m_object_t *));
