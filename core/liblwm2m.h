@@ -61,10 +61,12 @@
 #define lwm2m_malloc malloc
 #define lwm2m_free free
 #define lwm2m_strdup strdup
+#define lwm2m_strncmp strncmp
 #else
-char *lwm2m_strdup(const char* str);
-void *lwm2m_malloc(size_t s);
-void lwm2m_free(void *p);
+void * lwm2m_malloc(size_t s);
+void   lwm2m_free(void * p);
+char * lwm2m_strdup(const char * str);
+char * lwm2m_strncmp(const char * s1, const char * s2, size_t n);
 #endif
 // This function must return the number of seconds elapsed since origin.
 // The origin (Epoch, system boot, etc...) does not matter as this
@@ -408,6 +410,7 @@ typedef struct _lwm2m_client_
     char *                  name;
     lwm2m_binding_t         binding;
     char *                  msisdn;
+    char *                  altPath;
     uint32_t                lifetime;
     time_t                  endOfLife;
     void *                  sessionH;

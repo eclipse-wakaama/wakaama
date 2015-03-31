@@ -147,6 +147,7 @@ static void prv_dump_client(lwm2m_client_t * targetP)
     fprintf(stdout, "\tname: \"%s\"\r\n", targetP->name);
     fprintf(stdout, "\tbinding: \"%s\"\r\n", prv_dump_binding(targetP->binding));
     if (targetP->msisdn) fprintf(stdout, "\tmsisdn: \"%s\"\r\n", targetP->msisdn);
+    if (targetP->altPath) fprintf(stdout, "\talternative path: \"%s\"\r\n", targetP->altPath);
     fprintf(stdout, "\tlifetime: %d sec\r\n", targetP->lifetime);
     fprintf(stdout, "\tobjects: ");
     for (objectP = targetP->objectList; objectP != NULL ; objectP = objectP->next)
