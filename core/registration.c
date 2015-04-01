@@ -616,6 +616,10 @@ static lwm2m_client_object_t * prv_decodeRegisterPayload(uint8_t * payload,
                 payload[altPathEnd + 1] = 0;
                 *altPath = lwm2m_strdup((char *)payload + altPathStart);
                 if (*altPath == NULL) return NULL;
+                if (0 == prv_isAltPathValid(*altPath))
+                {
+                    return NULL;
+                }
                 altPathLen = altPathEnd - altPathStart + 1;
             }
         }
@@ -624,6 +628,12 @@ static lwm2m_client_object_t * prv_decodeRegisterPayload(uint8_t * payload,
     if (altPathLen != 0)
     {
         start = altPathEnd + 1 + REG_LWM2M_RESOURCE_TYPE_LEN;
+        // If declared alternative path is "/", use NULL instead
+        if (altPathLen == 1)
+        {
+            lwm2m_free(*altPath);
+            *altPath = NULL;
+        }
     }
     else
     {

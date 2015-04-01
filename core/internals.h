@@ -145,5 +145,6 @@ void observation_remove(lwm2m_client_t * clientP, lwm2m_observation_t * observat
 // defined in utils.c
 lwm2m_binding_t lwm2m_stringToBinding(uint8_t *buffer, size_t length);
 lwm2m_server_t * prv_findServer(lwm2m_context_t * contextP, void * fromSessionH);
+int prv_isAltPathValid(char * altPath);
 
 #endif

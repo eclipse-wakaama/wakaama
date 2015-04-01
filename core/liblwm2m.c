@@ -192,7 +192,17 @@ int lwm2m_configure(lwm2m_context_t * contextP,
         if (objectList[i]->objID == LWM2M_DEVICE_OBJECT_ID) found |= 0x04;
     }
     if (found != 0x07) return COAP_400_BAD_REQUEST;
-
+    if (altPath != NULL)
+    {
+        if (0 == prv_isAltPathValid(altPath))
+        {
+            return COAP_400_BAD_REQUEST;
+        }
+        if (altPath[1] == 0)
+        {
+            altPath = NULL;
+        }
+    }
     contextP->endpointName = lwm2m_strdup(endpointName);
     if (contextP->endpointName == NULL)
     {
