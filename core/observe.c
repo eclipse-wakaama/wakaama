@@ -393,7 +393,7 @@ int lwm2m_observe(lwm2m_context_t * contextP,
     if (observationP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
     memset(observationP, 0, sizeof(lwm2m_observation_t));
 
-    transactionP = transaction_new(COAP_GET, uriP, contextP->nextMID++, ENDPOINT_CLIENT, (void *)clientP);
+    transactionP = transaction_new(COAP_GET, NULL, uriP, contextP->nextMID++, ENDPOINT_CLIENT, (void *)clientP);
     if (transactionP == NULL)
     {
         lwm2m_free(observationP);

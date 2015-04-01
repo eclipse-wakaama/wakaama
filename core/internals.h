@@ -116,7 +116,7 @@ int prv_getRegisterPayload(lwm2m_context_t * contextP, char * buffer, size_t len
 int object_getServers(lwm2m_context_t * contextP);
 
 // defined in transaction.c
-lwm2m_transaction_t * transaction_new(coap_method_t method, lwm2m_uri_t * uriP, uint16_t mID, lwm2m_endpoint_type_t peerType, void * peerP);
+lwm2m_transaction_t * transaction_new(coap_method_t method, char * altPath, lwm2m_uri_t * uriP, uint16_t mID, lwm2m_endpoint_type_t peerType, void * peerP);
 int transaction_send(lwm2m_context_t * contextP, lwm2m_transaction_t * transacP);
 void transaction_free(lwm2m_transaction_t * transacP);
 void transaction_remove(lwm2m_context_t * contextP, lwm2m_transaction_t * transacP);
