@@ -129,11 +129,8 @@ lwm2m_transaction_t * transaction_new(coap_method_t method,
 
     if (altPath != NULL)
     {
-        if (altPath[0] != 0)
-        {
-            // TODO: Support multi-segment alternative path
-            coap_set_header_uri_path_segment(transacP->message, altPath);
-        }
+        // TODO: Support multi-segment alternative path
+        coap_set_header_uri_path_segment(transacP->message, altPath);
     }
     if (uriP != NULL)
     {

@@ -709,7 +709,7 @@ void prv_freeClient(lwm2m_client_t * clientP)
 {
     if (clientP->name != NULL) lwm2m_free(clientP->name);
     if (clientP->msisdn != NULL) lwm2m_free(clientP->msisdn);
-    lwm2m_free(clientP->altPath);
+    if (clientP->altPath != NULL) lwm2m_free(clientP->altPath);
     prv_freeClientObjectList(clientP->objectList);
     while(clientP->observationList != NULL)
     {
