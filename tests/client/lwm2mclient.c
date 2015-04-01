@@ -540,7 +540,7 @@ int main(int argc, char *argv[])
     result = lwm2m_configure(lwm2mH, name, NULL, "/test", OBJ_COUNT, objArray);
     if (result != 0)
     {
-        fprintf(stderr, "lwm2m_set_objects() failed: 0x%X\r\n", result);
+        fprintf(stderr, "lwm2m_configure() failed: 0x%X\r\n", result);
         return -1;
     }
 

@@ -245,7 +245,7 @@ static int prv_make_operation(lwm2m_context_t * contextP,
     clientP = (lwm2m_client_t *)lwm2m_list_find((lwm2m_list_t *)contextP->clientList, clientID);
     if (clientP == NULL) return COAP_404_NOT_FOUND;
 
-    transaction = transaction_new(method, NULL, uriP, contextP->nextMID++, ENDPOINT_CLIENT, (void *)clientP);
+    transaction = transaction_new(method, clientP->altPath, uriP, contextP->nextMID++, ENDPOINT_CLIENT, (void *)clientP);
     if (transaction == NULL) return INTERNAL_SERVER_ERROR_5_00;
 
     if (buffer != NULL)

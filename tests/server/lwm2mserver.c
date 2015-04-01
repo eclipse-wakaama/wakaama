@@ -734,7 +734,7 @@ int main(int argc, char *argv[])
                                             "   URI: uri on which to cancel an observe such as /3, /3/0/2, /1024/11\r\n"
                                             "Result will be displayed asynchronously.", prv_cancel_client, NULL},
 
-            {"quit", "Quit the server.", NULL, prv_quit, NULL},
+            {"q", "Quit the server.", NULL, prv_quit, NULL},
 
             COMMAND_END_LIST
     };
