@@ -108,7 +108,12 @@ static coap_status_t handle_request(lwm2m_context_t * contextP,
     lwm2m_uri_t * uriP;
     coap_status_t result = NOT_FOUND_4_04;
 
-    uriP = lwm2m_decode_uri(message->uri_path);
+#ifdef LWM2M_CLIENT_MODE
+    uriP = lwm2m_decode_uri(contextP->altPath, message->uri_path);
+#else
+    uriP = lwm2m_decode_uri(NULL, message->uri_path);
+#endif
+
     if (uriP == NULL) return BAD_REQUEST_4_00;
 
     switch(uriP->flag & LWM2M_URI_MASK_TYPE)

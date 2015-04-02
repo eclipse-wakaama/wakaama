@@ -61,10 +61,12 @@
 #define lwm2m_malloc malloc
 #define lwm2m_free free
 #define lwm2m_strdup strdup
+#define lwm2m_strncmp strncmp
 #else
-char *lwm2m_strdup(const char* str);
-void *lwm2m_malloc(size_t s);
-void lwm2m_free(void *p);
+void * lwm2m_malloc(size_t s);
+void   lwm2m_free(void * p);
+char * lwm2m_strdup(const char * str);
+char * lwm2m_strncmp(const char * s1, const char * s2, size_t n);
 #endif
 // This function must return the number of seconds elapsed since origin.
 // The origin (Epoch, system boot, etc...) does not matter as this
@@ -408,6 +410,7 @@ typedef struct _lwm2m_client_
     char *                  name;
     lwm2m_binding_t         binding;
     char *                  msisdn;
+    char *                  altPath;
     uint32_t                lifetime;
     time_t                  endOfLife;
     void *                  sessionH;
@@ -491,6 +494,7 @@ typedef struct
 #ifdef LWM2M_CLIENT_MODE
     char *              endpointName;
     char *              msisdn;
+    char *              altPath;
     lwm2m_server_t *    bootstrapServerList;
     lwm2m_server_t *    serverList;
     lwm2m_object_t **   objectList;
@@ -522,10 +526,11 @@ int lwm2m_step(lwm2m_context_t * contextP, time_t * timeoutP);
 void lwm2m_handle_packet(lwm2m_context_t * contextP, uint8_t * buffer, int length, void * fromSessionH);
 
 #ifdef LWM2M_CLIENT_MODE
-// configure the client side with the Endpoint Name, binding, MSISDN (if any) and a list of objects.
+// configure the client side with the Endpoint Name, binding, MSISDN (can be nil), alternative path
+// for objects (can be nil) and a list of objects.
 // LWM2M Security Object (ID 0) must be present with either a bootstrap server or a LWM2M server and
 // its matching LWM2M Server Object (ID 1) instance
-int lwm2m_configure(lwm2m_context_t * contextP, char * endpointName, char * msisdn, uint16_t numObject, lwm2m_object_t * objectList[]);
+int lwm2m_configure(lwm2m_context_t * contextP, char * endpointName, char * msisdn, char * altPath, uint16_t numObject, lwm2m_object_t * objectList[]);
 
 // create objects for known LWM2M Servers.
 int lwm2m_start(lwm2m_context_t * contextP);

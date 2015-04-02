@@ -207,7 +207,7 @@ static int prv_register(lwm2m_context_t * contextP, lwm2m_server_t * server)
 
     if (server->sessionH != NULL)
     {
-        transaction = transaction_new(COAP_POST, NULL, contextP->nextMID++, ENDPOINT_SERVER, (void *)server);
+        transaction = transaction_new(COAP_POST, NULL, NULL, contextP->nextMID++, ENDPOINT_SERVER, (void *)server);
         if (transaction == NULL) return INTERNAL_SERVER_ERROR_5_00;
 
         coap_set_header_uri_path(transaction->message, "/"URI_REGISTRATION_SEGMENT);
@@ -284,7 +284,7 @@ static int prv_update_registration(lwm2m_context_t * contextP,
 {
     lwm2m_transaction_t * transaction;
 
-    transaction = transaction_new(COAP_PUT, NULL, contextP->nextMID++, ENDPOINT_SERVER, (void *)server);
+    transaction = transaction_new(COAP_PUT, NULL, NULL, contextP->nextMID++, ENDPOINT_SERVER, (void *)server);
     if (transaction == NULL) return INTERNAL_SERVER_ERROR_5_00;
 
     coap_set_header_uri_path(transaction->message, server->location);
@@ -420,7 +420,7 @@ void registration_deregister(lwm2m_context_t * contextP,
         }
 
     lwm2m_transaction_t * transaction;
-    transaction = transaction_new(COAP_DELETE, NULL, contextP->nextMID++, ENDPOINT_SERVER, (void *)serverP);
+    transaction = transaction_new(COAP_DELETE, NULL, NULL, contextP->nextMID++, ENDPOINT_SERVER, (void *)serverP);
     if (transaction == NULL) return;
 
     coap_set_header_uri_path(transaction->message, serverP->location);
@@ -517,6 +517,8 @@ error:
 
 static int prv_getId(uint8_t * data,
                      uint16_t length,
+                     char * altPath,
+                     uint16_t altPathLen,
                      uint16_t * objId,
                      uint16_t * instanceId)
 {
@@ -534,6 +536,13 @@ static int prv_getId(uint8_t * data,
     else
     {
         return 0;
+    }
+
+    if (altPath != NULL)
+    {
+        if (length <= altPathLen) return 0;
+        if (0 != lwm2m_strncmp(data, altPath, altPathLen)) return 0;
+        data += altPathLen;
     }
 
     // If there is a preceding /, remove it
@@ -569,7 +578,8 @@ static int prv_getId(uint8_t * data,
 }
 
 static lwm2m_client_object_t * prv_decodeRegisterPayload(uint8_t * payload,
-                                                         uint16_t payloadLength)
+                                                         uint16_t payloadLength,
+                                                         char ** altPath)
 {
     lwm2m_client_object_t * objList;
     uint16_t id;
@@ -577,16 +587,66 @@ static lwm2m_client_object_t * prv_decodeRegisterPayload(uint8_t * payload,
     uint16_t start;
     uint16_t end;
     int result;
+    uint16_t altPathStart;
+    uint16_t altPathEnd;
+    uint16_t altPathLen;
 
     objList = NULL;
     start = 0;
+    altPathStart = 0;
+    altPathEnd = 0;
+    altPathLen = 0;
+    *altPath = NULL;
+
+    // Does the registration payload begin with an alternative path ?
+    while (start < payloadLength && payload[start] == ' ') start++;
+    if (start != payloadLength)
+    {
+        if (payload[start] == '<')
+        {
+            altPathStart = start + 1;
+        }
+        while (start < payloadLength - 1 && payload[start] != '>') start++;
+        if (start != payloadLength - 1)
+        {
+            altPathEnd = start - 1;
+            if ((payloadLength > altPathEnd + REG_LWM2M_RESOURCE_TYPE_LEN)
+             && (0 == lwm2m_strncmp(REG_LWM2M_RESOURCE_TYPE, (char *) payload + altPathEnd + 1, REG_LWM2M_RESOURCE_TYPE_LEN)))
+            {
+                payload[altPathEnd + 1] = 0;
+                *altPath = lwm2m_strdup((char *)payload + altPathStart);
+                if (*altPath == NULL) return NULL;
+                if (0 == prv_isAltPathValid(*altPath))
+                {
+                    return NULL;
+                }
+                altPathLen = altPathEnd - altPathStart + 1;
+            }
+        }
+    }
+
+    if (altPathLen != 0)
+    {
+        start = altPathEnd + 1 + REG_LWM2M_RESOURCE_TYPE_LEN;
+        // If declared alternative path is "/", use NULL instead
+        if (altPathLen == 1)
+        {
+            lwm2m_free(*altPath);
+            *altPath = NULL;
+        }
+    }
+    else
+    {
+        start = 0;
+    }
+
     while (start < payloadLength)
     {
         while (start < payloadLength && payload[start] == ' ') start++;
         if (start == payloadLength) return objList;
         end = start;
         while (end < payloadLength && payload[end] != ',') end++;
-        result = prv_getId(payload + start, end - start, &id, &instance);
+        result = prv_getId(payload + start, end - start, *altPath, altPathLen, &id, &instance);
         if (result != 0)
         {
             lwm2m_client_object_t * objectP;
@@ -659,6 +719,7 @@ void prv_freeClient(lwm2m_client_t * clientP)
 {
     if (clientP->name != NULL) lwm2m_free(clientP->name);
     if (clientP->msisdn != NULL) lwm2m_free(clientP->msisdn);
+    if (clientP->altPath != NULL) lwm2m_free(clientP->altPath);
     prv_freeClientObjectList(clientP->objectList);
     while(clientP->observationList != NULL)
     {
@@ -706,6 +767,7 @@ coap_status_t handle_registration_request(lwm2m_context_t * contextP,
         char * name = NULL;
         uint32_t lifetime;
         char * msisdn;
+        char * altPath;
         lwm2m_binding_t binding;
         lwm2m_client_object_t * objects;
         lwm2m_client_t * clientP;
@@ -716,7 +778,7 @@ coap_status_t handle_registration_request(lwm2m_context_t * contextP,
         {
             return COAP_400_BAD_REQUEST;
         }
-        objects = prv_decodeRegisterPayload(message->payload, message->payload_len);
+        objects = prv_decodeRegisterPayload(message->payload, message->payload_len, &altPath);
         if (objects == NULL)
         {
             lwm2m_free(name);
@@ -740,6 +802,7 @@ coap_status_t handle_registration_request(lwm2m_context_t * contextP,
             // we reset this registration
             lwm2m_free(clientP->name);
             if (clientP->msisdn != NULL) lwm2m_free(clientP->msisdn);
+            if (clientP->altPath != NULL) lwm2m_free(clientP->altPath);
             prv_freeClientObjectList(clientP->objectList);
             clientP->objectList = NULL;
         }
@@ -749,6 +812,7 @@ coap_status_t handle_registration_request(lwm2m_context_t * contextP,
             if (clientP == NULL)
             {
                 lwm2m_free(name);
+                lwm2m_free(altPath);
                 if (msisdn != NULL) lwm2m_free(msisdn);
                 prv_freeClientObjectList(objects);
                 return COAP_500_INTERNAL_SERVER_ERROR;
@@ -760,6 +824,7 @@ coap_status_t handle_registration_request(lwm2m_context_t * contextP,
         clientP->name = name;
         clientP->binding = binding;
         clientP->msisdn = msisdn;
+        clientP->altPath = altPath;
         clientP->lifetime = lifetime;
         clientP->endOfLife = tv_sec + lifetime;
         clientP->objectList = objects;
@@ -789,6 +854,7 @@ coap_status_t handle_registration_request(lwm2m_context_t * contextP,
         char * name = NULL;
         uint32_t lifetime;
         char * msisdn;
+        char * altPath;
         lwm2m_binding_t binding;
         lwm2m_client_object_t * objects;
         lwm2m_client_t * clientP;
@@ -802,7 +868,7 @@ coap_status_t handle_registration_request(lwm2m_context_t * contextP,
         {
             return COAP_400_BAD_REQUEST;
         }
-        objects = prv_decodeRegisterPayload(message->payload, message->payload_len);
+        objects = prv_decodeRegisterPayload(message->payload, message->payload_len, &altPath);
 
         // Endpoint client name MUST NOT be present
         if (name != NULL)

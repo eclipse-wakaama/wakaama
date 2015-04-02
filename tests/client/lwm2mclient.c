@@ -84,7 +84,7 @@
 int g_reboot = 0;
 static int g_quit = 0;
 
-#define OBJ_COUNT 9
+#define OBJ_COUNT 3
 lwm2m_object_t * objArray[OBJ_COUNT];
 
 
@@ -254,7 +254,7 @@ static uint8_t prv_buffer_send(void * sessionH,
         fprintf(stderr, "#> failed sending %lu bytes\r\n", length);
         return COAP_500_INTERNAL_SERVER_ERROR ;
     }
-    conn_s_updateTxStatistic(objArray[7], (uint16_t)length, false);
+    // conn_s_updateTxStatistic(objArray[7], (uint16_t)length, false);
     fprintf(stderr, "#> sent %lu bytes\r\n", length);
     return COAP_NO_ERROR;
 }
@@ -446,7 +446,7 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    objArray[1] = get_object_firmware();
+/*    objArray[1] = get_object_firmware();
     if (NULL == objArray[1])
     {
         fprintf(stderr, "Failed to create Firmware object\r\n");
@@ -459,10 +459,10 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Failed to create test object\r\n");
         return -1;
     }
-
+*/
     int serverId = 123;
-    objArray[3] = get_server_object(serverId, "U", lifetime, false);
-    if (NULL == objArray[3])
+    objArray[1] = get_server_object(serverId, "U", lifetime, false);
+    if (NULL == objArray[1])
     {
         fprintf(stderr, "Failed to create server object\r\n");
         return -1;
@@ -470,15 +470,15 @@ int main(int argc, char *argv[])
 
     char serverUri[50];
     sprintf(serverUri, "coap://%s:%s", server, serverPort);
-    objArray[4] = get_security_object(serverId, serverUri, false);
-    if (NULL == objArray[4])
+    objArray[2] = get_security_object(serverId, serverUri, false);
+    if (NULL == objArray[2])
     {
         fprintf(stderr, "Failed to create security object\r\n");
         return -1;
     }
-    data.securityObjP = objArray[4];
+    data.securityObjP = objArray[2];
 
-    objArray[5] = get_object_location();
+ /*   objArray[5] = get_object_location();
     if (NULL == objArray[5])
     {
         fprintf(stderr, "Failed to create location object\r\n");
@@ -521,6 +521,7 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Failed to create Access Control ACL resource for serverId: 999\r\n");
         return -1;
     }
+*/
     /*
      * The liblwm2m library is now initialized with the functions that will be in
      * charge of communication
@@ -536,10 +537,10 @@ int main(int argc, char *argv[])
      * We configure the liblwm2m library with the name of the client - which shall be unique for each client -
      * the number of objects we will be passing through and the objects array
      */
-    result = lwm2m_configure(lwm2mH, name, NULL, OBJ_COUNT, objArray);
+    result = lwm2m_configure(lwm2mH, name, NULL, "/test", OBJ_COUNT, objArray);
     if (result != 0)
     {
-        fprintf(stderr, "lwm2m_set_objects() failed: 0x%X\r\n", result);
+        fprintf(stderr, "lwm2m_configure() failed: 0x%X\r\n", result);
         return -1;
     }
 
@@ -699,7 +700,7 @@ int main(int argc, char *argv[])
                          * Let liblwm2m respond to the query depending on the context
                          */
                         lwm2m_handle_packet(lwm2mH, buffer, numBytes, connP);
-                        conn_s_updateRxStatistic(objArray[7], numBytes, false);
+                        //conn_s_updateRxStatistic(objArray[7], numBytes, false);
                     }
                     else
                     {

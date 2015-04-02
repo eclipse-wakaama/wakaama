@@ -70,6 +70,12 @@
 
 #define LWM2M_MAX_PACKET_SIZE 198
 
+#define REG_LWM2M_RESOURCE_TYPE     ">;rt=\"oma.lwm2m\","
+#define REG_LWM2M_RESOURCE_TYPE_LEN 17
+#define REG_ALT_PATH_LINK           "<%s"REG_LWM2M_RESOURCE_TYPE
+#define REG_OBJECT_PATH             "<%s/%hu>,"
+#define REG_OBJECT_INSTANCE_PATH    "<%s/%hu/%hu>,"
+
 #define URI_REGISTRATION_SEGMENT        "rd"
 #define URI_REGISTRATION_SEGMENT_LEN    2
 #define URI_BOOTSTRAP_SEGMENT           "bs"
@@ -97,7 +103,7 @@ typedef struct _obs_list_
 
 // defined in uri.c
 int lwm2m_get_number(const char * uriString, size_t uriLength);
-lwm2m_uri_t * lwm2m_decode_uri(multi_option_t *uriPath);
+lwm2m_uri_t * lwm2m_decode_uri(char * altPath, multi_option_t *uriPath);
 
 // defined in objects.c
 coap_status_t object_read(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, char ** bufferP, int * lengthP);
@@ -110,7 +116,7 @@ int prv_getRegisterPayload(lwm2m_context_t * contextP, char * buffer, size_t len
 int object_getServers(lwm2m_context_t * contextP);
 
 // defined in transaction.c
-lwm2m_transaction_t * transaction_new(coap_method_t method, lwm2m_uri_t * uriP, uint16_t mID, lwm2m_endpoint_type_t peerType, void * peerP);
+lwm2m_transaction_t * transaction_new(coap_method_t method, char * altPath, lwm2m_uri_t * uriP, uint16_t mID, lwm2m_endpoint_type_t peerType, void * peerP);
 int transaction_send(lwm2m_context_t * contextP, lwm2m_transaction_t * transacP);
 void transaction_free(lwm2m_transaction_t * transacP);
 void transaction_remove(lwm2m_context_t * contextP, lwm2m_transaction_t * transacP);
@@ -139,5 +145,6 @@ void observation_remove(lwm2m_client_t * clientP, lwm2m_observation_t * observat
 // defined in utils.c
 lwm2m_binding_t lwm2m_stringToBinding(uint8_t *buffer, size_t length);
 lwm2m_server_t * prv_findServer(lwm2m_context_t * contextP, void * fromSessionH);
+int prv_isAltPathValid(char * altPath);
 
 #endif

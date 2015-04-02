@@ -231,6 +231,35 @@ lwm2m_server_t * prv_findServer(lwm2m_context_t * contextP,
 #endif
 }
 
+int prv_isAltPathValid(char * altPath)
+{
+    int i;
+
+    if (altPath == NULL) return 0;
+
+    if (altPath[0] != '/') return 0;
+
+    for (i = 1 ; altPath[i] != 0 ; i++)
+    {
+        // TODO: Support multi-segment alternative path
+        if (altPath[i] == '/') return 0;
+        // TODO: Check needs for sub-delims, ':' and '@'
+        if ((altPath[i] < 'A' || altPath[i] > 'Z')      // ALPHA
+         && (altPath[i] < 'a' || altPath[i] > 'z')
+         && (altPath[i] < '0' || altPath[i] > '9')      // DIGIT
+         && (altPath[i] != '-')                         // Other unreserved
+         && (altPath[i] != '.')
+         && (altPath[i] != '_')
+         && (altPath[i] != '~')
+         && (altPath[i] != '%'))                        // pct_encoded
+        {
+            return 0;
+        }
+
+    }
+    return 1;
+}
+
 #ifndef LWM2M_EMBEDDED_MODE
 time_t lwm2m_gettime()
 {

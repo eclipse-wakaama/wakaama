@@ -104,6 +104,7 @@ static int prv_check_addr(void * leftSessionH,
 }
 
 lwm2m_transaction_t * transaction_new(coap_method_t method,
+                                      char * altPath,
                                       lwm2m_uri_t * uriP,
                                       uint16_t mID,
                                       lwm2m_endpoint_type_t peerType,
@@ -126,6 +127,11 @@ lwm2m_transaction_t * transaction_new(coap_method_t method,
     transacP->peerType = peerType;
     transacP->peerP = peerP;
 
+    if (altPath != NULL)
+    {
+        // TODO: Support multi-segment alternative path
+        coap_set_header_uri_path_segment(transacP->message, altPath + 1);
+    }
     if (uriP != NULL)
     {
         result = snprintf(transacP->objStringID, LWM2M_STRING_ID_MAX_LEN, "%hu", uriP->objectId);

@@ -93,7 +93,8 @@ int prv_get_number(const char * uriString,
 }
 
 
-lwm2m_uri_t * lwm2m_decode_uri(multi_option_t *uriPath)
+lwm2m_uri_t * lwm2m_decode_uri(char * altPath,
+                               multi_option_t *uriPath)
 {
     lwm2m_uri_t * uriP;
     int readNum;
@@ -120,6 +121,22 @@ lwm2m_uri_t * lwm2m_decode_uri(multi_option_t *uriPath)
         uriPath = uriPath->next;
         if (uriPath != NULL) goto error;
         return uriP;
+    }
+
+    // Read altPath if any
+    if (altPath != NULL)
+    {
+        int i;
+
+        for (i = 0 ; i < uriPath->len ; i++)
+        {
+            if (uriPath->data[i] != altPath[i+1])
+            {
+                lwm2m_free(uriP);
+                return NULL;
+            }
+        }
+        uriPath = uriPath->next;
     }
 
     readNum = prv_get_number(uriPath->data, uriPath->len);

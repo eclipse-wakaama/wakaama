@@ -131,6 +131,15 @@ void lwm2m_close(lwm2m_context_t * contextP)
     }
 
     lwm2m_free(contextP->endpointName);
+    if (contextP->msisdn != NULL)
+    {
+        lwm2m_free(contextP->msisdn);
+    }
+    if (contextP->altPath != NULL)
+    {
+        lwm2m_free(contextP->altPath);
+    }
+
 #endif
 
 #ifdef LWM2M_SERVER_MODE
@@ -162,6 +171,7 @@ void lwm2m_close(lwm2m_context_t * contextP)
 int lwm2m_configure(lwm2m_context_t * contextP,
                     char * endpointName,
                     char * msisdn,
+                    char * altPath,
                     uint16_t numObject,
                     lwm2m_object_t * objectList[])
 {
@@ -182,8 +192,18 @@ int lwm2m_configure(lwm2m_context_t * contextP,
         if (objectList[i]->objID == LWM2M_DEVICE_OBJECT_ID) found |= 0x04;
     }
     if (found != 0x07) return COAP_400_BAD_REQUEST;
-
-    contextP->endpointName = strdup(endpointName);
+    if (altPath != NULL)
+    {
+        if (0 == prv_isAltPathValid(altPath))
+        {
+            return COAP_400_BAD_REQUEST;
+        }
+        if (altPath[1] == 0)
+        {
+            altPath = NULL;
+        }
+    }
+    contextP->endpointName = lwm2m_strdup(endpointName);
     if (contextP->endpointName == NULL)
     {
         return COAP_500_INTERNAL_SERVER_ERROR;
@@ -191,8 +211,17 @@ int lwm2m_configure(lwm2m_context_t * contextP,
 
     if (msisdn != NULL)
     {
-        contextP->msisdn = strdup(msisdn);
+        contextP->msisdn = lwm2m_strdup(msisdn);
         if (contextP->msisdn == NULL)
+        {
+            return COAP_500_INTERNAL_SERVER_ERROR;
+        }
+    }
+
+    if (altPath != NULL)
+    {
+        contextP->altPath = lwm2m_strdup(altPath);
+        if (contextP->altPath == NULL)
         {
             return COAP_500_INTERNAL_SERVER_ERROR;
         }
