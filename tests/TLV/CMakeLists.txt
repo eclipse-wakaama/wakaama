@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 2.6)
 
-project (tlvdecode)
+project (tlvtests)
 
 SET(LIBLWM2M_DIR ${PROJECT_SOURCE_DIR}/../../core)
 
@@ -12,4 +12,4 @@ add_subdirectory(${LIBLWM2M_DIR} ${CMAKE_CURRENT_BINARY_DIR}/core)
 
 SET(SOURCES decode.c)
 
-add_executable(tlvdecode ${SOURCES} ${CORE_SOURCES})
+add_executable(tlvtests ${SOURCES} ${CORE_SOURCES})
