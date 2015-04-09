@@ -1,10 +1,10 @@
 cmake_minimum_required (VERSION 2.6)
 
-project (tlvdecode)
+project (tlvtests)
 
 include_directories ("${PROJECT_SOURCE_DIR}/../..")
 
 SET(SOURCES decode.c)
-SET(CORE_SOURCES ${PROJECT_SOURCE_DIR}/../../core/tlv.c)
+SET(CORE_SOURCES ${PROJECT_SOURCE_DIR}/../../core/tlv.c ${PROJECT_SOURCE_DIR}/../../core/json.c)
 
-add_executable(tlvdecode ${SOURCES} ${CORE_SOURCES})
+add_executable(tlvtests ${SOURCES} ${CORE_SOURCES})
