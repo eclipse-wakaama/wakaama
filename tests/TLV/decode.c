@@ -183,6 +183,31 @@ static void dump_json(char * buffer,
 {
 }
 
+static void test_JSON(char * testBuf,
+                      size_t testLen,
+                      char * id)
+{
+    lwm2m_tlv_t * tlvP;
+    int size;
+    int length;
+    char * buffer;
+
+    size = lwm2m_tlv_parse_json(testBuf, testLen, &tlvP);
+    if (size <= 0)
+    {
+        printf("\n\nJSON buffer %s decoding failed !\n", id);
+        return;
+    }
+    else
+        printf("\n\nJSON buffer %s decoding:\n", id);
+
+    dump_tlv(size, tlvP, 0);
+    length = lwm2m_tlv_serialize_json(size, tlvP, &buffer);
+    dump_json(buffer, length);
+    lwm2m_tlv_free(size, tlvP);
+}
+
+
 static void test_TLV(char * testBuf,
                      size_t testLen,
                      char * id)
@@ -229,7 +254,7 @@ int main(int argc, char *argv[])
                       0x08, 0x42, 0x00, 0x0E, 0xD8 , 0x42, 0x01, 0x13, 0x88, 0x87, 0x08, 0x41, 0x00, 0x7D, 0x42,
                       0x01, 0x03, 0x84, 0xC1, 0x09, 0x64 , 0xC1, 0x0A, 0x0F, 0x83, 0x0B, 0x41, 0x00, 0x00, 0xC4,
                       0x0D, 0x51, 0x82, 0x42, 0x8F, 0xC6, 0x0E, 0x2B, 0x30, 0x32, 0x3A, 0x30, 0x30, 0xC1, 0x0F, 0x55};
-    char * buffer3 = "{\"e\":[                                              \
+   char * buffer3 = "{\"e\":[                                              \
                         {\"n\":\"0\",\"sv\":\"Open Mobile Alliance\"},      \
                         {\"n\":\"1\",\"sv\":\"Lightweight M2M Client\"},    \
                         {\"n\":\"2\",\"sv\":\"345000123\"},                 \
@@ -249,9 +274,10 @@ int main(int argc, char *argv[])
                       }";
 
 
-
     test_TLV(buffer1, sizeof(buffer1), "1");
     printf("\n\n============\n\n");
     test_TLV(buffer2, sizeof(buffer2), "2");
+    printf("\n\n============\n\n");
+    test_JSON(buffer3, strlen(buffer3), "3");
 }
 
