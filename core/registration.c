@@ -543,6 +543,7 @@ static int prv_getId(uint8_t * data,
         if (length <= altPathLen) return 0;
         if (0 != lwm2m_strncmp(data, altPath, altPathLen)) return 0;
         data += altPathLen;
+        length -= altPathLen;
     }
 
     // If there is a preceding /, remove it
