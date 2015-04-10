@@ -825,7 +825,7 @@ int main(int argc, char *argv[])
                         port = saddr->sin6_port;
                     }
 
-                    fprintf(stderr, "%d bytes received from [%s]:%hu\r\n", numBytes, s, port);
+                    fprintf(stderr, "%d bytes received from [%s]:%hu\r\n", numBytes, s, ntohs(port));
 
                     output_buffer(stderr, buffer, numBytes);
 
