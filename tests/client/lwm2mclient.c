@@ -685,7 +685,7 @@ int main(int argc, char *argv[])
                         inet_ntop(saddr->sin6_family, &saddr->sin6_addr, s, INET6_ADDRSTRLEN);
                         port = saddr->sin6_port;
                     }
-                    fprintf(stderr, "%d bytes received from [%s]:%hu\r\n", numBytes, s, port);
+                    fprintf(stderr, "%d bytes received from [%s]:%hu\r\n", numBytes, s, ntohs(port));
 
                     /*
                      * Display it in the STDERR
