@@ -110,7 +110,8 @@ void dump_tlv(int size,
         {
             dump_tlv(tlvP[i].length, (lwm2m_tlv_t *)(tlvP[i].value), indent+1);
         }
-        else if (tlvP[i].length <= 8)
+        else if (tlvP[i].length <= 8
+              && (tlvP[i].flags & LWM2M_TLV_FLAG_TEXT_FORMAT) == 0)
         {
             int64_t value;
             if (0 != lwm2m_opaqueToInt(tlvP[i].value, tlvP[i].length, &value))
@@ -273,7 +274,7 @@ int main(int argc, char *argv[])
                          {\"n\":\"15\",\"sv\":\"U\"}]                        \
                        }";
     char * buffer4 = "{\"e\":[                                \
-                         {\"n\":\"0\",\"sv\":\"LWM2M\"},      \
+                         {\"n\":\"0\",\"sv\":\"a \\\"test\\\"\"},      \
                          {\"n\":\"1\",\"v\":2015},            \
                          {\"n\":\"2/0\",\"bv\":true},         \
                          {\"n\":\"2/1\",\"bv\":false}]        \

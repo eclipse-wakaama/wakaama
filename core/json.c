@@ -21,23 +21,12 @@
 #include <stdio.h>
 #include <inttypes.h>
 
-#define JSON_ARRAY_TOKEN            "\"e\""
-#define JSON_ARRAY_TOKEN_LEN        3
-#define JSON_BASE_NAME_TOKEN        "\"bn\""
-#define JSON_BASE_NAME_TOKEN_LEN    4
-#define JSON_BASE_TIME_TOKEN        "\"bt\""
-#define JSON_BASE_TIME_TOKEN_LEN    4
-#define JSON_NAME_TOKEN             "\"n\""
-#define JSON_NAME_TOKEN_LEN         3
-#define JSON_FLOAT_TOKEN            "\"v\""
-#define JSON_FLOAT_TOKEN_LEN        3
-#define JSON_BOOLEAN_TOKEN          "\"bv\""
-#define JSON_BOOLEAN_TOKEN_LEN      4
-#define JSON_STRING_TOKEN           "\"sv\""
-#define JSON_STRING_TOKEN_LEN       4
 
 #define JSON_MIN_ARRAY_LEN      21  // e":[{"n":"N","v":X}]}
 #define JSON_MIN_BASE_LEN        7  // n":"N",
+
+#define JSON_FALSE_STRING  "false"
+#define JSON_TRUE_STRING   "true"
 
 #define _GO_TO_NEXT_CHAR(I,B,L)         \
     {                                   \
@@ -46,6 +35,64 @@
         if (I == L) return -1;    \
     }
 
+typedef enum
+{
+    _STEP_START,
+    _STEP_TOKEN,
+    _STEP_ANY_SEPARATOR,
+    _STEP_SEPARATOR,
+    _STEP_QUOTED_VALUE,
+    _STEP_VALUE,
+    _STEP_DONE
+} _itemState;
+
+typedef enum
+{
+    _TYPE_UNSET,
+    _TYPE_FALSE,
+    _TYPE_TRUE,
+    _TYPE_FLOAT,
+    _TYPE_STRING
+} _type;
+
+typedef struct
+{
+    uint16_t    resId;
+    uint16_t    resInstId;
+    _type       type;
+    char *      value;
+    size_t      valueLen;
+} _record_t;
+
+static int prv_isReserved(char sign)
+{
+    if (sign == '['
+     || sign == '{'
+     || sign == ']'
+     || sign == '}'
+     || sign == ':'
+     || sign == ','
+     || sign == '"')
+    {
+        return 1;
+    }
+
+    return 0;
+}
+
+static int prv_isWhiteSpace(char sign)
+{
+    if (sign == 0x20
+     || sign == 0x09
+     || sign == 0x0A
+     || sign == 0x0D)
+    {
+        return 1;
+    }
+
+    return 0;
+}
+
 static int prv_skipSpace(char * buffer,
                          size_t bufferLen)
 {
@@ -53,10 +100,7 @@ static int prv_skipSpace(char * buffer,
 
     i = 0;
     while ((i < bufferLen)
-        && (buffer[i] == 0x20
-         || buffer[i] == 0x09
-         || buffer[i] == 0x0A
-         || buffer[i] == 0x0D))
+        && prv_isWhiteSpace(buffer[i]))
     {
         i++;
     }
@@ -64,38 +108,100 @@ static int prv_skipSpace(char * buffer,
     return i;
 }
 
-static int prv_findSeparator(char * buffer,
-                             size_t bufferLen)
+static int prv_split(char * buffer,
+                     size_t bufferLen,
+                     int * tokenStartP,
+                     int * tokenLenP,
+                     int * valueStartP,
+                     int * valueLenP)
 {
-    int i;
+    int index;
+    _itemState step;
 
-    i = 0;
-    while (i < bufferLen)
+    index = 0;
+    step = _STEP_START;
+
+    index = prv_skipSpace(buffer + index, bufferLen - index);
+    if (index == bufferLen) return -1;
+
+    while ((index < bufferLen)
+        && (buffer[index] != ','))
     {
-        if (buffer[i] == ':') return i;
-        if (buffer[i] == '"')
+        switch (step)
         {
-            // skip strings
-            i++;
-            while ((i < bufferLen)
-                && (buffer[i] != '"'))
-            {
-                i++;
-            }
-        }
-        // reserved characters
-        switch(buffer[i])
-        {
-        case ',':
-        case '{':
-        case '}':
-             return 0;
-        }
-        i++;
-    }
-    if (i == bufferLen) i = 0;
+        case _STEP_START:
+            if (buffer[index] != '"') return -1;
+            *tokenStartP = index+1;
+            step = _STEP_TOKEN;
+            break;
 
-    return i;
+        case _STEP_TOKEN:
+            if (buffer[index] == '"')
+            {
+                *tokenLenP = index - *tokenStartP;
+                step = _STEP_ANY_SEPARATOR;
+            }
+            break;
+
+        case _STEP_ANY_SEPARATOR:
+            if (buffer[index] != ':') return -1;
+            step = _STEP_SEPARATOR;
+            break;
+
+        case _STEP_SEPARATOR:
+            if (buffer[index] == '"')
+            {
+                *valueStartP = index;
+                step = _STEP_QUOTED_VALUE;
+            } else if (!prv_isReserved(buffer[index]))
+            {
+                *valueStartP = index;
+                step = _STEP_VALUE;
+            } else
+            {
+                return -1;
+            }
+            break;
+
+        case _STEP_QUOTED_VALUE:
+            if (buffer[index] == '"' && buffer[index-1] != '\\' )
+            {
+                *valueLenP = index - *valueStartP + 1;
+                step = _STEP_DONE;
+            }
+            break;
+
+        case _STEP_VALUE:
+            if (prv_isWhiteSpace(buffer[index]))
+            {
+                *valueLenP = index - *valueStartP;
+                step = _STEP_DONE;
+            }
+            break;
+
+        case _STEP_DONE:
+            return -1;
+        }
+
+        index++;
+        if (step == _STEP_START
+         || step == _STEP_ANY_SEPARATOR
+         || step == _STEP_SEPARATOR
+         || step == _STEP_DONE)
+        {
+            index += prv_skipSpace(buffer + index, bufferLen - index);
+        }
+    }
+
+    if (step == _STEP_VALUE)
+    {
+        *valueLenP = index - *valueStartP;
+        step = _STEP_DONE;
+    }
+
+    if (step != _STEP_DONE) return -1;
+
+    return index;
 }
 
 static int prv_countItems(char * buffer,
@@ -145,9 +251,250 @@ static int prv_countItems(char * buffer,
 
 static int prv_parseItem(char * buffer,
                          size_t bufferLen,
-                         lwm2m_tlv_t * tlvP)
+                         _record_t * recordP)
 {
+    int index;
+
+    recordP->resId = LWM2M_MAX_ID;
+    recordP->resInstId = LWM2M_MAX_ID;
+    recordP->type = _TYPE_UNSET;
+    recordP->value = NULL;
+    recordP->valueLen = 0;
+
+    index = 0;
+    do
+    {
+        int tokenStart;
+        int tokenLen;
+        int valueStart;
+        int valueLen;
+        int next;
+
+        next = prv_split(buffer+index, bufferLen-index, &tokenStart, &tokenLen, &valueStart, &valueLen);
+        if (next < 0) return -1;
+
+        switch (tokenLen)
+        {
+        case 1:
+        {
+            switch (buffer[index+tokenStart])
+            {
+            case 'n':
+            {
+                int i;
+                uint32_t readId;
+
+                if (recordP->resId != LWM2M_MAX_ID) return -1;
+
+                // Check for " around URI
+                if (valueLen < 3
+                 || buffer[index+valueStart] != '"'
+                 || buffer[index+valueStart+valueLen-1] != '"')
+                {
+                    return -1;
+                }
+                i = 1;
+                readId = 0;
+                while (i < valueLen-1 && buffer[index+valueStart+i] != '/')
+                {
+                    if (buffer[index+valueStart+i] < '0'
+                     || buffer[index+valueStart+i] > '9')
+                    {
+                        return -1;
+                    }
+                    readId *= 10;
+                    readId += buffer[index+valueStart+i] - '0';
+                    if (readId > LWM2M_MAX_ID) return -1;
+                    i++;
+                }
+                recordP->resId = readId;
+                if (buffer[index+valueStart+i] == '/')
+                {
+                    int j;
+
+                    if (i == valueLen-1) return -1;
+
+                    j = 1;
+                    readId = 0;
+                    while (i+j < valueLen-1)
+                    {
+                        if (buffer[index+valueStart+i+j] < '0'
+                         || buffer[index+valueStart+i+j] > '9')
+                        {
+                            return -1;
+                        }
+                        readId *= 10;
+                        readId += buffer[index+valueStart+i+j] - '0';
+                        if (readId > LWM2M_MAX_ID) return -1;
+                        i++;
+                    }
+                    recordP->resInstId = readId;
+                }
+                // TODO: support more URIs than just res and res/instance
+            }
+            break;
+
+            case 'v':
+                if (recordP->type != _TYPE_UNSET) return -1;
+                recordP->type = _TYPE_FLOAT;
+                recordP->value = buffer + index + valueStart;
+                recordP->valueLen = valueLen;
+                break;
+
+            case 't':
+                // TODO: support time
+                break;
+
+            default:
+                return -1;
+            }
+        }
+        break;
+
+        case 2:
+        {
+            // "bv", "ov", or "sv"
+            if (buffer[index+tokenStart+1] != 'v') return -1;
+            switch (buffer[index+tokenStart])
+            {
+            case 'b':
+                if (recordP->type != _TYPE_UNSET) return -1;
+                if (0 == lwm2m_strncmp(JSON_TRUE_STRING, buffer + index + valueStart, valueLen))
+                {
+                    recordP->type = _TYPE_TRUE;
+                }
+                else if (0 == lwm2m_strncmp(JSON_FALSE_STRING, buffer + index + valueStart, valueLen))
+                {
+                    recordP->type = _TYPE_FALSE;
+                }
+                else
+                {
+                    return -1;
+                }
+                break;
+
+            case 'o':
+                if (recordP->type != _TYPE_UNSET) return -1;
+                // TODO: support object link
+                break;
+
+            case 's':
+                if (recordP->type != _TYPE_UNSET) return -1;
+                // Check for " around value
+                if (valueLen < 2
+                 || buffer[index+valueStart] != '"'
+                 || buffer[index+valueStart+valueLen-1] != '"')
+                {
+                    return -1;
+                }
+                recordP->type = _TYPE_STRING;
+                recordP->value = buffer + index + valueStart + 1;
+                recordP->valueLen = valueLen - 2;
+                break;
+
+            default:
+                return -1;
+            }
+        }
+        break;
+
+        default:
+            return -1;
+        }
+
+        index += next + 1;
+    } while (index < bufferLen);
+
     return 0;
+}
+
+static int prv_convertRecord(_record_t * recordArray,
+                             int count,
+                             lwm2m_tlv_t ** dataP)
+{
+    int index;
+    int tlvIndex;
+    lwm2m_tlv_t * tlvP;
+
+    // may be overkill
+    tlvP = lwm2m_tlv_new(count);
+    if (NULL == tlvP) return -1;
+    tlvIndex = 0;
+
+    for (index = 0 ; index < count ; index++)
+    {
+        lwm2m_tlv_t * targetP;
+
+        if (recordArray[index].resInstId == LWM2M_MAX_ID)
+        {
+            targetP = tlvP + tlvIndex;
+            targetP->type = TLV_RESSOURCE;
+            targetP->id = recordArray[index].resId;
+            tlvIndex++;
+        }
+        else
+        {
+            int resIndex;
+
+            resIndex = 0;
+            while (resIndex < tlvIndex
+                && tlvP[resIndex].id != recordArray[index].resId)
+            {
+                resIndex++;
+            }
+            if (resIndex == tlvIndex)
+            {
+                targetP = lwm2m_tlv_new(1);
+                if (NULL == targetP) goto error;
+
+                tlvP[resIndex].type = LWM2M_TYPE_MULTIPLE_RESSOURCE;
+                tlvP[resIndex].id = recordArray[index].resId;
+                tlvP[resIndex].length = 1;
+                tlvP[resIndex].value = (uint8_t *)targetP;
+
+                tlvIndex++;
+            }
+            else
+            {
+                targetP = lwm2m_tlv_new(tlvP[resIndex].length + 1);
+                if (NULL == targetP) goto error;
+
+                memcpy(targetP + 1, tlvP[resIndex].value, tlvP[resIndex].length * sizeof(lwm2m_tlv_t));
+                lwm2m_free(tlvP[resIndex].value);   // do not use lwm2m_tlv_free() to preserve value pointers
+                tlvP[resIndex].value = (uint8_t *)targetP;
+                tlvP[resIndex].length++;
+            }
+
+            targetP->type = LWM2M_TYPE_RESSOURCE_INSTANCE;
+            targetP->id = recordArray[index].resInstId;
+        }
+        switch (recordArray[index].type)
+        {
+        case _TYPE_FALSE:
+            lwm2m_tlv_encode_bool(false, targetP);
+            break;
+        case _TYPE_TRUE:
+            lwm2m_tlv_encode_bool(true, targetP);
+            break;
+        case _TYPE_FLOAT:
+            // TODO: Convert float from string to numerical type
+            // TODO: Copy string instead of pointing to it
+        case _TYPE_STRING:
+            targetP->flags = LWM2M_TLV_FLAG_STATIC_DATA | LWM2M_TLV_FLAG_TEXT_FORMAT;
+            targetP->length = recordArray[index].valueLen;
+            targetP->value = recordArray[index].value;
+            break;
+        default:
+            goto error;
+        }
+    }
+
+    *dataP = tlvP;
+    return tlvIndex;
+
+error:
+    lwm2m_tlv_free(count, tlvP);
+    return -1;
 }
 
 int lwm2m_tlv_parse_json(char * buffer,
@@ -171,8 +518,8 @@ int lwm2m_tlv_parse_json(char * buffer,
     {
     case 'e':
     {
-        lwm2m_tlv_t * tlvP;
-        int tlvIndex;
+        _record_t * recordArray;
+        int recordIndex;
 
         if (eFound == true) return -1;
         eFound = true;
@@ -187,23 +534,23 @@ int lwm2m_tlv_parse_json(char * buffer,
         _GO_TO_NEXT_CHAR(index, buffer, bufferLen);
         count = prv_countItems(buffer + index, bufferLen - index);
         if (count <= 0) return -1;
-        tlvP = lwm2m_tlv_new(count);
-        if (tlvP == NULL) return -1;
+        recordArray = (_record_t*)lwm2m_malloc(count * sizeof(_record_t));
+        if (recordArray == NULL) return -1;
         // at this point we are sure buffer[index] is '{' and all { and } are matching
-        tlvIndex = 0;
-        while (tlvIndex < count)
+        recordIndex = 0;
+        while (recordIndex < count)
         {
             int itemLen;
 
             if (buffer[index] != '{') return -1;
             itemLen = 0;
             while (buffer[index + itemLen] != '}') itemLen++;
-            if (0 != prv_parseItem(buffer + index, itemLen, tlvP + tlvIndex))
+            if (0 != prv_parseItem(buffer + index + 1, itemLen - 1, recordArray + recordIndex))
             {
-                lwm2m_tlv_free(count, tlvP);
+                lwm2m_free(recordArray);
                 return -1;
             }
-            tlvIndex++;
+            recordIndex++;
             index += itemLen;
             _GO_TO_NEXT_CHAR(index, buffer, bufferLen);
             switch (buffer[index])
@@ -212,26 +559,26 @@ int lwm2m_tlv_parse_json(char * buffer,
                 _GO_TO_NEXT_CHAR(index, buffer, bufferLen);
                 break;
             case ']':
-                if (tlvIndex == count) break;
+                if (recordIndex == count) break;
                 // else this is an error
             default:
-                lwm2m_tlv_free(count, tlvP);
+                lwm2m_free(recordArray);
                 return -1;
             }
         }
         if (buffer[index] != ']')
         {
-            lwm2m_tlv_free(count, tlvP);
+            lwm2m_free(recordArray);
             return -1;
         }
-        // temp
-        *dataP = tlvP;
+        count = prv_convertRecord(recordArray, count, dataP);
+        lwm2m_free(recordArray);
     }
     break;
 
     case 'b':
     default:
-        // unsupported
+        // TODO: support for basename and base time.
         return -1;
     }
 
