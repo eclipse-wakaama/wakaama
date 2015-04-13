@@ -107,30 +107,29 @@ static coap_status_t handle_request(lwm2m_context_t * contextP,
 {
     lwm2m_uri_t * uriP;
     coap_status_t result = NOT_FOUND_4_04;
+    uri_type_t type;
 
 #ifdef LWM2M_CLIENT_MODE
-    uriP = lwm2m_decode_uri(contextP->altPath, message->uri_path);
+    type = lwm2m_decode_uri(contextP->altPath, message->uri_path, &uriP);
 #else
-    uriP = lwm2m_decode_uri(NULL, message->uri_path);
+    type = lwm2m_decode_uri(NULL, message->uri_path, &uriP);
 #endif
 
-    if (uriP == NULL) return BAD_REQUEST_4_00;
-
-    switch(uriP->flag & LWM2M_URI_MASK_TYPE)
+    switch(type)
     {
 #ifdef LWM2M_CLIENT_MODE
-    case LWM2M_URI_FLAG_DM:
+    case LWM2M_URI_DM:
         // TODO: Authentify server
         result = handle_dm_request(contextP, uriP, fromSessionH, message, response);
         break;
 
-    case LWM2M_URI_FLAG_BOOTSTRAP:
+    case LWM2M_URI_BOOTSTRAP:
         result = NOT_IMPLEMENTED_5_01;
         break;
 #endif
 
 #ifdef LWM2M_SERVER_MODE
-   case LWM2M_URI_FLAG_REGISTRATION:
+   case LWM2M_URI_REGISTRATION:
         result = handle_registration_request(contextP, uriP, fromSessionH, message, response);
         break;
 #endif
@@ -146,7 +145,7 @@ static coap_status_t handle_request(lwm2m_context_t * contextP,
         result = NO_ERROR;
     }
 
-    lwm2m_free( uriP);
+    lwm2m_free(uriP);
     return result;
 }
 

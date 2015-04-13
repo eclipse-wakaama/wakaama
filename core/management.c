@@ -102,7 +102,7 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
                     //longest uri is /65535/65535 = 12 + 1 (null) chars
                     char location_path[13] = "";
                     //instanceId expected
-                    if ((uriP->flag & LWM2M_URI_FLAG_INSTANCE_ID) == 0)
+                    if (uriP->instanceId == LWM2M_MAX_ID)
                     {
                         result = COAP_500_INTERNAL_SERVER_ERROR;
                         break;
@@ -214,7 +214,6 @@ static void dm_result_callback(lwm2m_transaction_t * transacP,
             }
 
             ((dm_data_t*)transacP->userData)->uri.instanceId = locationUri.instanceId;
-            ((dm_data_t*)transacP->userData)->uri.flag = locationUri.flag;
 
             lwm2m_free(locationString);
         }
