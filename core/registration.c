@@ -19,6 +19,7 @@
  *    Manuel Sangoi - Please refer to git log
  *    Julien Vermillard - Please refer to git log
  *    Bosch Software Innovations GmbH - Please refer to git log
+ *    Pascal Rieux - Please refer to git log
  *
  *******************************************************************************/
 
@@ -136,8 +137,9 @@ static void prv_handleRegistrationReply(lwm2m_transaction_t * transacP,
     {
         if (packet == NULL)
         {
-            targetP->status = STATE_DEREGISTERED;
+            targetP->status = STATE_REG_FAILED;
             targetP->mid = 0;
+            LOG("    => Registration FAILED\r\n");
         }
         else if (packet->mid == targetP->mid
               && packet->type == COAP_TYPE_ACK
@@ -156,11 +158,13 @@ static void prv_handleRegistrationReply(lwm2m_transaction_t * transacP,
                 {
                     targetP->registration = tv_sec;
                 }
+                LOG("    => REGISTERED\r\n");
             }
             else if (packet->code == BAD_REQUEST_4_00)
             {
-                targetP->status = STATE_DEREGISTERED;
+                targetP->status = STATE_REG_FAILED;
                 targetP->mid = 0;
+                LOG("    => Registration FAILED\r\n");
             }
         }
     }
@@ -224,11 +228,11 @@ static int prv_register(lwm2m_context_t * contextP, lwm2m_server_t * server)
             server->mid = transaction->mID;
         }
     }
+    return NO_ERROR;
 }
 
 int lwm2m_start(lwm2m_context_t * contextP)
 {
-    lwm2m_server_t * targetP;
     int result;
 
     result = object_getServers(contextP);
@@ -250,8 +254,9 @@ static void prv_handleRegistrationUpdateReply(lwm2m_transaction_t * transacP,
     {
         if (packet == NULL)
         {
-            targetP->status = STATE_DEREGISTERED;
+            targetP->status = STATE_REG_FAILED;
             targetP->mid = 0;
+            LOG("    => Registration update FAILED\r\n");
         }
         else if (packet->mid == targetP->mid
               && packet->type == COAP_TYPE_ACK)
@@ -264,12 +269,13 @@ static void prv_handleRegistrationUpdateReply(lwm2m_transaction_t * transacP,
                     targetP->registration = tv_sec;
                 }
                 targetP->status = STATE_REGISTERED;
+                LOG("    => REGISTERED\r\n");
             }
             else if (packet->code == BAD_REQUEST_4_00)
             {
-                targetP->status = STATE_DEREGISTERED;
+                targetP->status = STATE_REG_FAILED;
                 targetP->mid = 0;
-                // trigger a new registration? infinite loop?
+                LOG("    => Registration update FAILED\r\n");
             }
         }
     }
@@ -307,8 +313,14 @@ static int prv_update_registration(lwm2m_context_t * contextP,
 int lwm2m_update_registration(lwm2m_context_t * contextP,
                               uint16_t shortServerID)
 {
-    // look for the server
     lwm2m_server_t * targetP;
+
+    targetP = contextP->serverList;
+    if (targetP == NULL) {
+        if (object_getServers(contextP) == -1) {
+            return NOT_FOUND_4_04;
+        }
+    }
     targetP = contextP->serverList;
     while (targetP != NULL)
     {
@@ -331,14 +343,15 @@ void registration_update(lwm2m_context_t * contextP,
                          time_t currentTime,
                          time_t * timeoutP)
 {
-    lwm2m_server_t * targetP;
-    targetP = contextP->serverList;
+    lwm2m_server_t * targetP = contextP->serverList;
     while (targetP != NULL)
     {
-        switch (targetP->status) {
+        switch (targetP->status)
+        {
             case STATE_REGISTERED:
-                if (targetP->registration + targetP->lifetime <= currentTime)
+                if (targetP->registration + targetP->lifetime - *timeoutP <= currentTime)
                 {
+                    LOG("Updating registration...\r\n");
                     prv_update_registration(contextP, targetP);
                 }
                 else
@@ -367,6 +380,9 @@ void registration_update(lwm2m_context_t * contextP,
 
             case STATE_DEREG_PENDING:
                 break;
+            case STATE_REG_FAILED:
+                contextP->bsState = BOOTSTRAP_REQUESTED;
+                break;
         }
         targetP = targetP->next;
     }
@@ -379,33 +395,31 @@ static void prv_handleDeregistrationReply(lwm2m_transaction_t * transacP,
     coap_packet_t * packet = (coap_packet_t *)message;
 
     targetP = (lwm2m_server_t *)(transacP->peerP);
-
-    switch(targetP->status)
-    {
-    case STATE_DEREG_PENDING:
-    {
-        if (packet == NULL)
-        {
-            targetP->status = STATE_DEREGISTERED;
-            targetP->mid = 0;
-        }
-        else if (packet->mid == targetP->mid
-              && packet->type == COAP_TYPE_ACK)
-        {
-            if (packet->code == DELETED_2_02)
-            {
-                targetP->status = STATE_DEREGISTERED;
-            }
-            else if (packet->code == BAD_REQUEST_4_00)
+    if (NULL != targetP) {
+        switch(targetP->status) {
+        case STATE_DEREG_PENDING:
+            if (packet == NULL)
             {
                 targetP->status = STATE_DEREGISTERED;
                 targetP->mid = 0;
             }
+            else if (packet->mid == targetP->mid
+                  && packet->type == COAP_TYPE_ACK)
+            {
+                if (packet->code == DELETED_2_02)
+                {
+                    targetP->status = STATE_DEREGISTERED;
+                }
+                else if (packet->code == BAD_REQUEST_4_00)
+                {
+                    targetP->status = STATE_DEREGISTERED;
+                    targetP->mid = 0;
+                }
+            }
+            break;
+        default:
+            break;
         }
-    }
-    break;
-    default:
-        break;
     }
 }
 

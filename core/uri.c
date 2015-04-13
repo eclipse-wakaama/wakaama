@@ -15,6 +15,7 @@
  *    Fabien Fleutot - Please refer to git log
  *    Toby Jaffey - Please refer to git log
  *    Bosch Software Innovations GmbH - Please refer to git log
+ *    Pascal Rieux - Please refer to git log
  *    
  *******************************************************************************/
 
@@ -99,12 +100,16 @@ lwm2m_uri_t * lwm2m_decode_uri(char * altPath,
     lwm2m_uri_t * uriP;
     int readNum;
 
-    if (NULL == uriPath) return NULL;
-
     uriP = (lwm2m_uri_t *)lwm2m_malloc(sizeof(lwm2m_uri_t));
     if (NULL == uriP) return NULL;
 
     memset(uriP, 0, sizeof(lwm2m_uri_t));
+
+    if (uriPath->len == 0)
+    {
+        uriP->flag |= LWM2M_URI_FLAG_DELETE_ALL;
+        return uriP;
+    }
 
     // Read object ID
     if (URI_REGISTRATION_SEGMENT_LEN == uriPath->len

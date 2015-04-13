@@ -12,6 +12,7 @@
  *
  * Contributors:
  *    Bosch Software Innovations GmbH - Please refer to git log
+ *    Pascal Rieux - please refer to git log
  *    
  ******************************************************************************/
 
@@ -157,6 +158,7 @@ static uint8_t prv_read(uint16_t instanceId, int * numDataP,
     }
 
     ri = 0;
+    ni = 0;
     result = COAP_205_CONTENT;
     do
     {

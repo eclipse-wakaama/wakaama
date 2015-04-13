@@ -15,6 +15,8 @@
  *    Fabien Fleutot - Please refer to git log
  *    Toby Jaffey - Please refer to git log
  *    Bosch Software Innovations GmbH - Please refer to git log
+ *    Pascal Rieux - Please refer to git log
+ *    
  *******************************************************************************/
 /*
  Copyright (c) 2013, 2014 Intel Corporation
@@ -82,6 +84,7 @@
 #define URI_BOOTSTRAP_SEGMENT_LEN       2
 
 #define LWM2M_URI_FLAG_DM           (uint8_t)0x00
+#define LWM2M_URI_FLAG_DELETE_ALL   (uint8_t)0x10
 #define LWM2M_URI_FLAG_REGISTRATION (uint8_t)0x20
 #define LWM2M_URI_FLAG_BOOTSTRAP    (uint8_t)0x40
 
@@ -141,6 +144,12 @@ coap_status_t message_send(lwm2m_context_t * contextP, coap_packet_t * message, 
 // defined in observe.c
 void handle_observe_notify(lwm2m_context_t * contextP, void * fromSessionH, coap_packet_t * message);
 void observation_remove(lwm2m_client_t * clientP, lwm2m_observation_t * observationP);
+
+// defined in bootstrap.c
+void handle_bootstrap_ack(lwm2m_context_t * context, coap_packet_t * message, void * fromSessionH);
+void bootstrap_failed(lwm2m_context_t * context);
+void reset_bootstrap_timer(lwm2m_context_t * context);
+void update_bootstrap_state(lwm2m_context_t * contextP, uint32_t currentTime, time_t timeoutP);
 
 // defined in utils.c
 lwm2m_binding_t lwm2m_stringToBinding(uint8_t *buffer, size_t length);
