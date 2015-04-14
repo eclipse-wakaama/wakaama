@@ -22,6 +22,8 @@
 #include <unistd.h>
 #include <stdio.h>
 
+#define _JSON_BUFFER_SIZE   1024
+
 static void prv_output_buffer(uint8_t * buffer,
                               int length)
 {
@@ -182,6 +184,13 @@ void decode(char * buffer,
 static void dump_json(char * buffer,
                       int length)
 {
+    int i;
+
+    for (i = 0 ; i < length ; i++)
+    {
+        printf("%c", buffer[i]);
+    }
+    printf("\n");
 }
 
 static void test_JSON(char * testBuf,
@@ -191,7 +200,7 @@ static void test_JSON(char * testBuf,
     lwm2m_tlv_t * tlvP;
     int size;
     int length;
-    char * buffer;
+    char bufferJSON[_JSON_BUFFER_SIZE];
 
     size = lwm2m_tlv_parse_json(testBuf, testLen, &tlvP);
     if (size <= 0)
@@ -203,11 +212,10 @@ static void test_JSON(char * testBuf,
         printf("\n\nJSON buffer %s decoding:\n", id);
 
     dump_tlv(size, tlvP, 0);
-    length = lwm2m_tlv_serialize_json(size, tlvP, &buffer);
-    dump_json(buffer, length);
+    length = lwm2m_tlv_serialize_json(size, tlvP, bufferJSON, _JSON_BUFFER_SIZE);
+    dump_json(bufferJSON, length);
     lwm2m_tlv_free(size, tlvP);
 }
-
 
 static void test_TLV(char * testBuf,
                      size_t testLen,
@@ -217,6 +225,7 @@ static void test_TLV(char * testBuf,
     int size;
     int length;
     char * buffer;
+    char bufferJSON[_JSON_BUFFER_SIZE];
 
     printf("Buffer %s:\n", id);
     decode(testBuf, testLen, 0);
@@ -239,8 +248,16 @@ static void test_TLV(char * testBuf,
     {
         printf("\n\nSerialize Buffer %s to TLV OK\n", id);
     }
-    length = lwm2m_tlv_serialize_json(size, tlvP, &buffer);
-    dump_json(buffer, length);
+    lwm2m_free(buffer);
+    length = lwm2m_tlv_serialize_json(size, tlvP, bufferJSON, _JSON_BUFFER_SIZE);
+    if (length <= 0)
+    {
+        printf("\n\nSerialize Buffer %s to JSON failed.\n", id);
+    }
+    else
+    {
+        dump_json(bufferJSON, length);
+    }
     lwm2m_tlv_free(size, tlvP);
 }
 
