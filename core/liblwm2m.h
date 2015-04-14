@@ -215,12 +215,19 @@ int lwm2m_boolToPlainText(bool data, char ** bufferP);
 #define LWM2M_TLV_FLAG_STATIC_DATA  0x01
 #define LWM2M_TLV_FLAG_TEXT_FORMAT  0x02
 
+/*
+ * Bits 7 and 6 of assigned values for LWM2M_TYPE_RESOURCE,
+ * LWM2M_TYPE_MULTIPLE_RESOURCE, LWM2M_TYPE_RESOURCE_INSTANCE
+ * and LWM2M_TYPE_OBJECT_INSTANCE must match the ones defined
+ * in the TLV format from LWM2M TS §6.3.3
+ *
+ */
 typedef enum
 {
-    LWM2M_TYPE_RESOURCE = 0x00,
-    LWM2M_TYPE_MULTIPLE_RESOURCE = 0x01,
-    LWM2M_TYPE_RESOURCE_INSTANCE = 0x02,
-    LWM2M_TYPE_OBJECT_INSTANCE = 0x03
+    LWM2M_TYPE_RESOURCE = 0xC0,
+    LWM2M_TYPE_MULTIPLE_RESOURCE = 0x80,
+    LWM2M_TYPE_RESOURCE_INSTANCE = 0x40,
+    LWM2M_TYPE_OBJECT_INSTANCE = 0x00
 } lwm2m_tlv_type_t;
 
 typedef struct

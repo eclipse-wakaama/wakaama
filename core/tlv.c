@@ -24,6 +24,7 @@
 #include <inttypes.h>
 
 #define _PRV_64BIT_BUFFER_SIZE 8
+#define _PRV_TLV_TYPE_MASK 0xC0
 
 static int prv_getHeaderLength(uint16_t id,
                                size_t dataLen)
@@ -64,23 +65,8 @@ static int prv_create_header(uint8_t * header,
     header_len = prv_getHeaderLength(id, data_len);
 
     header[0] = 0;
-    switch (type)
-    {
-    case LWM2M_TYPE_OBJECT_INSTANCE:
-        // do nothing
-        break;
-    case LWM2M_TYPE_RESOURCE_INSTANCE:
-        header[0] |= 0x40;
-        break;
-    case LWM2M_TYPE_MULTIPLE_RESOURCE:
-        header[0] |= 0x80;
-        break;
-    case LWM2M_TYPE_RESOURCE:
-        header[0] |= 0xC0;
-        break;
-    default:
-        return 0;
-    }
+    header[0] |= type&_PRV_TLV_TYPE_MASK;
+
     if (id > 0xFF)
     {
         header[0] |= 0x20;
@@ -227,24 +213,7 @@ int lwm2m_decodeTLV(uint8_t * buffer,
 
     *oDataIndex = 2;
 
-    switch (buffer[0]&0xC0)
-    {
-    case 0x00:
-        *oType = LWM2M_TYPE_OBJECT_INSTANCE;
-        break;
-    case 0x40:
-        *oType = LWM2M_TYPE_RESOURCE_INSTANCE;
-        break;
-    case 0x80:
-        *oType = LWM2M_TYPE_MULTIPLE_RESOURCE;
-        break;
-    case 0xC0:
-        *oType = LWM2M_TYPE_RESOURCE;
-        break;
-    default:
-        // can't happen
-        return 0;
-    }
+    *oType = buffer[0]&_PRV_TLV_TYPE_MASK;
 
     if ((buffer[0]&0x20) == 0x20)
     {
