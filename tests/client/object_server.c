@@ -57,7 +57,7 @@ static uint8_t prv_get_value(lwm2m_tlv_t * tlvP,
                              server_instance_t * targetP)
 {
     // There are no multiple instance resources
-    tlvP->type = LWM2M_TYPE_RESSOURCE;
+    tlvP->type = LWM2M_TYPE_RESOURCE;
 
     switch (tlvP->id)
     {

@@ -163,7 +163,7 @@ static uint8_t prv_read(uint16_t instanceId,
         return COAP_404_NOT_FOUND;
     }
 
-    (*dataArrayP)->type = LWM2M_TYPE_RESSOURCE;
+    (*dataArrayP)->type = LWM2M_TYPE_RESOURCE;
     lwm2m_tlv_encode_int(targetP->test, *dataArrayP);
 
     if ((*dataArrayP)->length == 0) return COAP_500_INTERNAL_SERVER_ERROR;

@@ -85,16 +85,16 @@ void dump_tlv(int size,
         switch (tlvP[i].type)
         {
         case LWM2M_TYPE_OBJECT_INSTANCE:
-            printf("TLV_OBJECT_INSTANCE\r\n");
+            printf("LWM2M_TYPE_OBJECT_INSTANCE\r\n");
             break;
-        case LWM2M_TYPE_RESSOURCE_INSTANCE:
-            printf("TLV_RESSOURCE_INSTANCE\r\n");
+        case LWM2M_TYPE_RESOURCE_INSTANCE:
+            printf("LWM2M_TYPE_RESOURCE_INSTANCE\r\n");
             break;
-        case LWM2M_TYPE_MULTIPLE_RESSOURCE:
-            printf("TLV_MULTIPLE_INSTANCE\r\n");
+        case LWM2M_TYPE_MULTIPLE_RESOURCE:
+            printf("LWM2M_TYPE_MULTIPLE_RESOURCE\r\n");
             break;
-        case LWM2M_TYPE_RESSOURCE:
-            printf("TLV_RESSOURCE\r\n");
+        case LWM2M_TYPE_RESOURCE:
+            printf("LWM2M_TYPE_RESOURCE\r\n");
             break;
         default:
             printf("unknown (%d)\r\n", (int)tlvP[i].type);
@@ -106,7 +106,7 @@ void dump_tlv(int size,
         printf("data (%d bytes): ", tlvP[i].length);
         prv_output_buffer(tlvP[i].value, tlvP[i].length);
         if (tlvP[i].type == LWM2M_TYPE_OBJECT_INSTANCE
-         || tlvP[i].type == LWM2M_TYPE_MULTIPLE_RESSOURCE)
+         || tlvP[i].type == LWM2M_TYPE_MULTIPLE_RESOURCE)
         {
             dump_tlv(tlvP[i].length, (lwm2m_tlv_t *)(tlvP[i].value), indent+1);
         }
@@ -139,17 +139,17 @@ void decode(char * buffer,
         printf("type: ");
         switch (type)
         {
-        case TLV_OBJECT_INSTANCE:
-            printf("TLV_OBJECT_INSTANCE\r\n");
+        case LWM2M_TYPE_OBJECT_INSTANCE:
+            printf("LWM2M_TYPE_OBJECT_INSTANCE\r\n");
             break;
-        case TLV_RESSOURCE_INSTANCE:
-            printf("TLV_RESSOURCE_INSTANCE\r\n");
+        case LWM2M_TYPE_RESOURCE_INSTANCE:
+            printf("LWM2M_TYPE_RESOURCE_INSTANCE\r\n");
             break;
-        case TLV_MULTIPLE_INSTANCE:
-            printf("TLV_MULTIPLE_INSTANCE\r\n");
+        case LWM2M_TYPE_MULTIPLE_RESOURCE:
+            printf("LWM2M_TYPE_MULTIPLE_RESOURCE\r\n");
             break;
-        case TLV_RESSOURCE:
-            printf("TLV_RESSOURCE\r\n");
+        case LWM2M_TYPE_RESOURCE:
+            printf("LWM2M_TYPE_RESOURCE\r\n");
             break;
         default:
             printf("unknown (%d)\r\n", (int)type);
@@ -160,7 +160,7 @@ void decode(char * buffer,
         print_indent(indent);
         printf("data (%d bytes): ", dataLen);
         prv_output_buffer(buffer + length + dataIndex, dataLen);
-        if (type == TLV_OBJECT_INSTANCE || type == TLV_MULTIPLE_INSTANCE)
+        if (type == LWM2M_TYPE_OBJECT_INSTANCE || type == LWM2M_TYPE_MULTIPLE_RESOURCE)
         {
             decode(buffer + length + dataIndex, dataLen, indent+1);
         }

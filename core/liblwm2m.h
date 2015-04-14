@@ -205,11 +205,6 @@ int lwm2m_boolToPlainText(bool data, char ** bufferP);
 
 #define LWM2M_TLV_HEADER_MAX_LENGTH 6
 
-#define LWM2M_TYPE_RESSOURCE            0x00
-#define LWM2M_TYPE_MULTIPLE_RESSOURCE   0x01
-#define LWM2M_TYPE_RESSOURCE_INSTANCE   0x02
-#define LWM2M_TYPE_OBJECT_INSTANCE      0x03
-
 /*
  * Bitmask for the lwm2m_tlv_t::flag
  * LWM2M_TLV_FLAG_STATIC_DATA specifies that lwm2m_tlv_t::value
@@ -222,10 +217,10 @@ int lwm2m_boolToPlainText(bool data, char ** bufferP);
 
 typedef enum
 {
-    TLV_OBJECT_INSTANCE = LWM2M_TYPE_OBJECT_INSTANCE,
-    TLV_RESSOURCE_INSTANCE = LWM2M_TYPE_RESSOURCE_INSTANCE,
-    TLV_MULTIPLE_INSTANCE = LWM2M_TYPE_MULTIPLE_RESSOURCE,
-    TLV_RESSOURCE = LWM2M_TYPE_RESSOURCE
+    LWM2M_TYPE_RESOURCE = 0x00,
+    LWM2M_TYPE_MULTIPLE_RESOURCE = 0x01,
+    LWM2M_TYPE_RESOURCE_INSTANCE = 0x02,
+    LWM2M_TYPE_OBJECT_INSTANCE = 0x03
 } lwm2m_tlv_type_t;
 
 typedef struct

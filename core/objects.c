@@ -151,7 +151,7 @@ coap_status_t object_read(lwm2m_context_t * contextP,
         tlvP = lwm2m_tlv_new(size);
         if (tlvP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
 
-        tlvP->type = LWM2M_TYPE_RESSOURCE;
+        tlvP->type = LWM2M_TYPE_RESOURCE;
         tlvP->flags = LWM2M_TLV_FLAG_TEXT_FORMAT;
         tlvP->id = uriP->resourceId;
     }
@@ -159,7 +159,7 @@ coap_status_t object_read(lwm2m_context_t * contextP,
     if (result == COAP_205_CONTENT)
     {
         if (size == 1
-         && tlvP->type == LWM2M_TYPE_RESSOURCE
+         && tlvP->type == LWM2M_TYPE_RESOURCE
          && (tlvP->flags && LWM2M_TLV_FLAG_TEXT_FORMAT) != 0 )
         {
             *bufferP = (char *)malloc(tlvP->length);
@@ -205,7 +205,7 @@ coap_status_t object_write(lwm2m_context_t * contextP,
         if (tlvP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
 
         tlvP->flags = LWM2M_TLV_FLAG_TEXT_FORMAT | LWM2M_TLV_FLAG_STATIC_DATA;
-        tlvP->type = LWM2M_TYPE_RESSOURCE;
+        tlvP->type = LWM2M_TYPE_RESOURCE;
         tlvP->id = uriP->resourceId;
         tlvP->length = length;
         tlvP->value = (uint8_t*)buffer;

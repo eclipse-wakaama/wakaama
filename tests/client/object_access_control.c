@@ -66,13 +66,13 @@ static uint8_t prv_set_tlv(lwm2m_tlv_t* tlvP, acc_ctrl_oi_t* accCtrlOiP)
     switch (tlvP->id) {
     case RES_M_OBJECT_ID:
         lwm2m_tlv_encode_int(accCtrlOiP->objectId, tlvP);
-        tlvP->type = LWM2M_TYPE_RESSOURCE;
+        tlvP->type = LWM2M_TYPE_RESOURCE;
         return (0 != tlvP->length) ? COAP_205_CONTENT
                                    : COAP_500_INTERNAL_SERVER_ERROR;
         break;
     case RES_M_OBJECT_INSTANCE_ID:
         lwm2m_tlv_encode_int(accCtrlOiP->objectInstId, tlvP);
-        tlvP->type = LWM2M_TYPE_RESSOURCE;
+        tlvP->type = LWM2M_TYPE_RESOURCE;
         return (0 != tlvP->length) ? COAP_205_CONTENT
                                    : COAP_500_INTERNAL_SERVER_ERROR;
         break;
@@ -96,7 +96,7 @@ static uint8_t prv_set_tlv(lwm2m_tlv_t* tlvP, acc_ctrl_oi_t* accCtrlOiP)
                  accCtrlRiP = accCtrlRiP->next, ri++)
             {
                 lwm2m_tlv_encode_int(accCtrlRiP->accCtrlValue, &subTlvP[ri]);
-                subTlvP[ri].type = LWM2M_TYPE_RESSOURCE_INSTANCE;
+                subTlvP[ri].type = LWM2M_TYPE_RESOURCE_INSTANCE;
                 if (subTlvP[ri].length == 0)
                 {
                     lwm2m_free(subTlvP);
@@ -104,7 +104,7 @@ static uint8_t prv_set_tlv(lwm2m_tlv_t* tlvP, acc_ctrl_oi_t* accCtrlOiP)
                 }
             }
             tlvP->flags  = 0;
-            tlvP->type   = LWM2M_TYPE_MULTIPLE_RESSOURCE;
+            tlvP->type   = LWM2M_TYPE_RESOURCE;
             tlvP->length = ri;
             tlvP->value  = (uint8_t*)subTlvP;
             return COAP_205_CONTENT;
@@ -112,7 +112,7 @@ static uint8_t prv_set_tlv(lwm2m_tlv_t* tlvP, acc_ctrl_oi_t* accCtrlOiP)
     }   break;
     case RES_M_ACCESS_CONTROL_OWNER:
         lwm2m_tlv_encode_int(accCtrlOiP->accCtrlOwner, tlvP);
-        tlvP->type = LWM2M_TYPE_RESSOURCE;
+        tlvP->type = LWM2M_TYPE_RESOURCE;
         return (0 != tlvP->length) ? COAP_205_CONTENT
                                    : COAP_500_INTERNAL_SERVER_ERROR;
         break;
@@ -266,7 +266,8 @@ static uint8_t prv_write_resources(uint16_t instanceId, int numData,
             break;
         case RES_O_ACL:
         {
-            if (tlvArray[i].type!=LWM2M_TYPE_MULTIPLE_RESSOURCE) {
+            if (tlvArray[i].type!= LWM2M_TYPE_MULTIPLE_RESOURCE)
+            {
                 result = COAP_400_BAD_REQUEST;
             }
             else

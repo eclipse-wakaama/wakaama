@@ -90,35 +90,35 @@ static uint8_t prv_res2tlv(lwm2m_tlv_t* tlvP,
         tlvP->value  = (uint8_t*)locDataP->latitude;
         tlvP->length = strlen(locDataP->latitude);
         tlvP->flags  = LWM2M_TLV_FLAG_STATIC_DATA;
-        tlvP->type   = LWM2M_TYPE_RESSOURCE;
+        tlvP->type   = LWM2M_TYPE_RESOURCE;
         break;
     case RES_M_LONGITUDE:
         tlvP->value  = (uint8_t*)locDataP->longitude;
         tlvP->length = strlen(locDataP->latitude);
         tlvP->flags  = LWM2M_TLV_FLAG_STATIC_DATA;
-        tlvP->type   = LWM2M_TYPE_RESSOURCE;
+        tlvP->type   = LWM2M_TYPE_RESOURCE;
         break;
     case RES_O_ALTITUDE:
         tlvP->value  = (uint8_t*)locDataP->altitude;
         tlvP->length = strlen(locDataP->altitude);
         tlvP->flags  = LWM2M_TLV_FLAG_STATIC_DATA;
-        tlvP->type   = LWM2M_TYPE_RESSOURCE;
+        tlvP->type   = LWM2M_TYPE_RESOURCE;
         break;
     case RES_O_UNCERTAINTY:
         tlvP->value  = (uint8_t*)locDataP->uncertainty;
         tlvP->length = strlen(locDataP->uncertainty);
         tlvP->flags  = LWM2M_TLV_FLAG_STATIC_DATA;
-        tlvP->type   = LWM2M_TYPE_RESSOURCE;
+        tlvP->type   = LWM2M_TYPE_RESOURCE;
         break;
     case RES_O_VELOCITY:
         tlvP->value  = locDataP->velocity;
         tlvP->length = VELOCITY_OCTETS;
         tlvP->flags  = LWM2M_TLV_FLAG_STATIC_DATA;
-        tlvP->type   = LWM2M_TYPE_RESSOURCE;
+        tlvP->type   = LWM2M_TYPE_RESOURCE;
         break;
     case RES_M_TIMESTAMP:
         lwm2m_tlv_encode_int(locDataP->timestamp, tlvP);
-        tlvP->type   = LWM2M_TYPE_RESSOURCE;
+        tlvP->type   = LWM2M_TYPE_RESOURCE;
         break;
     default:
         ret = COAP_404_NOT_FOUND;

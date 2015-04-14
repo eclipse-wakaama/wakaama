@@ -63,32 +63,32 @@ static uint8_t prv_set_tlv(lwm2m_tlv_t * tlvP, conn_s_data_t * connStDataP)
     switch (tlvP->id) {
     case RES_O_SMS_TX_COUNTER:
         lwm2m_tlv_encode_int(connStDataP->smsTxCounter, tlvP);
-        tlvP->type = LWM2M_TYPE_RESSOURCE;
+        tlvP->type = LWM2M_TYPE_RESOURCE;
         return (0 != tlvP->length) ? COAP_205_CONTENT : COAP_500_INTERNAL_SERVER_ERROR;
         break;
     case RES_O_SMS_RX_COUNTER:
         lwm2m_tlv_encode_int(connStDataP->smsRxCounter, tlvP);
-        tlvP->type = LWM2M_TYPE_RESSOURCE;
+        tlvP->type = LWM2M_TYPE_RESOURCE;
         return (0 != tlvP->length) ? COAP_205_CONTENT : COAP_500_INTERNAL_SERVER_ERROR;
         break;
     case RES_O_TX_DATA:
         lwm2m_tlv_encode_int(connStDataP->txDataByte/1024, tlvP);
-        tlvP->type = LWM2M_TYPE_RESSOURCE;
+        tlvP->type = LWM2M_TYPE_RESOURCE;
         return (0 != tlvP->length) ? COAP_205_CONTENT : COAP_500_INTERNAL_SERVER_ERROR;
         break;
     case RES_O_RX_DATA:
         lwm2m_tlv_encode_int(connStDataP->rxDataByte/1024, tlvP);
-        tlvP->type = LWM2M_TYPE_RESSOURCE;
+        tlvP->type = LWM2M_TYPE_RESOURCE;
         return (0 != tlvP->length) ? COAP_205_CONTENT : COAP_500_INTERNAL_SERVER_ERROR;
         break;
     case RES_O_MAX_MESSAGE_SIZE:
         lwm2m_tlv_encode_int(connStDataP->maxMessageSize, tlvP);
-        tlvP->type = LWM2M_TYPE_RESSOURCE;
+        tlvP->type = LWM2M_TYPE_RESOURCE;
         return (0 != tlvP->length) ? COAP_205_CONTENT : COAP_500_INTERNAL_SERVER_ERROR;
         break;
     case RES_O_AVERAGE_MESSAGE_SIZE:
         lwm2m_tlv_encode_int(connStDataP->avrMessageSize, tlvP);
-        tlvP->type = LWM2M_TYPE_RESSOURCE;
+        tlvP->type = LWM2M_TYPE_RESOURCE;
         return (0 != tlvP->length) ? COAP_205_CONTENT : COAP_500_INTERNAL_SERVER_ERROR;
         break;
     default:
