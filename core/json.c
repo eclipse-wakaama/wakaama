@@ -22,11 +22,25 @@
 #include <inttypes.h>
 
 
-#define JSON_MIN_ARRAY_LEN      21  // e":[{"n":"N","v":X}]}
-#define JSON_MIN_BASE_LEN        7  // n":"N",
+#define JSON_MIN_ARRAY_LEN      21      // e":[{"n":"N","v":X}]}
+#define JSON_MIN_BASE_LEN        7      // n":"N",
+#define JSON_ITEM_MAX_SIZE      36      // with ten characters for value
 
 #define JSON_FALSE_STRING  "false"
 #define JSON_TRUE_STRING   "true"
+
+#define JSON_RES_ITEM_TEMPLATE      "{\"n\":\"%d\","
+#define JSON_INST_ITEM_TEMPLATE     "{\"n\":\"%d/%d\","
+#define JSON_ITEM_BOOL_TEMPLATE     "\"bv\":%s},"
+#define JSON_ITEM_FLOAT_TEMPLATE    "\"v\":%d},"
+#define JSON_ITEM_STRING_BEGIN      "\"sv\":\""
+#define JSON_ITEM_STRING_END        "\"},"
+
+#define JSON_HEADER             "{\"e\":["
+#define JSON_FOOTER             "]}"
+#define JSON_HEADER_SIZE        6
+#define JSON_FOOTER_SIZE        2
+
 
 #define _GO_TO_NEXT_CHAR(I,B,L)         \
     {                                   \
@@ -585,9 +599,113 @@ int lwm2m_tlv_parse_json(char * buffer,
     return count;
 }
 
+static int prv_serializeValue(lwm2m_tlv_t * tlvP,
+                              char * buffer,
+                              size_t bufferLen)
+{
+    int res;
+
+    res = snprintf(buffer, bufferLen, JSON_RES_ITEM_TEMPLATE, tlvP->id);
+    if (res >= bufferLen) return -1;
+
+    if (tlvP->length == 1
+     && tlvP->value[0] == '0')
+    {
+        res = snprintf(buffer, bufferLen, JSON_ITEM_BOOL_TEMPLATE, JSON_FALSE_STRING);
+        if (res >= bufferLen) return -1;
+    }
+    else if (tlvP->length == 1
+         && tlvP->value[0] == '1')
+    {
+        res = snprintf(buffer, bufferLen, JSON_ITEM_BOOL_TEMPLATE, JSON_TRUE_STRING);
+        if (res >= bufferLen) return -1;
+    }
+    else
+    {
+        int head;
+
+        res = snprintf(buffer, bufferLen, JSON_ITEM_STRING_BEGIN);
+        if (res >= bufferLen) return -1;
+        head = res;
+        if (tlvP->length >= bufferLen - head) return -1;
+        memcpy(buffer + head, tlvP->value, tlvP->length);
+        head += tlvP->length;
+        res = snprintf(buffer + head, bufferLen - head, JSON_ITEM_STRING_END);
+        if (res >= bufferLen - head) return -1;
+        res += head;
+    }
+
+    return res;
+}
+
 int lwm2m_tlv_serialize_json(int size,
                              lwm2m_tlv_t * tlvP,
-                             char ** bufferP)
+                             char * buffer,
+                             size_t bufferLen)
 {
-    return 0;
+    int index;
+    int head;
+
+    if (buffer == NULL
+     || bufferLen < JSON_HEADER_SIZE + JSON_FOOTER_SIZE + JSON_ITEM_MAX_SIZE)
+    {
+        return -1;
+    }
+
+    memcpy(buffer, JSON_HEADER, JSON_HEADER_SIZE);
+    head = JSON_HEADER_SIZE;
+
+    for (index = 0 ; index < size && head < bufferLen ; index++)
+    {
+        int res;
+
+        // TODO: handle non-text format
+        switch (tlvP[index].type)
+        {
+        case LWM2M_TYPE_MULTIPLE_RESSOURCE:
+        {
+            lwm2m_tlv_t * subTlvP;
+            int i;
+
+            subTlvP = (lwm2m_tlv_t *)tlvP[index].value;
+            for (i = 0 ; i < tlvP[index].length ; i++)
+            {
+                res = snprintf(buffer + head, bufferLen - head, JSON_INST_ITEM_TEMPLATE, tlvP[index].id, subTlvP[i].id);
+                if (res >= bufferLen - head) return -1;
+                head += res;
+
+                res = prv_serializeValue(subTlvP + i, buffer + head, bufferLen -head);
+                if (res < 0) return -1;
+                head += res;
+            }
+        }
+            break;
+        case LWM2M_TYPE_RESSOURCE:
+            res = snprintf(buffer + head, bufferLen - head, JSON_RES_ITEM_TEMPLATE, tlvP[index].id);
+            if (res >= bufferLen - head) return -1;
+            head += res;
+
+            res = prv_serializeValue(tlvP + index, buffer + head, bufferLen -head);
+            if (res < 0) return -1;
+            head += res;
+
+            break;
+        case LWM2M_TYPE_RESSOURCE_INSTANCE:
+            // TODO: support this
+            break;
+        case LWM2M_TYPE_OBJECT_INSTANCE:
+            // TODO: support this
+            break;
+        default:
+            return -1;
+            break;
+        }
+    }
+
+    if (head + JSON_FOOTER_SIZE - 1 > bufferLen) return -1;
+
+    memcpy(buffer + head - 1, JSON_FOOTER, JSON_FOOTER_SIZE);
+    head = head - 1 + JSON_FOOTER_SIZE;
+
+    return head;
 }
