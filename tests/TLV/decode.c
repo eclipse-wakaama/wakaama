@@ -83,6 +83,8 @@ void dump_tlv(int size,
     for(i= 0 ; i < size ; i++)
     {
         print_indent(indent);
+        printf("id: %d\r\n", tlvP[i].id);
+        print_indent(indent);
         printf("type: ");
         switch (tlvP[i].type)
         {
@@ -103,24 +105,64 @@ void dump_tlv(int size,
             break;
         }
         print_indent(indent);
-        printf("id: %d\r\n", tlvP[i].id);
-        print_indent(indent);
-        printf("data (%d bytes): ", tlvP[i].length);
-        prv_output_buffer(tlvP[i].value, tlvP[i].length);
+        printf("data length: %d\r\n", tlvP[i].length);
         if (tlvP[i].type == LWM2M_TYPE_OBJECT_INSTANCE
          || tlvP[i].type == LWM2M_TYPE_MULTIPLE_RESOURCE)
         {
             dump_tlv(tlvP[i].length, (lwm2m_tlv_t *)(tlvP[i].value), indent+1);
         }
-        else if (tlvP[i].length <= 8
-              && (tlvP[i].flags & LWM2M_TLV_FLAG_TEXT_FORMAT) == 0)
+        else
         {
-            int64_t value;
-            if (0 != lwm2m_opaqueToInt(tlvP[i].value, tlvP[i].length, &value))
+            print_indent(indent);
+            printf("data type: ");
+            switch (tlvP[i].dataType)
             {
-                print_indent(indent);
-                printf("  as int: %ld\r\n", value);
+            case LWM2M_TYPE_INTEGER:
+                printf("Integer");
+                if ((tlvP[i].flags & LWM2M_TLV_FLAG_TEXT_FORMAT) == 0)
+                {
+                    int64_t value;
+
+                    if (1 == lwm2m_tlv_decode_int(tlvP + i, &value))
+                    {
+                        printf(" (%ld)", value);
+                    }
+                }
+                break;
+            case LWM2M_TYPE_STRING:
+                printf("String");
+                break;
+            case LWM2M_TYPE_FLOAT:
+                printf("Float");
+                break;
+            case LWM2M_TYPE_BOOLEAN:
+                printf("Boolean");
+                if ((tlvP[i].flags & LWM2M_TLV_FLAG_TEXT_FORMAT) == 0)
+                {
+                    bool value;
+
+                    if (1 == lwm2m_tlv_decode_bool(tlvP + i, &value))
+                    {
+                        printf(" (%s)", value?"true":"false");
+                    }
+                }
+                break;
+            case LWM2M_TYPE_TIME:
+                printf("Time");
+                break;
+            case LWM2M_TYPE_OBJECT_LINK:
+                printf("Object Link");
+                break;
+            case LWM2M_TYPE_OPAQUE:
+                printf("Opaque");
+                break;
+            case LWM2M_TYPE_UNDEFINED:
+                printf("Undefined");
+                break;
             }
+            printf("\r\n");
+            print_indent(indent);
+            prv_output_buffer(tlvP[i].value, tlvP[i].length);
         }
     }
 }
