@@ -103,10 +103,7 @@ static uint8_t prv_set_tlv(lwm2m_tlv_t* tlvP, acc_ctrl_oi_t* accCtrlOiP)
                     return COAP_500_INTERNAL_SERVER_ERROR ;
                 }
             }
-            tlvP->flags  = 0;
-            tlvP->type   = LWM2M_TYPE_RESOURCE;
-            tlvP->length = ri;
-            tlvP->value  = (uint8_t*)subTlvP;
+            lwm2m_tlv_include(subTlvP, 2, tlvP);
             return COAP_205_CONTENT;
         }
     }   break;

@@ -660,3 +660,29 @@ int lwm2m_tlv_decode_bool(lwm2m_tlv_t * tlvP,
 
     return 1;
 }
+
+void lwm2m_tlv_include(lwm2m_tlv_t * subTlvP,
+                       size_t count,
+                       lwm2m_tlv_t * tlvP)
+{
+    int i;
+
+    if (subTlvP == NULL || count == 0) return;
+
+    switch(subTlvP[0].type)
+    {
+    case LWM2M_TYPE_RESOURCE:
+    case LWM2M_TYPE_MULTIPLE_RESOURCE:
+        tlvP->type = LWM2M_TYPE_OBJECT_INSTANCE;
+        break;
+    case LWM2M_TYPE_RESOURCE_INSTANCE:
+        tlvP->type = LWM2M_TYPE_MULTIPLE_RESOURCE;
+        break;
+    default:
+        break;
+    }
+    tlvP->flags = 0;
+    tlvP->dataType = LWM2M_TYPE_UNDEFINED;
+    tlvP->length = count;
+    tlvP->value = (uint8_t *)subTlvP;
+}

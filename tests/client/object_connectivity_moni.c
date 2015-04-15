@@ -110,10 +110,7 @@ static uint8_t prv_set_value(lwm2m_tlv_t * tlvP,
             lwm2m_tlv_free(riCnt, subTlvP);
             return COAP_500_INTERNAL_SERVER_ERROR ;
         }
-        tlvP->flags  = 0;
-        tlvP->type   = LWM2M_TYPE_MULTIPLE_RESOURCE;
-        tlvP->length = riCnt;
-        tlvP->value  = (uint8_t *) subTlvP;
+        lwm2m_tlv_include(subTlvP, riCnt, tlvP);
         return COAP_205_CONTENT ;
     }
         break;
@@ -152,10 +149,7 @@ static uint8_t prv_set_value(lwm2m_tlv_t * tlvP,
                 return COAP_500_INTERNAL_SERVER_ERROR ;
             }
         }
-        tlvP->flags  = 0;
-        tlvP->type   = LWM2M_TYPE_MULTIPLE_RESOURCE;
-        tlvP->length = riCnt;
-        tlvP->value  = (uint8_t *) subTlvP;
+        lwm2m_tlv_include(subTlvP, riCnt, tlvP);
         return COAP_205_CONTENT ;
     }
         break;
@@ -178,10 +172,7 @@ static uint8_t prv_set_value(lwm2m_tlv_t * tlvP,
                 return COAP_500_INTERNAL_SERVER_ERROR ;
             }
         }
-        tlvP->flags  = 0;
-        tlvP->type   = LWM2M_TYPE_MULTIPLE_RESOURCE;
-        tlvP->length = riCnt;
-        tlvP->value  = (uint8_t *) subTlvP;
+        lwm2m_tlv_include(subTlvP, riCnt, tlvP);
         return COAP_205_CONTENT ;
     }
         break;
@@ -211,10 +202,7 @@ static uint8_t prv_set_value(lwm2m_tlv_t * tlvP,
             lwm2m_tlv_free(riCnt, subTlvP);
             return COAP_500_INTERNAL_SERVER_ERROR ;
         }
-        tlvP->flags  = 0;
-        tlvP->type   = LWM2M_TYPE_MULTIPLE_RESOURCE;
-        tlvP->length = riCnt;
-        tlvP->value  = (uint8_t *) subTlvP;
+        lwm2m_tlv_include(subTlvP, riCnt, tlvP);
         return COAP_205_CONTENT;
     }
         break;
