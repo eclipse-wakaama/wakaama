@@ -491,10 +491,59 @@ static int prv_convertRecord(_record_t * recordArray,
             lwm2m_tlv_encode_bool(true, targetP);
             break;
         case _TYPE_FLOAT:
-            // TODO: Convert float from string to numerical type
+        {
+            int i;
+
+            i = 0;
+            while (i < recordArray[index].valueLen
+                && recordArray[index].value[i] != '.')
+            {
+                i++;
+            }
+            if (i == recordArray[index].valueLen)
+            {
+                int64_t value;
+                int sign;
+
+                value = 0;
+                if (recordArray[index].value[0] == '-')
+                {
+                    sign = -1;
+                    i = 1;
+                }
+                else
+                {
+                    sign = 1;
+                    i = 0;
+                }
+                while (i < recordArray[index].valueLen)
+                {
+                    if ('0' <= recordArray[index].value[i]
+                     && recordArray[index].value[i] <= '9')
+                    {
+                        value *= 10;
+                        value += recordArray[index].value[i] - '0';
+                    }
+                    else goto error;
+                    i++;
+                }
+                value *= sign;
+                lwm2m_tlv_encode_int(value, targetP);
+            }
+            else
+            {
+                targetP->dataType = LWM2M_TYPE_FLOAT;
+                targetP->flags = LWM2M_TLV_FLAG_STATIC_DATA | LWM2M_TLV_FLAG_TEXT_FORMAT;
+                targetP->length = recordArray[index].valueLen;
+                targetP->value = recordArray[index].value;
+            }
+        }
+        break;
+
             // TODO: Copy string instead of pointing to it
         case _TYPE_STRING:
             targetP->flags = LWM2M_TLV_FLAG_STATIC_DATA | LWM2M_TLV_FLAG_TEXT_FORMAT;
+            targetP->dataType = LWM2M_TYPE_STRING;      // or opaque ?
             targetP->length = recordArray[index].valueLen;
             targetP->value = recordArray[index].value;
             break;
