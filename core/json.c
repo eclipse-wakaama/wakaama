@@ -442,7 +442,7 @@ static int prv_convertRecord(_record_t * recordArray,
         if (recordArray[index].resInstId == LWM2M_MAX_ID)
         {
             targetP = tlvP + tlvIndex;
-            targetP->type = TLV_RESSOURCE;
+            targetP->type = LWM2M_TYPE_RESOURCE;
             targetP->id = recordArray[index].resId;
             tlvIndex++;
         }
@@ -461,7 +461,7 @@ static int prv_convertRecord(_record_t * recordArray,
                 targetP = lwm2m_tlv_new(1);
                 if (NULL == targetP) goto error;
 
-                tlvP[resIndex].type = LWM2M_TYPE_MULTIPLE_RESSOURCE;
+                tlvP[resIndex].type = LWM2M_TYPE_MULTIPLE_RESOURCE;
                 tlvP[resIndex].id = recordArray[index].resId;
                 tlvP[resIndex].length = 1;
                 tlvP[resIndex].value = (uint8_t *)targetP;
@@ -479,7 +479,7 @@ static int prv_convertRecord(_record_t * recordArray,
                 tlvP[resIndex].length++;
             }
 
-            targetP->type = LWM2M_TYPE_RESSOURCE_INSTANCE;
+            targetP->type = LWM2M_TYPE_RESOURCE_INSTANCE;
             targetP->id = recordArray[index].resInstId;
         }
         switch (recordArray[index].type)
@@ -662,7 +662,7 @@ int lwm2m_tlv_serialize_json(int size,
         // TODO: handle non-text format
         switch (tlvP[index].type)
         {
-        case LWM2M_TYPE_MULTIPLE_RESSOURCE:
+        case LWM2M_TYPE_MULTIPLE_RESOURCE:
         {
             lwm2m_tlv_t * subTlvP;
             int i;
@@ -680,7 +680,7 @@ int lwm2m_tlv_serialize_json(int size,
             }
         }
             break;
-        case LWM2M_TYPE_RESSOURCE:
+        case LWM2M_TYPE_RESOURCE:
             res = snprintf(buffer + head, bufferLen - head, JSON_RES_ITEM_TEMPLATE, tlvP[index].id);
             if (res >= bufferLen - head) return -1;
             head += res;
@@ -690,7 +690,7 @@ int lwm2m_tlv_serialize_json(int size,
             head += res;
 
             break;
-        case LWM2M_TYPE_RESSOURCE_INSTANCE:
+        case LWM2M_TYPE_RESOURCE_INSTANCE:
             // TODO: support this
             break;
         case LWM2M_TYPE_OBJECT_INSTANCE:
