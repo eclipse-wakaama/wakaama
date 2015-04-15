@@ -143,6 +143,7 @@ static uint8_t prv_set_value(lwm2m_tlv_t * tlvP,
             subTlvP[ri].flags  = LWM2M_TLV_FLAG_STATIC_DATA;
             subTlvP[ri].id     = 0;
             subTlvP[ri].type   = LWM2M_TYPE_RESOURCE_INSTANCE;
+            subTlvP[ri].dataType = LWM2M_TYPE_STRING;
             subTlvP[ri].value  = (uint8_t*) connDataP->ipAddresses[ri];
             subTlvP[ri].length = strlen(connDataP->ipAddresses[ri]);
             if (subTlvP[ri].length == 0)
@@ -168,6 +169,7 @@ static uint8_t prv_set_value(lwm2m_tlv_t * tlvP,
             subTlvP[ri].flags  = LWM2M_TLV_FLAG_STATIC_DATA;
             subTlvP[ri].id     = 0;
             subTlvP[ri].type   = LWM2M_TYPE_RESOURCE_INSTANCE;
+            subTlvP[ri].dataType = LWM2M_TYPE_STRING;
             subTlvP[ri].value  = (uint8_t*) connDataP->routerIpAddresses[ri];
             subTlvP[ri].length = strlen(connDataP->routerIpAddresses[ri]);
             if (subTlvP[ri].length == 0)
@@ -201,6 +203,7 @@ static uint8_t prv_set_value(lwm2m_tlv_t * tlvP,
         subTlvP[0].flags  = LWM2M_TLV_FLAG_STATIC_DATA;
         subTlvP[0].id     = 0;
         subTlvP[0].type   = LWM2M_TYPE_RESOURCE_INSTANCE;
+        subTlvP[0].dataType = LWM2M_TYPE_STRING;
         subTlvP[0].value  = (uint8_t*) VALUE_APN_1;
         subTlvP[0].length = strlen(VALUE_APN_1);
         if (0 == subTlvP[0].length)

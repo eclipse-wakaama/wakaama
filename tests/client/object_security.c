@@ -79,6 +79,7 @@ static uint8_t prv_get_value(lwm2m_tlv_t * tlvP,
         tlvP->value = (uint8_t*)targetP->uri;
         tlvP->length = strlen(targetP->uri);
         tlvP->flags = LWM2M_TLV_FLAG_STATIC_DATA;
+        tlvP->dataType = LWM2M_TYPE_STRING;
         return COAP_205_CONTENT;
 
     case LWM2M_SECURITY_BOOTSTRAP_ID:
@@ -96,6 +97,7 @@ static uint8_t prv_get_value(lwm2m_tlv_t * tlvP,
         tlvP->value = (uint8_t*)"";
         tlvP->length = 1;
         tlvP->flags = LWM2M_TLV_FLAG_STATIC_DATA;
+        tlvP->dataType = LWM2M_TYPE_OPAQUE;
         return COAP_205_CONTENT;
 
     case LWM2M_SECURITY_SERVER_PUBLIC_KEY_ID:
@@ -103,6 +105,7 @@ static uint8_t prv_get_value(lwm2m_tlv_t * tlvP,
         tlvP->value = (uint8_t*)"";
         tlvP->length = 1;
         tlvP->flags = LWM2M_TLV_FLAG_STATIC_DATA;
+        tlvP->dataType = LWM2M_TYPE_OPAQUE;
         return COAP_205_CONTENT;
 
     case LWM2M_SECURITY_SECRET_KEY_ID:
@@ -110,6 +113,7 @@ static uint8_t prv_get_value(lwm2m_tlv_t * tlvP,
         tlvP->value = (uint8_t*)"";
         tlvP->length = 1;
         tlvP->flags = LWM2M_TLV_FLAG_STATIC_DATA;
+        tlvP->dataType = LWM2M_TYPE_OPAQUE;
         return COAP_205_CONTENT;
 
     case LWM2M_SECURITY_SMS_SECURITY_ID:
@@ -122,6 +126,7 @@ static uint8_t prv_get_value(lwm2m_tlv_t * tlvP,
         tlvP->value = (uint8_t*)"12345";
         tlvP->length = 6;
         tlvP->flags = LWM2M_TLV_FLAG_STATIC_DATA;
+        tlvP->dataType = LWM2M_TYPE_OPAQUE;
         return COAP_205_CONTENT;
 
     case LWM2M_SECURITY_SMS_SECRET_KEY_ID:
@@ -129,6 +134,7 @@ static uint8_t prv_get_value(lwm2m_tlv_t * tlvP,
         tlvP->value = (uint8_t*)"1234567890abcdefghijklmnopqrstu";
         tlvP->length = 32;
         tlvP->flags = LWM2M_TLV_FLAG_STATIC_DATA;
+        tlvP->dataType = LWM2M_TYPE_OPAQUE;
         return COAP_205_CONTENT;
 
     case LWM2M_SECURITY_SMS_SERVER_NUMBER_ID:

@@ -508,6 +508,7 @@ void lwm2m_tlv_encode_int(int64_t data,
                           lwm2m_tlv_t * tlvP)
 {
     tlvP->length = 0;
+    tlvP->dataType = LWM2M_TYPE_INTEGER;
 
     if ((tlvP->flags & LWM2M_TLV_FLAG_TEXT_FORMAT) != 0)
     {
@@ -591,6 +592,7 @@ void lwm2m_tlv_encode_bool(bool data,
                           lwm2m_tlv_t * tlvP)
 {
     tlvP->length = 0;
+    tlvP->dataType = LWM2M_TYPE_BOOLEAN;
 
     tlvP->value = (uint8_t *)lwm2m_malloc(1);
     if (tlvP->value != NULL)

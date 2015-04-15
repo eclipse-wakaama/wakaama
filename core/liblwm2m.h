@@ -230,13 +230,26 @@ typedef enum
     LWM2M_TYPE_OBJECT_INSTANCE = 0x00
 } lwm2m_tlv_type_t;
 
+typedef enum
+{
+    LWM2M_TYPE_UNDEFINED = 0,
+    LWM2M_TYPE_STRING,
+    LWM2M_TYPE_INTEGER,
+    LWM2M_TYPE_FLOAT,
+    LWM2M_TYPE_BOOLEAN,
+    LWM2M_TYPE_OPAQUE,
+    LWM2M_TYPE_TIME,
+    LWM2M_TYPE_OBJECT_LINK
+} lwm2m_data_type_t;
+
 typedef struct
 {
-    uint8_t     flags;
-    uint8_t     type;
-    uint16_t    id;
-    size_t      length;
-    uint8_t *   value;
+    uint8_t           flags;
+    lwm2m_tlv_type_t  type;
+    lwm2m_data_type_t dataType;
+    uint16_t          id;
+    size_t            length;
+    uint8_t *         value;
 } lwm2m_tlv_t;
 
 lwm2m_tlv_t * lwm2m_tlv_new(int size);

@@ -98,6 +98,7 @@ static uint8_t prv_get_value(lwm2m_tlv_t * tlvP,
         tlvP->value = (uint8_t*)targetP->binding;
         tlvP->length = strlen(targetP->binding);
         tlvP->flags = LWM2M_TLV_FLAG_STATIC_DATA;
+        tlvP->dataType = LWM2M_TYPE_STRING;
         return COAP_205_CONTENT;
 
     case LWM2M_SERVER_UPDATE_ID:
