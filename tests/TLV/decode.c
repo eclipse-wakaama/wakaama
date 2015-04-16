@@ -105,6 +105,22 @@ void dump_tlv(int size,
             break;
         }
         print_indent(indent);
+        printf("flags: ");
+        if (tlvP[i].flags & LWM2M_TLV_FLAG_STATIC_DATA)
+        {
+            printf("STATIC_DATA");
+            if (tlvP[i].flags & LWM2M_TLV_FLAG_TEXT_FORMAT)
+            {
+                printf(" | TEXT_FORMAT");
+            }
+        }
+        else if (tlvP[i].flags & LWM2M_TLV_FLAG_TEXT_FORMAT)
+        {
+            printf("TEXT_FORMAT");
+        }
+        printf("\r\n");
+
+        print_indent(indent);
         printf("data length: %d\r\n", tlvP[i].length);
         if (tlvP[i].type == LWM2M_TYPE_OBJECT_INSTANCE
          || tlvP[i].type == LWM2M_TYPE_MULTIPLE_RESOURCE)
@@ -228,6 +244,7 @@ static void dump_json(char * buffer,
 {
     int i;
 
+    printf("JSON length: %d\n", length);
     for (i = 0 ; i < length ; i++)
     {
         printf("%c", buffer[i]);
@@ -332,18 +349,24 @@ int main(int argc, char *argv[])
                          {\"n\":\"14\",\"sv\":\"+02:00\"},                   \
                          {\"n\":\"15\",\"sv\":\"U\"}]                        \
                        }";
-    char * buffer4 = "{\"e\":[                                \
-                         {\"n\":\"0\",\"sv\":\"a \\\"test\\\"\"},      \
-                         {\"n\":\"1\",\"v\":2015},            \
-                         {\"n\":\"2/0\",\"bv\":true},         \
-                         {\"n\":\"2/1\",\"bv\":false}]        \
+    char * buffer4 = "{\"e\":[                                      \
+                         {\"n\":\"0\",\"sv\":\"a \\\"test\\\"\"},   \
+                         {\"n\":\"1\",\"v\":2015},                  \
+                         {\"n\":\"2/0\",\"bv\":true},               \
+                         {\"n\":\"2/1\",\"bv\":false}]              \
                        }";
-    char * buffer5 = "{\"e\":[                                \
-                         {    \"n\" :   \"0\",                \
-                            \"sv\":\"LWM2M\"},               \
-                         {\"v\":2015, \"n\":\"1\"},           \
-                         {\"n\":\"2/0\",    \"bv\":true},         \
-                         {\"bv\": false, \"n\":\"2/1\"}]        \
+    char * buffer5 = "{\"e\":[                              \
+                         {    \"n\" :   \"0\",              \
+                            \"sv\":\"LWM2M\"},              \
+                         {\"v\":2015, \"n\":\"1\"},         \
+                         {\"n\":\"2/0\",    \"bv\":true},   \
+                         {\"bv\": false, \"n\":\"2/1\"}]    \
+                       }";
+    char * buffer6 = "{\"e\":[                              \
+                         {\"n\":\"0\",\"v\":1234},          \
+                         {\"n\":\"1\",\"v\":56.789},        \
+                         {\"n\":\"2/0\",\"v\":0.23},        \
+                         {\"n\":\"2/1\",\"v\":-52.0006}]    \
                        }";
 
 
@@ -353,8 +376,10 @@ int main(int argc, char *argv[])
     printf("\n\n============\n\n");
     test_JSON(buffer3, strlen(buffer3), "3");
     printf("\n\n============\n\n");
-    test_JSON(buffer4, strlen(buffer3), "4");
+    test_JSON(buffer4, strlen(buffer4), "4");
     printf("\n\n============\n\n");
-    test_JSON(buffer5, strlen(buffer3), "5");
+    test_JSON(buffer5, strlen(buffer5), "5");
+    printf("\n\n============\n\n");
+    test_JSON(buffer6, strlen(buffer6), "6");
 }
 
