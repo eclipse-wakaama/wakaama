@@ -32,7 +32,8 @@
 #define JSON_RES_ITEM_TEMPLATE      "{\"n\":\"%d\","
 #define JSON_INST_ITEM_TEMPLATE     "{\"n\":\"%d/%d\","
 #define JSON_ITEM_BOOL_TEMPLATE     "\"bv\":%s},"
-#define JSON_ITEM_FLOAT_TEMPLATE    "\"v\":%d},"
+#define JSON_ITEM_INTEGER_TEMPLATE  "\"v\":%d},"
+#define JSON_ITEM_FLOAT_TEMPLATE    "\"v\":%f},"
 #define JSON_ITEM_STRING_BEGIN      "\"sv\":\""
 #define JSON_ITEM_STRING_END        "\"},"
 
@@ -653,26 +654,14 @@ static int prv_serializeValue(lwm2m_tlv_t * tlvP,
                               size_t bufferLen)
 {
     int res;
+    int head;
 
     res = snprintf(buffer, bufferLen, JSON_RES_ITEM_TEMPLATE, tlvP->id);
     if (res >= bufferLen) return -1;
 
-    if (tlvP->length == 1
-     && tlvP->value[0] == '0')
+    if ((tlvP->flags & LWM2M_TLV_FLAG_TEXT_FORMAT)
+      || tlvP->dataType == LWM2M_TYPE_STRING)
     {
-        res = snprintf(buffer, bufferLen, JSON_ITEM_BOOL_TEMPLATE, JSON_FALSE_STRING);
-        if (res >= bufferLen) return -1;
-    }
-    else if (tlvP->length == 1
-         && tlvP->value[0] == '1')
-    {
-        res = snprintf(buffer, bufferLen, JSON_ITEM_BOOL_TEMPLATE, JSON_TRUE_STRING);
-        if (res >= bufferLen) return -1;
-    }
-    else
-    {
-        int head;
-
         res = snprintf(buffer, bufferLen, JSON_ITEM_STRING_BEGIN);
         if (res >= bufferLen) return -1;
         head = res;
@@ -682,6 +671,58 @@ static int prv_serializeValue(lwm2m_tlv_t * tlvP,
         res = snprintf(buffer + head, bufferLen - head, JSON_ITEM_STRING_END);
         if (res >= bufferLen - head) return -1;
         res += head;
+    }
+    else
+    {
+        switch (tlvP->dataType)
+        {
+        case LWM2M_TYPE_INTEGER:
+            {
+                int64_t value;
+
+                if (1 == lwm2m_tlv_decode_int(tlvP, &value))
+                {
+                    res = snprintf(buffer, bufferLen, JSON_ITEM_INTEGER_TEMPLATE, value);
+                    if (res >= bufferLen) return -1;
+                }
+            }
+            break;
+        case LWM2M_TYPE_FLOAT:
+        {
+            double value;
+
+            if (1 == lwm2m_tlv_decode_float(tlvP, &value))
+            {
+                res = snprintf(buffer, bufferLen, JSON_ITEM_FLOAT_TEMPLATE, value);
+                if (res >= bufferLen) return -1;
+            }
+        }
+            break;
+        case LWM2M_TYPE_BOOLEAN:
+            {
+                bool value;
+
+                if (1 == lwm2m_tlv_decode_bool(tlvP, &value))
+                {
+                    res = snprintf(buffer, bufferLen,
+                                   JSON_ITEM_BOOL_TEMPLATE, value?JSON_TRUE_STRING:JSON_FALSE_STRING);
+                    if (res >= bufferLen) return -1;
+                }
+            }
+            break;
+        case LWM2M_TYPE_TIME:
+            // TODO:
+            break;
+        case LWM2M_TYPE_OBJECT_LINK:
+            // TODO:
+            break;
+        case LWM2M_TYPE_OPAQUE:
+            // TODO: base64 encoding
+            break;
+        case LWM2M_TYPE_UNDEFINED:
+            // Can't do anything
+            return -1;
+        }
     }
 
     return res;
@@ -704,6 +745,17 @@ int lwm2m_tlv_serialize_json(int size,
     memcpy(buffer, JSON_HEADER, JSON_HEADER_SIZE);
     head = JSON_HEADER_SIZE;
 
+    // HACK START
+    if (tlvP->type == LWM2M_TYPE_OBJECT_INSTANCE)
+    {
+        if (size == 1)
+        {
+            size = tlvP->length;
+            tlvP = (lwm2m_tlv_t *)tlvP->value;
+        }
+        else return -1;
+    }
+    // HACK END
     for (index = 0 ; index < size && head < bufferLen ; index++)
     {
         int res;
@@ -739,11 +791,8 @@ int lwm2m_tlv_serialize_json(int size,
             head += res;
 
             break;
-        case LWM2M_TYPE_RESOURCE_INSTANCE:
-            // TODO: support this
-            break;
         case LWM2M_TYPE_OBJECT_INSTANCE:
-            // TODO: support this
+            // TODO: support this. Hacked for now.
             break;
         default:
             return -1;

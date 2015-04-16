@@ -228,6 +228,7 @@ static void dump_json(char * buffer,
 {
     int i;
 
+    printf("JSON length: %d\n", length);
     for (i = 0 ; i < length ; i++)
     {
         printf("%c", buffer[i]);
