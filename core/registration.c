@@ -148,7 +148,8 @@ static void prv_handleRegistrationReply(lwm2m_transaction_t * transacP,
             if (packet->code == CREATED_2_01)
             {
                 targetP->status = STATE_REGISTERED;
-                if (NULL != targetP->location) {
+                if (NULL != targetP->location)
+                {
                     lwm2m_free(targetP->location);
                 }
                 targetP->location = coap_get_multi_option_as_string(packet->location_path);
@@ -316,19 +317,22 @@ int lwm2m_update_registration(lwm2m_context_t * contextP,
     lwm2m_server_t * targetP;
 
     targetP = contextP->serverList;
-    if (targetP == NULL) {
-        if (object_getServers(contextP) == -1) {
+    if (targetP == NULL)
+    {
+        if (object_getServers(contextP) == -1)
+        {
             return NOT_FOUND_4_04;
         }
     }
-    targetP = contextP->serverList;
     while (targetP != NULL)
     {
         if (targetP->shortID == shortServerID)
         {
             // found the server, trigger the update transaction
             return prv_update_registration(contextP, targetP);
-        } else {
+        }
+        else
+        {
             // try next server
             targetP = targetP->next;
         }
@@ -349,7 +353,7 @@ void registration_update(lwm2m_context_t * contextP,
         switch (targetP->status)
         {
             case STATE_REGISTERED:
-                if (targetP->registration + targetP->lifetime - *timeoutP <= currentTime)
+                if (targetP->registration + targetP->lifetime <= currentTime)
                 {
                     LOG("Updating registration...\r\n");
                     prv_update_registration(contextP, targetP);
@@ -395,8 +399,10 @@ static void prv_handleDeregistrationReply(lwm2m_transaction_t * transacP,
     coap_packet_t * packet = (coap_packet_t *)message;
 
     targetP = (lwm2m_server_t *)(transacP->peerP);
-    if (NULL != targetP) {
-        switch(targetP->status) {
+    if (NULL != targetP)
+    {
+        switch(targetP->status)
+        {
         case STATE_DEREG_PENDING:
             if (packet == NULL)
             {
