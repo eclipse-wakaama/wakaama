@@ -14,7 +14,7 @@
  *    David Navarro, Intel Corporation - initial API and implementation
  *    Fabien Fleutot - Please refer to git log
  *    Toby Jaffey - Please refer to git log
- *    Benjamin Cabé - Please refer to git log
+ *    Benjamin Cabï¿½ - Please refer to git log
  *    Bosch Software Innovations GmbH - Please refer to git log
  *    Pascal Rieux - Please refer to git log
  *    
@@ -214,7 +214,7 @@ coap_status_t object_write(lwm2m_context_t * contextP,
             tlvP->type = LWM2M_TYPE_RESSOURCE;
             tlvP->id = uriP->resourceId;
             tlvP->length = length;
-            tlvP->value = buffer;
+            tlvP->value = (uint8_t *)buffer;
         }
         else
         {
@@ -316,15 +316,6 @@ coap_status_t object_delete(lwm2m_context_t * contextP,
     return targetP->deleteFunc(uriP->instanceId, targetP);
 }
 
-coap_status_t object_delete_all(lwm2m_context_t * contextP)
-{
-    LOG("    Request is DEL /\r\n");
-    delete_observed_list(contextP);
-    lwm2m_delete_object_list_content(contextP, false, true);
-
-    return DELETED_2_02;
-}
-
 bool object_isInstanceNew(lwm2m_context_t * contextP,
                           uint16_t objectId,
                           uint16_t instanceId)
@@ -421,10 +412,7 @@ static lwm2m_list_t * prv_findServerInstance(lwm2m_object_t * objectP,
                                              uint16_t shortID)
 {
     lwm2m_list_t * instanceP;
-    lwm2m_tlv_t * tlvP;
-    int size;
 
-    size = 1;
     instanceP = objectP->instanceList;
     while (NULL != instanceP)
     {
@@ -434,7 +422,8 @@ static lwm2m_list_t * prv_findServerInstance(lwm2m_object_t * objectP,
 
         size = 1;
         tlvP = lwm2m_tlv_new(size);
-        if (tlvP == NULL) {
+        if (tlvP == NULL)
+        {
             return NULL;
         }
         tlvP->id = LWM2M_SERVER_SHORT_ID_ID;
@@ -502,8 +491,8 @@ static int prv_getMandatoryInfo(lwm2m_object_t * objectP,
 
 int object_getServers(lwm2m_context_t * contextP)
 {
-    lwm2m_object_t * securityObjP;
-    lwm2m_object_t * serverObjP;
+    lwm2m_object_t * securityObjP = NULL;
+    lwm2m_object_t * serverObjP = NULL;
     lwm2m_list_t * securityInstP;   // instanceID of the server in the LWM2M Security Object
     int i;
 
@@ -518,6 +507,8 @@ int object_getServers(lwm2m_context_t * contextP)
             serverObjP = contextP->objectList[i];
         }
     }
+
+    if (NULL == securityObjP) return -1;
 
     securityInstP = securityObjP->instanceList;
     while (securityInstP != NULL)
@@ -559,7 +550,7 @@ int object_getServers(lwm2m_context_t * contextP)
         }
 
         if (0 == lwm2m_tlv_decode_int(tlvP + 2, &value)
-         || value <= 0 || value > 0xFFFF)                // 0 is forbidden as a Short Server ID
+         || value < (isBootstrap ? 0 : 1) || value > 0xFFFF)                // 0 is forbidden as a Short Server ID
         {
             lwm2m_free(targetP);
             lwm2m_tlv_free(size, tlvP);
@@ -603,7 +594,7 @@ int object_getServers(lwm2m_context_t * contextP)
             }
             targetP->location = lwm2m_malloc((tlvP->length + 1) * sizeof(char));
             memset(targetP->location, 0, tlvP->length + 1);
-            strncpy(targetP->location, tlvP->value, tlvP->length); // tlvP = tlvP + 0 (first element)
+            strncpy(targetP->location, (char*)tlvP->value, tlvP->length); // tlvP = tlvP + 0 (first element)
             targetP->status = STATE_DEREGISTERED;
             contextP->serverList = (lwm2m_server_t*)LWM2M_LIST_ADD(contextP->serverList, targetP);
         }
