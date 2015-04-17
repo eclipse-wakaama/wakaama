@@ -206,11 +206,6 @@ int lwm2m_boolToPlainText(bool data, char ** bufferP);
 
 #define LWM2M_TLV_HEADER_MAX_LENGTH 6
 
-#define LWM2M_TYPE_RESSOURCE            0x00
-#define LWM2M_TYPE_MULTIPLE_RESSOURCE   0x01
-#define LWM2M_TYPE_RESSOURCE_INSTANCE   0x02
-#define LWM2M_TYPE_OBJECT_INSTANCE      0x03
-
 /*
  * Bitmask for the lwm2m_tlv_t::flag
  * LWM2M_TLV_FLAG_STATIC_DATA specifies that lwm2m_tlv_t::value
@@ -222,18 +217,38 @@ int lwm2m_boolToPlainText(bool data, char ** bufferP);
 #define LWM2M_TLV_FLAG_TEXT_FORMAT   0x02
 #define LWM2M_TLV_FLAG_BOOTSTRAPPING 0x04
 
+/*
+ * Bits 7 and 6 of assigned values for LWM2M_TYPE_RESOURCE,
+ * LWM2M_TYPE_MULTIPLE_RESOURCE, LWM2M_TYPE_RESOURCE_INSTANCE
+ * and LWM2M_TYPE_OBJECT_INSTANCE must match the ones defined
+ * in the TLV format from LWM2M TS §6.3.3
+ *
+ */
 typedef enum
 {
-    TLV_OBJECT_INSTANCE = LWM2M_TYPE_OBJECT_INSTANCE,
-    TLV_RESSOURCE_INSTANCE = LWM2M_TYPE_RESSOURCE_INSTANCE,
-    TLV_MULTIPLE_INSTANCE = LWM2M_TYPE_MULTIPLE_RESSOURCE,
-    TLV_RESSOURCE = LWM2M_TYPE_RESSOURCE
+    LWM2M_TYPE_RESOURCE = 0xC0,
+    LWM2M_TYPE_MULTIPLE_RESOURCE = 0x80,
+    LWM2M_TYPE_RESOURCE_INSTANCE = 0x40,
+    LWM2M_TYPE_OBJECT_INSTANCE = 0x00
 } lwm2m_tlv_type_t;
+
+typedef enum
+{
+    LWM2M_TYPE_UNDEFINED = 0,
+    LWM2M_TYPE_STRING,
+    LWM2M_TYPE_INTEGER,
+    LWM2M_TYPE_FLOAT,
+    LWM2M_TYPE_BOOLEAN,
+    LWM2M_TYPE_OPAQUE,
+    LWM2M_TYPE_TIME,
+    LWM2M_TYPE_OBJECT_LINK
+} lwm2m_data_type_t;
 
 typedef struct
 {
     uint8_t     flags;
-    uint8_t     type;
+    lwm2m_tlv_type_t  type;
+    lwm2m_data_type_t dataType;
     uint16_t    id;
     size_t      length;
     uint8_t *   value;
@@ -248,6 +263,7 @@ void lwm2m_tlv_encode_int(int64_t data, lwm2m_tlv_t * tlvP);
 int lwm2m_tlv_decode_int(lwm2m_tlv_t * tlvP, int64_t * dataP);
 void lwm2m_tlv_encode_bool(bool data, lwm2m_tlv_t * tlvP);
 int lwm2m_tlv_decode_bool(lwm2m_tlv_t * tlvP, bool * dataP);
+void lwm2m_tlv_include(lwm2m_tlv_t * subTlvP, size_t count, lwm2m_tlv_t * tlvP);
 
 
 /*
@@ -499,9 +515,8 @@ typedef void * (*lwm2m_connect_server_callback_t)(uint16_t serverID, void * user
 // The session handle MUST uniquely identify a peer.
 typedef uint8_t (*lwm2m_buffer_send_callback_t)(void * sessionH, uint8_t * buffer, size_t length, void * userData);
 
-typedef struct _lwm2m_context_ lwm2m_context_t;
 
-struct _lwm2m_context_
+typedef struct
 {
     int    socket;
 #ifdef LWM2M_CLIENT_MODE
@@ -527,14 +542,11 @@ struct _lwm2m_context_
     lwm2m_connect_server_callback_t connectCallback;
     lwm2m_buffer_send_callback_t    bufferSendCallback;
     void *                          userData;
-};
+} lwm2m_context_t;
 
 
 // initialize a liblwm2m context.
-lwm2m_context_t * lwm2m_init(lwm2m_connect_server_callback_t connectCallback,
-        lwm2m_buffer_send_callback_t bufferSendCallback,
-        void * userData);
-
+lwm2m_context_t * lwm2m_init(lwm2m_connect_server_callback_t connectCallback, lwm2m_buffer_send_callback_t bufferSendCallback, void * userData);
 // close a liblwm2m context.
 void lwm2m_close(lwm2m_context_t * contextP);
 
@@ -555,9 +567,6 @@ int lwm2m_start(lwm2m_context_t * contextP);
 
 // manage a bootstrap session
 int lwm2m_bootstrap(lwm2m_context_t * contextP);
-
-// check if the server registrations are outdated and needs to be renewed
-int lwm2m_update_registrations(lwm2m_context_t * contextP, uint32_t currentTime, struct timeval * timeoutP);
 
 // send a registration update to the server specified by the server short identifier
 int lwm2m_update_registration(lwm2m_context_t * contextP, uint16_t shortServerID);

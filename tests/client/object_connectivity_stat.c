@@ -63,32 +63,32 @@ static uint8_t prv_set_tlv(lwm2m_tlv_t * tlvP, conn_s_data_t * connStDataP)
     switch (tlvP->id) {
     case RES_O_SMS_TX_COUNTER:
         lwm2m_tlv_encode_int(connStDataP->smsTxCounter, tlvP);
-        tlvP->type = LWM2M_TYPE_RESSOURCE;
+        tlvP->type = LWM2M_TYPE_RESOURCE;
         return (0 != tlvP->length) ? COAP_205_CONTENT : COAP_500_INTERNAL_SERVER_ERROR;
         break;
     case RES_O_SMS_RX_COUNTER:
         lwm2m_tlv_encode_int(connStDataP->smsRxCounter, tlvP);
-        tlvP->type = LWM2M_TYPE_RESSOURCE;
+        tlvP->type = LWM2M_TYPE_RESOURCE;
         return (0 != tlvP->length) ? COAP_205_CONTENT : COAP_500_INTERNAL_SERVER_ERROR;
         break;
     case RES_O_TX_DATA:
         lwm2m_tlv_encode_int(connStDataP->txDataByte/1024, tlvP);
-        tlvP->type = LWM2M_TYPE_RESSOURCE;
+        tlvP->type = LWM2M_TYPE_RESOURCE;
         return (0 != tlvP->length) ? COAP_205_CONTENT : COAP_500_INTERNAL_SERVER_ERROR;
         break;
     case RES_O_RX_DATA:
         lwm2m_tlv_encode_int(connStDataP->rxDataByte/1024, tlvP);
-        tlvP->type = LWM2M_TYPE_RESSOURCE;
+        tlvP->type = LWM2M_TYPE_RESOURCE;
         return (0 != tlvP->length) ? COAP_205_CONTENT : COAP_500_INTERNAL_SERVER_ERROR;
         break;
     case RES_O_MAX_MESSAGE_SIZE:
         lwm2m_tlv_encode_int(connStDataP->maxMessageSize, tlvP);
-        tlvP->type = LWM2M_TYPE_RESSOURCE;
+        tlvP->type = LWM2M_TYPE_RESOURCE;
         return (0 != tlvP->length) ? COAP_205_CONTENT : COAP_500_INTERNAL_SERVER_ERROR;
         break;
     case RES_O_AVERAGE_MESSAGE_SIZE:
         lwm2m_tlv_encode_int(connStDataP->avrMessageSize, tlvP);
-        tlvP->type = LWM2M_TYPE_RESSOURCE;
+        tlvP->type = LWM2M_TYPE_RESOURCE;
         return (0 != tlvP->length) ? COAP_205_CONTENT : COAP_500_INTERNAL_SERVER_ERROR;
         break;
     default:
@@ -183,7 +183,8 @@ static void prv_close(lwm2m_object_t * objectP)
 void conn_s_updateTxStatistic(lwm2m_object_t * objectP, uint16_t txDataByte, bool smsBased)
 {
     conn_s_data_t* myData = (conn_s_data_t*) (objectP->userData);
-    if (myData->collectDataStarted) {
+    if (myData->collectDataStarted)
+    {
         myData->txDataByte += txDataByte;
         myData->messageCount++;
         myData->avrMessageSize = (myData->txDataByte+myData->rxDataByte) /
@@ -197,7 +198,8 @@ void conn_s_updateTxStatistic(lwm2m_object_t * objectP, uint16_t txDataByte, boo
 void conn_s_updateRxStatistic(lwm2m_object_t * objectP, uint16_t rxDataByte, bool smsBased)
 {
     conn_s_data_t* myData = (conn_s_data_t*) (objectP->userData);
-    if (myData->collectDataStarted) {
+    if (myData->collectDataStarted)
+    {
         myData->rxDataByte += rxDataByte;
         myData->messageCount++;
         myData->avrMessageSize = (myData->txDataByte+myData->rxDataByte) /

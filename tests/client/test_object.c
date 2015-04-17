@@ -165,7 +165,7 @@ static uint8_t prv_read(uint16_t instanceId,
         return COAP_404_NOT_FOUND;
     }
 
-    (*dataArrayP)->type = LWM2M_TYPE_RESSOURCE;
+    (*dataArrayP)->type = LWM2M_TYPE_RESOURCE;
     lwm2m_tlv_encode_int(targetP->test, *dataArrayP);
 
     if ((*dataArrayP)->length == 0) return COAP_500_INTERNAL_SERVER_ERROR;
@@ -282,7 +282,8 @@ static uint8_t prv_exec(uint16_t instanceId,
 static void prv_test_close(lwm2m_object_t * object)
 {
     LWM2M_LIST_FREE(object->instanceList);
-    if (object->userData != NULL) {
+    if (object->userData != NULL)
+    {
         lwm2m_free(object->userData);
         object->userData = NULL;
     }
@@ -293,7 +294,8 @@ void display_test_object(lwm2m_object_t * object)
 #ifdef WITH_LOGS
     fprintf(stdout, "  /%u: Test object, instances:\r\n", object->objID);
     prv_instance_t * instance = (prv_instance_t *)object->instanceList;
-    while (instance != NULL) {
+    while (instance != NULL)
+    {
         fprintf(stdout, "    /%u/%u: shortId: %u, test: %u\r\n",
                 object->objID, instance->shortID,
                 instance->shortID, instance->test);

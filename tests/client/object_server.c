@@ -57,7 +57,7 @@ static uint8_t prv_get_value(lwm2m_tlv_t * tlvP,
                              server_instance_t * targetP)
 {
     // There are no multiple instance resources
-    tlvP->type = LWM2M_TYPE_RESSOURCE;
+    tlvP->type = LWM2M_TYPE_RESOURCE;
 
     switch (tlvP->id)
     {
@@ -98,6 +98,7 @@ static uint8_t prv_get_value(lwm2m_tlv_t * tlvP,
         tlvP->value = (uint8_t*)targetP->binding;
         tlvP->length = strlen(targetP->binding);
         tlvP->flags = LWM2M_TLV_FLAG_STATIC_DATA;
+        tlvP->dataType = LWM2M_TYPE_STRING;
         return COAP_205_CONTENT;
 
     case LWM2M_SERVER_UPDATE_ID:
@@ -157,16 +158,20 @@ static uint8_t prv_set_int_value(lwm2m_tlv_t * dataArray, uint32_t * data) {
     uint8_t result;
     int64_t value;
 
-    if (1 == lwm2m_tlv_decode_int(dataArray, &value)) {
-        if (value >= 0 && value <= 0xFFFFFFFF) {
+    if (1 == lwm2m_tlv_decode_int(dataArray, &value))
+    {
+        if (value >= 0 && value <= 0xFFFFFFFF)
+        {
             *data = value;
             result = COAP_204_CHANGED;
         }
-        else {
+        else
+        {
             result = COAP_406_NOT_ACCEPTABLE;
         }
     }
-    else {
+    else
+    {
         result = COAP_400_BAD_REQUEST;
     }
     return result;
@@ -184,13 +189,16 @@ static uint8_t prv_server_write(uint16_t instanceId,
 
     bootstrapPending = (dataArray->flags & LWM2M_TLV_FLAG_BOOTSTRAPPING) != 0;
     targetP = (server_instance_t *)lwm2m_list_find(objectP->instanceList, instanceId);
-    if (NULL == targetP) {
+    if (NULL == targetP)
+    {
 #ifdef WITH_LOGS
         fprintf(stderr, "    >>>> Object with instanceID: %u not found\r\n", instanceId);
 #endif
-        if (bootstrapPending == true) {
+        if (bootstrapPending == true)
+        {
             targetP = (server_instance_t *)lwm2m_malloc(sizeof(server_instance_t));
-            if (NULL == targetP) {
+            if (NULL == targetP)
+            {
                 return COAP_500_INTERNAL_SERVER_ERROR;
             }
             memset(targetP, 0, sizeof(server_instance_t));
@@ -200,7 +208,8 @@ static uint8_t prv_server_write(uint16_t instanceId,
             fprintf(stderr, "    >>>> new instance created: /%u/%u\r\n", objectP->objID, targetP->instanceId);
 #endif
         }
-        else {
+        else
+        {
             return COAP_404_NOT_FOUND;
         }
     }
@@ -211,10 +220,12 @@ static uint8_t prv_server_write(uint16_t instanceId,
         switch (dataArray[i].id)
         {
         case LWM2M_SERVER_SHORT_ID_ID:
-            if (bootstrapPending) {
+            if (bootstrapPending)
+            {
                 result = prv_set_int_value(dataArray + i, (uint32_t *)&(targetP->shortServerId));
             }
-            else {
+            else
+            {
 #ifdef WITH_LOGS
                 fprintf(stderr, "    >>>> server is not allowed to write short ID\r\n");
 #endif
@@ -358,7 +369,8 @@ static uint8_t prv_server_create(uint16_t instanceId,
 }
 
 static void prv_server_close(lwm2m_object_t * object) {
-    while (object->instanceList != NULL) {
+    while (object->instanceList != NULL)
+    {
         server_instance_t * serverInstance = (server_instance_t *)object->instanceList;
         object->instanceList = object->instanceList->next;
         lwm2m_free(serverInstance);
@@ -372,19 +384,23 @@ void copy_server_object(lwm2m_object_t * objectDest, lwm2m_object_t * objectSrc)
     objectDest->userData = NULL;
     server_instance_t * instanceSrc = (server_instance_t *)objectSrc->instanceList;
     server_instance_t * previousInstanceDest = NULL;
-    while (instanceSrc != NULL) {
+    while (instanceSrc != NULL)
+    {
         server_instance_t * instanceDest = (server_instance_t *)lwm2m_malloc(sizeof(server_instance_t));
-        if (NULL == instanceDest) {
+        if (NULL == instanceDest)
+        {
             return;
         }
         memcpy(instanceDest, instanceSrc, sizeof(server_instance_t));
         // not sure it's necessary:
         strcpy(instanceDest->binding, instanceSrc->binding);
         instanceSrc = (server_instance_t *)instanceSrc->next;
-        if (previousInstanceDest == NULL) {
+        if (previousInstanceDest == NULL)
+        {
             objectDest->instanceList = (lwm2m_list_t *)instanceDest;
         }
-        else {
+        else
+        {
             previousInstanceDest->next = instanceDest;
         }
         previousInstanceDest = instanceDest;
@@ -396,7 +412,8 @@ void display_server_object(lwm2m_object_t * object)
 #ifdef WITH_LOGS
     fprintf(stdout, "  /%u: Server object, instances:\r\n", object->objID);
     server_instance_t * serverInstance = (server_instance_t *)object->instanceList;
-    while (serverInstance != NULL) {
+    while (serverInstance != NULL)
+    {
         fprintf(stdout, "    /%u/%u: instanceId: %u, shortServerId: %u, lifetime: %u, storing: %s, binding: %s\r\n",
                 object->objID, serverInstance->instanceId,
                 serverInstance->instanceId, serverInstance->shortServerId, serverInstance->lifetime,

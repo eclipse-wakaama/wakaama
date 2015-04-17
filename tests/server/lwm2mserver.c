@@ -208,24 +208,24 @@ static void output_tlv(char * buffer,
     int length = 0;
     int result;
 
-    while (0 != (result = lwm2m_decodeTLV(buffer + length, buffer_len - length, &type, &id, &dataIndex, &dataLen)))
+    while (0 != (result = lwm2m_decodeTLV((uint8_t*)buffer + length, buffer_len - length, &type, &id, &dataIndex, &dataLen)))
     {
         print_indent(indent);
         fprintf(stdout, "ID: %d", id);
         fprintf(stdout, "  type: ");
         switch (type)
         {
-        case TLV_OBJECT_INSTANCE:
+        case LWM2M_TYPE_OBJECT_INSTANCE:
             fprintf(stdout, "Object Instance");
             break;
-        case TLV_RESSOURCE_INSTANCE:
-            fprintf(stdout, "Ressource Instance");
+        case LWM2M_TYPE_RESOURCE_INSTANCE:
+            fprintf(stdout, "Resource Instance");
             break;
-        case TLV_MULTIPLE_INSTANCE:
+        case LWM2M_TYPE_MULTIPLE_RESOURCE:
             fprintf(stdout, "Multiple Instances");
             break;
-        case TLV_RESSOURCE:
-            fprintf(stdout, "Ressource");
+        case LWM2M_TYPE_RESOURCE:
+            fprintf(stdout, "Resource");
             break;
         default:
             printf("unknown (%d)", (int)type);
@@ -234,7 +234,7 @@ static void output_tlv(char * buffer,
         fprintf(stdout, "\n");
         print_indent(indent);
         fprintf(stdout, "{\n");
-        if (type == TLV_OBJECT_INSTANCE || type == TLV_MULTIPLE_INSTANCE)
+        if (type == LWM2M_TYPE_OBJECT_INSTANCE || type == LWM2M_TYPE_MULTIPLE_RESOURCE)
         {
             output_tlv(buffer + length + dataIndex, dataLen, indent+2);
         }
@@ -501,7 +501,7 @@ static void prv_create_client(char * buffer,
     if (uri.objectId == 1024)
     {
         result = lwm2m_PlainTextToInt64(buffer, end - buffer, &value);
-        temp_length = lwm2m_intToTLV(TLV_RESSOURCE, value, (uint16_t) 1, temp_buffer, MAX_PACKET_SIZE);
+        temp_length = lwm2m_intToTLV(LWM2M_TYPE_RESOURCE, value, (uint16_t) 1, temp_buffer, MAX_PACKET_SIZE);
     }
    /* End Client dependent part*/
 

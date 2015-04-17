@@ -100,7 +100,7 @@ static uint8_t prv_firmware_read(uint16_t instanceId,
         case RES_M_STATE:
             // firmware update state (int)
             lwm2m_tlv_encode_int(data->state, *dataArrayP + i);
-            (*dataArrayP)[i].type = LWM2M_TYPE_RESSOURCE;
+            (*dataArrayP)[i].type = LWM2M_TYPE_RESOURCE;
 
             if (0 != (*dataArrayP)[i].length) result = COAP_205_CONTENT;
             else result = COAP_500_INTERNAL_SERVER_ERROR;
@@ -109,7 +109,7 @@ static uint8_t prv_firmware_read(uint16_t instanceId,
 
         case RES_O_UPDATE_SUPPORTED_OPJECTS:
             lwm2m_tlv_encode_int(data->supported, *dataArrayP + i);
-            (*dataArrayP)[i].type = LWM2M_TYPE_RESSOURCE;
+            (*dataArrayP)[i].type = LWM2M_TYPE_RESOURCE;
 
             if (0 != (*dataArrayP)[i].length) result = COAP_205_CONTENT;
             else result = COAP_500_INTERNAL_SERVER_ERROR;
@@ -118,7 +118,7 @@ static uint8_t prv_firmware_read(uint16_t instanceId,
 
         case RES_M_UPDATE_RESULT:
             lwm2m_tlv_encode_int(data->result, *dataArrayP + i);
-            (*dataArrayP)[i].type = LWM2M_TYPE_RESSOURCE;
+            (*dataArrayP)[i].type = LWM2M_TYPE_RESOURCE;
 
             if (0 != (*dataArrayP)[i].length) result = COAP_205_CONTENT;
             else result = COAP_500_INTERNAL_SERVER_ERROR;
@@ -227,11 +227,13 @@ static uint8_t prv_firmware_execute(uint16_t instanceId,
 }
 
 static void prv_firmware_close(lwm2m_object_t * objectP) {
-    if (NULL != objectP->userData) {
+    if (NULL != objectP->userData)
+    {
         lwm2m_free(objectP->userData);
         objectP->userData = NULL;
     }
-    if (NULL != objectP->instanceList) {
+    if (NULL != objectP->instanceList)
+    {
         lwm2m_free(objectP->instanceList);
         objectP->instanceList = NULL;
     }
@@ -292,9 +294,8 @@ lwm2m_object_t * get_object_firmware()
         firmwareObj->readFunc    = prv_firmware_read;
         firmwareObj->writeFunc   = prv_firmware_write;
         firmwareObj->executeFunc = prv_firmware_execute;
-        firmwareObj->userData = lwm2m_malloc(sizeof(firmware_data_t));
-
-        firmwareObj->closeFunc = prv_firmware_close;
+        firmwareObj->closeFunc   = prv_firmware_close;
+        firmwareObj->userData    = lwm2m_malloc(sizeof(firmware_data_t));
 
         /*
          * Also some user data can be stored in the object with a private structure containing the needed variables

@@ -73,7 +73,7 @@ static uint8_t prv_get_value(lwm2m_tlv_t * tlvP,
                              security_instance_t * targetP)
 {
     // There are no multiple instance ressources
-    tlvP->type = LWM2M_TYPE_RESSOURCE;
+    tlvP->type = LWM2M_TYPE_RESOURCE;
 
     switch (tlvP->id)
     {
@@ -81,6 +81,7 @@ static uint8_t prv_get_value(lwm2m_tlv_t * tlvP,
         tlvP->value = (uint8_t*)targetP->uri;
         tlvP->length = strlen(targetP->uri);
         tlvP->flags = LWM2M_TLV_FLAG_STATIC_DATA;
+        tlvP->dataType = LWM2M_TYPE_STRING;
         return COAP_205_CONTENT;
 
     case LWM2M_SECURITY_BOOTSTRAP_ID:
@@ -98,6 +99,7 @@ static uint8_t prv_get_value(lwm2m_tlv_t * tlvP,
         tlvP->value = (uint8_t*)"";
         tlvP->length = 1;
         tlvP->flags = LWM2M_TLV_FLAG_STATIC_DATA;
+        tlvP->dataType = LWM2M_TYPE_OPAQUE;
         return COAP_205_CONTENT;
 
     case LWM2M_SECURITY_SERVER_PUBLIC_KEY_ID:
@@ -105,6 +107,7 @@ static uint8_t prv_get_value(lwm2m_tlv_t * tlvP,
         tlvP->value = (uint8_t*)"";
         tlvP->length = 1;
         tlvP->flags = LWM2M_TLV_FLAG_STATIC_DATA;
+        tlvP->dataType = LWM2M_TYPE_OPAQUE;
         return COAP_205_CONTENT;
 
     case LWM2M_SECURITY_SECRET_KEY_ID:
@@ -112,6 +115,7 @@ static uint8_t prv_get_value(lwm2m_tlv_t * tlvP,
         tlvP->value = (uint8_t*)"";
         tlvP->length = 1;
         tlvP->flags = LWM2M_TLV_FLAG_STATIC_DATA;
+        tlvP->dataType = LWM2M_TYPE_OPAQUE;
         return COAP_205_CONTENT;
 
     case LWM2M_SECURITY_SMS_SECURITY_ID:
@@ -124,6 +128,7 @@ static uint8_t prv_get_value(lwm2m_tlv_t * tlvP,
         tlvP->value = (uint8_t*)"12345";
         tlvP->length = 6;
         tlvP->flags = LWM2M_TLV_FLAG_STATIC_DATA;
+        tlvP->dataType = LWM2M_TYPE_OPAQUE;
         return COAP_205_CONTENT;
 
     case LWM2M_SECURITY_SMS_SECRET_KEY_ID:
@@ -131,6 +136,7 @@ static uint8_t prv_get_value(lwm2m_tlv_t * tlvP,
         tlvP->value = (uint8_t*)"1234567890abcdefghijklmnopqrstu";
         tlvP->length = 32;
         tlvP->flags = LWM2M_TLV_FLAG_STATIC_DATA;
+        tlvP->dataType = LWM2M_TYPE_OPAQUE;
         return COAP_205_CONTENT;
 
     case LWM2M_SECURITY_SMS_SERVER_NUMBER_ID:
@@ -213,11 +219,14 @@ static uint8_t prv_security_write(uint16_t instanceId,
 
     bootstrapPending = (dataArray->flags & LWM2M_TLV_FLAG_BOOTSTRAPPING) != 0;
     targetP = (security_instance_t *)lwm2m_list_find(objectP->instanceList, instanceId);
-    if (NULL == targetP) {
+    if (NULL == targetP)
+    {
         fprintf(stdout, "    >>>> Object with instanceID: %u not found\r\n", instanceId);
-        if (bootstrapPending == true) {
+        if (bootstrapPending == true)
+        {
             targetP = (security_instance_t *)lwm2m_malloc(sizeof(security_instance_t));
-            if (NULL == targetP) {
+            if (NULL == targetP)
+            {
                 return COAP_500_INTERNAL_SERVER_ERROR;
             }
             memset(targetP, 0, sizeof(security_instance_t));
@@ -225,32 +234,38 @@ static uint8_t prv_security_write(uint16_t instanceId,
             objectP->instanceList = LWM2M_LIST_ADD(objectP->instanceList, targetP);
             fprintf(stdout, "    >>>> new instance created: /%u/%u\r\n", objectP->objID, targetP->instanceId);
         }
-        else {
+        else
+        {
             return COAP_404_NOT_FOUND;
         }
     }
 
     i = 0;
     do {
-        switch (dataArray[i].id) {
+        switch (dataArray[i].id)
+        {
         case LWM2M_SECURITY_URI_ID:
             if (targetP->uri != NULL) lwm2m_free(targetP->uri);
             targetP->uri = (char *)lwm2m_malloc(dataArray[i].length + 1);
             memset(targetP->uri, 0, dataArray[i].length + 1);
-            if (targetP->uri != NULL) {
+            if (targetP->uri != NULL)
+            {
                 strncpy(targetP->uri, (char*)dataArray[i].value, dataArray[i].length);
                 result = COAP_204_CHANGED;
             }
-            else {
+            else
+            {
                 result = COAP_500_INTERNAL_SERVER_ERROR;
             }
             break;
 
         case LWM2M_SECURITY_BOOTSTRAP_ID:
-            if (1 == lwm2m_tlv_decode_bool(dataArray + i, &(targetP->isBootstrap))) {
+            if (1 == lwm2m_tlv_decode_bool(dataArray + i, &(targetP->isBootstrap)))
+            {
                 result = COAP_204_CHANGED;
             }
-            else {
+            else
+            {
                 result = COAP_400_BAD_REQUEST;
             }
             break;
@@ -299,16 +314,20 @@ static uint8_t prv_security_write(uint16_t instanceId,
         {
             int64_t value;
 
-            if (1 == lwm2m_tlv_decode_int(dataArray + i, &value)) {
-                if (value >= 0 && value <= 0xFFFF) {
+            if (1 == lwm2m_tlv_decode_int(dataArray + i, &value))
+            {
+                if (value >= 0 && value <= 0xFFFF)
+                {
                     targetP->shortID = value;
                     result = COAP_204_CHANGED;
                 }
-                else {
+                else
+                {
                     result = COAP_406_NOT_ACCEPTABLE;
                 }
             }
-            else {
+            else
+            {
                 result = COAP_400_BAD_REQUEST;
             }
         }
@@ -318,16 +337,20 @@ static uint8_t prv_security_write(uint16_t instanceId,
         {
             int64_t value;
 
-            if (1 == lwm2m_tlv_decode_int(dataArray + i, &value)) {
-                if (value >= 0 && value <= 0xFFFF) {
+            if (1 == lwm2m_tlv_decode_int(dataArray + i, &value))
+            {
+                if (value >= 0 && value <= 0xFFFF)
+                {
                     targetP->clientHoldOffTime = value;
                     result = COAP_204_CHANGED;
                 }
-                else {
+                else
+                {
                     result = COAP_406_NOT_ACCEPTABLE;
                 }
             }
-            else {
+            else
+            {
                 result = COAP_400_BAD_REQUEST;
             }
             break;
@@ -390,7 +413,8 @@ static void prv_security_close(lwm2m_object_t * objectP)
     {
         security_instance_t * securityInstance = (security_instance_t *)objectP->instanceList;
         objectP->instanceList = objectP->instanceList->next;
-        if (NULL != securityInstance->uri) {
+        if (NULL != securityInstance->uri)
+        {
             lwm2m_free(securityInstance->uri);
         }
         lwm2m_free(securityInstance);
@@ -404,19 +428,23 @@ void copy_security_object(lwm2m_object_t * objectDest, lwm2m_object_t * objectSr
     objectDest->userData = NULL;
     security_instance_t * instanceSrc = (security_instance_t *)objectSrc->instanceList;
     security_instance_t * previousInstanceDest = NULL;
-    while (instanceSrc != NULL) {
+    while (instanceSrc != NULL)
+    {
         security_instance_t * instanceDest = (security_instance_t *)lwm2m_malloc(sizeof(security_instance_t));
-        if (NULL == instanceDest) {
+        if (NULL == instanceDest)
+        {
             return;
         }
         memcpy(instanceDest, instanceSrc, sizeof(security_instance_t));
         instanceDest->uri = (char*)lwm2m_malloc(strlen(instanceSrc->uri) + 1);
         strcpy(instanceDest->uri, instanceSrc->uri);
         instanceSrc = (security_instance_t *)instanceSrc->next;
-        if (previousInstanceDest == NULL) {
+        if (previousInstanceDest == NULL)
+        {
             objectDest->instanceList = (lwm2m_list_t *)instanceDest;
         }
-        else {
+        else
+        {
             previousInstanceDest->next = instanceDest;
         }
         previousInstanceDest = instanceDest;
@@ -428,7 +456,8 @@ void display_security_object(lwm2m_object_t * object)
 #ifdef WITH_LOGS
     fprintf(stdout, "  /%u: Security object, instances:\r\n", object->objID);
     security_instance_t * instance = (security_instance_t *)object->instanceList;
-    while (instance != NULL) {
+    while (instance != NULL)
+    {
         fprintf(stdout, "    /%u/%u: instanceId: %u, uri: %s, isBootstrap: %s, shortId: %u, clientHoldOffTime: %u\r\n",
                 object->objID, instance->instanceId,
                 instance->instanceId, instance->uri, instance->isBootstrap ? "true" : "false",
