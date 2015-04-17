@@ -224,7 +224,8 @@ int transaction_handle_response(lwm2m_context_t * contextP,
 
     #ifdef LWM2M_CLIENT_MODE
         case ENDPOINT_SERVER:
-            if (NULL != transacP->peerP) {
+            if (NULL != transacP->peerP) 
+            {
                 targetSessionH = ((lwm2m_server_t *)transacP->peerP)->sessionH;
             }
             break;
@@ -285,7 +286,8 @@ int transaction_send(lwm2m_context_t * contextP,
         break;
 
     case ENDPOINT_SERVER:
-        if (NULL != transacP->peerP) {
+        if (NULL != transacP->peerP) 
+        {
             contextP->bufferSendCallback(((lwm2m_server_t*)transacP->peerP)->sessionH,
                     transacP->buffer, transacP->buffer_len, contextP->userData);
         }
