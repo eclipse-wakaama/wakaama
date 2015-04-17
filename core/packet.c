@@ -126,7 +126,8 @@ static coap_status_t handle_request(lwm2m_context_t * contextP,
         break;
 
     case LWM2M_URI_FLAG_DELETE_ALL:
-        if (contextP->bsState == BOOTSTRAP_PENDING) {
+        if (BOOTSTRAP_PENDING == contextP->bsState && COAP_DELETE == message->code)
+        {
             result = handle_delete_all(contextP);
         }
         else {
@@ -178,7 +179,6 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
     coap_status_t coap_error_code = NO_ERROR;
     static coap_packet_t message[1];
     static coap_packet_t response[1];
-    char code_as_string[5];
 
     coap_error_code = coap_parse_message(message, buffer, (uint16_t)length);
     if (coap_error_code == NO_ERROR)
@@ -301,7 +301,6 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
         else
         {
             /* Responses */
-            lwm2m_transaction_t * transaction;
 
             if (message->type == COAP_TYPE_RST)
             {
@@ -321,7 +320,8 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
 #endif
             }
 
-            if (message->type == COAP_TYPE_ACK) {
+            if (message->type == COAP_TYPE_ACK)
+            {
                 LOG("    => Received ACK\n");
             }
         } /* Request or Response */
