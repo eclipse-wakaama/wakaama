@@ -102,7 +102,7 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
         {
             if (!LWM2M_URI_IS_SET_INSTANCE(uriP))
             {
-                result = object_create(contextP, uriP, message->payload, message->payload_len);
+                result = object_create(contextP, uriP, (char*)message->payload, message->payload_len);
                 if (result == COAP_201_CREATED)
                 {
                     //longest uri is /65535/65535 = 12 + 1 (null) chars
@@ -126,16 +126,16 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
             {
                 if (object_isInstanceNew(contextP, uriP->objectId, uriP->instanceId))
                 {
-                    result = object_create(contextP, uriP, message->payload, message->payload_len);
+                    result = object_create(contextP, uriP, (char*)message->payload, message->payload_len);
                 }
                 else
                 {
-                    result = object_write(contextP, uriP, message->payload, message->payload_len);
+                    result = object_write(contextP, uriP, (char*)message->payload, message->payload_len);
                 }
             }
             else
             {
-                result = object_execute(contextP, uriP, message->payload, message->payload_len);
+                result = object_execute(contextP, uriP, (char*)message->payload, message->payload_len);
             }
         }
         break;
@@ -144,7 +144,7 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
         {
             if (LWM2M_URI_IS_SET_INSTANCE(uriP))
             {
-                result = object_write(contextP, uriP, message->payload, message->payload_len);
+                result = object_write(contextP, uriP, (char*)message->payload, message->payload_len);
             }
             else
             {
@@ -174,7 +174,8 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
     return result;
 }
 
-coap_status_t handle_delete_all(lwm2m_context_t * context) {
+coap_status_t handle_delete_all(lwm2m_context_t * context)
+{
     lwm2m_object_t ** objectList = context->objectList;
     if (NULL != objectList) {
         int i;
