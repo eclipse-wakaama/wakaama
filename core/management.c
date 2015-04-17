@@ -63,10 +63,12 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
     lwm2m_server_t * serverP;
 
     serverP = prv_findServer(contextP, fromSessionH);
-    if (contextP->bsState != BOOTSTRAP_PENDING) {
+    if (contextP->bsState != BOOTSTRAP_PENDING)
+    {
         if (serverP == NULL) return COAP_IGNORE;
         if ( serverP->status != STATE_REGISTERED &&
-                serverP->status != STATE_REG_UPDATE_PENDING) {
+                serverP->status != STATE_REG_UPDATE_PENDING)
+        {
             return COAP_IGNORE;
         }
     }
@@ -177,9 +179,11 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
 coap_status_t handle_delete_all(lwm2m_context_t * context)
 {
     lwm2m_object_t ** objectList = context->objectList;
-    if (NULL != objectList) {
+    if (NULL != objectList)
+    {
         int i;
-        for (i = 0 ; i < context->numObject ; i++) {
+        for (i = 0 ; i < context->numObject ; i++)
+        {
             // Only security and server objects are deleted upon a DEL /
             switch (objectList[i]->objID)
             {
