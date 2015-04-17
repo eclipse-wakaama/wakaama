@@ -150,7 +150,7 @@ void observation_remove(lwm2m_client_t * clientP, lwm2m_observation_t * observat
 void handle_bootstrap_ack(lwm2m_context_t * context, coap_packet_t * message, void * fromSessionH);
 void bootstrap_failed(lwm2m_context_t * context);
 void reset_bootstrap_timer(lwm2m_context_t * context);
-void update_bootstrap_state(lwm2m_context_t * contextP, uint32_t currentTime, time_t timeoutP);
+void update_bootstrap_state(lwm2m_context_t * contextP, uint32_t currentTime, time_t* timeoutP);
 void delete_bootstrap_server_list(lwm2m_context_t * contextP);
 
 // defined in liblwm2m.h

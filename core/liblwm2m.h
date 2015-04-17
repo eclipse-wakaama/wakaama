@@ -506,7 +506,7 @@ struct _lwm2m_context_
     int    socket;
 #ifdef LWM2M_CLIENT_MODE
     lwm2m_bootstrap_state_t bsState;
-    struct timeval      bsStart;
+    time_t              bsStart;
     char *              endpointName;
     char *              msisdn;
     char *              altPath;

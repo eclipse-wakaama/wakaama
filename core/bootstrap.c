@@ -114,19 +114,19 @@ void bootstrap_failed(lwm2m_context_t * context)
 
 void reset_bootstrap_timer(lwm2m_context_t * context)
 {
-    context->bsStart.tv_sec = lwm2m_gettime();
+    context->bsStart = lwm2m_gettime();
 }
 
 void update_bootstrap_state(lwm2m_context_t * context,
         uint32_t currentTime,
-        time_t timeout)
+        time_t* timeoutP)
 {
     if (context->bsState == BOOTSTRAP_REQUESTED)
     {
         context->bsState = BOOTSTRAP_CLIENT_HOLD_OFF;
-        context->bsStart.tv_sec = currentTime;
+        context->bsStart = currentTime;
         LOG("[BOOTSTRAP] Bootstrap requested at: %lu, now waiting during ClientHoldOffTime...\r\n",
-                (unsigned long)context->bsStart.tv_sec);
+                (unsigned long)context->bsStart);
     }
     if (context->bsState == BOOTSTRAP_CLIENT_HOLD_OFF)
     {
@@ -135,10 +135,14 @@ void update_bootstrap_state(lwm2m_context_t * context,
         {
             // get ClientHoldOffTime from bootstrapServer->lifetime
             // (see objects.c => object_getServers())
-            uint32_t clientHoldOffTime = bootstrapServer->lifetime;
-            if ((currentTime - context->bsStart.tv_sec) > clientHoldOffTime)
+            int32_t timeToBootstrap = (context->bsStart + bootstrapServer->lifetime) - currentTime;
+            if (0 >= timeToBootstrap)
             {
                 lwm2m_bootstrap(context);
+            }
+            else if (timeToBootstrap < *timeoutP)
+            {
+                *timeoutP = timeToBootstrap;
             }
         }
         else
@@ -148,7 +152,10 @@ void update_bootstrap_state(lwm2m_context_t * context,
     }
     if (context->bsState == BOOTSTRAP_PENDING)
     {
-        if ((currentTime - context->bsStart.tv_sec) > timeout)
+        // Use COAP_DEFAULT_MAX_AGE according proposal in
+        // https://github.com/OpenMobileAlliance/OMA-LwM2M-Public-Review/issues/35
+        int32_t timeToBootstrap = (context->bsStart + COAP_DEFAULT_MAX_AGE) - currentTime;
+        if (0 >= timeToBootstrap)
         {
             // Time out and no error => bootstrap OK
             // TODO: add smarter condition for bootstrap success:
@@ -157,12 +164,16 @@ void update_bootstrap_state(lwm2m_context_t * context,
             // if these conditions are not met, then bootstrap has failed and previous security
             // and server object configurations might be restored by client
             LOG("\r\n[BOOTSTRAP] Bootstrapped at: %lu (difftime: %lu s)\r\n",
-                    (unsigned long)currentTime, (unsigned long)(currentTime - context->bsStart.tv_sec));
+                    (unsigned long)currentTime, (unsigned long)(currentTime - context->bsStart));
             context->bsState = BOOTSTRAPPED;
             delete_transaction_list(context);
             delete_server_list(context);
             object_getServers(context);
             // during next step, lwm2m_update_registrations will connect the client to DM server
+        }
+        else if (timeToBootstrap < *timeoutP)
+        {
+            *timeoutP = timeToBootstrap;
         }
     }
 }
