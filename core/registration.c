@@ -347,13 +347,22 @@ void registration_update(lwm2m_context_t * contextP,
                          time_t currentTime,
                          time_t * timeoutP)
 {
+    time_t nextUpdate;
+    bool allServerFailed = true;
     lwm2m_server_t * targetP = contextP->serverList;
     while (targetP != NULL)
     {
+        if (STATE_REG_FAILED != targetP->status) allServerFailed = false;
+
         switch (targetP->status)
         {
             case STATE_REGISTERED:
-                if (targetP->registration + targetP->lifetime <= currentTime)
+                nextUpdate = targetP->lifetime;
+                if (30 < nextUpdate)
+                {
+                    nextUpdate -= 15; // update 15s earlier to have a chance to resend
+                }
+                if (targetP->registration + nextUpdate <= currentTime)
                 {
                     LOG("Updating registration...\r\n");
                     prv_update_registration(contextP, targetP);
@@ -362,7 +371,7 @@ void registration_update(lwm2m_context_t * contextP,
                 {
                     time_t interval;
 
-                    interval = targetP->registration + targetP->lifetime - currentTime;
+                    interval = targetP->registration + nextUpdate - currentTime;
                     if (interval < *timeoutP)
                     {
                         *timeoutP = interval;
@@ -385,10 +394,31 @@ void registration_update(lwm2m_context_t * contextP,
             case STATE_DEREG_PENDING:
                 break;
             case STATE_REG_FAILED:
-                contextP->bsState = BOOTSTRAP_REQUESTED;
+                if (NULL != contextP->bootstrapServerList)
+                {
+                    if (targetP->registration + targetP->lifetime <= currentTime)
+                    {
+                        LOG("Retry registration...\r\n");
+                        prv_register(contextP, targetP);
+                    }
+                    else
+                    {
+                        time_t interval;
+
+                        interval = targetP->registration + targetP->lifetime - currentTime;
+                        if (interval < *timeoutP)
+                        {
+                            *timeoutP = interval;
+                        }
+                    }
+                }
                 break;
         }
         targetP = targetP->next;
+    }
+    if (allServerFailed && NULL != contextP->bootstrapServerList)
+    {
+        contextP->bsState = BOOTSTRAP_REQUESTED;
     }
 }
 
