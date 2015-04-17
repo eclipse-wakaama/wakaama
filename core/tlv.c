@@ -348,7 +348,7 @@ int lwm2m_tlv_parse(char * buffer,
 
     *dataP = NULL;
 
-    while (0 != (result = lwm2m_decodeTLV(buffer + index, bufferLen - index, &type, &id, &dataIndex, &dataLen)))
+    while (0 != (result = lwm2m_decodeTLV((uint8_t*)buffer + index, bufferLen - index, &type, &id, &dataIndex, &dataLen)))
     {
         lwm2m_tlv_t * newTlvP;
 
@@ -403,7 +403,7 @@ int lwm2m_tlv_parse(char * buffer,
         {
             (*dataP)[size].flags = LWM2M_TLV_FLAG_STATIC_DATA;
             (*dataP)[size].length = dataLen;
-            (*dataP)[size].value = buffer + index + dataIndex;
+            (*dataP)[size].value = (uint8_t*)buffer + index + dataIndex;
         }
         size++;
         index += result;
@@ -489,7 +489,7 @@ int lwm2m_tlv_serialize(int size,
                 }
                 else
                 {
-                    headerLen = prv_create_header(*bufferP + index, tlvP[i].type, tlvP[i].id, tmpLength);
+                    headerLen = prv_create_header((uint8_t*)(*bufferP) + index, tlvP[i].type, tlvP[i].id, tmpLength);
                     index += headerLen;
                     memcpy(*bufferP + index, tmpBuffer, tmpLength);
                     index += tmpLength;
@@ -501,7 +501,7 @@ int lwm2m_tlv_serialize(int size,
         case LWM2M_TYPE_RESSOURCE_INSTANCE:
         case LWM2M_TYPE_RESSOURCE:
             {
-                headerLen = prv_create_header(*bufferP + index, tlvP[i].type, tlvP[i].id, tlvP[i].length);
+                headerLen = prv_create_header((uint8_t*)(*bufferP) + index, tlvP[i].type, tlvP[i].id, tlvP[i].length);
                 if (headerLen == 0)
                 {
                     length = 0;
@@ -569,7 +569,7 @@ void lwm2m_tlv_encode_int(int64_t data,
             tlvP->value = (uint8_t *)lwm2m_malloc(length);
             if (tlvP->value != NULL)
             {
-                strncpy(tlvP->value, string, length);
+                strncpy((char*)tlvP->value, string, length);
                 tlvP->flags &= ~LWM2M_TLV_FLAG_STATIC_DATA;
                 tlvP->length = length;
             }
