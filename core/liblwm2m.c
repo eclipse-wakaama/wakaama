@@ -86,32 +86,41 @@ lwm2m_context_t * lwm2m_init(lwm2m_connect_server_callback_t connectCallback,
 }
 
 #ifdef LWM2M_CLIENT_MODE
-void lwm2m_delete_object_list_content(lwm2m_context_t * context) {
+void lwm2m_delete_object_list_content(lwm2m_context_t * context)
+{
     lwm2m_object_t ** objectList = context->objectList;
-    if (NULL != objectList) {
+    if (NULL != objectList)
+    {
         int i;
-        for (i = 0 ; i < context->numObject ; i++) {
-            if (NULL != objectList[i]) {
+        for (i = 0 ; i < context->numObject ; i++)
+        {
+            if (NULL != objectList[i])
+            {
                 objectList[i]->closeFunc(objectList[i]);
             }
         }
     }
 }
 
-void lwm2m_deregister(lwm2m_context_t * context) {
+void lwm2m_deregister(lwm2m_context_t * context)
+{
     lwm2m_server_t * server = context->serverList;
-    while (NULL != server){
+    while (NULL != server)
+    {
         registration_deregister(context, server);
         server = server->next;
     }
 }
 
-void delete_server_list(lwm2m_context_t * context) {
-    while (NULL != context->serverList){
+void delete_server_list(lwm2m_context_t * context)
+{
+    while (NULL != context->serverList)
+    {
         lwm2m_server_t * server;
         server = context->serverList;
         context->serverList = context->serverList->next;
-        if (NULL != server->location) {
+        if (NULL != server->location)
+        {
             lwm2m_free(server->location);
         }
         lwm2m_free(server);
@@ -121,13 +130,16 @@ void delete_server_list(lwm2m_context_t * context) {
     context->serverList = NULL;
 }
 
-void delete_bootstrap_server_list(lwm2m_context_t * contextP) {
+void delete_bootstrap_server_list(lwm2m_context_t * contextP)
+{
     LWM2M_LIST_FREE(contextP->bootstrapServerList);
     contextP->bootstrapServerList = NULL;
 }
 
-void delete_observed_list(lwm2m_context_t * contextP) {
-    while (NULL != contextP->observedList) {
+void delete_observed_list(lwm2m_context_t * contextP)
+{
+    while (NULL != contextP->observedList)
+    {
         lwm2m_observed_t * targetP;
 
         targetP = contextP->observedList;
@@ -141,8 +153,10 @@ void delete_observed_list(lwm2m_context_t * contextP) {
 }
 #endif
 
-void delete_transaction_list(lwm2m_context_t * context) {
-    while (NULL != context->transactionList) {
+void delete_transaction_list(lwm2m_context_t * context)
+{
+    while (NULL != context->transactionList)
+    {
         lwm2m_transaction_t * transaction;
 
         transaction = context->transactionList;
@@ -161,7 +175,8 @@ void lwm2m_close(lwm2m_context_t * contextP)
     delete_bootstrap_server_list(contextP);
     delete_observed_list(contextP);
     lwm2m_delete_object_list_content(contextP);
-    for (i = 0 ; i < contextP->numObject ; i++) {
+    for (i = 0 ; i < contextP->numObject ; i++)
+    {
         lwm2m_free(contextP->objectList[i]);
     }
     lwm2m_free(contextP->objectList);
@@ -318,7 +333,8 @@ int lwm2m_step(lwm2m_context_t * contextP,
     }
 
 #ifdef LWM2M_CLIENT_MODE
-    if ((contextP->bsState != BOOTSTRAP_CLIENT_HOLD_OFF) && (contextP->bsState != BOOTSTRAP_PENDING)) {
+    if ((contextP->bsState != BOOTSTRAP_CLIENT_HOLD_OFF) && (contextP->bsState != BOOTSTRAP_PENDING))
+    {
         registration_update(contextP, tv_sec, timeoutP);
 //        lwm2m_update_registrations(contextP, currentTime.tv_sec, timeoutP);
     }
