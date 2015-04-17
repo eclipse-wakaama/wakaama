@@ -299,7 +299,7 @@ static void prv_output_servers(char * buffer,
             break;
         case STATE_REGISTERED:
             fprintf(stdout, "REGISTERED location: \"%s\"\r\n", targetP->location);
-            fprintf(stdout, "\tLifetime: %u s\r\n", targetP->lifetime);
+            fprintf(stdout, "\tLifetime: %lu s\r\n", (unsigned long)targetP->lifetime);
             break;
         case STATE_REG_UPDATE_PENDING:
             fprintf(stdout, "REGISTRATION UPDATE PENDING\r\n");
@@ -599,7 +599,7 @@ int main(int argc, char *argv[])
     int lifetime = 300;
     int batterylevelchanging = 1;
     time_t reboot_time = 0;
-    char bootstrapRequested[6];
+    char* bootstrapRequested = "no";
 
     /*
      * The function start by setting up the command line interface (which may or not be useful depending on your project)
@@ -634,7 +634,7 @@ int main(int argc, char *argv[])
     if (argc >= 5) name       = argv[4];
     if (argc >= 6) sscanf(argv[5], "%d", &lifetime);
     if (argc >= 7) batterylevelchanging = argv[6][0] == '1' ? 1 : 0;
-    if (argc >= 8) strcpy (bootstrapRequested, argv[7]);
+    if (argc >= 8) bootstrapRequested = argv[7];
 
     /*
      *This call an internal function that create an IPV6 socket on the port 5683.
