@@ -153,11 +153,10 @@ void reset_bootstrap_timer(lwm2m_context_t * context);
 void update_bootstrap_state(lwm2m_context_t * contextP, uint32_t currentTime, time_t* timeoutP);
 void delete_bootstrap_server_list(lwm2m_context_t * contextP);
 
-// defined in liblwm2m.h
+// defined in liblwm2m.c
 void delete_transaction_list(lwm2m_context_t * context);
 void delete_server_list(lwm2m_context_t * context);
 void delete_observed_list(lwm2m_context_t * contextP);
-void lwm2m_delete_object_list_content(lwm2m_context_t * context);
 
 // defined in utils.c
 lwm2m_binding_t lwm2m_stringToBinding(uint8_t *buffer, size_t length);
