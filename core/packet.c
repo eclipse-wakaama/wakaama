@@ -135,9 +135,6 @@ static coap_status_t handle_request(lwm2m_context_t * contextP,
         }
         break;
 
-    case LWM2M_URI_FLAG_BOOTSTRAP:
-        result = NOT_IMPLEMENTED_5_01;
-        break;
 #endif
 
 #ifdef LWM2M_SERVER_MODE
@@ -155,7 +152,6 @@ static coap_status_t handle_request(lwm2m_context_t * contextP,
         break;
     }
 
-    LOG("    Request result: %d.%.2d\r\n", result >> 5, result & 0x1F);
     coap_set_status_code(response, result);
 
     if (COAP_IGNORE < result && result < BAD_REQUEST_4_00)
