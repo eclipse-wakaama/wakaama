@@ -100,7 +100,7 @@ static uint8_t prv_firmware_read(uint16_t instanceId,
         case RES_M_STATE:
             // firmware update state (int)
             lwm2m_tlv_encode_int(data->state, *dataArrayP + i);
-            (*dataArrayP)[i].type = LWM2M_TYPE_RESSOURCE;
+            (*dataArrayP)[i].type = LWM2M_TYPE_RESOURCE;
 
             if (0 != (*dataArrayP)[i].length) result = COAP_205_CONTENT;
             else result = COAP_500_INTERNAL_SERVER_ERROR;
@@ -109,7 +109,7 @@ static uint8_t prv_firmware_read(uint16_t instanceId,
 
         case RES_O_UPDATE_SUPPORTED_OPJECTS:
             lwm2m_tlv_encode_int(data->supported, *dataArrayP + i);
-            (*dataArrayP)[i].type = LWM2M_TYPE_RESSOURCE;
+            (*dataArrayP)[i].type = LWM2M_TYPE_RESOURCE;
 
             if (0 != (*dataArrayP)[i].length) result = COAP_205_CONTENT;
             else result = COAP_500_INTERNAL_SERVER_ERROR;
@@ -118,7 +118,7 @@ static uint8_t prv_firmware_read(uint16_t instanceId,
 
         case RES_M_UPDATE_RESULT:
             lwm2m_tlv_encode_int(data->result, *dataArrayP + i);
-            (*dataArrayP)[i].type = LWM2M_TYPE_RESSOURCE;
+            (*dataArrayP)[i].type = LWM2M_TYPE_RESOURCE;
 
             if (0 != (*dataArrayP)[i].length) result = COAP_205_CONTENT;
             else result = COAP_500_INTERNAL_SERVER_ERROR;

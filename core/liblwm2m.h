@@ -205,11 +205,6 @@ int lwm2m_boolToPlainText(bool data, char ** bufferP);
 
 #define LWM2M_TLV_HEADER_MAX_LENGTH 6
 
-#define LWM2M_TYPE_RESSOURCE            0x00
-#define LWM2M_TYPE_MULTIPLE_RESSOURCE   0x01
-#define LWM2M_TYPE_RESSOURCE_INSTANCE   0x02
-#define LWM2M_TYPE_OBJECT_INSTANCE      0x03
-
 /*
  * Bitmask for the lwm2m_tlv_t::flag
  * LWM2M_TLV_FLAG_STATIC_DATA specifies that lwm2m_tlv_t::value
@@ -220,21 +215,41 @@ int lwm2m_boolToPlainText(bool data, char ** bufferP);
 #define LWM2M_TLV_FLAG_STATIC_DATA  0x01
 #define LWM2M_TLV_FLAG_TEXT_FORMAT  0x02
 
+/*
+ * Bits 7 and 6 of assigned values for LWM2M_TYPE_RESOURCE,
+ * LWM2M_TYPE_MULTIPLE_RESOURCE, LWM2M_TYPE_RESOURCE_INSTANCE
+ * and LWM2M_TYPE_OBJECT_INSTANCE must match the ones defined
+ * in the TLV format from LWM2M TS §6.3.3
+ *
+ */
 typedef enum
 {
-    TLV_OBJECT_INSTANCE = LWM2M_TYPE_OBJECT_INSTANCE,
-    TLV_RESSOURCE_INSTANCE = LWM2M_TYPE_RESSOURCE_INSTANCE,
-    TLV_MULTIPLE_INSTANCE = LWM2M_TYPE_MULTIPLE_RESSOURCE,
-    TLV_RESSOURCE = LWM2M_TYPE_RESSOURCE
+    LWM2M_TYPE_RESOURCE = 0xC0,
+    LWM2M_TYPE_MULTIPLE_RESOURCE = 0x80,
+    LWM2M_TYPE_RESOURCE_INSTANCE = 0x40,
+    LWM2M_TYPE_OBJECT_INSTANCE = 0x00
 } lwm2m_tlv_type_t;
+
+typedef enum
+{
+    LWM2M_TYPE_UNDEFINED = 0,
+    LWM2M_TYPE_STRING,
+    LWM2M_TYPE_INTEGER,
+    LWM2M_TYPE_FLOAT,
+    LWM2M_TYPE_BOOLEAN,
+    LWM2M_TYPE_OPAQUE,
+    LWM2M_TYPE_TIME,
+    LWM2M_TYPE_OBJECT_LINK
+} lwm2m_data_type_t;
 
 typedef struct
 {
-    uint8_t     flags;
-    uint8_t     type;
-    uint16_t    id;
-    size_t      length;
-    uint8_t *   value;
+    uint8_t           flags;
+    lwm2m_tlv_type_t  type;
+    lwm2m_data_type_t dataType;
+    uint16_t          id;
+    size_t            length;
+    uint8_t *         value;
 } lwm2m_tlv_t;
 
 lwm2m_tlv_t * lwm2m_tlv_new(int size);
@@ -246,6 +261,7 @@ void lwm2m_tlv_encode_int(int64_t data, lwm2m_tlv_t * tlvP);
 int lwm2m_tlv_decode_int(lwm2m_tlv_t * tlvP, int64_t * dataP);
 void lwm2m_tlv_encode_bool(bool data, lwm2m_tlv_t * tlvP);
 int lwm2m_tlv_decode_bool(lwm2m_tlv_t * tlvP, bool * dataP);
+void lwm2m_tlv_include(lwm2m_tlv_t * subTlvP, size_t count, lwm2m_tlv_t * tlvP);
 
 
 /*

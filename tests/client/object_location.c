@@ -33,7 +33,7 @@
  *  Latitude    |  0  |  R   | Single  | Yes | String  |       |  Deg  | The decimal notation of latitude  e.g. -  45.5723  [Worlds Geodetic System 1984].|
  *  Longitude   |  1  |  R   | Single  | Yes | String  |       |  Deg  | The decimal notation of longitude e.g. - 153.21760 [Worlds Geodetic System 1984].|
  *  Altidude    |  2  |  R   | Single  | No  | String  |       |   m   | The decimal notation of altidude in meters above sea level.                      |
- *  Uncertainty |  3  |  R   | Single  | No  | Integer |       |   m   | The accuracy of the position in meters.                                          |
+ *  Uncertainty |  3  |  R   | Single  | No  | String  |       |   m   | The accuracy of the position in meters.                                          |
  *  Velocity    |  4  |  R   | Single  | No  | Opaque  |       |   *   | The velocity of the device as defined in 3GPP 23.032 GAD specification(*).       |
  *              |     |      |         |     |         |       |       | This set of values may not be available if the device is static.                 |
  *              |     |      |         |     |         |       |       | opaque: see OMA_TS 6.3.2                                                         |
@@ -90,35 +90,41 @@ static uint8_t prv_res2tlv(lwm2m_tlv_t* tlvP,
         tlvP->value  = (uint8_t*)locDataP->latitude;
         tlvP->length = strlen(locDataP->latitude);
         tlvP->flags  = LWM2M_TLV_FLAG_STATIC_DATA;
-        tlvP->type   = LWM2M_TYPE_RESSOURCE;
+        tlvP->type   = LWM2M_TYPE_RESOURCE;
+        tlvP->dataType = LWM2M_TYPE_STRING;
         break;
     case RES_M_LONGITUDE:
         tlvP->value  = (uint8_t*)locDataP->longitude;
         tlvP->length = strlen(locDataP->latitude);
         tlvP->flags  = LWM2M_TLV_FLAG_STATIC_DATA;
-        tlvP->type   = LWM2M_TYPE_RESSOURCE;
+        tlvP->type   = LWM2M_TYPE_RESOURCE;
+        tlvP->dataType = LWM2M_TYPE_STRING;
         break;
     case RES_O_ALTITUDE:
         tlvP->value  = (uint8_t*)locDataP->altitude;
         tlvP->length = strlen(locDataP->altitude);
         tlvP->flags  = LWM2M_TLV_FLAG_STATIC_DATA;
-        tlvP->type   = LWM2M_TYPE_RESSOURCE;
+        tlvP->type   = LWM2M_TYPE_RESOURCE;
+        tlvP->dataType = LWM2M_TYPE_STRING;
         break;
     case RES_O_UNCERTAINTY:
         tlvP->value  = (uint8_t*)locDataP->uncertainty;
         tlvP->length = strlen(locDataP->uncertainty);
         tlvP->flags  = LWM2M_TLV_FLAG_STATIC_DATA;
-        tlvP->type   = LWM2M_TYPE_RESSOURCE;
+        tlvP->type   = LWM2M_TYPE_RESOURCE;
+        tlvP->dataType = LWM2M_TYPE_STRING;
         break;
     case RES_O_VELOCITY:
         tlvP->value  = locDataP->velocity;
         tlvP->length = VELOCITY_OCTETS;
         tlvP->flags  = LWM2M_TLV_FLAG_STATIC_DATA;
-        tlvP->type   = LWM2M_TYPE_RESSOURCE;
+        tlvP->type   = LWM2M_TYPE_RESOURCE;
+        tlvP->dataType = LWM2M_TYPE_OPAQUE;
         break;
     case RES_M_TIMESTAMP:
         lwm2m_tlv_encode_int(locDataP->timestamp, tlvP);
-        tlvP->type   = LWM2M_TYPE_RESSOURCE;
+        tlvP->type   = LWM2M_TYPE_RESOURCE;
+        tlvP->dataType = LWM2M_TYPE_TIME;
         break;
     default:
         ret = COAP_404_NOT_FOUND;
