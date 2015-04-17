@@ -313,10 +313,6 @@ typedef uint8_t (*lwm2m_create_callback_t) (uint16_t instanceId, int numData, lw
 typedef uint8_t (*lwm2m_delete_callback_t) (uint16_t instanceId, lwm2m_object_t * objectP);
 typedef void (*lwm2m_close_callback_t) (lwm2m_object_t * objectP);
 
-typedef void (*lwm2m_copy_callback_t) (lwm2m_object_t * objectDest, lwm2m_object_t * objectSrc);
-//typedef void (*lwm2m_print_callback_t) (lwm2m_object_t * objectP);
-
-
 struct _lwm2m_object_t
 {
     uint16_t                 objID;
@@ -505,9 +501,6 @@ typedef uint8_t (*lwm2m_buffer_send_callback_t)(void * sessionH, uint8_t * buffe
 
 typedef struct _lwm2m_context_ lwm2m_context_t;
 
-typedef void (*backup_objects_callback_t)(lwm2m_context_t * context);
-typedef void (*restore_objects_callback_t)(lwm2m_context_t * context);
-
 struct _lwm2m_context_
 {
     int    socket;
@@ -520,12 +513,8 @@ struct _lwm2m_context_
     lwm2m_server_t *    bootstrapServerList;
     lwm2m_server_t *    serverList;
     lwm2m_object_t **   objectList;
-//    lwm2m_object_t **   objectListBackup;
     uint16_t            numObject;
-//    uint16_t            numObjectBackup;
     lwm2m_observed_t *  observedList;
-//    backup_objects_callback_t backupObjectsCallback;
-//    restore_objects_callback_t restoreObjectsCallback;
 #endif
 #ifdef LWM2M_SERVER_MODE
     lwm2m_client_t *        clientList;
@@ -544,8 +533,6 @@ struct _lwm2m_context_
 // initialize a liblwm2m context.
 lwm2m_context_t * lwm2m_init(lwm2m_connect_server_callback_t connectCallback,
         lwm2m_buffer_send_callback_t bufferSendCallback,
-//        backup_objects_callback_t backupObjectsCallback,
-//        restore_objects_callback_t restoreObjectsCallback,
         void * userData);
 
 // close a liblwm2m context.
