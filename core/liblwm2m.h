@@ -183,6 +183,7 @@ void lwm2m_list_free(lwm2m_list_t * head);
 
 // defined in utils.c
 int lwm2m_PlainTextToInt64(char * buffer, int length, int64_t * dataP);
+int lwm2m_PlainTextToFloat64(char * buffer, int length, double * dataP);
 
 /*
  * These utility functions allocate a new buffer storing the plain text

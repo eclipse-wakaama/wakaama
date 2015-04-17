@@ -555,15 +555,9 @@ int lwm2m_tlv_decode_int(lwm2m_tlv_t * tlvP,
 
     if ((tlvP->flags & LWM2M_TLV_FLAG_TEXT_FORMAT) != 0)
     {
-        char string[32];
         int result;
 
-        // int64 is 20 digit max
-        if (tlvP->length > 32) return 0;
-
-        memcpy(string, tlvP->value, tlvP->length);
-        string[tlvP->length] = 0;
-        result = sscanf(string, "%" PRId64, dataP);
+        result = lwm2m_PlainTextToInt64((char *)tlvP->value, tlvP->length, dataP);
         if (result != 1) return 0;
     }
     else

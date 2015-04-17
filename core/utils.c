@@ -51,6 +51,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <inttypes.h>
+#include <float.h>
 
 
 int lwm2m_PlainTextToInt64(char * buffer,
@@ -59,7 +60,6 @@ int lwm2m_PlainTextToInt64(char * buffer,
 {
     uint64_t result = 0;
     int sign = 1;
-    int mul = 0;
     int i = 0;
 
     if (0 == length) return 0;
@@ -74,14 +74,8 @@ int lwm2m_PlainTextToInt64(char * buffer,
     {
         if ('0' <= buffer[i] && buffer[i] <= '9')
         {
-            if (0 == mul)
-            {
-                mul = 10;
-            }
-            else
-            {
-                result *= mul;
-            }
+            if (result > (UINT64_MAX / 10)) return 0;
+            result *= 10;
             result += buffer[i] - '0';
         }
         else
@@ -89,6 +83,79 @@ int lwm2m_PlainTextToInt64(char * buffer,
             return 0;
         }
         i++;
+    }
+
+    if (sign == -1)
+    {
+        if (result > (INT64_MAX / 10)) return 0;
+        *dataP = 0 - result;
+    }
+    else
+    {
+        *dataP = result;
+    }
+
+    return 1;
+}
+
+int lwm2m_PlainTextToFloat64(char * buffer,
+                             int length,
+                             double * dataP)
+{
+    double result;
+    int sign;
+    int i;
+
+    if (0 == length) return 0;
+
+    if (buffer[0] == '-')
+    {
+        sign = -1;
+        i = 1;
+    }
+    else
+    {
+        sign = 1;
+        i = 0;
+    }
+
+    result = 0;
+    while (i < length && buffer[i] != '.')
+    {
+        if ('0' <= buffer[i] && buffer[i] <= '9')
+        {
+            if (result > (DBL_MAX / 10)) return 0;
+            result *= 10;
+            result += (buffer[i] - '0');
+        }
+        else
+        {
+            return 0;
+        }
+        i++;
+    }
+    if (buffer[i] == '.')
+    {
+        double dec;
+
+        i++;
+        if (i == length) return 0;
+
+        dec = 0.1;
+        while (i < length)
+        {
+            if ('0' <= buffer[i] && buffer[i] <= '9')
+            {
+                if (result > (DBL_MAX - 1)) return 0;
+                result += (buffer[i] - '0') * dec;
+                dec /= 10;
+            }
+            else
+            {
+                return 0;
+            }
+            i++;
+        }
     }
 
     *dataP = result * sign;
