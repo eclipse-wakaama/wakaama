@@ -197,8 +197,8 @@ static int prv_register(lwm2m_context_t * contextP, lwm2m_server_t * server)
     {
         if (snprintf(query + query_length,
                         PRV_QUERY_BUFFER_LENGTH - query_length,
-                        QUERY_DELIMITER QUERY_LIFETIME "%d",
-                        server->lifetime) <= 0)
+                        QUERY_DELIMITER QUERY_LIFETIME "%lu",
+                        (unsigned long)server->lifetime) <= 0)
         {
             return INTERNAL_SERVER_ERROR_5_00;
         }
