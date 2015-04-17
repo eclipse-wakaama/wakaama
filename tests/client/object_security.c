@@ -211,7 +211,7 @@ static uint8_t prv_security_write(uint16_t instanceId,
     uint8_t result = COAP_204_CHANGED;
     bool bootstrapPending;
 
-    bootstrapPending = dataArray->flags & LWM2M_TLV_FLAG_BOOTSTRAPPING != 0;
+    bootstrapPending = (dataArray->flags & LWM2M_TLV_FLAG_BOOTSTRAPPING) != 0;
     targetP = (security_instance_t *)lwm2m_list_find(objectP->instanceList, instanceId);
     if (NULL == targetP) {
         fprintf(stdout, "    >>>> Object with instanceID: %u not found\r\n", instanceId);
@@ -238,7 +238,7 @@ static uint8_t prv_security_write(uint16_t instanceId,
             targetP->uri = (char *)lwm2m_malloc(dataArray[i].length + 1);
             memset(targetP->uri, 0, dataArray[i].length + 1);
             if (targetP->uri != NULL) {
-                strncpy(targetP->uri, dataArray[i].value, dataArray[i].length);
+                strncpy(targetP->uri, (char*)dataArray[i].value, dataArray[i].length);
                 result = COAP_204_CHANGED;
             }
             else {

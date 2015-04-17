@@ -182,7 +182,7 @@ static uint8_t prv_server_write(uint16_t instanceId,
     uint8_t result;
     bool bootstrapPending;
 
-    bootstrapPending = dataArray->flags & LWM2M_TLV_FLAG_BOOTSTRAPPING != 0;
+    bootstrapPending = (dataArray->flags & LWM2M_TLV_FLAG_BOOTSTRAPPING) != 0;
     targetP = (server_instance_t *)lwm2m_list_find(objectP->instanceList, instanceId);
     if (NULL == targetP) {
 #ifdef WITH_LOGS
