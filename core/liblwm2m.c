@@ -118,7 +118,7 @@ void delete_server_list(lwm2m_context_t * context)
     {
         lwm2m_server_t * server;
         server = context->serverList;
-        context->serverList = context->serverList->next;
+        context->serverList = server->next;
         if (NULL != server->location)
         {
             lwm2m_free(server->location);
@@ -126,8 +126,6 @@ void delete_server_list(lwm2m_context_t * context)
         lwm2m_free(server);
         server = NULL;
     }
-    lwm2m_free(context->serverList);
-    context->serverList = NULL;
 }
 
 void delete_bootstrap_server_list(lwm2m_context_t * contextP)
@@ -280,7 +278,7 @@ int lwm2m_configure(lwm2m_context_t * contextP,
         contextP->endpointName = NULL;
         return COAP_500_INTERNAL_SERVER_ERROR;
     }
-//    contextP->objectListBackup = NULL;
+
     return COAP_NO_ERROR;
 }
 #endif
