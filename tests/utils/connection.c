@@ -146,14 +146,14 @@ connection_t * connection_create(connection_t * connList,
 
 void connection_free(connection_t * connList)
 {
-    if (connList != NULL)
+    while (connList != NULL)
     {
         connection_t * nextP;
 
         nextP = connList->next;
         free(connList);
 
-        connection_free(nextP);
+        connList = nextP;
     }
 }
 
