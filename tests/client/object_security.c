@@ -510,20 +510,13 @@ lwm2m_object_t * get_security_object(int serverId, const char* serverUri, bool i
 }
 
 char * get_server_uri(lwm2m_object_t * objectP,
-                      uint16_t serverID)
+                      uint16_t secObjInstID)
 {
-    security_instance_t * targetP;
+    security_instance_t * targetP = (security_instance_t *)LWM2M_LIST_FIND(objectP->instanceList, secObjInstID);
 
-    targetP = (security_instance_t *)objectP->instanceList;
-    while (targetP != NULL)
+    if (NULL != targetP)
     {
-        if (targetP->shortID == serverID)
-        {
-            return lwm2m_strdup(targetP->uri);
-        }
-        else {
-            targetP = targetP->next;
-        }
+        return lwm2m_strdup(targetP->uri);
     }
 
     return NULL;

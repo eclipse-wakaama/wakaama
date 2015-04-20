@@ -95,7 +95,7 @@ extern void system_reboot();
  * object_security.c
  */
 extern lwm2m_object_t * get_security_object();
-extern char * get_server_uri(lwm2m_object_t * objectP, uint16_t serverID);
+extern char * get_server_uri(lwm2m_object_t * objectP, uint16_t secObjInstID);
 extern void display_security_object(lwm2m_object_t * objectP);
 extern void copy_security_object(lwm2m_object_t * objectDest, lwm2m_object_t * objectSrc);
 

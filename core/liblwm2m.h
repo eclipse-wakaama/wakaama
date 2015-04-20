@@ -373,7 +373,8 @@ typedef enum
 typedef struct _lwm2m_server_
 {
     struct _lwm2m_server_ * next;   // matches lwm2m_list_t::next
-    uint16_t          shortID;      // matches lwm2m_list_t::id
+    uint16_t          secObjInstID; // matches lwm2m_list_t::id
+    uint16_t          shortID;      // servers short ID, may be 0 for bootstrap server
     time_t            lifetime;     // lifetime of the registration in sec or 0 if default value (86400 sec), also used as hold off time for the bootstrap server
     time_t            registration; // date of the last registration in sec
     lwm2m_binding_t   binding;      // client connection mode with this server
@@ -511,7 +512,7 @@ typedef enum {
  */
 
 // The session handle MUST uniquely identify a peer.
-typedef void * (*lwm2m_connect_server_callback_t)(uint16_t serverID, void * userData);
+typedef void * (*lwm2m_connect_server_callback_t)(uint16_t secObjInstID, void * userData);
 // The session handle MUST uniquely identify a peer.
 typedef uint8_t (*lwm2m_buffer_send_callback_t)(void * sessionH, uint8_t * buffer, size_t length, void * userData);
 

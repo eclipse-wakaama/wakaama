@@ -552,6 +552,7 @@ int object_getServers(lwm2m_context_t * contextP)
             return -1;
         }
         memset(targetP, 0, sizeof(lwm2m_server_t));
+        targetP->secObjInstID = securityInstP->id;
 
         if (0 == lwm2m_tlv_decode_bool(tlvP + 0, &isBootstrap))
         {

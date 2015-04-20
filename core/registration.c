@@ -207,7 +207,7 @@ static int prv_register(lwm2m_context_t * contextP, lwm2m_server_t * server)
 
     if (server->sessionH == NULL)
     {
-        server->sessionH = contextP->connectCallback(server->shortID, contextP->userData);
+        server->sessionH = contextP->connectCallback(server->secObjInstID, contextP->userData);
     }
 
     if (server->sessionH != NULL)
@@ -407,7 +407,7 @@ void registration_update(lwm2m_context_t * contextP,
             case STATE_DEREG_PENDING:
                 break;
             case STATE_REG_FAILED:
-                if (NULL != contextP->bootstrapServerList)
+                if (NULL == contextP->bootstrapServerList)
                 {
                     if (targetP->registration + targetP->lifetime <= currentTime)
                     {

@@ -59,7 +59,7 @@ int lwm2m_bootstrap(lwm2m_context_t * context)
     {
         if (bootstrapServer->sessionH == NULL)
         {
-            bootstrapServer->sessionH = context->connectCallback(bootstrapServer->shortID, context->userData);
+            bootstrapServer->sessionH = context->connectCallback(bootstrapServer->secObjInstID, context->userData);
         }
         if (bootstrapServer->sessionH != NULL)
         {

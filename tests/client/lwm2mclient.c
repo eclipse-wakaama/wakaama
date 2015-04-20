@@ -198,7 +198,7 @@ void handle_value_changed(lwm2m_context_t * lwm2mH,
     }
 }
 
-static void * prv_connect_server(uint16_t serverID, void * userData)
+static void * prv_connect_server(uint16_t secObjInstID, void * userData)
 {
     client_data_t * dataP;
     char * uri;
@@ -210,7 +210,7 @@ static void * prv_connect_server(uint16_t serverID, void * userData)
 
     dataP = (client_data_t *)userData;
 
-    uri = get_server_uri(dataP->securityObjP, serverID);
+    uri = get_server_uri(dataP->securityObjP, secObjInstID);
 
     if (uri == NULL) return NULL;
 
