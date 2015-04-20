@@ -162,12 +162,10 @@ int lwm2m_PlainTextToFloat64(char * buffer,
     return 1;
 }
 
-
-int lwm2m_int64ToPlainText(int64_t data,
-                           char ** bufferP)
+static size_t prv_intToText(int64_t data,
+                            char * string,
+                            size_t length)
 {
-#define _PRV_STR_LENGTH 32
-    char string[_PRV_STR_LENGTH];
     int index;
     bool minus;
 
@@ -181,7 +179,7 @@ int lwm2m_int64ToPlainText(int64_t data,
         minus = false;
     }
 
-    index = _PRV_STR_LENGTH - 1;
+    index = length - 1;
     do
     {
         string[index] = '0' + data%10;
@@ -201,42 +199,83 @@ int lwm2m_int64ToPlainText(int64_t data,
         index++;
     }
 
-    *bufferP = (char *)lwm2m_malloc(_PRV_STR_LENGTH - index);
+    return length - index;
+}
+
+size_t lwm2m_int64ToPlainText(int64_t data,
+                              char ** bufferP)
+{
+#define _PRV_STR_LENGTH 32
+    char string[_PRV_STR_LENGTH];
+    size_t length;
+
+    length = prv_intToText(data, string, _PRV_STR_LENGTH);
+    if (length == 0) return 0;
+
+    *bufferP = (char *)lwm2m_malloc(length);
     if (NULL == *bufferP) return 0;
 
-    memcpy(*bufferP, string + index, _PRV_STR_LENGTH - index);
+    memcpy(*bufferP, string + _PRV_STR_LENGTH - length, length);
 
-    return _PRV_STR_LENGTH - index;
+    return length;
 }
 
 
-int lwm2m_float64ToPlainText(double data,
-                             char ** bufferP)
+size_t lwm2m_float64ToPlainText(double data,
+                                char ** bufferP)
 {
-    char string[64];
-    int len;
+#define _PRV_PRECISION 16
+    char intString[_PRV_STR_LENGTH];
+    size_t intLength;
+    char decString[_PRV_STR_LENGTH];
+    size_t decLength;
+    int64_t intPart;
+    double decPart;
+    int i;
 
-    len = snprintf(string, 64, "%.16g", data);
-    if (len > 0)
+    intPart = (int64_t)data;
+    decPart = data - intPart;
+    if (decPart < 0)
     {
-        *bufferP = (char *)lwm2m_malloc(len);
-
-        if (NULL != *bufferP)
-        {
-            strncpy(*bufferP, string, len);
-        }
-        else
-        {
-            len = 0;
-        }
+        decPart = 1 - decPart;
+    }
+    else
+    {
+        decPart = 1 + decPart;
     }
 
-    return len;
+    if (decPart == 1)
+    {
+        return lwm2m_int64ToPlainText(intPart, bufferP);
+    }
+
+    intLength = prv_intToText(intPart, intString, _PRV_STR_LENGTH);
+    if (intLength == 0) return 0;
+
+    i = 0;
+    do
+    {
+        decPart *= 10;
+        i++;
+    } while ((decPart - (int64_t)decPart > 0)
+          && (i < _PRV_PRECISION));
+
+    decLength = prv_intToText(decPart, decString, _PRV_STR_LENGTH);
+    if (decLength <= 1) return 0;
+
+    *bufferP = (char *)lwm2m_malloc(intLength + 1 + decLength);
+    if (NULL == *bufferP) return 0;
+
+    memcpy(*bufferP, intString + _PRV_STR_LENGTH - intLength, intLength);
+    (*bufferP)[intLength] = '.';
+    memcpy(*bufferP + intLength + 1, decString + _PRV_STR_LENGTH - decLength + 1, decLength - 1);
+
+    return intLength + decLength;   // +1 for dot, -1 for extra "1" in decPart
 }
 
 
-int lwm2m_boolToPlainText(bool data,
-                          char ** bufferP)
+size_t lwm2m_boolToPlainText(bool data,
+                             char ** bufferP)
 {
     return lwm2m_int64ToPlainText((int64_t)(data?1:0), bufferP);
 }

@@ -191,9 +191,9 @@ int lwm2m_PlainTextToFloat64(char * buffer, int length, double * dataP);
  * or 0 in case of error.
  * There is no trailing '\0' character in the buffer.
  */
-int lwm2m_int64ToPlainText(int64_t data, char ** bufferP);
-int lwm2m_float64ToPlainText(double data, char ** bufferP);
-int lwm2m_boolToPlainText(bool data, char ** bufferP);
+size_t lwm2m_int64ToPlainText(int64_t data, char ** bufferP);
+size_t lwm2m_float64ToPlainText(double data, char ** bufferP);
+size_t lwm2m_boolToPlainText(bool data, char ** bufferP);
 
 
 /*
