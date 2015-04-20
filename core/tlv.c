@@ -588,6 +588,45 @@ int lwm2m_tlv_decode_int(lwm2m_tlv_t * tlvP,
     return 1;
 }
 
+int lwm2m_tlv_decode_float(lwm2m_tlv_t * tlvP,
+                           double * dataP)
+{
+    int i;
+
+    if ((tlvP->flags & LWM2M_TLV_FLAG_TEXT_FORMAT) != 0)
+    {
+        char string[32];
+        int result;
+
+        // int64 is 20 digit max
+        if (tlvP->length > 32) return 0;
+
+        memcpy(string, tlvP->value, tlvP->length);
+        string[tlvP->length] = 0;
+        result = sscanf(string, "%lf", dataP);
+        if (result != 1) return 0;
+    }
+    else
+    {
+        switch (tlvP->length)
+        {
+        case 4:
+            *dataP = *((float *)tlvP->value);
+            break;
+        case 8:
+        {
+            // TODO: implement depending on system endianness
+            return 0;
+        }
+            break;
+        default:
+            return 0;
+        }
+    }
+
+    return 1;
+}
+
 void lwm2m_tlv_encode_bool(bool data,
                           lwm2m_tlv_t * tlvP)
 {
