@@ -244,11 +244,15 @@ int lwm2m_start(lwm2m_context_t * contextP)
         delete_bootstrap_server_list(contextP);
     }
     result = object_getServers(contextP);
-    if (0 > result && cleanup)
+    if (0 > result)
     {
-        LOG("lwm2m_start: cleanup on error\n");
-        delete_server_list(contextP);
-        delete_bootstrap_server_list(contextP);
+        LOG("lwm2m_start: security- or server-objects configuration error.\n");
+        if (0 > result && cleanup)
+        {
+            LOG("lwm2m_start: cleanup on error\n");
+            delete_server_list(contextP);
+            delete_bootstrap_server_list(contextP);
+        }
     }
     return result;
 }
@@ -285,7 +289,7 @@ static void prv_handleRegistrationUpdateReply(lwm2m_transaction_t * transacP,
                 targetP->status = STATE_REGISTERED;
                 LOG("    => REGISTERED\r\n");
             }
-            else if (packet->code == BAD_REQUEST_4_00)
+            else
             {
                 targetP->status = STATE_REG_FAILED;
                 targetP->mid = 0;
@@ -361,8 +365,9 @@ void registration_update(lwm2m_context_t * contextP,
                          time_t * timeoutP)
 {
     time_t nextUpdate;
-    bool allServerFailed = true;
     lwm2m_server_t * targetP = contextP->serverList;
+    bool allServerFailed = true;
+
     while (targetP != NULL)
     {
         if (STATE_REG_FAILED != targetP->status) allServerFailed = false;
@@ -431,7 +436,10 @@ void registration_update(lwm2m_context_t * contextP,
     }
     if (allServerFailed && NULL != contextP->bootstrapServerList)
     {
-        contextP->bsState = BOOTSTRAP_REQUESTED;
+        if (BOOTSTRAPPED == contextP->bsState || NOT_BOOTSTRAPPED == contextP->bsState)
+        {
+            contextP->bsState = BOOTSTRAP_REQUESTED;
+        }
     }
 }
 

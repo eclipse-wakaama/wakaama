@@ -482,6 +482,9 @@ static void prv_display_bootstrap_state(lwm2m_bootstrap_state_t bootstrapState)
     case BOOTSTRAP_PENDING:
         fprintf(stdout, "DI BOOTSTRAP PENDING\r\n");
         break;
+    case BOOTSTRAP_FINISHED:
+        fprintf(stdout, "DI BOOTSTRAP FINISHED\r\n");
+        break;
     case BOOTSTRAP_FAILED:
         fprintf(stdout, "DI BOOTSTRAP FAILED\r\n");
         break;
@@ -562,21 +565,49 @@ static void prv_restore_objects(lwm2m_context_t * context)
     fprintf(stdout, "[BOOTSTRAP] ObjectList restored\r\n");
 }
 
+static void prv_connections_free(lwm2m_context_t * context)
+{
+    client_data_t * app_data;
+
+    app_data = context->userData;
+    if (NULL != app_data)
+    {
+        connection_free(app_data->connList);
+        app_data->connList = NULL;
+    }
+}
+
 static void update_bootstrap_info(lwm2m_bootstrap_state_t previousBootstrapState,
         lwm2m_context_t * context)
 {
-    if ((previousBootstrapState != BOOTSTRAP_CLIENT_HOLD_OFF) && (context->bsState == BOOTSTRAP_CLIENT_HOLD_OFF)) {
+    if (previousBootstrapState != context->bsState)
+    {
+        switch(context->bsState)
+        {
+            case BOOTSTRAP_CLIENT_HOLD_OFF:
 #ifdef WITH_LOGS
-        fprintf(stdout, "[BOOTSTRAP] backup security and server objects\r\n");
+                fprintf(stdout, "[BOOTSTRAP] backup security and server objects\r\n");
 #endif
-        prv_backup_objects(context);
-    }
-    else if ((previousBootstrapState != BOOTSTRAP_FAILED) && (context->bsState == BOOTSTRAP_FAILED)) {
+                prv_backup_objects(context);
+                break;
+            case BOOTSTRAP_FINISHED:
 #ifdef WITH_LOGS
-        fprintf(stdout, "[BOOTSTRAP] restore security and server objects\r\n");
+                fprintf(stdout, "[BOOTSTRAP] free connections\r\n");
 #endif
-        prv_restore_objects(context);
+                prv_connections_free(context);
+                break;
+            case BOOTSTRAP_FAILED:
+#ifdef WITH_LOGS
+                fprintf(stdout, "[BOOTSTRAP] restore security and server objects\r\n");
+#endif
+                prv_connections_free(context);
+                prv_restore_objects(context);
+                break;
+            default:
+                break;
+        }
     }
+
 #ifdef WITH_LOGS
     prv_display_bootstrap_state(context->bsState);
 #endif

@@ -107,6 +107,7 @@ void handle_bootstrap_ack(lwm2m_context_t * context,
 
 void bootstrap_failed(lwm2m_context_t * context)
 {
+    reset_bootstrap_timer(context);
     context->bsState = BOOTSTRAP_FAILED;
     LOG("[BOOTSTRAP] Bootstrap failed\r\n");
 }
@@ -164,23 +165,31 @@ void update_bootstrap_state(lwm2m_context_t * context,
             // 2) there are coherent configurations for provisioned DM servers
             // if these conditions are not met, then bootstrap has failed and previous security
             // and server object configurations might be restored by client
-            LOG("\r\n[BOOTSTRAP] Bootstrapped at: %lu (difftime: %lu s)\r\n",
+            LOG("\r\n[BOOTSTRAP] Bootstrap finished at: %lu (difftime: %lu s)\r\n",
                     (unsigned long)currentTime, (unsigned long)(currentTime - context->bsStart));
-            context->bsState = BOOTSTRAPPED;
+            context->bsState = BOOTSTRAP_FINISHED;
             context->bsStart = currentTime;
-            if (0 > lwm2m_start(context))
-            {
-                bootstrap_failed(context);
-            }
-            // during next step, lwm2m_update_registrations will connect the client to DM server
+            *timeoutP = 1;
         }
         else if (timeToBootstrap < *timeoutP)
         {
             *timeoutP = timeToBootstrap;
         }
     }
-    if ((BOOTSTRAP_FAILED == context->bsState) &&
-        (NULL == context->serverList))
+    else if (context->bsState == BOOTSTRAP_FINISHED)
+    {
+        context->bsStart = currentTime;
+        if (0 <= lwm2m_start(context))
+        {
+            context->bsState = BOOTSTRAPPED;
+        }
+        else
+        {
+            bootstrap_failed(context);
+        }
+        // during next step, lwm2m_update_registrations will connect the client to DM server
+    }
+    if (BOOTSTRAP_FAILED == context->bsState)
     {
         lwm2m_server_t * bootstrapServer = context->bootstrapServerList;
         if (bootstrapServer != NULL)
