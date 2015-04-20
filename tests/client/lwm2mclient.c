@@ -557,17 +557,24 @@ static void prv_restore_objects(lwm2m_context_t * context)
         }
     }
 
-    object_getServers(context);
+    // restart the old servers
+    lwm2m_start(context);
     fprintf(stdout, "[BOOTSTRAP] ObjectList restored\r\n");
 }
 
 static void update_bootstrap_info(lwm2m_bootstrap_state_t previousBootstrapState,
         lwm2m_context_t * context)
 {
-    if ((previousBootstrapState == BOOTSTRAP_REQUESTED) && (context->bsState == BOOTSTRAP_CLIENT_HOLD_OFF)) {
+    if ((previousBootstrapState != BOOTSTRAP_CLIENT_HOLD_OFF) && (context->bsState == BOOTSTRAP_CLIENT_HOLD_OFF)) {
+#ifdef WITH_LOGS
+        fprintf(stdout, "[BOOTSTRAP] backup security and server objects\r\n");
+#endif
         prv_backup_objects(context);
     }
-    else if ((previousBootstrapState == BOOTSTRAP_CLIENT_HOLD_OFF) && (context->bsState == BOOTSTRAP_FAILED)) {
+    else if ((previousBootstrapState != BOOTSTRAP_FAILED) && (context->bsState == BOOTSTRAP_FAILED)) {
+#ifdef WITH_LOGS
+        fprintf(stdout, "[BOOTSTRAP] restore security and server objects\r\n");
+#endif
         prv_restore_objects(context);
     }
 #ifdef WITH_LOGS
