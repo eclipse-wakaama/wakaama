@@ -60,16 +60,40 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
                                 coap_packet_t * response)
 {
     coap_status_t result;
-    lwm2m_server_t * serverP;
+    lwm2m_server_t * serverP = NULL;
+    lwm2m_server_t * bsServerP = NULL;
 
     serverP = prv_findServer(contextP, fromSessionH);
+    if (NULL == serverP)
+    {
+        bsServerP = utils_findBootstrapServer(contextP, fromSessionH);
+        if (NULL == bsServerP)
+        {
+            // No server found
+            return COAP_IGNORE;
+        }
+    }
+
     if (contextP->bsState != BOOTSTRAP_PENDING)
     {
-        if (serverP == NULL) return COAP_IGNORE;
+        if (NULL != bsServerP)
+        {
+            // server initiated bootstrap?
+            // currently not implemented.
+            return NOT_IMPLEMENTED_5_01;
+        }
         if ( serverP->status != STATE_REGISTERED &&
                 serverP->status != STATE_REG_UPDATE_PENDING)
         {
             return COAP_IGNORE;
+        }
+    }
+    else
+    {
+        if (NULL != serverP)
+        {
+            // Request form management server during bootstrap.
+            return UNAUTHORIZED_4_01;
         }
     }
 

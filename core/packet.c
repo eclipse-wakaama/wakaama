@@ -128,7 +128,14 @@ static coap_status_t handle_request(lwm2m_context_t * contextP,
     case LWM2M_URI_FLAG_DELETE_ALL:
         if (BOOTSTRAP_PENDING == contextP->bsState && COAP_DELETE == message->code)
         {
-            result = handle_delete_all(contextP);
+            if (NULL != utils_findBootstrapServer(contextP, fromSessionH))
+            {
+                result = handle_delete_all(contextP);
+            }
+            else
+            {
+                result = UNAUTHORIZED_4_01;
+            }
         }
         else {
             result = BAD_REQUEST_4_00;

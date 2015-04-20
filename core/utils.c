@@ -231,6 +231,29 @@ lwm2m_server_t * prv_findServer(lwm2m_context_t * contextP,
 #endif
 }
 
+lwm2m_server_t * utils_findBootstrapServer(lwm2m_context_t * contextP,
+                                           void * fromSessionH)
+{
+#ifdef LWM2M_CLIENT_MODE
+
+    lwm2m_server_t * targetP;
+
+    targetP = contextP->bootstrapServerList;
+    while (targetP != NULL
+        && targetP->sessionH != fromSessionH)
+    {
+        targetP = targetP->next;
+    }
+
+    return targetP;
+
+#else
+
+    return NULL;
+
+#endif
+}
+
 int prv_isAltPathValid(char * altPath)
 {
     int i;
