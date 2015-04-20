@@ -162,53 +162,51 @@ int lwm2m_PlainTextToFloat64(char * buffer,
     return 1;
 }
 
-int lwm2m_int8ToPlainText(int8_t data,
-                          char ** bufferP)
-{
-    return lwm2m_int64ToPlainText((int64_t)data, bufferP);
-}
-
-int lwm2m_int16ToPlainText(int16_t data,
-                           char ** bufferP)
-{
-    return lwm2m_int64ToPlainText((int64_t)data, bufferP);
-}
-
-int lwm2m_int32ToPlainText(int32_t data,
-                           char ** bufferP)
-{
-    return lwm2m_int64ToPlainText((int64_t)data, bufferP);
-}
 
 int lwm2m_int64ToPlainText(int64_t data,
                            char ** bufferP)
 {
-    char string[32];
-    int len;
+#define _PRV_STR_LENGTH 32
+    char string[_PRV_STR_LENGTH];
+    int index;
+    bool minus;
 
-    len = snprintf(string, 32, "%" PRId64, data);
-    if (len > 0)
+    if (data < 0)
     {
-        *bufferP = (char *)lwm2m_malloc(len);
-
-        if (NULL != *bufferP)
-        {
-            strncpy(*bufferP, string, len);
-        }
-        else
-        {
-            len = 0;
-        }
+        minus = true;
+        data = 0 - data;
+    }
+    else
+    {
+        minus = false;
     }
 
-    return len;
-}
+    index = _PRV_STR_LENGTH - 1;
+    do
+    {
+        string[index] = '0' + data%10;
+        data /= 10;
+        index --;
+    } while (index >= 0 && data > 0);
 
+    if (data > 0) return 0;
 
-int lwm2m_float32ToPlainText(float data,
-                             char ** bufferP)
-{
-    return lwm2m_float64ToPlainText((double)data, bufferP);
+    if (minus == true)
+    {
+        if (index == 0) return 0;
+        string[index] = '-';
+    }
+    else
+    {
+        index++;
+    }
+
+    *bufferP = (char *)lwm2m_malloc(_PRV_STR_LENGTH - index);
+    if (NULL == *bufferP) return 0;
+
+    memcpy(*bufferP, string + index, _PRV_STR_LENGTH - index);
+
+    return _PRV_STR_LENGTH - index;
 }
 
 
@@ -218,7 +216,7 @@ int lwm2m_float64ToPlainText(double data,
     char string[64];
     int len;
 
-    len = snprintf(string, 64, "%lf", data);
+    len = snprintf(string, 64, "%.16g", data);
     if (len > 0)
     {
         *bufferP = (char *)lwm2m_malloc(len);
