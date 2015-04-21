@@ -212,7 +212,6 @@ static uint8_t prv_set_value(lwm2m_tlv_t * tlvP,
         subTlvP[0].flags = 0;
         subTlvP[0].id = 0;
         subTlvP[0].type = LWM2M_TYPE_RESOURCE_INSTANCE;
-        subTlvP[0].dataType = LWM2M_TYPE_INTEGER;
         lwm2m_tlv_encode_int(PRV_POWER_SOURCE_1, subTlvP);
         if (0 == subTlvP[0].length)
         {
@@ -223,7 +222,6 @@ static uint8_t prv_set_value(lwm2m_tlv_t * tlvP,
         subTlvP[1].flags = 0;
         subTlvP[1].id = 1;
         subTlvP[1].type = LWM2M_TYPE_RESOURCE_INSTANCE;
-        subTlvP[1].dataType = LWM2M_TYPE_INTEGER;
         lwm2m_tlv_encode_int(PRV_POWER_SOURCE_2, subTlvP + 1);
         if (0 == subTlvP[1].length)
         {
@@ -245,7 +243,6 @@ static uint8_t prv_set_value(lwm2m_tlv_t * tlvP,
         subTlvP[0].flags = 0;
         subTlvP[0].id = 0;
         subTlvP[0].type = LWM2M_TYPE_RESOURCE_INSTANCE;
-        subTlvP[0].dataType = LWM2M_TYPE_INTEGER;
         lwm2m_tlv_encode_int(PRV_POWER_VOLTAGE_1, subTlvP);
         if (0 == subTlvP[0].length)
         {
@@ -256,7 +253,6 @@ static uint8_t prv_set_value(lwm2m_tlv_t * tlvP,
         subTlvP[1].flags = 0;
         subTlvP[1].id = 1;
         subTlvP[1].type = LWM2M_TYPE_RESOURCE_INSTANCE;
-        subTlvP[1].dataType = LWM2M_TYPE_INTEGER;
         lwm2m_tlv_encode_int(PRV_POWER_VOLTAGE_2, subTlvP + 1);
         if (0 == subTlvP[1].length)
         {
@@ -278,7 +274,6 @@ static uint8_t prv_set_value(lwm2m_tlv_t * tlvP,
         subTlvP[0].flags = 0;
         subTlvP[0].id = 0;
         subTlvP[0].type = LWM2M_TYPE_RESOURCE_INSTANCE;
-        subTlvP[0].dataType = LWM2M_TYPE_INTEGER;
         lwm2m_tlv_encode_int(PRV_POWER_CURRENT_1, &subTlvP[0]);
         if (0 == subTlvP[0].length)
         {
@@ -289,7 +284,6 @@ static uint8_t prv_set_value(lwm2m_tlv_t * tlvP,
         subTlvP[1].flags = 0;
         subTlvP[1].id = 1;
         subTlvP[1].type = LWM2M_TYPE_RESOURCE_INSTANCE;
-        subTlvP[1].dataType = LWM2M_TYPE_INTEGER;
         lwm2m_tlv_encode_int(PRV_POWER_CURRENT_2, &subTlvP[1]);
         if (0 == subTlvP[1].length)
         {
@@ -305,7 +299,6 @@ static uint8_t prv_set_value(lwm2m_tlv_t * tlvP,
     case RES_O_BATTERY_LEVEL:
         lwm2m_tlv_encode_int(devDataP->battery_level, tlvP);
         tlvP->type = LWM2M_TYPE_RESOURCE;
-        tlvP->dataType = LWM2M_TYPE_INTEGER;
 
         if (0 != tlvP->length) return COAP_205_CONTENT;
         else return COAP_500_INTERNAL_SERVER_ERROR;
@@ -313,7 +306,6 @@ static uint8_t prv_set_value(lwm2m_tlv_t * tlvP,
     case RES_O_MEMORY_FREE:
         lwm2m_tlv_encode_int(devDataP->free_memory, tlvP);
         tlvP->type = LWM2M_TYPE_RESOURCE;
-        tlvP->dataType = LWM2M_TYPE_INTEGER;
 
         if (0 != tlvP->length) return COAP_205_CONTENT;
         else return COAP_500_INTERNAL_SERVER_ERROR;
@@ -327,7 +319,6 @@ static uint8_t prv_set_value(lwm2m_tlv_t * tlvP,
         subTlvP[0].flags = 0;
         subTlvP[0].id = 0;
         subTlvP[0].type = LWM2M_TYPE_RESOURCE_INSTANCE;
-        subTlvP[0].dataType = LWM2M_TYPE_INTEGER;
         lwm2m_tlv_encode_int(devDataP->error, subTlvP);
         if (0 == subTlvP[0].length)
         {

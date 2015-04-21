@@ -67,6 +67,7 @@
 #include <sys/stat.h>
 #include <errno.h>
 #include <signal.h>
+#include <inttypes.h>
 
 #include "commandline.h"
 #include "connection.h"
@@ -240,10 +241,23 @@ static void output_tlv(char * buffer,
         }
         else
         {
+            int64_t intValue;
+            double floatValue;
+
             print_indent(indent+2);
             fprintf(stdout, "data (%ld bytes):  ", dataLen);
             if (dataLen >= 16) fprintf(stdout, "\n");
             output_buffer(stdout, (uint8_t*)buffer + length + dataIndex, dataLen);
+            if (0 < lwm2m_opaqueToInt(buffer + length + dataIndex, dataLen, &intValue))
+            {
+                print_indent(indent+2);
+                fprintf(stdout, "data as Integer: %" PRId64 "\r\n", intValue);
+            }
+            if (0 < lwm2m_opaqueToFloat(buffer + length + dataIndex, dataLen, &floatValue))
+            {
+                print_indent(indent+2);
+                fprintf(stdout, "data as Float: %.16g\r\n", floatValue);
+            }
         }
         print_indent(indent);
         fprintf(stdout, "}\n");
