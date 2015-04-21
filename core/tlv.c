@@ -512,20 +512,8 @@ void lwm2m_tlv_encode_int(int64_t data,
 
     if ((tlvP->flags & LWM2M_TLV_FLAG_TEXT_FORMAT) != 0)
     {
-        char string[32];
-        int length;
-
-        length = snprintf(string, 32, "%" PRId64, data);
-        if (length > 0)
-        {
-            tlvP->value = (uint8_t *)lwm2m_malloc(length);
-            if (tlvP->value != NULL)
-            {
-                strncpy(tlvP->value, string, length);
-                tlvP->flags &= ~LWM2M_TLV_FLAG_STATIC_DATA;
-                tlvP->length = length;
-            }
-        }
+        tlvP->flags &= ~LWM2M_TLV_FLAG_STATIC_DATA;
+        tlvP->length = lwm2m_int64ToPlainText(data, (char **) &tlvP->value);
     }
     else
     {
