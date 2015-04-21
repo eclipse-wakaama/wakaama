@@ -479,6 +479,9 @@ static void prv_display_bootstrap_state(lwm2m_bootstrap_state_t bootstrapState)
     case BOOTSTRAP_CLIENT_HOLD_OFF:
         fprintf(stdout, "DI BOOTSTRAP CLIENT HOLD OFF\r\n");
         break;
+    case BOOTSTRAP_INITIATED:
+        fprintf(stdout, "DI BOOTSTRAP INITIATED\r\n");
+        break;
     case BOOTSTRAP_PENDING:
         fprintf(stdout, "DI BOOTSTRAP PENDING\r\n");
         break;

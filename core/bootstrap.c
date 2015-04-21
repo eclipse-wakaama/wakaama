@@ -78,6 +78,8 @@ int lwm2m_bootstrap(lwm2m_context_t * context)
             {
                 bootstrapServer->mid = transaction->mID;
                 LOG("[BOOTSTRAP] DI bootstrap requested to BS server\r\n");
+                context->bsState = BOOTSTRAP_INITIATED;
+                reset_bootstrap_timer(context);
             }
         }
         else
@@ -201,9 +203,10 @@ void update_bootstrap_state(lwm2m_context_t * context,
                     (unsigned long)context->bsStart, (long)timeToBootstrap);
             if (0 >= timeToBootstrap)
             {
-                context->bsState = BOOTSTRAP_CLIENT_HOLD_OFF;
+                context->bsState = NOT_BOOTSTRAPPED;
                 context->bsStart = currentTime;
                 LOG("[BOOTSTRAP] Bootstrap failed: retry ...\r\n");
+                *timeoutP = 1;
             }
             else if (timeToBootstrap < *timeoutP)
             {
