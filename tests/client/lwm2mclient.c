@@ -580,11 +580,12 @@ static void prv_connections_free(lwm2m_context_t * context)
     }
 }
 
-static void update_bootstrap_info(lwm2m_bootstrap_state_t previousBootstrapState,
+static void update_bootstrap_info(lwm2m_bootstrap_state_t * previousBootstrapState,
         lwm2m_context_t * context)
 {
-    if (previousBootstrapState != context->bsState)
+    if (*previousBootstrapState != context->bsState)
     {
+        *previousBootstrapState = context->bsState;
         switch(context->bsState)
         {
             case BOOTSTRAP_CLIENT_HOLD_OFF:
@@ -641,6 +642,7 @@ int main(int argc, char *argv[])
     int batterylevelchanging = 1;
     time_t reboot_time = 0;
     char* bootstrapRequested = "no";
+    lwm2m_bootstrap_state_t previousBootstrapState = NOT_BOOTSTRAPPED;
 
     /*
      * The function start by setting up the command line interface (which may or not be useful depending on your project)
@@ -841,7 +843,6 @@ int main(int argc, char *argv[])
     {
         struct timeval tv;
         fd_set readfds;
-        lwm2m_bootstrap_state_t previousBootstrapState;
 
         if (g_reboot)
         {
@@ -881,7 +882,6 @@ int main(int argc, char *argv[])
         FD_SET(data.sock, &readfds);
         FD_SET(STDIN_FILENO, &readfds);
 
-        previousBootstrapState = lwm2mH->bsState;
         /*
          * This function does two things:
          *  - first it does the work needed by liblwm2m (eg. (re)sending some packets).
@@ -894,7 +894,7 @@ int main(int argc, char *argv[])
             fprintf(stderr, "lwm2m_step() failed: 0x%X\r\n", result);
             return -1;
         }
-        update_bootstrap_info(previousBootstrapState, lwm2mH);
+        update_bootstrap_info(&previousBootstrapState, lwm2mH);
 
         /*
          * This part will set up an interruption until an event happen on SDTIN or the socket until "tv" timed out (set
