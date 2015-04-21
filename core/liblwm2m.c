@@ -374,3 +374,32 @@ int lwm2m_step(lwm2m_context_t * contextP,
 
     return 0;
 }
+
+#ifdef LWM2M_CLIENT_MODE
+int lwm2m_start(lwm2m_context_t * contextP)
+{
+    int result;
+    bool cleanup = (NULL != contextP->bootstrapServerList) || (NULL != contextP->serverList);
+    delete_transaction_list(contextP);
+    delete_observed_list(contextP);
+    if (cleanup)
+    {
+        LOG("lwm2m_start: cleanup\n");
+        delete_server_list(contextP);
+        delete_bootstrap_server_list(contextP);
+    }
+    result = object_getServers(contextP);
+    if (0 > result)
+    {
+        LOG("lwm2m_start: security- or server-objects configuration error.\n");
+        if (0 > result && cleanup)
+        {
+            LOG("lwm2m_start: cleanup on error\n");
+            delete_server_list(contextP);
+            delete_bootstrap_server_list(contextP);
+        }
+    }
+    return result;
+}
+#endif
+
