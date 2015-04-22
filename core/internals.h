@@ -81,12 +81,13 @@
 #define URI_BOOTSTRAP_SEGMENT           "bs"
 #define URI_BOOTSTRAP_SEGMENT_LEN       2
 
-#define LWM2M_URI_FLAG_DM           (uint8_t)0x00
-#define LWM2M_URI_FLAG_REGISTRATION (uint8_t)0x20
-#define LWM2M_URI_FLAG_BOOTSTRAP    (uint8_t)0x40
-
-#define LWM2M_URI_MASK_TYPE (uint8_t)0x70
-#define LWM2M_URI_MASK_ID   (uint8_t)0x07
+typedef enum
+{
+    LWM2M_URI_INVALID,
+    LWM2M_URI_DM,
+    LWM2M_URI_REGISTRATION,
+    LWM2M_URI_BOOTSTRAP
+} uri_type_t;
 
 typedef struct
 {
@@ -103,7 +104,7 @@ typedef struct _obs_list_
 
 // defined in uri.c
 int lwm2m_get_number(const char * uriString, size_t uriLength);
-lwm2m_uri_t * lwm2m_decode_uri(char * altPath, multi_option_t *uriPath);
+uri_type_t lwm2m_decode_uri(char * altPath, multi_option_t *uriPath, lwm2m_uri_t ** resultUriP);
 
 // defined in objects.c
 coap_status_t object_read(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, char ** bufferP, int * lengthP);

@@ -265,7 +265,10 @@ coap_status_t object_create(lwm2m_context_t * contextP,
     else
     {
         uriP->instanceId = lwm2m_list_newId(targetP->instanceList);
-        uriP->flag |= LWM2M_URI_FLAG_INSTANCE_ID;
+        if (uriP->instanceId == LWM2M_MAX_ID)
+        {
+            return COAP_500_INTERNAL_SERVER_ERROR;
+        }
     }
 
     targetP = prv_find_object(contextP, uriP->objectId);

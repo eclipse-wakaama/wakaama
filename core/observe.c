@@ -60,9 +60,8 @@ static lwm2m_observed_t * prv_findObserved(lwm2m_context_t * contextP,
     targetP = contextP->observedList;
     while (targetP != NULL
         && (targetP->uri.objectId != uriP->objectId
-         || targetP->uri.flag != uriP->flag
-         || (LWM2M_URI_IS_SET_INSTANCE(uriP) && targetP->uri.instanceId != uriP->instanceId)
-         || (LWM2M_URI_IS_SET_RESOURCE(uriP) && targetP->uri.resourceId != uriP->resourceId)))
+         || targetP->uri.instanceId != uriP->instanceId
+         || targetP->uri.resourceId != uriP->resourceId))
     {
         targetP = targetP->next;
     }
@@ -83,12 +82,12 @@ static obs_list_t * prv_getObservedList(lwm2m_context_t * contextP,
     {
         if (targetP->uri.objectId == uriP->objectId)
         {
-            if (!LWM2M_URI_IS_SET_INSTANCE(uriP)
-             || (targetP->uri.flag & LWM2M_URI_FLAG_INSTANCE_ID) == 0
+            if (uriP->instanceId == LWM2M_MAX_ID
+             || targetP->uri.instanceId == LWM2M_MAX_ID
              || uriP->instanceId == targetP->uri.instanceId)
             {
-                if (!LWM2M_URI_IS_SET_RESOURCE(uriP)
-                 || (targetP->uri.flag & LWM2M_URI_FLAG_RESOURCE_ID) == 0
+                if (uriP->resourceId == LWM2M_MAX_ID
+                 || targetP->uri.resourceId == LWM2M_MAX_ID
                  || uriP->resourceId == targetP->uri.resourceId)
                 {
                     obs_list_t * newP;
@@ -292,7 +291,6 @@ static lwm2m_observation_t * prv_findObservationByURI(lwm2m_client_t * clientP,
     while (targetP != NULL)
     {
         if (targetP->uri.objectId == uriP->objectId
-         && targetP->uri.flag == uriP->flag
          && targetP->uri.instanceId == uriP->instanceId
          && targetP->uri.resourceId == uriP->resourceId)
         {

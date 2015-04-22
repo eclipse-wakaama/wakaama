@@ -774,7 +774,7 @@ coap_status_t handle_registration_request(lwm2m_context_t * contextP,
         lwm2m_client_t * clientP;
         char location[MAX_LOCATION_LENGTH];
 
-        if ((uriP->flag & LWM2M_URI_MASK_ID) != 0) return COAP_400_BAD_REQUEST;
+        if (uriP->objectId != LWM2M_MAX_ID) return COAP_400_BAD_REQUEST;
         if (0 != prv_getParameters(message->uri_query, &name, &lifetime, &msisdn, &binding))
         {
             return COAP_400_BAD_REQUEST;
@@ -860,7 +860,11 @@ coap_status_t handle_registration_request(lwm2m_context_t * contextP,
         lwm2m_client_object_t * objects;
         lwm2m_client_t * clientP;
 
-        if ((uriP->flag & LWM2M_URI_MASK_ID) != LWM2M_URI_FLAG_OBJECT_ID) return COAP_400_BAD_REQUEST;
+        if (uriP->objectId == LWM2M_MAX_ID
+         || uriP->instanceId != LWM2M_MAX_ID)
+        {
+            return COAP_400_BAD_REQUEST;
+        }
 
         clientP = (lwm2m_client_t *)lwm2m_list_find((lwm2m_list_t *)contextP->clientList, uriP->objectId);
         if (clientP == NULL) return COAP_404_NOT_FOUND;
@@ -920,7 +924,7 @@ coap_status_t handle_registration_request(lwm2m_context_t * contextP,
                 }
                 else
                 {
-                    if ((observationP->uri.flag & LWM2M_URI_FLAG_INSTANCE_ID) != 0)
+                    if (observationP->uri.instanceId != LWM2M_MAX_ID)
                     {
                         if (lwm2m_list_find((lwm2m_list_t *)objP->instanceList, observationP->uri.instanceId) == NULL)
                         {
@@ -955,7 +959,11 @@ coap_status_t handle_registration_request(lwm2m_context_t * contextP,
     {
         lwm2m_client_t * clientP;
 
-        if ((uriP->flag & LWM2M_URI_MASK_ID) != LWM2M_URI_FLAG_OBJECT_ID) return COAP_400_BAD_REQUEST;
+        if (uriP->objectId == LWM2M_MAX_ID
+         || uriP->instanceId != LWM2M_MAX_ID)
+        {
+            return COAP_400_BAD_REQUEST;
+        }
 
         contextP->clientList = (lwm2m_client_t *)LWM2M_LIST_RM(contextP->clientList, uriP->objectId, &clientP);
         if (clientP == NULL) return COAP_400_BAD_REQUEST;

@@ -279,22 +279,20 @@ int lwm2m_opaqueToInt(char * buffer, size_t buffer_len, int64_t * dataP);
  * URI
  *
  * objectId is always set
- * if instanceId or resourceId is greater than LWM2M_URI_MAX_ID, it means it is not specified
+ * LWM2M_MAX_ID is a reserved value and means an ID is not specified
+ *
+ * IMPLEMENTATION LIMITATION: A resource can not have an ID of 65535.
+ * (LWM2M does not allow 65535 for Object IDs and Object Instance IDs)
  *
  */
 
 #define LWM2M_MAX_ID   ((uint16_t)0xFFFF)
 
-#define LWM2M_URI_FLAG_OBJECT_ID    (uint8_t)0x04
-#define LWM2M_URI_FLAG_INSTANCE_ID  (uint8_t)0x02
-#define LWM2M_URI_FLAG_RESOURCE_ID  (uint8_t)0x01
-
-#define LWM2M_URI_IS_SET_INSTANCE(uri) ((uri->flag & LWM2M_URI_FLAG_INSTANCE_ID) != 0)
-#define LWM2M_URI_IS_SET_RESOURCE(uri) ((uri->flag & LWM2M_URI_FLAG_RESOURCE_ID) != 0)
+#define LWM2M_URI_IS_SET_INSTANCE(uri) ((uri)->instanceId != LWM2M_MAX_ID)
+#define LWM2M_URI_IS_SET_RESOURCE(uri) ((uri)->resourceId != LWM2M_MAX_ID)
 
 typedef struct
 {
-    uint8_t     flag;           // indicates which segments are set
     uint16_t    objectId;
     uint16_t    instanceId;
     uint16_t    resourceId;
