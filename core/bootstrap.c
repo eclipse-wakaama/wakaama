@@ -41,7 +41,7 @@ static void prv_handleBootstrapReply(lwm2m_transaction_t * transaction, void * m
 }
 
 // start a device initiated bootstrap
-int lwm2m_bootstrap(lwm2m_context_t * context)
+int bootstrap_initiating_request(lwm2m_context_t * context)
 {
     char query[PRV_QUERY_BUFFER_LENGTH];
     int query_length = 0;
@@ -141,7 +141,7 @@ void update_bootstrap_state(lwm2m_context_t * context,
             LOG("[BOOTSTRAP] ClientHoldOffTime %ld\r\n", (long)timeToBootstrap);
             if (0 >= timeToBootstrap)
             {
-                lwm2m_bootstrap(context);
+                bootstrap_initiating_request(context);
             }
             else if (timeToBootstrap < *timeoutP)
             {

@@ -568,9 +568,6 @@ int lwm2m_configure(lwm2m_context_t * contextP, char * endpointName, char * msis
 // create objects for known LWM2M Servers.
 int lwm2m_start(lwm2m_context_t * contextP);
 
-// manage a bootstrap session
-int lwm2m_bootstrap(lwm2m_context_t * contextP);
-
 // send a registration update to the server specified by the server short identifier
 int lwm2m_update_registration(lwm2m_context_t * contextP, uint16_t shortServerID);
 
