@@ -200,6 +200,17 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
     return result;
 }
 
+static void management_delete_all_instances(lwm2m_object_t * object)
+{
+    if (NULL != object->deleteFunc)
+    {
+        while (NULL != object->instanceList)
+        {
+            object->deleteFunc(object->instanceList->id, object);
+        }
+    }
+}
+
 coap_status_t handle_delete_all(lwm2m_context_t * context)
 {
     lwm2m_object_t ** objectList = context->objectList;
@@ -213,7 +224,7 @@ coap_status_t handle_delete_all(lwm2m_context_t * context)
             {
             case LWM2M_SECURITY_OBJECT_ID:
             case LWM2M_SERVER_OBJECT_ID:
-                objectList[i]->closeFunc(objectList[i]);
+                management_delete_all_instances(objectList[i]);
                 break;
             default:
                 break;
