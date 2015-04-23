@@ -71,7 +71,7 @@ extern "C" {
 void * lwm2m_malloc(size_t s);
 void   lwm2m_free(void * p);
 char * lwm2m_strdup(const char * str);
-char * lwm2m_strncmp(const char * s1, const char * s2, size_t n);
+int    lwm2m_strncmp(const char * s1, const char * s2, size_t n);
 #endif
 // This function must return the number of seconds elapsed since origin.
 // The origin (Epoch, system boot, etc...) does not matter as this
