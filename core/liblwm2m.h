@@ -312,7 +312,7 @@ typedef struct
 // Return the number of characters read from buffer or 0 in case of error.
 // Valid URIs: /1, /1/, /1/2, /1/2/, /1/2/3
 // Invalid URIs: /, //, //2, /1//, /1//3, /1/2/3/, /1/2/3/4
-int lwm2m_stringToUri(const char * buffer, size_t buffer_len, lwm2m_uri_t * uriP);
+int lwm2m_stringToUri(char * buffer, size_t buffer_len, lwm2m_uri_t * uriP);
 
 
 /*

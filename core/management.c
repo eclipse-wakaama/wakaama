@@ -110,7 +110,7 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
     case COAP_GET:
         {
             uint8_t * buffer = NULL;
-            int length = 0;
+            size_t length = 0;
 
             result = object_read(contextP, uriP, &buffer, &length);
             if (COAP_205_CONTENT == result)

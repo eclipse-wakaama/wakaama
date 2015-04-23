@@ -11,6 +11,7 @@ add_definitions(-DLWM2M_CLIENT_MODE -DWITH_LOGS -DLWM2M_LITTLE_ENDIAN -DLWM2M_BO
 include_directories (${LIBLWM2M_DIR} ${PROJECT_SOURCE_DIR}/../utils)
 
 add_subdirectory(${LIBLWM2M_DIR} ${CMAKE_CURRENT_BINARY_DIR}/core)
+# SET(CMAKE_C_FLAGS "-Wall -Wextra -Wfloat-equal -Wshadow -Wpointer-arith -Wcast-align -Wstrict-prototypes -Wwrite-strings -Waggregate-return -Wswitch-default -Wswitch-enum")
 
 SET(SOURCES
     lwm2mclient.c

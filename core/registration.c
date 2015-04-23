@@ -391,15 +391,13 @@ void registration_update(lwm2m_context_t * contextP,
                 prv_register(contextP, targetP);
                 break;
 
-            case STATE_REG_PENDING:
-                break;
-
             case STATE_REG_UPDATE_PENDING:
                 // TODO: check for timeout and retry?
                 break;
 
             case STATE_DEREG_PENDING:
                 break;
+
             case STATE_REG_FAILED:
 #ifdef LWM2M_BOOTSTRAP
                 if (serverRegistered || NULL == contextP->bootstrapServerList)
@@ -423,6 +421,9 @@ void registration_update(lwm2m_context_t * contextP,
 #ifdef LWM2M_BOOTSTRAP
                 }
 #endif
+                break;
+
+            default:
                 break;
         }
         targetP = targetP->next;
@@ -519,7 +520,7 @@ static int prv_getParameters(multi_option_t * query,
 
     while (query != NULL)
     {
-        if (strncmp(query->data, QUERY_TEMPLATE, QUERY_LENGTH) == 0)
+        if (lwm2m_strncmp((char *)query->data, QUERY_TEMPLATE, QUERY_LENGTH) == 0)
         {
             if (*nameP != NULL) goto error;
             if (query->len == QUERY_LENGTH) goto error;
@@ -531,7 +532,7 @@ static int prv_getParameters(multi_option_t * query,
                 (*nameP)[query->len - QUERY_LENGTH] = 0;
             }
         }
-        else if (strncmp(query->data, QUERY_SMS, QUERY_SMS_LEN) == 0)
+        else if (lwm2m_strncmp((char *)query->data, QUERY_SMS, QUERY_SMS_LEN) == 0)
         {
             if (*msisdnP != NULL) goto error;
             if (query->len == QUERY_SMS_LEN) goto error;
@@ -543,7 +544,7 @@ static int prv_getParameters(multi_option_t * query,
                 (*msisdnP)[query->len - QUERY_SMS_LEN] = 0;
             }
         }
-        else if (strncmp(query->data, QUERY_LIFETIME, QUERY_LIFETIME_LEN) == 0)
+        else if (lwm2m_strncmp((char *)query->data, QUERY_LIFETIME, QUERY_LIFETIME_LEN) == 0)
         {
             int i;
 
@@ -556,15 +557,15 @@ static int prv_getParameters(multi_option_t * query,
                 *lifetimeP = (*lifetimeP * 10) + (query->data[i] - '0');
             }
         }
-        else if (strncmp(query->data, QUERY_VERSION, QUERY_VERSION_LEN) == 0)
+        else if (lwm2m_strncmp((char *)query->data, QUERY_VERSION, QUERY_VERSION_LEN) == 0)
         {
             if ((query->len != QUERY_VERSION_FULL_LEN)
-             || (strncmp(query->data, QUERY_VERSION_FULL, QUERY_VERSION_FULL_LEN) != 0))
+             || (lwm2m_strncmp((char *)query->data, QUERY_VERSION_FULL, QUERY_VERSION_FULL_LEN) != 0))
             {
                 goto error;
             }
         }
-        else if (strncmp(query->data, QUERY_BINDING, QUERY_BINDING_LEN) == 0)
+        else if (lwm2m_strncmp((char *)query->data, QUERY_BINDING, QUERY_BINDING_LEN) == 0)
         {
             if (*bindingP != BINDING_UNKNOWN) goto error;
             if (query->len == QUERY_BINDING_LEN) goto error;

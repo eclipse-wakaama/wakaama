@@ -287,7 +287,6 @@ static uint8_t prv_write_resources(uint16_t instanceId, int numData,
                 {
                     for (ri=0; tlvArray[i].length; ri++)
                     {
-                        int64_t value;
                         if (1 != lwm2m_tlv_decode_int(&subTlvArray[ri], &value))
                         {
                             result = COAP_400_BAD_REQUEST;
@@ -326,7 +325,6 @@ static uint8_t prv_write_resources(uint16_t instanceId, int numData,
             }
         }   break;
         case RES_M_ACCESS_CONTROL_OWNER: {
-            int64_t value;
             if (1 == lwm2m_tlv_decode_int(tlvArray + i, &value))
             {
                 if (value >= 0 && value <= 0xFFFF)
