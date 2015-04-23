@@ -55,7 +55,7 @@
 #include <ctype.h>
 
 
-static int prv_parse_number(const char * uriString,
+static int prv_parse_number(uint8_t * uriString,
                             size_t uriLength,
                             int * headP)
 {
@@ -85,7 +85,7 @@ static int prv_parse_number(const char * uriString,
 }
 
 
-int prv_get_number(const char * uriString,
+int prv_get_number(uint8_t * uriString,
                    size_t uriLength)
 {
     int index = 0;
@@ -222,7 +222,7 @@ int lwm2m_stringToUri(const char * buffer,
     if (head == buffer_len) return 0;
 
     // Read object ID
-    readNum = prv_parse_number(buffer, buffer_len, &head);
+    readNum = prv_parse_number((uint8_t *)buffer, buffer_len, &head);
     if (readNum < 0 || readNum > LWM2M_MAX_ID) return 0;
     uriP->objectId = (uint16_t)readNum;
     uriP->flag |= LWM2M_URI_FLAG_OBJECT_ID;
@@ -230,7 +230,7 @@ int lwm2m_stringToUri(const char * buffer,
     if (buffer[head] == '/') head += 1;
     if (head >= buffer_len) return head;
 
-    readNum = prv_parse_number(buffer, buffer_len, &head);
+    readNum = prv_parse_number((uint8_t *)buffer, buffer_len, &head);
     if (readNum < 0 || readNum >= LWM2M_MAX_ID) return 0;
     uriP->instanceId = (uint16_t)readNum;
     uriP->flag |= LWM2M_URI_FLAG_INSTANCE_ID;
@@ -238,7 +238,7 @@ int lwm2m_stringToUri(const char * buffer,
     if (buffer[head] == '/') head += 1;
     if (head >= buffer_len) return head;
 
-    readNum = prv_parse_number(buffer, buffer_len, &head);
+    readNum = prv_parse_number((uint8_t *)buffer, buffer_len, &head);
     if (readNum < 0 || readNum >= LWM2M_MAX_ID) return 0;
     uriP->resourceId = (uint16_t)readNum;
     uriP->flag |= LWM2M_URI_FLAG_RESOURCE_ID;

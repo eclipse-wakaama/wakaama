@@ -53,7 +53,7 @@
 #include <float.h>
 
 
-int lwm2m_PlainTextToInt64(char * buffer,
+int lwm2m_PlainTextToInt64(uint8_t * buffer,
                            int length,
                            int64_t * dataP)
 {
@@ -97,7 +97,7 @@ int lwm2m_PlainTextToInt64(char * buffer,
     return 1;
 }
 
-int lwm2m_PlainTextToFloat64(char * buffer,
+int lwm2m_PlainTextToFloat64(uint8_t * buffer,
                              int length,
                              double * dataP)
 {
@@ -162,7 +162,7 @@ int lwm2m_PlainTextToFloat64(char * buffer,
 }
 
 static size_t prv_intToText(int64_t data,
-                            char * string,
+                            uint8_t * string,
                             size_t length)
 {
     int index;
@@ -202,16 +202,16 @@ static size_t prv_intToText(int64_t data,
 }
 
 size_t lwm2m_int64ToPlainText(int64_t data,
-                              char ** bufferP)
+                              uint8_t ** bufferP)
 {
 #define _PRV_STR_LENGTH 32
-    char string[_PRV_STR_LENGTH];
+    uint8_t string[_PRV_STR_LENGTH];
     size_t length;
 
     length = prv_intToText(data, string, _PRV_STR_LENGTH);
     if (length == 0) return 0;
 
-    *bufferP = (char *)lwm2m_malloc(length);
+    *bufferP = (uint8_t *)lwm2m_malloc(length);
     if (NULL == *bufferP) return 0;
 
     memcpy(*bufferP, string + _PRV_STR_LENGTH - length, length);
@@ -221,12 +221,12 @@ size_t lwm2m_int64ToPlainText(int64_t data,
 
 
 size_t lwm2m_float64ToPlainText(double data,
-                                char ** bufferP)
+                                uint8_t ** bufferP)
 {
 #define _PRV_PRECISION 16
-    char intString[_PRV_STR_LENGTH];
+    uint8_t intString[_PRV_STR_LENGTH];
     size_t intLength;
-    char decString[_PRV_STR_LENGTH];
+    uint8_t decString[_PRV_STR_LENGTH];
     size_t decLength;
     int64_t intPart;
     double decPart;
@@ -262,7 +262,7 @@ size_t lwm2m_float64ToPlainText(double data,
     decLength = prv_intToText(decPart, decString, _PRV_STR_LENGTH);
     if (decLength <= 1) return 0;
 
-    *bufferP = (char *)lwm2m_malloc(intLength + 1 + decLength);
+    *bufferP = (uint8_t *)lwm2m_malloc(intLength + 1 + decLength);
     if (NULL == *bufferP) return 0;
 
     memcpy(*bufferP, intString + _PRV_STR_LENGTH - intLength, intLength);
@@ -274,38 +274,63 @@ size_t lwm2m_float64ToPlainText(double data,
 
 
 size_t lwm2m_boolToPlainText(bool data,
-                             char ** bufferP)
+                             uint8_t ** bufferP)
 {
     return lwm2m_int64ToPlainText((int64_t)(data?1:0), bufferP);
 }
 
-lwm2m_binding_t lwm2m_stringToBinding(uint8_t *buffer,
+lwm2m_binding_t lwm2m_stringToBinding(uint8_t * buffer,
                                       size_t length)
 {
-    // test order is important
-    if (strncmp((char*)buffer, "U", length) == 0)
+    if (length == 0) return BINDING_UNKNOWN;
+
+    switch (buffer[0])
     {
-        return BINDING_U;
-    }
-    if (strncmp((char*)buffer, "S", length) == 0)
-    {
-        return BINDING_S;
-    }
-    if (strncmp((char*)buffer, "UQ", length) == 0)
-    {
-        return BINDING_UQ;
-    }
-    if (strncmp((char*)buffer, "SQ", length) == 0)
-    {
-        return BINDING_SQ;
-    }
-    if (strncmp((char*)buffer, "US", length) == 0)
-    {
-        return BINDING_UQ;
-    }
-    if (strncmp((char*)buffer, "UQS", length) == 0)
-    {
-        return BINDING_UQ;
+    case 'U':
+        switch (length)
+        {
+        case 1:
+            return BINDING_U;
+        case 2:
+            switch (buffer[1])
+            {
+            case 'Q':
+                 return BINDING_UQ;
+            case 'S':
+                 return BINDING_US;
+            default:
+                break;
+            }
+            break;
+        case 3:
+            if (buffer[1] == 'Q' && buffer[2] == 'S')
+            {
+                return BINDING_UQS;
+            }
+            break;
+        default:
+            break;
+        }
+        break;
+
+        case 'S':
+            switch (length)
+            {
+            case 1:
+                return BINDING_S;
+            case 2:
+                if (buffer[1] == 'Q')
+                {
+                    return BINDING_SQ;
+                }
+                break;
+            default:
+                break;
+            }
+            break;
+
+        default:
+            break;
     }
 
     return BINDING_UNKNOWN;

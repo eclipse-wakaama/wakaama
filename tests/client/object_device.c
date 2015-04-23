@@ -62,6 +62,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <time.h>
 
 
 #define PRV_MANUFACTURER      "OMA"             // ... to fit in er_coap_h REST_MAX_CHUNK_SIZE "Open Mobile Alliance"
@@ -490,7 +491,7 @@ static uint8_t prv_device_write(uint16_t instanceId,
 
 static uint8_t prv_device_execute(uint16_t instanceId,
                                   uint16_t resourceId,
-                                  char * buffer,
+                                  uint8_t * buffer,
                                   int length,
                                   lwm2m_object_t * objectP)
 {

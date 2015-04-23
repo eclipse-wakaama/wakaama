@@ -178,30 +178,31 @@ static void prv_handleRegistrationReply(lwm2m_transaction_t * transacP,
 #define PRV_QUERY_BUFFER_LENGTH 200
 
 // send the registration for a single server
-static int prv_register(lwm2m_context_t * contextP, lwm2m_server_t * server)
+static void prv_register(lwm2m_context_t * contextP,
+                         lwm2m_server_t * server)
 {
     char query[200];
     int query_length;
-    char payload[512];
+    uint8_t payload[512];
     int payload_length;
 
     lwm2m_transaction_t * transaction;
 
     payload_length = prv_getRegisterPayload(contextP, payload, sizeof(payload));
-    if (payload_length == 0) return INTERNAL_SERVER_ERROR_5_00;
+    if (payload_length == 0) return;
 
     query_length = prv_getRegistrationQuery(contextP, server, query, sizeof(query));
 
-    if (query_length == 0) return INTERNAL_SERVER_ERROR_5_00;
+    if (query_length == 0) return;
 
     if (0 != server->lifetime)
     {
         if (snprintf(query + query_length,
                         PRV_QUERY_BUFFER_LENGTH - query_length,
-                        QUERY_DELIMITER QUERY_LIFETIME "%lu",
-                        (unsigned long)server->lifetime) <= 0)
+                        QUERY_DELIMITER QUERY_LIFETIME "%d",
+                        (int)server->lifetime) <= 0)
         {
-            return INTERNAL_SERVER_ERROR_5_00;
+            return;
         }
     }
 
@@ -213,7 +214,7 @@ static int prv_register(lwm2m_context_t * contextP, lwm2m_server_t * server)
     if (server->sessionH != NULL)
     {
         transaction = transaction_new(COAP_POST, NULL, NULL, contextP->nextMID++, ENDPOINT_SERVER, (void *)server);
-        if (transaction == NULL) return INTERNAL_SERVER_ERROR_5_00;
+        if (transaction == NULL) return;
 
         coap_set_header_uri_path(transaction->message, "/"URI_REGISTRATION_SEGMENT);
         coap_set_header_uri_query(transaction->message, query);
@@ -229,7 +230,6 @@ static int prv_register(lwm2m_context_t * contextP, lwm2m_server_t * server)
             server->mid = transaction->mID;
         }
     }
-    return NO_ERROR;
 }
 
 static void prv_handleRegistrationUpdateReply(lwm2m_transaction_t * transacP,
@@ -609,7 +609,7 @@ static int prv_getId(uint8_t * data,
     if (altPath != NULL)
     {
         if (length <= altPathLen) return 0;
-        if (0 != lwm2m_strncmp(data, altPath, altPathLen)) return 0;
+        if (0 != lwm2m_strncmp((char *)data, altPath, altPathLen)) return 0;
         data += altPathLen;
         length -= altPathLen;
     }

@@ -50,6 +50,7 @@ extern void display_location_object(lwm2m_object_t * objectP);
 /*
  * object_test.c
  */
+#define TEST_OBJECT_ID 1024
 extern lwm2m_object_t * get_test_object(void);
 extern void display_test_object(lwm2m_object_t * objectP);
 /*

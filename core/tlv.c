@@ -165,7 +165,7 @@ int lwm2m_opaqueToTLV(lwm2m_tlv_type_t type,
                       uint8_t* dataP,
                       size_t data_len,
                       uint16_t id,
-                      char * buffer,
+                      uint8_t * buffer,
                       size_t buffer_len)
 {
     uint8_t header[LWM2M_TLV_HEADER_MAX_LENGTH];
@@ -185,7 +185,7 @@ int lwm2m_opaqueToTLV(lwm2m_tlv_type_t type,
 int lwm2m_boolToTLV(lwm2m_tlv_type_t type,
                     bool value,
                     uint16_t id,
-                    char * buffer,
+                    uint8_t * buffer,
                     size_t buffer_len)
 {
     return lwm2m_intToTLV(type, value?1:0, id, buffer, buffer_len);
@@ -194,7 +194,7 @@ int lwm2m_boolToTLV(lwm2m_tlv_type_t type,
 int lwm2m_intToTLV(lwm2m_tlv_type_t type,
                    int64_t data,
                    uint16_t id,
-                   char * buffer,
+                   uint8_t * buffer,
                    size_t buffer_len)
 {
     uint8_t data_buffer[_PRV_64BIT_BUFFER_SIZE];
@@ -269,7 +269,7 @@ int lwm2m_decodeTLV(uint8_t * buffer,
     return *oDataIndex + *oDataLen;
 }
 
-int lwm2m_opaqueToInt(char * buffer,
+int lwm2m_opaqueToInt(uint8_t * buffer,
                       size_t buffer_len,
                       int64_t * dataP)
 {
@@ -303,7 +303,7 @@ int lwm2m_opaqueToInt(char * buffer,
     return i;
 }
 
-int lwm2m_opaqueToFloat(char * buffer,
+int lwm2m_opaqueToFloat(uint8_t * buffer,
                         size_t buffer_len,
                         double * dataP)
 {
@@ -369,7 +369,7 @@ lwm2m_tlv_t * lwm2m_tlv_new(int size)
     return tlvP;
 }
 
-int lwm2m_tlv_parse(char * buffer,
+int lwm2m_tlv_parse(uint8_t * buffer,
                     size_t bufferLen,
                     lwm2m_tlv_t ** dataP)
 {
@@ -473,7 +473,7 @@ static int prv_getLength(int size,
 
 int lwm2m_tlv_serialize(int size,
                         lwm2m_tlv_t * tlvP,
-                        char ** bufferP)
+                        uint8_t ** bufferP)
 {
     int length;
     int index;
@@ -483,7 +483,7 @@ int lwm2m_tlv_serialize(int size,
     length = prv_getLength(size, tlvP);
     if (length <= 0) return length;
 
-    *bufferP = (char *)lwm2m_malloc(length);
+    *bufferP = (uint8_t *)lwm2m_malloc(length);
     if (*bufferP == NULL) return 0;
 
     index = 0;
@@ -496,7 +496,7 @@ int lwm2m_tlv_serialize(int size,
         case LWM2M_TYPE_OBJECT_INSTANCE:
         case LWM2M_TYPE_MULTIPLE_RESOURCE:
             {
-                char * tmpBuffer;
+                uint8_t * tmpBuffer;
                 int tmpLength;
 
                 tmpLength = lwm2m_tlv_serialize(tlvP[i].length, (lwm2m_tlv_t *)tlvP[i].value, &tmpBuffer);
