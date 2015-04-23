@@ -191,7 +191,7 @@ static uint8_t prv_firmware_write(uint16_t instanceId,
 
 static uint8_t prv_firmware_execute(uint16_t instanceId,
                                     uint16_t resourceId,
-                                    char * buffer,
+                                    uint8_t * buffer,
                                     int length,
                                     lwm2m_object_t * objectP)
 {

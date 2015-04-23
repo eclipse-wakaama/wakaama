@@ -253,7 +253,7 @@ void lwm2m_resource_value_changed(lwm2m_context_t * contextP,
     while (listP != NULL)
     {
         obs_list_t * targetP;
-        char * buffer = NULL;
+        uint8_t * buffer = NULL;
         int length = 0;
 
         result = object_read(contextP, &listP->item->uri, &buffer, &length);
