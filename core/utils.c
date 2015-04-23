@@ -84,9 +84,10 @@ int lwm2m_PlainTextToInt64(uint8_t * buffer,
         i++;
     }
 
+    if (result > INT64_MAX) return 0;
+
     if (sign == -1)
     {
-        if (result > (INT64_MAX / 10)) return 0;
         *dataP = 0 - result;
     }
     else
@@ -243,7 +244,7 @@ size_t lwm2m_float64ToPlainText(double data,
         decPart = 1 + decPart;
     }
 
-    if (decPart == 1)
+    if (decPart >= 1 + FLT_EPSILON)
     {
         return lwm2m_int64ToPlainText(intPart, bufferP);
     }
@@ -336,11 +337,10 @@ lwm2m_binding_t lwm2m_stringToBinding(uint8_t * buffer,
     return BINDING_UNKNOWN;
 }
 
+#ifdef LWM2M_CLIENT_MODE
 lwm2m_server_t * prv_findServer(lwm2m_context_t * contextP,
                                 void * fromSessionH)
 {
-#ifdef LWM2M_CLIENT_MODE
-
     lwm2m_server_t * targetP;
 
     targetP = contextP->serverList;
@@ -351,13 +351,8 @@ lwm2m_server_t * prv_findServer(lwm2m_context_t * contextP,
     }
 
     return targetP;
-
-#else
-
-    return NULL;
-
-#endif
 }
+#endif
 
 int prv_isAltPathValid(char * altPath)
 {

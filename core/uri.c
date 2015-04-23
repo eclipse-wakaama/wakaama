@@ -108,14 +108,14 @@ lwm2m_uri_t * lwm2m_decode_uri(char * altPath,
 
     // Read object ID
     if (URI_REGISTRATION_SEGMENT_LEN == uriPath->len
-     && 0 == strncmp(URI_REGISTRATION_SEGMENT, uriPath->data, uriPath->len))
+     && 0 == strncmp(URI_REGISTRATION_SEGMENT, (char *)uriPath->data, uriPath->len))
     {
         uriP->flag |= LWM2M_URI_FLAG_REGISTRATION;
         uriPath = uriPath->next;
         if (uriPath == NULL) return uriP;
     }
     else if (URI_BOOTSTRAP_SEGMENT_LEN == uriPath->len
-     && 0 == strncmp(URI_BOOTSTRAP_SEGMENT, uriPath->data, uriPath->len))
+     && 0 == strncmp(URI_BOOTSTRAP_SEGMENT, (char *)uriPath->data, uriPath->len))
     {
         uriP->flag |= LWM2M_URI_FLAG_BOOTSTRAP;
         uriPath = uriPath->next;
@@ -186,7 +186,7 @@ error:
     return NULL;
 }
 
-int lwm2m_stringToUri(const char * buffer,
+int lwm2m_stringToUri(char * buffer,
                       size_t buffer_len,
                       lwm2m_uri_t * uriP)
 {

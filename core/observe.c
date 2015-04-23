@@ -254,7 +254,7 @@ void lwm2m_resource_value_changed(lwm2m_context_t * contextP,
     {
         obs_list_t * targetP;
         uint8_t * buffer = NULL;
-        int length = 0;
+        size_t length = 0;
 
         result = object_read(contextP, &listP->item->uri, &buffer, &length);
         if (result == COAP_205_CONTENT)
