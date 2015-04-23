@@ -153,6 +153,7 @@ static uint8_t prv_read(uint16_t instanceId, int * numDataP,
         }
     }
 
+    ni = 0;
     ri = 0;
     result = COAP_205_CONTENT;
     do
