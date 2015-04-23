@@ -306,10 +306,6 @@ coap_status_t object_create(lwm2m_context_t * contextP,
         uriP->flag |= LWM2M_URI_FLAG_INSTANCE_ID;
     }
 
-    targetP = prv_find_object(contextP, uriP->objectId);
-    if (NULL == targetP) return NOT_FOUND_4_04;
-    if (NULL == targetP->writeFunc) return METHOD_NOT_ALLOWED_4_05;
-
     size = lwm2m_tlv_parse(buffer, length, &tlvP);
     if (size == 0) return COAP_500_INTERNAL_SERVER_ERROR;
 
