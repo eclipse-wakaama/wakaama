@@ -364,7 +364,7 @@ int prv_isAltPathValid(char * altPath)
 }
 
 #ifndef LWM2M_EMBEDDED_MODE
-time_t lwm2m_gettime()
+time_t lwm2m_gettime(void)
 {
     struct timeval tv;
 

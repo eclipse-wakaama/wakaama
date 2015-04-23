@@ -232,7 +232,7 @@ static void prv_firmware_close(lwm2m_object_t * objectP)
     lwm2m_free(objectP->instanceList);
 }
 
-lwm2m_object_t * get_object_firmware()
+lwm2m_object_t * get_object_firmware(void)
 {
     /*
      * The get_object_firmware function create the object itself and return a pointer to the structure that represent it.

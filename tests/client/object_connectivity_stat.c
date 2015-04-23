@@ -210,7 +210,7 @@ void conn_s_updateRxStatistic(lwm2m_object_t * objectP, uint16_t rxDataByte, boo
 }
 
 
-lwm2m_object_t * get_object_conn_s()
+lwm2m_object_t * get_object_conn_s(void)
 {
     /*
      * The get_object_conn_s() function create the object itself and return

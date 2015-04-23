@@ -289,7 +289,7 @@ static void prv_close(lwm2m_object_t * objectP)
     LWM2M_LIST_FREE(objectP->instanceList);
 }
 
-lwm2m_object_t * get_test_object()
+lwm2m_object_t * get_test_object(void)
 {
     lwm2m_object_t * testObj;
 

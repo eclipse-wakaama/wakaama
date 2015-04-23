@@ -609,7 +609,7 @@ int lwm2m_tlv_decode_int(lwm2m_tlv_t * tlvP,
 
     if ((tlvP->flags & LWM2M_TLV_FLAG_TEXT_FORMAT) != 0)
     {
-        result = lwm2m_PlainTextToInt64((char *)tlvP->value, tlvP->length, dataP);
+        result = lwm2m_PlainTextToInt64(tlvP->value, tlvP->length, dataP);
     }
     else
     {
