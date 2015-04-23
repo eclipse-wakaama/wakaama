@@ -308,7 +308,10 @@ coap_status_t object_create(lwm2m_context_t * contextP,
 
     size = lwm2m_tlv_parse(buffer, length, &tlvP);
     if (size == 0) return COAP_500_INTERNAL_SERVER_ERROR;
-
+    if (contextP->bsState == BOOTSTRAP_PENDING)
+    {
+        tlvP->flags |= LWM2M_TLV_FLAG_BOOTSTRAPPING;
+    }
     result = targetP->createFunc(uriP->instanceId, size, tlvP, targetP);
     lwm2m_tlv_free(size, tlvP);
 
