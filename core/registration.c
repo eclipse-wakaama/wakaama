@@ -460,7 +460,9 @@ void registration_deregister(lwm2m_context_t * contextP,
 {
     if (serverP->status == STATE_DEREGISTERED
      || serverP->status == STATE_REG_PENDING
-     || serverP->status == STATE_DEREG_PENDING)
+     || serverP->status == STATE_DEREG_PENDING
+     || serverP->status == STATE_REG_FAILED
+     || serverP->location == NULL)
         {
             return;
         }
