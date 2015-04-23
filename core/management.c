@@ -126,6 +126,9 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
 
     case COAP_POST:
         {
+            /* no POST during bootstrap */
+            if (contextP->bsState == BOOTSTRAP_PENDING) return METHOD_NOT_ALLOWED_4_05;
+
             if (!LWM2M_URI_IS_SET_INSTANCE(uriP))
             {
                 result = object_create(contextP, uriP, (char*)message->payload, message->payload_len);
@@ -170,7 +173,18 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
         {
             if (LWM2M_URI_IS_SET_INSTANCE(uriP))
             {
-                result = object_write(contextP, uriP, (char*)message->payload, message->payload_len);
+                if (contextP->bsState == BOOTSTRAP_PENDING && object_isInstanceNew(contextP, uriP->objectId, uriP->instanceId))
+                {
+                    result = object_create(contextP, uriP, (char*)message->payload, message->payload_len);
+                    if (COAP_201_CREATED == result)
+                    {
+                        result = COAP_204_CHANGED;
+                    }
+                }
+                else
+                {
+                    result = object_write(contextP, uriP, (char*)message->payload, message->payload_len);
+                }
             }
             else
             {

@@ -215,29 +215,13 @@ static uint8_t prv_security_write(uint16_t instanceId,
     security_instance_t * targetP;
     int i;
     uint8_t result = COAP_204_CHANGED;
-    bool bootstrapPending;
 
-    bootstrapPending = (dataArray->flags & LWM2M_TLV_FLAG_BOOTSTRAPPING) != 0;
+    if ((dataArray->flags & LWM2M_TLV_FLAG_BOOTSTRAPPING) == 0) return COAP_401_UNAUTHORIZED;
+
     targetP = (security_instance_t *)lwm2m_list_find(objectP->instanceList, instanceId);
     if (NULL == targetP)
     {
-        fprintf(stdout, "    >>>> Object with instanceID: %u not found\r\n", instanceId);
-        if (bootstrapPending == true)
-        {
-            targetP = (security_instance_t *)lwm2m_malloc(sizeof(security_instance_t));
-            if (NULL == targetP)
-            {
-                return COAP_500_INTERNAL_SERVER_ERROR;
-            }
-            memset(targetP, 0, sizeof(security_instance_t));
-            targetP->instanceId = instanceId;
-            objectP->instanceList = LWM2M_LIST_ADD(objectP->instanceList, targetP);
-            fprintf(stdout, "    >>>> new instance created: /%u/%u\r\n", objectP->objID, targetP->instanceId);
-        }
-        else
-        {
-            return COAP_404_NOT_FOUND;
-        }
+        return COAP_404_NOT_FOUND;
     }
 
     i = 0;

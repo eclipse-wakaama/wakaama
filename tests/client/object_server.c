@@ -191,27 +191,7 @@ static uint8_t prv_server_write(uint16_t instanceId,
     targetP = (server_instance_t *)lwm2m_list_find(objectP->instanceList, instanceId);
     if (NULL == targetP)
     {
-#ifdef WITH_LOGS
-        fprintf(stderr, "    >>>> Object with instanceID: %u not found\r\n", instanceId);
-#endif
-        if (bootstrapPending == true)
-        {
-            targetP = (server_instance_t *)lwm2m_malloc(sizeof(server_instance_t));
-            if (NULL == targetP)
-            {
-                return COAP_500_INTERNAL_SERVER_ERROR;
-            }
-            memset(targetP, 0, sizeof(server_instance_t));
-            targetP->instanceId = instanceId;
-            objectP->instanceList = LWM2M_LIST_ADD(objectP->instanceList, targetP);
-#ifdef WITH_LOGS
-            fprintf(stderr, "    >>>> new instance created: /%u/%u\r\n", objectP->objID, targetP->instanceId);
-#endif
-        }
-        else
-        {
-            return COAP_404_NOT_FOUND;
-        }
+        return COAP_404_NOT_FOUND;
     }
 
     i = 0;
