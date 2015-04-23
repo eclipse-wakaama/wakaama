@@ -56,7 +56,7 @@
 
 static int prv_parse_number(uint8_t * uriString,
                             size_t uriLength,
-                            int * headP)
+                            size_t * headP)
 {
     int result = 0;
 
@@ -87,7 +87,7 @@ static int prv_parse_number(uint8_t * uriString,
 int prv_get_number(uint8_t * uriString,
                    size_t uriLength)
 {
-    int index = 0;
+    size_t index = 0;
 
     return prv_parse_number(uriString, uriLength, &index);
 }
@@ -190,7 +190,7 @@ int lwm2m_stringToUri(const char * buffer,
                       size_t buffer_len,
                       lwm2m_uri_t * uriP)
 {
-    int head;
+    size_t head;
     int readNum;
 
     if (buffer == NULL || buffer_len == 0 || uriP == NULL) return 0;

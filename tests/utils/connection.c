@@ -159,7 +159,7 @@ int connection_send(connection_t *connP,
                     uint8_t * buffer,
                     size_t length)
 {
-    size_t nbSent;
+    int nbSent;
     size_t offset;
 
     offset = 0;

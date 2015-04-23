@@ -273,7 +273,7 @@ int lwm2m_opaqueToInt(uint8_t * buffer,
                       size_t buffer_len,
                       int64_t * dataP)
 {
-    int i;
+    size_t i;
 
     switch (buffer_len)
     {
@@ -337,7 +337,7 @@ int lwm2m_opaqueToFloat(uint8_t * buffer,
 #else
 #ifdef LWM2M_LITTLE_ENDIAN
     {
-        int i;
+        size_t i;
 
         for (i = 0 ; i < buffer_len ; i++)
         {
@@ -680,7 +680,7 @@ void lwm2m_tlv_encode_float(double data,
                 memcpy(tlvP->value, &data, length);
 #else
 #ifdef LWM2M_LITTLE_ENDIAN
-                int i;
+                size_t i;
 
                 for (i = 0 ; i < length ; i++)
                 {
