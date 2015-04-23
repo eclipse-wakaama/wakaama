@@ -342,11 +342,23 @@ void registration_update(lwm2m_context_t * contextP,
     time_t nextUpdate;
     lwm2m_server_t * targetP = contextP->serverList;
     bool allServerFailed = true;
+    bool serverRegistered = false;
 
     while (targetP != NULL)
     {
-        if (STATE_REG_FAILED != targetP->status) allServerFailed = false;
+        if (STATE_REGISTERED == targetP->status)
+        {
+            serverRegistered = true;
+            allServerFailed = false;
+            break;
+        }
+        else if (STATE_REG_FAILED != targetP->status) allServerFailed = false;
+        targetP = targetP->next;
+    }
 
+    targetP = contextP->serverList;
+    while (targetP != NULL)
+    {
         switch (targetP->status)
         {
             case STATE_REGISTERED:
@@ -387,7 +399,7 @@ void registration_update(lwm2m_context_t * contextP,
             case STATE_DEREG_PENDING:
                 break;
             case STATE_REG_FAILED:
-                if (NULL == contextP->bootstrapServerList)
+                if (serverRegistered || NULL == contextP->bootstrapServerList)
                 {
                     if (targetP->registration + targetP->lifetime <= currentTime)
                     {
