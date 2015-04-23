@@ -204,7 +204,7 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
             uint32_t block_num = 0;
             uint16_t block_size = REST_MAX_CHUNK_SIZE;
             uint32_t block_offset = 0;
-            int32_t new_offset = 0;
+            int64_t new_offset = 0;
 
 #ifdef WITH_LOGS
 #ifdef LWM2M_CLIENT_MODE
