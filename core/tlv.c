@@ -579,7 +579,7 @@ void lwm2m_tlv_encode_int(int64_t data,
     if ((tlvP->flags & LWM2M_TLV_FLAG_TEXT_FORMAT) != 0)
     {
         tlvP->flags &= ~LWM2M_TLV_FLAG_STATIC_DATA;
-        tlvP->length = lwm2m_int64ToPlainText(data, (char **) &tlvP->value);
+        tlvP->length = lwm2m_int64ToPlainText(data, &tlvP->value);
     }
     else
     {
@@ -609,11 +609,11 @@ int lwm2m_tlv_decode_int(lwm2m_tlv_t * tlvP,
 
     if ((tlvP->flags & LWM2M_TLV_FLAG_TEXT_FORMAT) != 0)
     {
-        result = lwm2m_PlainTextToInt64((char *)tlvP->value, tlvP->length, dataP);
+        result = lwm2m_PlainTextToInt64(tlvP->value, tlvP->length, dataP);
     }
     else
     {
-        result = lwm2m_opaqueToInt((char*)tlvP->value, tlvP->length, dataP);
+        result = lwm2m_opaqueToInt(tlvP->value, tlvP->length, dataP);
         if (result == tlvP->length)
         {
             result = 1;
@@ -636,7 +636,7 @@ void lwm2m_tlv_encode_float(double data,
     if ((tlvP->flags & LWM2M_TLV_FLAG_TEXT_FORMAT) != 0)
     {
         tlvP->flags &= ~LWM2M_TLV_FLAG_STATIC_DATA;
-        tlvP->length = lwm2m_float64ToPlainText(data, (char **) &tlvP->value);
+        tlvP->length = lwm2m_float64ToPlainText(data, &tlvP->value);
     }
     else
     {
@@ -705,11 +705,11 @@ int lwm2m_tlv_decode_float(lwm2m_tlv_t * tlvP,
 
     if ((tlvP->flags & LWM2M_TLV_FLAG_TEXT_FORMAT) != 0)
     {
-        result = lwm2m_PlainTextToFloat64((char *)tlvP->value, tlvP->length, dataP);
+        result = lwm2m_PlainTextToFloat64(tlvP->value, tlvP->length, dataP);
     }
     else
     {
-        result = lwm2m_opaqueToFloat((char*)tlvP->value, tlvP->length, dataP);
+        result = lwm2m_opaqueToFloat(tlvP->value, tlvP->length, dataP);
         if (result == tlvP->length)
         {
             result = 1;

@@ -311,7 +311,7 @@ void display_test_object(lwm2m_object_t * object)
 #endif
 }
 
-lwm2m_object_t * get_test_object()
+lwm2m_object_t * get_test_object(void)
 {
     lwm2m_object_t * testObj;
 

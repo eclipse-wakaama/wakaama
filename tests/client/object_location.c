@@ -270,7 +270,7 @@ void location_setLocationAtTime(lwm2m_object_t* locationObj,
   * @return gives back allocated LWM2M data object structure pointer. On error, 
   * NULL value is returned.
   */
-lwm2m_object_t * get_object_location()
+lwm2m_object_t * get_object_location(void)
 {
     //-------------------------------------------------------------------- JH --
     lwm2m_object_t * locationObj;

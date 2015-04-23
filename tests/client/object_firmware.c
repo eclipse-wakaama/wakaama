@@ -252,7 +252,7 @@ void display_firmware_object(lwm2m_object_t * object)
 #endif
 }
 
-lwm2m_object_t * get_object_firmware()
+lwm2m_object_t * get_object_firmware(void)
 {
     /*
      * The get_object_firmware function create the object itself and return a pointer to the structure that represent it.

@@ -80,7 +80,7 @@ int    lwm2m_strncmp(const char * s1, const char * s2, size_t n);
 // In case of error, this must return a negative value.
 // Per POSIX specifications, time_t is a signed integer.
 // An implementation for POSIX systems is provided in utils.c
-time_t lwm2m_gettime();
+time_t lwm2m_gettime(void);
 
 /*
  * Error code
