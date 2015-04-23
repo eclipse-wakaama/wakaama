@@ -124,7 +124,6 @@ void delete_server_list(lwm2m_context_t * context)
             lwm2m_free(server->location);
         }
         lwm2m_free(server);
-        server = NULL;
     }
 }
 
@@ -146,7 +145,6 @@ void delete_observed_list(lwm2m_context_t * contextP)
         LWM2M_LIST_FREE(targetP->watcherList);
 
         lwm2m_free(targetP);
-        targetP = NULL;
     }
 }
 #endif
