@@ -15,6 +15,8 @@
  *
  *******************************************************************************/
 
+#ifdef LWM2M_SUPPORT_JSON
+
 #include "internals.h"
 #include <stdlib.h>
 #include <string.h>
@@ -810,3 +812,5 @@ int lwm2m_tlv_serialize_json(int size,
 
     return head;
 }
+
+#endif
