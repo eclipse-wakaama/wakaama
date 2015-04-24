@@ -121,7 +121,7 @@ static uint8_t prv_set_tlv(lwm2m_tlv_t* tlvP, acc_ctrl_oi_t* accCtrlOiP)
 static uint8_t prv_read(uint16_t instanceId, int * numDataP,
                         lwm2m_tlv_t** dataArrayP, lwm2m_object_t * objectP)
 {
-    uint8_t result, tmpRes;
+    uint8_t result;
     int     ri, ni;
 
     // multi-instance object: search instance
@@ -153,26 +153,21 @@ static uint8_t prv_read(uint16_t instanceId, int * numDataP,
         }
     }
 
-    ri = 0;
-    result = COAP_205_CONTENT;
+    ni = ri = 0;
     do
     {
-        tmpRes = prv_set_tlv((*dataArrayP)+ni, accCtrlOiP);
-        ri++;
-        // skip on tmpRes==COAP_404_NOT_FOUND:
-        if (tmpRes == COAP_205_CONTENT)
-        {
-            result = tmpRes;
-            ni++;
+        result = prv_set_tlv((*dataArrayP) + ni, accCtrlOiP);
+        if (result==COAP_404_NOT_FOUND) {
+            ri++;
+            if (*numDataP>1) result = COAP_205_CONTENT;
         }
-        else if (*numDataP<=1 || tmpRes != COAP_404_NOT_FOUND)
+        else if (ri > 0)    // copy new one by ri skipped ones in front
         {
-            result = tmpRes;
+            (*dataArrayP)[ni-ri] = (*dataArrayP)[ni];
         }
-
-    } while (ri < *numDataP && result == COAP_205_CONTENT);
-
-    if (*numDataP!=1) *numDataP = ni;
+        ni++;
+    } while (ni < *numDataP && result == COAP_205_CONTENT);
+    *numDataP = ni-ri;
 
     return result;
 }
