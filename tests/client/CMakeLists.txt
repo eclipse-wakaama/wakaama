@@ -4,7 +4,7 @@ project (lwm2mclient)
 
 SET(LIBLWM2M_DIR ${PROJECT_SOURCE_DIR}/../../core)
 
-add_definitions(-DLWM2M_CLIENT_MODE)
+add_definitions(-DLWM2M_CLIENT_MODE -DLWM2M_LITTLE_ENDIAN)
 
 include_directories (${LIBLWM2M_DIR} ${PROJECT_SOURCE_DIR}/../utils)
 
