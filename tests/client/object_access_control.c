@@ -163,7 +163,7 @@ static uint8_t prv_read(uint16_t instanceId, int * numDataP,
         }
         else if (ri > 0)    // copy new one by ri skipped ones in front
         {
-            memcpy ((*dataArrayP)+ni-ri, (*dataArrayP)+ni, sizeof(lwm2m_tlv_t));
+            (*dataArrayP)[ni-ri] = (*dataArrayP)[ni];
         }
         ni++;
     } while (ni < *numDataP && result == COAP_205_CONTENT);
