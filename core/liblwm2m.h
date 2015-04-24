@@ -184,6 +184,7 @@ void lwm2m_list_free(lwm2m_list_t * head);
 
 // defined in utils.c
 int lwm2m_PlainTextToInt64(char * buffer, int length, int64_t * dataP);
+int lwm2m_PlainTextToFloat64(char * buffer, int length, double * dataP);
 
 /*
  * These utility functions allocate a new buffer storing the plain text
@@ -191,13 +192,9 @@ int lwm2m_PlainTextToInt64(char * buffer, int length, int64_t * dataP);
  * or 0 in case of error.
  * There is no trailing '\0' character in the buffer.
  */
-int lwm2m_int8ToPlainText(int8_t data, char ** bufferP);
-int lwm2m_int16ToPlainText(int16_t data, char ** bufferP);
-int lwm2m_int32ToPlainText(int32_t data, char ** bufferP);
-int lwm2m_int64ToPlainText(int64_t data, char ** bufferP);
-int lwm2m_float32ToPlainText(float data, char ** bufferP);
-int lwm2m_float64ToPlainText(double data, char ** bufferP);
-int lwm2m_boolToPlainText(bool data, char ** bufferP);
+size_t lwm2m_int64ToPlainText(int64_t data, char ** bufferP);
+size_t lwm2m_float64ToPlainText(double data, char ** bufferP);
+size_t lwm2m_boolToPlainText(bool data, char ** bufferP);
 
 
 /*
@@ -264,6 +261,8 @@ void lwm2m_tlv_free(int size, lwm2m_tlv_t * tlvP);
 
 void lwm2m_tlv_encode_int(int64_t data, lwm2m_tlv_t * tlvP);
 int lwm2m_tlv_decode_int(lwm2m_tlv_t * tlvP, int64_t * dataP);
+void lwm2m_tlv_encode_float(double data, lwm2m_tlv_t * tlvP);
+int lwm2m_tlv_decode_float(lwm2m_tlv_t * tlvP, double * dataP);
 void lwm2m_tlv_encode_bool(bool data, lwm2m_tlv_t * tlvP);
 int lwm2m_tlv_decode_bool(lwm2m_tlv_t * tlvP, bool * dataP);
 void lwm2m_tlv_include(lwm2m_tlv_t * subTlvP, size_t count, lwm2m_tlv_t * tlvP);
@@ -279,6 +278,7 @@ int lwm2m_boolToTLV(lwm2m_tlv_type_t type, bool value, uint16_t id, char * buffe
 int lwm2m_opaqueToTLV(lwm2m_tlv_type_t type, uint8_t * dataP, size_t data_len, uint16_t id, char * buffer, size_t buffer_len);
 int lwm2m_decodeTLV(uint8_t * buffer, size_t buffer_len, lwm2m_tlv_type_t * oType, uint16_t * oID, size_t * oDataIndex, size_t * oDataLen);
 int lwm2m_opaqueToInt(char * buffer, size_t buffer_len, int64_t * dataP);
+int lwm2m_opaqueToFloat(char * buffer, size_t buffer_len, double * dataP);
 
 /*
  * URI

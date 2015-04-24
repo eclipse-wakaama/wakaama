@@ -22,6 +22,13 @@
 #include <string.h>
 #include <stdio.h>
 #include <inttypes.h>
+#include <float.h>
+
+#ifndef LWM2M_BIG_ENDIAN
+#ifndef LWM2M_LITTLE_ENDIAN
+#error Please define LWM2M_BIG_ENDIAN or LWM2M_LITTLE_ENDIAN
+#endif
+#endif
 
 #define _PRV_64BIT_BUFFER_SIZE 8
 #define _PRV_TLV_TYPE_MASK 0xC0
@@ -268,7 +275,16 @@ int lwm2m_opaqueToInt(char * buffer,
 {
     int i;
 
-    if (buffer_len == 0 || buffer_len > 8) return 0;
+    switch (buffer_len)
+    {
+    case 1:
+    case 2:
+    case 4:
+    case 8:
+        break;
+    default:
+        return 0;
+    }
 
     // first bit is the sign
     *dataP = buffer[0]&0x7F;
@@ -285,6 +301,56 @@ int lwm2m_opaqueToInt(char * buffer,
     }
 
     return i;
+}
+
+int lwm2m_opaqueToFloat(char * buffer,
+                        size_t buffer_len,
+                        double * dataP)
+{
+    switch (buffer_len)
+    {
+    case 4:
+    {
+        float temp;
+
+#ifdef LWM2M_BIG_ENDIAN
+        memcpy(&temp, buffer, buffer_len);
+#else
+#ifdef LWM2M_LITTLE_ENDIAN
+        {
+            int i;
+
+            for (i = 0 ; i < 4 ; i++)
+            {
+                (((uint8_t *)&temp)[3 - i]) = buffer[i] & 0xFF;
+            }
+        }
+#endif
+#endif
+        *dataP = temp;
+    }
+    return 4;
+
+    case 8:
+#ifdef LWM2M_BIG_ENDIAN
+        memcpy(dataP, buffer, buffer_len);
+#else
+#ifdef LWM2M_LITTLE_ENDIAN
+    {
+        int i;
+
+        for (i = 0 ; i < buffer_len ; i++)
+        {
+            (((uint8_t *)dataP)[buffer_len - i - 1]) = buffer[i] & 0xFF;
+        }
+    }
+#endif
+#endif
+    return 8;
+
+    default:
+        return 0;
+    }
 }
 
 lwm2m_tlv_t * lwm2m_tlv_new(int size)
@@ -512,20 +578,8 @@ void lwm2m_tlv_encode_int(int64_t data,
 
     if ((tlvP->flags & LWM2M_TLV_FLAG_TEXT_FORMAT) != 0)
     {
-        char string[32];
-        int length;
-
-        length = snprintf(string, 32, "%" PRId64, data);
-        if (length > 0)
-        {
-            tlvP->value = (uint8_t *)lwm2m_malloc(length);
-            if (tlvP->value != NULL)
-            {
-                strncpy((char*)tlvP->value, string, length);
-                tlvP->flags &= ~LWM2M_TLV_FLAG_STATIC_DATA;
-                tlvP->length = length;
-            }
-        }
+        tlvP->flags &= ~LWM2M_TLV_FLAG_STATIC_DATA;
+        tlvP->length = lwm2m_int64ToPlainText(data, (char **) &tlvP->value);
     }
     else
     {
@@ -549,43 +603,124 @@ void lwm2m_tlv_encode_int(int64_t data,
 int lwm2m_tlv_decode_int(lwm2m_tlv_t * tlvP,
                          int64_t * dataP)
 {
-    int i;
+    int result;
 
     if (tlvP->length == 0) return 0;
 
     if ((tlvP->flags & LWM2M_TLV_FLAG_TEXT_FORMAT) != 0)
     {
-        char string[32];
-        int result;
-
-        // int64 is 20 digit max
-        if (tlvP->length > 32) return 0;
-
-        memcpy(string, tlvP->value, tlvP->length);
-        string[tlvP->length] = 0;
-        result = sscanf(string, "%" PRId64, dataP);
-        if (result != 1) return 0;
+        result = lwm2m_PlainTextToInt64((char *)tlvP->value, tlvP->length, dataP);
     }
     else
     {
-        if (tlvP->length > 8) return 0;
-
-        // first bit is the sign
-        *dataP = tlvP->value[0]&0x7F;
-
-        for (i = 1 ; i < tlvP->length ; i++)
+        result = lwm2m_opaqueToInt((char*)tlvP->value, tlvP->length, dataP);
+        if (result == tlvP->length)
         {
-            *dataP = (*dataP << 8) + tlvP->value[i];
+            result = 1;
         }
-
-        // first bit is the sign
-        if ((tlvP->value[0]&0x80) == 0x80)
+        else
         {
-            *dataP = 0 - *dataP;
+            result = 0;
         }
     }
 
-    return 1;
+    return result;
+}
+
+void lwm2m_tlv_encode_float(double data,
+                            lwm2m_tlv_t * tlvP)
+{
+    tlvP->length = 0;
+    tlvP->dataType = LWM2M_TYPE_FLOAT;
+
+    if ((tlvP->flags & LWM2M_TLV_FLAG_TEXT_FORMAT) != 0)
+    {
+        tlvP->flags &= ~LWM2M_TLV_FLAG_STATIC_DATA;
+        tlvP->length = lwm2m_float64ToPlainText(data, (char **) &tlvP->value);
+    }
+    else
+    {
+        size_t length = 0;
+
+        if (data > FLT_MAX || data < (0 - FLT_MAX))
+        {
+            length = 8;
+        }
+        else
+        {
+            length = 4;
+        }
+
+        tlvP->value = (uint8_t *)lwm2m_malloc(length);
+        if (tlvP->value != NULL)
+        {
+            if (length == 4)
+            {
+                float temp;
+
+                temp = data;
+#ifdef LWM2M_BIG_ENDIAN
+                memcpy(tlvP->value, &temp, length);
+#else
+#ifdef LWM2M_LITTLE_ENDIAN
+                {
+                    int i;
+
+                    for (i = 0 ; i < 4 ; i++)
+                    {
+                        tlvP->value[i] = ((uint8_t *)&temp)[3 - i];
+                    }
+                }
+#endif
+#endif
+            }
+            else
+            {
+#ifdef LWM2M_BIG_ENDIAN
+                memcpy(tlvP->value, &data, length);
+#else
+#ifdef LWM2M_LITTLE_ENDIAN
+                int i;
+
+                for (i = 0 ; i < length ; i++)
+                {
+                    tlvP->value[i] = ((uint8_t *)&data)[7 - i];
+                }
+#endif
+#endif
+            }
+
+            tlvP->flags &= ~LWM2M_TLV_FLAG_STATIC_DATA;
+            tlvP->length = length;
+        }
+    }
+}
+
+int lwm2m_tlv_decode_float(lwm2m_tlv_t * tlvP,
+                           double * dataP)
+{
+    int result;
+
+    if (tlvP->length == 0) return 0;
+
+    if ((tlvP->flags & LWM2M_TLV_FLAG_TEXT_FORMAT) != 0)
+    {
+        result = lwm2m_PlainTextToFloat64((char *)tlvP->value, tlvP->length, dataP);
+    }
+    else
+    {
+        result = lwm2m_opaqueToFloat((char*)tlvP->value, tlvP->length, dataP);
+        if (result == tlvP->length)
+        {
+            result = 1;
+        }
+        else
+        {
+            result = 0;
+        }
+    }
+
+    return result;
 }
 
 void lwm2m_tlv_encode_bool(bool data,
