@@ -88,7 +88,7 @@ uint32_t
 coap_parse_int_option(uint8_t *bytes, size_t length)
 {
   uint32_t var = 0;
-  int i = 0;
+  size_t i = 0;
   while (i<length)
   {
     var <<= 8;
@@ -175,7 +175,7 @@ coap_serialize_array_option(unsigned int number, unsigned int current_number, ui
 
   if (split_char!='\0')
   {
-    int j;
+    size_t j;
     uint8_t *part_start = array;
     uint8_t *part_end = NULL;
     size_t temp_length;
@@ -231,7 +231,7 @@ coap_serialize_multi_option(unsigned int number, unsigned int current_number, ui
 /*-----------------------------------------------------------------------------------*/
 static
 void
-coap_merge_multi_option(char **dst, size_t *dst_len, uint8_t *option, size_t option_len, char separator)
+coap_merge_multi_option(uint8_t **dst, size_t *dst_len, uint8_t *option, size_t option_len, char separator)
 {
   /* Merge multiple options. */
   if (*dst_len > 0)
@@ -248,7 +248,7 @@ coap_merge_multi_option(char **dst, size_t *dst_len, uint8_t *option, size_t opt
   else
   {
     /* dst is empty: set to option */
-    *dst = (char *) option;
+    *dst = option;
     *dst_len = option_len;
   }
 }
@@ -265,13 +265,13 @@ coap_add_multi_option(multi_option_t **dst, uint8_t *option, size_t option_len, 
     opt->len = option_len;
     if (is_static)
     {
-      opt->data = (char*)option;
+      opt->data = option;
       opt->is_static = 1;
     }
     else
     {
         opt->is_static = 0;
-        opt->data = (char *)lwm2m_malloc(option_len);
+        opt->data = (uint8_t *)lwm2m_malloc(option_len);
         if (opt->data == NULL)
         {
             lwm2m_free(opt);
@@ -345,11 +345,11 @@ char * coap_get_multi_option_as_string(multi_option_t * option)
 /*-----------------------------------------------------------------------------------*/
 static
 int
-coap_get_variable(const char *buffer, size_t length, const char *name, const char **output)
+coap_get_variable(const uint8_t *buffer, size_t length, const char *name, const char **output)
 {
-  const char *start = NULL;
-  const char *end = NULL;
-  const char *value_end = NULL;
+  const uint8_t *start = NULL;
+  const uint8_t *end = NULL;
+  const uint8_t *value_end = NULL;
   size_t name_len = 0;
 
   /*initialize the output buffer first*/
@@ -360,18 +360,18 @@ coap_get_variable(const char *buffer, size_t length, const char *name, const cha
 
   for (start = buffer; start + name_len < end; ++start){
     if ((start == buffer || start[-1] == '&') && start[name_len] == '=' &&
-        strncmp(name, start, name_len)==0) {
+        strncmp(name, (char *)start, name_len)==0) {
 
       /* Point start to variable value */
       start += name_len + 1;
 
       /* Point end to the end of the value */
-      value_end = (const char *) memchr(start, '&', end - start);
+      value_end = (const uint8_t *) memchr(start, '&', end - start);
       if (value_end == NULL) {
         value_end = end;
       }
 
-      *output = start;
+      *output = (char *)start;
 
       return (value_end - start);
     }
@@ -661,7 +661,7 @@ coap_parse_message(void *packet, uint8_t *data, uint16_t data_len)
         break;
 
       case COAP_OPTION_URI_HOST:
-        coap_pkt->uri_host = (char *) current_option;
+        coap_pkt->uri_host = current_option;
         coap_pkt->uri_host_len = option_length;
         PRINTF("Uri-Host [%.*s]\n", coap_pkt->uri_host_len, coap_pkt->uri_host);
         break;
@@ -687,13 +687,13 @@ coap_parse_message(void *packet, uint8_t *data, uint16_t data_len)
         break;
       case COAP_OPTION_LOCATION_QUERY:
         /* coap_merge_multi_option() operates in-place on the IPBUF, but final packet field should be const string -> cast to string */
-        coap_merge_multi_option( (char **) &(coap_pkt->location_query), &(coap_pkt->location_query_len), current_option, option_length, '&');
+        coap_merge_multi_option( &(coap_pkt->location_query), &(coap_pkt->location_query_len), current_option, option_length, '&');
         PRINTF("Location-Query [%.*s]\n", coap_pkt->location_query_len, coap_pkt->location_query);
         break;
 
       case COAP_OPTION_PROXY_URI:
         /*FIXME check for own end-point */
-        coap_pkt->proxy_uri = (char *) current_option;
+        coap_pkt->proxy_uri = current_option;
         coap_pkt->proxy_uri_len = option_length;
         /*TODO length > 270 not implemented (actually not required) */
         PRINTF("Proxy-Uri NOT IMPLEMENTED [%.*s]\n", coap_pkt->proxy_uri_len, coap_pkt->proxy_uri);
@@ -765,7 +765,7 @@ coap_get_post_variable(void *packet, const char *name, const char **output)
   coap_packet_t *const coap_pkt = (coap_packet_t *) packet;
 
   if (coap_pkt->payload_len) {
-    return coap_get_variable((const char *)coap_pkt->payload, coap_pkt->payload_len, name, output);
+    return coap_get_variable(coap_pkt->payload, coap_pkt->payload_len, name, output);
   }
   return 0;
 }
@@ -968,7 +968,7 @@ coap_get_header_uri_host(void *packet, const char **host)
 
   if (!IS_OPTION(coap_pkt, COAP_OPTION_URI_HOST)) return 0;
 
-  *host = coap_pkt->uri_host;
+  *host = (char *)coap_pkt->uri_host;
   return coap_pkt->uri_host_len;
 }
 
@@ -977,7 +977,7 @@ coap_set_header_uri_host(void *packet, const char *host)
 {
   coap_packet_t *const coap_pkt = (coap_packet_t *) packet;
 
-  coap_pkt->uri_host = host;
+  coap_pkt->uri_host = (uint8_t *)host;
   coap_pkt->uri_host_len = strlen(host);
 
   SET_OPTION(coap_pkt, COAP_OPTION_URI_HOST);
@@ -1131,7 +1131,7 @@ coap_get_header_location_query(void *packet, const char **query)
 }
 
 int
-coap_set_header_location_query(void *packet, const char *query)
+coap_set_header_location_query(void *packet, char *query)
 {
   coap_packet_t *const coap_pkt = (coap_packet_t *) packet;
 

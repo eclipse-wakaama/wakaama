@@ -174,7 +174,7 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
             uint32_t block_num = 0;
             uint16_t block_size = REST_MAX_CHUNK_SIZE;
             uint32_t block_offset = 0;
-            int32_t new_offset = 0;
+            int64_t new_offset = 0;
 
             /* prepare response */
             if (message->type == COAP_TYPE_CON)
@@ -264,9 +264,6 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
         }
         else
         {
-            /* Responses */
-            lwm2m_transaction_t * transaction;
-
             if (message->type == COAP_TYPE_ACK)
             {
                 LOG("Received ACK\n");

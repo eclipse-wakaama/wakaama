@@ -198,7 +198,7 @@ static void print_indent(int num)
         fprintf(stdout, " ");
 }
 
-static void output_tlv(char * buffer,
+static void output_tlv(uint8_t * buffer,
                        size_t buffer_len,
                        int indent)
 {
@@ -322,7 +322,7 @@ static void prv_result_callback(uint16_t clientID,
         }
         else
         {
-            output_tlv((char*)data, dataLength, 2);
+            output_tlv(data, dataLength, 2);
         }
     }
 
@@ -415,7 +415,7 @@ static void prv_write_client(char * buffer,
 
     if (!check_end_of_args(end)) goto syntax_error;
 
-    result = lwm2m_dm_write(lwm2mH, clientId, &uri, buffer, end - buffer, prv_result_callback, NULL);
+    result = lwm2m_dm_write(lwm2mH, clientId, &uri, (uint8_t *)buffer, end - buffer, prv_result_callback, NULL);
 
     if (result == 0)
     {
@@ -461,7 +461,7 @@ static void prv_exec_client(char * buffer,
     {
         if (!check_end_of_args(end)) goto syntax_error;
 
-        result = lwm2m_dm_execute(lwm2mH, clientId, &uri, buffer, end - buffer, prv_result_callback, NULL);
+        result = lwm2m_dm_execute(lwm2mH, clientId, &uri, (uint8_t *)buffer, end - buffer, prv_result_callback, NULL);
     }
 
     if (result == 0)
@@ -487,7 +487,7 @@ static void prv_create_client(char * buffer,
     char * end = NULL;
     int result;
     int64_t value;
-    char temp_buffer[MAX_PACKET_SIZE];
+    uint8_t temp_buffer[MAX_PACKET_SIZE];
     int temp_length = 0;
 
 
@@ -514,7 +514,7 @@ static void prv_create_client(char * buffer,
 
     if (uri.objectId == 1024)
     {
-        result = lwm2m_PlainTextToInt64(buffer, end - buffer, &value);
+        result = lwm2m_PlainTextToInt64((uint8_t *)buffer, end - buffer, &value);
         temp_length = lwm2m_intToTLV(LWM2M_TYPE_RESOURCE, value, (uint16_t) 1, temp_buffer, MAX_PACKET_SIZE);
     }
    /* End Client dependent part*/

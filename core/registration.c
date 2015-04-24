@@ -173,30 +173,31 @@ static void prv_handleRegistrationReply(lwm2m_transaction_t * transacP,
 #define PRV_QUERY_BUFFER_LENGTH 200
 
 // send the registration for a single server
-static int prv_register(lwm2m_context_t * contextP, lwm2m_server_t * server)
+static void prv_register(lwm2m_context_t * contextP,
+                         lwm2m_server_t * server)
 {
     char query[200];
     int query_length;
-    char payload[512];
+    uint8_t payload[512];
     int payload_length;
 
     lwm2m_transaction_t * transaction;
 
     payload_length = prv_getRegisterPayload(contextP, payload, sizeof(payload));
-    if (payload_length == 0) return INTERNAL_SERVER_ERROR_5_00;
+    if (payload_length == 0) return;
 
     query_length = prv_getRegistrationQuery(contextP, server, query, sizeof(query));
 
-    if (query_length == 0) return INTERNAL_SERVER_ERROR_5_00;
+    if (query_length == 0) return;
 
     if (0 != server->lifetime)
     {
         if (snprintf(query + query_length,
                         PRV_QUERY_BUFFER_LENGTH - query_length,
                         QUERY_DELIMITER QUERY_LIFETIME "%d",
-                        server->lifetime) <= 0)
+                        (int)server->lifetime) <= 0)
         {
-            return INTERNAL_SERVER_ERROR_5_00;
+            return;
         }
     }
 
@@ -208,7 +209,7 @@ static int prv_register(lwm2m_context_t * contextP, lwm2m_server_t * server)
     if (server->sessionH != NULL)
     {
         transaction = transaction_new(COAP_POST, NULL, NULL, contextP->nextMID++, ENDPOINT_SERVER, (void *)server);
-        if (transaction == NULL) return INTERNAL_SERVER_ERROR_5_00;
+        if (transaction == NULL) return;
 
         coap_set_header_uri_path(transaction->message, "/"URI_REGISTRATION_SEGMENT);
         coap_set_header_uri_query(transaction->message, query);
@@ -228,7 +229,6 @@ static int prv_register(lwm2m_context_t * contextP, lwm2m_server_t * server)
 
 int lwm2m_start(lwm2m_context_t * contextP)
 {
-    lwm2m_server_t * targetP;
     int result;
 
     result = object_getServers(contextP);
@@ -358,14 +358,11 @@ void registration_update(lwm2m_context_t * contextP,
                 prv_register(contextP, targetP);
                 break;
 
-            case STATE_REG_PENDING:
-                break;
-
             case STATE_REG_UPDATE_PENDING:
                 // TODO: check for timeout and retry?
                 break;
 
-            case STATE_DEREG_PENDING:
+            default:
                 break;
         }
         targetP = targetP->next;
@@ -451,7 +448,7 @@ static int prv_getParameters(multi_option_t * query,
 
     while (query != NULL)
     {
-        if (strncmp(query->data, QUERY_TEMPLATE, QUERY_LENGTH) == 0)
+        if (lwm2m_strncmp((char *)query->data, QUERY_TEMPLATE, QUERY_LENGTH) == 0)
         {
             if (*nameP != NULL) goto error;
             if (query->len == QUERY_LENGTH) goto error;
@@ -463,7 +460,7 @@ static int prv_getParameters(multi_option_t * query,
                 (*nameP)[query->len - QUERY_LENGTH] = 0;
             }
         }
-        else if (strncmp(query->data, QUERY_SMS, QUERY_SMS_LEN) == 0)
+        else if (lwm2m_strncmp((char *)query->data, QUERY_SMS, QUERY_SMS_LEN) == 0)
         {
             if (*msisdnP != NULL) goto error;
             if (query->len == QUERY_SMS_LEN) goto error;
@@ -475,7 +472,7 @@ static int prv_getParameters(multi_option_t * query,
                 (*msisdnP)[query->len - QUERY_SMS_LEN] = 0;
             }
         }
-        else if (strncmp(query->data, QUERY_LIFETIME, QUERY_LIFETIME_LEN) == 0)
+        else if (lwm2m_strncmp((char *)query->data, QUERY_LIFETIME, QUERY_LIFETIME_LEN) == 0)
         {
             int i;
 
@@ -488,15 +485,15 @@ static int prv_getParameters(multi_option_t * query,
                 *lifetimeP = (*lifetimeP * 10) + (query->data[i] - '0');
             }
         }
-        else if (strncmp(query->data, QUERY_VERSION, QUERY_VERSION_LEN) == 0)
+        else if (lwm2m_strncmp((char *)query->data, QUERY_VERSION, QUERY_VERSION_LEN) == 0)
         {
             if ((query->len != QUERY_VERSION_FULL_LEN)
-             || (strncmp(query->data, QUERY_VERSION_FULL, QUERY_VERSION_FULL_LEN) != 0))
+             || (lwm2m_strncmp((char *)query->data, QUERY_VERSION_FULL, QUERY_VERSION_FULL_LEN) != 0))
             {
                 goto error;
             }
         }
-        else if (strncmp(query->data, QUERY_BINDING, QUERY_BINDING_LEN) == 0)
+        else if (lwm2m_strncmp((char *)query->data, QUERY_BINDING, QUERY_BINDING_LEN) == 0)
         {
             if (*bindingP != BINDING_UNKNOWN) goto error;
             if (query->len == QUERY_BINDING_LEN) goto error;
@@ -541,7 +538,7 @@ static int prv_getId(uint8_t * data,
     if (altPath != NULL)
     {
         if (length <= altPathLen) return 0;
-        if (0 != lwm2m_strncmp(data, altPath, altPathLen)) return 0;
+        if (0 != lwm2m_strncmp((char *)data, altPath, altPathLen)) return 0;
         data += altPathLen;
         length -= altPathLen;
     }

@@ -258,7 +258,7 @@ static uint8_t prv_create(uint16_t instanceId,
 
 static uint8_t prv_exec(uint16_t instanceId,
                         uint16_t resourceId,
-                        char * buffer,
+                        uint8_t * buffer,
                         int length,
                         lwm2m_object_t * objectP)
 {
@@ -289,7 +289,7 @@ static void prv_close(lwm2m_object_t * objectP)
     LWM2M_LIST_FREE(objectP->instanceList);
 }
 
-lwm2m_object_t * get_test_object()
+lwm2m_object_t * get_test_object(void)
 {
     lwm2m_object_t * testObj;
 
