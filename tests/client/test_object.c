@@ -62,6 +62,7 @@
  *  Name | ID | Operations | Instances | Mandatory |  Type   | Range | Units | Description |
  *  test |  1 |    R/W     |    No     |    Yes    | Integer | 0-255 |       |             |
  *  exec |  2 |     E      |    No     |    Yes    |         |       |       |             |
+ *  dec  |  3 |    R/W     |    No     |    Yes    |  Float  |       |       |             |
  *
  */
 
@@ -73,7 +74,6 @@
 #include <string.h>
 #include <ctype.h>
 
-#define PRV_RESOURCE_3_SIZE 190
 #define PRV_TLV_BUFFER_SIZE 64
 
 /*
@@ -90,7 +90,7 @@ typedef struct _prv_instance_
     struct _prv_instance_ * next;   // matches lwm2m_list_t::next
     uint16_t shortID;               // matches lwm2m_list_t::id
     uint8_t  test;
-    int counter;
+    double   dec;
 } prv_instance_t;
 
 static void prv_output_buffer(uint8_t * buffer,
@@ -136,39 +136,39 @@ static uint8_t prv_read(uint16_t instanceId,
                         lwm2m_object_t * objectP)
 {
     prv_instance_t * targetP;
+    int i;
 
     targetP = (prv_instance_t *)lwm2m_list_find(objectP->instanceList, instanceId);
     if (NULL == targetP) return COAP_404_NOT_FOUND;
 
     if (*numDataP == 0)
     {
-        *dataArrayP = lwm2m_tlv_new(1);
+        *dataArrayP = lwm2m_tlv_new(2);
         if (*dataArrayP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
-        *numDataP = 1;
-        (*dataArrayP)->id = 1;
+        *numDataP = 2;
+        (*dataArrayP)[0].id = 1;
+        (*dataArrayP)[1].id = 3;
     }
 
-    if (*numDataP != 1) return COAP_404_NOT_FOUND;
-
-    if ((*dataArrayP)->id == 1)
+    for (i = 0 ; i < *numDataP ; i++)
     {
-        lwm2m_tlv_encode_int(targetP->test, *dataArrayP);
+        switch ((*dataArrayP)[i].id)
+        {
+        case 1:
+            (*dataArrayP)[i].type = LWM2M_TYPE_RESOURCE;
+            lwm2m_tlv_encode_int(targetP->test, *dataArrayP + i);
+            break;
+        case 2:
+            return COAP_405_METHOD_NOT_ALLOWED;
+        case 3:
+            (*dataArrayP)[i].type = LWM2M_TYPE_RESOURCE;
+            lwm2m_tlv_encode_float(targetP->dec, *dataArrayP + i);
+            break;
+        default:
+            return COAP_404_NOT_FOUND;
+        }
+        if ((*dataArrayP)[i].length == 0) return COAP_500_INTERNAL_SERVER_ERROR;
     }
-    else if ((*dataArrayP)->id == 3)
-    {
-        (*dataArrayP)->value = malloc(PRV_RESOURCE_3_SIZE);
-        (*dataArrayP)->length = PRV_RESOURCE_3_SIZE;
-        memset((*dataArrayP)->value, '0' + targetP->counter, PRV_RESOURCE_3_SIZE);
-    }
-    else
-    {
-        return COAP_404_NOT_FOUND;
-    }
-
-    (*dataArrayP)->type = LWM2M_TYPE_RESOURCE;
-    lwm2m_tlv_encode_int(targetP->test, *dataArrayP);
-
-    if ((*dataArrayP)->length == 0) return COAP_500_INTERNAL_SERVER_ERROR;
 
     return COAP_205_CONTENT;
 }
@@ -179,32 +179,37 @@ static uint8_t prv_write(uint16_t instanceId,
                          lwm2m_object_t * objectP)
 {
     prv_instance_t * targetP;
-    int64_t value;
+    int i;
 
     targetP = (prv_instance_t *)lwm2m_list_find(objectP->instanceList, instanceId);
     if (NULL == targetP) return COAP_404_NOT_FOUND;
 
-    if (numData != 1) return COAP_404_NOT_FOUND;
+    for (i = 0 ; i < numData ; i++)
+    {
+        switch (dataArray[i].id)
+        {
+        case 1:
+        {
+            int64_t value;
 
-    if (dataArray->id == 1)
-    {
-        if (1 != lwm2m_tlv_decode_int(dataArray, &value) || value < 0 || value > 0xFF)
-        {
-            return COAP_400_BAD_REQUEST;
+            if (1 != lwm2m_tlv_decode_int(dataArray + i, &value) || value < 0 || value > 0xFF)
+            {
+                return COAP_400_BAD_REQUEST;
+            }
+            targetP->test = (uint8_t)value;
         }
-        targetP->test = (uint8_t)value;
-    }
-    else if (dataArray->id == 3)
-    {
-        if (1 != lwm2m_tlv_decode_int(dataArray, &value) || value < 0 || value > 9)
-        {
-            return COAP_400_BAD_REQUEST;
+        break;
+        case 2:
+            return COAP_405_METHOD_NOT_ALLOWED;
+        case 3:
+            if (1 != lwm2m_tlv_decode_float(dataArray + i, &(targetP->dec)))
+            {
+                return COAP_400_BAD_REQUEST;
+            }
+            break;
+        default:
+            return COAP_404_NOT_FOUND;
         }
-        targetP->counter = (uint8_t)value;
-    }
-    else
-    {
-        return COAP_404_NOT_FOUND;
     }
 
     return COAP_204_CHANGED;
@@ -274,6 +279,8 @@ static uint8_t prv_exec(uint16_t instanceId,
         prv_output_buffer((uint8_t*)buffer, length);
         fprintf(stdout, "-----------------\r\n\r\n");
         return COAP_204_CHANGED;
+    case 3:
+        return COAP_405_METHOD_NOT_ALLOWED;
     default:
         return COAP_404_NOT_FOUND;
     }
@@ -325,7 +332,7 @@ lwm2m_object_t * get_test_object()
             memset(targetP, 0, sizeof(prv_instance_t));
             targetP->shortID = 10 + i;
             targetP->test    = 20 + i;
-            targetP->counter = i;
+            targetP->dec     = -30 + i + (double)i/100.0;
             testObj->instanceList = LWM2M_LIST_ADD(testObj->instanceList, targetP);
         }
         /*
