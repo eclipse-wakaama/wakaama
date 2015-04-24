@@ -209,7 +209,7 @@ static void output_tlv(char * buffer,
     int length = 0;
     int result;
 
-    while (0 != (result = lwm2m_decodeTLV(buffer + length, buffer_len - length, &type, &id, &dataIndex, &dataLen)))
+    while (0 != (result = lwm2m_decodeTLV((uint8_t*)buffer + length, buffer_len - length, &type, &id, &dataIndex, &dataLen)))
     {
         print_indent(indent);
         fprintf(stdout, "ID: %d", id);

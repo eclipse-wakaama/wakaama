@@ -9,6 +9,7 @@ SET(CORE_SOURCES
     ${CMAKE_CURRENT_LIST_DIR}/packet.c
     ${CMAKE_CURRENT_LIST_DIR}/transaction.c
     ${CMAKE_CURRENT_LIST_DIR}/registration.c
+    ${CMAKE_CURRENT_LIST_DIR}/bootstrap.c
     ${CMAKE_CURRENT_LIST_DIR}/management.c
     ${CMAKE_CURRENT_LIST_DIR}/observe.c
     ${EXT_SOURCES}

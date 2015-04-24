@@ -16,6 +16,7 @@
  *    Fabien Fleutot - Please refer to git log
  *    Axel Lorente - Please refer to git log
  *    Bosch Software Innovations GmbH - Please refer to git log
+ *    Pascal Rieux - Please refer to git log
  *    
  *******************************************************************************/
 
@@ -166,33 +167,33 @@ static uint8_t prv_set_value(lwm2m_tlv_t * tlvP,
     switch (tlvP->id)
     {
     case RES_O_MANUFACTURER:
-        tlvP->value    = (uint8_t*)PRV_MANUFACTURER;
-        tlvP->length   = strlen(PRV_MANUFACTURER);
-        tlvP->flags    = LWM2M_TLV_FLAG_STATIC_DATA;
+        tlvP->value  = (uint8_t*)PRV_MANUFACTURER;
+        tlvP->length = strlen(PRV_MANUFACTURER);
+        tlvP->flags  = LWM2M_TLV_FLAG_STATIC_DATA;
         tlvP->type     = LWM2M_TYPE_RESOURCE;
         tlvP->dataType = LWM2M_TYPE_STRING;
         return COAP_205_CONTENT;
 
     case RES_O_MODEL_NUMBER:
-        tlvP->value    = (uint8_t*)PRV_MODEL_NUMBER;
-        tlvP->length   = strlen(PRV_MODEL_NUMBER);
-        tlvP->flags    = LWM2M_TLV_FLAG_STATIC_DATA;
+        tlvP->value  = (uint8_t*)PRV_MODEL_NUMBER;
+        tlvP->length = strlen(PRV_MODEL_NUMBER);
+        tlvP->flags  = LWM2M_TLV_FLAG_STATIC_DATA;
         tlvP->type     = LWM2M_TYPE_RESOURCE;
         tlvP->dataType = LWM2M_TYPE_STRING;
         return COAP_205_CONTENT;
 
     case RES_O_SERIAL_NUMBER:
-        tlvP->value    = (uint8_t*)PRV_SERIAL_NUMBER;
-        tlvP->length   = strlen(PRV_SERIAL_NUMBER);
-        tlvP->flags    = LWM2M_TLV_FLAG_STATIC_DATA;
+        tlvP->value  = (uint8_t*)PRV_SERIAL_NUMBER;
+        tlvP->length = strlen(PRV_SERIAL_NUMBER);
+        tlvP->flags  = LWM2M_TLV_FLAG_STATIC_DATA;
         tlvP->type     = LWM2M_TYPE_RESOURCE;
         tlvP->dataType = LWM2M_TYPE_STRING;
         return COAP_205_CONTENT;
 
     case RES_O_FIRMWARE_VERSION:
-        tlvP->value    = (uint8_t*)PRV_FIRMWARE_VERSION;
-        tlvP->length   = strlen(PRV_FIRMWARE_VERSION);
-        tlvP->flags    = LWM2M_TLV_FLAG_STATIC_DATA;
+        tlvP->value  = (uint8_t*)PRV_FIRMWARE_VERSION;
+        tlvP->length = strlen(PRV_FIRMWARE_VERSION);
+        tlvP->flags  = LWM2M_TLV_FLAG_STATIC_DATA;
         tlvP->type     = LWM2M_TYPE_RESOURCE;
         tlvP->dataType = LWM2M_TYPE_STRING;
         return COAP_205_CONTENT;
@@ -342,25 +343,25 @@ static uint8_t prv_set_value(lwm2m_tlv_t * tlvP,
         else return COAP_500_INTERNAL_SERVER_ERROR;
 
     case RES_O_UTC_OFFSET:
-        tlvP->value    = (uint8_t*)devDataP->time_offset;
-        tlvP->length   = strlen(devDataP->time_offset);
-        tlvP->flags    = LWM2M_TLV_FLAG_STATIC_DATA;
+        tlvP->value  = (uint8_t*)devDataP->time_offset;
+        tlvP->length = strlen(devDataP->time_offset);
+        tlvP->flags  = LWM2M_TLV_FLAG_STATIC_DATA;
         tlvP->type     = LWM2M_TYPE_RESOURCE;
         tlvP->dataType = LWM2M_TYPE_STRING;
         return COAP_205_CONTENT;
 
     case RES_O_TIMEZONE:
-        tlvP->value    = (uint8_t*)PRV_TIME_ZONE;
-        tlvP->length   = strlen(PRV_TIME_ZONE);
-        tlvP->flags    = LWM2M_TLV_FLAG_STATIC_DATA;
+        tlvP->value  = (uint8_t*)PRV_TIME_ZONE;
+        tlvP->length = strlen(PRV_TIME_ZONE);
+        tlvP->flags  = LWM2M_TLV_FLAG_STATIC_DATA;
         tlvP->type     = LWM2M_TYPE_RESOURCE;
         tlvP->dataType = LWM2M_TYPE_STRING;
         return COAP_205_CONTENT;
       
     case RES_M_BINDING_MODES:
-        tlvP->value    = (uint8_t*)PRV_BINDING_MODE;
-        tlvP->length   = strlen(PRV_BINDING_MODE);
-        tlvP->flags    = LWM2M_TLV_FLAG_STATIC_DATA;
+        tlvP->value  = (uint8_t*)PRV_BINDING_MODE;
+        tlvP->length = strlen(PRV_BINDING_MODE);
+        tlvP->flags  = LWM2M_TLV_FLAG_STATIC_DATA;
         tlvP->type     = LWM2M_TYPE_RESOURCE;
         tlvP->dataType = LWM2M_TYPE_STRING;
         return COAP_205_CONTENT;
@@ -519,10 +520,30 @@ static uint8_t prv_device_execute(uint16_t instanceId,
     }
 }
 
-static void prv_device_close(lwm2m_object_t * objectP)
+static void prv_device_close(lwm2m_object_t * objectP) {
+    if (NULL != objectP->userData)
+    {
+        lwm2m_free(objectP->userData);
+        objectP->userData = NULL;
+    }
+    if (NULL != objectP->instanceList)
+    {
+        lwm2m_free(objectP->instanceList);
+        objectP->instanceList = NULL;
+    }
+}
+
+void display_device_object(lwm2m_object_t * object)
 {
-    lwm2m_free(objectP->userData);
-    lwm2m_free(objectP->instanceList);
+#ifdef WITH_LOGS
+    device_data_t * data = (device_data_t *)object->userData;
+    fprintf(stdout, "  /%u: Device object:\r\n", object->objID);
+    if (NULL != data)
+    {
+        fprintf(stdout, "    time: %lld, time_offset: %s\r\n",
+                (long long) data->time, data->time_offset);
+    }
+#endif
 }
 
 lwm2m_object_t * get_object_device()
@@ -567,8 +588,8 @@ lwm2m_object_t * get_object_device()
         deviceObj->readFunc    = prv_device_read;
         deviceObj->writeFunc   = prv_device_write;
         deviceObj->executeFunc = prv_device_execute;
-        deviceObj->closeFunc   = prv_device_close;
-        deviceObj->userData    = lwm2m_malloc(sizeof(device_data_t));
+        deviceObj->closeFunc = prv_device_close;
+        deviceObj->userData = lwm2m_malloc(sizeof(device_data_t));
 
         /*
          * Also some user data can be stored in the object with a private structure containing the needed variables 

@@ -283,27 +283,27 @@ lwm2m_binding_t lwm2m_stringToBinding(uint8_t *buffer,
                                       size_t length)
 {
     // test order is important
-    if (strncmp(buffer, "U", length) == 0)
+    if (strncmp((char*)buffer, "U", length) == 0)
     {
         return BINDING_U;
     }
-    if (strncmp(buffer, "S", length) == 0)
+    if (strncmp((char*)buffer, "S", length) == 0)
     {
         return BINDING_S;
     }
-    if (strncmp(buffer, "UQ", length) == 0)
+    if (strncmp((char*)buffer, "UQ", length) == 0)
     {
         return BINDING_UQ;
     }
-    if (strncmp(buffer, "SQ", length) == 0)
+    if (strncmp((char*)buffer, "SQ", length) == 0)
     {
         return BINDING_SQ;
     }
-    if (strncmp(buffer, "US", length) == 0)
+    if (strncmp((char*)buffer, "US", length) == 0)
     {
         return BINDING_UQ;
     }
-    if (strncmp(buffer, "UQS", length) == 0)
+    if (strncmp((char*)buffer, "UQS", length) == 0)
     {
         return BINDING_UQ;
     }
@@ -319,6 +319,29 @@ lwm2m_server_t * prv_findServer(lwm2m_context_t * contextP,
     lwm2m_server_t * targetP;
 
     targetP = contextP->serverList;
+    while (targetP != NULL
+        && targetP->sessionH != fromSessionH)
+    {
+        targetP = targetP->next;
+    }
+
+    return targetP;
+
+#else
+
+    return NULL;
+
+#endif
+}
+
+lwm2m_server_t * utils_findBootstrapServer(lwm2m_context_t * contextP,
+                                           void * fromSessionH)
+{
+#ifdef LWM2M_CLIENT_MODE
+
+    lwm2m_server_t * targetP;
+
+    targetP = contextP->bootstrapServerList;
     while (targetP != NULL
         && targetP->sessionH != fromSessionH)
     {

@@ -17,6 +17,7 @@
  *    Toby Jaffey - Please refer to git log
  *    Julien Vermillard - Please refer to git log
  *    Bosch Software Innovations GmbH - Please refer to git log
+ *    Pascal Rieux - Please refer to git log
  *******************************************************************************/
 
 /*
@@ -70,7 +71,7 @@ extern "C" {
 void * lwm2m_malloc(size_t s);
 void   lwm2m_free(void * p);
 char * lwm2m_strdup(const char * str);
-char * lwm2m_strncmp(const char * s1, const char * s2, size_t n);
+int    lwm2m_strncmp(const char * s1, const char * s2, size_t n);
 #endif
 // This function must return the number of seconds elapsed since origin.
 // The origin (Epoch, system boot, etc...) does not matter as this
@@ -209,8 +210,12 @@ size_t lwm2m_boolToPlainText(bool data, char ** bufferP);
  * LWM2M_TLV_FLAG_TEXT_FORMAT specifies that lwm2m_tlv_t::value
  * is expressed or requested in plain text format.
  */
-#define LWM2M_TLV_FLAG_STATIC_DATA  0x01
-#define LWM2M_TLV_FLAG_TEXT_FORMAT  0x02
+#define LWM2M_TLV_FLAG_STATIC_DATA   0x01
+#define LWM2M_TLV_FLAG_TEXT_FORMAT   0x02
+
+#ifdef LWM2M_BOOTSTRAP
+#define LWM2M_TLV_FLAG_BOOTSTRAPPING 0x04
+#endif
 
 /*
  * Bits 7 and 6 of assigned values for LWM2M_TYPE_RESOURCE,
@@ -241,12 +246,12 @@ typedef enum
 
 typedef struct
 {
-    uint8_t           flags;
+    uint8_t     flags;
     lwm2m_tlv_type_t  type;
     lwm2m_data_type_t dataType;
-    uint16_t          id;
-    size_t            length;
-    uint8_t *         value;
+    uint16_t    id;
+    size_t      length;
+    uint8_t *   value;
 } lwm2m_tlv_t;
 
 lwm2m_tlv_t * lwm2m_tlv_new(int size);
@@ -327,7 +332,6 @@ typedef uint8_t (*lwm2m_create_callback_t) (uint16_t instanceId, int numData, lw
 typedef uint8_t (*lwm2m_delete_callback_t) (uint16_t instanceId, lwm2m_object_t * objectP);
 typedef void (*lwm2m_close_callback_t) (lwm2m_object_t * objectP);
 
-
 struct _lwm2m_object_t
 {
     uint16_t                 objID;
@@ -372,7 +376,8 @@ typedef enum
 typedef struct _lwm2m_server_
 {
     struct _lwm2m_server_ * next;   // matches lwm2m_list_t::next
-    uint16_t          shortID;      // matches lwm2m_list_t::id
+    uint16_t          secObjInstID; // matches lwm2m_list_t::id
+    uint16_t          shortID;      // servers short ID, may be 0 for bootstrap server
     time_t            lifetime;     // lifetime of the registration in sec or 0 if default value (86400 sec), also used as hold off time for the bootstrap server
     time_t            registration; // date of the last registration in sec
     lwm2m_binding_t   binding;      // client connection mode with this server
@@ -489,7 +494,6 @@ typedef struct _lwm2m_watcher_
 } lwm2m_watcher_t;
 
 typedef struct _lwm2m_observed_
-
 {
     struct _lwm2m_observed_ * next;
 
@@ -497,13 +501,26 @@ typedef struct _lwm2m_observed_
     lwm2m_watcher_t * watcherList;
 } lwm2m_observed_t;
 
+#ifdef LWM2M_BOOTSTRAP
 
+typedef enum {
+    NOT_BOOTSTRAPPED = 0,
+    BOOTSTRAP_REQUESTED,
+    BOOTSTRAP_CLIENT_HOLD_OFF,
+    BOOTSTRAP_INITIATED,
+    BOOTSTRAP_PENDING,
+    BOOTSTRAP_FINISHED,
+    BOOTSTRAP_FAILED,
+    BOOTSTRAPPED
+} lwm2m_bootstrap_state_t;
+
+#endif
 /*
  * LWM2M Context
  */
 
 // The session handle MUST uniquely identify a peer.
-typedef void * (*lwm2m_connect_server_callback_t)(uint16_t serverID, void * userData);
+typedef void * (*lwm2m_connect_server_callback_t)(uint16_t secObjInstID, void * userData);
 // The session handle MUST uniquely identify a peer.
 typedef uint8_t (*lwm2m_buffer_send_callback_t)(void * sessionH, uint8_t * buffer, size_t length, void * userData);
 
@@ -512,6 +529,10 @@ typedef struct
 {
     int    socket;
 #ifdef LWM2M_CLIENT_MODE
+#ifdef LWM2M_BOOTSTRAP
+    lwm2m_bootstrap_state_t bsState;
+    time_t              bsStart;
+#endif
     char *              endpointName;
     char *              msisdn;
     char *              altPath;

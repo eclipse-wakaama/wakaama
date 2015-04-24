@@ -4,7 +4,9 @@ project (lwm2mclient)
 
 SET(LIBLWM2M_DIR ${PROJECT_SOURCE_DIR}/../../core)
 
-add_definitions(-DLWM2M_CLIENT_MODE -DLWM2M_LITTLE_ENDIAN)
+#SET(CMAKE_C_FLAGS "-g")
+
+add_definitions(-DLWM2M_CLIENT_MODE -DWITH_LOGS -DLWM2M_LITTLE_ENDIAN -DLWM2M_BOOTSTRAP)
 
 include_directories (${LIBLWM2M_DIR} ${PROJECT_SOURCE_DIR}/../utils)
 
