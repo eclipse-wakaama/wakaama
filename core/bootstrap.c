@@ -16,13 +16,15 @@
  *
  *******************************************************************************/
 
+#ifdef LWM2M_BOOTSTRAP
+#ifdef LWM2M_CLIENT_MODE
+
 #include "internals.h"
 
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 
-#ifdef LWM2M_CLIENT_MODE
 #define PRV_QUERY_BUFFER_LENGTH 200
 
 static void prv_handleBootstrapReply(lwm2m_transaction_t * transaction, void * message)
@@ -215,4 +217,6 @@ void update_bootstrap_state(lwm2m_context_t * context,
         }
     }
 }
+#endif
+
 #endif

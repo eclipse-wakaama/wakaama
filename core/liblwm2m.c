@@ -329,14 +329,18 @@ int lwm2m_step(lwm2m_context_t * contextP,
     }
 
 #ifdef LWM2M_CLIENT_MODE
+#ifdef LWM2M_BOOTSTRAP
     if ((contextP->bsState != BOOTSTRAP_CLIENT_HOLD_OFF) &&
         (contextP->bsState != BOOTSTRAP_PENDING) &&
         (contextP->bsState != BOOTSTRAP_FINISHED) &&
         (contextP->bsState != BOOTSTRAP_FAILED))
     {
+#endif
         registration_update(contextP, tv_sec, timeoutP);
+#ifdef LWM2M_BOOTSTRAP
     }
     update_bootstrap_state(contextP, tv_sec, timeoutP);
+#endif
 #endif
 
 #ifdef LWM2M_SERVER_MODE

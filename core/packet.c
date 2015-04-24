@@ -125,6 +125,7 @@ static coap_status_t handle_request(lwm2m_context_t * contextP,
         result = handle_dm_request(contextP, uriP, fromSessionH, message, response);
         break;
 
+#ifdef LWM2M_BOOTSTRAP
     case LWM2M_URI_FLAG_DELETE_ALL:
         if (COAP_DELETE != message->code)
         {
@@ -143,7 +144,7 @@ static coap_status_t handle_request(lwm2m_context_t * contextP,
             result = COAP_IGNORE;
         }
         break;
-
+#endif
 #endif
 
 #ifdef LWM2M_SERVER_MODE

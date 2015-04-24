@@ -61,19 +61,26 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
 {
     coap_status_t result;
     lwm2m_server_t * serverP = NULL;
+#ifdef LWM2M_BOOTSTRAP
     lwm2m_server_t * bsServerP = NULL;
+#endif
 
     serverP = prv_findServer(contextP, fromSessionH);
     if (NULL == serverP)
     {
+#ifdef LWM2M_BOOTSTRAP
         bsServerP = utils_findBootstrapServer(contextP, fromSessionH);
         if (NULL == bsServerP)
         {
             // No server found
             return COAP_IGNORE;
         }
+#else
+        return COAP_IGNORE;
+#endif
     }
 
+#ifdef LWM2M_BOOTSTRAP
     if (contextP->bsState != BOOTSTRAP_PENDING)
     {
         if (NULL != bsServerP)
@@ -96,6 +103,7 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
             return UNAUTHORIZED_4_01;
         }
     }
+#endif
 
     switch (message->code)
     {
@@ -126,9 +134,10 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
 
     case COAP_POST:
         {
+#ifdef LWM2M_BOOTSTRAP
             /* no POST during bootstrap */
             if (contextP->bsState == BOOTSTRAP_PENDING) return METHOD_NOT_ALLOWED_4_05;
-
+#endif
             if (!LWM2M_URI_IS_SET_INSTANCE(uriP))
             {
                 result = object_create(contextP, uriP, (char*)message->payload, message->payload_len);
@@ -173,6 +182,7 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
         {
             if (LWM2M_URI_IS_SET_INSTANCE(uriP))
             {
+#ifdef LWM2M_BOOTSTRAP
                 if (contextP->bsState == BOOTSTRAP_PENDING && object_isInstanceNew(contextP, uriP->objectId, uriP->instanceId))
                 {
                     result = object_create(contextP, uriP, (char*)message->payload, message->payload_len);
@@ -182,6 +192,7 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
                     }
                 }
                 else
+#endif
                 {
                     result = object_write(contextP, uriP, (char*)message->payload, message->payload_len);
                 }

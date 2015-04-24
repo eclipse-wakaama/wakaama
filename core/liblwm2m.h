@@ -215,7 +215,10 @@ int lwm2m_boolToPlainText(bool data, char ** bufferP);
  */
 #define LWM2M_TLV_FLAG_STATIC_DATA   0x01
 #define LWM2M_TLV_FLAG_TEXT_FORMAT   0x02
+
+#ifdef LWM2M_BOOTSTRAP
 #define LWM2M_TLV_FLAG_BOOTSTRAPPING 0x04
+#endif
 
 /*
  * Bits 7 and 6 of assigned values for LWM2M_TYPE_RESOURCE,
@@ -498,6 +501,8 @@ typedef struct _lwm2m_observed_
     lwm2m_watcher_t * watcherList;
 } lwm2m_observed_t;
 
+#ifdef LWM2M_BOOTSTRAP
+
 typedef enum {
     NOT_BOOTSTRAPPED = 0,
     BOOTSTRAP_REQUESTED,
@@ -509,6 +514,7 @@ typedef enum {
     BOOTSTRAPPED
 } lwm2m_bootstrap_state_t;
 
+#endif
 /*
  * LWM2M Context
  */
@@ -523,8 +529,10 @@ typedef struct
 {
     int    socket;
 #ifdef LWM2M_CLIENT_MODE
+#ifdef LWM2M_BOOTSTRAP
     lwm2m_bootstrap_state_t bsState;
     time_t              bsStart;
+#endif
     char *              endpointName;
     char *              msisdn;
     char *              altPath;

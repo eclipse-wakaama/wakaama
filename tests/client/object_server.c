@@ -185,9 +185,11 @@ static uint8_t prv_server_write(uint16_t instanceId,
     server_instance_t * targetP;
     int i;
     uint8_t result;
+#ifdef LWM2M_BOOTSTRAP
     bool bootstrapPending;
 
     bootstrapPending = (dataArray->flags & LWM2M_TLV_FLAG_BOOTSTRAPPING) != 0;
+#endif
     targetP = (server_instance_t *)lwm2m_list_find(objectP->instanceList, instanceId);
     if (NULL == targetP)
     {
@@ -200,11 +202,13 @@ static uint8_t prv_server_write(uint16_t instanceId,
         switch (dataArray[i].id)
         {
         case LWM2M_SERVER_SHORT_ID_ID:
+#ifdef LWM2M_BOOTSTRAP
             if (bootstrapPending)
             {
                 result = prv_set_int_value(dataArray + i, (uint32_t *)&(targetP->shortServerId));
             }
             else
+#endif
             {
 #ifdef WITH_LOGS
                 fprintf(stderr, "    >>>> server is not allowed to write short ID\r\n");

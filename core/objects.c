@@ -64,7 +64,11 @@ static lwm2m_object_t * prv_find_object(lwm2m_context_t * contextP,
 {
     int i;
 
-    if ((contextP->bsState != BOOTSTRAP_PENDING) && (Id == LWM2M_SECURITY_OBJECT_ID))
+    if (
+#ifdef LWM2M_BOOTSTRAP
+        (contextP->bsState != BOOTSTRAP_PENDING) &&
+#endif
+        (Id == LWM2M_SECURITY_OBJECT_ID))
     {
         return NULL;
     }
@@ -90,7 +94,9 @@ coap_status_t object_read(lwm2m_context_t * contextP,
     lwm2m_tlv_t * tlvP = NULL;
     int size = 0;
 
+#ifdef LWM2M_BOOTSTRAP
     if (contextP->bsState == BOOTSTRAP_PENDING) return METHOD_NOT_ALLOWED_4_05;
+#endif
 
     targetP = prv_find_object(contextP, uriP->objectId);
     if (NULL == targetP) return NOT_FOUND_4_04;
@@ -237,14 +243,18 @@ coap_status_t object_write(lwm2m_context_t * contextP,
     }
     if (result == NO_ERROR)
     {
+#ifdef LWM2M_BOOTSTRAP
         if (contextP->bsState == BOOTSTRAP_PENDING)
         {
             tlvP->flags |= LWM2M_TLV_FLAG_BOOTSTRAPPING;
         }
+#endif
         result = targetP->writeFunc(uriP->instanceId, size, tlvP, targetP);
         lwm2m_tlv_free(size, tlvP);
     }
-    if (contextP->bsState == BOOTSTRAP_PENDING) {
+#ifdef LWM2M_BOOTSTRAP
+    if (contextP->bsState == BOOTSTRAP_PENDING)
+    {
         if (result == COAP_204_CHANGED)
         {
             reset_bootstrap_timer(contextP);
@@ -254,6 +264,7 @@ coap_status_t object_write(lwm2m_context_t * contextP,
             bootstrap_failed(contextP);
         }
     }
+#endif
     return result;
 }
 
@@ -264,7 +275,9 @@ coap_status_t object_execute(lwm2m_context_t * contextP,
 {
     lwm2m_object_t * targetP;
 
+#ifdef LWM2M_BOOTSTRAP
     if (contextP->bsState == BOOTSTRAP_PENDING) return METHOD_NOT_ALLOWED_4_05;
+#endif
 
     targetP = prv_find_object(contextP, uriP->objectId);
     if (NULL == targetP) return NOT_FOUND_4_04;
@@ -308,10 +321,12 @@ coap_status_t object_create(lwm2m_context_t * contextP,
 
     size = lwm2m_tlv_parse(buffer, length, &tlvP);
     if (size == 0) return COAP_500_INTERNAL_SERVER_ERROR;
+#ifdef LWM2M_BOOTSTRAP
     if (contextP->bsState == BOOTSTRAP_PENDING)
     {
         tlvP->flags |= LWM2M_TLV_FLAG_BOOTSTRAPPING;
     }
+#endif
     result = targetP->createFunc(uriP->instanceId, size, tlvP, targetP);
     lwm2m_tlv_free(size, tlvP);
 

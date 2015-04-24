@@ -154,9 +154,11 @@ void handle_value_changed(lwm2m_context_t * lwm2mH,
                 return;
             }
             tlvP->flags = LWM2M_TLV_FLAG_STATIC_DATA | LWM2M_TLV_FLAG_TEXT_FORMAT;
+#ifdef LWM2M_BOOTSTRAP
             if (lwm2mH->bsState == BOOTSTRAP_PENDING) {
                 tlvP->flags |= LWM2M_TLV_FLAG_BOOTSTRAPPING;
             }
+#endif
             tlvP->id = uri->resourceId;
             tlvP->length = valueLength;
             tlvP->value = (uint8_t*) value;
@@ -391,6 +393,8 @@ static void update_battery_level(lwm2m_context_t * context)
         next_change_time = tv_sec + level + 10;
     }
 }
+
+#ifdef LWM2M_BOOTSTRAP
 
 static void prv_initiate_bootstrap(char * buffer,
                                    void * user_data)
@@ -627,6 +631,7 @@ static void close_backup_object()
         }
     }
 }
+#endif
 
 int main(int argc, char *argv[])
 {
@@ -641,8 +646,10 @@ int main(int argc, char *argv[])
     int lifetime = 300;
     int batterylevelchanging = 1;
     time_t reboot_time = 0;
+#ifdef LWM2M_BOOTSTRAP
     char* bootstrapRequested = "no";
     lwm2m_bootstrap_state_t previousBootstrapState = NOT_BOOTSTRAPPED;
+#endif
 
     /*
      * The function start by setting up the command line interface (which may or not be useful depending on your project)
@@ -659,10 +666,12 @@ int main(int argc, char *argv[])
                                                         "   DATA: (optional) new value\r\n", prv_change, NULL},
             {"update", "Trigger a registration update", " update SERVER\r\n"
                                                         "   SERVER: short server id such as 123\r\n", prv_update, NULL},
+#ifdef LWM2M_BOOTSTRAP
             {"bootstrap", "Initiate a DI bootstrap process", NULL, prv_initiate_bootstrap, NULL},
             {"disp", "Display current objects/instances/resources", NULL, prv_display_objects, NULL},
             {"dispb", "Display current backup of objects/instances/resources\r\n"
                     "\t(only security and server objects are backupped)", NULL, prv_display_backup, NULL},
+#endif
             {"quit", "Quit the client gracefully.", NULL, prv_quit, NULL},
             {"^C", "Quit the client abruptly (without sending a de-register message).", NULL, NULL, NULL},
 
@@ -677,8 +686,9 @@ int main(int argc, char *argv[])
     if (argc >= 5) name       = argv[4];
     if (argc >= 6) sscanf(argv[5], "%d", &lifetime);
     if (argc >= 7) batterylevelchanging = argv[6][0] == '1' ? 1 : 0;
+#ifdef LWM2M_BOOTSTRAP
     if (argc >= 8) bootstrapRequested = argv[7];
-
+#endif
     /*
      *This call an internal function that create an IPV6 socket on the port 5683.
      */
@@ -697,7 +707,11 @@ int main(int argc, char *argv[])
     char serverUri[50];
     int serverId = 123;
     sprintf (serverUri, "coap://%s:%s", server, serverPort);
+#ifdef LWM2M_BOOTSTRAP
     objArray[0] = get_security_object(serverId, serverUri, strcmp(bootstrapRequested, "bootstrap") == 0 ? true : false);
+#else
+    objArray[0] = get_security_object(serverId, serverUri, false);
+#endif
     if (NULL == objArray[0])
     {
         fprintf(stderr, "Failed to create security object\r\n");
@@ -787,6 +801,7 @@ int main(int argc, char *argv[])
         return -1;
     }
 
+#ifdef LWM2M_BOOTSTRAP
     /*
      * Bootstrap state initialization
      */
@@ -797,6 +812,7 @@ int main(int argc, char *argv[])
     else {
         lwm2mH->bsState = NOT_BOOTSTRAPPED;
     }
+#endif
 
     /*
      * We configure the liblwm2m library with the name of the client - which shall be unique for each client -
@@ -894,8 +910,9 @@ int main(int argc, char *argv[])
             fprintf(stderr, "lwm2m_step() failed: 0x%X\r\n", result);
             return -1;
         }
+#ifdef LWM2M_BOOTSTRAP
         update_bootstrap_info(&previousBootstrapState, lwm2mH);
-
+#endif
         /*
          * This part will set up an interruption until an event happen on SDTIN or the socket until "tv" timed out (set
          * with the precedent function)
@@ -1008,7 +1025,9 @@ int main(int argc, char *argv[])
      * Finally when the loop is left smoothly - asked by user in the command line interface - we unregister our client from it
      */
     if (g_quit == 1) {
+#ifdef LWM2M_BOOTSTRAP
         close_backup_object();
+#endif
         lwm2m_close(lwm2mH);
     }
     close(data.sock);

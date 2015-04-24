@@ -341,6 +341,7 @@ void registration_update(lwm2m_context_t * contextP,
 {
     time_t nextUpdate;
     lwm2m_server_t * targetP = contextP->serverList;
+#ifdef LWM2M_BOOTSTRAP
     bool allServerFailed = true;
     bool serverRegistered = false;
 
@@ -355,6 +356,7 @@ void registration_update(lwm2m_context_t * contextP,
         else if (STATE_REG_FAILED != targetP->status) allServerFailed = false;
         targetP = targetP->next;
     }
+#endif
 
     targetP = contextP->serverList;
     while (targetP != NULL)
@@ -399,8 +401,10 @@ void registration_update(lwm2m_context_t * contextP,
             case STATE_DEREG_PENDING:
                 break;
             case STATE_REG_FAILED:
+#ifdef LWM2M_BOOTSTRAP
                 if (serverRegistered || NULL == contextP->bootstrapServerList)
                 {
+#endif
                     if (targetP->registration + targetP->lifetime <= currentTime)
                     {
                         LOG("Retry registration...\r\n");
@@ -416,11 +420,14 @@ void registration_update(lwm2m_context_t * contextP,
                             *timeoutP = interval;
                         }
                     }
+#ifdef LWM2M_BOOTSTRAP
                 }
+#endif
                 break;
         }
         targetP = targetP->next;
     }
+#ifdef LWM2M_BOOTSTRAP
     if (allServerFailed && NULL != contextP->bootstrapServerList)
     {
         if (BOOTSTRAPPED == contextP->bsState || NOT_BOOTSTRAPPED == contextP->bsState)
@@ -428,6 +435,7 @@ void registration_update(lwm2m_context_t * contextP,
             contextP->bsState = BOOTSTRAP_REQUESTED;
         }
     }
+#endif
 }
 
 static void prv_handleDeregistrationReply(lwm2m_transaction_t * transacP,
