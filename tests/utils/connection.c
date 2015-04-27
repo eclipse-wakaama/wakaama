@@ -12,6 +12,7 @@
  *
  * Contributors:
  *    David Navarro, Intel Corporation - initial API and implementation
+ *    Pascal Rieux - Please refer to git log
  *    
  *******************************************************************************/
 
@@ -19,7 +20,6 @@
 #include <string.h>
 #include <ctype.h>
 #include "connection.h"
-
 
 int create_socket(const char * portStr)
 {
@@ -132,11 +132,13 @@ connection_t * connection_create(connection_t * connList,
             }
         }
     }
-
     if (s >= 0)
     {
         connP = connection_new_incoming(connList, sock, sa, sl);
         close(s);
+    }
+    if (NULL != servinfo) {
+        free(servinfo);
     }
 
     return connP;
@@ -144,14 +146,14 @@ connection_t * connection_create(connection_t * connList,
 
 void connection_free(connection_t * connList)
 {
-    if (connList != NULL)
+    while (connList != NULL)
     {
         connection_t * nextP;
 
         nextP = connList->next;
         free(connList);
 
-        connection_free(nextP);
+        connList = nextP;
     }
 }
 

@@ -383,7 +383,7 @@ int lwm2m_tlv_parse(char * buffer,
 
     *dataP = NULL;
 
-    while (0 != (result = lwm2m_decodeTLV(buffer + index, bufferLen - index, &type, &id, &dataIndex, &dataLen)))
+    while (0 != (result = lwm2m_decodeTLV((uint8_t*)buffer + index, bufferLen - index, &type, &id, &dataIndex, &dataLen)))
     {
         lwm2m_tlv_t * newTlvP;
 
@@ -420,7 +420,7 @@ int lwm2m_tlv_parse(char * buffer,
         {
             (*dataP)[size].flags = LWM2M_TLV_FLAG_STATIC_DATA;
             (*dataP)[size].length = dataLen;
-            (*dataP)[size].value = buffer + index + dataIndex;
+            (*dataP)[size].value = (uint8_t*)buffer + index + dataIndex;
         }
         size++;
         index += result;
@@ -506,7 +506,7 @@ int lwm2m_tlv_serialize(int size,
                 }
                 else
                 {
-                    headerLen = prv_create_header(*bufferP + index, tlvP[i].type, tlvP[i].id, tmpLength);
+                    headerLen = prv_create_header((uint8_t*)(*bufferP) + index, tlvP[i].type, tlvP[i].id, tmpLength);
                     index += headerLen;
                     memcpy(*bufferP + index, tmpBuffer, tmpLength);
                     index += tmpLength;
@@ -518,7 +518,7 @@ int lwm2m_tlv_serialize(int size,
         case LWM2M_TYPE_RESOURCE_INSTANCE:
         case LWM2M_TYPE_RESOURCE:
             {
-                headerLen = prv_create_header(*bufferP + index, tlvP[i].type, tlvP[i].id, tlvP[i].length);
+                headerLen = prv_create_header((uint8_t*)(*bufferP) + index, tlvP[i].type, tlvP[i].id, tlvP[i].length);
                 if (headerLen == 0)
                 {
                     length = 0;
@@ -613,7 +613,7 @@ int lwm2m_tlv_decode_int(lwm2m_tlv_t * tlvP,
     }
     else
     {
-        result = lwm2m_opaqueToInt(tlvP->value, tlvP->length, dataP);
+        result = lwm2m_opaqueToInt((char*)tlvP->value, tlvP->length, dataP);
         if (result == tlvP->length)
         {
             result = 1;
@@ -709,7 +709,7 @@ int lwm2m_tlv_decode_float(lwm2m_tlv_t * tlvP,
     }
     else
     {
-        result = lwm2m_opaqueToFloat(tlvP->value, tlvP->length, dataP);
+        result = lwm2m_opaqueToFloat((char*)tlvP->value, tlvP->length, dataP);
         if (result == tlvP->length)
         {
             result = 1;
@@ -800,8 +800,6 @@ void lwm2m_tlv_include(lwm2m_tlv_t * subTlvP,
                        size_t count,
                        lwm2m_tlv_t * tlvP)
 {
-    int i;
-
     if (subTlvP == NULL || count == 0) return;
 
     switch(subTlvP[0].type)

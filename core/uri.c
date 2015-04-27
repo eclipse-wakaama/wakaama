@@ -15,6 +15,7 @@
  *    Fabien Fleutot - Please refer to git log
  *    Toby Jaffey - Please refer to git log
  *    Bosch Software Innovations GmbH - Please refer to git log
+ *    Pascal Rieux - Please refer to git log
  *    
  *******************************************************************************/
 
@@ -99,22 +100,20 @@ lwm2m_uri_t * lwm2m_decode_uri(char * altPath,
     lwm2m_uri_t * uriP;
     int readNum;
 
-    if (NULL == uriPath) return NULL;
-
     uriP = (lwm2m_uri_t *)lwm2m_malloc(sizeof(lwm2m_uri_t));
     if (NULL == uriP) return NULL;
 
     memset(uriP, 0, sizeof(lwm2m_uri_t));
 
     // Read object ID
-    if (URI_REGISTRATION_SEGMENT_LEN == uriPath->len
+    if (NULL != uriPath && URI_REGISTRATION_SEGMENT_LEN == uriPath->len
      && 0 == strncmp(URI_REGISTRATION_SEGMENT, uriPath->data, uriPath->len))
     {
         uriP->flag |= LWM2M_URI_FLAG_REGISTRATION;
         uriPath = uriPath->next;
         if (uriPath == NULL) return uriP;
     }
-    else if (URI_BOOTSTRAP_SEGMENT_LEN == uriPath->len
+    else if (NULL != uriPath && URI_BOOTSTRAP_SEGMENT_LEN == uriPath->len
      && 0 == strncmp(URI_BOOTSTRAP_SEGMENT, uriPath->data, uriPath->len))
     {
         uriP->flag |= LWM2M_URI_FLAG_BOOTSTRAP;
@@ -123,20 +122,32 @@ lwm2m_uri_t * lwm2m_decode_uri(char * altPath,
         return uriP;
     }
 
-    // Read altPath if any
-    if (altPath != NULL)
+    if ((uriP->flag & LWM2M_URI_MASK_TYPE) != LWM2M_URI_FLAG_REGISTRATION)
     {
-        int i;
-
-        for (i = 0 ; i < uriPath->len ; i++)
+        // Read altPath if any
+        if (altPath != NULL)
         {
-            if (uriPath->data[i] != altPath[i+1])
+            int i;
+            if (NULL == uriPath)
             {
                 lwm2m_free(uriP);
                 return NULL;
             }
+            for (i = 0 ; i < uriPath->len ; i++)
+            {
+                if (uriPath->data[i] != altPath[i+1])
+                {
+                    lwm2m_free(uriP);
+                    return NULL;
+                }
+            }
+            uriPath = uriPath->next;
         }
-        uriPath = uriPath->next;
+        if (NULL == uriPath || uriPath->len == 0)
+        {
+            uriP->flag |= LWM2M_URI_FLAG_DELETE_ALL;
+            return uriP;
+        }
     }
 
     readNum = prv_get_number(uriPath->data, uriPath->len);

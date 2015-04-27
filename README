@@ -82,3 +82,6 @@ The lwm2mclient features four LWM2M objects:
 The lwm2mclient opens udp port 56830 and tries to register to a LWM2M Server at
 127.0.0.1:5683. It features a basic command line interface. Type 'help' for a
 list of supported commands.
+
+To launch a bootstrap session:
+./lwm2mclient <local port> <bootstrap server IP> <bootstrap server port> <client name> 0 0 bootstrap

@@ -13,6 +13,7 @@
  * Contributors:
  *    David Navarro, Intel Corporation - initial API and implementation
  *    Bosch Software Innovations GmbH - Please refer to git log
+ *    Pascal Rieux - Please refer to git log
  *    
  *******************************************************************************/
 
@@ -43,6 +44,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 #define LWM2M_SECURITY_URI_ID                 0
 #define LWM2M_SECURITY_BOOTSTRAP_ID           1
@@ -57,14 +59,14 @@
 #define LWM2M_SECURITY_SHORT_SERVER_ID        10
 #define LWM2M_SECURITY_HOLD_OFF_ID            11
 
-
 typedef struct _security_instance_
 {
-    struct _server_instance_ * next;        // matches lwm2m_list_t::next
-    uint16_t                   instanceId;  // matches lwm2m_list_t::id
-    char *                  uri;
-    bool                    isBootstrap;
-    uint16_t                shortID;
+    struct _security_instance_ * next;        // matches lwm2m_list_t::next
+    uint16_t                     instanceId;  // matches lwm2m_list_t::id
+    char *                       uri;
+    bool                         isBootstrap;
+    uint16_t                     shortID;
+    uint32_t                     clientHoldOffTime;
 } security_instance_t;
 
 static uint8_t prv_get_value(lwm2m_tlv_t * tlvP,
@@ -148,7 +150,7 @@ static uint8_t prv_get_value(lwm2m_tlv_t * tlvP,
         else return COAP_500_INTERNAL_SERVER_ERROR;
 
     case LWM2M_SECURITY_HOLD_OFF_ID:
-        lwm2m_tlv_encode_int(30, tlvP);
+        lwm2m_tlv_encode_int(targetP->clientHoldOffTime, tlvP);
         if (0 != tlvP->length) return COAP_205_CONTENT;
         else return COAP_500_INTERNAL_SERVER_ERROR;
 
@@ -205,6 +207,8 @@ static uint8_t prv_security_read(uint16_t instanceId,
     return result;
 }
 
+#ifdef LWM2M_BOOTSTRAP
+
 static uint8_t prv_security_write(uint16_t instanceId,
                                   int numData,
                                   lwm2m_tlv_t * dataArray,
@@ -214,17 +218,22 @@ static uint8_t prv_security_write(uint16_t instanceId,
     int i;
     uint8_t result = COAP_204_CHANGED;
 
+    if ((dataArray->flags & LWM2M_TLV_FLAG_BOOTSTRAPPING) == 0) return COAP_401_UNAUTHORIZED;
+
     targetP = (security_instance_t *)lwm2m_list_find(objectP->instanceList, instanceId);
-    if (NULL == targetP) return COAP_404_NOT_FOUND;
+    if (NULL == targetP)
+    {
+        return COAP_404_NOT_FOUND;
+    }
 
     i = 0;
-    do
-    {
+    do {
         switch (dataArray[i].id)
         {
         case LWM2M_SECURITY_URI_ID:
             if (targetP->uri != NULL) lwm2m_free(targetP->uri);
             targetP->uri = (char *)lwm2m_malloc(dataArray[i].length + 1);
+            memset(targetP->uri, 0, dataArray[i].length + 1);
             if (targetP->uri != NULL)
             {
                 strncpy(targetP->uri, (char*)dataArray[i].value, dataArray[i].length);
@@ -311,10 +320,27 @@ static uint8_t prv_security_write(uint16_t instanceId,
         break;
 
         case LWM2M_SECURITY_HOLD_OFF_ID:
-            // Let just ignore this
-            result = COAP_204_CHANGED;
-            break;
+        {
+            int64_t value;
 
+            if (1 == lwm2m_tlv_decode_int(dataArray + i, &value))
+            {
+                if (value >= 0 && value <= 0xFFFF)
+                {
+                    targetP->clientHoldOffTime = value;
+                    result = COAP_204_CHANGED;
+                }
+                else
+                {
+                    result = COAP_406_NOT_ACCEPTABLE;
+                }
+            }
+            else
+            {
+                result = COAP_400_BAD_REQUEST;
+            }
+            break;
+        }
         default:
             return COAP_404_NOT_FOUND;
         }
@@ -365,20 +391,66 @@ static uint8_t prv_security_create(uint16_t instanceId,
 
     return result;
 }
-
+#endif
 
 static void prv_security_close(lwm2m_object_t * objectP)
 {
     while (objectP->instanceList != NULL)
     {
-        security_instance_t * targetP;
-
-        targetP = (security_instance_t *)objectP->instanceList;
+        security_instance_t * securityInstance = (security_instance_t *)objectP->instanceList;
         objectP->instanceList = objectP->instanceList->next;
-
-        lwm2m_free(targetP->uri);
-        lwm2m_free(targetP);
+        if (NULL != securityInstance->uri)
+        {
+            lwm2m_free(securityInstance->uri);
+        }
+        lwm2m_free(securityInstance);
     }
+}
+
+void copy_security_object(lwm2m_object_t * objectDest, lwm2m_object_t * objectSrc)
+{
+    memcpy(objectDest, objectSrc, sizeof(lwm2m_object_t));
+    objectDest->instanceList = NULL;
+    objectDest->userData = NULL;
+    security_instance_t * instanceSrc = (security_instance_t *)objectSrc->instanceList;
+    security_instance_t * previousInstanceDest = NULL;
+    while (instanceSrc != NULL)
+    {
+        security_instance_t * instanceDest = (security_instance_t *)lwm2m_malloc(sizeof(security_instance_t));
+        if (NULL == instanceDest)
+        {
+            return;
+        }
+        memcpy(instanceDest, instanceSrc, sizeof(security_instance_t));
+        instanceDest->uri = (char*)lwm2m_malloc(strlen(instanceSrc->uri) + 1);
+        strcpy(instanceDest->uri, instanceSrc->uri);
+        instanceSrc = (security_instance_t *)instanceSrc->next;
+        if (previousInstanceDest == NULL)
+        {
+            objectDest->instanceList = (lwm2m_list_t *)instanceDest;
+        }
+        else
+        {
+            previousInstanceDest->next = instanceDest;
+        }
+        previousInstanceDest = instanceDest;
+    }
+}
+
+void display_security_object(lwm2m_object_t * object)
+{
+#ifdef WITH_LOGS
+    fprintf(stdout, "  /%u: Security object, instances:\r\n", object->objID);
+    security_instance_t * instance = (security_instance_t *)object->instanceList;
+    while (instance != NULL)
+    {
+        fprintf(stdout, "    /%u/%u: instanceId: %u, uri: %s, isBootstrap: %s, shortId: %u, clientHoldOffTime: %u\r\n",
+                object->objID, instance->instanceId,
+                instance->instanceId, instance->uri, instance->isBootstrap ? "true" : "false",
+                instance->shortID, instance->clientHoldOffTime);
+        instance = (security_instance_t *)instance->next;
+    }
+#endif
 }
 
 lwm2m_object_t * get_security_object(int serverId, const char* serverUri, bool isBootstrap)
@@ -395,7 +467,7 @@ lwm2m_object_t * get_security_object(int serverId, const char* serverUri, bool i
 
         securityObj->objID = 0;
 
-        // Manually create an hardcoded server
+        // Manually create an hardcoded instance
         targetP = (security_instance_t *)lwm2m_malloc(sizeof(security_instance_t));
         if (NULL == targetP)
         {
@@ -409,13 +481,16 @@ lwm2m_object_t * get_security_object(int serverId, const char* serverUri, bool i
         strcpy(targetP->uri, serverUri);
         targetP->isBootstrap = isBootstrap;
         targetP->shortID = serverId;
+        targetP->clientHoldOffTime = 10;
 
         securityObj->instanceList = LWM2M_LIST_ADD(securityObj->instanceList, targetP);
 
         securityObj->readFunc = prv_security_read;
+#ifdef LWM2M_BOOTSTRAP
         securityObj->writeFunc = prv_security_write;
         securityObj->createFunc = prv_security_create;
         securityObj->deleteFunc = prv_security_delete;
+#endif
         securityObj->closeFunc = prv_security_close;
     }
 
@@ -423,18 +498,13 @@ lwm2m_object_t * get_security_object(int serverId, const char* serverUri, bool i
 }
 
 char * get_server_uri(lwm2m_object_t * objectP,
-                      uint16_t serverID)
+                      uint16_t secObjInstID)
 {
-    security_instance_t * targetP;
+    security_instance_t * targetP = (security_instance_t *)LWM2M_LIST_FIND(objectP->instanceList, secObjInstID);
 
-    targetP = (security_instance_t *)objectP->instanceList;
-    while (targetP != NULL)
+    if (NULL != targetP)
     {
-        if (targetP->shortID == serverID)
-        {
-            return lwm2m_strdup(targetP->uri);
-        }
-        targetP = (security_instance_t*)targetP->next;
+        return lwm2m_strdup(targetP->uri);
     }
 
     return NULL;
