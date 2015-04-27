@@ -154,7 +154,7 @@ static void prv_resetCounter(lwm2m_object_t* objectP, bool start)
 }
 
 static uint8_t prv_exec(uint16_t instanceId, uint16_t resourceId,
-                        char * buffer, int length, lwm2m_object_t * objectP)
+                        uint8_t * buffer, int length, lwm2m_object_t * objectP)
 {
     // this is a single instance object
     if (instanceId != 0)
@@ -183,7 +183,8 @@ static void prv_close(lwm2m_object_t * objectP)
 void conn_s_updateTxStatistic(lwm2m_object_t * objectP, uint16_t txDataByte, bool smsBased)
 {
     conn_s_data_t* myData = (conn_s_data_t*) (objectP->userData);
-    if (myData->collectDataStarted) {
+    if (myData->collectDataStarted)
+    {
         myData->txDataByte += txDataByte;
         myData->messageCount++;
         myData->avrMessageSize = (myData->txDataByte+myData->rxDataByte) /
@@ -197,7 +198,8 @@ void conn_s_updateTxStatistic(lwm2m_object_t * objectP, uint16_t txDataByte, boo
 void conn_s_updateRxStatistic(lwm2m_object_t * objectP, uint16_t rxDataByte, bool smsBased)
 {
     conn_s_data_t* myData = (conn_s_data_t*) (objectP->userData);
-    if (myData->collectDataStarted) {
+    if (myData->collectDataStarted)
+    {
         myData->rxDataByte += rxDataByte;
         myData->messageCount++;
         myData->avrMessageSize = (myData->txDataByte+myData->rxDataByte) /
@@ -210,7 +212,7 @@ void conn_s_updateRxStatistic(lwm2m_object_t * objectP, uint16_t rxDataByte, boo
 }
 
 
-lwm2m_object_t * get_object_conn_s()
+lwm2m_object_t * get_object_conn_s(void)
 {
     /*
      * The get_object_conn_s() function create the object itself and return

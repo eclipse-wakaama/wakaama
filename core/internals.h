@@ -15,6 +15,8 @@
  *    Fabien Fleutot - Please refer to git log
  *    Toby Jaffey - Please refer to git log
  *    Bosch Software Innovations GmbH - Please refer to git log
+ *    Pascal Rieux - Please refer to git log
+ *    
  *******************************************************************************/
 /*
  Copyright (c) 2013, 2014 Intel Corporation
@@ -82,6 +84,7 @@
 #define URI_BOOTSTRAP_SEGMENT_LEN       2
 
 #define LWM2M_URI_FLAG_DM           (uint8_t)0x00
+#define LWM2M_URI_FLAG_DELETE_ALL   (uint8_t)0x10
 #define LWM2M_URI_FLAG_REGISTRATION (uint8_t)0x20
 #define LWM2M_URI_FLAG_BOOTSTRAP    (uint8_t)0x40
 
@@ -102,17 +105,18 @@ typedef struct _obs_list_
 } obs_list_t;
 
 // defined in uri.c
-int lwm2m_get_number(const char * uriString, size_t uriLength);
+int lwm2m_get_number(char * uriString, size_t uriLength);
 lwm2m_uri_t * lwm2m_decode_uri(char * altPath, multi_option_t *uriPath);
+int prv_get_number(uint8_t * uriString, size_t uriLength);
 
 // defined in objects.c
-coap_status_t object_read(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, char ** bufferP, int * lengthP);
-coap_status_t object_write(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, char * buffer, int length);
-coap_status_t object_create(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, char * buffer, int length);
-coap_status_t object_execute(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, char * buffer, int length);
+coap_status_t object_read(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, uint8_t ** bufferP, size_t * lengthP);
+coap_status_t object_write(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, uint8_t * buffer, size_t length);
+coap_status_t object_create(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, uint8_t * buffer, size_t length);
+coap_status_t object_execute(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, uint8_t * buffer, size_t length);
 coap_status_t object_delete(lwm2m_context_t * contextP, lwm2m_uri_t * uriP);
 bool object_isInstanceNew(lwm2m_context_t * contextP, uint16_t objectId, uint16_t instanceId);
-int prv_getRegisterPayload(lwm2m_context_t * contextP, char * buffer, size_t length);
+int prv_getRegisterPayload(lwm2m_context_t * contextP, uint8_t * buffer, size_t length);
 int object_getServers(lwm2m_context_t * contextP);
 
 // defined in transaction.c
@@ -124,6 +128,7 @@ int transaction_handle_response(lwm2m_context_t * contextP, void * fromSessionH,
 
 // defined in management.c
 coap_status_t handle_dm_request(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, void * fromSessionH, coap_packet_t * message, coap_packet_t * response);
+coap_status_t handle_delete_all(lwm2m_context_t * context);
 
 // defined in observe.c
 coap_status_t handle_observe_request(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_server_t * serverP, coap_packet_t * message, coap_packet_t * response);
@@ -142,9 +147,24 @@ coap_status_t message_send(lwm2m_context_t * contextP, coap_packet_t * message, 
 void handle_observe_notify(lwm2m_context_t * contextP, void * fromSessionH, coap_packet_t * message);
 void observation_remove(lwm2m_client_t * clientP, lwm2m_observation_t * observationP);
 
+// defined in bootstrap.c
+void handle_bootstrap_ack(lwm2m_context_t * context, coap_packet_t * message, void * fromSessionH);
+void bootstrap_failed(lwm2m_context_t * context);
+void reset_bootstrap_timer(lwm2m_context_t * context);
+void update_bootstrap_state(lwm2m_context_t * contextP, uint32_t currentTime, time_t* timeoutP);
+void delete_bootstrap_server_list(lwm2m_context_t * contextP);
+
+// defined in liblwm2m.c
+void delete_transaction_list(lwm2m_context_t * context);
+void delete_server_list(lwm2m_context_t * context);
+void delete_observed_list(lwm2m_context_t * contextP);
+
 // defined in utils.c
 lwm2m_binding_t lwm2m_stringToBinding(uint8_t *buffer, size_t length);
-lwm2m_server_t * prv_findServer(lwm2m_context_t * contextP, void * fromSessionH);
 int prv_isAltPathValid(char * altPath);
+#ifdef LWM2M_CLIENT_MODE
+lwm2m_server_t * prv_findServer(lwm2m_context_t * contextP, void * fromSessionH);
+lwm2m_server_t * utils_findBootstrapServer(lwm2m_context_t * contextP, void * fromSessionH);
+#endif
 
 #endif

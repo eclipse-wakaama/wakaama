@@ -17,6 +17,7 @@
  *    Fabien Fleutot - Please refer to git log
  *    Simon Bernard - Please refer to git log
  *    Toby Jaffey - Please refer to git log
+ *    Pascal Rieux - Please refer to git log
  *
  *******************************************************************************/
 
@@ -124,14 +125,36 @@ static coap_status_t handle_request(lwm2m_context_t * contextP,
         result = handle_dm_request(contextP, uriP, fromSessionH, message, response);
         break;
 
-    case LWM2M_URI_FLAG_BOOTSTRAP:
-        result = NOT_IMPLEMENTED_5_01;
+#ifdef LWM2M_BOOTSTRAP
+    case LWM2M_URI_FLAG_DELETE_ALL:
+        if (COAP_DELETE != message->code)
+        {
+            result = BAD_REQUEST_4_00;
+        }
+        else if (NULL == utils_findBootstrapServer(contextP, fromSessionH))
+        {
+            result = UNAUTHORIZED_4_01;
+        }
+        else if (BOOTSTRAP_PENDING == contextP->bsState)
+        {
+            result = handle_delete_all(contextP);
+        }
+        else
+        {
+            result = COAP_IGNORE;
+        }
         break;
+#endif
 #endif
 
 #ifdef LWM2M_SERVER_MODE
-   case LWM2M_URI_FLAG_REGISTRATION:
+    case LWM2M_URI_FLAG_REGISTRATION:
         result = handle_registration_request(contextP, uriP, fromSessionH, message, response);
+        break;
+
+    case LWM2M_URI_FLAG_BOOTSTRAP:
+        LOG("Client initiated bootstrap. Not implemented.\r\n");
+        result = NOT_IMPLEMENTED_5_01;
         break;
 #endif
     default:
@@ -166,7 +189,14 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
     coap_error_code = coap_parse_message(message, buffer, (uint16_t)length);
     if (coap_error_code == NO_ERROR)
     {
-        LOG("  Parsed: ver %u, type %u, tkl %u, code %u, mid %u\r\n", message->version, message->type, message->token_len, message->code, message->mid);
+        if (message->code >= COAP_GET && message->code <= COAP_DELETE)
+        {
+            LOG("  Parsed: ver %u, type %u, tkl %u, code %u, mid %u\r\n", message->version, message->type, message->token_len, message->code, message->mid);
+        }
+        else
+        {
+            LOG("  Parsed: ver %u, type %u, tkl %u, code %u.%.2u, mid %u\r\n", message->version, message->type, message->token_len, message->code >> 5, message->code & 0x1F, message->mid);
+        }
         LOG("  Payload: %.*s\r\n\n", message->payload_len, message->payload);
 
         if (message->code >= COAP_GET && message->code <= COAP_DELETE)
@@ -174,8 +204,20 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
             uint32_t block_num = 0;
             uint16_t block_size = REST_MAX_CHUNK_SIZE;
             uint32_t block_offset = 0;
-            int32_t new_offset = 0;
+            int64_t new_offset = 0;
 
+#ifdef WITH_LOGS
+#ifdef LWM2M_CLIENT_MODE
+            switch (message->code)
+            {
+                case COAP_GET:    LOG("    => Received GET\n");    break;
+                case COAP_DELETE: LOG("    => Received DELETE\n"); break;
+                case COAP_POST:   LOG("    => Received POST\n");   break;
+                case COAP_PUT:    LOG("    => Received PUT\n");    break;
+                default:                                           break;
+            }
+#endif
+#endif
             /* prepare response */
             if (message->type == COAP_TYPE_CON)
             {
@@ -265,13 +307,8 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
         else
         {
             /* Responses */
-            lwm2m_transaction_t * transaction;
 
-            if (message->type == COAP_TYPE_ACK)
-            {
-                LOG("Received ACK\n");
-            }
-            else if (message->type == COAP_TYPE_RST)
+            if (message->type == COAP_TYPE_RST)
             {
                 LOG("Received RST\n");
                 /* Cancel possible subscriptions. */
@@ -287,6 +324,11 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
                     handle_observe_notify(contextP, fromSessionH, message);
                 }
 #endif
+            }
+
+            if (message->type == COAP_TYPE_ACK)
+            {
+                LOG("    => Received ACK\n");
             }
         } /* Request or Response */
 

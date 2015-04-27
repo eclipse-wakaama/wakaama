@@ -78,7 +78,7 @@ typedef struct
     uint16_t    resId;
     uint16_t    resInstId;
     _type       type;
-    char *      value;
+    uint8_t *      value;
     size_t      valueLen;
 } _record_t;
 
@@ -222,7 +222,7 @@ static int prv_split(char * buffer,
     return index;
 }
 
-static int prv_countItems(char * buffer,
+static int prv_countItems(uint8_t * buffer,
                           size_t bufferLen)
 {
     int count;
@@ -267,7 +267,7 @@ static int prv_countItems(char * buffer,
     return count;
 }
 
-static int prv_parseItem(char * buffer,
+static int prv_parseItem(uint8_t * buffer,
                          size_t bufferLen,
                          _record_t * recordP)
 {
@@ -553,7 +553,7 @@ error:
     return -1;
 }
 
-int lwm2m_tlv_parse_json(char * buffer,
+int lwm2m_tlv_parse_json(uint8_t * buffer,
                          size_t bufferLen,
                          lwm2m_tlv_t ** dataP)
 {
@@ -642,7 +642,7 @@ int lwm2m_tlv_parse_json(char * buffer,
 }
 
 static int prv_serializeValue(lwm2m_tlv_t * tlvP,
-                              char * buffer,
+                              uint8_t * buffer,
                               size_t bufferLen)
 {
     int res;
@@ -735,7 +735,7 @@ static int prv_serializeValue(lwm2m_tlv_t * tlvP,
 
 int lwm2m_tlv_serialize_json(int size,
                              lwm2m_tlv_t * tlvP,
-                             char * buffer,
+                             uint8_t * buffer,
                              size_t bufferLen)
 {
     int index;

@@ -15,6 +15,7 @@
  *    Fabien Fleutot - Please refer to git log
  *    David Navarro, Intel Corporation - Please refer to git log
  *    Bosch Software Innovations GmbH - Please refer to git log
+ *    Pascal Rieux - Please refer to git log
  *    
  *******************************************************************************/
 
@@ -34,7 +35,6 @@
  */
 
 #include "liblwm2m.h"
-
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -191,7 +191,7 @@ static uint8_t prv_firmware_write(uint16_t instanceId,
 
 static uint8_t prv_firmware_execute(uint16_t instanceId,
                                     uint16_t resourceId,
-                                    char * buffer,
+                                    uint8_t * buffer,
                                     int length,
                                     lwm2m_object_t * objectP)
 {
@@ -226,13 +226,33 @@ static uint8_t prv_firmware_execute(uint16_t instanceId,
     }
 }
 
-static void prv_firmware_close(lwm2m_object_t * objectP)
-{
-    lwm2m_free(objectP->userData);
-    lwm2m_free(objectP->instanceList);
+static void prv_firmware_close(lwm2m_object_t * objectP) {
+    if (NULL != objectP->userData)
+    {
+        lwm2m_free(objectP->userData);
+        objectP->userData = NULL;
+    }
+    if (NULL != objectP->instanceList)
+    {
+        lwm2m_free(objectP->instanceList);
+        objectP->instanceList = NULL;
+    }
 }
 
-lwm2m_object_t * get_object_firmware()
+void display_firmware_object(lwm2m_object_t * object)
+{
+#ifdef WITH_LOGS
+    firmware_data_t * data = (firmware_data_t *)object->userData;
+    fprintf(stdout, "  /%u: Firmware object:\r\n", object->objID);
+    if (NULL != data)
+    {
+        fprintf(stdout, "    state: %u, supported: %u, result: %u\r\n",
+                data->state, data->supported, data->result);
+    }
+#endif
+}
+
+lwm2m_object_t * get_object_firmware(void)
 {
     /*
      * The get_object_firmware function create the object itself and return a pointer to the structure that represent it.

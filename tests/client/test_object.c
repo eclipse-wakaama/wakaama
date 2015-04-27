@@ -16,6 +16,7 @@
  *    Fabien Fleutot - Please refer to git log
  *    Axel Lorente - Please refer to git log
  *    Achim Kraus, Bosch Software Innovations GmbH - Please refer to git log
+ *    Pascal Rieux - Please refer to git log
  *    
  *******************************************************************************/
 
@@ -66,6 +67,7 @@
  */
 
 #include "liblwm2m.h"
+#include "lwm2mclient.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -258,7 +260,7 @@ static uint8_t prv_create(uint16_t instanceId,
 
 static uint8_t prv_exec(uint16_t instanceId,
                         uint16_t resourceId,
-                        char * buffer,
+                        uint8_t * buffer,
                         int length,
                         lwm2m_object_t * objectP)
 {
@@ -284,12 +286,32 @@ static uint8_t prv_exec(uint16_t instanceId,
     }
 }
 
-static void prv_close(lwm2m_object_t * objectP)
+static void prv_test_close(lwm2m_object_t * object)
 {
-    LWM2M_LIST_FREE(objectP->instanceList);
+    LWM2M_LIST_FREE(object->instanceList);
+    if (object->userData != NULL)
+    {
+        lwm2m_free(object->userData);
+        object->userData = NULL;
+    }
 }
 
-lwm2m_object_t * get_test_object()
+void display_test_object(lwm2m_object_t * object)
+{
+#ifdef WITH_LOGS
+    fprintf(stdout, "  /%u: Test object, instances:\r\n", object->objID);
+    prv_instance_t * instance = (prv_instance_t *)object->instanceList;
+    while (instance != NULL)
+    {
+        fprintf(stdout, "    /%u/%u: shortId: %u, test: %u\r\n",
+                object->objID, instance->shortID,
+                instance->shortID, instance->test);
+        instance = (prv_instance_t *)instance->next;
+    }
+#endif
+}
+
+lwm2m_object_t * get_test_object(void)
 {
     lwm2m_object_t * testObj;
 
@@ -302,7 +324,7 @@ lwm2m_object_t * get_test_object()
 
         memset(testObj, 0, sizeof(lwm2m_object_t));
 
-        testObj->objID = 1024;
+        testObj->objID = TEST_OBJECT_ID;
         for (i=0 ; i < 3 ; i++)
         {
             targetP = (prv_instance_t *)lwm2m_malloc(sizeof(prv_instance_t));
@@ -320,12 +342,12 @@ lwm2m_object_t * get_test_object()
          * - The other one (deleteFunc) delete an instance by removing it from the instance list (and freeing the memory
          *   allocated to it)
          */
-        testObj->readFunc    = prv_read;
-        testObj->writeFunc   = prv_write;
-        testObj->createFunc  = prv_create;
-        testObj->deleteFunc  = prv_delete;
+        testObj->readFunc = prv_read;
+        testObj->writeFunc = prv_write;
         testObj->executeFunc = prv_exec;
-        testObj->closeFunc   = prv_close;
+        testObj->createFunc = prv_create;
+        testObj->deleteFunc = prv_delete;
+        testObj->closeFunc = prv_test_close;
     }
 
     return testObj;

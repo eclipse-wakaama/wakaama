@@ -204,7 +204,7 @@ typedef struct _multi_option_t {
   struct _multi_option_t *next;
   uint8_t is_static;
   uint8_t len;
-  char *data;
+  uint8_t *data;
 } multi_option_t;
 
 /* Parsed message struct */
@@ -221,15 +221,15 @@ typedef struct {
   coap_content_type_t content_type; /* Parse options once and store; allows setting options in random order  */
   uint32_t max_age;
   size_t proxy_uri_len;
-  const char *proxy_uri;
+  const uint8_t *proxy_uri;
   uint8_t etag_len;
   uint8_t etag[COAP_ETAG_LEN];
   size_t uri_host_len;
-  const char *uri_host;
+  const uint8_t *uri_host;
   multi_option_t *location_path;
   uint16_t uri_port;
   size_t location_query_len;
-  const char *location_query;
+  uint8_t *location_query;
   multi_option_t *uri_path;
   uint32_t observe;
   uint8_t token_len;
@@ -312,7 +312,6 @@ typedef struct {
     }
 
 /* To store error code and human-readable payload */
-extern coap_status_t coap_error_code;
 extern char *coap_error_message;
 
 uint16_t coap_get_mid(void);
@@ -369,7 +368,7 @@ int coap_get_header_location_path(void *packet, const char **path); /* In-place 
 int coap_set_header_location_path(void *packet, const char *path); /* Also splits optional query into Location-Query option. */
 
 int coap_get_header_location_query(void *packet, const char **query); /* In-place string might not be 0-terminated. */
-int coap_set_header_location_query(void *packet, const char *query);
+int coap_set_header_location_query(void *packet, char *query);
 
 int coap_get_header_observe(void *packet, uint32_t *observe);
 int coap_set_header_observe(void *packet, uint32_t observe);

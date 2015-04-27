@@ -17,6 +17,7 @@
  *    Toby Jaffey - Please refer to git log
  *    Julien Vermillard - Please refer to git log
  *    Bosch Software Innovations GmbH - Please refer to git log
+ *    Pascal Rieux - Please refer to git log
  *******************************************************************************/
 
 /*
@@ -70,7 +71,7 @@ extern "C" {
 void * lwm2m_malloc(size_t s);
 void   lwm2m_free(void * p);
 char * lwm2m_strdup(const char * str);
-char * lwm2m_strncmp(const char * s1, const char * s2, size_t n);
+int    lwm2m_strncmp(const char * s1, const char * s2, size_t n);
 #endif
 // This function must return the number of seconds elapsed since origin.
 // The origin (Epoch, system boot, etc...) does not matter as this
@@ -79,7 +80,7 @@ char * lwm2m_strncmp(const char * s1, const char * s2, size_t n);
 // In case of error, this must return a negative value.
 // Per POSIX specifications, time_t is a signed integer.
 // An implementation for POSIX systems is provided in utils.c
-time_t lwm2m_gettime();
+time_t lwm2m_gettime(void);
 
 /*
  * Error code
@@ -182,8 +183,8 @@ void lwm2m_list_free(lwm2m_list_t * head);
  */
 
 // defined in utils.c
-int lwm2m_PlainTextToInt64(char * buffer, int length, int64_t * dataP);
-int lwm2m_PlainTextToFloat64(char * buffer, int length, double * dataP);
+int lwm2m_PlainTextToInt64(uint8_t * buffer, int length, int64_t * dataP);
+int lwm2m_PlainTextToFloat64(uint8_t * buffer, int length, double * dataP);
 
 /*
  * These utility functions allocate a new buffer storing the plain text
@@ -191,9 +192,9 @@ int lwm2m_PlainTextToFloat64(char * buffer, int length, double * dataP);
  * or 0 in case of error.
  * There is no trailing '\0' character in the buffer.
  */
-size_t lwm2m_int64ToPlainText(int64_t data, char ** bufferP);
-size_t lwm2m_float64ToPlainText(double data, char ** bufferP);
-size_t lwm2m_boolToPlainText(bool data, char ** bufferP);
+size_t lwm2m_int64ToPlainText(int64_t data, uint8_t ** bufferP);
+size_t lwm2m_float64ToPlainText(double data, uint8_t ** bufferP);
+size_t lwm2m_boolToPlainText(bool data, uint8_t ** bufferP);
 
 
 /*
@@ -209,8 +210,12 @@ size_t lwm2m_boolToPlainText(bool data, char ** bufferP);
  * LWM2M_TLV_FLAG_TEXT_FORMAT specifies that lwm2m_tlv_t::value
  * is expressed or requested in plain text format.
  */
-#define LWM2M_TLV_FLAG_STATIC_DATA  0x01
-#define LWM2M_TLV_FLAG_TEXT_FORMAT  0x02
+#define LWM2M_TLV_FLAG_STATIC_DATA   0x01
+#define LWM2M_TLV_FLAG_TEXT_FORMAT   0x02
+
+#ifdef LWM2M_BOOTSTRAP
+#define LWM2M_TLV_FLAG_BOOTSTRAPPING 0x04
+#endif
 
 /*
  * Bits 7 and 6 of assigned values for LWM2M_TYPE_RESOURCE,
@@ -241,21 +246,21 @@ typedef enum
 
 typedef struct
 {
-    uint8_t           flags;
+    uint8_t     flags;
     lwm2m_tlv_type_t  type;
     lwm2m_data_type_t dataType;
-    uint16_t          id;
-    size_t            length;
-    uint8_t *         value;
+    uint16_t    id;
+    size_t      length;
+    uint8_t *   value;
 } lwm2m_tlv_t;
 
 lwm2m_tlv_t * lwm2m_tlv_new(int size);
-int lwm2m_tlv_parse(char * buffer, size_t bufferLen, lwm2m_tlv_t ** dataP);
-int lwm2m_tlv_serialize(int size, lwm2m_tlv_t * tlvP, char ** bufferP);
 #ifdef LWM2M_SUPPORT_JSON
-int lwm2m_tlv_parse_json(char * buffer, size_t bufferLen, lwm2m_tlv_t ** dataP);
-int lwm2m_tlv_serialize_json(int size, lwm2m_tlv_t * tlvP, char * buffer, size_t bufferLen);
+int lwm2m_tlv_parse_json(uint8_t * buffer, size_t bufferLen, lwm2m_tlv_t ** dataP);
+int lwm2m_tlv_serialize_json(int size, lwm2m_tlv_t * tlvP, uint8_t * buffer, size_t bufferLen);
 #endif
+int lwm2m_tlv_parse(uint8_t * buffer, size_t bufferLen, lwm2m_tlv_t ** dataP);
+int lwm2m_tlv_serialize(int size, lwm2m_tlv_t * tlvP, uint8_t ** bufferP);
 void lwm2m_tlv_free(int size, lwm2m_tlv_t * tlvP);
 
 void lwm2m_tlv_encode_int(int64_t data, lwm2m_tlv_t * tlvP);
@@ -272,12 +277,12 @@ void lwm2m_tlv_include(lwm2m_tlv_t * subTlvP, size_t count, lwm2m_tlv_t * tlvP);
  * the data. They return the size in bytes of the TLV record, 0 in case
  * of error.
  */
-int lwm2m_intToTLV(lwm2m_tlv_type_t type, int64_t data, uint16_t id, char * buffer, size_t buffer_len);
-int lwm2m_boolToTLV(lwm2m_tlv_type_t type, bool value, uint16_t id, char * buffer, size_t buffer_len);
-int lwm2m_opaqueToTLV(lwm2m_tlv_type_t type, uint8_t * dataP, size_t data_len, uint16_t id, char * buffer, size_t buffer_len);
+int lwm2m_intToTLV(lwm2m_tlv_type_t type, int64_t data, uint16_t id, uint8_t * buffer, size_t buffer_len);
+int lwm2m_boolToTLV(lwm2m_tlv_type_t type, bool value, uint16_t id, uint8_t * buffer, size_t buffer_len);
+int lwm2m_opaqueToTLV(lwm2m_tlv_type_t type, uint8_t * dataP, size_t data_len, uint16_t id, uint8_t * buffer, size_t buffer_len);
 int lwm2m_decodeTLV(uint8_t * buffer, size_t buffer_len, lwm2m_tlv_type_t * oType, uint16_t * oID, size_t * oDataIndex, size_t * oDataLen);
-int lwm2m_opaqueToInt(char * buffer, size_t buffer_len, int64_t * dataP);
-int lwm2m_opaqueToFloat(char * buffer, size_t buffer_len, double * dataP);
+int lwm2m_opaqueToInt(uint8_t * buffer, size_t buffer_len, int64_t * dataP);
+int lwm2m_opaqueToFloat(uint8_t * buffer, size_t buffer_len, double * dataP);
 
 /*
  * URI
@@ -311,7 +316,7 @@ typedef struct
 // Return the number of characters read from buffer or 0 in case of error.
 // Valid URIs: /1, /1/, /1/2, /1/2/, /1/2/3
 // Invalid URIs: /, //, //2, /1//, /1//3, /1/2/3/, /1/2/3/4
-int lwm2m_stringToUri(const char * buffer, size_t buffer_len, lwm2m_uri_t * uriP);
+int lwm2m_stringToUri(char * buffer, size_t buffer_len, lwm2m_uri_t * uriP);
 
 
 /*
@@ -326,11 +331,10 @@ typedef struct _lwm2m_object_t lwm2m_object_t;
 
 typedef uint8_t (*lwm2m_read_callback_t) (uint16_t instanceId, int * numDataP, lwm2m_tlv_t ** dataArrayP, lwm2m_object_t * objectP);
 typedef uint8_t (*lwm2m_write_callback_t) (uint16_t instanceId, int numData, lwm2m_tlv_t * dataArray, lwm2m_object_t * objectP);
-typedef uint8_t (*lwm2m_execute_callback_t) (uint16_t instanceId, uint16_t resourceId, char * buffer, int length, lwm2m_object_t * objectP);
+typedef uint8_t (*lwm2m_execute_callback_t) (uint16_t instanceId, uint16_t resourceId, uint8_t * buffer, int length, lwm2m_object_t * objectP);
 typedef uint8_t (*lwm2m_create_callback_t) (uint16_t instanceId, int numData, lwm2m_tlv_t * dataArray, lwm2m_object_t * objectP);
 typedef uint8_t (*lwm2m_delete_callback_t) (uint16_t instanceId, lwm2m_object_t * objectP);
 typedef void (*lwm2m_close_callback_t) (lwm2m_object_t * objectP);
-
 
 struct _lwm2m_object_t
 {
@@ -376,7 +380,8 @@ typedef enum
 typedef struct _lwm2m_server_
 {
     struct _lwm2m_server_ * next;   // matches lwm2m_list_t::next
-    uint16_t          shortID;      // matches lwm2m_list_t::id
+    uint16_t          secObjInstID; // matches lwm2m_list_t::id
+    uint16_t          shortID;      // servers short ID, may be 0 for bootstrap server
     time_t            lifetime;     // lifetime of the registration in sec or 0 if default value (86400 sec), also used as hold off time for the bootstrap server
     time_t            registration; // date of the last registration in sec
     lwm2m_binding_t   binding;      // client connection mode with this server
@@ -493,7 +498,6 @@ typedef struct _lwm2m_watcher_
 } lwm2m_watcher_t;
 
 typedef struct _lwm2m_observed_
-
 {
     struct _lwm2m_observed_ * next;
 
@@ -501,21 +505,37 @@ typedef struct _lwm2m_observed_
     lwm2m_watcher_t * watcherList;
 } lwm2m_observed_t;
 
+#ifdef LWM2M_BOOTSTRAP
 
+typedef enum {
+    NOT_BOOTSTRAPPED = 0,
+    BOOTSTRAP_REQUESTED,
+    BOOTSTRAP_CLIENT_HOLD_OFF,
+    BOOTSTRAP_INITIATED,
+    BOOTSTRAP_PENDING,
+    BOOTSTRAP_FINISHED,
+    BOOTSTRAP_FAILED,
+    BOOTSTRAPPED
+} lwm2m_bootstrap_state_t;
+
+#endif
 /*
  * LWM2M Context
  */
 
 // The session handle MUST uniquely identify a peer.
-typedef void * (*lwm2m_connect_server_callback_t)(uint16_t serverID, void * userData);
+typedef void * (*lwm2m_connect_server_callback_t)(uint16_t secObjInstID, void * userData);
 // The session handle MUST uniquely identify a peer.
 typedef uint8_t (*lwm2m_buffer_send_callback_t)(void * sessionH, uint8_t * buffer, size_t length, void * userData);
 
 
 typedef struct
 {
-    int    socket;
 #ifdef LWM2M_CLIENT_MODE
+#ifdef LWM2M_BOOTSTRAP
+    lwm2m_bootstrap_state_t bsState;
+    time_t              bsStart;
+#endif
     char *              endpointName;
     char *              msisdn;
     char *              altPath;
@@ -576,9 +596,9 @@ void lwm2m_set_monitoring_callback(lwm2m_context_t * contextP, lwm2m_result_call
 
 // Device Management APIs
 int lwm2m_dm_read(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, lwm2m_result_callback_t callback, void * userData);
-int lwm2m_dm_write(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, char * buffer, int length, lwm2m_result_callback_t callback, void * userData);
-int lwm2m_dm_execute(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, char * buffer, int length, lwm2m_result_callback_t callback, void * userData);
-int lwm2m_dm_create(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, char * buffer, int length, lwm2m_result_callback_t callback, void * userData);
+int lwm2m_dm_write(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, uint8_t * buffer, int length, lwm2m_result_callback_t callback, void * userData);
+int lwm2m_dm_execute(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, uint8_t * buffer, int length, lwm2m_result_callback_t callback, void * userData);
+int lwm2m_dm_create(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, uint8_t * buffer, int length, lwm2m_result_callback_t callback, void * userData);
 int lwm2m_dm_delete(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, lwm2m_result_callback_t callback, void * userData);
 
 // Information Reporting APIs

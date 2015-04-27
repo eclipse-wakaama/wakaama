@@ -16,6 +16,7 @@
  *    Toby Jaffey - Please refer to git log
  *    Benjamin Cabé - Please refer to git log
  *    Bosch Software Innovations GmbH - Please refer to git log
+ *    Pascal Rieux - Please refer to git log
  *    
  *******************************************************************************/
 
@@ -63,7 +64,14 @@ static lwm2m_object_t * prv_find_object(lwm2m_context_t * contextP,
 {
     int i;
 
-    if (Id == LWM2M_SECURITY_OBJECT_ID) return NULL;
+    if (
+#ifdef LWM2M_BOOTSTRAP
+        (contextP->bsState != BOOTSTRAP_PENDING) &&
+#endif
+        (Id == LWM2M_SECURITY_OBJECT_ID))
+    {
+        return NULL;
+    }
 
     for (i = 0 ; i < contextP->numObject ; i++)
     {
@@ -78,13 +86,17 @@ static lwm2m_object_t * prv_find_object(lwm2m_context_t * contextP,
 
 coap_status_t object_read(lwm2m_context_t * contextP,
                           lwm2m_uri_t * uriP,
-                          char ** bufferP,
-                          int * lengthP)
+                          uint8_t ** bufferP,
+                          size_t * lengthP)
 {
     coap_status_t result;
     lwm2m_object_t * targetP;
     lwm2m_tlv_t * tlvP = NULL;
     int size = 0;
+
+#ifdef LWM2M_BOOTSTRAP
+    if (contextP->bsState == BOOTSTRAP_PENDING) return METHOD_NOT_ALLOWED_4_05;
+#endif
 
     targetP = prv_find_object(contextP, uriP->objectId);
     if (NULL == targetP) return NOT_FOUND_4_04;
@@ -162,7 +174,7 @@ coap_status_t object_read(lwm2m_context_t * contextP,
          && tlvP->type == LWM2M_TYPE_RESOURCE
          && (tlvP->flags && LWM2M_TLV_FLAG_TEXT_FORMAT) != 0 )
         {
-            *bufferP = (char *)malloc(tlvP->length);
+            *bufferP = (uint8_t *)malloc(tlvP->length);
             if (*bufferP == NULL)
             {
                 result = COAP_500_INTERNAL_SERVER_ERROR;
@@ -186,47 +198,86 @@ coap_status_t object_read(lwm2m_context_t * contextP,
 
 coap_status_t object_write(lwm2m_context_t * contextP,
                            lwm2m_uri_t * uriP,
-                           char * buffer,
-                           int length)
+                           uint8_t * buffer,
+                           size_t length)
 {
-    coap_status_t result;
+    coap_status_t result = NO_ERROR;
     lwm2m_object_t * targetP;
     lwm2m_tlv_t * tlvP = NULL;
     int size = 0;
 
     targetP = prv_find_object(contextP, uriP->objectId);
-    if (NULL == targetP) return NOT_FOUND_4_04;
-    if (NULL == targetP->writeFunc) return METHOD_NOT_ALLOWED_4_05;
-
-    if (LWM2M_URI_IS_SET_RESOURCE(uriP))
+    if (NULL == targetP)
     {
-        size = 1;
-        tlvP = lwm2m_tlv_new(size);
-        if (tlvP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
-
-        tlvP->flags = LWM2M_TLV_FLAG_TEXT_FORMAT | LWM2M_TLV_FLAG_STATIC_DATA;
-        tlvP->type = LWM2M_TYPE_RESOURCE;
-        tlvP->id = uriP->resourceId;
-        tlvP->length = length;
-        tlvP->value = (uint8_t*)buffer;
+        result = NOT_FOUND_4_04;
+    }
+    else if (NULL == targetP->writeFunc)
+    {
+        result = METHOD_NOT_ALLOWED_4_05;
     }
     else
     {
-        size = lwm2m_tlv_parse(buffer, length, &tlvP);
-        if (size == 0) return COAP_500_INTERNAL_SERVER_ERROR;
-    }
-    result = targetP->writeFunc(uriP->instanceId, size, tlvP, targetP);
-    lwm2m_tlv_free(size, tlvP);
+        if (LWM2M_URI_IS_SET_RESOURCE(uriP))
+        {
+            size = 1;
+            tlvP = lwm2m_tlv_new(size);
+            if (tlvP == NULL)
+            {
+                return COAP_500_INTERNAL_SERVER_ERROR;
+            }
 
+            tlvP->flags = LWM2M_TLV_FLAG_TEXT_FORMAT | LWM2M_TLV_FLAG_STATIC_DATA;
+            tlvP->type = LWM2M_TYPE_RESOURCE;
+            tlvP->id = uriP->resourceId;
+            tlvP->length = length;
+            tlvP->value = (uint8_t *)buffer;
+        }
+        else
+        {
+            size = lwm2m_tlv_parse(buffer, length, &tlvP);
+            if (size == 0)
+            {
+                result = COAP_500_INTERNAL_SERVER_ERROR;
+            }
+        }
+    }
+    if (result == NO_ERROR)
+    {
+#ifdef LWM2M_BOOTSTRAP
+        if (contextP->bsState == BOOTSTRAP_PENDING)
+        {
+            tlvP->flags |= LWM2M_TLV_FLAG_BOOTSTRAPPING;
+        }
+#endif
+        result = targetP->writeFunc(uriP->instanceId, size, tlvP, targetP);
+        lwm2m_tlv_free(size, tlvP);
+    }
+#ifdef LWM2M_BOOTSTRAP
+    if (contextP->bsState == BOOTSTRAP_PENDING)
+    {
+        if (result == COAP_204_CHANGED)
+        {
+            reset_bootstrap_timer(contextP);
+        }
+        else
+        {
+            bootstrap_failed(contextP);
+        }
+    }
+#endif
     return result;
 }
 
 coap_status_t object_execute(lwm2m_context_t * contextP,
                              lwm2m_uri_t * uriP,
-                             char * buffer,
-                             int length)
+                             uint8_t * buffer,
+                             size_t length)
 {
     lwm2m_object_t * targetP;
+
+#ifdef LWM2M_BOOTSTRAP
+    if (contextP->bsState == BOOTSTRAP_PENDING) return METHOD_NOT_ALLOWED_4_05;
+#endif
 
     targetP = prv_find_object(contextP, uriP->objectId);
     if (NULL == targetP) return NOT_FOUND_4_04;
@@ -237,8 +288,8 @@ coap_status_t object_execute(lwm2m_context_t * contextP,
 
 coap_status_t object_create(lwm2m_context_t * contextP,
                             lwm2m_uri_t * uriP,
-                            char * buffer,
-                            int length)
+                            uint8_t * buffer,
+                            size_t length)
 {
     lwm2m_object_t * targetP;
     lwm2m_tlv_t * tlvP = NULL;
@@ -268,13 +319,14 @@ coap_status_t object_create(lwm2m_context_t * contextP,
         uriP->flag |= LWM2M_URI_FLAG_INSTANCE_ID;
     }
 
-    targetP = prv_find_object(contextP, uriP->objectId);
-    if (NULL == targetP) return NOT_FOUND_4_04;
-    if (NULL == targetP->writeFunc) return METHOD_NOT_ALLOWED_4_05;
-
     size = lwm2m_tlv_parse(buffer, length, &tlvP);
     if (size == 0) return COAP_500_INTERNAL_SERVER_ERROR;
-
+#ifdef LWM2M_BOOTSTRAP
+    if (contextP->bsState == BOOTSTRAP_PENDING)
+    {
+        tlvP->flags |= LWM2M_TLV_FLAG_BOOTSTRAPPING;
+    }
+#endif
     result = targetP->createFunc(uriP->instanceId, size, tlvP, targetP);
     lwm2m_tlv_free(size, tlvP);
 
@@ -289,6 +341,8 @@ coap_status_t object_delete(lwm2m_context_t * contextP,
     targetP = prv_find_object(contextP, uriP->objectId);
     if (NULL == targetP) return NOT_FOUND_4_04;
     if (NULL == targetP->deleteFunc) return METHOD_NOT_ALLOWED_4_05;
+
+    LOG("    Call to object_delete\r\n");
 
     return targetP->deleteFunc(uriP->instanceId, targetP);
 }
@@ -312,7 +366,7 @@ bool object_isInstanceNew(lwm2m_context_t * contextP,
 }
 
 int prv_getRegisterPayload(lwm2m_context_t * contextP,
-                           char * buffer,
+                           uint8_t * buffer,
                            size_t length)
 {
     int index;
@@ -325,7 +379,7 @@ int prv_getRegisterPayload(lwm2m_context_t * contextP,
     if ((contextP->altPath != NULL)
      && (contextP->altPath[0] != 0))
     {
-        result = snprintf(buffer, length, REG_ALT_PATH_LINK, contextP->altPath);
+        result = snprintf((char *)buffer, length, REG_ALT_PATH_LINK, contextP->altPath);
         if (result > 0 && result <= length)
         {
             index = result;
@@ -341,7 +395,7 @@ int prv_getRegisterPayload(lwm2m_context_t * contextP,
 
         if (contextP->objectList[i]->instanceList == NULL)
         {
-            result = snprintf(buffer + index, length - index,
+            result = snprintf((char *)buffer + index, length - index,
                               REG_OBJECT_PATH,
                               contextP->altPath?contextP->altPath:"", contextP->objectList[i]->objID);
             if (result > 0 && result <= length - index)
@@ -358,9 +412,7 @@ int prv_getRegisterPayload(lwm2m_context_t * contextP,
             lwm2m_list_t * targetP;
             for (targetP = contextP->objectList[i]->instanceList ; targetP != NULL ; targetP = targetP->next)
             {
-                int result;
-
-                result = snprintf(buffer + index, length - index,
+                result = snprintf((char *)buffer + index, length - index,
                                   REG_OBJECT_INSTANCE_PATH,
                                   contextP->altPath?contextP->altPath:"", contextP->objectList[i]->objID, targetP->id);
                 if (result > 0 && result <= length - index)
@@ -437,7 +489,6 @@ static int prv_getMandatoryInfo(lwm2m_object_t * objectP,
     tlvP[0].id = LWM2M_SERVER_LIFETIME_ID;
     tlvP[1].id = LWM2M_SERVER_BINDING_ID;
 
-
     if (objectP->readFunc(instanceID, &size, &tlvP, objectP) != COAP_205_CONTENT)
     {
         lwm2m_tlv_free(size, tlvP);
@@ -466,8 +517,8 @@ static int prv_getMandatoryInfo(lwm2m_object_t * objectP,
 
 int object_getServers(lwm2m_context_t * contextP)
 {
-    lwm2m_object_t * securityObjP;
-    lwm2m_object_t * serverObjP;
+    lwm2m_object_t * securityObjP = NULL;
+    lwm2m_object_t * serverObjP = NULL;
     lwm2m_list_t * securityInstP;   // instanceID of the server in the LWM2M Security Object
     int i;
 
@@ -482,6 +533,8 @@ int object_getServers(lwm2m_context_t * contextP)
             serverObjP = contextP->objectList[i];
         }
     }
+
+    if (NULL == securityObjP) return -1;
 
     securityInstP = securityObjP->instanceList;
     while (securityInstP != NULL)
@@ -506,8 +559,12 @@ int object_getServers(lwm2m_context_t * contextP)
         }
 
         targetP = (lwm2m_server_t *)lwm2m_malloc(sizeof(lwm2m_server_t));
-        if (targetP == NULL) return -1;
+        if (targetP == NULL) {
+            lwm2m_tlv_free(size, tlvP);
+            return -1;
+        }
         memset(targetP, 0, sizeof(lwm2m_server_t));
+        targetP->secObjInstID = securityInstP->id;
 
         if (0 == lwm2m_tlv_decode_bool(tlvP + 0, &isBootstrap))
         {
@@ -517,7 +574,7 @@ int object_getServers(lwm2m_context_t * contextP)
         }
 
         if (0 == lwm2m_tlv_decode_int(tlvP + 1, &value)
-         || value <= 0 || value >0xFFFF)                // 0 is forbidden as a Short Server ID
+         || value < (isBootstrap ? 0 : 1) || value > 0xFFFF)                // 0 is forbidden as a Short Server ID
         {
             lwm2m_free(targetP);
             lwm2m_tlv_free(size, tlvP);
@@ -528,12 +585,13 @@ int object_getServers(lwm2m_context_t * contextP)
         if (isBootstrap == true)
         {
             if (0 == lwm2m_tlv_decode_int(tlvP + 2, &value)
-             || value < 0 || value >0xFFFFFFFF)             // This is an implementation limit
+             || value < 0 || value > 0xFFFFFFFF)             // This is an implementation limit
             {
                 lwm2m_free(targetP);
                 lwm2m_tlv_free(size, tlvP);
                 return -1;
             }
+            // lifetime of a bootstrap server is set to ClientHoldOffTime
             targetP->lifetime = value;
 
             contextP->bootstrapServerList = (lwm2m_server_t*)LWM2M_LIST_ADD(contextP->bootstrapServerList, targetP);
@@ -555,7 +613,7 @@ int object_getServers(lwm2m_context_t * contextP)
                 lwm2m_tlv_free(size, tlvP);
                 return -1;
             }
-
+            targetP->status = STATE_DEREGISTERED;
             contextP->serverList = (lwm2m_server_t*)LWM2M_LIST_ADD(contextP->serverList, targetP);
         }
         lwm2m_tlv_free(size, tlvP);

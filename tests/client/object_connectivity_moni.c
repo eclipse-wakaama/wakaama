@@ -12,6 +12,7 @@
  *
  * Contributors:
  *    Bosch Software Innovations GmbH - Please refer to git log
+ *    Pascal Rieux - Please refer to git log
  *    
  *******************************************************************************/
 
@@ -291,7 +292,7 @@ static void prv_close(lwm2m_object_t * objectP)
     lwm2m_list_free(objectP->instanceList);
 }
 
-lwm2m_object_t * get_object_conn_m()
+lwm2m_object_t * get_object_conn_m(void)
 {
     /*
      * The get_object_conn_m() function create the object itself and return a pointer to the structure that represent it.
@@ -329,9 +330,10 @@ lwm2m_object_t * get_object_conn_m()
          * Those function will be called when a read/write/execute query is made by the server. In fact the library don't need to
          * know the resources of the object, only the server does.
          */
-        connObj->readFunc  = prv_read;
+        connObj->readFunc = prv_read;
         connObj->closeFunc = prv_close;
-        connObj->userData  = lwm2m_malloc(sizeof(conn_m_data_t));
+        connObj->executeFunc = NULL;
+        connObj->userData = lwm2m_malloc(sizeof(conn_m_data_t));
 
         /*
          * Also some user data can be stored in the object with a private structure containing the needed variables

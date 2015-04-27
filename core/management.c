@@ -15,6 +15,7 @@
  *    domedambrosio - Please refer to git log
  *    Toby Jaffey - Please refer to git log
  *    Bosch Software Innovations GmbH - Please refer to git log
+ *    Pascal Rieux - Please refer to git log
  *    
  *******************************************************************************/
 /*
@@ -59,18 +60,57 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
                                 coap_packet_t * response)
 {
     coap_status_t result;
-    lwm2m_server_t * serverP;
+    lwm2m_server_t * serverP = NULL;
+#ifdef LWM2M_BOOTSTRAP
+    lwm2m_server_t * bsServerP = NULL;
+#endif
 
     serverP = prv_findServer(contextP, fromSessionH);
-    if (serverP == NULL) return COAP_IGNORE;
-    if (serverP->status != STATE_REGISTERED && serverP->status != STATE_REG_UPDATE_PENDING) return COAP_IGNORE;
+    if (NULL == serverP)
+    {
+#ifdef LWM2M_BOOTSTRAP
+        bsServerP = utils_findBootstrapServer(contextP, fromSessionH);
+        if (NULL == bsServerP)
+        {
+            // No server found
+            return COAP_IGNORE;
+        }
+#else
+        return COAP_IGNORE;
+#endif
+    }
+
+#ifdef LWM2M_BOOTSTRAP
+    if (contextP->bsState != BOOTSTRAP_PENDING)
+    {
+        if (NULL != bsServerP)
+        {
+            // server initiated bootstrap?
+            // currently not implemented.
+            return NOT_IMPLEMENTED_5_01;
+        }
+        if ( serverP->status != STATE_REGISTERED &&
+                serverP->status != STATE_REG_UPDATE_PENDING)
+        {
+            return COAP_IGNORE;
+        }
+    }
+    else
+    {
+        if (NULL != serverP)
+        {
+            // Request form management server during bootstrap.
+            return UNAUTHORIZED_4_01;
+        }
+    }
+#endif
 
     switch (message->code)
     {
     case COAP_GET:
         {
-            char * buffer = NULL;
-            int length = 0;
+            uint8_t * buffer = NULL;
+            size_t length = 0;
 
             result = object_read(contextP, uriP, &buffer, &length);
             if (COAP_205_CONTENT == result)
@@ -94,9 +134,13 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
 
     case COAP_POST:
         {
+#ifdef LWM2M_BOOTSTRAP
+            /* no POST during bootstrap */
+            if (contextP->bsState == BOOTSTRAP_PENDING) return METHOD_NOT_ALLOWED_4_05;
+#endif
             if (!LWM2M_URI_IS_SET_INSTANCE(uriP))
             {
-                result = object_create(contextP, uriP, message->payload, message->payload_len);
+                result = object_create(contextP, uriP, (char*)message->payload, message->payload_len);
                 if (result == COAP_201_CREATED)
                 {
                     //longest uri is /65535/65535 = 12 + 1 (null) chars
@@ -120,16 +164,16 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
             {
                 if (object_isInstanceNew(contextP, uriP->objectId, uriP->instanceId))
                 {
-                    result = object_create(contextP, uriP, message->payload, message->payload_len);
+                    result = object_create(contextP, uriP, (char*)message->payload, message->payload_len);
                 }
                 else
                 {
-                    result = object_write(contextP, uriP, message->payload, message->payload_len);
+                    result = object_write(contextP, uriP, (char*)message->payload, message->payload_len);
                 }
             }
             else
             {
-                result = object_execute(contextP, uriP, message->payload, message->payload_len);
+                result = object_execute(contextP, uriP, (char*)message->payload, message->payload_len);
             }
         }
         break;
@@ -138,7 +182,20 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
         {
             if (LWM2M_URI_IS_SET_INSTANCE(uriP))
             {
-                result = object_write(contextP, uriP, message->payload, message->payload_len);
+#ifdef LWM2M_BOOTSTRAP
+                if (contextP->bsState == BOOTSTRAP_PENDING && object_isInstanceNew(contextP, uriP->objectId, uriP->instanceId))
+                {
+                    result = object_create(contextP, uriP, (char*)message->payload, message->payload_len);
+                    if (COAP_201_CREATED == result)
+                    {
+                        result = COAP_204_CHANGED;
+                    }
+                }
+                else
+#endif
+                {
+                    result = object_write(contextP, uriP, (char*)message->payload, message->payload_len);
+                }
             }
             else
             {
@@ -166,6 +223,40 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
     }
 
     return result;
+}
+
+static void management_delete_all_instances(lwm2m_object_t * object)
+{
+    if (NULL != object->deleteFunc)
+    {
+        while (NULL != object->instanceList)
+        {
+            object->deleteFunc(object->instanceList->id, object);
+        }
+    }
+}
+
+coap_status_t handle_delete_all(lwm2m_context_t * context)
+{
+    lwm2m_object_t ** objectList = context->objectList;
+    if (NULL != objectList)
+    {
+        int i;
+        for (i = 0 ; i < context->numObject ; i++)
+        {
+            // Only security and server objects are deleted upon a DEL /
+            switch (objectList[i]->objID)
+            {
+            case LWM2M_SECURITY_OBJECT_ID:
+            case LWM2M_SERVER_OBJECT_ID:
+                management_delete_all_instances(objectList[i]);
+                break;
+            default:
+                break;
+            }
+        }
+    }
+    return DELETED_2_02;
 }
 #endif
 
@@ -233,7 +324,7 @@ static int prv_make_operation(lwm2m_context_t * contextP,
                               uint16_t clientID,
                               lwm2m_uri_t * uriP,
                               coap_method_t method,
-                              char * buffer,
+                              uint8_t * buffer,
                               int length,
                               lwm2m_result_callback_t callback,
                               void * userData)
@@ -289,7 +380,7 @@ int lwm2m_dm_read(lwm2m_context_t * contextP,
 int lwm2m_dm_write(lwm2m_context_t * contextP,
                    uint16_t clientID,
                    lwm2m_uri_t * uriP,
-                   char * buffer,
+                   uint8_t * buffer,
                    int length,
                    lwm2m_result_callback_t callback,
                    void * userData)
@@ -317,7 +408,7 @@ int lwm2m_dm_write(lwm2m_context_t * contextP,
 int lwm2m_dm_execute(lwm2m_context_t * contextP,
                      uint16_t clientID,
                      lwm2m_uri_t * uriP,
-                     char * buffer,
+                     uint8_t * buffer,
                      int length,
                      lwm2m_result_callback_t callback,
                      void * userData)
@@ -335,7 +426,7 @@ int lwm2m_dm_execute(lwm2m_context_t * contextP,
 int lwm2m_dm_create(lwm2m_context_t * contextP,
                     uint16_t clientID,
                     lwm2m_uri_t * uriP,
-                    char * buffer,
+                    uint8_t * buffer,
                     int length,
                     lwm2m_result_callback_t callback,
                     void * userData)
