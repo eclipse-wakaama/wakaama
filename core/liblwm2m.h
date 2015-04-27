@@ -527,7 +527,6 @@ typedef uint8_t (*lwm2m_buffer_send_callback_t)(void * sessionH, uint8_t * buffe
 
 typedef struct
 {
-    int    socket;
 #ifdef LWM2M_CLIENT_MODE
 #ifdef LWM2M_BOOTSTRAP
     lwm2m_bootstrap_state_t bsState;
