@@ -36,7 +36,7 @@
 #define JSON_ITEM_BOOL_TRUE         "\"bv\":true},"
 #define JSON_ITEM_BOOL_FALSE        "\"bv\":false},"
 #define JSON_ITEM_FLOAT_TEMPLATE    "\"v\":%.16g},"
-#define JSON_ITEM_INTEGER_TEMPLATE  "\"v\":%d},"
+#define JSON_ITEM_INTEGER_TEMPLATE  "\"v\":%"PRId64"},"
 #define JSON_ITEM_STRING_BEGIN      "\"sv\":\""
 #define JSON_ITEM_STRING_END        "\"},"
 
@@ -98,7 +98,7 @@ static int prv_isReserved(char sign)
     return 0;
 }
 
-static int prv_isWhiteSpace(char sign)
+static int prv_isWhiteSpace(uint8_t sign)
 {
     if (sign == 0x20
      || sign == 0x09
@@ -111,10 +111,10 @@ static int prv_isWhiteSpace(char sign)
     return 0;
 }
 
-static int prv_skipSpace(char * buffer,
-                         size_t bufferLen)
+static size_t prv_skipSpace(uint8_t * buffer,
+                            size_t bufferLen)
 {
-    int i;
+    size_t i;
 
     i = 0;
     while ((i < bufferLen)
@@ -126,14 +126,14 @@ static int prv_skipSpace(char * buffer,
     return i;
 }
 
-static int prv_split(char * buffer,
+static int prv_split(uint8_t * buffer,
                      size_t bufferLen,
                      int * tokenStartP,
                      int * tokenLenP,
                      int * valueStartP,
                      int * valueLenP)
 {
-    int index;
+    size_t index;
     _itemState step;
 
     index = 0;
@@ -198,6 +198,7 @@ static int prv_split(char * buffer,
             break;
 
         case _STEP_DONE:
+        default:
             return -1;
         }
 
@@ -219,14 +220,14 @@ static int prv_split(char * buffer,
 
     if (step != _STEP_DONE) return -1;
 
-    return index;
+    return (int)index;
 }
 
 static int prv_countItems(uint8_t * buffer,
                           size_t bufferLen)
 {
     int count;
-    int index;
+    size_t index;
     int in;
 
     count = 0;
@@ -271,7 +272,7 @@ static int prv_parseItem(uint8_t * buffer,
                          size_t bufferLen,
                          _record_t * recordP)
 {
-    int index;
+    size_t index;
 
     recordP->resId = LWM2M_MAX_ID;
     recordP->resInstId = LWM2M_MAX_ID;
@@ -377,11 +378,11 @@ static int prv_parseItem(uint8_t * buffer,
             {
             case 'b':
                 if (recordP->type != _TYPE_UNSET) return -1;
-                if (0 == lwm2m_strncmp(JSON_TRUE_STRING, buffer + index + valueStart, valueLen))
+                if (0 == lwm2m_strncmp(JSON_TRUE_STRING, (char *)buffer + index + valueStart, valueLen))
                 {
                     recordP->type = _TYPE_TRUE;
                 }
-                else if (0 == lwm2m_strncmp(JSON_FALSE_STRING, buffer + index + valueStart, valueLen))
+                else if (0 == lwm2m_strncmp(JSON_FALSE_STRING, (char *)buffer + index + valueStart, valueLen))
                 {
                     recordP->type = _TYPE_FALSE;
                 }
@@ -496,7 +497,7 @@ static int prv_convertRecord(_record_t * recordArray,
             break;
         case _TYPE_FLOAT:
         {
-            int i;
+            size_t i;
 
             i = 0;
             while (i < recordArray[index].valueLen
@@ -540,6 +541,8 @@ static int prv_convertRecord(_record_t * recordArray,
             targetP->length = recordArray[index].valueLen;
             targetP->value = recordArray[index].value;
             break;
+
+        case _TYPE_UNSET:
         default:
             goto error;
         }
@@ -557,7 +560,7 @@ int lwm2m_tlv_parse_json(uint8_t * buffer,
                          size_t bufferLen,
                          lwm2m_tlv_t ** dataP)
 {
-    int index;
+    size_t index;
     int count = 0;
     bool eFound = false;
     bool bnFound = false;
@@ -648,20 +651,20 @@ static int prv_serializeValue(lwm2m_tlv_t * tlvP,
     int res;
     int head;
 
-    res = snprintf(buffer, bufferLen, JSON_RES_ITEM_TEMPLATE, tlvP->id);
-    if (res >= bufferLen) return -1;
+    res = snprintf((char *)(char *)buffer, bufferLen, JSON_RES_ITEM_TEMPLATE, tlvP->id);
+    if (res <= 0 || res >= bufferLen) return -1;
 
     switch (tlvP->dataType)
     {
     case LWM2M_TYPE_STRING:
-        res = snprintf(buffer, bufferLen, JSON_ITEM_STRING_BEGIN);
-        if (res >= bufferLen) return -1;
+        res = snprintf((char *)buffer, bufferLen, JSON_ITEM_STRING_BEGIN);
+        if (res <= 0 || res >= bufferLen) return -1;
         head = res;
         if (tlvP->length >= bufferLen - head) return -1;
         memcpy(buffer + head, tlvP->value, tlvP->length);
         head += tlvP->length;
-        res = snprintf(buffer + head, bufferLen - head, JSON_ITEM_STRING_END);
-        if (res >= bufferLen - head) return -1;
+        res = snprintf((char *)buffer + head, bufferLen - head, JSON_ITEM_STRING_END);
+        if (res <= 0 || res >= bufferLen - head) return -1;
         res += head;
         break;
 
@@ -670,8 +673,8 @@ static int prv_serializeValue(lwm2m_tlv_t * tlvP,
         int64_t value;
 
         if (0 == lwm2m_tlv_decode_int(tlvP, &value)) return -1;
-        res = snprintf(buffer, bufferLen, JSON_ITEM_INTEGER_TEMPLATE, value);
-        if (res >= bufferLen) return -1;
+        res = snprintf((char *)buffer, bufferLen, JSON_ITEM_INTEGER_TEMPLATE, value);
+        if (res <= 0 || res >= bufferLen) return -1;
     }
     break;
 
@@ -680,8 +683,8 @@ static int prv_serializeValue(lwm2m_tlv_t * tlvP,
         double value;
 
         if (0 == lwm2m_tlv_decode_float(tlvP, &value)) return -1;
-        res = snprintf(buffer, bufferLen, JSON_ITEM_FLOAT_TEMPLATE, value);
-        if (res >= bufferLen) return -1;
+        res = snprintf((char *)buffer, bufferLen, JSON_ITEM_FLOAT_TEMPLATE, value);
+        if (res <= 0 || res >= bufferLen) return -1;
     }
     break;
 
@@ -690,21 +693,21 @@ static int prv_serializeValue(lwm2m_tlv_t * tlvP,
         bool value;
 
         if (0 == lwm2m_tlv_decode_bool(tlvP, &value)) return -1;
-        res = snprintf(buffer, bufferLen, value?JSON_ITEM_BOOL_TRUE:JSON_ITEM_BOOL_FALSE);
-        if (res >= bufferLen) return -1;
+        res = snprintf((char *)buffer, bufferLen, value?JSON_ITEM_BOOL_TRUE:JSON_ITEM_BOOL_FALSE);
+        if (res <= 0 || res >= bufferLen) return -1;
     }
     break;
 
     case LWM2M_TYPE_OPAQUE:
         // TODO: base64 encoding
-        res = snprintf(buffer, bufferLen, JSON_ITEM_STRING_BEGIN);
-        if (res >= bufferLen) return -1;
+        res = snprintf((char *)buffer, bufferLen, JSON_ITEM_STRING_BEGIN);
+        if (res <= 0 || res >= bufferLen) return -1;
         head = res;
         if (tlvP->length >= bufferLen - head) return -1;
         memcpy(buffer + head, tlvP->value, tlvP->length);
         head += tlvP->length;
-        res = snprintf(buffer + head, bufferLen - head, JSON_ITEM_STRING_END);
-        if (res >= bufferLen - head) return -1;
+        res = snprintf((char *)buffer + head, bufferLen - head, JSON_ITEM_STRING_END);
+        if (res <= 0 || res >= bufferLen - head) return -1;
         res += head;
         break;
 
@@ -714,22 +717,27 @@ static int prv_serializeValue(lwm2m_tlv_t * tlvP,
         return -1;
 
     case LWM2M_TYPE_UNDEFINED:
-        if (tlvP->flags & LWM2M_TLV_FLAG_TEXT_FORMAT != 0)
+        if ((tlvP->flags & LWM2M_TLV_FLAG_TEXT_FORMAT) != 0)
         {
-            res = snprintf(buffer, bufferLen, JSON_ITEM_STRING_BEGIN);
-            if (res >= bufferLen) return -1;
+            res = snprintf((char *)buffer, bufferLen, JSON_ITEM_STRING_BEGIN);
+            if (res <= 0 || res >= bufferLen) return -1;
             head = res;
             if (tlvP->length >= bufferLen - head) return -1;
             memcpy(buffer + head, tlvP->value, tlvP->length);
             head += tlvP->length;
-            res = snprintf(buffer + head, bufferLen - head, JSON_ITEM_STRING_END);
-            if (res >= bufferLen - head) return -1;
+            res = snprintf((char *)buffer + head, bufferLen - head, JSON_ITEM_STRING_END);
+            if (res <= 0 || res >= bufferLen - head) return -1;
             res += head;
         } else
         {
             return -1;
         }
+        break;
+
+    default:
+        break;
     }
+
     return res;
 }
 
@@ -739,7 +747,7 @@ int lwm2m_tlv_serialize_json(int size,
                              size_t bufferLen)
 {
     int index;
-    int head;
+    size_t head;
 
     if (buffer == NULL
      || bufferLen < JSON_HEADER_SIZE + JSON_FOOTER_SIZE + JSON_ITEM_MAX_SIZE)
@@ -771,13 +779,13 @@ int lwm2m_tlv_serialize_json(int size,
         case LWM2M_TYPE_MULTIPLE_RESOURCE:
         {
             lwm2m_tlv_t * subTlvP;
-            int i;
+            size_t i;
 
             subTlvP = (lwm2m_tlv_t *)tlvP[index].value;
             for (i = 0 ; i < tlvP[index].length ; i++)
             {
-                res = snprintf(buffer + head, bufferLen - head, JSON_INST_ITEM_TEMPLATE, tlvP[index].id, subTlvP[i].id);
-                if (res >= bufferLen - head) return -1;
+                res = snprintf((char *)buffer + head, bufferLen - head, JSON_INST_ITEM_TEMPLATE, tlvP[index].id, subTlvP[i].id);
+                if (res <= 0 || res >= bufferLen - head) return -1;
                 head += res;
 
                 res = prv_serializeValue(subTlvP + i, buffer + head, bufferLen -head);
@@ -786,19 +794,22 @@ int lwm2m_tlv_serialize_json(int size,
             }
         }
             break;
+
         case LWM2M_TYPE_RESOURCE:
-            res = snprintf(buffer + head, bufferLen - head, JSON_RES_ITEM_TEMPLATE, tlvP[index].id);
-            if (res >= bufferLen - head) return -1;
+            res = snprintf((char *)buffer + head, bufferLen - head, JSON_RES_ITEM_TEMPLATE, tlvP[index].id);
+            if (res <= 0 || res >= bufferLen - head) return -1;
             head += res;
 
             res = prv_serializeValue(tlvP + index, buffer + head, bufferLen -head);
             if (res < 0) return -1;
             head += res;
-
             break;
+
         case LWM2M_TYPE_OBJECT_INSTANCE:
             // TODO: support this. Hacked for now.
             break;
+
+        case LWM2M_TYPE_RESOURCE_INSTANCE:
         default:
             return -1;
             break;
@@ -810,7 +821,7 @@ int lwm2m_tlv_serialize_json(int size,
     memcpy(buffer + head - 1, JSON_FOOTER, JSON_FOOTER_SIZE);
     head = head - 1 + JSON_FOOTER_SIZE;
 
-    return head;
+    return (int)head;
 }
 
 #endif
