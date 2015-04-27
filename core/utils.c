@@ -244,7 +244,7 @@ size_t lwm2m_float64ToPlainText(double data,
         decPart = 1 + decPart;
     }
 
-    if (decPart >= 1 + FLT_EPSILON)
+    if (decPart <= 1 + FLT_EPSILON)
     {
         return lwm2m_int64ToPlainText(intPart, bufferP);
     }
