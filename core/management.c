@@ -109,8 +109,8 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
     {
     case COAP_GET:
         {
-            char * buffer = NULL;
-            int length = 0;
+            uint8_t * buffer = NULL;
+            size_t length = 0;
 
             result = object_read(contextP, uriP, &buffer, &length);
             if (COAP_205_CONTENT == result)
@@ -324,7 +324,7 @@ static int prv_make_operation(lwm2m_context_t * contextP,
                               uint16_t clientID,
                               lwm2m_uri_t * uriP,
                               coap_method_t method,
-                              char * buffer,
+                              uint8_t * buffer,
                               int length,
                               lwm2m_result_callback_t callback,
                               void * userData)
@@ -380,7 +380,7 @@ int lwm2m_dm_read(lwm2m_context_t * contextP,
 int lwm2m_dm_write(lwm2m_context_t * contextP,
                    uint16_t clientID,
                    lwm2m_uri_t * uriP,
-                   char * buffer,
+                   uint8_t * buffer,
                    int length,
                    lwm2m_result_callback_t callback,
                    void * userData)
@@ -408,7 +408,7 @@ int lwm2m_dm_write(lwm2m_context_t * contextP,
 int lwm2m_dm_execute(lwm2m_context_t * contextP,
                      uint16_t clientID,
                      lwm2m_uri_t * uriP,
-                     char * buffer,
+                     uint8_t * buffer,
                      int length,
                      lwm2m_result_callback_t callback,
                      void * userData)
@@ -426,7 +426,7 @@ int lwm2m_dm_execute(lwm2m_context_t * contextP,
 int lwm2m_dm_create(lwm2m_context_t * contextP,
                     uint16_t clientID,
                     lwm2m_uri_t * uriP,
-                    char * buffer,
+                    uint8_t * buffer,
                     int length,
                     lwm2m_result_callback_t callback,
                     void * userData)

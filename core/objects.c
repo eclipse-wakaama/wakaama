@@ -86,8 +86,8 @@ static lwm2m_object_t * prv_find_object(lwm2m_context_t * contextP,
 
 coap_status_t object_read(lwm2m_context_t * contextP,
                           lwm2m_uri_t * uriP,
-                          char ** bufferP,
-                          int * lengthP)
+                          uint8_t ** bufferP,
+                          size_t * lengthP)
 {
     coap_status_t result;
     lwm2m_object_t * targetP;
@@ -174,7 +174,7 @@ coap_status_t object_read(lwm2m_context_t * contextP,
          && tlvP->type == LWM2M_TYPE_RESOURCE
          && (tlvP->flags && LWM2M_TLV_FLAG_TEXT_FORMAT) != 0 )
         {
-            *bufferP = (char *)malloc(tlvP->length);
+            *bufferP = (uint8_t *)malloc(tlvP->length);
             if (*bufferP == NULL)
             {
                 result = COAP_500_INTERNAL_SERVER_ERROR;
@@ -198,8 +198,8 @@ coap_status_t object_read(lwm2m_context_t * contextP,
 
 coap_status_t object_write(lwm2m_context_t * contextP,
                            lwm2m_uri_t * uriP,
-                           char * buffer,
-                           int length)
+                           uint8_t * buffer,
+                           size_t length)
 {
     coap_status_t result = NO_ERROR;
     lwm2m_object_t * targetP;
@@ -270,8 +270,8 @@ coap_status_t object_write(lwm2m_context_t * contextP,
 
 coap_status_t object_execute(lwm2m_context_t * contextP,
                              lwm2m_uri_t * uriP,
-                             char * buffer,
-                             int length)
+                             uint8_t * buffer,
+                             size_t length)
 {
     lwm2m_object_t * targetP;
 
@@ -288,8 +288,8 @@ coap_status_t object_execute(lwm2m_context_t * contextP,
 
 coap_status_t object_create(lwm2m_context_t * contextP,
                             lwm2m_uri_t * uriP,
-                            char * buffer,
-                            int length)
+                            uint8_t * buffer,
+                            size_t length)
 {
     lwm2m_object_t * targetP;
     lwm2m_tlv_t * tlvP = NULL;
@@ -366,7 +366,7 @@ bool object_isInstanceNew(lwm2m_context_t * contextP,
 }
 
 int prv_getRegisterPayload(lwm2m_context_t * contextP,
-                           char * buffer,
+                           uint8_t * buffer,
                            size_t length)
 {
     int index;
@@ -379,7 +379,7 @@ int prv_getRegisterPayload(lwm2m_context_t * contextP,
     if ((contextP->altPath != NULL)
      && (contextP->altPath[0] != 0))
     {
-        result = snprintf(buffer, length, REG_ALT_PATH_LINK, contextP->altPath);
+        result = snprintf((char *)buffer, length, REG_ALT_PATH_LINK, contextP->altPath);
         if (result > 0 && result <= length)
         {
             index = result;
@@ -395,7 +395,7 @@ int prv_getRegisterPayload(lwm2m_context_t * contextP,
 
         if (contextP->objectList[i]->instanceList == NULL)
         {
-            result = snprintf(buffer + index, length - index,
+            result = snprintf((char *)buffer + index, length - index,
                               REG_OBJECT_PATH,
                               contextP->altPath?contextP->altPath:"", contextP->objectList[i]->objID);
             if (result > 0 && result <= length - index)
@@ -412,9 +412,7 @@ int prv_getRegisterPayload(lwm2m_context_t * contextP,
             lwm2m_list_t * targetP;
             for (targetP = contextP->objectList[i]->instanceList ; targetP != NULL ; targetP = targetP->next)
             {
-                int result;
-
-                result = snprintf(buffer + index, length - index,
+                result = snprintf((char *)buffer + index, length - index,
                                   REG_OBJECT_INSTANCE_PATH,
                                   contextP->altPath?contextP->altPath:"", contextP->objectList[i]->objID, targetP->id);
                 if (result > 0 && result <= length - index)

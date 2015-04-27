@@ -29,9 +29,9 @@
 #define UNKNOWN_CMD_MSG "Unknown command. Type '"HELP_COMMAND"' for help."
 
 
-static command_desc_t *  prv_find_command(command_desc_t * commandArray,
-                                          char * buffer,
-                                          int length)
+static command_desc_t * prv_find_command(command_desc_t * commandArray,
+                                         char * buffer,
+                                         size_t length)
 {
     int i;
 

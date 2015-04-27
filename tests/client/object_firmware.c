@@ -191,7 +191,7 @@ static uint8_t prv_firmware_write(uint16_t instanceId,
 
 static uint8_t prv_firmware_execute(uint16_t instanceId,
                                     uint16_t resourceId,
-                                    char * buffer,
+                                    uint8_t * buffer,
                                     int length,
                                     lwm2m_object_t * objectP)
 {
@@ -252,7 +252,7 @@ void display_firmware_object(lwm2m_object_t * object)
 #endif
 }
 
-lwm2m_object_t * get_object_firmware()
+lwm2m_object_t * get_object_firmware(void)
 {
     /*
      * The get_object_firmware function create the object itself and return a pointer to the structure that represent it.

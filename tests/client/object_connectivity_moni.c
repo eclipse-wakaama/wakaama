@@ -292,7 +292,7 @@ static void prv_close(lwm2m_object_t * objectP)
     lwm2m_list_free(objectP->instanceList);
 }
 
-lwm2m_object_t * get_object_conn_m()
+lwm2m_object_t * get_object_conn_m(void)
 {
     /*
      * The get_object_conn_m() function create the object itself and return a pointer to the structure that represent it.
