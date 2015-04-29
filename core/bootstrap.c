@@ -13,17 +13,18 @@
  * Contributors:
  *    Pascal Rieux - Please refer to git log
  *    Bosch Software Innovations GmbH - Please refer to git log
+ *    David Navarro, Intel Corporation - Please refer to git log
  *
  *******************************************************************************/
-
-#ifdef LWM2M_BOOTSTRAP
-#ifdef LWM2M_CLIENT_MODE
 
 #include "internals.h"
 
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+
+#ifdef LWM2M_BOOTSTRAP
+#ifdef LWM2M_CLIENT_MODE
 
 #define PRV_QUERY_BUFFER_LENGTH 200
 
@@ -219,4 +220,32 @@ void update_bootstrap_state(lwm2m_context_t * context,
 }
 #endif
 
+#endif
+
+#ifdef LWM2M_BOOTSTRAP_SERVER_MODE
+void lwm2m_set_bootstrap_callback(lwm2m_context_t * contextP,
+                                  lwm2m_bootstrap_callback_t callback,
+                                  void * userData)
+{
+    contextP->bootstrapCallback = callback;
+    contextP->bootstrapUserData = userData;
+}
+
+int lwm2m_bootstrap_delete(lwm2m_context_t * contextP,
+                           void * sessionH,
+                           lwm2m_uri_t * uriP,
+                           void * userData)
+{
+    return COAP_NO_ERROR;
+}
+
+int lwm2m_bootstrap_write(lwm2m_context_t * contextP,
+                          void * sessionH,
+                          lwm2m_uri_t * uriP,
+                          uint8_t * buffer,
+                          size_t length,
+                          void * userData)
+{
+    return COAP_NO_ERROR;
+}
 #endif
