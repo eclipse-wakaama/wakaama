@@ -223,6 +223,41 @@ void update_bootstrap_state(lwm2m_context_t * context,
 #endif
 
 #ifdef LWM2M_BOOTSTRAP_SERVER_MODE
+uint8_t handle_bootstrap_request(lwm2m_context_t * contextP,
+                                 lwm2m_uri_t * uriP,
+                                 void * fromSessionH,
+                                 coap_packet_t * message,
+                                 coap_packet_t * response)
+{
+    uint8_t result;
+    char * name;
+
+    if (contextP->bootstrapCallback == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
+    if (message->code != COAP_POST) return COAP_400_BAD_REQUEST;
+    if (message->uri_query == NULL) return COAP_400_BAD_REQUEST;
+    if (message->payload != NULL) return COAP_400_BAD_REQUEST;
+
+    if (lwm2m_strncmp((char *)message->uri_query->data, QUERY_TEMPLATE, QUERY_LENGTH) != 0)
+    {
+        return COAP_400_BAD_REQUEST;
+    }
+
+    if (message->uri_query->len == QUERY_LENGTH) return COAP_400_BAD_REQUEST;
+    if (message->uri_query->next != NULL) return COAP_400_BAD_REQUEST;
+
+    name = (char *)lwm2m_malloc(message->uri_query->len - QUERY_LENGTH + 1);
+    if (name == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
+
+    memcpy(name, message->uri_query->data + QUERY_LENGTH, message->uri_query->len - QUERY_LENGTH);
+    name[message->uri_query->len - QUERY_LENGTH] = 0;
+
+    result = contextP->bootstrapCallback(fromSessionH, name, contextP->bootstrapUserData);
+
+    lwm2m_free(name);
+
+    return result;
+}
+
 void lwm2m_set_bootstrap_callback(lwm2m_context_t * contextP,
                                   lwm2m_bootstrap_callback_t callback,
                                   void * userData)

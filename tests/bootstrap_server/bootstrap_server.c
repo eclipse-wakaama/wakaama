@@ -192,18 +192,12 @@ void print_usage(char * port)
 
 
 static int prv_bootstrap_callback(void * sessionH,
-                                  uint8_t * name,
-                                  size_t nameLength,
+                                  char * name,
                                   void * userData)
 {
     size_t i;
 
-    fprintf(stdout, "\r\nBootstrap request from \"");
-    for (i = 0 ; i < nameLength ; i++)
-    {
-        fprintf(stdout, "%c", (char)name[i]);
-    }
-    fprintf(stdout, "\"\r\n");
+    fprintf(stdout, "\r\nBootstrap request from \"%s\"\r\n", name);
 
     return COAP_204_CHANGED;
 }
@@ -339,7 +333,6 @@ int main(int argc, char *argv[])
                 if (numBytes > 1)
                 {
                     buffer[numBytes] = 0;
-                    fprintf(stdout, "STDIN %d bytes '%s'\r\n> ", numBytes, buffer);
                     handle_command(commands, (char*)buffer);
                 }
                 if (g_quit == 0)

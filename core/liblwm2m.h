@@ -529,7 +529,7 @@ typedef uint8_t (*lwm2m_buffer_send_callback_t)(void * sessionH, uint8_t * buffe
 
 // LWM2M bootstrap request callback
 // Returns a COAP_* error code. COAP_204_CHANGED for success.
-typedef int (*lwm2m_bootstrap_callback_t) (void * sessionH, uint8_t * name, size_t nameLength, void * userData);
+typedef int (*lwm2m_bootstrap_callback_t) (void * sessionH, char * name, void * userData);
 #endif
 
 typedef struct
