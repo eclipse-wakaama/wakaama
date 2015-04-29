@@ -113,6 +113,14 @@ typedef struct
     void * userData;
 } dm_data_t;
 
+typedef struct
+{
+    bool        isUri;
+    lwm2m_uri_t uri;
+    lwm2m_bootstrap_callback_t callback;
+    void *      userData;
+} bs_data_t;
+
 typedef struct _obs_list_
 {
     struct _obs_list_ * next;

@@ -216,20 +216,25 @@ int transaction_handle_response(lwm2m_context_t * contextP,
         targetSessionH = NULL;
         switch (transacP->peerType)
         {
-    #ifdef LWM2M_SERVER_MODE
+#ifdef LWM2M_BOOTSTRAP_SERVER_MODE
+        case ENDPOINT_UNKNOWN:
+            targetSessionH = transacP->peerP;
+            break;
+#endif
+#ifdef LWM2M_SERVER_MODE
         case ENDPOINT_CLIENT:
             targetSessionH = ((lwm2m_client_t *)transacP->peerP)->sessionH;
             break;
-    #endif
+#endif
 
-    #ifdef LWM2M_CLIENT_MODE
+#ifdef LWM2M_CLIENT_MODE
         case ENDPOINT_SERVER:
             if (NULL != transacP->peerP) 
             {
                 targetSessionH = ((lwm2m_server_t *)transacP->peerP)->sessionH;
             }
             break;
-    #endif
+#endif
 
         default:
             break;
@@ -263,6 +268,8 @@ int transaction_handle_response(lwm2m_context_t * contextP,
 int transaction_send(lwm2m_context_t * contextP,
                      lwm2m_transaction_t * transacP)
 {
+    void * targetSessionH;
+
     if (transacP->buffer == NULL)
     {
         uint8_t tempBuffer[LWM2M_MAX_PACKET_SIZE];
@@ -278,24 +285,33 @@ int transaction_send(lwm2m_context_t * contextP,
         transacP->buffer_len = length;
     }
 
-    switch(transacP->peerType)
+    targetSessionH = NULL;
+    switch (transacP->peerType)
     {
-    case ENDPOINT_CLIENT:
-        contextP->bufferSendCallback(((lwm2m_client_t*)transacP->peerP)->sessionH,
-                                     transacP->buffer, transacP->buffer_len, contextP->userData);
+#ifdef LWM2M_BOOTSTRAP_SERVER_MODE
+    case ENDPOINT_UNKNOWN:
+        targetSessionH = transacP->peerP;
         break;
-
+#endif
+#ifdef LWM2M_SERVER_MODE
+    case ENDPOINT_CLIENT:
+        targetSessionH = ((lwm2m_client_t *)transacP->peerP)->sessionH;
+        break;
+#endif
+#ifdef LWM2M_CLIENT_MODE
     case ENDPOINT_SERVER:
         if (NULL != transacP->peerP) 
         {
-            contextP->bufferSendCallback(((lwm2m_server_t*)transacP->peerP)->sessionH,
-                    transacP->buffer, transacP->buffer_len, contextP->userData);
+            targetSessionH = ((lwm2m_server_t *)transacP->peerP)->sessionH;
         }
         break;
-
+#endif
     default:
-        return 0;
+        return COAP_500_INTERNAL_SERVER_ERROR;
     }
+
+    contextP->bufferSendCallback(targetSessionH,
+                                 transacP->buffer, transacP->buffer_len, contextP->userData);
 
     if (transacP->retrans_counter == 0)
     {

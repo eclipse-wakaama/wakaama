@@ -251,7 +251,7 @@ uint8_t handle_bootstrap_request(lwm2m_context_t * contextP,
     memcpy(name, message->uri_query->data + QUERY_LENGTH, message->uri_query->len - QUERY_LENGTH);
     name[message->uri_query->len - QUERY_LENGTH] = 0;
 
-    result = contextP->bootstrapCallback(fromSessionH, name, contextP->bootstrapUserData);
+    result = contextP->bootstrapCallback(fromSessionH, COAP_NO_ERROR, NULL, name, contextP->bootstrapUserData);
 
     lwm2m_free(name);
 
@@ -266,20 +266,83 @@ void lwm2m_set_bootstrap_callback(lwm2m_context_t * contextP,
     contextP->bootstrapUserData = userData;
 }
 
+static void bs_result_callback(lwm2m_transaction_t * transacP,
+                               void * message)
+{
+    bs_data_t * dataP = (bs_data_t *)transacP->userData;
+    lwm2m_uri_t * uriP;
+
+    if (dataP->isUri == true)
+    {
+        uriP = &dataP->uri;
+    }
+    else
+    {
+        uriP = NULL;
+    }
+
+    if (message == NULL)
+    {
+        dataP->callback(transacP->peerP,
+                        COAP_503_SERVICE_UNAVAILABLE,
+                        uriP,
+                        NULL,
+                        dataP->userData);
+    }
+    else
+    {
+        coap_packet_t * packet = (coap_packet_t *)message;
+
+        dataP->callback(transacP->peerP,
+                        packet->code,
+                        uriP,
+                        NULL,
+                        dataP->userData);
+    }
+    lwm2m_free(dataP);
+}
+
 int lwm2m_bootstrap_delete(lwm2m_context_t * contextP,
                            void * sessionH,
-                           lwm2m_uri_t * uriP,
-                           void * userData)
+                           lwm2m_uri_t * uriP)
 {
-    return COAP_NO_ERROR;
+    lwm2m_transaction_t * transaction;
+    bs_data_t * dataP;
+
+    transaction = transaction_new(COAP_DELETE, NULL, uriP, contextP->nextMID++, ENDPOINT_UNKNOWN, sessionH);
+    if (transaction == NULL) return INTERNAL_SERVER_ERROR_5_00;
+
+    dataP = (bs_data_t *)lwm2m_malloc(sizeof(bs_data_t));
+    if (dataP == NULL)
+    {
+        transaction_free(transaction);
+        return COAP_500_INTERNAL_SERVER_ERROR;
+    }
+    if (uriP == NULL)
+    {
+        dataP->isUri = false;
+    }
+    else
+    {
+        dataP->isUri = true;
+        memcpy(&dataP->uri, uriP, sizeof(lwm2m_uri_t));
+    }
+    dataP->callback = contextP->bootstrapCallback;
+    dataP->userData = contextP->bootstrapUserData;
+
+    transaction->callback = bs_result_callback;
+    transaction->userData = (void *)dataP;
+
+    contextP->transactionList = (lwm2m_transaction_t *)LWM2M_LIST_ADD(contextP->transactionList, transaction);
+
+    return transaction_send(contextP, transaction);
 }
 
 int lwm2m_bootstrap_write(lwm2m_context_t * contextP,
                           void * sessionH,
                           lwm2m_uri_t * uriP,
                           uint8_t * buffer,
-                          size_t length,
-                          void * userData)
+                          size_t length)
 {
     return COAP_NO_ERROR;
 }

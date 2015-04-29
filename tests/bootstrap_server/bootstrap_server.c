@@ -163,12 +163,7 @@ static void output_tlv(uint8_t * buffer,
     }
 }
 
-static void prv_print_result(int status)
-{
-    fprintf(stdout, "  returned status %d.%02d %s\r\n", (status&0xE0)>>5, status&0x1F, prv_status_to_string(status));
-}
-
-static void prv_print_error(int status)
+static void prv_print_error(uint8_t status)
 {
     fprintf(stdout, "Error %d.%02d %s!\r\n", (status&0xE0)>>5, status&0x1F, prv_status_to_string(status));
 }
@@ -192,14 +187,40 @@ void print_usage(char * port)
 
 
 static int prv_bootstrap_callback(void * sessionH,
+                                  uint8_t status,
+                                  lwm2m_uri_t * uriP,
                                   char * name,
                                   void * userData)
 {
-    size_t i;
+    lwm2m_context_t * lwm2mH = (lwm2m_context_t *)userData;
+    uint8_t result;
 
-    fprintf(stdout, "\r\nBootstrap request from \"%s\"\r\n", name);
+    switch (status)
+    {
+    case COAP_NO_ERROR:
+        fprintf(stdout, "\r\nBootstrap request from \"%s\"\r\n", name);
 
-    return COAP_204_CHANGED;
+        if (strcmp(name, "testlwm2mclient") != 0)
+        {
+            fprintf(stdout, "Unknown client.\r\n");
+            return COAP_404_NOT_FOUND;
+        }
+
+        fprintf(stdout, "Deleting /\r\n");
+        result = lwm2m_bootstrap_delete(lwm2mH, sessionH, NULL);
+        if (result != COAP_NO_ERROR)
+        {
+            fprintf(stdout, "lwm2m_bootstrap_delete(): ");
+            prv_print_error(result);
+        }
+        return COAP_204_CHANGED;
+
+    default:
+        fprintf(stdout, "\r\n Received status %d.%02d %s\r\n", (status&0xE0)>>5, status&0x1F, prv_status_to_string(status));
+        break;
+    }
+
+    return COAP_NO_ERROR;
 }
 
 
@@ -243,7 +264,7 @@ int main(int argc, char *argv[])
     }
     fprintf(stdout, "> "); fflush(stdout);
 
-    lwm2m_set_bootstrap_callback(lwm2mH, prv_bootstrap_callback, lwm2mH);
+    lwm2m_set_bootstrap_callback(lwm2mH, prv_bootstrap_callback, (void *)lwm2mH);
 
     while (0 == g_quit)
     {

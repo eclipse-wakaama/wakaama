@@ -527,9 +527,12 @@ typedef uint8_t (*lwm2m_buffer_send_callback_t)(void * sessionH, uint8_t * buffe
 #ifdef LWM2M_BOOTSTRAP_SERVER_MODE
 // In all the following APIs, the session handle MUST uniquely identify a peer.
 
-// LWM2M bootstrap request callback
-// Returns a COAP_* error code. COAP_204_CHANGED for success.
-typedef int (*lwm2m_bootstrap_callback_t) (void * sessionH, char * name, void * userData);
+// LWM2M bootstrap callback
+// When a LWM2M client requests bootstrap information, the callback is called with status COAP_NO_ERROR, uriP is nil and
+// name is set. The callback must return a COAP_* error code. COAP_204_CHANGED for success.
+// After a lwm2m_bootstrap_delete() or a lwm2m_bootstrap_write(), the callback is called with the status returned by the
+// client, the URI of the operation (may be nil) and name is nil. The callback return value is ignored.
+typedef int (*lwm2m_bootstrap_callback_t) (void * sessionH, uint8_t status, lwm2m_uri_t * uriP, char * name, void * userData);
 #endif
 
 typedef struct
@@ -620,8 +623,8 @@ void lwm2m_set_bootstrap_callback(lwm2m_context_t * contextP, lwm2m_bootstrap_ca
 
 // Boostrap Interface APIs
 // if uriP is nil, a "Delete /" is sent to the client
-int lwm2m_bootstrap_delete(lwm2m_context_t * contextP, void * sessionH, lwm2m_uri_t * uriP, void * userData);
-int lwm2m_bootstrap_write(lwm2m_context_t * contextP, void * sessionH, lwm2m_uri_t * uriP, uint8_t * buffer, size_t length, void * userData);
+int lwm2m_bootstrap_delete(lwm2m_context_t * contextP, void * sessionH, lwm2m_uri_t * uriP);
+int lwm2m_bootstrap_write(lwm2m_context_t * contextP, void * sessionH, lwm2m_uri_t * uriP, uint8_t * buffer, size_t length);
 
 #endif
 
