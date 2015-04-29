@@ -647,7 +647,7 @@ int main(int argc, char *argv[])
     int batterylevelchanging = 1;
     time_t reboot_time = 0;
 #ifdef LWM2M_BOOTSTRAP
-    char* bootstrapRequested = "no";
+    char* bootstrapRequested = "bootstrap";
     lwm2m_bootstrap_state_t previousBootstrapState = NOT_BOOTSTRAPPED;
 #endif
 
@@ -706,7 +706,7 @@ int main(int argc, char *argv[])
      */
     char serverUri[50];
     int serverId = 123;
-    sprintf (serverUri, "coap://%s:%s", server, serverPort);
+    sprintf (serverUri, "coap://%s:%s", server, "5685");
 #ifdef LWM2M_BOOTSTRAP
     objArray[0] = get_security_object(serverId, serverUri, strcmp(bootstrapRequested, "bootstrap") == 0 ? true : false);
 #else
