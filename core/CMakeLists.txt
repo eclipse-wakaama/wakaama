@@ -5,6 +5,7 @@ SET(CORE_SOURCES
     ${CMAKE_CURRENT_LIST_DIR}/utils.c
     ${CMAKE_CURRENT_LIST_DIR}/objects.c
     ${CMAKE_CURRENT_LIST_DIR}/tlv.c
+    ${CMAKE_CURRENT_LIST_DIR}/json.c
     ${CMAKE_CURRENT_LIST_DIR}/list.c
     ${CMAKE_CURRENT_LIST_DIR}/packet.c
     ${CMAKE_CURRENT_LIST_DIR}/transaction.c

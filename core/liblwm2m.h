@@ -255,6 +255,10 @@ typedef struct
 } lwm2m_tlv_t;
 
 lwm2m_tlv_t * lwm2m_tlv_new(int size);
+#ifdef LWM2M_SUPPORT_JSON
+int lwm2m_tlv_parse_json(uint8_t * buffer, size_t bufferLen, lwm2m_tlv_t ** dataP);
+int lwm2m_tlv_serialize_json(int size, lwm2m_tlv_t * tlvP, uint8_t * buffer, size_t bufferLen);
+#endif
 int lwm2m_tlv_parse(uint8_t * buffer, size_t bufferLen, lwm2m_tlv_t ** dataP);
 int lwm2m_tlv_serialize(int size, lwm2m_tlv_t * tlvP, uint8_t ** bufferP);
 void lwm2m_tlv_free(int size, lwm2m_tlv_t * tlvP);
