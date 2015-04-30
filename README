@@ -59,7 +59,7 @@ To compile the test client
 In the any directory, run the following commands:
     cmake [liblwm2m directory]/tests/client
     make
-    ./lwm2mclient
+    ./lwm2mclient [Options]
 
 The lwm2mclient features four LWM2M objects:
     - Server Object (id: 1) provided by the core.
@@ -83,5 +83,14 @@ The lwm2mclient opens udp port 56830 and tries to register to a LWM2M Server at
 127.0.0.1:5683. It features a basic command line interface. Type 'help' for a
 list of supported commands.
 
+Options are:
+  -n NAME	Set the endpoint name of the Client. Default: testlwm2mclient
+  -l PORT	Set the local UDP port of the Client. Default: 56830
+  -h HOST	Set the hostname of the LWM2M Server to connect to. Default: localhost
+  -p HOST	Set the port of the LWM2M Server to connect to. Default: 5683
+  -t TIME	Set the lifetime of the Client. Default: 300
+  -b		Bootstrap requested.
+  -c		Change battery level over time.
+
 To launch a bootstrap session:
-./lwm2mclient <local port> <bootstrap server IP> <bootstrap server port> <client name> 0 0 bootstrap
+./lwm2mclient -b

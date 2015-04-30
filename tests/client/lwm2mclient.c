@@ -111,12 +111,6 @@ void handle_sigint(int signum)
     g_quit = 2;
 }
 
-void print_usage(void)
-{
-    fprintf(stderr, "Usage: lwm2mclient [..[localPort] server] serverPort] name] lifetime] batChg] bootstrap\r\n");
-    fprintf(stderr, "Launch a LWM2M client.\r\n\n");
-}
-
 static lwm2m_object_t * prv_find_object(lwm2m_context_t * contextP,
                                         uint16_t Id)
 {
@@ -742,6 +736,21 @@ static void close_backup_object()
 }
 #endif
 
+void print_usage(void)
+{
+    fprintf(stdout, "Usage: lwm2mclient [OPTION]\r\n");
+    fprintf(stdout, "Launch a LWM2M client.\r\n");
+    fprintf(stdout, "Options:\r\n");
+    fprintf(stdout, "  -n NAME\tSet the endpoint name of the Client. Default: testlwm2mclient\r\n");
+    fprintf(stdout, "  -l PORT\tSet the local UDP port of the Client. Default: 56830\r\n");
+    fprintf(stdout, "  -h HOST\tSet the hostname of the LWM2M Server to connect to. Default: localhost\r\n");
+    fprintf(stdout, "  -p HOST\tSet the port of the LWM2M Server to connect to. Default: "LWM2M_STANDARD_PORT_STR"\r\n");
+    fprintf(stdout, "  -t TIME\tSet the lifetime of the Client. Default: 300\r\n");
+    fprintf(stdout, "  -b\t\tBootstrap requested.\r\n");
+    fprintf(stdout, "  -c\t\tChange battery level over time.\r\n");
+    fprintf(stdout, "\r\n");
+}
+
 int main(int argc, char *argv[])
 {
     client_data_t data;
@@ -753,10 +762,11 @@ int main(int argc, char *argv[])
     const char * serverPort = LWM2M_STANDARD_PORT_STR;
     char * name = "testlwm2mclient";
     int lifetime = 300;
-    int batterylevelchanging = 1;
+    int batterylevelchanging = 0;
     time_t reboot_time = 0;
+    int opt;
+    bool bootstrapRequested = false;
 #ifdef LWM2M_BOOTSTRAP
-    char* bootstrapRequested = "no";
     lwm2m_bootstrap_state_t previousBootstrapState = NOT_BOOTSTRAPPED;
 #endif
 
@@ -792,15 +802,37 @@ int main(int argc, char *argv[])
 
     memset(&data, 0, sizeof(client_data_t));
 
-    if (argc >= 2) localPort  = argv[1];
-    if (argc >= 3) server     = argv[2];
-    if (argc >= 4) serverPort = argv[3];
-    if (argc >= 5) name       = argv[4];
-    if (argc >= 6) sscanf(argv[5], "%d", &lifetime);
-    if (argc >= 7) batterylevelchanging = argv[6][0] == '1' ? 1 : 0;
-#ifdef LWM2M_BOOTSTRAP
-    if (argc >= 8) bootstrapRequested = argv[7];
-#endif
+    while ((opt = getopt(argc, argv, "bcl:n:p:t:h:")) != -1)
+    {
+        switch (opt)
+        {
+        case 'b':
+            bootstrapRequested = true;
+            break;
+        case 'c':
+            batterylevelchanging = 1;
+            break;
+        case 't':
+            sscanf(optarg, "%d", &lifetime);
+            break;
+        case 'n':
+            name = optarg;
+            break;
+        case 'l':
+            localPort = optarg;
+            break;
+        case 'h':
+            server = optarg;
+            break;
+        case 'p':
+            serverPort = optarg;
+            break;
+        default:
+            print_usage();
+            return 0;
+        }
+    }
+
     /*
      *This call an internal function that create an IPV6 socket on the port 5683.
      */
@@ -820,7 +852,7 @@ int main(int argc, char *argv[])
     int serverId = 123;
     sprintf (serverUri, "coap://%s:%s", server, serverPort);
 #ifdef LWM2M_BOOTSTRAP
-    objArray[0] = get_security_object(serverId, serverUri, strcmp(bootstrapRequested, "bootstrap") == 0 ? true : false);
+    objArray[0] = get_security_object(serverId, serverUri, bootstrapRequested);
 #else
     objArray[0] = get_security_object(serverId, serverUri, false);
 #endif
@@ -917,11 +949,12 @@ int main(int argc, char *argv[])
     /*
      * Bootstrap state initialization
      */
-    if (strcmp(bootstrapRequested, "bootstrap") == 0)
+    if (bootstrapRequested)
     {
         lwm2mH->bsState = BOOTSTRAP_REQUESTED;
     }
-    else {
+    else
+    {
         lwm2mH->bsState = NOT_BOOTSTRAPPED;
     }
 #endif
