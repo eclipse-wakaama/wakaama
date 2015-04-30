@@ -348,6 +348,115 @@ syntax_error:
     fprintf(stdout, "Syntax error !\n");
 }
 
+static void prv_object_list(char * buffer,
+                            void * user_data)
+{
+    lwm2m_context_t * lwm2mH = (lwm2m_context_t *)user_data;
+    uint16_t i;
+
+    for (i = 0 ; i < lwm2mH->numObject ; i++)
+    {
+        lwm2m_object_t * objectP;
+
+        objectP = lwm2mH->objectList[i];
+        if (objectP->instanceList == NULL)
+        {
+            fprintf(stdout, "/%d ", objectP->objID);
+        }
+        else
+        {
+            lwm2m_list_t * instanceP;
+
+            for (instanceP = objectP->instanceList; instanceP != NULL ; instanceP = instanceP->next)
+            {
+                fprintf(stdout, "/%d/%d  ", objectP->objID, instanceP->id);
+            }
+        }
+        fprintf(stdout, "\r\n");
+    }
+}
+
+static void prv_instance_dump(lwm2m_object_t * objectP,
+                              uint16_t id)
+{
+    int numData;
+    lwm2m_tlv_t * dataArray;
+    int size;
+    uint8_t * buffer;
+    int i;
+    uint16_t res;
+
+    numData = 0;
+    res = objectP->readFunc(id, &numData, &dataArray, objectP);
+    if (res != COAP_205_CONTENT)
+    {
+        printf("Error ");
+        print_status(stdout, res);
+        printf("\r\n");
+        return;
+    }
+
+    dump_tlv(stdout, numData, dataArray, 0);
+
+    size = lwm2m_tlv_serialize(numData, dataArray, &buffer);
+    printf("char objectTlv[%d] = {", size);
+    for (i = 0 ; i < size ; i++)
+    {
+        printf("0x%02X, ", buffer[i]);
+    }
+    printf("\b\b};\r\n");
+    lwm2m_tlv_free(numData, dataArray);
+    lwm2m_free(buffer);
+}
+
+
+static void prv_object_dump(char * buffer,
+                            void * user_data)
+{
+    lwm2m_context_t * lwm2mH = (lwm2m_context_t *) user_data;
+    lwm2m_uri_t uri;
+    char * end = NULL;
+    int result;
+    lwm2m_object_t * objectP;
+    uint16_t i;
+
+
+    end = get_end_of_arg(buffer);
+    if (end[0] == 0) goto syntax_error;
+
+    result = lwm2m_stringToUri(buffer, end - buffer, &uri);
+    if (result == 0) goto syntax_error;
+    if (uri.flag & LWM2M_URI_FLAG_RESOURCE_ID) goto syntax_error;
+
+    objectP = prv_find_object(lwm2mH, uri.objectId);
+    if (objectP == NULL)
+    {
+        fprintf(stdout, "Object not found.\n");
+        return;
+    }
+
+    if (uri.flag & LWM2M_URI_FLAG_INSTANCE_ID)
+    {
+        prv_instance_dump(objectP, uri.instanceId);
+    }
+    else
+    {
+        lwm2m_list_t * instanceP;
+
+        for (instanceP = objectP->instanceList; instanceP != NULL ; instanceP = instanceP->next)
+        {
+            fprintf(stdout, "Instance %d:\r\n", instanceP->id);
+            prv_instance_dump(objectP, instanceP->id);
+            fprintf(stdout, "\r\n");
+        }
+    }
+
+    return;
+
+syntax_error:
+    fprintf(stdout, "Syntax error !\n");
+}
+
 static void prv_update(char * buffer,
                        void * user_data)
 {
@@ -672,6 +781,9 @@ int main(int argc, char *argv[])
             {"dispb", "Display current backup of objects/instances/resources\r\n"
                     "\t(only security and server objects are backupped)", NULL, prv_display_backup, NULL},
 #endif
+            {"ls", "List Objects and Instances", NULL, prv_object_list, NULL},
+            {"dump", "Dump an Object", "dump URI"
+                                       "URI: uri of the Object or Instance such as /3/0, /1\r\n", prv_object_dump, NULL},
             {"quit", "Quit the client gracefully.", NULL, prv_quit, NULL},
             {"^C", "Quit the client abruptly (without sending a de-register message).", NULL, NULL, NULL},
 
@@ -692,7 +804,7 @@ int main(int argc, char *argv[])
     /*
      *This call an internal function that create an IPV6 socket on the port 5683.
      */
-    fprintf(stdout, "Trying to bind LWM2M Client to port %s\r\n", localPort);
+    fprintf(stderr, "Trying to bind LWM2M Client to port %s\r\n", localPort);
     data.sock = create_socket(localPort);
     if (data.sock < 0)
     {
@@ -850,8 +962,8 @@ int main(int argc, char *argv[])
     {
         commands[i].userData = (void *)lwm2mH;
     }
+    fprintf(stdout, "LWM2M Client \"%s\" started on port %s\r\n", name, localPort);
     fprintf(stdout, "> "); fflush(stdout);
-
     /*
      * We now enter in a while loop that will handle the communications from the server
      */
