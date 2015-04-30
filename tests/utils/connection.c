@@ -174,47 +174,4 @@ int connection_send(connection_t *connP,
     return 0;
 }
 
-void output_buffer(FILE * stream,
-                   uint8_t * buffer,
-                   int length)
-{
-    int i;
-    int j;
-
-    i = 0;
-    while (i < length)
-    {
-
-        fprintf(stream, "  ");
-
-        for (j = 0 ; j < 16 && i+j < length; j++)
-        {
-            fprintf(stream, "%02X ", buffer[i+j]);
-        }
-        if (i != 0)
-        {
-            while (j < 16)
-            {
-                fprintf(stream, "   ");
-                j++;
-            }
-        }
-        fprintf(stream, "  ");
-        for (j = 0 ; j < 16 && i+j < length; j++)
-        {
-            if (isprint(buffer[i+j]))
-            {
-                fprintf(stream, "%c ", buffer[i+j]);
-            }
-            else
-            {
-                fprintf(stream, ". ");
-            }
-        }
-        fprintf(stream, "\n");
-
-        i += 16;
-    }
-}
-
 

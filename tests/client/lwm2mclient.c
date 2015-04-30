@@ -236,7 +236,7 @@ static void * prv_connect_server(uint16_t secObjInstID, void * userData)
         goto exit;
     }
 
-    fprintf(stdout, "Trying to connect to LWM2M Server at %s:%d\r\n", host, port);
+    fprintf(stderr, "Trying to connect to LWM2M Server at %s:%d\r\n", host, port);
     newConnP = connection_create(dataP->connList, dataP->sock, host, port);
     if (newConnP == NULL) {
         fprintf(stderr, "Connection creation failed.\r\n");
@@ -475,28 +475,28 @@ static void prv_display_bootstrap_state(lwm2m_bootstrap_state_t bootstrapState)
 {
     switch (bootstrapState) {
     case NOT_BOOTSTRAPPED:
-        fprintf(stdout, "NOT BOOTSTRAPPED\r\n");
+        fprintf(stderr, "NOT BOOTSTRAPPED\r\n");
         break;
     case BOOTSTRAP_REQUESTED:
-        fprintf(stdout, "DI BOOTSTRAP REQUESTED\r\n");
+        fprintf(stderr, "DI BOOTSTRAP REQUESTED\r\n");
         break;
     case BOOTSTRAP_CLIENT_HOLD_OFF:
-        fprintf(stdout, "DI BOOTSTRAP CLIENT HOLD OFF\r\n");
+        fprintf(stderr, "DI BOOTSTRAP CLIENT HOLD OFF\r\n");
         break;
     case BOOTSTRAP_INITIATED:
-        fprintf(stdout, "DI BOOTSTRAP INITIATED\r\n");
+        fprintf(stderr, "DI BOOTSTRAP INITIATED\r\n");
         break;
     case BOOTSTRAP_PENDING:
-        fprintf(stdout, "DI BOOTSTRAP PENDING\r\n");
+        fprintf(stderr, "DI BOOTSTRAP PENDING\r\n");
         break;
     case BOOTSTRAP_FINISHED:
-        fprintf(stdout, "DI BOOTSTRAP FINISHED\r\n");
+        fprintf(stderr, "DI BOOTSTRAP FINISHED\r\n");
         break;
     case BOOTSTRAP_FAILED:
-        fprintf(stdout, "DI BOOTSTRAP FAILED\r\n");
+        fprintf(stderr, "DI BOOTSTRAP FAILED\r\n");
         break;
     case BOOTSTRAPPED:
-        fprintf(stdout, "BOOTSTRAPPED\r\n");
+        fprintf(stderr, "BOOTSTRAPPED\r\n");
         break;
     default:
         break;
@@ -973,7 +973,7 @@ int main(int argc, char *argv[])
                     /*
                      * Display it in the STDERR
                      */
-                    output_buffer(stderr, buffer, numBytes);
+                    output_buffer(stderr, buffer, numBytes, 0);
 
                     connP = connection_find(data.connList, &addr, addrLen);
                     if (connP != NULL)
@@ -1001,7 +1001,7 @@ int main(int argc, char *argv[])
                 if (numBytes > 1)
                 {
                     buffer[numBytes] = 0;
-                    fprintf(stdout, "STDIN %d bytes '%s'\r\n> ", numBytes, buffer);
+                    fprintf(stderr, "STDIN %d bytes '%s'\r\n> ", numBytes, buffer);
 
                     /*
                      * We call the corresponding callback of the typed command passing it the buffer for further arguments

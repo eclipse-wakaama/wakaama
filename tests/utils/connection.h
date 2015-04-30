@@ -47,6 +47,4 @@ void connection_free(connection_t * connList);
 
 int connection_send(connection_t *connP, uint8_t * buffer, size_t length);
 
-void output_buffer(FILE * stream, uint8_t * buffer, int length);
-
 #endif

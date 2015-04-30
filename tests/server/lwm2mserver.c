@@ -80,6 +80,13 @@
 
 static int g_quit = 0;
 
+static void prv_print_error(uint8_t status)
+{
+    fprintf(stdout, "Error: ");
+    print_status(stdout, status);
+    fprintf(stdout, "\r\n");
+}
+
 static uint8_t prv_buffer_send(void * sessionH,
                                uint8_t * buffer,
                                size_t length,
@@ -114,29 +121,6 @@ static char * prv_dump_binding(lwm2m_binding_t binding)
         return "UDP queue mode plus SMS";
     default:
         return "";
-    }
-}
-
-#define CODE_TO_STRING(X)   case X : return "(" #X ") "
-
-const char* prv_status_to_string(int status)
-{
-    switch(status)
-	{
-    CODE_TO_STRING(COAP_NO_ERROR);
-    CODE_TO_STRING(COAP_201_CREATED);
-    CODE_TO_STRING(COAP_202_DELETED);
-    CODE_TO_STRING(COAP_204_CHANGED);
-    CODE_TO_STRING(COAP_205_CONTENT);
-    CODE_TO_STRING(COAP_400_BAD_REQUEST);
-    CODE_TO_STRING(COAP_401_UNAUTHORIZED);
-    CODE_TO_STRING(COAP_404_NOT_FOUND);
-    CODE_TO_STRING(COAP_405_METHOD_NOT_ALLOWED);
-    CODE_TO_STRING(COAP_406_NOT_ACCEPTABLE);
-    CODE_TO_STRING(COAP_500_INTERNAL_SERVER_ERROR);
-    CODE_TO_STRING(COAP_501_NOT_IMPLEMENTED);
-    CODE_TO_STRING(COAP_503_SERVICE_UNAVAILABLE);
-    default: return "";
     }
 }
 
@@ -190,81 +174,6 @@ static void prv_output_clients(char * buffer,
     }
 }
 
-static void print_indent(int num)
-{
-    int i;
-
-    for ( i = 0 ; i< num ; i++)
-        fprintf(stdout, " ");
-}
-
-static void output_tlv(uint8_t * buffer,
-                       size_t buffer_len,
-                       int indent)
-{
-    lwm2m_tlv_type_t type;
-    uint16_t id;
-    size_t dataIndex;
-    size_t dataLen;
-    int length = 0;
-    int result;
-
-    while (0 != (result = lwm2m_decodeTLV((uint8_t*)buffer + length, buffer_len - length, &type, &id, &dataIndex, &dataLen)))
-    {
-        print_indent(indent);
-        fprintf(stdout, "ID: %d", id);
-        fprintf(stdout, "  type: ");
-        switch (type)
-        {
-        case LWM2M_TYPE_OBJECT_INSTANCE:
-            fprintf(stdout, "Object Instance");
-            break;
-        case LWM2M_TYPE_RESOURCE_INSTANCE:
-            fprintf(stdout, "Resource Instance");
-            break;
-        case LWM2M_TYPE_MULTIPLE_RESOURCE:
-            fprintf(stdout, "Multiple Instances");
-            break;
-        case LWM2M_TYPE_RESOURCE:
-            fprintf(stdout, "Resource");
-            break;
-        default:
-            printf("unknown (%d)", (int)type);
-            break;
-        }
-        fprintf(stdout, "\n");
-        print_indent(indent);
-        fprintf(stdout, "{\n");
-        if (type == LWM2M_TYPE_OBJECT_INSTANCE || type == LWM2M_TYPE_MULTIPLE_RESOURCE)
-        {
-            output_tlv(buffer + length + dataIndex, dataLen, indent+2);
-        }
-        else
-        {
-            int64_t intValue;
-            double floatValue;
-
-            print_indent(indent+2);
-            fprintf(stdout, "data (%ld bytes):  ", dataLen);
-            if (dataLen >= 16) fprintf(stdout, "\n");
-            output_buffer(stdout, (uint8_t*)buffer + length + dataIndex, dataLen);
-            if (0 < lwm2m_opaqueToInt(buffer + length + dataIndex, dataLen, &intValue))
-            {
-                print_indent(indent+2);
-                fprintf(stdout, "data as Integer: %" PRId64 "\r\n", intValue);
-            }
-            if (0 < lwm2m_opaqueToFloat(buffer + length + dataIndex, dataLen, &floatValue))
-            {
-                print_indent(indent+2);
-                fprintf(stdout, "data as Float: %.16g\r\n", floatValue);
-            }
-        }
-        print_indent(indent);
-        fprintf(stdout, "}\n");
-        length += result;
-    }
-}
-
 static int prv_read_id(char * buffer,
                        uint16_t * idP)
 {
@@ -287,16 +196,6 @@ static int prv_read_id(char * buffer,
     return nb;
 }
 
-static void prv_print_result(int status)
-{
-    fprintf(stdout, "  returned status %d.%02d %s\r\n", (status&0xE0)>>5, status&0x1F, prv_status_to_string(status));
-}
-
-static void prv_print_error(int status)
-{
-    fprintf(stdout, "Error %d.%02d %s!\r\n", (status&0xE0)>>5, status&0x1F, prv_status_to_string(status));
-}
-
 static void prv_result_callback(uint16_t clientID,
                                 lwm2m_uri_t * uriP,
                                 int status,
@@ -311,18 +210,20 @@ static void prv_result_callback(uint16_t clientID,
         fprintf(stdout, "/");
     if (LWM2M_URI_IS_SET_RESOURCE(uriP))
             fprintf(stdout, "/%d", uriP->resourceId);
-    prv_print_result(status);
+    fprintf(stdout, " : ");
+    print_status(stdout, status);
+    fprintf(stdout, "\r\n");
 
     if (data != NULL)
     {
         fprintf(stdout, "%d bytes received:\r\n", dataLength);
         if (LWM2M_URI_IS_SET_RESOURCE(uriP))
         {
-            output_buffer(stdout, data, dataLength);
+            output_buffer(stdout, data, dataLength, 1);
         }
         else
         {
-            output_tlv(data, dataLength, 2);
+            output_tlv(stdout, data, dataLength, 1);
         }
     }
 
@@ -337,7 +238,7 @@ static void prv_notify_callback(uint16_t clientID,
                                 int dataLength,
                                 void * userData)
 {
-    fprintf(stdout, "\r\nNotify from client #%d %d", clientID, uriP->objectId);
+    fprintf(stdout, "\r\nNotify from client #%d /%d", clientID, uriP->objectId);
     if (LWM2M_URI_IS_SET_INSTANCE(uriP))
         fprintf(stdout, "/%d", uriP->instanceId);
     else if (LWM2M_URI_IS_SET_RESOURCE(uriP))
@@ -349,7 +250,7 @@ static void prv_notify_callback(uint16_t clientID,
     if (data != NULL)
     {
         fprintf(stdout, "%d bytes received:\r\n", dataLength);
-        output_buffer(stdout, data, dataLength);
+        output_buffer(stdout, data, dataLength, 0);
     }
 
     fprintf(stdout, "\r\n> ");
@@ -840,8 +741,7 @@ int main(int argc, char *argv[])
                     }
 
                     fprintf(stderr, "%d bytes received from [%s]:%hu\r\n", numBytes, s, ntohs(port));
-
-                    output_buffer(stderr, buffer, numBytes);
+                    output_buffer(stderr, buffer, numBytes, 0);
 
                     connP = connection_find(connList, &addr, addrLen);
                     if (connP == NULL)
