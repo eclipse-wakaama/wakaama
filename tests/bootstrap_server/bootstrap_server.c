@@ -198,6 +198,7 @@ static int prv_bootstrap_callback(void * sessionH,
     switch (status)
     {
     case COAP_NO_ERROR:
+        // Display
         fprintf(stdout, "\r\nBootstrap request from \"%s\"\r\n", name);
 
         if (strcmp(name, "testlwm2mclient") != 0)
@@ -205,8 +206,8 @@ static int prv_bootstrap_callback(void * sessionH,
             fprintf(stdout, "Unknown client.\r\n");
             return COAP_404_NOT_FOUND;
         }
-
         fprintf(stdout, "Deleting /\r\n");
+        // Process
         result = lwm2m_bootstrap_delete(lwm2mH, sessionH, NULL);
         if (result != COAP_NO_ERROR)
         {
@@ -216,7 +217,35 @@ static int prv_bootstrap_callback(void * sessionH,
         return COAP_204_CHANGED;
 
     default:
-        fprintf(stdout, "\r\n Received status %d.%02d %s\r\n", (status&0xE0)>>5, status&0x1F, prv_status_to_string(status));
+        // Display
+        fprintf(stdout, "\r\n Received status %d.%02d (%s) for URI /", (status&0xE0)>>5, status&0x1F, prv_status_to_string(status));
+        if (uriP != NULL)
+        {
+            printf("%hu", uriP->objectId);
+            if (LWM2M_URI_IS_SET_INSTANCE(uriP))
+            {
+                fprintf(stdout, "/%d", uriP->instanceId);
+                if (LWM2M_URI_IS_SET_RESOURCE(uriP))
+                    fprintf(stdout, "/%d", uriP->resourceId);
+            }
+        }
+        printf("\r\n");
+        // Process
+        if (status == COAP_202_DELETED)
+        {
+            lwm2m_uri_t uri;
+            uint8_t instTlv[9] = {0xC1, 0x01, 0x14, 0xC4, 0x03, 0xC1, 0xF0, 0x00, 0x00};
+
+            uri.flag = LWM2M_URI_FLAG_OBJECT_ID | LWM2M_URI_FLAG_INSTANCE_ID;
+            uri.objectId = 1024;
+            uri.instanceId = 1;
+            result = lwm2m_bootstrap_write(lwm2mH, sessionH, &uri, instTlv, 9);
+            if (result != COAP_NO_ERROR)
+            {
+                fprintf(stdout, "lwm2m_bootstrap_write(): ");
+                prv_print_error(result);
+            }
+        }
         break;
     }
 

@@ -113,6 +113,7 @@ typedef struct
     void * userData;
 } dm_data_t;
 
+#ifdef LWM2M_BOOTSTRAP_SERVER_MODE
 typedef struct
 {
     bool        isUri;
@@ -120,6 +121,7 @@ typedef struct
     lwm2m_bootstrap_callback_t callback;
     void *      userData;
 } bs_data_t;
+#endif
 
 typedef struct _obs_list_
 {

@@ -344,6 +344,37 @@ int lwm2m_bootstrap_write(lwm2m_context_t * contextP,
                           uint8_t * buffer,
                           size_t length)
 {
-    return COAP_NO_ERROR;
+    lwm2m_transaction_t * transaction;
+    bs_data_t * dataP;
+
+    if (uriP == NULL
+    || buffer == NULL
+    || length == 0)
+    {
+        return COAP_400_BAD_REQUEST;
+    }
+
+    transaction = transaction_new(COAP_PUT, NULL, uriP, contextP->nextMID++, ENDPOINT_UNKNOWN, sessionH);
+    if (transaction == NULL) return INTERNAL_SERVER_ERROR_5_00;
+
+    coap_set_payload(transaction->message, buffer, length);
+
+    dataP = (bs_data_t *)lwm2m_malloc(sizeof(bs_data_t));
+    if (dataP == NULL)
+    {
+        transaction_free(transaction);
+        return COAP_500_INTERNAL_SERVER_ERROR;
+    }
+    dataP->isUri = true;
+    memcpy(&dataP->uri, uriP, sizeof(lwm2m_uri_t));
+    dataP->callback = contextP->bootstrapCallback;
+    dataP->userData = contextP->bootstrapUserData;
+
+    transaction->callback = bs_result_callback;
+    transaction->userData = (void *)dataP;
+
+    contextP->transactionList = (lwm2m_transaction_t *)LWM2M_LIST_ADD(contextP->transactionList, transaction);
+
+    return transaction_send(contextP, transaction);
 }
 #endif
