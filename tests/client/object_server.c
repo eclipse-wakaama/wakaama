@@ -205,7 +205,19 @@ static uint8_t prv_server_write(uint16_t instanceId,
 #ifdef LWM2M_BOOTSTRAP
             if (bootstrapPending)
             {
-                result = prv_set_int_value(dataArray + i, (uint32_t *)&(targetP->shortServerId));
+                uint32_t value = targetP->shortServerId;
+                result = prv_set_int_value(dataArray + i, &value);
+                if (COAP_204_CHANGED == result)
+                {
+                    if (0 < value && 0xFFFF >= value)
+                    {
+                        targetP->shortServerId = value;
+                    }
+                    else
+                    {
+                        result = COAP_406_NOT_ACCEPTABLE;
+                    }
+                }
             }
             else
 #endif
