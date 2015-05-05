@@ -41,6 +41,28 @@
 
 #include "commandline.h"
 #include "connection.h"
+#include "bootstrap_info.h"
+
+#define CMD_STATUS_NEW  0
+#define CMD_STATUS_SENT 1
+#define CMD_STATUS_OK   2
+#define CMD_STATUS_FAIL 3
+
+typedef struct _endpoint_
+{
+    struct _endpoint_ * next;
+    char *          name;
+    void *          handle;
+    bs_command_t *  cmdList;
+    uint8_t         status;
+} endpoint_t;
+
+typedef struct
+{
+    lwm2m_context_t * lwm2mH;
+    bs_info_t *     bsInfo;
+    endpoint_t *    endpointList;
+} internal_data_t;
 
 /*
  * ensure sync with: er_coap_13.h COAP_MAX_PACKET_SIZE!
@@ -81,6 +103,169 @@ void print_usage(char * port)
     fprintf(stderr, "Launch a LWM2M Bootstrap Server on localhost port %s.\r\n\n", port);
 }
 
+static void prv_endpoint_free(endpoint_t * endP)
+{
+    if (endP != NULL)
+    {
+        if (endP->name != NULL) free(endP->name);
+        free(endP);
+    }
+}
+
+static endpoint_t * prv_endpoint_find(internal_data_t * dataP,
+                                      void * sessionH)
+{
+    endpoint_t * endP;
+
+    endP = dataP->endpointList;
+
+    while (endP != NULL
+        && endP->handle != sessionH)
+    {
+        endP = endP->next;
+    }
+
+    return endP;
+}
+
+static endpoint_t * prv_endpoint_new(internal_data_t * dataP,
+                                     void * sessionH)
+{
+    endpoint_t * endP;
+
+    endP = prv_endpoint_find(dataP, sessionH);
+    if (endP != NULL)
+    {
+        // delete previous state for the endpoint
+        endpoint_t * parentP;
+
+        parentP = dataP->endpointList;
+        while (parentP != NULL
+            && parentP->next != endP)
+        {
+            parentP = parentP->next;
+        }
+        if (parentP != NULL)
+        {
+            parentP->next = endP->next;
+        }
+        else
+        {
+            dataP->endpointList = endP->next;
+        }
+        prv_endpoint_free(endP);
+    }
+
+    endP = (endpoint_t *)malloc(sizeof(endpoint_t));
+    return endP;
+}
+
+static void prv_endpoint_clean(internal_data_t * dataP)
+{
+    endpoint_t * endP;
+    endpoint_t * parentP;
+
+    while (dataP->endpointList != NULL
+        && (dataP->endpointList->cmdList == NULL
+         || dataP->endpointList->status == CMD_STATUS_FAIL))
+    {
+        endP = dataP->endpointList->next;
+        prv_endpoint_free(dataP->endpointList);
+        dataP->endpointList = endP;
+    }
+
+    parentP = dataP->endpointList;
+    if (parentP != NULL)
+    {
+        endP = dataP->endpointList->next;
+        while(endP != NULL)
+        {
+            endpoint_t * nextP;
+
+            nextP = endP->next;
+            if (endP->cmdList == NULL
+            || endP->status == CMD_STATUS_FAIL)
+            {
+                prv_endpoint_free(endP);
+                parentP->next = nextP;
+            }
+            else
+            {
+                parentP = endP;
+            }
+            endP = nextP;
+        }
+    }
+}
+
+static void prv_send_command(internal_data_t * dataP,
+                             endpoint_t * endP)
+{
+    int res;
+
+    if (endP->cmdList == NULL) return;
+
+    switch (endP->cmdList->operation)
+    {
+    case BS_DELETE:
+        res = lwm2m_bootstrap_delete(dataP->lwm2mH, endP->handle, endP->cmdList->uri);
+        break;
+
+    case BS_WRITE_SECURITY:
+    {
+        lwm2m_uri_t uri;
+        bs_server_tlv_t * serverP;
+
+        serverP = (bs_server_tlv_t *)LWM2M_LIST_FIND(dataP->bsInfo->serverList, endP->cmdList->serverId);
+        if (serverP == NULL
+         || serverP->securityData == NULL)
+        {
+            endP->status = CMD_STATUS_FAIL;
+            return;
+        }
+
+        uri.flag = LWM2M_URI_FLAG_OBJECT_ID | LWM2M_URI_FLAG_INSTANCE_ID;
+        uri.objectId = LWM2M_SECURITY_OBJECT_ID;
+        uri.instanceId = endP->cmdList->serverId;
+
+        res = lwm2m_bootstrap_write(dataP->lwm2mH, endP->handle, &uri, serverP->securityData, serverP->securityLen);
+    }
+        break;
+
+    case BS_WRITE_SERVER:
+    {
+        lwm2m_uri_t uri;
+        bs_server_tlv_t * serverP;
+
+        serverP = (bs_server_tlv_t *)LWM2M_LIST_FIND(dataP->bsInfo->serverList, endP->cmdList->serverId);
+        if (serverP == NULL
+         || serverP->serverData == NULL)
+        {
+            endP->status = CMD_STATUS_FAIL;
+            return;
+        }
+
+        uri.flag = LWM2M_URI_FLAG_OBJECT_ID | LWM2M_URI_FLAG_INSTANCE_ID;
+        uri.objectId = LWM2M_SERVER_OBJECT_ID;
+        uri.instanceId = endP->cmdList->serverId;
+
+        res = lwm2m_bootstrap_write(dataP->lwm2mH, endP->handle, &uri, serverP->serverData, serverP->serverLen);
+    }
+        break;
+
+    default:
+        return;
+    }
+
+    if (res == COAP_NO_ERROR)
+    {
+        endP->status = CMD_STATUS_SENT;
+    }
+    else
+    {
+        endP->status = CMD_STATUS_FAIL;
+    }
+}
 
 static int prv_bootstrap_callback(void * sessionH,
                                   uint8_t status,
@@ -88,30 +273,52 @@ static int prv_bootstrap_callback(void * sessionH,
                                   char * name,
                                   void * userData)
 {
-    lwm2m_context_t * lwm2mH = (lwm2m_context_t *)userData;
+    internal_data_t * dataP = (internal_data_t *)userData;
     uint8_t result;
+    endpoint_t * endP;
 
     switch (status)
     {
     case COAP_NO_ERROR:
+    {
+        bs_endpoint_info_t * endInfoP;
+
         // Display
         fprintf(stdout, "\r\nBootstrap request from \"%s\"\r\n", name);
 
-        if (strcmp(name, "testlwm2mclient") != 0)
+        // find Bootstrap Info for this endpoint
+        endInfoP = dataP->bsInfo->endpointList;
+        while (endInfoP != NULL
+            && endInfoP->name != NULL
+            && strcmp(name, endInfoP->name) != 0)
         {
-            fprintf(stdout, "Unknown client.\r\n");
-            return COAP_404_NOT_FOUND;
+            endInfoP = endInfoP->next;
         }
-        fprintf(stdout, "Deleting /\r\n");
-        // Process
-        result = lwm2m_bootstrap_delete(lwm2mH, sessionH, NULL);
-        if (result != COAP_NO_ERROR)
+        if (endInfoP == NULL)
         {
-            fprintf(stdout, "lwm2m_bootstrap_delete(): ");
-            print_status(stdout, status);
-            fprintf(stdout, "\r\n");
+            // find default Bootstrap Info
+            endInfoP = dataP->bsInfo->endpointList;
+            while (endInfoP != NULL
+                && endInfoP->name != NULL)
+            {
+                endInfoP = endInfoP->next;
+            }
         }
+        // Nothing found, discard the request
+        if (endInfoP == NULL)return COAP_IGNORE;
+
+        endP = prv_endpoint_new(dataP, sessionH);
+        if (endP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
+
+        endP->cmdList = endInfoP->commandList;
+        endP->handle = sessionH;
+        endP->name = strdup(name);
+        endP->status = CMD_STATUS_NEW;
+        endP->next = dataP->endpointList;
+        dataP->endpointList = endP;
+
         return COAP_204_CHANGED;
+    }
 
     default:
         // Display
@@ -120,7 +327,7 @@ static int prv_bootstrap_callback(void * sessionH,
         fprintf(stdout, " for URI /");
         if (uriP != NULL)
         {
-            printf("%hu", uriP->objectId);
+            fprintf(stdout, "%hu", uriP->objectId);
             if (LWM2M_URI_IS_SET_INSTANCE(uriP))
             {
                 fprintf(stdout, "/%d", uriP->instanceId);
@@ -128,23 +335,47 @@ static int prv_bootstrap_callback(void * sessionH,
                     fprintf(stdout, "/%d", uriP->resourceId);
             }
         }
-        printf("\r\n");
-        // Process
-        if (status == COAP_202_DELETED)
-        {
-            lwm2m_uri_t uri;
-            uint8_t instTlv[9] = {0xC1, 0x01, 0x14, 0xC4, 0x03, 0xC1, 0xF0, 0x00, 0x00};
 
-            uri.flag = LWM2M_URI_FLAG_OBJECT_ID | LWM2M_URI_FLAG_INSTANCE_ID;
-            uri.objectId = 1024;
-            uri.instanceId = 1;
-            result = lwm2m_bootstrap_write(lwm2mH, sessionH, &uri, instTlv, 9);
-            if (result != COAP_NO_ERROR)
+        endP = prv_endpoint_find(dataP, sessionH);
+        if (endP == NULL)
+        {
+            fprintf(stdout, " from unknown endpoint.\r\n");
+            return COAP_NO_ERROR;
+        }
+        fprintf(stdout, " from endpoint %s.\r\n", endP->name);
+
+        // should not happen
+        if (endP->cmdList == NULL) return COAP_NO_ERROR;
+        if (endP->status != CMD_STATUS_SENT) return COAP_NO_ERROR;
+
+        switch (endP->cmdList->operation)
+        {
+        case BS_DELETE:
+            if (status == COAP_202_DELETED)
             {
-                fprintf(stdout, "lwm2m_bootstrap_write(): ");
-                print_status(stdout, result);
-                fprintf(stdout, "\r\n");
+                endP->status = CMD_STATUS_OK;
             }
+            else
+            {
+                endP->status = CMD_STATUS_FAIL;
+            }
+            break;
+
+        case BS_WRITE_SECURITY:
+        case BS_WRITE_SERVER:
+            if (status == COAP_204_CHANGED)
+            {
+                endP->status = CMD_STATUS_OK;
+            }
+            else
+            {
+                endP->status = CMD_STATUS_FAIL;
+            }
+            break;
+
+        default:
+            endP->status = CMD_STATUS_FAIL;
+            break;
         }
         break;
     }
@@ -159,10 +390,11 @@ int main(int argc, char *argv[])
     fd_set readfds;
     struct timeval tv;
     int result;
-    lwm2m_context_t * lwm2mH = NULL;
     int i;
     connection_t * connList = NULL;
     char * port = "5685";
+    internal_data_t data;
+    char * filename = "bootstrap_info.ini";
 
     command_desc_t commands[] =
     {
@@ -178,8 +410,10 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    lwm2mH = lwm2m_init(NULL, prv_buffer_send, NULL);
-    if (NULL == lwm2mH)
+    memset(&data, 0, sizeof(internal_data_t));
+
+    data.lwm2mH = lwm2m_init(NULL, prv_buffer_send, NULL);
+    if (NULL == data.lwm2mH)
     {
         fprintf(stderr, "lwm2m_init() failed\r\n");
         return -1;
@@ -187,16 +421,22 @@ int main(int argc, char *argv[])
 
     signal(SIGINT, handle_sigint);
 
-    for (i = 0 ; commands[i].name != NULL ; i++)
+    data.bsInfo = bs_get_info(filename);
+    if (data.bsInfo == NULL)
     {
-        commands[i].userData = (void *)lwm2mH;
+        fprintf(stderr, "Reading Bootsrap Info from file %s failed.\r\n", filename);
+        return -1;
     }
-    fprintf(stdout, "> "); fflush(stdout);
 
-    lwm2m_set_bootstrap_callback(lwm2mH, prv_bootstrap_callback, (void *)lwm2mH);
+    lwm2m_set_bootstrap_callback(data.lwm2mH, prv_bootstrap_callback, (void *)&data);
+
+    fprintf(stdout, "LWM2M Bootstrap Server now listening on port %s.\r\n\n", port);
+    fprintf(stdout, "> "); fflush(stdout);
 
     while (0 == g_quit)
     {
+        endpoint_t * endP;
+
         FD_ZERO(&readfds);
         FD_SET(sock, &readfds);
         FD_SET(STDIN_FILENO, &readfds);
@@ -204,7 +444,7 @@ int main(int argc, char *argv[])
         tv.tv_sec = 60;
         tv.tv_usec = 0;
 
-        result = lwm2m_step(lwm2mH, &(tv.tv_sec));
+        result = lwm2m_step(data.lwm2mH, &(tv.tv_sec));
         if (result != 0)
         {
             fprintf(stderr, "lwm2m_step() failed: 0x%X\r\n", result);
@@ -220,11 +460,12 @@ int main(int argc, char *argv[])
               fprintf(stderr, "Error in select(): %d\r\n", errno);
             }
         }
-        else if (result > 0)
+        else if (result >= 0)
         {
             uint8_t buffer[MAX_PACKET_SIZE];
             int numBytes;
 
+            // Packet received
             if (FD_ISSET(sock, &readfds))
             {
                 struct sockaddr_storage addr;
@@ -272,10 +513,11 @@ int main(int argc, char *argv[])
                     }
                     if (connP != NULL)
                     {
-                        lwm2m_handle_packet(lwm2mH, buffer, numBytes, connP);
+                        lwm2m_handle_packet(data.lwm2mH, buffer, numBytes, connP);
                     }
                 }
             }
+            // command line input
             else if (FD_ISSET(STDIN_FILENO, &readfds))
             {
                 numBytes = read(STDIN_FILENO, buffer, MAX_PACKET_SIZE - 1);
@@ -295,10 +537,41 @@ int main(int argc, char *argv[])
                     fprintf(stdout, "\r\n");
                 }
             }
+            // Do operations on endpoints
+            prv_endpoint_clean(&data);
+
+            endP = data.endpointList;
+            while (endP != NULL)
+            {
+                switch(endP->status)
+                {
+                case CMD_STATUS_OK:
+                    endP->cmdList = endP->cmdList->next;
+                    endP->status = CMD_STATUS_NEW;
+                    // fall through
+                case CMD_STATUS_NEW:
+                    prv_send_command(&data, endP);
+                    break;
+                default:
+                    break;
+                }
+
+                endP = endP->next;
+            }
         }
     }
 
-    lwm2m_close(lwm2mH);
+    lwm2m_close(data.lwm2mH);
+    bs_free_info(data.bsInfo);
+    while (data.endpointList != NULL)
+    {
+        endpoint_t * endP;
+
+        endP = data.endpointList;
+        data.endpointList = data.endpointList->next;
+
+        prv_endpoint_free(endP);
+    }
     close(sock);
     connection_free(connList);
 
