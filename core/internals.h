@@ -83,6 +83,21 @@
 #define URI_BOOTSTRAP_SEGMENT           "bs"
 #define URI_BOOTSTRAP_SEGMENT_LEN       2
 
+#define QUERY_TEMPLATE      "ep="
+#define QUERY_LENGTH        3       // strlen("ep=")
+#define QUERY_SMS           "sms="
+#define QUERY_SMS_LEN       4
+#define QUERY_LIFETIME      "lt="
+#define QUERY_LIFETIME_LEN  3
+#define QUERY_VERSION       "lwm2m="
+#define QUERY_VERSION_LEN   6
+#define QUERY_BINDING       "b="
+#define QUERY_BINDING_LEN   2
+#define QUERY_DELIMITER     "&"
+
+#define QUERY_VERSION_FULL      "lwm2m=1.0"
+#define QUERY_VERSION_FULL_LEN  9
+
 #define LWM2M_URI_FLAG_DM           (uint8_t)0x00
 #define LWM2M_URI_FLAG_DELETE_ALL   (uint8_t)0x10
 #define LWM2M_URI_FLAG_REGISTRATION (uint8_t)0x20
@@ -97,6 +112,16 @@ typedef struct
     lwm2m_result_callback_t callback;
     void * userData;
 } dm_data_t;
+
+#ifdef LWM2M_BOOTSTRAP_SERVER_MODE
+typedef struct
+{
+    bool        isUri;
+    lwm2m_uri_t uri;
+    lwm2m_bootstrap_callback_t callback;
+    void *      userData;
+} bs_data_t;
+#endif
 
 typedef struct _obs_list_
 {
@@ -153,6 +178,7 @@ void bootstrap_failed(lwm2m_context_t * context);
 void reset_bootstrap_timer(lwm2m_context_t * context);
 void update_bootstrap_state(lwm2m_context_t * contextP, uint32_t currentTime, time_t* timeoutP);
 void delete_bootstrap_server_list(lwm2m_context_t * contextP);
+uint8_t handle_bootstrap_request(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, void * fromSessionH, coap_packet_t * message, coap_packet_t * response);
 
 // defined in liblwm2m.c
 void delete_transaction_list(lwm2m_context_t * context);
