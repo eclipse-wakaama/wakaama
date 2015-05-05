@@ -97,10 +97,15 @@ void handle_sigint(int signum)
     prv_quit(NULL, NULL);
 }
 
-void print_usage(char * port)
+void print_usage(char * filename,
+                 char * port)
 {
-    fprintf(stderr, "Usage: bootstap_server\r\n");
-    fprintf(stderr, "Launch a LWM2M Bootstrap Server on localhost port %s.\r\n\n", port);
+    fprintf(stdout, "Usage: bootstap_server [OPTION]\r\n");
+    fprintf(stderr, "Launch a LWM2M Bootstrap Server.\r\n\n");
+    fprintf(stdout, "Options:\r\n");
+    fprintf(stdout, "  -f FILE\tSpecify BootStrap Information file. Default: ./%s\r\n", filename);
+    fprintf(stdout, "  -p PORT\tSet the local UDP port of the Client. Default: %s\r\n", port);
+    fprintf(stdout, "\r\n");
 }
 
 static void prv_endpoint_free(endpoint_t * endP)
@@ -390,18 +395,33 @@ int main(int argc, char *argv[])
     fd_set readfds;
     struct timeval tv;
     int result;
-    int i;
     connection_t * connList = NULL;
     char * port = "5685";
     internal_data_t data;
     char * filename = "bootstrap_info.ini";
-
+    int opt;
     command_desc_t commands[] =
     {
             {"q", "Quit the server.", NULL, prv_quit, NULL},
 
             COMMAND_END_LIST
     };
+
+    while ((opt = getopt(argc, argv, "f:p:")) != -1)
+    {
+        switch (opt)
+        {
+        case 'f':
+            filename = optarg;
+            break;
+        case 'p':
+            port = optarg;
+            break;
+        default:
+            print_usage(filename, port);
+            return 0;
+        }
+    }
 
     sock = create_socket(port);
     if (sock < 0)
