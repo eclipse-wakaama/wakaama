@@ -12,11 +12,6 @@
  *
  * Contributors:
  *    David Navarro, Intel Corporation - initial API and implementation
- *    domedambrosio - Please refer to git log
- *    Simon Bernard - Please refer to git log
- *    Toby Jaffey - Please refer to git log
- *    Julien Vermillard - Please refer to git log
- *    Bosch Software Innovations GmbH - Please refer to git log
  *
  *******************************************************************************/
 
