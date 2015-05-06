@@ -400,6 +400,7 @@ int main(int argc, char *argv[])
     internal_data_t data;
     char * filename = "bootstrap_info.ini";
     int opt;
+    FILE * fd;
     command_desc_t commands[] =
     {
             {"q", "Quit the server.", NULL, prv_quit, NULL},
@@ -441,7 +442,15 @@ int main(int argc, char *argv[])
 
     signal(SIGINT, handle_sigint);
 
-    data.bsInfo = bs_get_info(filename);
+    fd = fopen(filename, "r");
+    if (fd == NULL)
+    {
+        fprintf(stderr, "Opening file %s failed.\r\n", filename);
+        return -1;
+    }
+
+    data.bsInfo = bs_get_info(fd);
+    fclose(fd);
     if (data.bsInfo == NULL)
     {
         fprintf(stderr, "Reading Bootsrap Info from file %s failed.\r\n", filename);

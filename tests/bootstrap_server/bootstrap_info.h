@@ -8,6 +8,7 @@
  *
  *******************************************************************************/
 
+#include <stdio.h>
 #include "liblwm2m.h"
 
 typedef enum
@@ -60,5 +61,5 @@ typedef struct
     bs_endpoint_info_t * endpointList;
 } bs_info_t;
 
-bs_info_t * bs_get_info(char * filename);
+bs_info_t * bs_get_info(FILE * fd);
 void bs_free_info(bs_info_t * infoP);
