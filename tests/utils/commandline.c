@@ -342,7 +342,7 @@ void dump_tlv(FILE * stream,
         fprintf(stream, "\r\n");
 
         print_indent(stream, indent+1);
-        fprintf(stream, "data length: %d\r\n", tlvP[i].length);
+        fprintf(stream, "data length: %d\r\n", (int) tlvP[i].length);
 
         if (tlvP[i].type == LWM2M_TYPE_OBJECT_INSTANCE
          || tlvP[i].type == LWM2M_TYPE_MULTIPLE_RESOURCE)
