@@ -412,8 +412,6 @@ static void prv_object_dump(char * buffer,
     char * end = NULL;
     int result;
     lwm2m_object_t * objectP;
-    uint16_t i;
-
 
     end = get_end_of_arg(buffer);
     if (end[0] == 0) goto syntax_error;
