@@ -71,6 +71,7 @@
 
 #include "commandline.h"
 #include "connection.h"
+#include "IPSO.h"
 
 /*
  * ensure sync with: er_coap_13.h COAP_MAX_PACKET_SIZE!
@@ -79,6 +80,23 @@
 #define MAX_PACKET_SIZE 198
 
 static int g_quit = 0;
+static bool g_ipso = false;
+
+typedef struct _ipso_object_
+{
+    struct _ipso_object_ * next;
+    uint16_t clientId;
+    lwm2m_client_object_t * objectP;
+    char templateStr[512];
+    char * outputStr;
+} ipso_object_t;
+
+typedef struct
+{
+    lwm2m_context_t * lwm2mH;
+    ipso_object_t * objectList;
+} internal_data_t;
+
 
 static void prv_print_error(uint8_t status)
 {
@@ -545,6 +563,229 @@ syntax_error:
     fprintf(stdout, "Syntax error !");
 }
 
+static void prv_ipso_callback(uint16_t clientID,
+                              lwm2m_uri_t * uriP,
+                              int status,
+                              uint8_t * data,
+                              int dataLength,
+                              void * userData)
+{
+    ipso_object_t * objectP = (ipso_object_t *)userData;
+    char * tempStr;
+
+    if (!LWM2M_URI_IS_SET_RESOURCE(uriP)) return;
+    if (data == NULL) return;
+
+    tempStr = (char *) lwm2m_malloc(dataLength + 1);
+    if (tempStr == NULL) return;
+
+    memcpy(tempStr, data, dataLength);
+    tempStr[dataLength] = 0;
+
+    if (objectP->outputStr != NULL) lwm2m_free(objectP->outputStr);
+    objectP->outputStr = tempStr;
+}
+
+static void prv_add_ipso_client(internal_data_t * dataP,
+                                lwm2m_client_t * targetP)
+{
+    lwm2m_client_object_t * cltObjP;
+
+    cltObjP = targetP->objectList;
+    while (cltObjP != NULL)
+    {
+        if (cltObjP->id >= IPSO_Digital_Input_OBJ_ID
+         && cltObjP->id <= IPSO_Barometer_OBJ_ID)
+        {
+            lwm2m_list_t * instP;
+
+            instP = cltObjP->instanceList;
+
+            while (instP != NULL)
+            {
+                ipso_object_t * objectP;
+                lwm2m_uri_t uri;
+
+                objectP = (ipso_object_t *)lwm2m_malloc(sizeof(ipso_object_t));
+                if (objectP == NULL) return;
+
+                memset(objectP, 0, sizeof(ipso_object_t));
+                objectP->clientId = targetP->internalID;
+                objectP->objectP = cltObjP;
+
+                uri.flag = LWM2M_URI_FLAG_OBJECT_ID | LWM2M_URI_FLAG_INSTANCE_ID | LWM2M_URI_FLAG_RESOURCE_ID;
+                uri.objectId = cltObjP->id;
+                uri.instanceId = instP->id;
+
+                switch (cltObjP->id)
+                {
+                case IPSO_Digital_Input_OBJ_ID:
+                    uri.resourceId = IPSO_Digital_Input_State_RES_ID;
+                    snprintf(objectP->templateStr, 512, "Client \"%s\" Digital Input #%d: ", targetP->name, instP->id);
+                    lwm2m_observe(dataP->lwm2mH, targetP->internalID, &uri, prv_ipso_callback, (void *)objectP);
+                    break;
+
+                case IPSO_Digital_Output_OBJ_ID:
+                    uri.resourceId = IPSO_Digital_Output_State_RES_ID;
+                    snprintf(objectP->templateStr, 512, "Client \"%s\" Digital Output #%d: ", targetP->name, instP->id);
+                    lwm2m_observe(dataP->lwm2mH, targetP->internalID, &uri, prv_ipso_callback, (void *)objectP);
+                    break;
+
+                case IPSO_Analogue_Input_OBJ_ID:
+                    uri.resourceId = IPSO_Analog_Input_Current_Value_RES_ID;
+                    snprintf(objectP->templateStr, 512, "Client \"%s\" Analog Input #%d: ", targetP->name, instP->id);
+                    lwm2m_observe(dataP->lwm2mH, targetP->internalID, &uri, prv_ipso_callback, (void *)objectP);
+                    break;
+
+                case IPSO_Analogue_Output_OBJ_ID:
+                    uri.resourceId = IPSO_Analog_Output_Current_Value_RES_ID;
+                    snprintf(objectP->templateStr, 512, "Client \"%s\" Analog Output #%d: ", targetP->name, instP->id);
+                    lwm2m_observe(dataP->lwm2mH, targetP->internalID, &uri, prv_ipso_callback, (void *)objectP);
+                    break;
+
+                case IPSO_Generic_Sensor_OBJ_ID:
+                    uri.resourceId = IPSO_Sensor_Value_RES_ID;
+                    snprintf(objectP->templateStr, 512, "Client \"%s\" Generic Sensor #%d: ", targetP->name, instP->id);
+                    lwm2m_observe(dataP->lwm2mH, targetP->internalID, &uri, prv_ipso_callback, (void *)objectP);
+                    break;
+
+                case IPSO_Illuminance_Sensor_OBJ_ID:
+                    uri.resourceId = IPSO_Sensor_Value_RES_ID;
+                    snprintf(objectP->templateStr, 512, "Client \"%s\" Illuminance Sensor #%d: ", targetP->name, instP->id);
+                    lwm2m_observe(dataP->lwm2mH, targetP->internalID, &uri, prv_ipso_callback, (void *)objectP);
+                    break;
+
+                case IPSO_Presence_Sensor_OBJ_ID:
+                    uri.resourceId = IPSO_Digital_Input_State_RES_ID;
+                    snprintf(objectP->templateStr, 512, "Client \"%s\" Presence Sensor #%d: ", targetP->name, instP->id);
+                    lwm2m_observe(dataP->lwm2mH, targetP->internalID, &uri, prv_ipso_callback, (void *)objectP);
+                    break;
+
+                case IPSO_Temperature_Sensor_OBJ_ID:
+                    uri.resourceId = IPSO_Sensor_Value_RES_ID;
+                    snprintf(objectP->templateStr, 512, "Client \"%s\" Temperature Sensor #%d: ", targetP->name, instP->id);
+                    lwm2m_observe(dataP->lwm2mH, targetP->internalID, &uri, prv_ipso_callback, (void *)objectP);
+                    break;
+
+                case IPSO_Humidity_Sensor_OBJ_ID:
+                    uri.resourceId = IPSO_Sensor_Value_RES_ID;
+                    snprintf(objectP->templateStr, 512, "Client \"%s\" Humidity Sensor #%d: ", targetP->name, instP->id);
+                    lwm2m_observe(dataP->lwm2mH, targetP->internalID, &uri, prv_ipso_callback, (void *)objectP);
+                    break;
+
+                case IPSO_Power_Measurement_OBJ_ID:
+                    uri.resourceId = IPSO_Instantaneous_active_power_RES_ID;
+                    snprintf(objectP->templateStr, 512, "Client \"%s\" Power measurement #%d: ", targetP->name, instP->id);
+                    lwm2m_observe(dataP->lwm2mH, targetP->internalID, &uri, prv_ipso_callback, (void *)objectP);
+                    break;
+
+                case IPSO_Actuation_OBJ_ID:
+                    uri.resourceId = IPSO_On_Off_RES_ID;
+                    snprintf(objectP->templateStr, 512, "Client \"%s\" Actuation #%d: ", targetP->name, instP->id);
+                    lwm2m_observe(dataP->lwm2mH, targetP->internalID, &uri, prv_ipso_callback, (void *)objectP);
+                    break;
+
+                case IPSO_Set_Point_OBJ_ID:
+                    uri.resourceId = IPSO_SetPoint_Value_RES_ID;
+                    snprintf(objectP->templateStr, 512, "Client \"%s\" Set Point #%d: ", targetP->name, instP->id);
+                    lwm2m_observe(dataP->lwm2mH, targetP->internalID, &uri, prv_ipso_callback, (void *)objectP);
+                    break;
+
+                case IPSO_Load_Control_OBJ_ID:
+                    // TODO:
+                    continue;
+                    break;
+
+                case IPSO_Light_Control_OBJ_ID:
+                    uri.resourceId = IPSO_On_Off_RES_ID;
+                    snprintf(objectP->templateStr, 512, "Client \"%s\" Light Control #%d: ", targetP->name, instP->id);
+                    lwm2m_observe(dataP->lwm2mH, targetP->internalID, &uri, prv_ipso_callback, (void *)objectP);
+                    break;
+
+                case IPSO_Power_Control_OBJ_ID:
+                    uri.resourceId = IPSO_On_Off_RES_ID;
+                    snprintf(objectP->templateStr, 512, "Client \"%s\" Power Control #%d: ", targetP->name, instP->id);
+                    lwm2m_observe(dataP->lwm2mH, targetP->internalID, &uri, prv_ipso_callback, (void *)objectP);
+                    break;
+
+                case IPSO_Accelerometer_OBJ_ID:
+                    uri.resourceId = IPSO_X_Value_RES_ID;
+                    snprintf(objectP->templateStr, 512, "Client \"%s\" Accelerometer X Value #%d: ", targetP->name, instP->id);
+                    lwm2m_observe(dataP->lwm2mH, targetP->internalID, &uri, prv_ipso_callback, (void *)objectP);
+                    break;
+
+                case IPSO_Magnetometer_OBJ_ID:
+                    uri.resourceId = IPSO_X_Value_RES_ID;
+                    snprintf(objectP->templateStr, 512, "Client \"%s\" Magnetometer X Value #%d: ", targetP->name, instP->id);
+                    lwm2m_observe(dataP->lwm2mH, targetP->internalID, &uri, prv_ipso_callback, (void *)objectP);
+                    break;
+
+                case IPSO_Barometer_OBJ_ID:
+                    uri.resourceId = IPSO_Sensor_Value_RES_ID;
+                    snprintf(objectP->templateStr, 512, "Client \"%s\" Barometer #%d: ", targetP->name, instP->id);
+                    lwm2m_observe(dataP->lwm2mH, targetP->internalID, &uri, prv_ipso_callback, (void *)objectP);
+                    break;
+                }
+                objectP->next = dataP->objectList;
+                dataP->objectList = objectP;
+
+                instP = instP->next;
+            }
+        }
+        cltObjP = cltObjP->next;
+    }
+}
+
+static void prv_remove_ipso_client(internal_data_t * dataP,
+                                   uint16_t clientID)
+{
+    ipso_object_t * parentP;
+
+    parentP = dataP->objectList;
+    while (parentP->next != NULL)
+    {
+        if (parentP->next->clientId == clientID)
+        {
+            ipso_object_t * objectP;
+
+            objectP = parentP->next;
+            parentP->next = objectP->next;
+            if (objectP->outputStr) lwm2m_free(objectP->outputStr);
+            lwm2m_free(objectP);
+        }
+        else
+        {
+            parentP = parentP->next;
+        }
+    }
+    if (dataP->objectList->clientId == clientID)
+    {
+        ipso_object_t * objectP;
+
+        objectP = dataP->objectList;
+        dataP->objectList = dataP->objectList->next;
+        if (objectP->outputStr) lwm2m_free(objectP->outputStr);
+        lwm2m_free(objectP);
+    }
+}
+
+static void prv_ipso_display(internal_data_t * dataP)
+{
+    ipso_object_t * objectP;
+
+    fprintf(stdout, "\r\n======== IPSO ========\r\n");
+    objectP = dataP->objectList;
+    while (objectP != NULL)
+    {
+        fprintf(stdout, objectP->templateStr);
+        if (objectP->outputStr) fprintf(stdout, objectP->outputStr);
+        fprintf(stdout, "\r\n");
+
+        objectP = objectP->next;
+    }
+    fprintf(stdout, "======================\r\n");
+}
+
 static void prv_monitor_callback(uint16_t clientID,
                                  lwm2m_uri_t * uriP,
                                  int status,
@@ -552,7 +793,7 @@ static void prv_monitor_callback(uint16_t clientID,
                                  int dataLength,
                                  void * userData)
 {
-    lwm2m_context_t * lwm2mH = (lwm2m_context_t *) userData;
+    internal_data_t * dataP = (internal_data_t *) userData;
     lwm2m_client_t * targetP;
 
     switch (status)
@@ -560,21 +801,27 @@ static void prv_monitor_callback(uint16_t clientID,
     case COAP_201_CREATED:
         fprintf(stdout, "\r\nNew client #%d registered.\r\n", clientID);
 
-        targetP = (lwm2m_client_t *)lwm2m_list_find((lwm2m_list_t *)lwm2mH->clientList, clientID);
+        targetP = (lwm2m_client_t *)lwm2m_list_find((lwm2m_list_t *)dataP->lwm2mH->clientList, clientID);
 
         prv_dump_client(targetP);
+
+        prv_add_ipso_client(dataP, targetP);
         break;
 
     case COAP_202_DELETED:
         fprintf(stdout, "\r\nClient #%d unregistered.\r\n", clientID);
+        prv_remove_ipso_client(dataP, clientID);
         break;
 
     case COAP_204_CHANGED:
         fprintf(stdout, "\r\nClient #%d updated.\r\n", clientID);
 
-        targetP = (lwm2m_client_t *)lwm2m_list_find((lwm2m_list_t *)lwm2mH->clientList, clientID);
+        targetP = (lwm2m_client_t *)lwm2m_list_find((lwm2m_list_t *)dataP->lwm2mH->clientList, clientID);
 
         prv_dump_client(targetP);
+
+        prv_remove_ipso_client(dataP, clientID);
+        prv_add_ipso_client(dataP, targetP);
         break;
 
     default:
@@ -591,6 +838,12 @@ static void prv_quit(char * buffer,
                      void * user_data)
 {
     g_quit = 1;
+}
+
+static void prv_switch_ipso(char * buffer,
+                            void * user_data)
+{
+    g_ipso = g_ipso?false:true;
 }
 
 void handle_sigint(int signum)
@@ -611,9 +864,9 @@ int main(int argc, char *argv[])
     fd_set readfds;
     struct timeval tv;
     int result;
-    lwm2m_context_t * lwm2mH = NULL;
     int i;
     connection_t * connList = NULL;
+    internal_data_t data;
 
     command_desc_t commands[] =
     {
@@ -648,6 +901,8 @@ int main(int argc, char *argv[])
                                             "   CLIENT#: client number as returned by command 'list'\r\n"
                                             "   URI: uri on which to cancel an observe such as /3, /3/0/2, /1024/11\r\n"
                                             "Result will be displayed asynchronously.", prv_cancel_client, NULL},
+            {"ipso", "Toggle IPSO UI.", NULL, prv_switch_ipso, NULL},
+
 
             {"q", "Quit the server.", NULL, prv_quit, NULL},
 
@@ -661,8 +916,10 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    lwm2mH = lwm2m_init(NULL, prv_buffer_send, NULL);
-    if (NULL == lwm2mH)
+    memset(&data, 0, sizeof(internal_data_t));
+
+    data.lwm2mH = lwm2m_init(NULL, prv_buffer_send, NULL);
+    if (NULL == data.lwm2mH)
     {
         fprintf(stderr, "lwm2m_init() failed\r\n");
         return -1;
@@ -672,11 +929,11 @@ int main(int argc, char *argv[])
 
     for (i = 0 ; commands[i].name != NULL ; i++)
     {
-        commands[i].userData = (void *)lwm2mH;
+        commands[i].userData = (void *)data.lwm2mH;
     }
     fprintf(stdout, "> "); fflush(stdout);
 
-    lwm2m_set_monitoring_callback(lwm2mH, prv_monitor_callback, lwm2mH);
+    lwm2m_set_monitoring_callback(data.lwm2mH, prv_monitor_callback, (void *)&data);
 
     while (0 == g_quit)
     {
@@ -687,7 +944,7 @@ int main(int argc, char *argv[])
         tv.tv_sec = 60;
         tv.tv_usec = 0;
 
-        result = lwm2m_step(lwm2mH, &(tv.tv_sec));
+        result = lwm2m_step(data.lwm2mH, &(tv.tv_sec));
         if (result != 0)
         {
             fprintf(stderr, "lwm2m_step() failed: 0x%X\r\n", result);
@@ -754,8 +1011,13 @@ int main(int argc, char *argv[])
                     }
                     if (connP != NULL)
                     {
-                        lwm2m_handle_packet(lwm2mH, buffer, numBytes, connP);
+                        lwm2m_handle_packet(data.lwm2mH, buffer, numBytes, connP);
                     }
+                }
+
+                if (g_ipso == true)
+                {
+                    prv_ipso_display(&data);
                 }
             }
             else if (FD_ISSET(STDIN_FILENO, &readfds))
@@ -765,7 +1027,6 @@ int main(int argc, char *argv[])
                 if (numBytes > 1)
                 {
                     buffer[numBytes] = 0;
-                    fprintf(stdout, "STDIN %d bytes '%s'\r\n> ", numBytes, buffer);
                     handle_command(commands, (char*)buffer);
                 }
                 if (g_quit == 0)
@@ -781,7 +1042,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    lwm2m_close(lwm2mH);
+    lwm2m_close(data.lwm2mH);
     close(sock);
     connection_free(connList);
 
