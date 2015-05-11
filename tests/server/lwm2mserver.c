@@ -80,7 +80,7 @@
 #define MAX_PACKET_SIZE 198
 
 static int g_quit = 0;
-static bool g_ipso = false;
+static bool g_ipso = true;
 
 typedef struct _ipso_object_
 {
@@ -844,6 +844,7 @@ static void prv_switch_ipso(char * buffer,
                             void * user_data)
 {
     g_ipso = g_ipso?false:true;
+    fprintf(stdout, "\r\nIPSO UI set to %s\r\n", g_ipso?"ON":"OFF");
 }
 
 void handle_sigint(int signum)
