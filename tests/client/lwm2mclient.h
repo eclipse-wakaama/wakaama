@@ -34,69 +34,86 @@ extern int g_reboot;
 /*
  * object_device.c
  */
-extern lwm2m_object_t * get_object_device(void);
+lwm2m_object_t * get_object_device(void);
 uint8_t device_change(lwm2m_tlv_t * dataArray, lwm2m_object_t * objectP);
-extern void display_device_object(lwm2m_object_t * objectP);
+void display_device_object(lwm2m_object_t * objectP);
 /*
  * object_firmware.c
  */
-extern lwm2m_object_t * get_object_firmware(void);
-extern void display_firmware_object(lwm2m_object_t * objectP);
+lwm2m_object_t * get_object_firmware(void);
+void display_firmware_object(lwm2m_object_t * objectP);
 /*
  * object_location.c
  */
-extern lwm2m_object_t * get_object_location(void);
-extern void display_location_object(lwm2m_object_t * objectP);
+lwm2m_object_t * get_object_location(void);
+void display_location_object(lwm2m_object_t * objectP);
 /*
  * object_test.c
  */
 #define TEST_OBJECT_ID 1024
-extern lwm2m_object_t * get_test_object(void);
-extern void display_test_object(lwm2m_object_t * objectP);
+lwm2m_object_t * get_test_object(void);
+void display_test_object(lwm2m_object_t * objectP);
 /*
  * object_server.c
  */
-extern lwm2m_object_t * get_server_object(int serverId, const char* binding, int lifetime, bool storing);
-extern void display_server_object(lwm2m_object_t * objectP);
-extern void copy_server_object(lwm2m_object_t * objectDest, lwm2m_object_t * objectSrc);
+lwm2m_object_t * get_server_object(int serverId, const char* binding, int lifetime, bool storing);
+void display_server_object(lwm2m_object_t * objectP);
+void copy_server_object(lwm2m_object_t * objectDest, lwm2m_object_t * objectSrc);
 
 /*
  * object_connectivity_moni.c
  */
-extern lwm2m_object_t * get_object_conn_m(void);
+lwm2m_object_t * get_object_conn_m(void);
 uint8_t connectivity_moni_change(lwm2m_tlv_t * dataArray, lwm2m_object_t * objectP);
 
 /*
  * object_connectivity_stat.c
  */
-extern lwm2m_object_t * get_object_conn_s(void);
-extern void conn_s_updateTxStatistic(lwm2m_object_t * objectP, uint16_t txDataByte, bool smsBased);
-extern void conn_s_updateRxStatistic(lwm2m_object_t * objectP, uint16_t rxDataByte, bool smsBased);
+lwm2m_object_t * get_object_conn_s(void);
+void conn_s_updateTxStatistic(lwm2m_object_t * objectP, uint16_t txDataByte, bool smsBased);
+void conn_s_updateRxStatistic(lwm2m_object_t * objectP, uint16_t rxDataByte, bool smsBased);
 
 /*
  * object_access_control.c
  */
-extern lwm2m_object_t* acc_ctrl_create_object(void);
-extern bool  acc_ctrl_obj_add_inst (lwm2m_object_t* accCtrlObjP, uint16_t instId,
+lwm2m_object_t* acc_ctrl_create_object(void);
+bool  acc_ctrl_obj_add_inst (lwm2m_object_t* accCtrlObjP, uint16_t instId,
                  uint16_t acObjectId, uint16_t acObjInstId, uint16_t acOwner);
-extern bool  acc_ctrl_oi_add_ac_val(lwm2m_object_t* accCtrlObjP, uint16_t instId,
+bool  acc_ctrl_oi_add_ac_val(lwm2m_object_t* accCtrlObjP, uint16_t instId,
                  uint16_t aclResId, uint16_t acValue);
 /*
  * lwm2mclient.c
  */
-extern void handle_value_changed(lwm2m_context_t* lwm2mH, lwm2m_uri_t* uri, const char * value, size_t valueLength);
+void handle_value_changed(lwm2m_context_t* lwm2mH, lwm2m_uri_t* uri, const char * value, size_t valueLength);
 /*
  * system_api.c
  */
-extern void init_value_change(lwm2m_context_t * lwm2m);
-extern void system_reboot(void);
+void init_value_change(lwm2m_context_t * lwm2m);
+void system_reboot(void);
 
 /*
  * object_security.c
  */
-extern lwm2m_object_t * get_security_object(int serverId, const char* serverUri, bool isBootstrap);
-extern char * get_server_uri(lwm2m_object_t * objectP, uint16_t secObjInstID);
-extern void display_security_object(lwm2m_object_t * objectP);
-extern void copy_security_object(lwm2m_object_t * objectDest, lwm2m_object_t * objectSrc);
+
+typedef struct _security_instance_
+{
+    struct _security_instance_ * next;        // matches lwm2m_list_t::next
+    uint16_t                     instanceId;  // matches lwm2m_list_t::id
+    char *      uri;
+    bool        isBootstrap;
+    uint16_t    shortID;
+    uint32_t    clientHoldOffTime;
+    uint8_t     securityMode;
+    uint8_t *   publicKey;
+    size_t      publicKeyLen;
+    uint8_t *   serverKey;
+    size_t      serverKeyLen;
+    uint8_t *   privateKey;
+    size_t      privateKeyLen;
+} security_instance_t;
+
+lwm2m_object_t * get_security_object(int serverId, const char* serverUri, bool isBootstrap);
+void display_security_object(lwm2m_object_t * objectP);
+void copy_security_object(lwm2m_object_t * objectDest, lwm2m_object_t * objectSrc);
 
 #endif /* LWM2MCLIENT_H_ */

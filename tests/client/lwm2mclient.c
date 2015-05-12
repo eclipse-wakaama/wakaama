@@ -74,6 +74,15 @@
 #include <errno.h>
 #include <signal.h>
 
+#ifdef WITH_TINYDTLS
+#include <tinydtls/global.h>
+#include <tinydtls/debug.h>
+#include <tinydtls/dtls.h>
+
+#define PSK_IDENTITY    "IPSO_Interop"
+#define PSK_KEY         "Not_So_Secret_Key"
+#endif
+
 /*
  * Bugfix: REST_MAX_CHUNK_SIZE is the size of the payload!
  * ensure sync with: er_coap_13.h COAP_MAX_PACKET_SIZE!
@@ -94,6 +103,7 @@ lwm2m_object_t * backupObjectArray[BACKUP_OBJECT_COUNT];
 
 typedef struct
 {
+    lwm2m_context_t * lwm2mH;
     lwm2m_object_t * securityObjP;
     lwm2m_object_t * serverObject;
     int sock;
@@ -197,52 +207,153 @@ void handle_value_changed(lwm2m_context_t * lwm2mH,
 static void * prv_connect_server(uint16_t secObjInstID, void * userData)
 {
     client_data_t * dataP;
-    char * uri;
+    security_instance_t * secuP;
     char * host;
     char * portStr;
     int port;
     char * ptr;
+#ifdef WITH_TINYDTLS
+    session_t dst;
+#else
     connection_t * newConnP = NULL;
+#endif
 
     dataP = (client_data_t *)userData;
 
-    uri = get_server_uri(dataP->securityObjP, secObjInstID);
-
-    if (uri == NULL) return NULL;
+    secuP = (security_instance_t *)LWM2M_LIST_FIND(dataP->securityObjP, secObjInstID);
+    if (secuP == NULL) return NULL;
 
     // parse uri in the form "coaps://[host]:[port]"
-    if (0==strncmp(uri, "coaps://", strlen("coaps://"))) {
-        host = uri+strlen("coaps://");
+    if (0 == strncmp(secuP->uri, "coaps://", strlen("coaps://")))
+    {
+        host = secuP->uri + strlen("coaps://");
     }
-    else if (0==strncmp(uri, "coap://",  strlen("coap://"))) {
-        host = uri+strlen("coap://");
+    else if (0 == strncmp(secuP->uri, "coap://",  strlen("coap://")))
+    {
+        host = secuP->uri + strlen("coap://");
     }
-    else {
-        goto exit;
-    }
+    else return NULL;
+
     portStr = strchr(host, ':');
-    if (portStr == NULL) goto exit;
+    if (portStr == NULL) return NULL;
+
     // split strings
     *portStr = 0;
     portStr++;
     port = strtol(portStr, &ptr, 10);
-    if (*ptr != 0) {
-        goto exit;
-    }
+    if (*ptr != 0) return NULL;
 
     fprintf(stderr, "Trying to connect to LWM2M Server at %s:%d\r\n", host, port);
+
+#ifdef WITH_TINYDTLS
+    if (connection_get_addr(host, portStr, &dst.addr.st, &dst.size) != 0) return NULL;
+    if (dtls_connect(dataP->dtlsH, &dst) < 0) return NULL;
+
+    return (void *)dtls_get_peer(dataP->dtlsH, &dst);
+#else
     newConnP = connection_create(dataP->connList, dataP->sock, host, port);
-    if (newConnP == NULL) {
+    if (newConnP == NULL)
+    {
         fprintf(stderr, "Connection creation failed.\r\n");
     }
-    else {
+    else
+    {
+        newConnP->next = dataP->connList;
         dataP->connList = newConnP;
     }
 
-exit:
-    lwm2m_free(uri);
     return (void *)newConnP;
+#endif
 }
+
+#ifdef WITH_TINYDTLS
+// This is the write callback for tinyDTLS
+static int prv_dtls_send(struct dtls_context_t * dtlsH,
+                         session_t * dst,
+                         uint8 * data,
+                         size_t length)
+{
+    client_data_t * dataP = (client_data_t *)dtls_get_app_data(dtlsH);
+
+    return sendto(dataP->sock, data, length, MSG_DONTWAIT, &dst->addr.sa, dst->size);
+}
+
+// This is the buffer send callback for wakaama
+static uint8_t prv_buffer_send(void * sessionH,
+                               uint8_t * buffer,
+                               size_t length,
+                               void * userData)
+{
+    dtls_context_t * dtlsH = (dtls_context_t *)userData;
+    session_t * dst = (session_t *)sessionH;
+    int nbSent;
+    size_t offset;
+
+    offset = 0;
+    while (offset != length)
+    {
+        nbSent = dtls_write(dtlsH, dst, buffer + offset, length - offset);
+        if (nbSent == -1) return COAP_500_INTERNAL_SERVER_ERROR;
+        offset += nbSent;
+    }
+    return COAP_NO_ERROR;
+}
+
+// This is the read callback for tinyDTLS
+static int prv_dtls_read(dtls_context_t * dtlsH,
+                         session_t * src,
+                         uint8 * data,
+                         size_t length)
+{
+    client_data_t * dataP = (client_data_t *)dtls_get_app_data(dtlsH);
+    dtls_peer_t * peerP;
+
+    peerP = dtls_get_peer(dtlsH, src);
+    if (peerP != NULL)
+    {
+        lwm2m_handle_packet(dataP->lwm2mH, data, length, (void *)src);
+    }
+}
+
+// This is the get_psk_info callback for tinyDTLS
+static int prv_dtls_get_psk(dtls_context_t * dtlsH,
+                            const session_t * session,
+                            dtls_credentials_type_t type,
+                            const unsigned char * identity,
+                            size_t identityLength,
+                            unsigned char * result,
+                            size_t resultLength)
+{
+    switch (type)
+    {
+    case DTLS_PSK_IDENTITY:
+        if (resultLength < strlen(PSK_IDENTITY))
+        {
+            return dtls_alert_fatal_create(DTLS_ALERT_INTERNAL_ERROR);
+        }
+        memcpy(result, PSK_IDENTITY, strlen(PSK_IDENTITY));
+        return strlen(PSK_IDENTITY);
+
+    case DTLS_PSK_KEY:
+        if (identityLength != strlen(PSK_IDENTITY)
+         || strcmp(identity, PSK_IDENTITY) != 0)
+        {
+            return dtls_alert_fatal_create(DTLS_ALERT_ILLEGAL_PARAMETER);
+        }
+        if (resultLength < strlen(PSK_KEY))
+        {
+            return dtls_alert_fatal_create(DTLS_ALERT_INTERNAL_ERROR);
+        }
+        memcpy(result, PSK_KEY, strlen(PSK_KEY));
+        return strlen(PSK_KEY);
+
+    default:
+    }
+
+    return dtls_alert_fatal_create(DTLS_ALERT_INTERNAL_ERROR);
+}
+
+#else
 
 static uint8_t prv_buffer_send(void * sessionH,
                                uint8_t * buffer,
@@ -266,6 +377,7 @@ static uint8_t prv_buffer_send(void * sessionH,
     fprintf(stderr, "#> sent %lu bytes\r\n", length);
     return COAP_NO_ERROR;
 }
+#endif
 
 static void prv_output_servers(char * buffer,
                                void * user_data)
@@ -755,7 +867,6 @@ int main(int argc, char *argv[])
 {
     client_data_t data;
     int result;
-    lwm2m_context_t * lwm2mH = NULL;
     int i;
     const char * localPort = "56830";
     const char * server = "localhost";
@@ -938,8 +1049,8 @@ int main(int argc, char *argv[])
      * The liblwm2m library is now initialized with the functions that will be in
      * charge of communication
      */
-    lwm2mH = lwm2m_init(prv_connect_server, prv_buffer_send, &data);
-    if (NULL == lwm2mH)
+    data.lwm2mH = lwm2m_init(prv_connect_server, prv_buffer_send, &data);
+    if (NULL == data.lwm2mH)
     {
         fprintf(stderr, "lwm2m_init() failed\r\n");
         return -1;
@@ -963,7 +1074,7 @@ int main(int argc, char *argv[])
      * We configure the liblwm2m library with the name of the client - which shall be unique for each client -
      * the number of objects we will be passing through and the objects array
      */
-    result = lwm2m_configure(lwm2mH, name, NULL, NULL, OBJ_COUNT, objArray);
+    result = lwm2m_configure(data.lwm2mH, name, NULL, NULL, OBJ_COUNT, objArray);
     if (result != 0)
     {
         fprintf(stderr, "lwm2m_configure() failed: 0x%X\r\n", result);
@@ -975,7 +1086,7 @@ int main(int argc, char *argv[])
     /*
      * This function start your client to the LWM2M servers
      */
-    result = lwm2m_start(lwm2mH);
+    result = lwm2m_start(data.lwm2mH);
     if (result != 0)
     {
         fprintf(stderr, "lwm2m_start() failed: 0x%X\r\n", result);
@@ -985,7 +1096,7 @@ int main(int argc, char *argv[])
     /**
      * Initialize value changed callback.
      */
-    init_value_change(lwm2mH);
+    init_value_change(data.lwm2mH);
 
     /*
      * As you now have your lwm2m context complete you can pass it as an argument to all the command line functions
@@ -993,7 +1104,7 @@ int main(int argc, char *argv[])
      */
     for (i = 0 ; commands[i].name != NULL ; i++)
     {
-        commands[i].userData = (void *)lwm2mH;
+        commands[i].userData = (void *)data.lwm2mH;
     }
     fprintf(stdout, "LWM2M Client \"%s\" started on port %s\r\n", name, localPort);
     fprintf(stdout, "> "); fflush(stdout);
@@ -1030,7 +1141,7 @@ int main(int argc, char *argv[])
         }
         else if (batterylevelchanging) 
         {
-            update_battery_level(lwm2mH);
+            update_battery_level(data.lwm2mH);
             tv.tv_sec = 5;
         }
         else 
@@ -1049,7 +1160,7 @@ int main(int argc, char *argv[])
          *  - Secondly it adjusts the timeout value (default 60s) depending on the state of the transaction
          *    (eg. retransmission) and the time between the next operation
          */
-        result = lwm2m_step(lwm2mH, &(tv.tv_sec));
+        result = lwm2m_step(data.lwm2mH, &(tv.tv_sec));
         if (result != 0)
         {
             fprintf(stderr, "lwm2m_step() failed: 0x%X\r\n", result);
@@ -1126,7 +1237,7 @@ int main(int argc, char *argv[])
                         /*
                          * Let liblwm2m respond to the query depending on the context
                          */
-                        lwm2m_handle_packet(lwm2mH, buffer, numBytes, connP);
+                        lwm2m_handle_packet(data.lwm2mH, buffer, numBytes, connP);
                         conn_s_updateRxStatistic(objArray[7], numBytes, false);
                     }
                     else
@@ -1173,7 +1284,7 @@ int main(int argc, char *argv[])
 #ifdef LWM2M_BOOTSTRAP
         close_backup_object();
 #endif
-        lwm2m_close(lwm2mH);
+        lwm2m_close(data.lwm2mH);
     }
     close(data.sock);
     connection_free(data.connList);

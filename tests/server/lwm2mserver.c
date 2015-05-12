@@ -73,6 +73,15 @@
 #include "connection.h"
 #include "IPSO.h"
 
+#ifdef WITH_TINYDTLS
+#include <tinydtls/global.h>
+#include <tinydtls/debug.h>
+#include <tinydtls/dtls.h>
+
+#define PSK_IDENTITY    "IPSO_Interop"
+#define PSK_KEY         "Not_So_Secret_Key"
+#endif
+
 /*
  * ensure sync with: er_coap_13.h COAP_MAX_PACKET_SIZE!
  * or internals.h LWM2M_MAX_PACKET_SIZE!
@@ -93,6 +102,7 @@ typedef struct _ipso_object_
 
 typedef struct
 {
+    int sock;
     lwm2m_context_t * lwm2mH;
     ipso_object_t * objectList;
 } internal_data_t;
@@ -105,6 +115,94 @@ static void prv_print_error(uint8_t status)
     fprintf(stdout, "\r\n");
 }
 
+#ifdef WITH_TINYDTLS
+// This is the write callback for tinyDTLS
+static int prv_dtls_send(struct dtls_context_t * dtlsH,
+                         session_t * dst,
+                         uint8 * data,
+                         size_t length)
+{
+    internal_data_t * dataP = (internal_data_t *)dtls_get_app_data(dtlsH);
+
+    return sendto(dataP->sock, data, length, MSG_DONTWAIT, &dst->addr.sa, dst->size);
+}
+
+// This is the buffer send callback for wakaama
+static uint8_t prv_buffer_send(void * sessionH,
+                               uint8_t * buffer,
+                               size_t length,
+                               void * userdata)
+{
+    dtls_context_t * dtlsH = (dtls_context_t *)userData;
+    session_t * dst = (session_t *)sessionH;
+    int nbSent;
+    size_t offset;
+
+    offset = 0;
+    while (offset != length)
+    {
+        nbSent = dtls_write(dtlsH, dst, buffer + offset, length - offset);
+        if (nbSent == -1) return COAP_500_INTERNAL_SERVER_ERROR;
+        offset += nbSent;
+    }
+    return COAP_NO_ERROR;
+}
+
+// This is the read callback for tinyDTLS
+static int prv_dtls_read(dtls_context_t * dtlsH,
+                         session_t * src,
+                         uint8 * data,
+                         size_t length)
+{
+    internal_data_t * dataP = (internal_data_t *)dtls_get_app_data(dtlsH);
+    dtls_peer_t * peerP;
+
+    peerP = dtls_get_peer(dtlsH, src);
+    if (peerP != NULL)
+    {
+        lwm2m_handle_packet(dataP->lwm2mH, data, length, (void *)src);
+    }
+}
+
+// This is the get_psk_info callback for tinyDTLS
+static int prv_dtls_get_psk(dtls_context_t * dtlsH,
+                            const session_t * session,
+                            dtls_credentials_type_t type,
+                            const unsigned char * identity,
+                            size_t identityLength,
+                            unsigned char * result,
+                            size_t resultLength)
+{
+    switch (type)
+    {
+    case DTLS_PSK_IDENTITY:
+        if (resultLength < strlen(PSK_IDENTITY))
+        {
+            return dtls_alert_fatal_create(DTLS_ALERT_INTERNAL_ERROR);
+        }
+        memcpy(result, PSK_IDENTITY, strlen(PSK_IDENTITY));
+        return strlen(PSK_IDENTITY);
+
+    case DTLS_PSK_KEY:
+        if (identityLength != strlen(PSK_IDENTITY)
+         || strcmp(identity, PSK_IDENTITY) != 0)
+        {
+            return dtls_alert_fatal_create(DTLS_ALERT_ILLEGAL_PARAMETER);
+        }
+        if (resultLength < strlen(PSK_KEY))
+        {
+            return dtls_alert_fatal_create(DTLS_ALERT_INTERNAL_ERROR);
+        }
+        memcpy(result, PSK_KEY, strlen(PSK_KEY));
+        return strlen(PSK_KEY);
+
+    default:
+    }
+
+    return dtls_alert_fatal_create(DTLS_ALERT_INTERNAL_ERROR);
+}
+
+#else
 static uint8_t prv_buffer_send(void * sessionH,
                                uint8_t * buffer,
                                size_t length,
@@ -118,6 +216,7 @@ static uint8_t prv_buffer_send(void * sessionH,
     }
     return COAP_NO_ERROR;
 }
+#endif
 
 static char * prv_dump_binding(lwm2m_binding_t binding)
 {
@@ -861,12 +960,28 @@ void print_usage(void)
 
 int main(int argc, char *argv[])
 {
-    int sock;
     fd_set readfds;
     struct timeval tv;
     int result;
     int i;
+#ifdef WITH_TINYDTLS
+    dtls_context_t * dtlsH = NULL;
+    dtls_handler_t dtlsCb =
+    {
+        .write = prv_dtls_send,
+        .read  = prv_dtls_read,
+        .event = NULL,
+    #ifdef DTLS_PSK
+        .get_psk_info = prv_dtls_get_psk,
+    #endif
+    #ifdef DTLS_ECC
+        .get_ecdsa_key = NULL,
+        .verify_ecdsa_key = NULL,
+    #endif
+    };
+#else
     connection_t * connList = NULL;
+#endif
     internal_data_t data;
 
     command_desc_t commands[] =
@@ -910,8 +1025,8 @@ int main(int argc, char *argv[])
             COMMAND_END_LIST
     };
 
-    sock = create_socket(LWM2M_STANDARD_PORT_STR);
-    if (sock < 0)
+    data.sock = create_socket(LWM2M_STANDARD_PORT_STR);
+    if (data.sock < 0)
     {
         fprintf(stderr, "Error opening socket: %d\r\n", errno);
         return -1;
@@ -919,7 +1034,20 @@ int main(int argc, char *argv[])
 
     memset(&data, 0, sizeof(internal_data_t));
 
+#ifdef WITH_TINYDTLS
+    dtls_init();
+    dtlsH = dtls_new_context((void *)&data);
+    if (dtlsH == NULL)
+    {
+        fprintf(stderr, "dtls_new_context() failed\r\n");
+        return -1;
+    }
+    dtls_set_handler(dtlsH, &dtlsCb);
+
+    data.lwm2mH = lwm2m_init(NULL, prv_buffer_send, (void *)dtlsH);
+#else
     data.lwm2mH = lwm2m_init(NULL, prv_buffer_send, NULL);
+#endif
     if (NULL == data.lwm2mH)
     {
         fprintf(stderr, "lwm2m_init() failed\r\n");
@@ -939,7 +1067,7 @@ int main(int argc, char *argv[])
     while (0 == g_quit)
     {
         FD_ZERO(&readfds);
-        FD_SET(sock, &readfds);
+        FD_SET(data.sock, &readfds);
         FD_SET(STDIN_FILENO, &readfds);
 
         tv.tv_sec = 60;
@@ -966,13 +1094,13 @@ int main(int argc, char *argv[])
             uint8_t buffer[MAX_PACKET_SIZE];
             int numBytes;
 
-            if (FD_ISSET(sock, &readfds))
+            if (FD_ISSET(data.sock, &readfds))
             {
                 struct sockaddr_storage addr;
                 socklen_t addrLen;
 
                 addrLen = sizeof(addr);
-                numBytes = recvfrom(sock, buffer, MAX_PACKET_SIZE, 0, (struct sockaddr *)&addr, &addrLen);
+                numBytes = recvfrom(data.sock, buffer, MAX_PACKET_SIZE, 0, (struct sockaddr *)&addr, &addrLen);
 
                 if (numBytes == -1)
                 {
@@ -982,7 +1110,11 @@ int main(int argc, char *argv[])
                 {
                     char s[INET6_ADDRSTRLEN];
                     in_port_t port;
+#ifdef WITH_TINYDTLS
+                    session_t session;
+#else
                     connection_t * connP;
+#endif
 
 					s[0] = 0;
                     if (AF_INET == addr.ss_family)
@@ -1001,10 +1133,17 @@ int main(int argc, char *argv[])
                     fprintf(stderr, "%d bytes received from [%s]:%hu\r\n", numBytes, s, ntohs(port));
                     output_buffer(stderr, buffer, numBytes, 0);
 
+#ifdef WITH_TINYDTLS
+                    memset(&session, 0, sizeof(session_t));
+                    session.size = addrLen;
+                    memcpy(&session.addr.st, &addr, sizeof(addr));
+
+                    dtls_handle_message(dtlsH, &session, buffer, numBytes);
+#else
                     connP = connection_find(connList, &addr, addrLen);
                     if (connP == NULL)
                     {
-                        connP = connection_new_incoming(connList, sock, (struct sockaddr *)&addr, addrLen);
+                        connP = connection_new_incoming(connList, data.sock, (struct sockaddr *)&addr, addrLen);
                         if (connP != NULL)
                         {
                             connList = connP;
@@ -1014,6 +1153,7 @@ int main(int argc, char *argv[])
                     {
                         lwm2m_handle_packet(data.lwm2mH, buffer, numBytes, connP);
                     }
+#endif
                 }
 
                 if (g_ipso == true)
@@ -1044,8 +1184,12 @@ int main(int argc, char *argv[])
     }
 
     lwm2m_close(data.lwm2mH);
-    close(sock);
+    close(data.sock);
+#ifdef WITH_TINYDTLS
+    dtls_free_context(dtlsH);
+#else
     connection_free(connList);
+#endif
 
     return 0;
 }

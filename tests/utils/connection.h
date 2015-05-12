@@ -43,6 +43,8 @@ connection_t * connection_find(connection_t * connList, struct sockaddr_storage 
 connection_t * connection_new_incoming(connection_t * connList, int sock, struct sockaddr * addr, size_t addrLen);
 connection_t * connection_create(connection_t * connList, int sock, char * host, uint16_t port);
 
+int connection_get_addr(char * host, char * port, struct sockaddr_storage * sockAddrP, socklen_t * sockAddrLen);
+
 void connection_free(connection_t * connList);
 
 int connection_send(connection_t *connP, uint8_t * buffer, size_t length);

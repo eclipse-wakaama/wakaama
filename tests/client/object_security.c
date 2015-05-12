@@ -25,14 +25,14 @@
  *  Bootstrap Server        |  1 |            |  Single   |    Yes    | Boolean |         |       |
  *  Security Mode           |  2 |            |  Single   |    Yes    | Integer |   0-3   |       |
  *  Public Key or ID        |  3 |            |  Single   |    Yes    | Opaque  |         |       |
- *  Server Public Key or ID |  4 |            |  Single   |    Yes    | Opaque  |         |       |
+ *  Server Public Key       |  4 |            |  Single   |    Yes    | Opaque  |         |       |
  *  Secret Key              |  5 |            |  Single   |    Yes    | Opaque  |         |       |
- *  SMS Security Mode       |  6 |            |  Single   |    Yes    | Integer |  0-255  |       |
- *  SMS Binding Key Param.  |  7 |            |  Single   |    Yes    | Opaque  |   6 B   |       |
- *  SMS Binding Secret Keys |  8 |            |  Single   |    Yes    | Opaque  | 32-48 B |       |
- *  Server SMS Number       |  9 |            |  Single   |    Yes    | Integer |         |       |
+ *  SMS Security Mode       |  6 |            |  Single   |    No     | Integer |  0-255  |       |
+ *  SMS Binding Key Param.  |  7 |            |  Single   |    No     | Opaque  |   6 B   |       |
+ *  SMS Binding Secret Keys |  8 |            |  Single   |    No     | Opaque  | 32-48 B |       |
+ *  Server SMS Number       |  9 |            |  Single   |    No     | Integer |         |       |
  *  Short Server ID         | 10 |            |  Single   |    No     | Integer | 1-65535 |       |
- *  Client Hold Off Time    | 11 |            |  Single   |    Yes    | Integer |         |   s   |
+ *  Client Hold Off Time    | 11 |            |  Single   |    No     | Integer |         |   s   |
  *
  */
 
@@ -41,33 +41,12 @@
  */
 
 #include "liblwm2m.h"
+#include "lwm2m_client.h"
 
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 
-#define LWM2M_SECURITY_URI_ID                 0
-#define LWM2M_SECURITY_BOOTSTRAP_ID           1
-#define LWM2M_SECURITY_SECURITY_ID            2
-#define LWM2M_SECURITY_PUBLIC_KEY_ID          3
-#define LWM2M_SECURITY_SERVER_PUBLIC_KEY_ID   4
-#define LWM2M_SECURITY_SECRET_KEY_ID          5
-#define LWM2M_SECURITY_SMS_SECURITY_ID        6
-#define LWM2M_SECURITY_SMS_KEY_PARAM_ID       7
-#define LWM2M_SECURITY_SMS_SECRET_KEY_ID      8
-#define LWM2M_SECURITY_SMS_SERVER_NUMBER_ID   9
-#define LWM2M_SECURITY_SHORT_SERVER_ID        10
-#define LWM2M_SECURITY_HOLD_OFF_ID            11
-
-typedef struct _security_instance_
-{
-    struct _security_instance_ * next;        // matches lwm2m_list_t::next
-    uint16_t                     instanceId;  // matches lwm2m_list_t::id
-    char *                       uri;
-    bool                         isBootstrap;
-    uint16_t                     shortID;
-    uint32_t                     clientHoldOffTime;
-} security_instance_t;
 
 static uint8_t prv_get_value(lwm2m_tlv_t * tlvP,
                              security_instance_t * targetP)
@@ -174,20 +153,19 @@ static uint8_t prv_security_read(uint16_t instanceId,
     // is the server asking for the full instance ?
     if (*numDataP == 0)
     {
-        uint16_t resList[] = {LWM2M_SECURITY_URI_ID,
+        uint16_t resList[] = {LWM2M_SECURITY_SHORT_SERVER_ID,   // replaced by LWM2M_SECURITY_HOLD_OFF_ID if it is a Bootstrap server
+                              LWM2M_SECURITY_URI_ID,
                               LWM2M_SECURITY_BOOTSTRAP_ID,
                               LWM2M_SECURITY_SECURITY_ID,
                               LWM2M_SECURITY_PUBLIC_KEY_ID,
                               LWM2M_SECURITY_SERVER_PUBLIC_KEY_ID,
-                              LWM2M_SECURITY_SECRET_KEY_ID,
-                              LWM2M_SECURITY_SMS_SECURITY_ID,
-                              LWM2M_SECURITY_SMS_KEY_PARAM_ID,
-                              LWM2M_SECURITY_SMS_SECRET_KEY_ID,
-                              LWM2M_SECURITY_SMS_SERVER_NUMBER_ID,
-                              LWM2M_SECURITY_SHORT_SERVER_ID,
-                              LWM2M_SECURITY_HOLD_OFF_ID};
+                              LWM2M_SECURITY_SECRET_KEY_ID};
         int nbRes = sizeof(resList)/sizeof(uint16_t);
 
+        if (targetP->isBootstrap == true)
+        {
+            resList[0] = LWM2M_SECURITY_HOLD_OFF_ID;
+        }
         *dataArrayP = lwm2m_tlv_new(nbRes);
         if (*dataArrayP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
         *numDataP = nbRes;
@@ -482,6 +460,11 @@ lwm2m_object_t * get_security_object(int serverId, const char* serverUri, bool i
         targetP->isBootstrap = isBootstrap;
         targetP->shortID = serverId;
         targetP->clientHoldOffTime = 10;
+        targetP->securityMode = LWM2M_SECURITY_MODE_PRE_SHARED_KEY;
+        targetP->publicKey = strdup("IPSO_Interop");
+        targetP->publicKeyLen = strlen("IPSO_Interop");
+        targetP->privateKey = strdup("Not_So_Secret_Key");
+        targetP->privateKeyLen = strlen("Not_So_Secret_Key");
 
         securityObj->instanceList = LWM2M_LIST_ADD(securityObj->instanceList, targetP);
 
@@ -495,17 +478,4 @@ lwm2m_object_t * get_security_object(int serverId, const char* serverUri, bool i
     }
 
     return securityObj;
-}
-
-char * get_server_uri(lwm2m_object_t * objectP,
-                      uint16_t secObjInstID)
-{
-    security_instance_t * targetP = (security_instance_t *)LWM2M_LIST_FIND(objectP->instanceList, secObjInstID);
-
-    if (NULL != targetP)
-    {
-        return lwm2m_strdup(targetP->uri);
-    }
-
-    return NULL;
 }

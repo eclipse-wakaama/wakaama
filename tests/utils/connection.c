@@ -95,30 +95,27 @@ connection_t * connection_new_incoming(connection_t * connList,
     return connP;
 }
 
-connection_t * connection_create(connection_t * connList,
-                                 int sock,
-                                 char * host,
-                                 uint16_t port)
+int connection_get_addr(char * host,
+                        char * port,
+                        struct sockaddr_storage * sockAddrP,
+                        socklen_t * sockAddrLen)
 {
-    char portStr[6];
     struct addrinfo hints;
-    struct addrinfo *servinfo = NULL;
-    struct addrinfo *p;
+    struct addrinfo * servinfo = NULL;
+    struct addrinfo * p;
     int s;
-    struct sockaddr *sa;
+    struct sockaddr * sa;
     socklen_t sl;
-    connection_t * connP = NULL;
 
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_DGRAM;
 
-    if (0 >= sprintf(portStr, "%hu", port)) return NULL;
-    if (0 != getaddrinfo(host, portStr, &hints, &servinfo) || servinfo == NULL) return NULL;
+    if (0 != getaddrinfo(host, portStr, &hints, &servinfo) || servinfo == NULL) return -1;
 
     // we test the various addresses
     s = -1;
-    for(p = servinfo ; p != NULL && s == -1 ; p = p->ai_next)
+    for (p = servinfo ; p != NULL && s == -1 ; p = p->ai_next)
     {
         s = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
         if (s >= 0)
@@ -132,13 +129,35 @@ connection_t * connection_create(connection_t * connList,
             }
         }
     }
+
     if (s >= 0)
     {
-        connP = connection_new_incoming(connList, sock, sa, sl);
         close(s);
+        *sockAddrLen = sl;
+        memcpy(sockAddrP, sa, sl);
+        freeaddrinfo(servinfo);
+        return 0;
     }
-    if (NULL != servinfo) {
-        free(servinfo);
+
+    freeaddrinfo(servinfo);
+    return -1;
+}
+
+connection_t * connection_create(connection_t * connList,
+                                 int sock,
+                                 char * host,
+                                 uint16_t port)
+{
+    char portStr[6];
+    struct sockaddr_storage sa;
+    socklen_t sl;
+    connection_t * connP = NULL;
+
+    if (sprintf(portStr, "%hu", port) <= 0) return NULL;
+
+    if (connection_get_addr(host, portStr, &sa, &sl) == 0)
+    {
+        connP = connection_new_incoming(connList, sock, sa, sl);
     }
 
     return connP;
