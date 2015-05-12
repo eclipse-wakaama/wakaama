@@ -29,7 +29,7 @@ int create_socket(const char * portStr)
     struct addrinfo *p;
 
     memset(&hints, 0, sizeof hints);
-    hints.ai_family = AF_INET;
+    hints.ai_family = AF_INET6;
     hints.ai_socktype = SOCK_DGRAM;
     hints.ai_flags = AI_PASSIVE;
 
@@ -110,7 +110,7 @@ connection_t * connection_create(connection_t * connList,
     connection_t * connP = NULL;
 
     memset(&hints, 0, sizeof(hints));
-    hints.ai_family = AF_INET;
+    hints.ai_family = AF_INET6;
     hints.ai_socktype = SOCK_DGRAM;
 
     if (0 >= sprintf(portStr, "%hu", port)) return NULL;
