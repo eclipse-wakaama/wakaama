@@ -29,7 +29,7 @@ int create_socket(const char * portStr)
     struct addrinfo *p;
 
     memset(&hints, 0, sizeof hints);
-    hints.ai_family = AF_INET;
+    hints.ai_family = AF_INET6;
     hints.ai_socktype = SOCK_DGRAM;
     hints.ai_flags = AI_PASSIVE;
 
@@ -108,7 +108,7 @@ int connection_get_addr(char * host,
     socklen_t sl;
 
     memset(&hints, 0, sizeof(hints));
-    hints.ai_family = AF_INET;
+    hints.ai_family = AF_INET6;
     hints.ai_socktype = SOCK_DGRAM;
 
     if (0 != getaddrinfo(host, portStr, &hints, &servinfo) || servinfo == NULL) return -1;
