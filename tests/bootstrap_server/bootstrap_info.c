@@ -29,8 +29,8 @@ typedef struct
     uint8_t     securityMode;
     uint8_t *   publicKey;
     size_t      publicKeyLen;
-    uint8_t *   privateKey;
-    size_t      privateKeyLen;
+    uint8_t *   secretKey;
+    size_t      secretKeyLen;
     uint8_t *   serverKey;
     size_t      serverKeyLen;
 } read_server_t;
@@ -238,6 +238,21 @@ static read_server_t * prv_read_next_server(FILE * fd)
             else goto error;
             free(value);
         }
+        else if (strcasecmp(key, "public") == 0)
+        {
+            readSrvP->publicKey = (uint8_t *)value;
+            readSrvP->publicKeyLen = strlen(value);
+        }
+        else if (strcasecmp(key, "server") == 0)
+        {
+            readSrvP->serverKey = (uint8_t *)value;
+            readSrvP->serverKeyLen = strlen(value);
+        }
+        else if (strcasecmp(key, "secret") == 0)
+        {
+            readSrvP->secretKey = (uint8_t *)value;
+            readSrvP->secretKeyLen = strlen(value);
+        }
         else
         {
             // ignore key for now
@@ -250,8 +265,8 @@ static read_server_t * prv_read_next_server(FILE * fd)
     if (readSrvP->id == 0
      || readSrvP->uri == 0
      || (readSrvP->securityMode != LWM2M_SECURITY_MODE_NONE
-          && (readSrvP->publicKey == NULL || readSrvP->serverKey == NULL))
-     || (readSrvP->privateKey == NULL
+          && (readSrvP->publicKey == NULL || readSrvP->secretKey == NULL))
+     || (readSrvP->serverKey == NULL
           && (readSrvP->securityMode == LWM2M_SECURITY_MODE_RAW_PUBLIC_KEY
            || readSrvP->securityMode == LWM2M_SECURITY_MODE_CERTIFICATE)))
     {
@@ -265,7 +280,7 @@ error:
     {
         if (readSrvP->uri != NULL) free(readSrvP->uri);
         if (readSrvP->publicKey != NULL) free(readSrvP->publicKey);
-        if (readSrvP->privateKey != NULL) free(readSrvP->privateKey);
+        if (readSrvP->secretKey != NULL) free(readSrvP->secretKey);
         if (readSrvP->serverKey != NULL) free(readSrvP->serverKey);
         free(readSrvP);
     }
@@ -340,20 +355,20 @@ static int prv_add_server(bs_info_t * infoP,
         tlvP[4].length = dataP->publicKeyLen;
 
         tlvP[5].type = LWM2M_TYPE_RESOURCE;
-        tlvP[5].id = LWM2M_SECURITY_SERVER_PUBLIC_KEY_ID;
+        tlvP[5].id = LWM2M_SECURITY_SECRET_KEY_ID;
         tlvP[5].dataType = LWM2M_TYPE_OPAQUE;
         tlvP[5].flags = LWM2M_TLV_FLAG_STATIC_DATA;
-        tlvP[5].value = dataP->serverKey;
-        tlvP[5].length = dataP->serverKeyLen;
+        tlvP[5].value = dataP->secretKey;
+        tlvP[5].length = dataP->secretKeyLen;
 
-        if (size = 7)
+        if (size == 7)
         {
             tlvP[6].type = LWM2M_TYPE_RESOURCE;
             tlvP[6].id = LWM2M_SECURITY_SERVER_PUBLIC_KEY_ID;
             tlvP[6].dataType = LWM2M_TYPE_OPAQUE;
             tlvP[6].flags = LWM2M_TLV_FLAG_STATIC_DATA;
-            tlvP[6].value = dataP->privateKey;
-            tlvP[6].length = dataP->privateKeyLen;
+            tlvP[6].value = dataP->serverKey;
+            tlvP[6].length = dataP->serverKeyLen;
         }
     }
 
