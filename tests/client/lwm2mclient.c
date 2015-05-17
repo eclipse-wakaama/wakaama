@@ -107,7 +107,11 @@ typedef struct
     lwm2m_object_t * securityObjP;
     lwm2m_object_t * serverObject;
     int sock;
+#ifdef WITH_TINYDTLS
+    dtls_context_t * dtlsH;
+#else
     connection_t * connList;
+#endif
 } client_data_t;
 
 static void prv_quit(char * buffer,
@@ -214,13 +218,15 @@ static void * prv_connect_server(uint16_t secObjInstID, void * userData)
     char * ptr;
 #ifdef WITH_TINYDTLS
     session_t dst;
+    dtls_peer_t * peerP;
 #else
     connection_t * newConnP = NULL;
 #endif
 
+fprintf(stderr, "%s\r\n", __FUNCTION__);
     dataP = (client_data_t *)userData;
 
-    secuP = (security_instance_t *)LWM2M_LIST_FIND(dataP->securityObjP, secObjInstID);
+    secuP = (security_instance_t *)LWM2M_LIST_FIND(dataP->securityObjP->instanceList, secObjInstID);
     if (secuP == NULL) return NULL;
 
     // parse uri in the form "coaps://[host]:[port]"
@@ -246,10 +252,66 @@ static void * prv_connect_server(uint16_t secObjInstID, void * userData)
     fprintf(stderr, "Trying to connect to LWM2M Server at %s:%d\r\n", host, port);
 
 #ifdef WITH_TINYDTLS
-    if (connection_get_addr(host, portStr, &dst.addr.st, &dst.size) != 0) return NULL;
+    memset(&dst, 0, sizeof(session_t));
+    if (connection_get_addr(host, portStr, &dst.addr.sa, &dst.size) != 0) return NULL;
     if (dtls_connect(dataP->dtlsH, &dst) < 0) return NULL;
+    peerP = dtls_get_peer(dataP->dtlsH, &dst);
 
-    return (void *)dtls_get_peer(dataP->dtlsH, &dst);
+    while (peerP && peerP->state != DTLS_STATE_CONNECTED)
+    {
+        fd_set readfds;
+        struct timeval tv;
+        int res;
+
+        FD_ZERO(&readfds);
+        FD_SET(dataP->sock, &readfds);
+
+        tv.tv_sec = 60;
+        tv.tv_usec = 0;
+
+        res = select(FD_SETSIZE, &readfds, 0, 0, &tv);
+
+        if ( res < 0 )
+        {
+            if (errno != EINTR)
+            {
+              fprintf(stderr, "Error in select(): %d\r\n", errno);
+            }
+        }
+        else if (res > 0)
+        {
+            uint8_t buffer[MAX_PACKET_SIZE];
+            int numBytes;
+
+            if (FD_ISSET(dataP->sock, &readfds))
+            {
+                struct sockaddr_storage addr;
+                socklen_t addrLen;
+
+                addrLen = sizeof(addr);
+                numBytes = recvfrom(dataP->sock, buffer, MAX_PACKET_SIZE, 0, (struct sockaddr *)&addr, &addrLen);
+
+                if (numBytes == -1)
+                {
+                    fprintf(stderr, "Error in recvfrom(): %d\r\n", errno);
+                }
+                else
+                {
+                    session_t session;
+
+                    memset(&session, 0, sizeof(session_t));
+                    session.size = addrLen;
+                    memcpy(&session.addr.st, &addr, addrLen);
+
+                    dtls_handle_message(dataP->dtlsH, &session, buffer, numBytes);
+                }
+            }
+        }
+        peerP = dtls_get_peer(dataP->dtlsH, &dst);
+    }
+    fprintf(stderr, "%s returned 0x%08X\r\n", __FUNCTION__, peerP);
+
+    return (void *)peerP;
 #else
     newConnP = connection_create(dataP->connList, dataP->sock, host, port);
     if (newConnP == NULL)
@@ -274,6 +336,23 @@ static int prv_dtls_send(struct dtls_context_t * dtlsH,
                          size_t length)
 {
     client_data_t * dataP = (client_data_t *)dtls_get_app_data(dtlsH);
+    char s[INET6_ADDRSTRLEN];
+    in_port_t port;
+
+    fprintf(stderr, "%s\r\n", __FUNCTION__);
+    if (AF_INET == dst->addr.st.ss_family)
+    {
+        struct sockaddr_in *saddr = (struct sockaddr_in *)&dst->addr;
+        inet_ntop(saddr->sin_family, &saddr->sin_addr, s, INET6_ADDRSTRLEN);
+        port = saddr->sin_port;
+    }
+    else if (AF_INET6 == dst->addr.st.ss_family)
+    {
+        struct sockaddr_in6 *saddr = (struct sockaddr_in6 *)&dst->addr;
+        inet_ntop(saddr->sin6_family, &saddr->sin6_addr, s, INET6_ADDRSTRLEN);
+        port = saddr->sin6_port;
+    }
+    fprintf(stderr, "Sending %d bytes to [%s]:%hu\r\n", length, s, ntohs(port));
 
     return sendto(dataP->sock, data, length, MSG_DONTWAIT, &dst->addr.sa, dst->size);
 }
@@ -284,15 +363,16 @@ static uint8_t prv_buffer_send(void * sessionH,
                                size_t length,
                                void * userData)
 {
-    dtls_context_t * dtlsH = (dtls_context_t *)userData;
-    session_t * dst = (session_t *)sessionH;
+    client_data_t * dataP = (client_data_t *)userData;
+    dtls_peer_t * peerP = (dtls_peer_t *)sessionH;
     int nbSent;
     size_t offset;
+    fprintf(stderr, "%s to 0x%08X\r\n", __FUNCTION__, sessionH);
 
     offset = 0;
     while (offset != length)
     {
-        nbSent = dtls_write(dtlsH, dst, buffer + offset, length - offset);
+        nbSent = dtls_write(dataP->dtlsH, &peerP->session, buffer + offset, length - offset);
         if (nbSent == -1) return COAP_500_INTERNAL_SERVER_ERROR;
         offset += nbSent;
     }
@@ -309,9 +389,11 @@ static int prv_dtls_read(dtls_context_t * dtlsH,
     dtls_peer_t * peerP;
 
     peerP = dtls_get_peer(dtlsH, src);
+    fprintf(stderr, "%s from 0x%08X\r\n", __FUNCTION__, peerP);
+
     if (peerP != NULL)
     {
-        lwm2m_handle_packet(dataP->lwm2mH, data, length, (void *)src);
+        lwm2m_handle_packet(dataP->lwm2mH, data, length, (void *)peerP);
     }
 }
 
@@ -324,6 +406,7 @@ static int prv_dtls_get_psk(dtls_context_t * dtlsH,
                             unsigned char * result,
                             size_t resultLength)
 {
+    fprintf(stderr, "%s\r\n", __FUNCTION__);
     switch (type)
     {
     case DTLS_PSK_IDENTITY:
@@ -348,6 +431,7 @@ static int prv_dtls_get_psk(dtls_context_t * dtlsH,
         return strlen(PSK_KEY);
 
     default:
+        break;
     }
 
     return dtls_alert_fatal_create(DTLS_ALERT_INTERNAL_ERROR);
@@ -880,6 +964,21 @@ int main(int argc, char *argv[])
 #ifdef LWM2M_BOOTSTRAP
     lwm2m_bootstrap_state_t previousBootstrapState = NOT_BOOTSTRAPPED;
 #endif
+#ifdef WITH_TINYDTLS
+    dtls_handler_t dtlsCb =
+    {
+        .write = prv_dtls_send,
+        .read  = prv_dtls_read,
+        .event = NULL,
+    #ifdef DTLS_PSK
+        .get_psk_info = prv_dtls_get_psk,
+    #endif
+    #ifdef DTLS_ECC
+        .get_ecdsa_key = NULL,
+        .verify_ecdsa_key = NULL,
+    #endif
+    };
+#endif
 
     /*
      * The function start by setting up the command line interface (which may or not be useful depending on your project)
@@ -1049,7 +1148,20 @@ int main(int argc, char *argv[])
      * The liblwm2m library is now initialized with the functions that will be in
      * charge of communication
      */
+#ifdef WITH_TINYDTLS
+    dtls_init();
+    data.dtlsH = dtls_new_context((void *)&data);
+    if (data.dtlsH == NULL)
+    {
+        fprintf(stderr, "dtls_new_context() failed\r\n");
+        return -1;
+    }
+    dtls_set_handler(data.dtlsH, &dtlsCb);
+
     data.lwm2mH = lwm2m_init(prv_connect_server, prv_buffer_send, &data);
+#else
+    data.lwm2mH = lwm2m_init(prv_connect_server, prv_buffer_send, &data);
+#endif
     if (NULL == data.lwm2mH)
     {
         fprintf(stderr, "lwm2m_init() failed\r\n");
@@ -1210,8 +1322,11 @@ int main(int argc, char *argv[])
                 {
                     char s[INET6_ADDRSTRLEN];
                     in_port_t port;
+#ifdef WITH_TINYDTLS
+                    session_t session;
+#else
                     connection_t * connP;
-
+#endif
                     if (AF_INET == addr.ss_family)
                     {
                         struct sockaddr_in *saddr = (struct sockaddr_in *)&addr;
@@ -1231,6 +1346,13 @@ int main(int argc, char *argv[])
                      */
                     output_buffer(stderr, buffer, numBytes, 0);
 
+#ifdef WITH_TINYDTLS
+                    memset(&session, 0, sizeof(session_t));
+                    session.size = addrLen;
+                    memcpy(&session.addr.st, &addr, addrLen);
+
+                    dtls_handle_message(data.dtlsH, &session, buffer, numBytes);
+#else
                     connP = connection_find(data.connList, &addr, addrLen);
                     if (connP != NULL)
                     {
@@ -1244,6 +1366,7 @@ int main(int argc, char *argv[])
                     {
                         fprintf(stderr, "received bytes ignored!\r\n");
                     }
+#endif
                 }
             }
 
@@ -1257,8 +1380,6 @@ int main(int argc, char *argv[])
                 if (numBytes > 1)
                 {
                     buffer[numBytes] = 0;
-                    fprintf(stderr, "STDIN %d bytes '%s'\r\n> ", numBytes, buffer);
-
                     /*
                      * We call the corresponding callback of the typed command passing it the buffer for further arguments
                      */
@@ -1287,7 +1408,11 @@ int main(int argc, char *argv[])
         lwm2m_close(data.lwm2mH);
     }
     close(data.sock);
+#ifdef WITH_TINYDTLS
+    dtls_free_context(data.dtlsH);
+#else
     connection_free(data.connList);
+#endif
 
     return 0;
 }

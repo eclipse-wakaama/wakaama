@@ -34,16 +34,16 @@ typedef struct _connection_t
     struct _connection_t *  next;
     int                     sock;
     struct sockaddr_in6     addr;
-    size_t                  addrLen;
+    socklen_t               addrLen;
 } connection_t;
 
 int create_socket(const char * portStr);
 
 connection_t * connection_find(connection_t * connList, struct sockaddr_storage * addr, size_t addrLen);
-connection_t * connection_new_incoming(connection_t * connList, int sock, struct sockaddr * addr, size_t addrLen);
+connection_t * connection_new_incoming(connection_t * connList, int sock, struct sockaddr * addr, socklen_t addrLen);
 connection_t * connection_create(connection_t * connList, int sock, char * host, uint16_t port);
 
-int connection_get_addr(char * host, char * port, struct sockaddr_storage * sockAddrP, socklen_t * sockAddrLen);
+int connection_get_addr(char * host, char * port, struct sockaddr * sockAddrP, socklen_t * sockAddrLen);
 
 void connection_free(connection_t * connList);
 

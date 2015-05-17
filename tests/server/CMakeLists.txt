@@ -5,9 +5,12 @@ project (lwm2mserver)
 SET(LIBLWM2M_DIR ${PROJECT_SOURCE_DIR}/../../core)
 SET(UTILS_DIR ${PROJECT_SOURCE_DIR}/../utils)
 
-add_definitions(-DLWM2M_SERVER_MODE -DLWM2M_LITTLE_ENDIAN -DWITH_TINYDTLS)
+add_definitions(-DLWM2M_SERVER_MODE -DLWM2M_LITTLE_ENDIAN)
+if(DTLS)
+add_definitions(-DWITH_TINYDTLS)
+endif(DTLS)
 
-include_directories (${LIBLWM2M_DIR} ${UTILS_DIR})
+include_directories(${LIBLWM2M_DIR} ${UTILS_DIR})
 
 add_subdirectory(${LIBLWM2M_DIR} ${CMAKE_CURRENT_BINARY_DIR}/core)
 
@@ -16,3 +19,7 @@ add_subdirectory(${LIBLWM2M_DIR} ${CMAKE_CURRENT_BINARY_DIR}/core)
 SET(SOURCES lwm2mserver.c ${UTILS_DIR}/commandline.c ${UTILS_DIR}/connection.c)
 
 add_executable(lwm2mserver ${SOURCES} ${CORE_SOURCES})
+
+if(DTLS)
+target_link_libraries(lwm2mserver tinydtls)
+endif(DTLS)

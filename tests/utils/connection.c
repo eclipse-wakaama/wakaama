@@ -79,7 +79,7 @@ connection_t * connection_find(connection_t * connList,
 connection_t * connection_new_incoming(connection_t * connList,
                                        int sock,
                                        struct sockaddr * addr,
-                                       size_t addrLen)
+                                       socklen_t addrLen)
 {
     connection_t * connP;
 
@@ -97,7 +97,7 @@ connection_t * connection_new_incoming(connection_t * connList,
 
 int connection_get_addr(char * host,
                         char * port,
-                        struct sockaddr_storage * sockAddrP,
+                        struct sockaddr * sockAddrP,
                         socklen_t * sockAddrLen)
 {
     struct addrinfo hints;
@@ -111,7 +111,7 @@ int connection_get_addr(char * host,
     hints.ai_family = AF_INET6;
     hints.ai_socktype = SOCK_DGRAM;
 
-    if (0 != getaddrinfo(host, portStr, &hints, &servinfo) || servinfo == NULL) return -1;
+    if (0 != getaddrinfo(host, port, &hints, &servinfo) || servinfo == NULL) return -1;
 
     // we test the various addresses
     s = -1;
@@ -149,7 +149,7 @@ connection_t * connection_create(connection_t * connList,
                                  uint16_t port)
 {
     char portStr[6];
-    struct sockaddr_storage sa;
+    struct sockaddr sa;
     socklen_t sl;
     connection_t * connP = NULL;
 
@@ -157,7 +157,7 @@ connection_t * connection_create(connection_t * connList,
 
     if (connection_get_addr(host, portStr, &sa, &sl) == 0)
     {
-        connP = connection_new_incoming(connList, sock, sa, sl);
+        connP = connection_new_incoming(connList, sock, &sa, sl);
     }
 
     return connP;

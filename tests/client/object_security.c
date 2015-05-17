@@ -41,7 +41,7 @@
  */
 
 #include "liblwm2m.h"
-#include "lwm2m_client.h"
+#include "lwm2mclient.h"
 
 #include <stdlib.h>
 #include <string.h>

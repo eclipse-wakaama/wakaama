@@ -123,6 +123,7 @@ static int prv_dtls_send(struct dtls_context_t * dtlsH,
                          size_t length)
 {
     internal_data_t * dataP = (internal_data_t *)dtls_get_app_data(dtlsH);
+    fprintf(stderr, "%s\r\n", __FUNCTION__);
 
     return sendto(dataP->sock, data, length, MSG_DONTWAIT, &dst->addr.sa, dst->size);
 }
@@ -131,12 +132,13 @@ static int prv_dtls_send(struct dtls_context_t * dtlsH,
 static uint8_t prv_buffer_send(void * sessionH,
                                uint8_t * buffer,
                                size_t length,
-                               void * userdata)
+                               void * userData)
 {
     dtls_context_t * dtlsH = (dtls_context_t *)userData;
     session_t * dst = (session_t *)sessionH;
     int nbSent;
     size_t offset;
+    fprintf(stderr, "%s\r\n", __FUNCTION__);
 
     offset = 0;
     while (offset != length)
@@ -156,6 +158,7 @@ static int prv_dtls_read(dtls_context_t * dtlsH,
 {
     internal_data_t * dataP = (internal_data_t *)dtls_get_app_data(dtlsH);
     dtls_peer_t * peerP;
+    fprintf(stderr, "%s\r\n", __FUNCTION__);
 
     peerP = dtls_get_peer(dtlsH, src);
     if (peerP != NULL)
@@ -173,8 +176,12 @@ static int prv_dtls_get_psk(dtls_context_t * dtlsH,
                             unsigned char * result,
                             size_t resultLength)
 {
+    fprintf(stderr, "%s\r\n", __FUNCTION__);
     switch (type)
     {
+    case DTLS_PSK_HINT:
+        return 0;
+
     case DTLS_PSK_IDENTITY:
         if (resultLength < strlen(PSK_IDENTITY))
         {
@@ -197,6 +204,7 @@ static int prv_dtls_get_psk(dtls_context_t * dtlsH,
         return strlen(PSK_KEY);
 
     default:
+        break;
     }
 
     return dtls_alert_fatal_create(DTLS_ALERT_INTERNAL_ERROR);
@@ -872,6 +880,7 @@ static void prv_ipso_display(internal_data_t * dataP)
 {
     ipso_object_t * objectP;
 
+    if (dataP->objectList == NULL) return;
     fprintf(stdout, "\r\n======== IPSO ========\r\n");
     objectP = dataP->objectList;
     while (objectP != NULL)
@@ -1025,14 +1034,14 @@ int main(int argc, char *argv[])
             COMMAND_END_LIST
     };
 
+    memset(&data, 0, sizeof(internal_data_t));
+
     data.sock = create_socket(LWM2M_STANDARD_PORT_STR);
     if (data.sock < 0)
     {
         fprintf(stderr, "Error opening socket: %d\r\n", errno);
         return -1;
     }
-
-    memset(&data, 0, sizeof(internal_data_t));
 
 #ifdef WITH_TINYDTLS
     dtls_init();
@@ -1043,6 +1052,7 @@ int main(int argc, char *argv[])
         return -1;
     }
     dtls_set_handler(dtlsH, &dtlsCb);
+    dtls_set_log_level(0);
 
     data.lwm2mH = lwm2m_init(NULL, prv_buffer_send, (void *)dtlsH);
 #else
@@ -1136,7 +1146,7 @@ int main(int argc, char *argv[])
 #ifdef WITH_TINYDTLS
                     memset(&session, 0, sizeof(session_t));
                     session.size = addrLen;
-                    memcpy(&session.addr.st, &addr, sizeof(addr));
+                    memcpy(&session.addr.st, &addr, addrLen);
 
                     dtls_handle_message(dtlsH, &session, buffer, numBytes);
 #else

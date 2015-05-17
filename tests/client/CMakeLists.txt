@@ -6,7 +6,7 @@ SET(LIBLWM2M_DIR ${PROJECT_SOURCE_DIR}/../../core)
 
 #SET(CMAKE_C_FLAGS "-g")
 
-add_definitions(-DLWM2M_CLIENT_MODE -DWITH_TINYDTLS -DLWM2M_LITTLE_ENDIAN -DLWM2M_BOOTSTRAP)
+add_definitions(-DLWM2M_CLIENT_MODE -DWITH_TINYDTLS -DLWM2M_LITTLE_ENDIAN)
 
 include_directories (${LIBLWM2M_DIR} ${PROJECT_SOURCE_DIR}/../utils)
 
@@ -29,3 +29,4 @@ SET(SOURCES
     test_object.c)
 
 add_executable(lwm2mclient ${SOURCES} ${CORE_SOURCES})
+target_link_libraries(lwm2mclient tinydtls)
