@@ -678,19 +678,58 @@ static void prv_ipso_callback(uint16_t clientID,
                               void * userData)
 {
     ipso_object_t * objectP = (ipso_object_t *)userData;
-    char * tempStr;
+    char * tempStr = NULL;
+    int i;
 
     if (!LWM2M_URI_IS_SET_RESOURCE(uriP)) return;
     if (data == NULL) return;
 
-    tempStr = (char *) lwm2m_malloc(dataLength + 1);
-    if (tempStr == NULL) return;
+    for (i = 0 ; i < dataLength ; i++)
+    {
+        if (!isprint(data[i]))
+        {
+            break;
+        }
+    }
 
-    memcpy(tempStr, data, dataLength);
-    tempStr[dataLength] = 0;
+    if (i == dataLength)
+    {
+        tempStr = (char *) lwm2m_malloc(dataLength + 1);
+        if (tempStr == NULL) return;
 
-    if (objectP->outputStr != NULL) lwm2m_free(objectP->outputStr);
-    objectP->outputStr = tempStr;
+        memcpy(tempStr, data, dataLength);
+        tempStr[dataLength] = 0;
+    }
+    else
+    {
+        lwm2m_tlv_t * tlvP = NULL;
+        int size;
+
+        size = lwm2m_tlv_parse(data, dataLength, &tlvP);
+        if (size == 1)
+        {
+            double value;
+
+            if (1 == lwm2m_tlv_decode_float(tlvP, &value))
+            {
+                tempStr = (char *)lwm2m_malloc(32);
+                if (tempStr == NULL) return;
+
+                snprintf(tempStr, 32, "%lf", value);
+            }
+        }
+    }
+
+    if (tempStr == NULL)
+    {
+        fprintf(stderr, "Invalid data: \r\n");
+        output_buffer(stderr, data, dataLength, 0);
+    }
+    else
+    {
+        if (objectP->outputStr != NULL) lwm2m_free(objectP->outputStr);
+        objectP->outputStr = tempStr;
+    }
 }
 
 static void prv_add_ipso_client(internal_data_t * dataP,
@@ -848,6 +887,8 @@ static void prv_remove_ipso_client(internal_data_t * dataP,
 {
     ipso_object_t * parentP;
 
+    if (dataP->objectList == NULL) return;
+
     parentP = dataP->objectList;
     while (parentP->next != NULL)
     {
@@ -913,6 +954,7 @@ static void prv_monitor_callback(uint16_t clientID,
 
         prv_dump_client(targetP);
 
+        prv_remove_ipso_client(dataP, clientID);
         prv_add_ipso_client(dataP, targetP);
         break;
 
