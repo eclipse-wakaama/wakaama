@@ -199,9 +199,7 @@ static void * prv_connect_server(uint16_t secObjInstID, void * userData)
     client_data_t * dataP;
     char * uri;
     char * host;
-    char * portStr;
-    int port;
-    char * ptr;
+    char * port;
     connection_t * newConnP = NULL;
 
     dataP = (client_data_t *)userData;
@@ -220,17 +218,23 @@ static void * prv_connect_server(uint16_t secObjInstID, void * userData)
     else {
         goto exit;
     }
-    portStr = strchr(host, ':');
-    if (portStr == NULL) goto exit;
-    // split strings
-    *portStr = 0;
-    portStr++;
-    port = strtol(portStr, &ptr, 10);
-    if (*ptr != 0) {
-        goto exit;
+    port = strrchr(host, ':');
+    if (port == NULL) goto exit;
+    // remove brackets
+    if (host[0] == '[')
+    {
+        host++;
+        if (*(port - 1) == ']')
+        {
+            *(port - 1) = 0;
+        }
+        else goto exit;
     }
+    // split strings
+    *port = 0;
+    port++;
 
-    fprintf(stderr, "Trying to connect to LWM2M Server at %s:%d\r\n", host, port);
+    fprintf(stderr, "Trying to connect to LWM2M Server at %s:%s\r\n", host, port);
     newConnP = connection_create(dataP->connList, dataP->sock, host, port);
     if (newConnP == NULL) {
         fprintf(stderr, "Connection creation failed.\r\n");
