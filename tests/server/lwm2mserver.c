@@ -72,11 +72,7 @@
 #include "commandline.h"
 #include "connection.h"
 
-/*
- * ensure sync with: er_coap_13.h COAP_MAX_PACKET_SIZE!
- * or internals.h LWM2M_MAX_PACKET_SIZE!
- */
-#define MAX_PACKET_SIZE 198
+#define MAX_PACKET_SIZE 1024
 
 static int g_quit = 0;
 
