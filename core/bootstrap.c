@@ -32,7 +32,7 @@ static void prv_handleBootstrapReply(lwm2m_transaction_t * transaction, void * m
     LOG("[BOOTSTRAP] Handling bootstrap reply...\r\n");
     lwm2m_context_t * context = (lwm2m_context_t *)transaction->userData;
     coap_packet_t * coapMessage = (coap_packet_t *)message;
-    if (NULL != coapMessage)
+    if (NULL != coapMessage && COAP_TYPE_RST != coapMessage->type)
     {
         handle_bootstrap_response(context, coapMessage, NULL);
     }

@@ -322,6 +322,7 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
             case COAP_TYPE_RST:
                 /* Cancel possible subscriptions. */
                 handle_reset(contextP, fromSessionH, message);
+                transaction_handle_response(contextP, fromSessionH, message, NULL);
                 break;
 
             case COAP_TYPE_ACK:
