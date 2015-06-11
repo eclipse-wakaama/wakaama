@@ -4,11 +4,11 @@ Options:
   -f FILE   Specify BootStrap Information file. Default: ./bootstrap_info.ini
   -p PORT   Set the local UDP port of the Client. Default: 5685
 
-When it receives a Bootstrap Request from a LWM2M Client, it sneds commands as
+When it receives a Bootstrap Request from a LWM2M Client, it sends commands as
 described in the Bootstrap Information file.
 This file is a custom .INI file:
 
-Commented lines starts either with a or a ;
+Commented lines starts either with a # or a ;
 Spaces before [ and key names are ignored. Spaces around = are ignored.
 Spaces at the end of lines are ignored.
 
@@ -23,8 +23,12 @@ Supported sections are [Server] and [Endpoint].
   - lifetime: registration lifetime. (optional)
   - security: security mode. Supported values are NoSec, PSK, RPK and
               Certificate. (MANDATORY)
+  - public: the client public key or identity as defined by resource
+            /0/x/3
+  - server: the server public key as defined by resource /0/x/4
+  - secret: the private key or secret key as defined by resource /0/x/5
 
-For now only NoSec is supported.
+Keys are hexadecimal strings. No spaces, no dashes. Upper of lower case letters.
 
 [Endpoint] contains the Bootstrap operations. If no Name is specified,
 these operations will be sent to any unknown Client that requests
