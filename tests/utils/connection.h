@@ -41,7 +41,7 @@ int create_socket(const char * portStr);
 
 connection_t * connection_find(connection_t * connList, struct sockaddr_storage * addr, size_t addrLen);
 connection_t * connection_new_incoming(connection_t * connList, int sock, struct sockaddr * addr, size_t addrLen);
-connection_t * connection_create(connection_t * connList, int sock, char * host, uint16_t port);
+connection_t * connection_create(connection_t * connList, int sock, char * host, char * port);
 
 void connection_free(connection_t * connList);
 
