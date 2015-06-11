@@ -65,7 +65,7 @@ static int prv_find_next_section(FILE * fd,
                 }
             }
         }
-        free(line);
+        lwm2m_free(line);
         line = NULL;
         length = 0;
     }
@@ -106,7 +106,7 @@ static int prv_read_key_value(FILE * fd,
             break;
         }
 
-        free(line);
+        lwm2m_free(line);
         line = NULL;
         length = 0;
         if (fgetpos(fd, &prevPos) != 0) return -1;
@@ -117,7 +117,7 @@ static int prv_read_key_value(FILE * fd,
     // end of section
     if (line[start] == '[')
     {
-        free(line);
+        lwm2m_free(line);
         fsetpos(fd, &prevPos);
         return 0;
     }
@@ -128,7 +128,7 @@ static int prv_read_key_value(FILE * fd,
     if (middle == start
      || middle == length)
     {
-        free(line);
+        lwm2m_free(line);
         return -1;
     }
 
@@ -137,7 +137,7 @@ static int prv_read_key_value(FILE * fd,
     // invalid lines
     if (end == middle)
     {
-        free(line);
+        lwm2m_free(line);
         return -1;
     }
     end += 1;
@@ -146,7 +146,7 @@ static int prv_read_key_value(FILE * fd,
     *keyP = strdup(line + start);
     if (*keyP == NULL)
     {
-        free(line);
+        lwm2m_free(line);
         return -1;
     }
 
@@ -156,15 +156,74 @@ static int prv_read_key_value(FILE * fd,
     *valueP = strdup(line + middle);
     if (*valueP == NULL)
     {
-        free(*keyP);
+        lwm2m_free(*keyP);
         *keyP = NULL;
-        free(line);
+        lwm2m_free(line);
         return -1;
     }
 
-    free(line);
+    lwm2m_free(line);
 
     return 1;
+}
+
+static int prv_readDigit(char digit)
+{
+    if (digit >= '0' && digit <= '9')
+    {
+        return (digit - '0');
+    }
+    if (digit >= 'a' && digit <= 'f')
+    {
+        return (10 + digit - 'a');
+    }
+    if (digit >= 'A' && digit <= 'F')
+    {
+        return (10 + digit - 'A');
+    }
+
+    return -1;
+}
+
+static size_t prv_readSecurityKey(char * value,
+                                  uint8_t ** resultP)
+{
+    size_t length;
+    size_t charIndex;
+    size_t resIndex;
+
+    if (strlen(value)%2 != 0) return 0;
+
+    length = strlen(value) / 2;
+    *resultP = (uint8_t *)lwm2m_malloc(length);
+    if (*resultP == NULL) return 0;
+
+    resIndex = 0;
+    charIndex = 0;
+    while (resIndex < length)
+    {
+        int tmp;
+
+        tmp = prv_readDigit(value[charIndex]);
+        if (tmp == -1) goto error;
+        (*resultP)[resIndex] = (tmp & 0xFF);
+
+        charIndex++;
+        tmp = prv_readDigit(value[charIndex]);
+        if (tmp == -1) goto error;
+        (*resultP)[resIndex] = ((*resultP)[resIndex] << 4) + (tmp & 0xFF);
+
+        charIndex++;
+        resIndex++;
+    }
+
+    return length;
+
+error:
+    lwm2m_free(*resultP);
+    *resultP = NULL;
+
+    return 0;
 }
 
 static read_server_t * prv_read_next_server(FILE * fd)
@@ -176,7 +235,7 @@ static read_server_t * prv_read_next_server(FILE * fd)
 
     if (prv_find_next_section(fd, "Server") == 0) return NULL;
 
-    readSrvP = (read_server_t *)malloc(sizeof(read_server_t));
+    readSrvP = (read_server_t *)lwm2m_malloc(sizeof(read_server_t));
     if (readSrvP == NULL) return NULL;
     memset(readSrvP, 0, sizeof(read_server_t));
 
@@ -189,7 +248,7 @@ static read_server_t * prv_read_next_server(FILE * fd)
             if (sscanf(value, "%d", &num) != 1) goto error;
             if (num <= 0 || num > LWM2M_MAX_ID) goto error;
             readSrvP->id = num;
-            free(value);
+            lwm2m_free(value);
         }
         else if (strcasecmp(key, "uri") == 0)
         {
@@ -206,7 +265,7 @@ static read_server_t * prv_read_next_server(FILE * fd)
                 readSrvP->isBootstrap = false;
             }
             else goto error;
-            free(value);
+            lwm2m_free(value);
         }
         else if (strcasecmp(key, "lifetime") == 0)
         {
@@ -215,7 +274,7 @@ static read_server_t * prv_read_next_server(FILE * fd)
             if (sscanf(value, "%d", &num) != 1) goto error;
             if (num <= 0) goto error;
             readSrvP->lifetime = num;
-            free(value);
+            lwm2m_free(value);
         }
         else if (strcasecmp(key, "security") == 0)
         {
@@ -227,7 +286,7 @@ static read_server_t * prv_read_next_server(FILE * fd)
             {
                 readSrvP->securityMode = LWM2M_SECURITY_MODE_PRE_SHARED_KEY;
             }
-            else if (strcasecmp(value, "RSK") == 0)
+            else if (strcasecmp(value, "RPK") == 0)
             {
                 readSrvP->securityMode = LWM2M_SECURITY_MODE_RAW_PUBLIC_KEY;
             }
@@ -236,29 +295,32 @@ static read_server_t * prv_read_next_server(FILE * fd)
                 readSrvP->securityMode = LWM2M_SECURITY_MODE_CERTIFICATE;
             }
             else goto error;
-            free(value);
+            lwm2m_free(value);
         }
         else if (strcasecmp(key, "public") == 0)
         {
-            readSrvP->publicKey = (uint8_t *)value;
-            readSrvP->publicKeyLen = strlen(value);
+            readSrvP->publicKeyLen = prv_readSecurityKey(value, &(readSrvP->publicKey));
+            if (readSrvP->publicKeyLen == 0) goto error;
+            lwm2m_free(value);
         }
         else if (strcasecmp(key, "server") == 0)
         {
-            readSrvP->serverKey = (uint8_t *)value;
-            readSrvP->serverKeyLen = strlen(value);
+            readSrvP->serverKeyLen = prv_readSecurityKey(value, &(readSrvP->serverKey));
+            if (readSrvP->serverKeyLen == 0) goto error;
+            lwm2m_free(value);
         }
         else if (strcasecmp(key, "secret") == 0)
         {
-            readSrvP->secretKey = (uint8_t *)value;
-            readSrvP->secretKeyLen = strlen(value);
+            readSrvP->secretKeyLen = prv_readSecurityKey(value, &(readSrvP->secretKey));
+            if (readSrvP->secretKeyLen == 0) goto error;
+            lwm2m_free(value);
         }
         else
         {
             // ignore key for now
-            free(value);
+            lwm2m_free(value);
         }
-        free(key);
+        lwm2m_free(key);
     }
 
     if (res == -1) goto error;
@@ -278,14 +340,14 @@ static read_server_t * prv_read_next_server(FILE * fd)
 error:
     if (readSrvP != NULL)
     {
-        if (readSrvP->uri != NULL) free(readSrvP->uri);
-        if (readSrvP->publicKey != NULL) free(readSrvP->publicKey);
-        if (readSrvP->secretKey != NULL) free(readSrvP->secretKey);
-        if (readSrvP->serverKey != NULL) free(readSrvP->serverKey);
-        free(readSrvP);
+        if (readSrvP->uri != NULL) lwm2m_free(readSrvP->uri);
+        if (readSrvP->publicKey != NULL) lwm2m_free(readSrvP->publicKey);
+        if (readSrvP->secretKey != NULL) lwm2m_free(readSrvP->secretKey);
+        if (readSrvP->serverKey != NULL) lwm2m_free(readSrvP->serverKey);
+        lwm2m_free(readSrvP);
     }
-    if (key != NULL) free(key);
-    if (value != NULL) free(value);
+    if (key != NULL) lwm2m_free(key);
+    if (value != NULL) lwm2m_free(value);
 
     return NULL;
 }
@@ -313,7 +375,7 @@ static int prv_add_server(bs_info_t * infoP,
         return -1;
     }
 
-    serverP = (bs_server_tlv_t *)malloc(sizeof(bs_server_tlv_t));
+    serverP = (bs_server_tlv_t *)lwm2m_malloc(sizeof(bs_server_tlv_t));
     if (serverP == NULL) return -1;
     memset(serverP, 0, sizeof(bs_server_tlv_t));
 
@@ -416,9 +478,9 @@ static int prv_add_server(bs_info_t * infoP,
 
 error:
     if (tlvP != NULL) lwm2m_tlv_free(size, tlvP);
-    if (serverP->securityData != NULL) free(serverP->securityData);
-    if (serverP->serverData != NULL) free(serverP->serverData);
-    free(serverP);
+    if (serverP->securityData != NULL) lwm2m_free(serverP->securityData);
+    if (serverP->serverData != NULL) lwm2m_free(serverP->serverData);
+    lwm2m_free(serverP);
 
     return -1;
 }
@@ -433,7 +495,7 @@ static bs_endpoint_info_t * prv_read_next_endpoint(FILE * fd)
 
     if (prv_find_next_section(fd, "Endpoint") == 0) return NULL;
 
-    endptP = (bs_endpoint_info_t *)malloc(sizeof(bs_endpoint_info_t));
+    endptP = (bs_endpoint_info_t *)lwm2m_malloc(sizeof(bs_endpoint_info_t));
     if (endptP == NULL) return NULL;
     memset(endptP, 0, sizeof(bs_endpoint_info_t));
 
@@ -460,19 +522,19 @@ static bs_endpoint_info_t * prv_read_next_endpoint(FILE * fd)
                 else goto error;
             }
 
-            cmdP = (bs_command_t *)malloc(sizeof(bs_command_t));
+            cmdP = (bs_command_t *)lwm2m_malloc(sizeof(bs_command_t));
             if (cmdP == NULL) goto error;
             memset(cmdP, 0, sizeof(bs_command_t));
 
             cmdP->operation = BS_DELETE;
             if (uri.flag != 0)
             {
-                cmdP->uri = (lwm2m_uri_t *)malloc(sizeof(lwm2m_uri_t));
+                cmdP->uri = (lwm2m_uri_t *)lwm2m_malloc(sizeof(lwm2m_uri_t));
                 if (cmdP->uri == NULL) goto error;
                 memcpy(cmdP->uri, &uri, sizeof(lwm2m_uri_t));
             }
 
-            free(value);
+            lwm2m_free(value);
         }
         else if (strcasecmp(key, "Server") == 0)
         {
@@ -481,10 +543,10 @@ static bs_endpoint_info_t * prv_read_next_endpoint(FILE * fd)
             if (sscanf(value, "%d", &num) != 1) goto error;
             if (num <= 0 || num > LWM2M_MAX_ID) goto error;
 
-            cmdP = (bs_command_t *)malloc(sizeof(bs_command_t));
+            cmdP = (bs_command_t *)lwm2m_malloc(sizeof(bs_command_t));
             if (cmdP == NULL) goto error;
             memset(cmdP, 0, sizeof(bs_command_t));
-            cmdP->next = (bs_command_t *)malloc(sizeof(bs_command_t));
+            cmdP->next = (bs_command_t *)lwm2m_malloc(sizeof(bs_command_t));
             if (cmdP->next == NULL) goto error;
             memset(cmdP->next, 0, sizeof(bs_command_t));
 
@@ -493,14 +555,14 @@ static bs_endpoint_info_t * prv_read_next_endpoint(FILE * fd)
             cmdP->next->operation = BS_WRITE_SERVER;
             cmdP->next->serverId = num;
 
-            free(value);
+            lwm2m_free(value);
         }
         else
         {
             // ignore key for now
-            free(value);
+            lwm2m_free(value);
         }
-        free(key);
+        lwm2m_free(key);
 
         if (cmdP != NULL)
         {
@@ -526,29 +588,29 @@ static bs_endpoint_info_t * prv_read_next_endpoint(FILE * fd)
     return endptP;
 
 error:
-    if (key != NULL) free(key);
-    if (value != NULL) free(value);
+    if (key != NULL) lwm2m_free(key);
+    if (value != NULL) lwm2m_free(value);
     while (cmdP != NULL)
     {
         bs_command_t * tempP;
 
-        if (cmdP->uri != NULL) free(cmdP->uri);
+        if (cmdP->uri != NULL) lwm2m_free(cmdP->uri);
         tempP = cmdP;
         cmdP = cmdP->next;
-        free(tempP);
+        lwm2m_free(tempP);
     }
     if (endptP != NULL)
     {
-        if (endptP->name != NULL) free(endptP->name);
+        if (endptP->name != NULL) lwm2m_free(endptP->name);
         while (endptP->commandList != NULL)
         {
             cmdP = endptP->commandList;
             endptP->commandList =endptP->commandList->next;
 
-            if (cmdP->uri != NULL) free(cmdP->uri);
-            free(cmdP);
+            if (cmdP->uri != NULL) lwm2m_free(cmdP->uri);
+            lwm2m_free(cmdP);
         }
-        free(endptP);
+        lwm2m_free(endptP);
     }
 
     return NULL;
@@ -561,7 +623,7 @@ bs_info_t *  bs_get_info(FILE * fd)
     bs_endpoint_info_t * cltInfoP;
     bs_command_t * cmdP;
 
-    infoP = (bs_info_t *)malloc(sizeof(bs_info_t));
+    infoP = (bs_info_t *)lwm2m_malloc(sizeof(bs_info_t));
     if (infoP == NULL) return NULL;
     memset(infoP, 0, sizeof(bs_info_t));
 
@@ -640,13 +702,13 @@ bs_info_t *  bs_get_info(FILE * fd)
                     if (parentP == NULL)
                     {
                         cltInfoP->commandList = cmdP->next;
-                        free(cmdP);
+                        lwm2m_free(cmdP);
                         cmdP = cltInfoP->commandList;
                     }
                     else
                     {
                         parentP->next = cmdP->next;
-                        free(cmdP);
+                        lwm2m_free(cmdP);
                         cmdP = parentP->next;
                     }
                 }
@@ -686,10 +748,10 @@ void bs_free_info(bs_info_t * infoP)
         targetP = infoP->serverList;
         infoP->serverList = infoP->serverList->next;
 
-        if (targetP->securityData != NULL) free(targetP->securityData);
-        if (targetP->serverData != NULL) free(targetP->serverData);
+        if (targetP->securityData != NULL) lwm2m_free(targetP->securityData);
+        if (targetP->serverData != NULL) lwm2m_free(targetP->serverData);
 
-        free(targetP);
+        lwm2m_free(targetP);
     }
 
     while (infoP->endpointList != NULL)
@@ -699,7 +761,7 @@ void bs_free_info(bs_info_t * infoP)
         targetP = infoP->endpointList;
         infoP->endpointList = infoP->endpointList->next;
 
-        if (targetP->name != NULL) free(targetP->name);
+        if (targetP->name != NULL) lwm2m_free(targetP->name);
         while (targetP->commandList != NULL)
         {
             bs_command_t * cmdP;
@@ -707,12 +769,12 @@ void bs_free_info(bs_info_t * infoP)
             cmdP = targetP->commandList;
             targetP->commandList =targetP->commandList->next;
 
-            if (cmdP->uri != NULL) free(cmdP->uri);
-            free(cmdP);
+            if (cmdP->uri != NULL) lwm2m_free(cmdP->uri);
+            lwm2m_free(cmdP);
         }
 
-        free(targetP);
+        lwm2m_free(targetP);
     }
 
-    free(infoP);
+    lwm2m_free(infoP);
 }
