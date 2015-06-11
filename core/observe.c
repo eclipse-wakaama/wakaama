@@ -308,27 +308,7 @@ static lwm2m_observation_t * prv_findObservationByURI(lwm2m_client_t * clientP,
 void observation_remove(lwm2m_client_t * clientP,
                         lwm2m_observation_t * observationP)
 {
-    if (clientP->observationList == observationP)
-    {
-        clientP->observationList = clientP->observationList->next;
-    }
-    else if (clientP->observationList != NULL)
-    {
-        lwm2m_observation_t * parentP;
-
-        parentP = clientP->observationList;
-
-        while (parentP->next != NULL
-            && parentP->next != observationP)
-        {
-            parentP = parentP->next;
-        }
-        if (parentP->next != NULL)
-        {
-            parentP->next = parentP->next->next;
-        }
-    }
-
+    clientP->observationList = (lwm2m_observation_t *) LWM2M_LIST_RM(clientP->observationList, observationP->id, NULL);
     lwm2m_free(observationP);
 }
 
@@ -393,13 +373,6 @@ int lwm2m_observe(lwm2m_context_t * contextP,
     if (observationP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
     memset(observationP, 0, sizeof(lwm2m_observation_t));
 
-    transactionP = transaction_new(COAP_GET, clientP->altPath, uriP, contextP->nextMID++, ENDPOINT_CLIENT, (void *)clientP);
-    if (transactionP == NULL)
-    {
-        lwm2m_free(observationP);
-        return COAP_500_INTERNAL_SERVER_ERROR;
-    }
-
     observationP->id = lwm2m_list_newId((lwm2m_list_t *)clientP->observationList);
     memcpy(&observationP->uri, uriP, sizeof(lwm2m_uri_t));
     observationP->clientP = clientP;
@@ -410,6 +383,13 @@ int lwm2m_observe(lwm2m_context_t * contextP,
     token[1] = clientP->internalID & 0xFF;
     token[2] = observationP->id >> 8;
     token[3] = observationP->id & 0xFF;
+
+    transactionP = transaction_new(COAP_TYPE_CON, COAP_GET, clientP->altPath, uriP, contextP->nextMID++, 4, token, ENDPOINT_CLIENT, (void *)clientP);
+    if (transactionP == NULL)
+    {
+        lwm2m_free(observationP);
+        return COAP_500_INTERNAL_SERVER_ERROR;
+    }
 
     coap_set_header_observe(transactionP->message, 0);
     coap_set_header_token(transactionP->message, token, sizeof(token));
@@ -442,9 +422,10 @@ int lwm2m_observe_cancel(lwm2m_context_t * contextP,
     return 0;
 }
 
-void handle_observe_notify(lwm2m_context_t * contextP,
+bool handle_observe_notify(lwm2m_context_t * contextP,
                            void * fromSessionH,
-                           coap_packet_t * message)
+                           coap_packet_t * message,
+        				   coap_packet_t * response)
 {
     uint8_t * tokenP;
     int token_len;
@@ -455,32 +436,34 @@ void handle_observe_notify(lwm2m_context_t * contextP,
     uint32_t count;
 
     token_len = coap_get_header_token(message, (const uint8_t **)&tokenP);
-    if (token_len != sizeof(uint32_t)) return;
+    if (token_len != sizeof(uint32_t)) return false;
 
-    if (1 != coap_get_header_observe(message, &count)) return;
+    if (1 != coap_get_header_observe(message, &count)) return false;
 
     clientID = (tokenP[0] << 8) | tokenP[1];
     obsID = (tokenP[2] << 8) | tokenP[3];
 
     clientP = (lwm2m_client_t *)lwm2m_list_find((lwm2m_list_t *)contextP->clientList, clientID);
-    if (clientP == NULL) return;
+    if (clientP == NULL) return false;
 
     observationP = (lwm2m_observation_t *)lwm2m_list_find((lwm2m_list_t *)clientP->observationList, obsID);
     if (observationP == NULL)
     {
-        coap_packet_t resetMsg;
-
-        coap_init_message(&resetMsg, COAP_TYPE_RST, 0, message->mid);
-
-        message_send(contextP, &resetMsg, fromSessionH);
+        coap_init_message(response, COAP_TYPE_RST, 0, message->mid);
+        message_send(contextP, response, fromSessionH);
     }
     else
     {
+        if (message->type == COAP_TYPE_CON ) {
+            coap_init_message(response, COAP_TYPE_ACK, 0, message->mid);
+            message_send(contextP, response, fromSessionH);
+        }
         observationP->callback(clientID,
                                &observationP->uri,
                                (int)count,
                                message->payload, message->payload_len,
                                observationP->userData);
     }
+    return true;
 }
 #endif

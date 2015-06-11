@@ -410,8 +410,6 @@ static void prv_object_dump(char * buffer,
     char * end = NULL;
     int result;
     lwm2m_object_t * objectP;
-    uint16_t i;
-
 
     end = get_end_of_arg(buffer);
     if (end[0] == 0) goto syntax_error;
@@ -1167,7 +1165,8 @@ int main(int argc, char *argv[])
     /*
      * Finally when the loop is left smoothly - asked by user in the command line interface - we unregister our client from it
      */
-    if (g_quit == 1) {
+    if (g_quit == 1)
+    {
 #ifdef LWM2M_BOOTSTRAP
         close_backup_object();
 #endif
@@ -1175,6 +1174,13 @@ int main(int argc, char *argv[])
     }
     close(data.sock);
     connection_free(data.connList);
+
+#ifdef MEMORY_TRACE
+    if (g_quit == 1)
+    {
+        trace_print(0, 1);
+    }
+#endif
 
     return 0;
 }
