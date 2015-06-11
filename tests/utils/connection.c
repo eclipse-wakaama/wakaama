@@ -98,9 +98,8 @@ connection_t * connection_new_incoming(connection_t * connList,
 connection_t * connection_create(connection_t * connList,
                                  int sock,
                                  char * host,
-                                 uint16_t port)
+                                 char * port)
 {
-    char portStr[6];
     struct addrinfo hints;
     struct addrinfo *servinfo = NULL;
     struct addrinfo *p;
@@ -110,11 +109,10 @@ connection_t * connection_create(connection_t * connList,
     connection_t * connP = NULL;
 
     memset(&hints, 0, sizeof(hints));
-    hints.ai_family = AF_INET6;
+    hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_DGRAM;
 
-    if (0 >= sprintf(portStr, "%hu", port)) return NULL;
-    if (0 != getaddrinfo(host, portStr, &hints, &servinfo) || servinfo == NULL) return NULL;
+    if (0 != getaddrinfo(host, port, &hints, &servinfo) || servinfo == NULL) return NULL;
 
     // we test the various addresses
     s = -1;

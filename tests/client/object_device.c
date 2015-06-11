@@ -65,8 +65,8 @@
 #include <time.h>
 
 
-#define PRV_MANUFACTURER      "OMA"             // ... to fit in er_coap_h REST_MAX_CHUNK_SIZE "Open Mobile Alliance"
-#define PRV_MODEL_NUMBER      "LWM2M Client"    // dito: "Lightweight M2M Client"
+#define PRV_MANUFACTURER      "Open Mobile Alliance"
+#define PRV_MODEL_NUMBER      "Lightweight M2M Client"
 #define PRV_SERIAL_NUMBER     "345000123"
 #define PRV_FIRMWARE_VERSION  "1.0"
 #define PRV_POWER_SOURCE_1    1

@@ -74,13 +74,7 @@
 #include <errno.h>
 #include <signal.h>
 
-/*
- * Bugfix: REST_MAX_CHUNK_SIZE is the size of the payload!
- * ensure sync with: er_coap_13.h COAP_MAX_PACKET_SIZE!
- * or internals.h LWM2M_MAX_PACKET_SIZE!
- */
-#define MAX_PACKET_SIZE 198
-
+#define MAX_PACKET_SIZE 1024
 
 int g_reboot = 0;
 static int g_quit = 0;
@@ -199,9 +193,7 @@ static void * prv_connect_server(uint16_t secObjInstID, void * userData)
     client_data_t * dataP;
     char * uri;
     char * host;
-    char * portStr;
-    int port;
-    char * ptr;
+    char * port;
     connection_t * newConnP = NULL;
 
     dataP = (client_data_t *)userData;
@@ -220,17 +212,23 @@ static void * prv_connect_server(uint16_t secObjInstID, void * userData)
     else {
         goto exit;
     }
-    portStr = strchr(host, ':');
-    if (portStr == NULL) goto exit;
-    // split strings
-    *portStr = 0;
-    portStr++;
-    port = strtol(portStr, &ptr, 10);
-    if (*ptr != 0) {
-        goto exit;
+    port = strrchr(host, ':');
+    if (port == NULL) goto exit;
+    // remove brackets
+    if (host[0] == '[')
+    {
+        host++;
+        if (*(port - 1) == ']')
+        {
+            *(port - 1) = 0;
+        }
+        else goto exit;
     }
+    // split strings
+    *port = 0;
+    port++;
 
-    fprintf(stderr, "Trying to connect to LWM2M Server at %s:%d\r\n", host, port);
+    fprintf(stderr, "Trying to connect to LWM2M Server at %s:%s\r\n", host, port);
     newConnP = connection_create(dataP->connList, dataP->sock, host, port);
     if (newConnP == NULL) {
         fprintf(stderr, "Connection creation failed.\r\n");
