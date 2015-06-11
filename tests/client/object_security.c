@@ -357,6 +357,10 @@ static uint8_t prv_security_delete(uint16_t id,
 
     objectP->instanceList = lwm2m_list_remove(objectP->instanceList, id, (lwm2m_list_t **)&targetP);
     if (NULL == targetP) return COAP_404_NOT_FOUND;
+    if (NULL != targetP->uri)
+    {
+        lwm2m_free(targetP->uri);
+    }
 
     lwm2m_free(targetP);
 
