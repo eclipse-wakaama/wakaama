@@ -63,9 +63,13 @@ extern "C" {
 #include <sys/time.h>
 
 #ifndef LWM2M_EMBEDDED_MODE
+#ifdef MEMORY_TRACE
+#include "memtrace.h"
+#else
 #define lwm2m_malloc malloc
 #define lwm2m_free free
 #define lwm2m_strdup strdup
+#endif
 #define lwm2m_strncmp strncmp
 #else
 void * lwm2m_malloc(size_t s);
@@ -384,7 +388,6 @@ typedef struct _lwm2m_server_
     void *            sessionH;
     lwm2m_status_t    status;
     char *            location;
-    uint16_t          mid;
 } lwm2m_server_t;
 
 
@@ -467,6 +470,8 @@ struct _lwm2m_transaction_
     uint16_t              mID;   // matches lwm2m_list_t::id
     lwm2m_endpoint_type_t peerType;
     void *                peerP;
+    uint8_t               ack_received; // indicates, that the ACK was received
+    time_t                response_timeout; // timeout to wait for response, if token is used. When 0, use calculated acknowledge timeout.
     uint8_t  retrans_counter;
     time_t   retrans_time;
     char objStringID[LWM2M_STRING_ID_MAX_LEN];

@@ -33,9 +33,9 @@ static void prv_handleBootstrapReply(lwm2m_transaction_t * transaction, void * m
     LOG("[BOOTSTRAP] Handling bootstrap reply...\r\n");
     lwm2m_context_t * context = (lwm2m_context_t *)transaction->userData;
     coap_packet_t * coapMessage = (coap_packet_t *)message;
-    if ((NULL != coapMessage) && (coapMessage->type == COAP_TYPE_ACK))
+    if (NULL != coapMessage && COAP_TYPE_RST != coapMessage->type)
     {
-        handle_bootstrap_ack(context, coapMessage, NULL);
+        handle_bootstrap_response(context, coapMessage, NULL);
     }
     else
     {
@@ -67,7 +67,7 @@ int bootstrap_initiating_request(lwm2m_context_t * context)
         if (bootstrapServer->sessionH != NULL)
         {
             LOG("[BOOTSTRAP] Bootstrap session starting...\r\n");
-            transaction = transaction_new(COAP_POST, NULL, NULL, context->nextMID++, ENDPOINT_SERVER, (void *)bootstrapServer);
+            transaction = transaction_new(COAP_TYPE_CON, COAP_POST, NULL, NULL, context->nextMID++, 4, NULL, ENDPOINT_SERVER, (void *)bootstrapServer);
             if (transaction == NULL)
             {
                 return INTERNAL_SERVER_ERROR_5_00;
@@ -79,7 +79,6 @@ int bootstrap_initiating_request(lwm2m_context_t * context)
             context->transactionList = (lwm2m_transaction_t *)LWM2M_LIST_ADD(context->transactionList, transaction);
             if (transaction_send(context, transaction) == 0)
             {
-                bootstrapServer->mid = transaction->mID;
                 LOG("[BOOTSTRAP] DI bootstrap requested to BS server\r\n");
                 context->bsState = BOOTSTRAP_INITIATED;
                 reset_bootstrap_timer(context);
@@ -94,7 +93,7 @@ int bootstrap_initiating_request(lwm2m_context_t * context)
     return NO_ERROR;
 }
 
-void handle_bootstrap_ack(lwm2m_context_t * context,
+void handle_bootstrap_response(lwm2m_context_t * context,
         coap_packet_t * message,
         void * fromSessionH)
 {
@@ -309,7 +308,7 @@ int lwm2m_bootstrap_delete(lwm2m_context_t * contextP,
     lwm2m_transaction_t * transaction;
     bs_data_t * dataP;
 
-    transaction = transaction_new(COAP_DELETE, NULL, uriP, contextP->nextMID++, ENDPOINT_UNKNOWN, sessionH);
+    transaction = transaction_new(COAP_TYPE_CON, COAP_DELETE, NULL, uriP, contextP->nextMID++, 4, NULL, ENDPOINT_UNKNOWN, sessionH);
     if (transaction == NULL) return INTERNAL_SERVER_ERROR_5_00;
 
     dataP = (bs_data_t *)lwm2m_malloc(sizeof(bs_data_t));
@@ -354,7 +353,7 @@ int lwm2m_bootstrap_write(lwm2m_context_t * contextP,
         return COAP_400_BAD_REQUEST;
     }
 
-    transaction = transaction_new(COAP_PUT, NULL, uriP, contextP->nextMID++, ENDPOINT_UNKNOWN, sessionH);
+    transaction = transaction_new(COAP_TYPE_CON, COAP_PUT, NULL, uriP, contextP->nextMID++, 4, NULL, ENDPOINT_UNKNOWN, sessionH);
     if (transaction == NULL) return INTERNAL_SERVER_ERROR_5_00;
 
     coap_set_payload(transaction->message, buffer, length);

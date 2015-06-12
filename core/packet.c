@@ -18,6 +18,7 @@
  *    Simon Bernard - Please refer to git log
  *    Toby Jaffey - Please refer to git log
  *    Pascal Rieux - Please refer to git log
+ *    Bosch Software Innovations GmbH - Please refer to git log
  *
  *******************************************************************************/
 
@@ -266,7 +267,7 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
                     else
                     {
                         /* resource provides chunk-wise data */
-                        LOG("Blockwise: blockwise resource, new offset %d\n", new_offset);
+                        LOG("Blockwise: blockwise resource, new offset %d\n", (int) new_offset);
                         coap_set_header_block2(response, block_num, new_offset!=-1 || response->payload_len > block_size, block_size);
                         if (response->payload_len > block_size) coap_set_payload(response, response->payload, block_size);
                     } /* if (resource aware of blockwise) */
@@ -296,27 +297,43 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
         else
         {
             /* Responses */
-
-            if (message->type == COAP_TYPE_RST)
+            switch (message->type)
             {
+            case COAP_TYPE_NON:
+            case COAP_TYPE_CON:
+                {
+                    bool done = transaction_handle_response(contextP, fromSessionH, message, response);
+
+#ifdef LWM2M_SERVER_MODE
+                    if (!done && IS_OPTION(message, COAP_OPTION_OBSERVE) &&
+                        ((message->code == COAP_204_CHANGED) || (message->code == COAP_205_CONTENT)))
+                    {
+                        done = handle_observe_notify(contextP, fromSessionH, message, response);
+                    }
+#endif
+                    if (!done && message->type == COAP_TYPE_CON )
+                    {
+                        coap_init_message(response, COAP_TYPE_ACK, 0, message->mid);
+                        coap_error_code = message_send(contextP, response, fromSessionH);
+                    }
+                }
+                break;
+
+            case COAP_TYPE_RST:
                 /* Cancel possible subscriptions. */
                 handle_reset(contextP, fromSessionH, message);
-            }
+                transaction_handle_response(contextP, fromSessionH, message, NULL);
+                break;
 
-            if (!transaction_handle_response(contextP, fromSessionH, message))
-            {
-#ifdef LWM2M_SERVER_MODE
-                if ( (message->code == COAP_204_CHANGED || message->code == COAP_205_CONTENT)
-                 && IS_OPTION(message, COAP_OPTION_OBSERVE))
-                {
-                    handle_observe_notify(contextP, fromSessionH, message);
-                }
-#endif
+            case COAP_TYPE_ACK:
+                transaction_handle_response(contextP, fromSessionH, message, NULL);
+                break;
+
+            default:
+                break;
             }
         } /* Request or Response */
-
         coap_free_header(message);
-
     } /* if (parsed correctly) */
     else
     {

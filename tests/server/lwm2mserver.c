@@ -591,7 +591,7 @@ static void prv_quit(char * buffer,
 
 void handle_sigint(int signum)
 {
-    prv_quit(NULL, NULL);
+    g_quit = 2;
 }
 
 void print_usage(void)
@@ -780,6 +780,13 @@ int main(int argc, char *argv[])
     lwm2m_close(lwm2mH);
     close(sock);
     connection_free(connList);
+
+#ifdef MEMORY_TRACE
+    if (g_quit == 1)
+    {
+        trace_print(0, 1);
+    }
+#endif
 
     return 0;
 }
