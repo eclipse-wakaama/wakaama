@@ -393,7 +393,7 @@ int main(int argc, char *argv[])
     connection_t * connList = NULL;
     char * port = "5685";
     internal_data_t data;
-    char * filename = "bootstrap_info.ini";
+    char * filename = "bootstrap_server.ini";
     int opt;
     FILE * fd;
     command_desc_t commands[] =
