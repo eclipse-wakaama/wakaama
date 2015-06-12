@@ -96,7 +96,10 @@ void lwm2m_delete_object_list_content(lwm2m_context_t * context)
         {
             if (NULL != objectList[i])
             {
-                objectList[i]->closeFunc(objectList[i]);
+                if (objectList[i]->closeFunc != NULL)
+                {
+                    objectList[i]->closeFunc(objectList[i]);
+                }
             }
         }
     }
