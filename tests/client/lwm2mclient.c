@@ -457,7 +457,9 @@ static void prv_update(char * buffer,
     int res = lwm2m_update_registration(lwm2mH, serverId);
     if (res != 0)
     {
-        fprintf(stdout, "Registration update error: %d\n", res);
+        fprintf(stdout, "Registration update error: ");
+        print_status(stdout, res);
+        fprintf(stdout, "\r\n");
     }
     return;
 
@@ -1142,8 +1144,6 @@ int main(int argc, char *argv[])
                 if (numBytes > 1)
                 {
                     buffer[numBytes] = 0;
-                    fprintf(stderr, "STDIN %d bytes '%s'\r\n> ", numBytes, buffer);
-
                     /*
                      * We call the corresponding callback of the typed command passing it the buffer for further arguments
                      */

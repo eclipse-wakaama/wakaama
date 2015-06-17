@@ -239,7 +239,7 @@ static int prv_update_registration(lwm2m_context_t * contextP,
 {
     lwm2m_transaction_t * transaction;
 
-    transaction = transaction_new(COAP_TYPE_CON, COAP_PUT, NULL, NULL, contextP->nextMID++, 4, NULL, ENDPOINT_SERVER, (void *)server);
+    transaction = transaction_new(COAP_TYPE_CON, COAP_POST, NULL, NULL, contextP->nextMID++, 4, NULL, ENDPOINT_SERVER, (void *)server);
     if (transaction == NULL) return INTERNAL_SERVER_ERROR_5_00;
 
     coap_set_header_uri_path(transaction->message, server->location);
