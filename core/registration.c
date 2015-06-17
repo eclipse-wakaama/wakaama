@@ -753,19 +753,12 @@ coap_status_t handle_registration_request(lwm2m_context_t * contextP,
                                           coap_packet_t * response)
 {
     coap_status_t result;
-    int code;
     time_t tv_sec;
 
     tv_sec = lwm2m_gettime();
     if (tv_sec < 0) return COAP_500_INTERNAL_SERVER_ERROR;
 
-    code = message->code;
-    if (COAP_POST == code && ((uriP->flag & LWM2M_URI_MASK_ID) == LWM2M_URI_FLAG_OBJECT_ID))
-    {
-        /* process update also as "POST" as defined in TS since 20150212 */
-        code = COAP_PUT;
-    }
-    switch(code)
+    switch(message->code)
     {
     case COAP_POST:
     {
@@ -778,180 +771,172 @@ coap_status_t handle_registration_request(lwm2m_context_t * contextP,
         lwm2m_client_t * clientP;
         char location[MAX_LOCATION_LENGTH];
 
-        if ((uriP->flag & LWM2M_URI_MASK_ID) != 0) return COAP_400_BAD_REQUEST;
         if (0 != prv_getParameters(message->uri_query, &name, &lifetime, &msisdn, &binding))
         {
             return COAP_400_BAD_REQUEST;
         }
         objects = prv_decodeRegisterPayload(message->payload, message->payload_len, &altPath);
-        if (objects == NULL)
-        {
-            lwm2m_free(name);
-            if (msisdn != NULL) lwm2m_free(msisdn);
-            return COAP_400_BAD_REQUEST;
-        }
-        // Endpoint client name is mandatory
-        if (name == NULL)
-        {
-            if (msisdn != NULL) lwm2m_free(msisdn);
-            return COAP_400_BAD_REQUEST;
-        }
-        if (lifetime == 0)
-        {
-            lifetime = LWM2M_DEFAULT_LIFETIME;
-        }
 
-        clientP = prv_getClientByName(contextP, name);
-        if (clientP != NULL)
+        switch (uriP->flag & LWM2M_URI_MASK_ID)
         {
-            // we reset this registration
-            lwm2m_free(clientP->name);
-            if (clientP->msisdn != NULL) lwm2m_free(clientP->msisdn);
-            if (clientP->altPath != NULL) lwm2m_free(clientP->altPath);
-            prv_freeClientObjectList(clientP->objectList);
-            clientP->objectList = NULL;
-        }
-        else
-        {
-            clientP = (lwm2m_client_t *)lwm2m_malloc(sizeof(lwm2m_client_t));
-            if (clientP == NULL)
+        case 0:
+            // Register operation
+
+            if (objects == NULL)
             {
                 lwm2m_free(name);
-                lwm2m_free(altPath);
                 if (msisdn != NULL) lwm2m_free(msisdn);
-                prv_freeClientObjectList(objects);
+                return COAP_400_BAD_REQUEST;
+            }
+            // Endpoint client name is mandatory
+            if (name == NULL)
+            {
+                if (msisdn != NULL) lwm2m_free(msisdn);
+                return COAP_400_BAD_REQUEST;
+            }
+            if (lifetime == 0)
+            {
+                lifetime = LWM2M_DEFAULT_LIFETIME;
+            }
+
+            clientP = prv_getClientByName(contextP, name);
+            if (clientP != NULL)
+            {
+                // we reset this registration
+                lwm2m_free(clientP->name);
+                if (clientP->msisdn != NULL) lwm2m_free(clientP->msisdn);
+                if (clientP->altPath != NULL) lwm2m_free(clientP->altPath);
+                prv_freeClientObjectList(clientP->objectList);
+                clientP->objectList = NULL;
+            }
+            else
+            {
+                clientP = (lwm2m_client_t *)lwm2m_malloc(sizeof(lwm2m_client_t));
+                if (clientP == NULL)
+                {
+                    lwm2m_free(name);
+                    lwm2m_free(altPath);
+                    if (msisdn != NULL) lwm2m_free(msisdn);
+                    prv_freeClientObjectList(objects);
+                    return COAP_500_INTERNAL_SERVER_ERROR;
+                }
+                memset(clientP, 0, sizeof(lwm2m_client_t));
+                clientP->internalID = lwm2m_list_newId((lwm2m_list_t *)contextP->clientList);
+                contextP->clientList = (lwm2m_client_t *)LWM2M_LIST_ADD(contextP->clientList, clientP);
+            }
+            clientP->name = name;
+            clientP->binding = binding;
+            clientP->msisdn = msisdn;
+            clientP->altPath = altPath;
+            clientP->lifetime = lifetime;
+            clientP->endOfLife = tv_sec + lifetime;
+            clientP->objectList = objects;
+            clientP->sessionH = fromSessionH;
+
+            if (prv_getLocationString(clientP->internalID, location) == 0)
+            {
+                prv_freeClient(clientP);
                 return COAP_500_INTERNAL_SERVER_ERROR;
             }
-            memset(clientP, 0, sizeof(lwm2m_client_t));
-            clientP->internalID = lwm2m_list_newId((lwm2m_list_t *)contextP->clientList);
-            contextP->clientList = (lwm2m_client_t *)LWM2M_LIST_ADD(contextP->clientList, clientP);
-        }
-        clientP->name = name;
-        clientP->binding = binding;
-        clientP->msisdn = msisdn;
-        clientP->altPath = altPath;
-        clientP->lifetime = lifetime;
-        clientP->endOfLife = tv_sec + lifetime;
-        clientP->objectList = objects;
-        clientP->sessionH = fromSessionH;
-
-        if (prv_getLocationString(clientP->internalID, location) == 0)
-        {
-            prv_freeClient(clientP);
-            return COAP_500_INTERNAL_SERVER_ERROR;
-        }
-        if (coap_set_header_location_path(response, location) == 0)
-        {
-            prv_freeClient(clientP);
-            return COAP_500_INTERNAL_SERVER_ERROR;
-        }
-
-        if (contextP->monitorCallback != NULL)
-        {
-            contextP->monitorCallback(clientP->internalID, NULL, CREATED_2_01, NULL, 0, contextP->monitorUserData);
-        }
-        result = COAP_201_CREATED;
-    }
-    break;
-
-    case COAP_PUT:
-    {
-        char * name = NULL;
-        uint32_t lifetime;
-        char * msisdn;
-        char * altPath;
-        lwm2m_binding_t binding;
-        lwm2m_client_object_t * objects;
-        lwm2m_client_t * clientP;
-
-        if ((uriP->flag & LWM2M_URI_MASK_ID) != LWM2M_URI_FLAG_OBJECT_ID) return COAP_400_BAD_REQUEST;
-
-        clientP = (lwm2m_client_t *)lwm2m_list_find((lwm2m_list_t *)contextP->clientList, uriP->objectId);
-        if (clientP == NULL) return COAP_404_NOT_FOUND;
-
-        if (0 != prv_getParameters(message->uri_query, &name, &lifetime, &msisdn, &binding))
-        {
-            return COAP_400_BAD_REQUEST;
-        }
-        objects = prv_decodeRegisterPayload(message->payload, message->payload_len, &altPath);
-
-        // Endpoint client name MUST NOT be present
-        if (name != NULL)
-        {
-            lwm2m_free(name);
-            if (msisdn != NULL) lwm2m_free(msisdn);
-            return COAP_400_BAD_REQUEST;
-        }
-
-        if (binding != BINDING_UNKNOWN)
-        {
-            clientP->binding = binding;
-        }
-        if (msisdn != NULL)
-        {
-            if (clientP->msisdn != NULL) lwm2m_free(clientP->msisdn);
-            clientP->msisdn = msisdn;
-        }
-        if (lifetime != 0)
-        {
-            clientP->lifetime = lifetime;
-        }
-        // client IP address, port or MSISDN may have changed
-        clientP->sessionH = fromSessionH;
-
-        if (objects != NULL)
-        {
-            lwm2m_observation_t * observationP;
-
-            // remove observations on object/instance no longer existing
-            observationP = clientP->observationList;
-            while (observationP != NULL)
+            if (coap_set_header_location_path(response, location) == 0)
             {
-                lwm2m_client_object_t * objP;
-                lwm2m_observation_t * nextP;
-
-                nextP = observationP->next;
-
-                objP = (lwm2m_client_object_t *)lwm2m_list_find((lwm2m_list_t *)objects, observationP->uri.objectId);
-                if (objP == NULL)
-                {
-                    observationP->callback(clientP->internalID,
-                                           &observationP->uri,
-                                           COAP_202_DELETED,
-                                           NULL, 0,
-                                           observationP->userData);
-                    observation_remove(clientP, observationP);
-                }
-                else
-                {
-                    if ((observationP->uri.flag & LWM2M_URI_FLAG_INSTANCE_ID) != 0)
-                    {
-                        if (lwm2m_list_find((lwm2m_list_t *)objP->instanceList, observationP->uri.instanceId) == NULL)
-                        {
-                            observationP->callback(clientP->internalID,
-                                                   &observationP->uri,
-                                                   COAP_202_DELETED,
-                                                   NULL, 0,
-                                                   observationP->userData);
-                            observation_remove(clientP, observationP);
-                        }
-                    }
-                }
-
-                observationP = nextP;
+                prv_freeClient(clientP);
+                return COAP_500_INTERNAL_SERVER_ERROR;
             }
 
-            prv_freeClientObjectList(clientP->objectList);
-            clientP->objectList = objects;
-        }
+            if (contextP->monitorCallback != NULL)
+            {
+                contextP->monitorCallback(clientP->internalID, NULL, CREATED_2_01, NULL, 0, contextP->monitorUserData);
+            }
+            result = COAP_201_CREATED;
+            break;
 
-        clientP->endOfLife = tv_sec + clientP->lifetime;
+        case LWM2M_URI_FLAG_OBJECT_ID:
+            clientP = (lwm2m_client_t *)lwm2m_list_find((lwm2m_list_t *)contextP->clientList, uriP->objectId);
+            if (clientP == NULL) return COAP_404_NOT_FOUND;
 
-        if (contextP->monitorCallback != NULL)
-        {
-            contextP->monitorCallback(clientP->internalID, NULL, COAP_204_CHANGED, NULL, 0, contextP->monitorUserData);
+            // Endpoint client name MUST NOT be present
+            if (name != NULL)
+            {
+                lwm2m_free(name);
+                if (msisdn != NULL) lwm2m_free(msisdn);
+                return COAP_400_BAD_REQUEST;
+            }
+
+            if (binding != BINDING_UNKNOWN)
+            {
+                clientP->binding = binding;
+            }
+            if (msisdn != NULL)
+            {
+                if (clientP->msisdn != NULL) lwm2m_free(clientP->msisdn);
+                clientP->msisdn = msisdn;
+            }
+            if (lifetime != 0)
+            {
+                clientP->lifetime = lifetime;
+            }
+            // client IP address, port or MSISDN may have changed
+            clientP->sessionH = fromSessionH;
+
+            if (objects != NULL)
+            {
+                lwm2m_observation_t * observationP;
+
+                // remove observations on object/instance no longer existing
+                observationP = clientP->observationList;
+                while (observationP != NULL)
+                {
+                    lwm2m_client_object_t * objP;
+                    lwm2m_observation_t * nextP;
+
+                    nextP = observationP->next;
+
+                    objP = (lwm2m_client_object_t *)lwm2m_list_find((lwm2m_list_t *)objects, observationP->uri.objectId);
+                    if (objP == NULL)
+                    {
+                        observationP->callback(clientP->internalID,
+                                               &observationP->uri,
+                                               COAP_202_DELETED,
+                                               NULL, 0,
+                                               observationP->userData);
+                        observation_remove(clientP, observationP);
+                    }
+                    else
+                    {
+                        if ((observationP->uri.flag & LWM2M_URI_FLAG_INSTANCE_ID) != 0)
+                        {
+                            if (lwm2m_list_find((lwm2m_list_t *)objP->instanceList, observationP->uri.instanceId) == NULL)
+                            {
+                                observationP->callback(clientP->internalID,
+                                                       &observationP->uri,
+                                                       COAP_202_DELETED,
+                                                       NULL, 0,
+                                                       observationP->userData);
+                                observation_remove(clientP, observationP);
+                            }
+                        }
+                    }
+
+                    observationP = nextP;
+                }
+
+                prv_freeClientObjectList(clientP->objectList);
+                clientP->objectList = objects;
+            }
+
+            clientP->endOfLife = tv_sec + clientP->lifetime;
+
+            if (contextP->monitorCallback != NULL)
+            {
+                contextP->monitorCallback(clientP->internalID, NULL, COAP_204_CHANGED, NULL, 0, contextP->monitorUserData);
+            }
+            result = COAP_204_CHANGED;
+            break;
+
+            default:
+                return COAP_400_BAD_REQUEST;
         }
-        result = COAP_204_CHANGED;
     }
     break;
 
