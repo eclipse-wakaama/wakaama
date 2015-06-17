@@ -630,6 +630,7 @@ void lwm2m_set_bootstrap_callback(lwm2m_context_t * contextP, lwm2m_bootstrap_ca
 // if uriP is nil, a "Delete /" is sent to the client
 int lwm2m_bootstrap_delete(lwm2m_context_t * contextP, void * sessionH, lwm2m_uri_t * uriP);
 int lwm2m_bootstrap_write(lwm2m_context_t * contextP, void * sessionH, lwm2m_uri_t * uriP, uint8_t * buffer, size_t length);
+int lwm2m_bootstrap_finish(lwm2m_context_t * contextP, void * sessionH);
 
 #endif
 
