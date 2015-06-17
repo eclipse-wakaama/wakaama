@@ -217,6 +217,18 @@ void update_bootstrap_state(lwm2m_context_t * context,
         }
     }
 }
+
+coap_status_t handle_bootstrap_finish(lwm2m_context_t * context,
+                                      void * fromSessionH)
+{
+    if (context->bsState == BOOTSTRAP_PENDING)
+    {
+        context->bsState = BOOTSTRAP_FINISHED;
+        return COAP_204_CHANGED;
+    }
+
+    return COAP_IGNORE;
+}
 #endif
 
 #endif
