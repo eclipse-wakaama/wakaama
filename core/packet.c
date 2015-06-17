@@ -152,14 +152,14 @@ static coap_status_t handle_request(lwm2m_context_t * contextP,
     case LWM2M_URI_FLAG_REGISTRATION:
         result = handle_registration_request(contextP, uriP, fromSessionH, message, response);
         break;
-
+#endif
+#ifdef LWM2M_BOOTSTRAP_SERVER_MODE
     case LWM2M_URI_FLAG_BOOTSTRAP:
-        LOG("Client initiated bootstrap. Not implemented.\r\n");
-        result = NOT_IMPLEMENTED_5_01;
+        result = handle_bootstrap_request(contextP, uriP, fromSessionH, message, response);
         break;
 #endif
     default:
-        result = BAD_REQUEST_4_00;
+        result = COAP_IGNORE;
         break;
     }
 
@@ -170,7 +170,7 @@ static coap_status_t handle_request(lwm2m_context_t * contextP,
         result = NO_ERROR;
     }
 
-    lwm2m_free( uriP);
+    lwm2m_free(uriP);
     return result;
 }
 

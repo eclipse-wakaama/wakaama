@@ -60,20 +60,6 @@
 #include <stdio.h>
 
 #define MAX_LOCATION_LENGTH 10      // strlen("/rd/65534") + 1
-#define QUERY_TEMPLATE      "ep="
-#define QUERY_LENGTH        3       // strlen("ep=")
-#define QUERY_SMS           "sms="
-#define QUERY_SMS_LEN       4
-#define QUERY_LIFETIME      "lt="
-#define QUERY_LIFETIME_LEN  3
-#define QUERY_VERSION       "lwm2m="
-#define QUERY_VERSION_LEN   6
-#define QUERY_BINDING       "b="
-#define QUERY_BINDING_LEN   2
-#define QUERY_DELIMITER     "&"
-
-#define QUERY_VERSION_FULL      "lwm2m=1.0"
-#define QUERY_VERSION_FULL_LEN  9
 
 #ifdef LWM2M_CLIENT_MODE
 
