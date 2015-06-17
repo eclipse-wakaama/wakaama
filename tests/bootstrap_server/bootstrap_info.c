@@ -584,6 +584,23 @@ static bs_endpoint_info_t * prv_read_next_endpoint(FILE * fd)
             cmdP = NULL;
         }
     }
+    if (endptP->commandList != NULL)
+    {
+        bs_command_t * parentP;
+
+        cmdP = (bs_command_t *)lwm2m_malloc(sizeof(bs_command_t));
+        if (cmdP == NULL) goto error;
+        memset(cmdP, 0, sizeof(bs_command_t));
+
+        cmdP->operation = BS_FINISH;
+
+        parentP = endptP->commandList;
+        while (parentP->next != NULL)
+        {
+            parentP = parentP->next;
+        }
+        parentP->next = cmdP;
+    }
 
     return endptP;
 

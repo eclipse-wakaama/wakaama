@@ -179,7 +179,7 @@ void output_buffer(FILE * stream,
 {
     int i;
 
-    if (length == 0 || length > 16) fprintf(stream, "\n");
+    if (length == 0) fprintf(stream, "\n");
 
     i = 0;
     while (i < length)

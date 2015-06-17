@@ -4,7 +4,7 @@ project (bootstrap_server)
 
 SET(LIBLWM2M_DIR ${PROJECT_SOURCE_DIR}/../../core)
 
-add_definitions(-DLWM2M_LITTLE_ENDIAN -DLWM2M_BOOTSTRAP_SERVER_MODE)
+add_definitions(-DLWM2M_LITTLE_ENDIAN -DWITH_LOGS -DLWM2M_BOOTSTRAP_SERVER_MODE)
 
 include_directories (${LIBLWM2M_DIR} ${PROJECT_SOURCE_DIR}/../utils)
 
