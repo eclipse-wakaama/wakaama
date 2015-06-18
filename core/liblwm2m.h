@@ -258,9 +258,18 @@ typedef struct
     uint8_t *   value;
 } lwm2m_tlv_t;
 
+typedef enum
+{
+    LWM2M_CONTENT_TEXT      = 0,
+    LWM2M_CONTENT_OPAQUE    = 42,
+    LWM2M_CONTENT_TLV       = 1542,     // Temporary value
+    LWM2M_CONTENT_JSON      = 1543,     // Temporary value
+    LWM2M_CONTENT_UNDEFINED = 0xFFFF
+} lwm2m_media_type_t;
+
 lwm2m_tlv_t * lwm2m_tlv_new(int size);
-int lwm2m_tlv_parse(uint8_t * buffer, size_t bufferLen, lwm2m_tlv_t ** dataP);
-int lwm2m_tlv_serialize(int size, lwm2m_tlv_t * tlvP, uint8_t ** bufferP);
+int lwm2m_tlv_parse(uint8_t * buffer, size_t bufferLen, lwm2m_media_type_t format, lwm2m_tlv_t ** dataP);
+int lwm2m_tlv_serialize(int size, lwm2m_tlv_t * tlvP, lwm2m_media_type_t format, uint8_t ** bufferP);
 void lwm2m_tlv_free(int size, lwm2m_tlv_t * tlvP);
 
 void lwm2m_tlv_encode_int(int64_t data, lwm2m_tlv_t * tlvP);

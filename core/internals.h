@@ -127,15 +127,16 @@ typedef struct _obs_list_
     lwm2m_observed_t * item;
 } obs_list_t;
 
+
 // defined in uri.c
 int lwm2m_get_number(char * uriString, size_t uriLength);
 lwm2m_uri_t * lwm2m_decode_uri(char * altPath, multi_option_t *uriPath);
 int prv_get_number(uint8_t * uriString, size_t uriLength);
 
 // defined in objects.c
-coap_status_t object_read(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, uint8_t ** bufferP, size_t * lengthP);
-coap_status_t object_write(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, uint8_t * buffer, size_t length);
-coap_status_t object_create(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, uint8_t * buffer, size_t length);
+coap_status_t object_read(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_media_type_t format, uint8_t ** bufferP, size_t * lengthP);
+coap_status_t object_write(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_media_type_t format, uint8_t * buffer, size_t length);
+coap_status_t object_create(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_media_type_t format, uint8_t * buffer, size_t length);
 coap_status_t object_execute(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, uint8_t * buffer, size_t length);
 coap_status_t object_delete(lwm2m_context_t * contextP, lwm2m_uri_t * uriP);
 bool object_isInstanceNew(lwm2m_context_t * contextP, uint16_t objectId, uint16_t instanceId);

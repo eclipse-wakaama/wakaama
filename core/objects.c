@@ -86,6 +86,7 @@ static lwm2m_object_t * prv_find_object(lwm2m_context_t * contextP,
 
 coap_status_t object_read(lwm2m_context_t * contextP,
                           lwm2m_uri_t * uriP,
+                          lwm2m_media_type_t format,
                           uint8_t ** bufferP,
                           size_t * lengthP)
 {
@@ -147,7 +148,7 @@ coap_status_t object_read(lwm2m_context_t * contextP,
 
             if (result == COAP_205_CONTENT)
             {
-                *lengthP = lwm2m_tlv_serialize(size, tlvP, bufferP);
+                *lengthP = lwm2m_tlv_serialize(size, tlvP, format, bufferP);
                 if (*lengthP == 0) result = COAP_500_INTERNAL_SERVER_ERROR;
             }
             lwm2m_tlv_free(size, tlvP);
@@ -187,7 +188,7 @@ coap_status_t object_read(lwm2m_context_t * contextP,
         }
         else
         {
-            *lengthP = lwm2m_tlv_serialize(size, tlvP, bufferP);
+            *lengthP = lwm2m_tlv_serialize(size, tlvP, format, bufferP);
             if (*lengthP == 0) result = COAP_500_INTERNAL_SERVER_ERROR;
         }
     }
@@ -198,6 +199,7 @@ coap_status_t object_read(lwm2m_context_t * contextP,
 
 coap_status_t object_write(lwm2m_context_t * contextP,
                            lwm2m_uri_t * uriP,
+                           lwm2m_media_type_t format,
                            uint8_t * buffer,
                            size_t length)
 {
@@ -234,7 +236,7 @@ coap_status_t object_write(lwm2m_context_t * contextP,
         }
         else
         {
-            size = lwm2m_tlv_parse(buffer, length, &tlvP);
+            size = lwm2m_tlv_parse(buffer, length, format, &tlvP);
             if (size == 0)
             {
                 result = COAP_500_INTERNAL_SERVER_ERROR;
@@ -288,6 +290,7 @@ coap_status_t object_execute(lwm2m_context_t * contextP,
 
 coap_status_t object_create(lwm2m_context_t * contextP,
                             lwm2m_uri_t * uriP,
+                            lwm2m_media_type_t format,
                             uint8_t * buffer,
                             size_t length)
 {
@@ -319,7 +322,7 @@ coap_status_t object_create(lwm2m_context_t * contextP,
         uriP->flag |= LWM2M_URI_FLAG_INSTANCE_ID;
     }
 
-    size = lwm2m_tlv_parse(buffer, length, &tlvP);
+    size = lwm2m_tlv_parse(buffer, length, format, &tlvP);
     if (size == 0) return COAP_500_INTERNAL_SERVER_ERROR;
 #ifdef LWM2M_BOOTSTRAP
     if (contextP->bsState == BOOTSTRAP_PENDING)

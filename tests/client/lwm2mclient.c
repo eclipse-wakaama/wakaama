@@ -390,7 +390,7 @@ static void prv_instance_dump(lwm2m_object_t * objectP,
 
     dump_tlv(stdout, numData, dataArray, 0);
 
-    size = lwm2m_tlv_serialize(numData, dataArray, &buffer);
+    size = lwm2m_tlv_serialize(numData, dataArray, LWM2M_CONTENT_TLV, &buffer);
     printf("char objectTlv[%d] = {", size);
     for (i = 0 ; i < size ; i++)
     {

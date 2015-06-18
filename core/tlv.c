@@ -371,6 +371,7 @@ lwm2m_tlv_t * lwm2m_tlv_new(int size)
 
 int lwm2m_tlv_parse(uint8_t * buffer,
                     size_t bufferLen,
+                    lwm2m_media_type_t format,
                     lwm2m_tlv_t ** dataP)
 {
     lwm2m_tlv_type_t type;
@@ -409,6 +410,7 @@ int lwm2m_tlv_parse(uint8_t * buffer,
         {
             (*dataP)[size].length = lwm2m_tlv_parse(buffer + index + dataIndex,
                                                     dataLen,
+                                                    format,
                                                     (lwm2m_tlv_t **)&((*dataP)[size].value));
             if ((*dataP)[size].length == 0)
             {
@@ -473,6 +475,7 @@ static int prv_getLength(int size,
 
 int lwm2m_tlv_serialize(int size,
                         lwm2m_tlv_t * tlvP,
+                        lwm2m_media_type_t format,
                         uint8_t ** bufferP)
 {
     int length;
@@ -499,7 +502,7 @@ int lwm2m_tlv_serialize(int size,
                 uint8_t * tmpBuffer;
                 int tmpLength;
 
-                tmpLength = lwm2m_tlv_serialize(tlvP[i].length, (lwm2m_tlv_t *)tlvP[i].value, &tmpBuffer);
+                tmpLength = lwm2m_tlv_serialize(tlvP[i].length, (lwm2m_tlv_t *)tlvP[i].value, format, &tmpBuffer);
                 if (tmpLength == 0)
                 {
                     length = 0;

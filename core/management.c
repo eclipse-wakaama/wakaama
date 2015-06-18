@@ -112,7 +112,7 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
             uint8_t * buffer = NULL;
             size_t length = 0;
 
-            result = object_read(contextP, uriP, &buffer, &length);
+            result = object_read(contextP, uriP, message->content_type, &buffer, &length);
             if (COAP_205_CONTENT == result)
             {
                 if (IS_OPTION(message, COAP_OPTION_OBSERVE))
@@ -140,7 +140,7 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
 #endif
             if (!LWM2M_URI_IS_SET_INSTANCE(uriP))
             {
-                result = object_create(contextP, uriP, message->payload, message->payload_len);
+                result = object_create(contextP, uriP, message->content_type, message->payload, message->payload_len);
                 if (result == COAP_201_CREATED)
                 {
                     //longest uri is /65535/65535 = 12 + 1 (null) chars
@@ -164,11 +164,11 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
             {
                 if (object_isInstanceNew(contextP, uriP->objectId, uriP->instanceId))
                 {
-                    result = object_create(contextP, uriP, message->payload, message->payload_len);
+                    result = object_create(contextP, uriP, message->content_type, message->payload, message->payload_len);
                 }
                 else
                 {
-                    result = object_write(contextP, uriP, message->payload, message->payload_len);
+                    result = object_write(contextP, uriP, message->content_type, message->payload, message->payload_len);
                 }
             }
             else
@@ -185,7 +185,7 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
 #ifdef LWM2M_BOOTSTRAP
                 if (contextP->bsState == BOOTSTRAP_PENDING && object_isInstanceNew(contextP, uriP->objectId, uriP->instanceId))
                 {
-                    result = object_create(contextP, uriP, message->payload, message->payload_len);
+                    result = object_create(contextP, uriP, message->content_type, message->payload, message->payload_len);
                     if (COAP_201_CREATED == result)
                     {
                         result = COAP_204_CHANGED;
@@ -194,7 +194,7 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
                 else
 #endif
                 {
-                    result = object_write(contextP, uriP, message->payload, message->payload_len);
+                    result = object_write(contextP, uriP, message->content_type, message->payload, message->payload_len);
                 }
             }
             else
