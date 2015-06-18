@@ -81,52 +81,52 @@ typedef struct
 /**
 implementation for all read-able resources
 */
-static uint8_t prv_res2tlv(lwm2m_tlv_t* tlvP,
+static uint8_t prv_res2tlv(lwm2m_data_t* dataP,
                            location_data_t* locDataP)
 {
     //-------------------------------------------------------------------- JH --
     uint8_t ret = COAP_205_CONTENT;  
-    switch (tlvP->id)     // location resourceId
+    switch (dataP->id)     // location resourceId
     {
     case RES_M_LATITUDE:
-        tlvP->value  = (uint8_t*)locDataP->latitude;
-        tlvP->length = strlen(locDataP->latitude);
-        tlvP->flags  = LWM2M_TLV_FLAG_STATIC_DATA;
-        tlvP->type   = LWM2M_TYPE_RESOURCE;
-        tlvP->dataType = LWM2M_TYPE_STRING;
+        dataP->value  = (uint8_t*)locDataP->latitude;
+        dataP->length = strlen(locDataP->latitude);
+        dataP->flags  = LWM2M_TLV_FLAG_STATIC_DATA;
+        dataP->type   = LWM2M_TYPE_RESOURCE;
+        dataP->dataType = LWM2M_TYPE_STRING;
         break;
     case RES_M_LONGITUDE:
-        tlvP->value  = (uint8_t*)locDataP->longitude;
-        tlvP->length = strlen(locDataP->latitude);
-        tlvP->flags  = LWM2M_TLV_FLAG_STATIC_DATA;
-        tlvP->type   = LWM2M_TYPE_RESOURCE;
-        tlvP->dataType = LWM2M_TYPE_STRING;
+        dataP->value  = (uint8_t*)locDataP->longitude;
+        dataP->length = strlen(locDataP->latitude);
+        dataP->flags  = LWM2M_TLV_FLAG_STATIC_DATA;
+        dataP->type   = LWM2M_TYPE_RESOURCE;
+        dataP->dataType = LWM2M_TYPE_STRING;
         break;
     case RES_O_ALTITUDE:
-        tlvP->value  = (uint8_t*)locDataP->altitude;
-        tlvP->length = strlen(locDataP->altitude);
-        tlvP->flags  = LWM2M_TLV_FLAG_STATIC_DATA;
-        tlvP->type   = LWM2M_TYPE_RESOURCE;
-        tlvP->dataType = LWM2M_TYPE_STRING;
+        dataP->value  = (uint8_t*)locDataP->altitude;
+        dataP->length = strlen(locDataP->altitude);
+        dataP->flags  = LWM2M_TLV_FLAG_STATIC_DATA;
+        dataP->type   = LWM2M_TYPE_RESOURCE;
+        dataP->dataType = LWM2M_TYPE_STRING;
         break;
     case RES_O_UNCERTAINTY:
-        tlvP->value  = (uint8_t*)locDataP->uncertainty;
-        tlvP->length = strlen(locDataP->uncertainty);
-        tlvP->flags  = LWM2M_TLV_FLAG_STATIC_DATA;
-        tlvP->type   = LWM2M_TYPE_RESOURCE;
-        tlvP->dataType = LWM2M_TYPE_STRING;
+        dataP->value  = (uint8_t*)locDataP->uncertainty;
+        dataP->length = strlen(locDataP->uncertainty);
+        dataP->flags  = LWM2M_TLV_FLAG_STATIC_DATA;
+        dataP->type   = LWM2M_TYPE_RESOURCE;
+        dataP->dataType = LWM2M_TYPE_STRING;
         break;
     case RES_O_VELOCITY:
-        tlvP->value  = locDataP->velocity;
-        tlvP->length = VELOCITY_OCTETS;
-        tlvP->flags  = LWM2M_TLV_FLAG_STATIC_DATA;
-        tlvP->type   = LWM2M_TYPE_RESOURCE;
-        tlvP->dataType = LWM2M_TYPE_OPAQUE;
+        dataP->value  = locDataP->velocity;
+        dataP->length = VELOCITY_OCTETS;
+        dataP->flags  = LWM2M_TLV_FLAG_STATIC_DATA;
+        dataP->type   = LWM2M_TYPE_RESOURCE;
+        dataP->dataType = LWM2M_TYPE_OPAQUE;
         break;
     case RES_M_TIMESTAMP:
-        lwm2m_tlv_encode_int(locDataP->timestamp, tlvP);
-        tlvP->type   = LWM2M_TYPE_RESOURCE;
-        tlvP->dataType = LWM2M_TYPE_TIME;
+        lwm2m_data_encode_int(locDataP->timestamp, dataP);
+        dataP->type   = LWM2M_TYPE_RESOURCE;
+        dataP->dataType = LWM2M_TYPE_TIME;
         break;
     default:
         ret = COAP_404_NOT_FOUND;
@@ -150,7 +150,7 @@ static uint8_t prv_res2tlv(lwm2m_tlv_t* tlvP,
   */
 static uint8_t prv_location_read(uint16_t objInstId,
                                  int*  numDataP,
-                                 lwm2m_tlv_t** tlvArrayP,
+                                 lwm2m_data_t** tlvArrayP,
                                  lwm2m_object_t*  objectP)
 {   
     //-------------------------------------------------------------------- JH --
@@ -173,7 +173,7 @@ static uint8_t prv_location_read(uint16_t objInstId,
         }; // readable resources!
         
         *numDataP  = sizeof(readResIds)/sizeof(uint16_t);
-        *tlvArrayP = lwm2m_tlv_new(*numDataP);
+        *tlvArrayP = lwm2m_data_new(*numDataP);
         if (*tlvArrayP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
         
         // init readable resource id's

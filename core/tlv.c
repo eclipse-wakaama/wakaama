@@ -353,26 +353,26 @@ int lwm2m_opaqueToFloat(uint8_t * buffer,
     }
 }
 
-lwm2m_tlv_t * lwm2m_tlv_new(int size)
+lwm2m_data_t * lwm2m_data_new(int size)
 {
-    lwm2m_tlv_t * tlvP;
+    lwm2m_data_t * dataP;
 
     if (size <= 0) return NULL;
 
-    tlvP = (lwm2m_tlv_t *)lwm2m_malloc(size * sizeof(lwm2m_tlv_t));
+    dataP = (lwm2m_data_t *)lwm2m_malloc(size * sizeof(lwm2m_data_t));
 
-    if (tlvP != NULL)
+    if (dataP != NULL)
     {
-        memset(tlvP, 0, size * sizeof(lwm2m_tlv_t));
+        memset(dataP, 0, size * sizeof(lwm2m_data_t));
     }
 
-    return tlvP;
+    return dataP;
 }
 
-int lwm2m_tlv_parse(uint8_t * buffer,
-                    size_t bufferLen,
-                    lwm2m_media_type_t format,
-                    lwm2m_tlv_t ** dataP)
+int lwm2m_data_parse(uint8_t * buffer,
+                     size_t bufferLen,
+                     lwm2m_media_type_t format,
+                     lwm2m_data_t ** dataP)
 {
     lwm2m_tlv_type_t type;
     uint16_t id;
@@ -386,19 +386,19 @@ int lwm2m_tlv_parse(uint8_t * buffer,
 
     while (0 != (result = lwm2m_decodeTLV((uint8_t*)buffer + index, bufferLen - index, &type, &id, &dataIndex, &dataLen)))
     {
-        lwm2m_tlv_t * newTlvP;
+        lwm2m_data_t * newTlvP;
 
-        newTlvP = lwm2m_tlv_new(size + 1);
+        newTlvP = lwm2m_data_new(size + 1);
         if (size >= 1)
         {
             if (newTlvP == NULL)
             {
-                lwm2m_tlv_free(size, *dataP);
+                lwm2m_data_free(size, *dataP);
                 return 0;
             }
             else
             {
-                memcpy(newTlvP, *dataP, size * sizeof(lwm2m_tlv_t));
+                memcpy(newTlvP, *dataP, size * sizeof(lwm2m_data_t));
                 lwm2m_free(*dataP);
             }
         }
@@ -408,13 +408,13 @@ int lwm2m_tlv_parse(uint8_t * buffer,
         (*dataP)[size].id = id;
         if (type == LWM2M_TYPE_OBJECT_INSTANCE || type == LWM2M_TYPE_MULTIPLE_RESOURCE)
         {
-            (*dataP)[size].length = lwm2m_tlv_parse(buffer + index + dataIndex,
+            (*dataP)[size].length = lwm2m_data_parse(buffer + index + dataIndex,
                                                     dataLen,
                                                     format,
-                                                    (lwm2m_tlv_t **)&((*dataP)[size].value));
+                                                    (lwm2m_data_t **)&((*dataP)[size].value));
             if ((*dataP)[size].length == 0)
             {
-                lwm2m_tlv_free(size + 1, *dataP);
+                lwm2m_data_free(size + 1, *dataP);
                 return 0;
             }
         }
@@ -432,7 +432,7 @@ int lwm2m_tlv_parse(uint8_t * buffer,
 }
 
 static int prv_getLength(int size,
-                         lwm2m_tlv_t * tlvP)
+                         lwm2m_data_t * dataP)
 {
     int length;
     int i;
@@ -441,27 +441,27 @@ static int prv_getLength(int size,
 
     for (i = 0 ; i < size && length != -1 ; i++)
     {
-        switch (tlvP[i].type)
+        switch (dataP[i].type)
         {
         case LWM2M_TYPE_OBJECT_INSTANCE:
         case LWM2M_TYPE_MULTIPLE_RESOURCE:
             {
                 int subLength;
 
-                subLength = prv_getLength(tlvP[i].length, (lwm2m_tlv_t *)(tlvP[i].value));
+                subLength = prv_getLength(dataP[i].length, (lwm2m_data_t *)(dataP[i].value));
                 if (subLength == -1)
                 {
                     length = -1;
                 }
                 else
                 {
-                    length += prv_getHeaderLength(tlvP[i].id, subLength) + subLength;
+                    length += prv_getHeaderLength(dataP[i].id, subLength) + subLength;
                 }
             }
             break;
         case LWM2M_TYPE_RESOURCE_INSTANCE:
         case LWM2M_TYPE_RESOURCE:
-            length += prv_getHeaderLength(tlvP[i].id, tlvP[i].length) + tlvP[i].length;
+            length += prv_getHeaderLength(dataP[i].id, dataP[i].length) + dataP[i].length;
             break;
         default:
             length = -1;
@@ -473,17 +473,17 @@ static int prv_getLength(int size,
 }
 
 
-int lwm2m_tlv_serialize(int size,
-                        lwm2m_tlv_t * tlvP,
-                        lwm2m_media_type_t format,
-                        uint8_t ** bufferP)
+int lwm2m_data_serialize(int size,
+                         lwm2m_data_t * dataP,
+                         lwm2m_media_type_t format,
+                         uint8_t ** bufferP)
 {
     int length;
     int index;
     int i;
 
     *bufferP = NULL;
-    length = prv_getLength(size, tlvP);
+    length = prv_getLength(size, dataP);
     if (length <= 0) return length;
 
     *bufferP = (uint8_t *)lwm2m_malloc(length);
@@ -494,7 +494,7 @@ int lwm2m_tlv_serialize(int size,
     {
         int headerLen;
 
-        switch (tlvP[i].type)
+        switch (dataP[i].type)
         {
         case LWM2M_TYPE_OBJECT_INSTANCE:
         case LWM2M_TYPE_MULTIPLE_RESOURCE:
@@ -502,14 +502,14 @@ int lwm2m_tlv_serialize(int size,
                 uint8_t * tmpBuffer;
                 int tmpLength;
 
-                tmpLength = lwm2m_tlv_serialize(tlvP[i].length, (lwm2m_tlv_t *)tlvP[i].value, format, &tmpBuffer);
+                tmpLength = lwm2m_data_serialize(dataP[i].length, (lwm2m_data_t *)dataP[i].value, format, &tmpBuffer);
                 if (tmpLength == 0)
                 {
                     length = 0;
                 }
                 else
                 {
-                    headerLen = prv_create_header((uint8_t*)(*bufferP) + index, tlvP[i].type, tlvP[i].id, tmpLength);
+                    headerLen = prv_create_header((uint8_t*)(*bufferP) + index, dataP[i].type, dataP[i].id, tmpLength);
                     index += headerLen;
                     memcpy(*bufferP + index, tmpBuffer, tmpLength);
                     index += tmpLength;
@@ -521,7 +521,7 @@ int lwm2m_tlv_serialize(int size,
         case LWM2M_TYPE_RESOURCE_INSTANCE:
         case LWM2M_TYPE_RESOURCE:
             {
-                headerLen = prv_create_header((uint8_t*)(*bufferP) + index, tlvP[i].type, tlvP[i].id, tlvP[i].length);
+                headerLen = prv_create_header((uint8_t*)(*bufferP) + index, dataP[i].type, dataP[i].id, dataP[i].length);
                 if (headerLen == 0)
                 {
                     length = 0;
@@ -529,8 +529,8 @@ int lwm2m_tlv_serialize(int size,
                 else
                 {
                     index += headerLen;
-                    memcpy(*bufferP + index, tlvP[i].value, tlvP[i].length);
-                    index += tlvP[i].length;
+                    memcpy(*bufferP + index, dataP[i].value, dataP[i].length);
+                    index += dataP[i].length;
                 }
             }
             break;
@@ -548,76 +548,76 @@ int lwm2m_tlv_serialize(int size,
     return length;
 }
 
-void lwm2m_tlv_free(int size,
-                    lwm2m_tlv_t * tlvP)
+void lwm2m_data_free(int size,
+                     lwm2m_data_t * dataP)
 {
     int i;
 
-    if (size == 0 || tlvP == NULL) return;
+    if (size == 0 || dataP == NULL) return;
 
     for (i = 0 ; i < size ; i++)
     {
-        if ((tlvP[i].flags & LWM2M_TLV_FLAG_STATIC_DATA) == 0)
+        if ((dataP[i].flags & LWM2M_TLV_FLAG_STATIC_DATA) == 0)
         {
-            if (tlvP[i].type == LWM2M_TYPE_MULTIPLE_RESOURCE
-             || tlvP[i].type == LWM2M_TYPE_OBJECT_INSTANCE)
+            if (dataP[i].type == LWM2M_TYPE_MULTIPLE_RESOURCE
+             || dataP[i].type == LWM2M_TYPE_OBJECT_INSTANCE)
             {
-                lwm2m_tlv_free(tlvP[i].length, (lwm2m_tlv_t *)(tlvP[i].value));
+                lwm2m_data_free(dataP[i].length, (lwm2m_data_t *)(dataP[i].value));
             }
             else
             {
-                lwm2m_free(tlvP[i].value);
+                lwm2m_free(dataP[i].value);
             }
         }
     }
-    lwm2m_free(tlvP);
+    lwm2m_free(dataP);
 }
 
-void lwm2m_tlv_encode_int(int64_t data,
-                          lwm2m_tlv_t * tlvP)
+void lwm2m_data_encode_int(int64_t value,
+                           lwm2m_data_t * dataP)
 {
-    tlvP->length = 0;
-    tlvP->dataType = LWM2M_TYPE_INTEGER;
+    dataP->length = 0;
+    dataP->dataType = LWM2M_TYPE_INTEGER;
 
-    if ((tlvP->flags & LWM2M_TLV_FLAG_TEXT_FORMAT) != 0)
+    if ((dataP->flags & LWM2M_TLV_FLAG_TEXT_FORMAT) != 0)
     {
-        tlvP->flags &= ~LWM2M_TLV_FLAG_STATIC_DATA;
-        tlvP->length = lwm2m_int64ToPlainText(data, &tlvP->value);
+        dataP->flags &= ~LWM2M_TLV_FLAG_STATIC_DATA;
+        dataP->length = lwm2m_int64ToPlainText(value, &dataP->value);
     }
     else
     {
         uint8_t buffer[_PRV_64BIT_BUFFER_SIZE];
         size_t length = 0;
 
-        prv_encodeInt(data, buffer, &length);
+        prv_encodeInt(value, buffer, &length);
 
-        tlvP->value = (uint8_t *)lwm2m_malloc(length);
-        if (tlvP->value != NULL)
+        dataP->value = (uint8_t *)lwm2m_malloc(length);
+        if (dataP->value != NULL)
         {
-            memcpy(tlvP->value,
+            memcpy(dataP->value,
                    buffer + (_PRV_64BIT_BUFFER_SIZE - length),
                    length);
-            tlvP->flags &= ~LWM2M_TLV_FLAG_STATIC_DATA;
-            tlvP->length = length;
+            dataP->flags &= ~LWM2M_TLV_FLAG_STATIC_DATA;
+            dataP->length = length;
         }
     }
 }
 
-int lwm2m_tlv_decode_int(lwm2m_tlv_t * tlvP,
-                         int64_t * dataP)
+int lwm2m_data_decode_int(lwm2m_data_t * dataP,
+                          int64_t * valueP)
 {
     int result;
 
-    if (tlvP->length == 0) return 0;
+    if (dataP->length == 0) return 0;
 
-    if ((tlvP->flags & LWM2M_TLV_FLAG_TEXT_FORMAT) != 0)
+    if ((dataP->flags & LWM2M_TLV_FLAG_TEXT_FORMAT) != 0)
     {
-        result = lwm2m_PlainTextToInt64(tlvP->value, tlvP->length, dataP);
+        result = lwm2m_PlainTextToInt64(dataP->value, dataP->length, valueP);
     }
     else
     {
-        result = lwm2m_opaqueToInt(tlvP->value, tlvP->length, dataP);
-        if (result == tlvP->length)
+        result = lwm2m_opaqueToInt(dataP->value, dataP->length, valueP);
+        if (result == dataP->length)
         {
             result = 1;
         }
@@ -630,22 +630,22 @@ int lwm2m_tlv_decode_int(lwm2m_tlv_t * tlvP,
     return result;
 }
 
-void lwm2m_tlv_encode_float(double data,
-                            lwm2m_tlv_t * tlvP)
+void lwm2m_data_encode_float(double value,
+                             lwm2m_data_t * dataP)
 {
-    tlvP->length = 0;
-    tlvP->dataType = LWM2M_TYPE_FLOAT;
+    dataP->length = 0;
+    dataP->dataType = LWM2M_TYPE_FLOAT;
 
-    if ((tlvP->flags & LWM2M_TLV_FLAG_TEXT_FORMAT) != 0)
+    if ((dataP->flags & LWM2M_TLV_FLAG_TEXT_FORMAT) != 0)
     {
-        tlvP->flags &= ~LWM2M_TLV_FLAG_STATIC_DATA;
-        tlvP->length = lwm2m_float64ToPlainText(data, &tlvP->value);
+        dataP->flags &= ~LWM2M_TLV_FLAG_STATIC_DATA;
+        dataP->length = lwm2m_float64ToPlainText(value, &dataP->value);
     }
     else
     {
         size_t length = 0;
 
-        if (data > FLT_MAX || data < (0 - FLT_MAX))
+        if (value > FLT_MAX || value < (0 - FLT_MAX))
         {
             length = 8;
         }
@@ -654,16 +654,16 @@ void lwm2m_tlv_encode_float(double data,
             length = 4;
         }
 
-        tlvP->value = (uint8_t *)lwm2m_malloc(length);
-        if (tlvP->value != NULL)
+        dataP->value = (uint8_t *)lwm2m_malloc(length);
+        if (dataP->value != NULL)
         {
             if (length == 4)
             {
                 float temp;
 
-                temp = data;
+                temp = value;
 #ifdef LWM2M_BIG_ENDIAN
-                memcpy(tlvP->value, &temp, length);
+                memcpy(dataP->value, &temp, length);
 #else
 #ifdef LWM2M_LITTLE_ENDIAN
                 {
@@ -671,7 +671,7 @@ void lwm2m_tlv_encode_float(double data,
 
                     for (i = 0 ; i < 4 ; i++)
                     {
-                        tlvP->value[i] = ((uint8_t *)&temp)[3 - i];
+                        dataP->value[i] = ((uint8_t *)&temp)[3 - i];
                     }
                 }
 #endif
@@ -680,40 +680,40 @@ void lwm2m_tlv_encode_float(double data,
             else
             {
 #ifdef LWM2M_BIG_ENDIAN
-                memcpy(tlvP->value, &data, length);
+                memcpy(dataP->value, &value, length);
 #else
 #ifdef LWM2M_LITTLE_ENDIAN
                 size_t i;
 
                 for (i = 0 ; i < length ; i++)
                 {
-                    tlvP->value[i] = ((uint8_t *)&data)[7 - i];
+                    dataP->value[i] = ((uint8_t *)&value)[7 - i];
                 }
 #endif
 #endif
             }
 
-            tlvP->flags &= ~LWM2M_TLV_FLAG_STATIC_DATA;
-            tlvP->length = length;
+            dataP->flags &= ~LWM2M_TLV_FLAG_STATIC_DATA;
+            dataP->length = length;
         }
     }
 }
 
-int lwm2m_tlv_decode_float(lwm2m_tlv_t * tlvP,
-                           double * dataP)
+int lwm2m_data_decode_float(lwm2m_data_t * dataP,
+                            double * valueP)
 {
     int result;
 
-    if (tlvP->length == 0) return 0;
+    if (dataP->length == 0) return 0;
 
-    if ((tlvP->flags & LWM2M_TLV_FLAG_TEXT_FORMAT) != 0)
+    if ((dataP->flags & LWM2M_TLV_FLAG_TEXT_FORMAT) != 0)
     {
-        result = lwm2m_PlainTextToFloat64(tlvP->value, tlvP->length, dataP);
+        result = lwm2m_PlainTextToFloat64(dataP->value, dataP->length, valueP);
     }
     else
     {
-        result = lwm2m_opaqueToFloat(tlvP->value, tlvP->length, dataP);
-        if (result == tlvP->length)
+        result = lwm2m_opaqueToFloat(dataP->value, dataP->length, valueP);
+        if (result == dataP->length)
         {
             result = 1;
         }
@@ -726,56 +726,56 @@ int lwm2m_tlv_decode_float(lwm2m_tlv_t * tlvP,
     return result;
 }
 
-void lwm2m_tlv_encode_bool(bool data,
-                          lwm2m_tlv_t * tlvP)
+void lwm2m_data_encode_bool(bool value,
+                            lwm2m_data_t * dataP)
 {
-    tlvP->length = 0;
-    tlvP->dataType = LWM2M_TYPE_BOOLEAN;
+    dataP->length = 0;
+    dataP->dataType = LWM2M_TYPE_BOOLEAN;
 
-    tlvP->value = (uint8_t *)lwm2m_malloc(1);
-    if (tlvP->value != NULL)
+    dataP->value = (uint8_t *)lwm2m_malloc(1);
+    if (dataP->value != NULL)
     {
-        if (data == true)
+        if (value == true)
         {
-            if ((tlvP->flags & LWM2M_TLV_FLAG_TEXT_FORMAT) != 0)
+            if ((dataP->flags & LWM2M_TLV_FLAG_TEXT_FORMAT) != 0)
             {
-                tlvP->value[0] = '1';
+                dataP->value[0] = '1';
             }
             else
             {
-                tlvP->value[0] = 1;
+                dataP->value[0] = 1;
             }
         }
         else
         {
-            if ((tlvP->flags & LWM2M_TLV_FLAG_TEXT_FORMAT) != 0)
+            if ((dataP->flags & LWM2M_TLV_FLAG_TEXT_FORMAT) != 0)
             {
-                tlvP->value[0] = '0';
+                dataP->value[0] = '0';
             }
             else
             {
-                tlvP->value[0] = 0;
+                dataP->value[0] = 0;
             }
         }
-        tlvP->flags &= ~LWM2M_TLV_FLAG_STATIC_DATA;
-        tlvP->length = 1;
+        dataP->flags &= ~LWM2M_TLV_FLAG_STATIC_DATA;
+        dataP->length = 1;
     }
 }
 
-int lwm2m_tlv_decode_bool(lwm2m_tlv_t * tlvP,
-                          bool * dataP)
+int lwm2m_data_decode_bool(lwm2m_data_t * dataP,
+                           bool * valueP)
 {
-    if (tlvP->length != 1) return 0;
+    if (dataP->length != 1) return 0;
 
-    if ((tlvP->flags & LWM2M_TLV_FLAG_TEXT_FORMAT) != 0)
+    if ((dataP->flags & LWM2M_TLV_FLAG_TEXT_FORMAT) != 0)
     {
-        switch (tlvP->value[0])
+        switch (dataP->value[0])
         {
         case '0':
-            *dataP = false;
+            *valueP = false;
             break;
         case '1':
-            *dataP = true;
+            *valueP = true;
             break;
         default:
             return 0;
@@ -783,13 +783,13 @@ int lwm2m_tlv_decode_bool(lwm2m_tlv_t * tlvP,
     }
     else
     {
-        switch (tlvP->value[0])
+        switch (dataP->value[0])
         {
         case 0:
-            *dataP = false;
+            *valueP = false;
             break;
         case 1:
-            *dataP = true;
+            *valueP = true;
             break;
         default:
             return 0;
@@ -799,26 +799,26 @@ int lwm2m_tlv_decode_bool(lwm2m_tlv_t * tlvP,
     return 1;
 }
 
-void lwm2m_tlv_include(lwm2m_tlv_t * subTlvP,
-                       size_t count,
-                       lwm2m_tlv_t * tlvP)
+void lwm2m_data_include(lwm2m_data_t * subDataP,
+                        size_t count,
+                        lwm2m_data_t * dataP)
 {
-    if (subTlvP == NULL || count == 0) return;
+    if (subDataP == NULL || count == 0) return;
 
-    switch(subTlvP[0].type)
+    switch(subDataP[0].type)
     {
     case LWM2M_TYPE_RESOURCE:
     case LWM2M_TYPE_MULTIPLE_RESOURCE:
-        tlvP->type = LWM2M_TYPE_OBJECT_INSTANCE;
+        dataP->type = LWM2M_TYPE_OBJECT_INSTANCE;
         break;
     case LWM2M_TYPE_RESOURCE_INSTANCE:
-        tlvP->type = LWM2M_TYPE_MULTIPLE_RESOURCE;
+        dataP->type = LWM2M_TYPE_MULTIPLE_RESOURCE;
         break;
     default:
         break;
     }
-    tlvP->flags = 0;
-    tlvP->dataType = LWM2M_TYPE_UNDEFINED;
-    tlvP->length = count;
-    tlvP->value = (uint8_t *)subTlvP;
+    dataP->flags = 0;
+    dataP->dataType = LWM2M_TYPE_UNDEFINED;
+    dataP->length = count;
+    dataP->value = (uint8_t *)subDataP;
 }

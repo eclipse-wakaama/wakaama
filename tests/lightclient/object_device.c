@@ -95,36 +95,36 @@
 #define RES_O_MEMORY_TOTAL          21
 
 
-static uint8_t prv_set_value(lwm2m_tlv_t * tlvP)
+static uint8_t prv_set_value(lwm2m_data_t * dataP)
 {
     // a simple switch structure is used to respond at the specified resource asked
-    switch (tlvP->id)
+    switch (dataP->id)
     {
     case RES_O_MANUFACTURER:
-        tlvP->value  = (uint8_t*)PRV_MANUFACTURER;
-        tlvP->length = strlen(PRV_MANUFACTURER);
-        tlvP->flags  = LWM2M_TLV_FLAG_STATIC_DATA;
-        tlvP->type     = LWM2M_TYPE_RESOURCE;
-        tlvP->dataType = LWM2M_TYPE_STRING;
+        dataP->value  = (uint8_t*)PRV_MANUFACTURER;
+        dataP->length = strlen(PRV_MANUFACTURER);
+        dataP->flags  = LWM2M_TLV_FLAG_STATIC_DATA;
+        dataP->type     = LWM2M_TYPE_RESOURCE;
+        dataP->dataType = LWM2M_TYPE_STRING;
         return COAP_205_CONTENT;
 
     case RES_O_MODEL_NUMBER:
-        tlvP->value  = (uint8_t*)PRV_MODEL_NUMBER;
-        tlvP->length = strlen(PRV_MODEL_NUMBER);
-        tlvP->flags  = LWM2M_TLV_FLAG_STATIC_DATA;
-        tlvP->type     = LWM2M_TYPE_RESOURCE;
-        tlvP->dataType = LWM2M_TYPE_STRING;
+        dataP->value  = (uint8_t*)PRV_MODEL_NUMBER;
+        dataP->length = strlen(PRV_MODEL_NUMBER);
+        dataP->flags  = LWM2M_TLV_FLAG_STATIC_DATA;
+        dataP->type     = LWM2M_TYPE_RESOURCE;
+        dataP->dataType = LWM2M_TYPE_STRING;
         return COAP_205_CONTENT;
 
     case RES_M_REBOOT:
         return COAP_405_METHOD_NOT_ALLOWED;
       
     case RES_M_BINDING_MODES:
-        tlvP->value  = (uint8_t*)PRV_BINDING_MODE;
-        tlvP->length = strlen(PRV_BINDING_MODE);
-        tlvP->flags  = LWM2M_TLV_FLAG_STATIC_DATA;
-        tlvP->type     = LWM2M_TYPE_RESOURCE;
-        tlvP->dataType = LWM2M_TYPE_STRING;
+        dataP->value  = (uint8_t*)PRV_BINDING_MODE;
+        dataP->length = strlen(PRV_BINDING_MODE);
+        dataP->flags  = LWM2M_TLV_FLAG_STATIC_DATA;
+        dataP->type     = LWM2M_TYPE_RESOURCE;
+        dataP->dataType = LWM2M_TYPE_STRING;
         return COAP_205_CONTENT;
 
     default:
@@ -134,7 +134,7 @@ static uint8_t prv_set_value(lwm2m_tlv_t * tlvP)
 
 static uint8_t prv_device_read(uint16_t instanceId,
                                int * numDataP,
-                               lwm2m_tlv_t ** dataArrayP,
+                               lwm2m_data_t ** dataArrayP,
                                lwm2m_object_t * objectP)
 {
     uint8_t result;
@@ -156,7 +156,7 @@ static uint8_t prv_device_read(uint16_t instanceId,
         };
         int nbRes = sizeof(resList)/sizeof(uint16_t);
 
-        *dataArrayP = lwm2m_tlv_new(nbRes);
+        *dataArrayP = lwm2m_data_new(nbRes);
         if (*dataArrayP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
         *numDataP = nbRes;
         for (i = 0 ; i < nbRes ; i++)

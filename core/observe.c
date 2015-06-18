@@ -256,7 +256,7 @@ void lwm2m_resource_value_changed(lwm2m_context_t * contextP,
         uint8_t * buffer = NULL;
         size_t length = 0;
 
-        result = object_read(contextP, &listP->item->uri, LWM2M_CONTENT_UNDEFINED, &buffer, &length);
+        result = object_read(contextP, &listP->item->uri, LWM2M_CONTENT_TEXT, &buffer, &length);
         if (result == COAP_205_CONTENT)
         {
             coap_packet_t message[1];

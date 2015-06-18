@@ -355,7 +355,7 @@ error:
 static int prv_add_server(bs_info_t * infoP,
                           read_server_t * dataP)
 {
-    lwm2m_tlv_t * tlvP;
+    lwm2m_data_t * tlvP;
     int size;
     bs_server_tlv_t * serverP;
 
@@ -381,7 +381,7 @@ static int prv_add_server(bs_info_t * infoP,
 
     serverP->id = dataP->id;
 
-    tlvP = lwm2m_tlv_new(size);
+    tlvP = lwm2m_data_new(size);
     if (tlvP == NULL) goto error;
 
     // LWM2M Server URI
@@ -395,17 +395,17 @@ static int prv_add_server(bs_info_t * infoP,
     // Bootstrap Server
     tlvP[1].type = LWM2M_TYPE_RESOURCE;
     tlvP[1].id = LWM2M_SECURITY_BOOTSTRAP_ID;
-    lwm2m_tlv_encode_bool(dataP->isBootstrap, tlvP + 1);
+    lwm2m_data_encode_bool(dataP->isBootstrap, tlvP + 1);
 
     // Short Server ID
     tlvP[2].type = LWM2M_TYPE_RESOURCE;
     tlvP[2].id = LWM2M_SECURITY_SHORT_SERVER_ID;
-    lwm2m_tlv_encode_int(dataP->id, tlvP + 2);
+    lwm2m_data_encode_int(dataP->id, tlvP + 2);
 
     // Security Mode
     tlvP[3].type = LWM2M_TYPE_RESOURCE;
     tlvP[3].id = LWM2M_SECURITY_SECURITY_ID;
-    lwm2m_tlv_encode_int(dataP->securityMode, tlvP + 3);
+    lwm2m_data_encode_int(dataP->securityMode, tlvP + 3);
 
     if (size > 4)
     {
@@ -434,30 +434,30 @@ static int prv_add_server(bs_info_t * infoP,
         }
     }
 
-    serverP->securityLen = lwm2m_tlv_serialize(size, tlvP, LWM2M_CONTENT_TLV, &(serverP->securityData));
+    serverP->securityLen = lwm2m_data_serialize(size, tlvP, LWM2M_CONTENT_TLV, &(serverP->securityData));
     if (serverP->securityLen <= 0) goto error;
-    lwm2m_tlv_free(size, tlvP);
+    lwm2m_data_free(size, tlvP);
 
     if (dataP->isBootstrap == false)
     {
         size = 4;
-        tlvP = lwm2m_tlv_new(size);
+        tlvP = lwm2m_data_new(size);
         if (tlvP == NULL) goto error;
 
         // Short Server ID
         tlvP[0].type = LWM2M_TYPE_RESOURCE;
         tlvP[0].id = LWM2M_SERVER_SHORT_ID_ID;
-        lwm2m_tlv_encode_int(dataP->id, tlvP);
+        lwm2m_data_encode_int(dataP->id, tlvP);
 
         // Lifetime
         tlvP[1].type = LWM2M_TYPE_RESOURCE;
         tlvP[1].id = LWM2M_SERVER_LIFETIME_ID;
-        lwm2m_tlv_encode_int(dataP->lifetime, tlvP + 1);
+        lwm2m_data_encode_int(dataP->lifetime, tlvP + 1);
 
         // Notification Storing
         tlvP[2].type = LWM2M_TYPE_RESOURCE;
         tlvP[2].id = LWM2M_SERVER_STORING_ID;
-        lwm2m_tlv_encode_bool(false, tlvP + 2);
+        lwm2m_data_encode_bool(false, tlvP + 2);
 
         // Binding
         tlvP[3].type = LWM2M_TYPE_RESOURCE;
@@ -467,9 +467,9 @@ static int prv_add_server(bs_info_t * infoP,
         tlvP[3].value = "U";
         tlvP[3].length = 1;
 
-        serverP->serverLen = lwm2m_tlv_serialize(size, tlvP, LWM2M_CONTENT_TLV, &(serverP->serverData));
+        serverP->serverLen = lwm2m_data_serialize(size, tlvP, LWM2M_CONTENT_TLV, &(serverP->serverData));
         if (serverP->serverLen <= 0) goto error;
-        lwm2m_tlv_free(size, tlvP);
+        lwm2m_data_free(size, tlvP);
     }
 
     infoP->serverList = (bs_server_tlv_t *)LWM2M_LIST_ADD(infoP->serverList, serverP);
@@ -477,7 +477,7 @@ static int prv_add_server(bs_info_t * infoP,
     return 0;
 
 error:
-    if (tlvP != NULL) lwm2m_tlv_free(size, tlvP);
+    if (tlvP != NULL) lwm2m_data_free(size, tlvP);
     if (serverP->securityData != NULL) lwm2m_free(serverP->securityData);
     if (serverP->serverData != NULL) lwm2m_free(serverP->serverData);
     lwm2m_free(serverP);

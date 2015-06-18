@@ -129,7 +129,7 @@ typedef struct _prv_instance_
 
 static uint8_t prv_read(uint16_t instanceId,
                         int * numDataP,
-                        lwm2m_tlv_t ** dataArrayP,
+                        lwm2m_data_t ** dataArrayP,
                         lwm2m_object_t * objectP)
 {
     prv_instance_t * targetP;
@@ -140,7 +140,7 @@ static uint8_t prv_read(uint16_t instanceId,
 
     if (*numDataP == 0)
     {
-        *dataArrayP = lwm2m_tlv_new(2);
+        *dataArrayP = lwm2m_data_new(2);
         if (*dataArrayP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
         *numDataP = 2;
         (*dataArrayP)[0].id = 1;
@@ -153,13 +153,13 @@ static uint8_t prv_read(uint16_t instanceId,
         {
         case 1:
             (*dataArrayP)[i].type = LWM2M_TYPE_RESOURCE;
-            lwm2m_tlv_encode_int(targetP->test, *dataArrayP + i);
+            lwm2m_data_encode_int(targetP->test, *dataArrayP + i);
             break;
         case 2:
             return COAP_405_METHOD_NOT_ALLOWED;
         case 3:
             (*dataArrayP)[i].type = LWM2M_TYPE_RESOURCE;
-            lwm2m_tlv_encode_float(targetP->dec, *dataArrayP + i);
+            lwm2m_data_encode_float(targetP->dec, *dataArrayP + i);
             break;
         default:
             return COAP_404_NOT_FOUND;
@@ -172,7 +172,7 @@ static uint8_t prv_read(uint16_t instanceId,
 
 static uint8_t prv_write(uint16_t instanceId,
                          int numData,
-                         lwm2m_tlv_t * dataArray,
+                         lwm2m_data_t * dataArray,
                          lwm2m_object_t * objectP)
 {
     prv_instance_t * targetP;
@@ -189,7 +189,7 @@ static uint8_t prv_write(uint16_t instanceId,
         {
             int64_t value;
 
-            if (1 != lwm2m_tlv_decode_int(dataArray + i, &value) || value < 0 || value > 0xFF)
+            if (1 != lwm2m_data_decode_int(dataArray + i, &value) || value < 0 || value > 0xFF)
             {
                 return COAP_400_BAD_REQUEST;
             }
@@ -199,7 +199,7 @@ static uint8_t prv_write(uint16_t instanceId,
         case 2:
             return COAP_405_METHOD_NOT_ALLOWED;
         case 3:
-            if (1 != lwm2m_tlv_decode_float(dataArray + i, &(targetP->dec)))
+            if (1 != lwm2m_data_decode_float(dataArray + i, &(targetP->dec)))
             {
                 return COAP_400_BAD_REQUEST;
             }
@@ -227,7 +227,7 @@ static uint8_t prv_delete(uint16_t id,
 
 static uint8_t prv_create(uint16_t instanceId,
                           int numData,
-                          lwm2m_tlv_t * dataArray,
+                          lwm2m_data_t * dataArray,
                           lwm2m_object_t * objectP)
 {
     prv_instance_t * targetP;

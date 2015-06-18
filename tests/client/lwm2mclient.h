@@ -35,7 +35,7 @@ extern int g_reboot;
  * object_device.c
  */
 extern lwm2m_object_t * get_object_device(void);
-uint8_t device_change(lwm2m_tlv_t * dataArray, lwm2m_object_t * objectP);
+uint8_t device_change(lwm2m_data_t * dataArray, lwm2m_object_t * objectP);
 extern void display_device_object(lwm2m_object_t * objectP);
 /*
  * object_firmware.c
@@ -64,7 +64,7 @@ extern void copy_server_object(lwm2m_object_t * objectDest, lwm2m_object_t * obj
  * object_connectivity_moni.c
  */
 extern lwm2m_object_t * get_object_conn_m(void);
-uint8_t connectivity_moni_change(lwm2m_tlv_t * dataArray, lwm2m_object_t * objectP);
+uint8_t connectivity_moni_change(lwm2m_data_t * dataArray, lwm2m_object_t * objectP);
 
 /*
  * object_connectivity_stat.c

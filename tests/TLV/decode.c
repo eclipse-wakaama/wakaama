@@ -26,7 +26,7 @@
 
 int main(int argc, char *argv[])
 {
-    lwm2m_tlv_t * tlvP;
+    lwm2m_data_t * dataP;
     int size;
     int length;
     uint8_t * buffer;
@@ -43,10 +43,10 @@ int main(int argc, char *argv[])
 
     printf("Buffer 1:\n");
     output_tlv(stdout, buffer1, sizeof(buffer1), 0);
-    printf("\n\nBuffer 1 using lwm2m_tlv_t:\n");
-    size = lwm2m_tlv_parse(buffer1, sizeof(buffer1), &tlvP);
-    dump_tlv(stdout, size, tlvP, 0);
-    length = lwm2m_tlv_serialize(size, tlvP, &buffer);
+    printf("\n\nBuffer 1 using lwm2m_data_t:\n");
+    size = lwm2m_data_parse(buffer1, sizeof(buffer1), &dataP);
+    dump_tlv(stdout, size, dataP, 0);
+    length = lwm2m_data_serialize(size, dataP, &buffer);
     if (length != sizeof(buffer1))
     {
         printf("\n\nSerialize Buffer 1 failed: %d bytes instead of %d\n", length, sizeof(buffer1));
@@ -62,14 +62,14 @@ int main(int argc, char *argv[])
     {
         printf("\n\nSerialize Buffer 1 OK\n");
     }
-    lwm2m_tlv_free(size, tlvP);
+    lwm2m_data_free(size, dataP);
 
     printf("\n\n============\n\nBuffer 2: \r\r\n");
     output_tlv(stdout, buffer2, sizeof(buffer2), 0);
-    printf("\n\nBuffer 2 using lwm2m_tlv_t: \r\r\n");
-    size = lwm2m_tlv_parse(buffer2, sizeof(buffer2), &tlvP);
-    dump_tlv(stdout, size, tlvP, 0);
-    length = lwm2m_tlv_serialize(size, tlvP, &buffer);
+    printf("\n\nBuffer 2 using lwm2m_data_t: \r\r\n");
+    size = lwm2m_data_parse(buffer2, sizeof(buffer2), &dataP);
+    dump_tlv(stdout, size, dataP, 0);
+    length = lwm2m_data_serialize(size, dataP, &buffer);
     if (length != sizeof(buffer2))
     {
         printf("\n\nSerialize Buffer 2 failed: %d bytes instead of %d\n", length, sizeof(buffer2));
@@ -85,6 +85,6 @@ int main(int argc, char *argv[])
     {
         printf("\n\nSerialize Buffer 2 OK\n\n");
     }
-    lwm2m_tlv_free(size, tlvP);
+    lwm2m_data_free(size, dataP);
 }
 

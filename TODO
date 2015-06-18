@@ -55,7 +55,7 @@ LWM2M Features
   - Remove lwm2m_object_t::closeFunc()
   The lwm2m_object_t data is the sole responsibility of the client application.
   
-  - Use lwm2m_tlv_t in server-side APIs
+  - Use lwm2m_data_t in server-side APIs
   This would hides the TLV or JSON marshalling.
   
   - Provide an example client (and server) using tinyDTLS

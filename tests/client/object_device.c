@@ -161,42 +161,42 @@ static int prv_check_time_offset(char * buffer,
     return 1;
 }
 
-static uint8_t prv_set_value(lwm2m_tlv_t * tlvP,
+static uint8_t prv_set_value(lwm2m_data_t * dataP,
                              device_data_t * devDataP)
 {
     // a simple switch structure is used to respond at the specified resource asked
-    switch (tlvP->id)
+    switch (dataP->id)
     {
     case RES_O_MANUFACTURER:
-        tlvP->value  = (uint8_t*)PRV_MANUFACTURER;
-        tlvP->length = strlen(PRV_MANUFACTURER);
-        tlvP->flags  = LWM2M_TLV_FLAG_STATIC_DATA;
-        tlvP->type     = LWM2M_TYPE_RESOURCE;
-        tlvP->dataType = LWM2M_TYPE_STRING;
+        dataP->value  = (uint8_t*)PRV_MANUFACTURER;
+        dataP->length = strlen(PRV_MANUFACTURER);
+        dataP->flags  = LWM2M_TLV_FLAG_STATIC_DATA;
+        dataP->type     = LWM2M_TYPE_RESOURCE;
+        dataP->dataType = LWM2M_TYPE_STRING;
         return COAP_205_CONTENT;
 
     case RES_O_MODEL_NUMBER:
-        tlvP->value  = (uint8_t*)PRV_MODEL_NUMBER;
-        tlvP->length = strlen(PRV_MODEL_NUMBER);
-        tlvP->flags  = LWM2M_TLV_FLAG_STATIC_DATA;
-        tlvP->type     = LWM2M_TYPE_RESOURCE;
-        tlvP->dataType = LWM2M_TYPE_STRING;
+        dataP->value  = (uint8_t*)PRV_MODEL_NUMBER;
+        dataP->length = strlen(PRV_MODEL_NUMBER);
+        dataP->flags  = LWM2M_TLV_FLAG_STATIC_DATA;
+        dataP->type     = LWM2M_TYPE_RESOURCE;
+        dataP->dataType = LWM2M_TYPE_STRING;
         return COAP_205_CONTENT;
 
     case RES_O_SERIAL_NUMBER:
-        tlvP->value  = (uint8_t*)PRV_SERIAL_NUMBER;
-        tlvP->length = strlen(PRV_SERIAL_NUMBER);
-        tlvP->flags  = LWM2M_TLV_FLAG_STATIC_DATA;
-        tlvP->type     = LWM2M_TYPE_RESOURCE;
-        tlvP->dataType = LWM2M_TYPE_STRING;
+        dataP->value  = (uint8_t*)PRV_SERIAL_NUMBER;
+        dataP->length = strlen(PRV_SERIAL_NUMBER);
+        dataP->flags  = LWM2M_TLV_FLAG_STATIC_DATA;
+        dataP->type     = LWM2M_TYPE_RESOURCE;
+        dataP->dataType = LWM2M_TYPE_STRING;
         return COAP_205_CONTENT;
 
     case RES_O_FIRMWARE_VERSION:
-        tlvP->value  = (uint8_t*)PRV_FIRMWARE_VERSION;
-        tlvP->length = strlen(PRV_FIRMWARE_VERSION);
-        tlvP->flags  = LWM2M_TLV_FLAG_STATIC_DATA;
-        tlvP->type     = LWM2M_TYPE_RESOURCE;
-        tlvP->dataType = LWM2M_TYPE_STRING;
+        dataP->value  = (uint8_t*)PRV_FIRMWARE_VERSION;
+        dataP->length = strlen(PRV_FIRMWARE_VERSION);
+        dataP->flags  = LWM2M_TLV_FLAG_STATIC_DATA;
+        dataP->type     = LWM2M_TYPE_RESOURCE;
+        dataP->dataType = LWM2M_TYPE_STRING;
         return COAP_205_CONTENT;
 
     case RES_M_REBOOT:
@@ -207,128 +207,128 @@ static uint8_t prv_set_value(lwm2m_tlv_t * tlvP,
 
     case RES_O_AVL_POWER_SOURCES: 
     {
-        lwm2m_tlv_t * subTlvP;
+        lwm2m_data_t * subTlvP;
 
-        subTlvP = lwm2m_tlv_new(2);
+        subTlvP = lwm2m_data_new(2);
 
         subTlvP[0].flags = 0;
         subTlvP[0].id = 0;
         subTlvP[0].type = LWM2M_TYPE_RESOURCE_INSTANCE;
-        lwm2m_tlv_encode_int(PRV_POWER_SOURCE_1, subTlvP);
+        lwm2m_data_encode_int(PRV_POWER_SOURCE_1, subTlvP);
         if (0 == subTlvP[0].length)
         {
-            lwm2m_tlv_free(2, subTlvP);
+            lwm2m_data_free(2, subTlvP);
             return COAP_500_INTERNAL_SERVER_ERROR;
         }
 
         subTlvP[1].flags = 0;
         subTlvP[1].id = 1;
         subTlvP[1].type = LWM2M_TYPE_RESOURCE_INSTANCE;
-        lwm2m_tlv_encode_int(PRV_POWER_SOURCE_2, subTlvP + 1);
+        lwm2m_data_encode_int(PRV_POWER_SOURCE_2, subTlvP + 1);
         if (0 == subTlvP[1].length)
         {
-            lwm2m_tlv_free(2, subTlvP);
+            lwm2m_data_free(2, subTlvP);
             return COAP_500_INTERNAL_SERVER_ERROR;
         }
 
-        lwm2m_tlv_include(subTlvP, 2, tlvP);
+        lwm2m_data_include(subTlvP, 2, dataP);
 
         return COAP_205_CONTENT;
     }
 
     case RES_O_POWER_SOURCE_VOLTAGE:
     {
-        lwm2m_tlv_t * subTlvP;
+        lwm2m_data_t * subTlvP;
 
-        subTlvP = lwm2m_tlv_new(2);
+        subTlvP = lwm2m_data_new(2);
 
         subTlvP[0].flags = 0;
         subTlvP[0].id = 0;
         subTlvP[0].type = LWM2M_TYPE_RESOURCE_INSTANCE;
-        lwm2m_tlv_encode_int(PRV_POWER_VOLTAGE_1, subTlvP);
+        lwm2m_data_encode_int(PRV_POWER_VOLTAGE_1, subTlvP);
         if (0 == subTlvP[0].length)
         {
-            lwm2m_tlv_free(2, subTlvP);
+            lwm2m_data_free(2, subTlvP);
             return COAP_500_INTERNAL_SERVER_ERROR;
         }
 
         subTlvP[1].flags = 0;
         subTlvP[1].id = 1;
         subTlvP[1].type = LWM2M_TYPE_RESOURCE_INSTANCE;
-        lwm2m_tlv_encode_int(PRV_POWER_VOLTAGE_2, subTlvP + 1);
+        lwm2m_data_encode_int(PRV_POWER_VOLTAGE_2, subTlvP + 1);
         if (0 == subTlvP[1].length)
         {
-            lwm2m_tlv_free(2, subTlvP);
+            lwm2m_data_free(2, subTlvP);
             return COAP_500_INTERNAL_SERVER_ERROR;
         }
 
-        lwm2m_tlv_include(subTlvP, 2, tlvP);
+        lwm2m_data_include(subTlvP, 2, dataP);
 
         return COAP_205_CONTENT;
     }
 
     case RES_O_POWER_SOURCE_CURRENT:
     {
-        lwm2m_tlv_t * subTlvP;
+        lwm2m_data_t * subTlvP;
 
-        subTlvP = lwm2m_tlv_new(2);
+        subTlvP = lwm2m_data_new(2);
 
         subTlvP[0].flags = 0;
         subTlvP[0].id = 0;
         subTlvP[0].type = LWM2M_TYPE_RESOURCE_INSTANCE;
-        lwm2m_tlv_encode_int(PRV_POWER_CURRENT_1, &subTlvP[0]);
+        lwm2m_data_encode_int(PRV_POWER_CURRENT_1, &subTlvP[0]);
         if (0 == subTlvP[0].length)
         {
-            lwm2m_tlv_free(2, subTlvP);
+            lwm2m_data_free(2, subTlvP);
             return COAP_500_INTERNAL_SERVER_ERROR;
         }
 
         subTlvP[1].flags = 0;
         subTlvP[1].id = 1;
         subTlvP[1].type = LWM2M_TYPE_RESOURCE_INSTANCE;
-        lwm2m_tlv_encode_int(PRV_POWER_CURRENT_2, &subTlvP[1]);
+        lwm2m_data_encode_int(PRV_POWER_CURRENT_2, &subTlvP[1]);
         if (0 == subTlvP[1].length)
         {
-            lwm2m_tlv_free(2, subTlvP);
+            lwm2m_data_free(2, subTlvP);
             return COAP_500_INTERNAL_SERVER_ERROR;
         }
 
-        lwm2m_tlv_include(subTlvP, 2, tlvP);
+        lwm2m_data_include(subTlvP, 2, dataP);
 
         return COAP_205_CONTENT;
     }
 
     case RES_O_BATTERY_LEVEL:
-        lwm2m_tlv_encode_int(devDataP->battery_level, tlvP);
-        tlvP->type = LWM2M_TYPE_RESOURCE;
+        lwm2m_data_encode_int(devDataP->battery_level, dataP);
+        dataP->type = LWM2M_TYPE_RESOURCE;
 
-        if (0 != tlvP->length) return COAP_205_CONTENT;
+        if (0 != dataP->length) return COAP_205_CONTENT;
         else return COAP_500_INTERNAL_SERVER_ERROR;
 
     case RES_O_MEMORY_FREE:
-        lwm2m_tlv_encode_int(devDataP->free_memory, tlvP);
-        tlvP->type = LWM2M_TYPE_RESOURCE;
+        lwm2m_data_encode_int(devDataP->free_memory, dataP);
+        dataP->type = LWM2M_TYPE_RESOURCE;
 
-        if (0 != tlvP->length) return COAP_205_CONTENT;
+        if (0 != dataP->length) return COAP_205_CONTENT;
         else return COAP_500_INTERNAL_SERVER_ERROR;
 
     case RES_M_ERROR_CODE:
     {
-        lwm2m_tlv_t * subTlvP;
+        lwm2m_data_t * subTlvP;
 
-        subTlvP = lwm2m_tlv_new(1);
+        subTlvP = lwm2m_data_new(1);
 
         subTlvP[0].flags = 0;
         subTlvP[0].id = 0;
         subTlvP[0].type = LWM2M_TYPE_RESOURCE_INSTANCE;
-        lwm2m_tlv_encode_int(devDataP->error, subTlvP);
+        lwm2m_data_encode_int(devDataP->error, subTlvP);
         if (0 == subTlvP[0].length)
         {
-            lwm2m_tlv_free(2, subTlvP);
+            lwm2m_data_free(2, subTlvP);
             return COAP_500_INTERNAL_SERVER_ERROR;
         }
 
-        lwm2m_tlv_include(subTlvP, 1, tlvP);
+        lwm2m_data_include(subTlvP, 1, dataP);
 
         return COAP_205_CONTENT;
     }        
@@ -336,35 +336,35 @@ static uint8_t prv_set_value(lwm2m_tlv_t * tlvP,
         return COAP_405_METHOD_NOT_ALLOWED;
 
     case RES_O_CURRENT_TIME:
-        lwm2m_tlv_encode_int(time(NULL) + devDataP->time, tlvP);
-        tlvP->type = LWM2M_TYPE_RESOURCE;
-        tlvP->dataType = LWM2M_TYPE_TIME;
+        lwm2m_data_encode_int(time(NULL) + devDataP->time, dataP);
+        dataP->type = LWM2M_TYPE_RESOURCE;
+        dataP->dataType = LWM2M_TYPE_TIME;
 
-        if (0 != tlvP->length) return COAP_205_CONTENT;
+        if (0 != dataP->length) return COAP_205_CONTENT;
         else return COAP_500_INTERNAL_SERVER_ERROR;
 
     case RES_O_UTC_OFFSET:
-        tlvP->value  = (uint8_t*)devDataP->time_offset;
-        tlvP->length = strlen(devDataP->time_offset);
-        tlvP->flags  = LWM2M_TLV_FLAG_STATIC_DATA;
-        tlvP->type     = LWM2M_TYPE_RESOURCE;
-        tlvP->dataType = LWM2M_TYPE_STRING;
+        dataP->value  = (uint8_t*)devDataP->time_offset;
+        dataP->length = strlen(devDataP->time_offset);
+        dataP->flags  = LWM2M_TLV_FLAG_STATIC_DATA;
+        dataP->type     = LWM2M_TYPE_RESOURCE;
+        dataP->dataType = LWM2M_TYPE_STRING;
         return COAP_205_CONTENT;
 
     case RES_O_TIMEZONE:
-        tlvP->value  = (uint8_t*)PRV_TIME_ZONE;
-        tlvP->length = strlen(PRV_TIME_ZONE);
-        tlvP->flags  = LWM2M_TLV_FLAG_STATIC_DATA;
-        tlvP->type     = LWM2M_TYPE_RESOURCE;
-        tlvP->dataType = LWM2M_TYPE_STRING;
+        dataP->value  = (uint8_t*)PRV_TIME_ZONE;
+        dataP->length = strlen(PRV_TIME_ZONE);
+        dataP->flags  = LWM2M_TLV_FLAG_STATIC_DATA;
+        dataP->type     = LWM2M_TYPE_RESOURCE;
+        dataP->dataType = LWM2M_TYPE_STRING;
         return COAP_205_CONTENT;
       
     case RES_M_BINDING_MODES:
-        tlvP->value  = (uint8_t*)PRV_BINDING_MODE;
-        tlvP->length = strlen(PRV_BINDING_MODE);
-        tlvP->flags  = LWM2M_TLV_FLAG_STATIC_DATA;
-        tlvP->type     = LWM2M_TYPE_RESOURCE;
-        tlvP->dataType = LWM2M_TYPE_STRING;
+        dataP->value  = (uint8_t*)PRV_BINDING_MODE;
+        dataP->length = strlen(PRV_BINDING_MODE);
+        dataP->flags  = LWM2M_TLV_FLAG_STATIC_DATA;
+        dataP->type     = LWM2M_TYPE_RESOURCE;
+        dataP->dataType = LWM2M_TYPE_STRING;
         return COAP_205_CONTENT;
 
     default:
@@ -374,7 +374,7 @@ static uint8_t prv_set_value(lwm2m_tlv_t * tlvP,
 
 static uint8_t prv_device_read(uint16_t instanceId,
                                int * numDataP,
-                               lwm2m_tlv_t ** dataArrayP,
+                               lwm2m_data_t ** dataArrayP,
                                lwm2m_object_t * objectP)
 {
     uint8_t result;
@@ -410,7 +410,7 @@ static uint8_t prv_device_read(uint16_t instanceId,
         };
         int nbRes = sizeof(resList)/sizeof(uint16_t);
 
-        *dataArrayP = lwm2m_tlv_new(nbRes);
+        *dataArrayP = lwm2m_data_new(nbRes);
         if (*dataArrayP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
         *numDataP = nbRes;
         for (i = 0 ; i < nbRes ; i++)
@@ -431,7 +431,7 @@ static uint8_t prv_device_read(uint16_t instanceId,
 
 static uint8_t prv_device_write(uint16_t instanceId,
                                 int numData,
-                                lwm2m_tlv_t * dataArray,
+                                lwm2m_data_t * dataArray,
                                 lwm2m_object_t * objectP)
 {
     int i;
@@ -450,7 +450,7 @@ static uint8_t prv_device_write(uint16_t instanceId,
         switch (dataArray[i].id)
         {
         case RES_O_CURRENT_TIME:
-            if (1 == lwm2m_tlv_decode_int(dataArray + i, &((device_data_t*)(objectP->userData))->time))
+            if (1 == lwm2m_data_decode_int(dataArray + i, &((device_data_t*)(objectP->userData))->time))
             {
                 ((device_data_t*)(objectP->userData))->time -= time(NULL);
                 result = COAP_204_CHANGED;
@@ -613,7 +613,7 @@ lwm2m_object_t * get_object_device()
     return deviceObj;
 }
 
-uint8_t device_change(lwm2m_tlv_t * dataArray,
+uint8_t device_change(lwm2m_data_t * dataArray,
                       lwm2m_object_t * objectP)
 {
     uint8_t result;
@@ -623,7 +623,7 @@ uint8_t device_change(lwm2m_tlv_t * dataArray,
     case RES_O_BATTERY_LEVEL:
             {
                 int64_t value;
-                if (1 == lwm2m_tlv_decode_int(dataArray, &value))
+                if (1 == lwm2m_data_decode_int(dataArray, &value))
                 {
                     if ((0 <= value) && (100 >= value))
                     {
@@ -642,7 +642,7 @@ uint8_t device_change(lwm2m_tlv_t * dataArray,
             }
             break;
         case RES_M_ERROR_CODE:
-            if (1 == lwm2m_tlv_decode_int(dataArray, &((device_data_t*)(objectP->userData))->error))
+            if (1 == lwm2m_data_decode_int(dataArray, &((device_data_t*)(objectP->userData))->error))
             {
                 result = COAP_204_CHANGED;
             }
@@ -652,7 +652,7 @@ uint8_t device_change(lwm2m_tlv_t * dataArray,
             }
             break;
         case RES_O_MEMORY_FREE:
-            if (1 == lwm2m_tlv_decode_int(dataArray, &((device_data_t*)(objectP->userData))->free_memory))
+            if (1 == lwm2m_data_decode_int(dataArray, &((device_data_t*)(objectP->userData))->free_memory))
             {
                 result = COAP_204_CHANGED;
             }
