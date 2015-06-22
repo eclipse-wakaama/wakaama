@@ -324,6 +324,7 @@ static int prv_make_operation(lwm2m_context_t * contextP,
                               uint16_t clientID,
                               lwm2m_uri_t * uriP,
                               coap_method_t method,
+                              lwm2m_media_type_t format,
                               uint8_t * buffer,
                               int length,
                               lwm2m_result_callback_t callback,
@@ -341,6 +342,7 @@ static int prv_make_operation(lwm2m_context_t * contextP,
 
     if (buffer != NULL)
     {
+        coap_set_header_content_type(transaction->message, format);
         // TODO: Take care of fragmentation
         coap_set_payload(transaction->message, buffer, length);
     }
@@ -373,7 +375,9 @@ int lwm2m_dm_read(lwm2m_context_t * contextP,
                   void * userData)
 {
     return prv_make_operation(contextP, clientID, uriP,
-                              COAP_GET, NULL, 0,
+                              COAP_GET,
+                              LWM2M_CONTENT_TEXT,
+                              NULL, 0,
                               callback, userData);
 }
 
@@ -394,13 +398,15 @@ int lwm2m_dm_write(lwm2m_context_t * contextP,
     if (LWM2M_URI_IS_SET_RESOURCE(uriP))
     {
         return prv_make_operation(contextP, clientID, uriP,
-                                  COAP_PUT, buffer, length,
+                                  COAP_PUT,
+                                  LWM2M_CONTENT_TEXT, buffer, length,
                                   callback, userData);
     }
     else
     {
         return prv_make_operation(contextP, clientID, uriP,
-                                  COAP_POST, buffer, length,
+                                  COAP_POST,
+                                  LWM2M_CONTENT_TLV, buffer, length,
                                   callback, userData);
     }
 }
@@ -419,7 +425,8 @@ int lwm2m_dm_execute(lwm2m_context_t * contextP,
     }
 
     return prv_make_operation(contextP, clientID, uriP,
-                              COAP_POST, buffer, length,
+                              COAP_POST,
+                              LWM2M_CONTENT_TEXT, buffer, length,
                               callback, userData);
 }
 
@@ -438,7 +445,8 @@ int lwm2m_dm_create(lwm2m_context_t * contextP,
     }
 
     return prv_make_operation(contextP, clientID, uriP,
-                              COAP_POST, buffer, length,
+                              COAP_POST,
+                              LWM2M_CONTENT_TLV, buffer, length,
                               callback, userData);
 }
 
@@ -455,7 +463,8 @@ int lwm2m_dm_delete(lwm2m_context_t * contextP,
     }
 
     return prv_make_operation(contextP, clientID, uriP,
-                              COAP_DELETE, NULL, 0,
+                              COAP_DELETE,
+                              LWM2M_CONTENT_TEXT, NULL, 0,
                               callback, userData);
 }
 #endif
