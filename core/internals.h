@@ -185,6 +185,12 @@ void delete_transaction_list(lwm2m_context_t * context);
 void delete_server_list(lwm2m_context_t * context);
 void delete_observed_list(lwm2m_context_t * contextP);
 
+// defined in json.c
+#ifdef LWM2M_SUPPORT_JSON
+int lwm2m_json_parse(uint8_t * buffer, size_t bufferLen, lwm2m_data_t ** dataP);
+int lwm2m_json_serialize(int size, lwm2m_data_t * tlvP, uint8_t ** bufferP);
+#endif
+
 // defined in utils.c
 lwm2m_binding_t lwm2m_stringToBinding(uint8_t *buffer, size_t length);
 int prv_isAltPathValid(const char * altPath);

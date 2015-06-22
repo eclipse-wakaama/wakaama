@@ -62,6 +62,12 @@ extern "C" {
 #include <stdbool.h>
 #include <sys/time.h>
 
+#ifdef LWM2M_SERVER_MODE
+#ifndef LWM2M_SUPPORT_JSON
+#define LWM2M_SUPPORT_JSON
+#endif
+#endif
+
 #ifndef LWM2M_EMBEDDED_MODE
 #ifdef MEMORY_TRACE
 #include "memtrace.h"

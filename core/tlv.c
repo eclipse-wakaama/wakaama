@@ -448,9 +448,10 @@ int lwm2m_data_parse(uint8_t * buffer,
     case LWM2M_CONTENT_TLV:
         return prv_parseTLV(buffer, bufferLen, dataP);
 
+#ifdef LWM2M_SUPPORT_JSON
     case LWM2M_CONTENT_JSON:
-        // TODO: implement
-        return 0;
+        return lwm2m_json_parse(buffer, bufferLen, dataP);
+#endif
 
     default:
         return 0;
@@ -602,9 +603,10 @@ int lwm2m_data_serialize(int size,
     case LWM2M_CONTENT_TLV:
         return prv_serializeTLV(size, dataP, bufferP);
 
+#ifdef LWM2M_SUPPORT_JSON
     case LWM2M_CONTENT_JSON:
-        // TODO: implement
-        return 0;
+        return lwm2m_json_serialize(size, dataP, bufferP);
+#endif
 
     default:
         return 0;
