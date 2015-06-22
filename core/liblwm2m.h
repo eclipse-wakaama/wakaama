@@ -316,7 +316,7 @@ typedef struct
 // Return the number of characters read from buffer or 0 in case of error.
 // Valid URIs: /1, /1/, /1/2, /1/2/, /1/2/3
 // Invalid URIs: /, //, //2, /1//, /1//3, /1/2/3/, /1/2/3/4
-int lwm2m_stringToUri(char * buffer, size_t buffer_len, lwm2m_uri_t * uriP);
+int lwm2m_stringToUri(const char * buffer, size_t buffer_len, lwm2m_uri_t * uriP);
 
 
 /*
@@ -589,7 +589,7 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP, uint8_t * buffer, int lengt
 // for objects (can be nil) and a list of objects.
 // LWM2M Security Object (ID 0) must be present with either a bootstrap server or a LWM2M server and
 // its matching LWM2M Server Object (ID 1) instance
-int lwm2m_configure(lwm2m_context_t * contextP, char * endpointName, char * msisdn, char * altPath, uint16_t numObject, lwm2m_object_t * objectList[]);
+int lwm2m_configure(lwm2m_context_t * contextP, const char * endpointName, const char * msisdn, const char * altPath, uint16_t numObject, lwm2m_object_t * objectList[]);
 
 // create objects for known LWM2M Servers.
 int lwm2m_start(lwm2m_context_t * contextP);

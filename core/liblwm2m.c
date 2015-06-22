@@ -209,9 +209,9 @@ void lwm2m_close(lwm2m_context_t * contextP)
 
 #ifdef LWM2M_CLIENT_MODE
 int lwm2m_configure(lwm2m_context_t * contextP,
-                    char * endpointName,
-                    char * msisdn,
-                    char * altPath,
+                    const char * endpointName,
+                    const char * msisdn,
+                    const char * altPath,
                     uint16_t numObject,
                     lwm2m_object_t * objectList[])
 {

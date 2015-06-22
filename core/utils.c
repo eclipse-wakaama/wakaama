@@ -377,7 +377,7 @@ lwm2m_server_t * utils_findBootstrapServer(lwm2m_context_t * contextP,
 #endif
 }
 
-int prv_isAltPathValid(char * altPath)
+int prv_isAltPathValid(const char * altPath)
 {
     int i;
 

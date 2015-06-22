@@ -186,7 +186,7 @@ void delete_observed_list(lwm2m_context_t * contextP);
 
 // defined in utils.c
 lwm2m_binding_t lwm2m_stringToBinding(uint8_t *buffer, size_t length);
-int prv_isAltPathValid(char * altPath);
+int prv_isAltPathValid(const char * altPath);
 #ifdef LWM2M_CLIENT_MODE
 lwm2m_server_t * prv_findServer(lwm2m_context_t * contextP, void * fromSessionH);
 lwm2m_server_t * utils_findBootstrapServer(lwm2m_context_t * contextP, void * fromSessionH);
