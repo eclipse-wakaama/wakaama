@@ -255,13 +255,16 @@ void lwm2m_resource_value_changed(lwm2m_context_t * contextP,
         obs_list_t * targetP;
         uint8_t * buffer = NULL;
         size_t length = 0;
+        lwm2m_media_type_t format;
 
-        result = object_read(contextP, &listP->item->uri, LWM2M_CONTENT_TEXT, &buffer, &length);
+        format = LWM2M_CONTENT_TEXT;
+        result = object_read(contextP, &listP->item->uri, &format, &buffer, &length);
         if (result == COAP_205_CONTENT)
         {
             coap_packet_t message[1];
 
             coap_init_message(message, COAP_TYPE_NON, COAP_205_CONTENT, 0);
+            coap_set_header_content_type(message, format);
             coap_set_payload(message, buffer, length);
 
             for (watcherP = listP->item->watcherList ; watcherP != NULL ; watcherP = watcherP->next)

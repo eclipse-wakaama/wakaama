@@ -369,10 +369,9 @@ lwm2m_data_t * lwm2m_data_new(int size)
     return dataP;
 }
 
-int lwm2m_data_parse(uint8_t * buffer,
-                     size_t bufferLen,
-                     lwm2m_media_type_t format,
-                     lwm2m_data_t ** dataP)
+static int prv_parseTLV(uint8_t * buffer,
+                        size_t bufferLen,
+                        lwm2m_data_t ** dataP)
 {
     lwm2m_tlv_type_t type;
     uint16_t id;
@@ -408,10 +407,9 @@ int lwm2m_data_parse(uint8_t * buffer,
         (*dataP)[size].id = id;
         if (type == LWM2M_TYPE_OBJECT_INSTANCE || type == LWM2M_TYPE_MULTIPLE_RESOURCE)
         {
-            (*dataP)[size].length = lwm2m_data_parse(buffer + index + dataIndex,
-                                                    dataLen,
-                                                    format,
-                                                    (lwm2m_data_t **)&((*dataP)[size].value));
+            (*dataP)[size].length = prv_parseTLV(buffer + index + dataIndex,
+                                                 dataLen,
+                                                 (lwm2m_data_t **)&((*dataP)[size].value));
             if ((*dataP)[size].length == 0)
             {
                 lwm2m_data_free(size + 1, *dataP);
@@ -429,6 +427,34 @@ int lwm2m_data_parse(uint8_t * buffer,
     }
 
     return size;
+}
+
+int lwm2m_data_parse(uint8_t * buffer,
+                     size_t bufferLen,
+                     lwm2m_media_type_t format,
+                     lwm2m_data_t ** dataP)
+{
+    switch (format)
+    {
+    case LWM2M_CONTENT_TEXT:
+    case LWM2M_CONTENT_OPAQUE:
+        *dataP = lwm2m_data_new(1);
+        if (*dataP == NULL) return 0;
+        (*dataP)->length = bufferLen;
+        (*dataP)->value = buffer;
+        (*dataP)->flags = LWM2M_TLV_FLAG_STATIC_DATA;
+        return 1;
+
+    case LWM2M_CONTENT_TLV:
+        return prv_parseTLV(buffer, bufferLen, dataP);
+
+    case LWM2M_CONTENT_JSON:
+        // TODO: implement
+        return 0;
+
+    default:
+        return 0;
+    }
 }
 
 static int prv_getLength(int size,
@@ -473,10 +499,9 @@ static int prv_getLength(int size,
 }
 
 
-int lwm2m_data_serialize(int size,
-                         lwm2m_data_t * dataP,
-                         lwm2m_media_type_t format,
-                         uint8_t ** bufferP)
+static int prv_serializeTLV(int size,
+                            lwm2m_data_t * dataP,
+                            uint8_t ** bufferP)
 {
     int length;
     int index;
@@ -502,7 +527,7 @@ int lwm2m_data_serialize(int size,
                 uint8_t * tmpBuffer;
                 int tmpLength;
 
-                tmpLength = lwm2m_data_serialize(dataP[i].length, (lwm2m_data_t *)dataP[i].value, format, &tmpBuffer);
+                tmpLength = prv_serializeTLV(dataP[i].length, (lwm2m_data_t *)dataP[i].value, &tmpBuffer);
                 if (tmpLength == 0)
                 {
                     length = 0;
@@ -546,6 +571,44 @@ int lwm2m_data_serialize(int size,
         lwm2m_free(*bufferP);
     }
     return length;
+}
+
+int lwm2m_data_serialize(int size,
+                         lwm2m_data_t * dataP,
+                         lwm2m_media_type_t * formatP,
+                         uint8_t ** bufferP)
+{
+
+    // Check format
+    if (*formatP == LWM2M_CONTENT_TEXT
+     || *formatP == LWM2M_CONTENT_OPAQUE)
+    {
+        if ((size != 1)
+         || (dataP->type != LWM2M_TYPE_RESOURCE))
+        {
+            *formatP = LWM2M_CONTENT_TLV;
+        }
+    }
+
+    switch (*formatP)
+    {
+    case LWM2M_CONTENT_TEXT:
+    case LWM2M_CONTENT_OPAQUE:
+        *bufferP = (uint8_t *)lwm2m_malloc(dataP->length);
+        if (*bufferP == NULL) return 0;
+        memcpy(*bufferP, dataP->value, dataP->length);
+        return dataP->length;
+
+    case LWM2M_CONTENT_TLV:
+        return prv_serializeTLV(size, dataP, bufferP);
+
+    case LWM2M_CONTENT_JSON:
+        // TODO: implement
+        return 0;
+
+    default:
+        return 0;
+    }
 }
 
 void lwm2m_data_free(int size,

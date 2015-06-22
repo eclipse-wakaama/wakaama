@@ -86,7 +86,7 @@ static lwm2m_object_t * prv_find_object(lwm2m_context_t * contextP,
 
 coap_status_t object_read(lwm2m_context_t * contextP,
                           lwm2m_uri_t * uriP,
-                          lwm2m_media_type_t format,
+                          lwm2m_media_type_t * formatP,
                           uint8_t ** bufferP,
                           size_t * lengthP)
 {
@@ -148,7 +148,7 @@ coap_status_t object_read(lwm2m_context_t * contextP,
 
             if (result == COAP_205_CONTENT)
             {
-                *lengthP = lwm2m_data_serialize(size, dataP, format, bufferP);
+                *lengthP = lwm2m_data_serialize(size, dataP, formatP, bufferP);
                 if (*lengthP == 0) result = COAP_500_INTERNAL_SERVER_ERROR;
             }
             lwm2m_data_free(size, dataP);
@@ -188,7 +188,7 @@ coap_status_t object_read(lwm2m_context_t * contextP,
         }
         else
         {
-            *lengthP = lwm2m_data_serialize(size, dataP, format, bufferP);
+            *lengthP = lwm2m_data_serialize(size, dataP, formatP, bufferP);
             if (*lengthP == 0) result = COAP_500_INTERNAL_SERVER_ERROR;
         }
     }

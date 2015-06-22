@@ -52,6 +52,25 @@
 #include <stdio.h>
 
 
+static lwm2m_media_type_t prv_convertMediaType(coap_content_type_t type)
+{
+    // Here we just check the content type is a valid value for LWM2M
+    switch(type)
+    {
+    case TEXT_PLAIN:
+        return LWM2M_CONTENT_TEXT;
+    case APPLICATION_OCTET_STREAM:
+        return LWM2M_CONTENT_OPAQUE;
+    case LWM2M_CONTENT_TLV:
+        return LWM2M_CONTENT_TLV;
+    case LWM2M_CONTENT_JSON:
+        return LWM2M_CONTENT_JSON;
+
+    default:
+        return LWM2M_CONTENT_TEXT;
+    }
+}
+
 #ifdef LWM2M_CLIENT_MODE
 coap_status_t handle_dm_request(lwm2m_context_t * contextP,
                                 lwm2m_uri_t * uriP,
@@ -61,9 +80,13 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
 {
     coap_status_t result;
     lwm2m_server_t * serverP = NULL;
+    lwm2m_media_type_t format;
+
 #ifdef LWM2M_BOOTSTRAP
     lwm2m_server_t * bsServerP = NULL;
 #endif
+
+    format = prv_convertMediaType(message->content_type);
 
     serverP = prv_findServer(contextP, fromSessionH);
     if (NULL == serverP)
@@ -112,7 +135,7 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
             uint8_t * buffer = NULL;
             size_t length = 0;
 
-            result = object_read(contextP, uriP, message->content_type, &buffer, &length);
+            result = object_read(contextP, uriP, &format, &buffer, &length);
             if (COAP_205_CONTENT == result)
             {
                 if (IS_OPTION(message, COAP_OPTION_OBSERVE))
@@ -121,6 +144,7 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
                 }
                 if (COAP_205_CONTENT == result)
                 {
+                    coap_set_header_content_type(response, format);
                     coap_set_payload(response, buffer, length);
                     // lwm2m_handle_packet will free buffer
                 }
@@ -140,7 +164,11 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
 #endif
             if (!LWM2M_URI_IS_SET_INSTANCE(uriP))
             {
-                result = object_create(contextP, uriP, message->content_type, message->payload, message->payload_len);
+                lwm2m_media_type_t format;
+
+                format = prv_convertMediaType(message->content_type);
+
+                result = object_create(contextP, uriP, format, message->payload, message->payload_len);
                 if (result == COAP_201_CREATED)
                 {
                     //longest uri is /65535/65535 = 12 + 1 (null) chars
@@ -164,11 +192,11 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
             {
                 if (object_isInstanceNew(contextP, uriP->objectId, uriP->instanceId))
                 {
-                    result = object_create(contextP, uriP, message->content_type, message->payload, message->payload_len);
+                    result = object_create(contextP, uriP, format, message->payload, message->payload_len);
                 }
                 else
                 {
-                    result = object_write(contextP, uriP, message->content_type, message->payload, message->payload_len);
+                    result = object_write(contextP, uriP, format, message->payload, message->payload_len);
                 }
             }
             else
@@ -185,7 +213,7 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
 #ifdef LWM2M_BOOTSTRAP
                 if (contextP->bsState == BOOTSTRAP_PENDING && object_isInstanceNew(contextP, uriP->objectId, uriP->instanceId))
                 {
-                    result = object_create(contextP, uriP, message->content_type, message->payload, message->payload_len);
+                    result = object_create(contextP, uriP, format, message->payload, message->payload_len);
                     if (COAP_201_CREATED == result)
                     {
                         result = COAP_204_CHANGED;
@@ -194,7 +222,7 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
                 else
 #endif
                 {
-                    result = object_write(contextP, uriP, message->content_type, message->payload, message->payload_len);
+                    result = object_write(contextP, uriP, format, message->payload, message->payload_len);
                 }
             }
             else
