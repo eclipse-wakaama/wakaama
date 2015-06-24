@@ -587,7 +587,11 @@ int lwm2m_data_serialize(int size,
         if ((size != 1)
          || (dataP->type != LWM2M_TYPE_RESOURCE))
         {
+#ifdef LWM2M_SUPPORT_JSON
+            *formatP = LWM2M_CONTENT_JSON;
+#else
             *formatP = LWM2M_CONTENT_TLV;
+#endif
         }
     }
 

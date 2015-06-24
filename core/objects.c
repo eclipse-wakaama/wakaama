@@ -383,15 +383,20 @@ int prv_getRegisterPayload(lwm2m_context_t * contextP,
      && (contextP->altPath[0] != 0))
     {
         result = snprintf((char *)buffer, length, REG_ALT_PATH_LINK, contextP->altPath);
-        if (result > 0 && result <= length)
-        {
-            index = result;
-        }
-        else
-        {
-            return 0;
-        }
     }
+    else
+    {
+        result = snprintf((char *)buffer, length, REG_ALT_PATH_LINK, "/");
+    }
+    if (result > 0 && result <= length)
+    {
+        index = result;
+    }
+    else
+    {
+        return 0;
+    }
+
     for (i = 0 ; i < contextP->numObject ; i++)
     {
         if (contextP->objectList[i]->objID == LWM2M_SECURITY_OBJECT_ID) continue;

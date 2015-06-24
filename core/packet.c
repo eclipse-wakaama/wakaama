@@ -203,7 +203,7 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
         {
             LOG("  Parsed: ver %u, type %u, tkl %u, code %u.%.2u, mid %u\r\n", message->version, message->type, message->token_len, message->code >> 5, message->code & 0x1F, message->mid);
         }
-        LOG("  Payload: %.*s\r\n\n", message->payload_len, message->payload);
+        LOG("  Content type: %d\r\n  Payload: %.*s\r\n\n", message->content_type, message->payload_len, message->payload);
 #endif
         if (message->code >= COAP_GET && message->code <= COAP_DELETE)
         {

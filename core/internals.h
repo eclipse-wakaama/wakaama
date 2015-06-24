@@ -70,8 +70,13 @@
 
 #define LWM2M_DEFAULT_LIFETIME  86400
 
+#ifdef LWM2M_SUPPORT_JSON
+#define REG_LWM2M_RESOURCE_TYPE     ">;rt=\"oma.lwm2m\";ct=1543,"   // Temporary value
+#define REG_LWM2M_RESOURCE_TYPE_LEN 25
+#else
 #define REG_LWM2M_RESOURCE_TYPE     ">;rt=\"oma.lwm2m\","
 #define REG_LWM2M_RESOURCE_TYPE_LEN 17
+#endif
 #define REG_ALT_PATH_LINK           "<%s"REG_LWM2M_RESOURCE_TYPE
 #define REG_OBJECT_PATH             "<%s/%hu>,"
 #define REG_OBJECT_INSTANCE_PATH    "<%s/%hu/%hu>,"
