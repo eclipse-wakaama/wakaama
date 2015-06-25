@@ -189,6 +189,7 @@ static void prv_register(lwm2m_context_t * contextP,
 
         coap_set_header_uri_path(transaction->message, "/"URI_REGISTRATION_SEGMENT);
         coap_set_header_uri_query(transaction->message, query);
+        coap_set_header_content_type(transaction->message, LWM2M_CONTENT_LINK);
         coap_set_payload(transaction->message, payload, payload_length);
 
         transaction->callback = prv_handleRegistrationReply;
@@ -775,6 +776,12 @@ coap_status_t handle_registration_request(lwm2m_context_t * contextP,
         {
             return COAP_400_BAD_REQUEST;
         }
+        if (message->content_type != LWM2M_CONTENT_LINK
+         && message->content_type != LWM2M_CONTENT_TEXT)
+        {
+            return COAP_400_BAD_REQUEST;
+        }
+
         objects = prv_decodeRegisterPayload(message->payload, message->payload_len, &altPath);
 
         switch (uriP->flag & LWM2M_URI_MASK_ID)

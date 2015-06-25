@@ -267,6 +267,7 @@ typedef struct
 typedef enum
 {
     LWM2M_CONTENT_TEXT      = 0,        // Also used as undefined
+    LWM2M_CONTENT_LINK      = 40,
     LWM2M_CONTENT_OPAQUE    = 42,
     LWM2M_CONTENT_TLV       = 1542,     // Temporary value
     LWM2M_CONTENT_JSON      = 1543      // Temporary value
