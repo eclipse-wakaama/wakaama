@@ -145,6 +145,10 @@ static coap_status_t handle_request(lwm2m_context_t * contextP,
             result = COAP_IGNORE;
         }
         break;
+
+    case LWM2M_URI_FLAG_BOOTSTRAP:
+        result = handle_bootstrap_finish(contextP, fromSessionH);
+        break;
 #endif
 #endif
 

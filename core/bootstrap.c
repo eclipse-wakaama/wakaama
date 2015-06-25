@@ -217,6 +217,18 @@ void update_bootstrap_state(lwm2m_context_t * context,
         }
     }
 }
+
+coap_status_t handle_bootstrap_finish(lwm2m_context_t * context,
+                                      void * fromSessionH)
+{
+    if (context->bsState == BOOTSTRAP_PENDING)
+    {
+        context->bsState = BOOTSTRAP_FINISHED;
+        return COAP_204_CHANGED;
+    }
+
+    return COAP_IGNORE;
+}
 #endif
 
 #endif
@@ -376,4 +388,34 @@ int lwm2m_bootstrap_write(lwm2m_context_t * contextP,
 
     return transaction_send(contextP, transaction);
 }
+
+int lwm2m_bootstrap_finish(lwm2m_context_t * contextP,
+                           void * sessionH)
+{
+    lwm2m_transaction_t * transaction;
+    bs_data_t * dataP;
+
+    transaction = transaction_new(COAP_TYPE_CON, COAP_PUT, NULL, NULL, contextP->nextMID++, 4, NULL, ENDPOINT_UNKNOWN, sessionH);
+    if (transaction == NULL) return INTERNAL_SERVER_ERROR_5_00;
+
+    coap_set_header_uri_path(transaction->message, "/"URI_BOOTSTRAP_SEGMENT);
+
+    dataP = (bs_data_t *)lwm2m_malloc(sizeof(bs_data_t));
+    if (dataP == NULL)
+    {
+        transaction_free(transaction);
+        return COAP_500_INTERNAL_SERVER_ERROR;
+    }
+    dataP->isUri = false;
+    dataP->callback = contextP->bootstrapCallback;
+    dataP->userData = contextP->bootstrapUserData;
+
+    transaction->callback = bs_result_callback;
+    transaction->userData = (void *)dataP;
+
+    contextP->transactionList = (lwm2m_transaction_t *)LWM2M_LIST_ADD(contextP->transactionList, transaction);
+
+    return transaction_send(contextP, transaction);
+}
+
 #endif

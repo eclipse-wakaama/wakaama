@@ -253,6 +253,10 @@ static void prv_send_command(internal_data_t * dataP,
     }
         break;
 
+    case BS_FINISH:
+        res = lwm2m_bootstrap_finish(dataP->lwm2mH, endP->handle);
+        break;
+
     default:
         return;
     }

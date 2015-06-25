@@ -22,7 +22,8 @@ typedef enum
 {
     BS_DELETE = 0,
     BS_WRITE_SECURITY,
-    BS_WRITE_SERVER
+    BS_WRITE_SERVER,
+    BS_FINISH
 } bs_operation_t;
 
 typedef struct
