@@ -344,7 +344,6 @@ static void prv_obsRequestCallback(lwm2m_transaction_t * transacP,
     }
     else
     {
-        observationP->clientP->observationList = (lwm2m_observation_t *)LWM2M_LIST_ADD(observationP->clientP->observationList, observationP);
         observationP->callback(((lwm2m_client_t*)transacP->peerP)->internalID,
                                &observationP->uri,
                                0,
@@ -390,6 +389,8 @@ int lwm2m_observe(lwm2m_context_t * contextP,
         lwm2m_free(observationP);
         return COAP_500_INTERNAL_SERVER_ERROR;
     }
+
+    observationP->clientP->observationList = (lwm2m_observation_t *)LWM2M_LIST_ADD(observationP->clientP->observationList, observationP);
 
     coap_set_header_observe(transactionP->message, 0);
     coap_set_header_token(transactionP->message, token, sizeof(token));
