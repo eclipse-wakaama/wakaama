@@ -319,6 +319,21 @@ static void prv_obsRequestCallback(lwm2m_transaction_t * transacP,
     coap_packet_t * packet = (coap_packet_t *)message;
     uint8_t code;
 
+    switch (observationP->status)
+    {
+    case STATE_DEREG_PENDING:
+        // Observation was canceled by the user.
+        observation_remove(((lwm2m_client_t*)transacP->peerP), observationP);
+        return;
+
+    case STATE_REG_PENDING:
+        observationP->status = STATE_REGISTERED;
+        break;
+
+    default:
+        break;
+    }
+
     if (message == NULL)
     {
         code = COAP_503_SERVICE_UNAVAILABLE;
@@ -375,6 +390,7 @@ int lwm2m_observe(lwm2m_context_t * contextP,
     observationP->id = lwm2m_list_newId((lwm2m_list_t *)clientP->observationList);
     memcpy(&observationP->uri, uriP, sizeof(lwm2m_uri_t));
     observationP->clientP = clientP;
+    observationP->status = STATE_REG_PENDING;
     observationP->callback = callback;
     observationP->userData = userData;
 
@@ -418,7 +434,20 @@ int lwm2m_observe_cancel(lwm2m_context_t * contextP,
     observationP = prv_findObservationByURI(clientP, uriP);
     if (observationP == NULL) return COAP_404_NOT_FOUND;
 
-    observation_remove(clientP, observationP);
+    switch (observationP->status)
+    {
+    case STATE_REGISTERED:
+        observation_remove(clientP, observationP);
+        break;
+
+    case STATE_REG_PENDING:
+        observationP->status = STATE_DEREG_PENDING;
+        break;
+
+    default:
+        // Should not happen
+        break;
+    }
 
     return 0;
 }
