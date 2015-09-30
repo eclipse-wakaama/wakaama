@@ -671,6 +671,7 @@ static int prv_serializeValue(lwm2m_data_t * tlvP,
         break;
 
     case LWM2M_TYPE_INTEGER:
+    case LWM2M_TYPE_TIME:
     {
         int64_t value;
 
@@ -713,7 +714,6 @@ static int prv_serializeValue(lwm2m_data_t * tlvP,
         res += head;
         break;
 
-    case LWM2M_TYPE_TIME:
     case LWM2M_TYPE_OBJECT_LINK:
         // TODO: implement
         return -1;

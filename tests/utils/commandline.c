@@ -290,6 +290,52 @@ void output_tlv(FILE * stream,
     }
 }
 
+void output_data(FILE * stream,
+                 lwm2m_media_type_t format,
+                 uint8_t * data,
+                 int dataLength,
+                 int indent)
+{
+    int i;
+
+    if (data == NULL) return;
+
+    print_indent(stream, indent);
+    fprintf(stream, "%d bytes received of type ", dataLength);
+    switch (format)
+    {
+    case LWM2M_CONTENT_TEXT:
+        fprintf(stream, "text/plain:\r\n");
+        output_buffer(stream, data, dataLength, indent);
+        break;
+
+    case LWM2M_CONTENT_OPAQUE:
+        fprintf(stream, "application/octet-stream:\r\n");
+        output_buffer(stream, data, dataLength, indent);
+        break;
+
+    case LWM2M_CONTENT_TLV:
+        fprintf(stream, "application/vnd.oma.lwm2m+tlv:\r\n");
+        output_tlv(stream, data, dataLength, indent);
+        break;
+
+    case LWM2M_CONTENT_JSON:
+        fprintf(stream, "application/vnd.oma.lwm2m+json:\r\n");
+        print_indent(stream, indent);
+        for (i = 0 ; i < dataLength ; i++)
+        {
+            fprintf(stream, "%c", data[i]);
+        }
+        fprintf(stream, "\n");
+        break;
+
+    default:
+        fprintf(stream, "Unknown (%d):\r\n", format);
+        output_buffer(stream, data, dataLength, indent);
+        break;
+    }
+}
+
 void dump_tlv(FILE * stream,
               int size,
               lwm2m_data_t * dataP,

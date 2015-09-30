@@ -341,7 +341,7 @@ static void prv_obsRequestCallback(lwm2m_transaction_t * transacP,
         observationP->callback(((lwm2m_client_t*)transacP->peerP)->internalID,
                                &observationP->uri,
                                code,
-                               NULL, 0,
+                               LWM2M_CONTENT_TEXT, NULL, 0,
                                observationP->userData);
         observation_remove(((lwm2m_client_t*)transacP->peerP), observationP);
     }
@@ -351,7 +351,7 @@ static void prv_obsRequestCallback(lwm2m_transaction_t * transacP,
         observationP->callback(((lwm2m_client_t*)transacP->peerP)->internalID,
                                &observationP->uri,
                                0,
-                               packet->payload, packet->payload_len,
+                               packet->content_type, packet->payload, packet->payload_len,
                                observationP->userData);
     }
 }
@@ -464,7 +464,7 @@ bool handle_observe_notify(lwm2m_context_t * contextP,
         observationP->callback(clientID,
                                &observationP->uri,
                                (int)count,
-                               message->payload, message->payload_len,
+                               message->content_type, message->payload, message->payload_len,
                                observationP->userData);
     }
     return true;

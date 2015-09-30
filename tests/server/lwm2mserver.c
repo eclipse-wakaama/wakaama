@@ -192,9 +192,11 @@ static int prv_read_id(char * buffer,
     return nb;
 }
 
+
 static void prv_result_callback(uint16_t clientID,
                                 lwm2m_uri_t * uriP,
                                 int status,
+                                lwm2m_media_type_t format,
                                 uint8_t * data,
                                 int dataLength,
                                 void * userData)
@@ -210,18 +212,7 @@ static void prv_result_callback(uint16_t clientID,
     print_status(stdout, status);
     fprintf(stdout, "\r\n");
 
-    if (data != NULL)
-    {
-        fprintf(stdout, "%d bytes received:\r\n", dataLength);
-        if (LWM2M_URI_IS_SET_RESOURCE(uriP))
-        {
-            output_buffer(stdout, data, dataLength, 1);
-        }
-        else
-        {
-            output_tlv(stdout, data, dataLength, 1);
-        }
-    }
+    output_data(stdout, format, data, dataLength, 1);
 
     fprintf(stdout, "\r\n> ");
     fflush(stdout);
@@ -230,6 +221,7 @@ static void prv_result_callback(uint16_t clientID,
 static void prv_notify_callback(uint16_t clientID,
                                 lwm2m_uri_t * uriP,
                                 int count,
+                                lwm2m_media_type_t format,
                                 uint8_t * data,
                                 int dataLength,
                                 void * userData)
@@ -243,11 +235,7 @@ static void prv_notify_callback(uint16_t clientID,
             fprintf(stdout, "/%d", uriP->resourceId);
     fprintf(stdout, " number %d\r\n", count);
 
-    if (data != NULL)
-    {
-        fprintf(stdout, "%d bytes received:\r\n", dataLength);
-        output_buffer(stdout, data, dataLength, 0);
-    }
+    output_data(stdout, format, data, dataLength, 1);
 
     fprintf(stdout, "\r\n> ");
     fflush(stdout);
@@ -544,6 +532,7 @@ syntax_error:
 static void prv_monitor_callback(uint16_t clientID,
                                  lwm2m_uri_t * uriP,
                                  int status,
+                                 lwm2m_media_type_t format,
                                  uint8_t * data,
                                  int dataLength,
                                  void * userData)

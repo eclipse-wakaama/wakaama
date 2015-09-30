@@ -411,7 +411,7 @@ typedef struct _lwm2m_server_
  *
  * When used with an observe, if 'data' is not nil, 'status' holds the observe counter.
  */
-typedef void (*lwm2m_result_callback_t) (uint16_t clientID, lwm2m_uri_t * uriP, int status, uint8_t * data, int dataLength, void * userData);
+typedef void (*lwm2m_result_callback_t) (uint16_t clientID, lwm2m_uri_t * uriP, int status, lwm2m_media_type_t format, uint8_t * data, int dataLength, void * userData);
 
 /*
  * LWM2M Observations
