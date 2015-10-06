@@ -62,6 +62,12 @@ extern "C" {
 #include <stdbool.h>
 #include <sys/time.h>
 
+#ifdef LWM2M_SERVER_MODE
+#ifndef LWM2M_SUPPORT_JSON
+#define LWM2M_SUPPORT_JSON
+#endif
+#endif
+
 #ifndef LWM2M_EMBEDDED_MODE
 #ifdef MEMORY_TRACE
 #include "memtrace.h"
@@ -208,10 +214,10 @@ size_t lwm2m_boolToPlainText(bool data, uint8_t ** bufferP);
 #define LWM2M_TLV_HEADER_MAX_LENGTH 6
 
 /*
- * Bitmask for the lwm2m_tlv_t::flag
- * LWM2M_TLV_FLAG_STATIC_DATA specifies that lwm2m_tlv_t::value
+ * Bitmask for the lwm2m_data_t::flag
+ * LWM2M_TLV_FLAG_STATIC_DATA specifies that lwm2m_data_t::value
  * points to static memory and must no be freeed by the caller.
- * LWM2M_TLV_FLAG_TEXT_FORMAT specifies that lwm2m_tlv_t::value
+ * LWM2M_TLV_FLAG_TEXT_FORMAT specifies that lwm2m_data_t::value
  * is expressed or requested in plain text format.
  */
 #define LWM2M_TLV_FLAG_STATIC_DATA   0x01
@@ -256,20 +262,29 @@ typedef struct
     uint16_t    id;
     size_t      length;
     uint8_t *   value;
-} lwm2m_tlv_t;
+} lwm2m_data_t;
 
-lwm2m_tlv_t * lwm2m_tlv_new(int size);
-int lwm2m_tlv_parse(uint8_t * buffer, size_t bufferLen, lwm2m_tlv_t ** dataP);
-int lwm2m_tlv_serialize(int size, lwm2m_tlv_t * tlvP, uint8_t ** bufferP);
-void lwm2m_tlv_free(int size, lwm2m_tlv_t * tlvP);
+typedef enum
+{
+    LWM2M_CONTENT_TEXT      = 0,        // Also used as undefined
+    LWM2M_CONTENT_LINK      = 40,
+    LWM2M_CONTENT_OPAQUE    = 42,
+    LWM2M_CONTENT_TLV       = 1542,     // Temporary value
+    LWM2M_CONTENT_JSON      = 1543      // Temporary value
+} lwm2m_media_type_t;
 
-void lwm2m_tlv_encode_int(int64_t data, lwm2m_tlv_t * tlvP);
-int lwm2m_tlv_decode_int(lwm2m_tlv_t * tlvP, int64_t * dataP);
-void lwm2m_tlv_encode_float(double data, lwm2m_tlv_t * tlvP);
-int lwm2m_tlv_decode_float(lwm2m_tlv_t * tlvP, double * dataP);
-void lwm2m_tlv_encode_bool(bool data, lwm2m_tlv_t * tlvP);
-int lwm2m_tlv_decode_bool(lwm2m_tlv_t * tlvP, bool * dataP);
-void lwm2m_tlv_include(lwm2m_tlv_t * subTlvP, size_t count, lwm2m_tlv_t * tlvP);
+lwm2m_data_t * lwm2m_data_new(int size);
+int lwm2m_data_parse(uint8_t * buffer, size_t bufferLen, lwm2m_media_type_t format, lwm2m_data_t ** dataP);
+int lwm2m_data_serialize(int size, lwm2m_data_t * dataP, lwm2m_media_type_t * formatP, uint8_t ** bufferP);
+void lwm2m_data_free(int size, lwm2m_data_t * dataP);
+
+void lwm2m_data_encode_int(int64_t value, lwm2m_data_t * dataP);
+int lwm2m_data_decode_int(lwm2m_data_t * dataP, int64_t * valueP);
+void lwm2m_data_encode_float(double value, lwm2m_data_t * dataP);
+int lwm2m_data_decode_float(lwm2m_data_t * dataP, double * valueP);
+void lwm2m_data_encode_bool(bool value, lwm2m_data_t * dataP);
+int lwm2m_data_decode_bool(lwm2m_data_t * dataP, bool * valueP);
+void lwm2m_data_include(lwm2m_data_t * subDataP, size_t count, lwm2m_data_t * dataP);
 
 
 /*
@@ -329,10 +344,10 @@ int lwm2m_stringToUri(const char * buffer, size_t buffer_len, lwm2m_uri_t * uriP
 
 typedef struct _lwm2m_object_t lwm2m_object_t;
 
-typedef uint8_t (*lwm2m_read_callback_t) (uint16_t instanceId, int * numDataP, lwm2m_tlv_t ** dataArrayP, lwm2m_object_t * objectP);
-typedef uint8_t (*lwm2m_write_callback_t) (uint16_t instanceId, int numData, lwm2m_tlv_t * dataArray, lwm2m_object_t * objectP);
+typedef uint8_t (*lwm2m_read_callback_t) (uint16_t instanceId, int * numDataP, lwm2m_data_t ** dataArrayP, lwm2m_object_t * objectP);
+typedef uint8_t (*lwm2m_write_callback_t) (uint16_t instanceId, int numData, lwm2m_data_t * dataArray, lwm2m_object_t * objectP);
 typedef uint8_t (*lwm2m_execute_callback_t) (uint16_t instanceId, uint16_t resourceId, uint8_t * buffer, int length, lwm2m_object_t * objectP);
-typedef uint8_t (*lwm2m_create_callback_t) (uint16_t instanceId, int numData, lwm2m_tlv_t * dataArray, lwm2m_object_t * objectP);
+typedef uint8_t (*lwm2m_create_callback_t) (uint16_t instanceId, int numData, lwm2m_data_t * dataArray, lwm2m_object_t * objectP);
 typedef uint8_t (*lwm2m_delete_callback_t) (uint16_t instanceId, lwm2m_object_t * objectP);
 typedef void (*lwm2m_close_callback_t) (lwm2m_object_t * objectP);
 
@@ -396,7 +411,7 @@ typedef struct _lwm2m_server_
  *
  * When used with an observe, if 'data' is not nil, 'status' holds the observe counter.
  */
-typedef void (*lwm2m_result_callback_t) (uint16_t clientID, lwm2m_uri_t * uriP, int status, uint8_t * data, int dataLength, void * userData);
+typedef void (*lwm2m_result_callback_t) (uint16_t clientID, lwm2m_uri_t * uriP, int status, lwm2m_media_type_t format, uint8_t * data, int dataLength, void * userData);
 
 /*
  * LWM2M Observations

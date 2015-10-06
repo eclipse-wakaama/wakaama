@@ -189,6 +189,7 @@ static void prv_register(lwm2m_context_t * contextP,
 
         coap_set_header_uri_path(transaction->message, "/"URI_REGISTRATION_SEGMENT);
         coap_set_header_uri_query(transaction->message, query);
+        coap_set_header_content_type(transaction->message, LWM2M_CONTENT_LINK);
         coap_set_payload(transaction->message, payload, payload_length);
 
         transaction->callback = prv_handleRegistrationReply;
@@ -775,6 +776,12 @@ coap_status_t handle_registration_request(lwm2m_context_t * contextP,
         {
             return COAP_400_BAD_REQUEST;
         }
+        if (message->content_type != LWM2M_CONTENT_LINK
+         && message->content_type != LWM2M_CONTENT_TEXT)
+        {
+            return COAP_400_BAD_REQUEST;
+        }
+
         objects = prv_decodeRegisterPayload(message->payload, message->payload_len, &altPath);
 
         switch (uriP->flag & LWM2M_URI_MASK_ID)
@@ -846,7 +853,7 @@ coap_status_t handle_registration_request(lwm2m_context_t * contextP,
 
             if (contextP->monitorCallback != NULL)
             {
-                contextP->monitorCallback(clientP->internalID, NULL, CREATED_2_01, NULL, 0, contextP->monitorUserData);
+                contextP->monitorCallback(clientP->internalID, NULL, CREATED_2_01, LWM2M_CONTENT_TEXT, NULL, 0, contextP->monitorUserData);
             }
             result = COAP_201_CREATED;
             break;
@@ -898,7 +905,7 @@ coap_status_t handle_registration_request(lwm2m_context_t * contextP,
                         observationP->callback(clientP->internalID,
                                                &observationP->uri,
                                                COAP_202_DELETED,
-                                               NULL, 0,
+                                               LWM2M_CONTENT_TEXT, NULL, 0,
                                                observationP->userData);
                         observation_remove(clientP, observationP);
                     }
@@ -911,7 +918,7 @@ coap_status_t handle_registration_request(lwm2m_context_t * contextP,
                                 observationP->callback(clientP->internalID,
                                                        &observationP->uri,
                                                        COAP_202_DELETED,
-                                                       NULL, 0,
+                                                       LWM2M_CONTENT_TEXT, NULL, 0,
                                                        observationP->userData);
                                 observation_remove(clientP, observationP);
                             }
@@ -929,7 +936,7 @@ coap_status_t handle_registration_request(lwm2m_context_t * contextP,
 
             if (contextP->monitorCallback != NULL)
             {
-                contextP->monitorCallback(clientP->internalID, NULL, COAP_204_CHANGED, NULL, 0, contextP->monitorUserData);
+                contextP->monitorCallback(clientP->internalID, NULL, COAP_204_CHANGED, LWM2M_CONTENT_TEXT, NULL, 0, contextP->monitorUserData);
             }
             result = COAP_204_CHANGED;
             break;
@@ -950,7 +957,7 @@ coap_status_t handle_registration_request(lwm2m_context_t * contextP,
         if (clientP == NULL) return COAP_400_BAD_REQUEST;
         if (contextP->monitorCallback != NULL)
         {
-            contextP->monitorCallback(clientP->internalID, NULL, DELETED_2_02, NULL, 0, contextP->monitorUserData);
+            contextP->monitorCallback(clientP->internalID, NULL, DELETED_2_02, LWM2M_CONTENT_TEXT, NULL, 0, contextP->monitorUserData);
         }
         prv_freeClient(clientP);
         result = COAP_202_DELETED;

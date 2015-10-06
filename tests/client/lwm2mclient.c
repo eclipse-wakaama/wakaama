@@ -132,32 +132,32 @@ void handle_value_changed(lwm2m_context_t * lwm2mH,
     {
         if (object->writeFunc != NULL)
         {
-            lwm2m_tlv_t * tlvP;
+            lwm2m_data_t * dataP;
             int result;
             
-            tlvP = lwm2m_tlv_new(1);
-            if (tlvP == NULL)
+            dataP = lwm2m_data_new(1);
+            if (dataP == NULL)
             {
                 fprintf(stderr, "Internal allocation failure !\n");
                 return;
             }
-            tlvP->flags = LWM2M_TLV_FLAG_STATIC_DATA | LWM2M_TLV_FLAG_TEXT_FORMAT;
+            dataP->flags = LWM2M_TLV_FLAG_STATIC_DATA | LWM2M_TLV_FLAG_TEXT_FORMAT;
 #ifdef LWM2M_BOOTSTRAP
             if (lwm2mH->bsState == BOOTSTRAP_PENDING) {
-                tlvP->flags |= LWM2M_TLV_FLAG_BOOTSTRAPPING;
+                dataP->flags |= LWM2M_TLV_FLAG_BOOTSTRAPPING;
             }
 #endif
-            tlvP->id = uri->resourceId;
-            tlvP->length = valueLength;
-            tlvP->value = (uint8_t*) value;
+            dataP->id = uri->resourceId;
+            dataP->length = valueLength;
+            dataP->value = (uint8_t*) value;
 
-            result = object->writeFunc(uri->instanceId, 1, tlvP, object);
+            result = object->writeFunc(uri->instanceId, 1, dataP, object);
             if (COAP_405_METHOD_NOT_ALLOWED == result)
             {
                 switch (uri->objectId)
                 {
                 case LWM2M_DEVICE_OBJECT_ID:
-                    result = device_change(tlvP, object);
+                    result = device_change(dataP, object);
                     break;
                 default:
                     break;
@@ -173,7 +173,7 @@ void handle_value_changed(lwm2m_context_t * lwm2mH,
                 fprintf(stderr, "value changed!\n");
                 lwm2m_resource_value_changed(lwm2mH, uri);
             }
-            lwm2m_tlv_free(1, tlvP);
+            lwm2m_data_free(1, dataP);
             return;
         }
         else
@@ -372,10 +372,7 @@ static void prv_instance_dump(lwm2m_object_t * objectP,
                               uint16_t id)
 {
     int numData;
-    lwm2m_tlv_t * dataArray;
-    int size;
-    uint8_t * buffer;
-    int i;
+    lwm2m_data_t * dataArray;
     uint16_t res;
 
     numData = 0;
@@ -389,16 +386,6 @@ static void prv_instance_dump(lwm2m_object_t * objectP,
     }
 
     dump_tlv(stdout, numData, dataArray, 0);
-
-    size = lwm2m_tlv_serialize(numData, dataArray, &buffer);
-    printf("char objectTlv[%d] = {", size);
-    for (i = 0 ; i < size ; i++)
-    {
-        printf("0x%02X, ", buffer[i]);
-    }
-    printf("\b\b};\r\n");
-    lwm2m_tlv_free(numData, dataArray);
-    lwm2m_free(buffer);
 }
 
 

@@ -30,17 +30,17 @@ static void fill(uint8_t *data, int size) {
 static void test_tlv_new(void)
 {
    MEMORY_TRACE_BEFORE;
-   lwm2m_tlv_t *tlvP =  lwm2m_tlv_new(10);
-   CU_ASSERT_PTR_NOT_NULL(tlvP);
+   lwm2m_data_t *dataP =  lwm2m_data_new(10);
+   CU_ASSERT_PTR_NOT_NULL(dataP);
    MEMORY_TRACE_AFTER(<);
 }
 
 static void test_tlv_free(void)
 {
    MEMORY_TRACE_BEFORE;
-   lwm2m_tlv_t *tlvP =  lwm2m_tlv_new(10);
-   CU_ASSERT_PTR_NOT_NULL_FATAL(tlvP);
-   lwm2m_tlv_free(10, tlvP);
+   lwm2m_data_t *dataP =  lwm2m_data_new(10);
+   CU_ASSERT_PTR_NOT_NULL_FATAL(dataP);
+   lwm2m_data_free(10, dataP);
    MEMORY_TRACE_AFTER_EQ;
 }
 
@@ -233,26 +233,26 @@ static void test_tlv_parse()
     // Instance 11 {MultiResource 11 {ResourceInstance 0 {1, 2, 3}, ResourceInstance 1 {4, 5, 6, 7, 8, 9, ... } }
     uint8_t data3[174] = {0x08, 11, 171, 0x88, 77, 168, 0x43, 0, 1, 2, 3, 0x48, 1, 160, 4, 5, 6, 7, 8, 9};
     int result;
-    lwm2m_tlv_t *tlvP;
-    lwm2m_tlv_t *tlvSubP;
+    lwm2m_data_t *dataP;
+    lwm2m_data_t *tlvSubP;
 
-    result = lwm2m_tlv_parse(data1, sizeof(data1), &tlvP);
+    result = lwm2m_data_parse(data1, sizeof(data1), &dataP);
     CU_ASSERT_EQUAL(result, 1);
-    CU_ASSERT_PTR_NOT_NULL_FATAL(tlvP);
-    CU_ASSERT_EQUAL(tlvP->type, LWM2M_TYPE_RESOURCE);
-    CU_ASSERT_EQUAL(tlvP->id, 55);
-    CU_ASSERT_EQUAL(tlvP->length, 3);
-    CU_ASSERT(0 == memcmp(tlvP->value, &data1[2], 3));
-    lwm2m_tlv_free(result, tlvP);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(dataP);
+    CU_ASSERT_EQUAL(dataP->type, LWM2M_TYPE_RESOURCE);
+    CU_ASSERT_EQUAL(dataP->id, 55);
+    CU_ASSERT_EQUAL(dataP->length, 3);
+    CU_ASSERT(0 == memcmp(dataP->value, &data1[2], 3));
+    lwm2m_data_free(result, dataP);
 
-    result = lwm2m_tlv_parse(data2, sizeof(data2), &tlvP);
+    result = lwm2m_data_parse(data2, sizeof(data2), &dataP);
     CU_ASSERT_EQUAL(result, 1);
-    CU_ASSERT_PTR_NOT_NULL_FATAL(tlvP);
-    CU_ASSERT_EQUAL(tlvP->type, LWM2M_TYPE_OBJECT_INSTANCE);
-    CU_ASSERT_EQUAL(tlvP->id, 0x203);
-    CU_ASSERT_EQUAL(tlvP->length, 2);
-    CU_ASSERT_PTR_NOT_NULL_FATAL(tlvP->value);
-    tlvSubP = (lwm2m_tlv_t *)tlvP->value;
+    CU_ASSERT_PTR_NOT_NULL_FATAL(dataP);
+    CU_ASSERT_EQUAL(dataP->type, LWM2M_TYPE_OBJECT_INSTANCE);
+    CU_ASSERT_EQUAL(dataP->id, 0x203);
+    CU_ASSERT_EQUAL(dataP->length, 2);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(dataP->value);
+    tlvSubP = (lwm2m_data_t *)dataP->value;
 
     CU_ASSERT_EQUAL(tlvSubP[0].type, LWM2M_TYPE_RESOURCE);
     CU_ASSERT_EQUAL(tlvSubP[0].id, 55);
@@ -263,22 +263,22 @@ static void test_tlv_parse()
     CU_ASSERT_EQUAL(tlvSubP[1].id, 66);
     CU_ASSERT_EQUAL(tlvSubP[1].length, 9);
     CU_ASSERT(0 == memcmp(tlvSubP[1].value, &data2[12], 9));
-    lwm2m_tlv_free(result, tlvP);
+    lwm2m_data_free(result, dataP);
 
-    result = lwm2m_tlv_parse(data3, sizeof(data3), &tlvP);
+    result = lwm2m_data_parse(data3, sizeof(data3), &dataP);
     CU_ASSERT_EQUAL(result, 1);
-    CU_ASSERT_PTR_NOT_NULL_FATAL(tlvP);
-    CU_ASSERT_EQUAL(tlvP->type, LWM2M_TYPE_OBJECT_INSTANCE);
-    CU_ASSERT_EQUAL(tlvP->id, 11);
-    CU_ASSERT_EQUAL(tlvP->length, 1);
-    CU_ASSERT_PTR_NOT_NULL_FATAL(tlvP->value);
-    tlvSubP = (lwm2m_tlv_t *)tlvP->value;
+    CU_ASSERT_PTR_NOT_NULL_FATAL(dataP);
+    CU_ASSERT_EQUAL(dataP->type, LWM2M_TYPE_OBJECT_INSTANCE);
+    CU_ASSERT_EQUAL(dataP->id, 11);
+    CU_ASSERT_EQUAL(dataP->length, 1);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(dataP->value);
+    tlvSubP = (lwm2m_data_t *)dataP->value;
 
     CU_ASSERT_EQUAL(tlvSubP[0].type, LWM2M_TYPE_MULTIPLE_RESOURCE);
     CU_ASSERT_EQUAL(tlvSubP[0].id, 77);
     CU_ASSERT_EQUAL(tlvSubP[0].length, 2);
     CU_ASSERT_PTR_NOT_NULL_FATAL(tlvSubP[0].value);
-    tlvSubP = (lwm2m_tlv_t *)tlvSubP[0].value;
+    tlvSubP = (lwm2m_data_t *)tlvSubP[0].value;
 
     CU_ASSERT_EQUAL(tlvSubP[0].type, LWM2M_TYPE_RESOURCE_INSTANCE);
     CU_ASSERT_EQUAL(tlvSubP[0].id, 0);
@@ -289,7 +289,7 @@ static void test_tlv_parse()
     CU_ASSERT_EQUAL(tlvSubP[1].id, 1);
     CU_ASSERT_EQUAL(tlvSubP[1].length, 160);
     CU_ASSERT(0 == memcmp(tlvSubP[1].value, &data3[14], 160));
-    lwm2m_tlv_free(result, tlvP);
+    lwm2m_data_free(result, dataP);
 
     MEMORY_TRACE_AFTER_EQ;
 }
@@ -299,20 +299,20 @@ static void test_tlv_serialize()
     MEMORY_TRACE_BEFORE;
 
     int result;
-    lwm2m_tlv_t *tlvP;
-    lwm2m_tlv_t *tlvSubP;
+    lwm2m_data_t *dataP;
+    lwm2m_data_t *tlvSubP;
     uint8_t data1[] = {1, 2, 3, 4};
     uint8_t data2[170] = {5, 6, 7, 8};
     uint8_t* buffer;
 
-    tlvP =  lwm2m_tlv_new(1);
-    CU_ASSERT_PTR_NOT_NULL_FATAL(tlvP);
-    tlvP->type = LWM2M_TYPE_OBJECT_INSTANCE;
-    tlvP->id = 3;
-    tlvP->length = 2;
-    tlvSubP =  lwm2m_tlv_new(2);
+    dataP =  lwm2m_data_new(1);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(dataP);
+    dataP->type = LWM2M_TYPE_OBJECT_INSTANCE;
+    dataP->id = 3;
+    dataP->length = 2;
+    tlvSubP =  lwm2m_data_new(2);
     CU_ASSERT_PTR_NOT_NULL_FATAL(tlvSubP);
-    tlvP->value = (uint8_t *) tlvSubP;
+    dataP->value = (uint8_t *) tlvSubP;
 
     tlvSubP[0].type = LWM2M_TYPE_RESOURCE;
     tlvSubP[0].flags = LWM2M_TLV_FLAG_STATIC_DATA;
@@ -323,9 +323,9 @@ static void test_tlv_serialize()
     tlvSubP[1].type = LWM2M_TYPE_MULTIPLE_RESOURCE;
     tlvSubP[1].id = 77;
     tlvSubP[1].length = 1;
-    tlvSubP[1].value = (uint8_t *) lwm2m_tlv_new(1);
+    tlvSubP[1].value = (uint8_t *) lwm2m_data_new(1);
     CU_ASSERT_PTR_NOT_NULL_FATAL(tlvSubP[1].value);
-    tlvSubP = (lwm2m_tlv_t *)tlvSubP[1].value;
+    tlvSubP = (lwm2m_data_t *)tlvSubP[1].value;
 
     tlvSubP[0].type = LWM2M_TYPE_RESOURCE_INSTANCE;
     tlvSubP[0].flags = LWM2M_TLV_FLAG_STATIC_DATA;
@@ -333,7 +333,7 @@ static void test_tlv_serialize()
     tlvSubP[0].length = sizeof(data2);
     tlvSubP[0].value = data2;
 
-    result = lwm2m_tlv_serialize(1, tlvP, &buffer);
+    result = lwm2m_data_serialize(1, dataP, &buffer);
     CU_ASSERT_EQUAL(result, sizeof(data2) + sizeof(data1) + 11);
 
     CU_ASSERT_EQUAL(buffer[0], 0x08);
@@ -353,7 +353,7 @@ static void test_tlv_serialize()
     CU_ASSERT_EQUAL(buffer[10 + sizeof(data1)], sizeof(data2));
     CU_ASSERT(0 == memcmp(data2, &buffer[11 + sizeof(data1)], sizeof(data2)));
 
-    lwm2m_tlv_free(1, tlvP);
+    lwm2m_data_free(1, dataP);
     lwm2m_free(buffer);
 
     MEMORY_TRACE_AFTER_EQ;
@@ -364,43 +364,43 @@ static void test_tlv_encode_int(void)
    MEMORY_TRACE_BEFORE;
    uint8_t data1[] = { 0x92, 0x34 };
    uint8_t data2[] = { 0x7f, 0x34, 0x56, 0x78, 0x91, 0x22, 0x33, 0x44 };
-   lwm2m_tlv_t *tlvP =  lwm2m_tlv_new(10);
-   CU_ASSERT_PTR_NOT_NULL(tlvP);
+   lwm2m_data_t *dataP =  lwm2m_data_new(10);
+   CU_ASSERT_PTR_NOT_NULL(dataP);
 
-   lwm2m_tlv_encode_int(0x12, tlvP);
-   tlvP[0].type = LWM2M_TYPE_RESOURCE;
-   CU_ASSERT_EQUAL(tlvP[0].flags, 0);
-   CU_ASSERT_EQUAL(tlvP[0].length, 1);
-   CU_ASSERT_PTR_NOT_NULL_FATAL(tlvP[0].value);
-   CU_ASSERT_EQUAL(tlvP[0].value[0], 0x12);
+   lwm2m_data_encode_int(0x12, dataP);
+   dataP[0].type = LWM2M_TYPE_RESOURCE;
+   CU_ASSERT_EQUAL(dataP[0].flags, 0);
+   CU_ASSERT_EQUAL(dataP[0].length, 1);
+   CU_ASSERT_PTR_NOT_NULL_FATAL(dataP[0].value);
+   CU_ASSERT_EQUAL(dataP[0].value[0], 0x12);
 
-   tlvP[1].flags = LWM2M_TLV_FLAG_TEXT_FORMAT;
-   lwm2m_tlv_encode_int(18, &tlvP[1]);
-   tlvP[1].type = LWM2M_TYPE_RESOURCE;
-   CU_ASSERT_EQUAL(tlvP[1].length, 2);
-   CU_ASSERT_PTR_NOT_NULL_FATAL(tlvP[1].value);
-   CU_ASSERT(0 == memcmp(tlvP[1].value, "18", 2));
+   dataP[1].flags = LWM2M_TLV_FLAG_TEXT_FORMAT;
+   lwm2m_data_encode_int(18, &dataP[1]);
+   dataP[1].type = LWM2M_TYPE_RESOURCE;
+   CU_ASSERT_EQUAL(dataP[1].length, 2);
+   CU_ASSERT_PTR_NOT_NULL_FATAL(dataP[1].value);
+   CU_ASSERT(0 == memcmp(dataP[1].value, "18", 2));
 
-   lwm2m_tlv_encode_int(-0x1234, &tlvP[2]);
-   tlvP[2].type = LWM2M_TYPE_RESOURCE;
-   CU_ASSERT_EQUAL(tlvP[2].length, 2);
-   CU_ASSERT_PTR_NOT_NULL_FATAL(tlvP[2].value);
-   CU_ASSERT(0 == memcmp(tlvP[2].value, data1, 2));
+   lwm2m_data_encode_int(-0x1234, &dataP[2]);
+   dataP[2].type = LWM2M_TYPE_RESOURCE;
+   CU_ASSERT_EQUAL(dataP[2].length, 2);
+   CU_ASSERT_PTR_NOT_NULL_FATAL(dataP[2].value);
+   CU_ASSERT(0 == memcmp(dataP[2].value, data1, 2));
 
-   tlvP[3].flags = LWM2M_TLV_FLAG_TEXT_FORMAT;
-   lwm2m_tlv_encode_int(-14678, &tlvP[3]);
-   tlvP[3].type = LWM2M_TYPE_RESOURCE;
-   CU_ASSERT_EQUAL(tlvP[3].length, 6);
-   CU_ASSERT_PTR_NOT_NULL_FATAL(tlvP[3].value);
-   CU_ASSERT(0 == memcmp(tlvP[3].value, "-14678", 6));
+   dataP[3].flags = LWM2M_TLV_FLAG_TEXT_FORMAT;
+   lwm2m_data_encode_int(-14678, &dataP[3]);
+   dataP[3].type = LWM2M_TYPE_RESOURCE;
+   CU_ASSERT_EQUAL(dataP[3].length, 6);
+   CU_ASSERT_PTR_NOT_NULL_FATAL(dataP[3].value);
+   CU_ASSERT(0 == memcmp(dataP[3].value, "-14678", 6));
 
-   lwm2m_tlv_encode_int(0x7f34567891223344, &tlvP[4]);
-   tlvP[4].type = LWM2M_TYPE_RESOURCE;
-   CU_ASSERT_EQUAL(tlvP[4].length, 8);
-   CU_ASSERT_PTR_NOT_NULL_FATAL(tlvP[4].value);
-   CU_ASSERT(0 == memcmp(tlvP[4].value, data2, 8));
+   lwm2m_data_encode_int(0x7f34567891223344, &dataP[4]);
+   dataP[4].type = LWM2M_TYPE_RESOURCE;
+   CU_ASSERT_EQUAL(dataP[4].length, 8);
+   CU_ASSERT_PTR_NOT_NULL_FATAL(dataP[4].value);
+   CU_ASSERT(0 == memcmp(dataP[4].value, data2, 8));
 
-   lwm2m_tlv_free(10, tlvP);
+   lwm2m_data_free(10, dataP);
    MEMORY_TRACE_AFTER_EQ;
 }
 
@@ -412,89 +412,89 @@ static void test_tlv_decode_int(void)
    uint8_t data3[] = { 0x7f, 0x34, 0x56, 0x78, 0x91, 0x22, 0x33, 0x44 };
    int64_t value;
    int result;
-   lwm2m_tlv_t *tlvP =  lwm2m_tlv_new(10);
-   CU_ASSERT_PTR_NOT_NULL(tlvP);
+   lwm2m_data_t *dataP =  lwm2m_data_new(10);
+   CU_ASSERT_PTR_NOT_NULL(dataP);
 
-   result = lwm2m_tlv_decode_int(tlvP, &value);
+   result = lwm2m_data_decode_int(dataP, &value);
    CU_ASSERT_EQUAL(result, 0);
 
-   tlvP[0].flags = LWM2M_TLV_FLAG_STATIC_DATA;
-   tlvP[0].length = 1;
-   tlvP[0].value = data1;
-   result = lwm2m_tlv_decode_int(tlvP, &value);
+   dataP[0].flags = LWM2M_TLV_FLAG_STATIC_DATA;
+   dataP[0].length = 1;
+   dataP[0].value = data1;
+   result = lwm2m_data_decode_int(dataP, &value);
    CU_ASSERT_EQUAL(result, 1);
    CU_ASSERT_EQUAL(value, 0x12);
 
-   tlvP[0].length = 2;
-   tlvP[0].value = data2;
-   result = lwm2m_tlv_decode_int(tlvP, &value);
+   dataP[0].length = 2;
+   dataP[0].value = data2;
+   result = lwm2m_data_decode_int(dataP, &value);
    CU_ASSERT_EQUAL(result, 1);
    CU_ASSERT_EQUAL(value, -0x1234);
 
-   tlvP[0].length = 8;
-   tlvP[0].value = data3;
-   result = lwm2m_tlv_decode_int(tlvP, &value);
+   dataP[0].length = 8;
+   dataP[0].value = data3;
+   result = lwm2m_data_decode_int(dataP, &value);
    CU_ASSERT_EQUAL(result, 1);
    CU_ASSERT_EQUAL(value, 0x7f34567891223344);
 
-   tlvP[0].length = 9;
-   result = lwm2m_tlv_decode_int(tlvP, &value);
+   dataP[0].length = 9;
+   result = lwm2m_data_decode_int(dataP, &value);
    CU_ASSERT_EQUAL(result, 0);
 
-   tlvP[0].flags |= LWM2M_TLV_FLAG_TEXT_FORMAT;
-   tlvP[0].length = 2;
-   tlvP[0].value = (uint8_t *) "18";
-   result = lwm2m_tlv_decode_int(tlvP, &value);
+   dataP[0].flags |= LWM2M_TLV_FLAG_TEXT_FORMAT;
+   dataP[0].length = 2;
+   dataP[0].value = (uint8_t *) "18";
+   result = lwm2m_data_decode_int(dataP, &value);
    CU_ASSERT_EQUAL(result, 1);
    CU_ASSERT_EQUAL(value, 18);
 
-   tlvP[0].length = 9;
-   tlvP[0].value = (uint8_t *) "-56923456";
-   result = lwm2m_tlv_decode_int(tlvP, &value);
+   dataP[0].length = 9;
+   dataP[0].value = (uint8_t *) "-56923456";
+   result = lwm2m_data_decode_int(dataP, &value);
    CU_ASSERT_EQUAL(result, 1);
    CU_ASSERT_EQUAL(value, -56923456);
 
-   lwm2m_tlv_free(10, tlvP);
+   lwm2m_data_free(10, dataP);
    MEMORY_TRACE_AFTER_EQ;
 }
 
 static void test_tlv_encode_bool(void)
 {
    MEMORY_TRACE_BEFORE;
-   lwm2m_tlv_t *tlvP =  lwm2m_tlv_new(10);
-   CU_ASSERT_PTR_NOT_NULL(tlvP);
+   lwm2m_data_t *dataP =  lwm2m_data_new(10);
+   CU_ASSERT_PTR_NOT_NULL(dataP);
 
-   lwm2m_tlv_encode_bool(2, tlvP);
-   tlvP[0].type = LWM2M_TYPE_RESOURCE;
-   CU_ASSERT_EQUAL(tlvP[0].flags, 0);
-   CU_ASSERT_EQUAL(tlvP[0].length, 1);
-   CU_ASSERT_PTR_NOT_NULL_FATAL(tlvP[0].value);
-   CU_ASSERT_EQUAL(tlvP[0].value[0], 1);
+   lwm2m_data_encode_bool(2, dataP);
+   dataP[0].type = LWM2M_TYPE_RESOURCE;
+   CU_ASSERT_EQUAL(dataP[0].flags, 0);
+   CU_ASSERT_EQUAL(dataP[0].length, 1);
+   CU_ASSERT_PTR_NOT_NULL_FATAL(dataP[0].value);
+   CU_ASSERT_EQUAL(dataP[0].value[0], 1);
 
-   lwm2m_tlv_encode_bool(0, &tlvP[1]);
-   tlvP[1].type = LWM2M_TYPE_RESOURCE;
-   CU_ASSERT_EQUAL(tlvP[1].flags, 0);
-   CU_ASSERT_EQUAL(tlvP[1].length, 1);
-   CU_ASSERT_PTR_NOT_NULL_FATAL(tlvP[1].value);
-   CU_ASSERT_EQUAL(tlvP[1].value[0], 0);
+   lwm2m_data_encode_bool(0, &dataP[1]);
+   dataP[1].type = LWM2M_TYPE_RESOURCE;
+   CU_ASSERT_EQUAL(dataP[1].flags, 0);
+   CU_ASSERT_EQUAL(dataP[1].length, 1);
+   CU_ASSERT_PTR_NOT_NULL_FATAL(dataP[1].value);
+   CU_ASSERT_EQUAL(dataP[1].value[0], 0);
 
-   tlvP[2].flags = LWM2M_TLV_FLAG_TEXT_FORMAT;
-   lwm2m_tlv_encode_bool(0, &tlvP[2]);
-   tlvP[2].type = LWM2M_TYPE_RESOURCE;
-   CU_ASSERT_EQUAL(tlvP[2].flags, LWM2M_TLV_FLAG_TEXT_FORMAT);
-   CU_ASSERT_EQUAL(tlvP[2].length, 1);
-   CU_ASSERT_PTR_NOT_NULL_FATAL(tlvP[2].value);
-   CU_ASSERT_EQUAL(tlvP[2].value[0], '0');
+   dataP[2].flags = LWM2M_TLV_FLAG_TEXT_FORMAT;
+   lwm2m_data_encode_bool(0, &dataP[2]);
+   dataP[2].type = LWM2M_TYPE_RESOURCE;
+   CU_ASSERT_EQUAL(dataP[2].flags, LWM2M_TLV_FLAG_TEXT_FORMAT);
+   CU_ASSERT_EQUAL(dataP[2].length, 1);
+   CU_ASSERT_PTR_NOT_NULL_FATAL(dataP[2].value);
+   CU_ASSERT_EQUAL(dataP[2].value[0], '0');
 
-   tlvP[3].flags = LWM2M_TLV_FLAG_TEXT_FORMAT;
-   lwm2m_tlv_encode_bool(4, &tlvP[3]);
-   tlvP[3].type = LWM2M_TYPE_RESOURCE;
-   CU_ASSERT_EQUAL(tlvP[3].flags, LWM2M_TLV_FLAG_TEXT_FORMAT);
-   CU_ASSERT_EQUAL(tlvP[3].length, 1);
-   CU_ASSERT_PTR_NOT_NULL_FATAL(tlvP[3].value);
-   CU_ASSERT_EQUAL(tlvP[3].value[0], '1');
+   dataP[3].flags = LWM2M_TLV_FLAG_TEXT_FORMAT;
+   lwm2m_data_encode_bool(4, &dataP[3]);
+   dataP[3].type = LWM2M_TYPE_RESOURCE;
+   CU_ASSERT_EQUAL(dataP[3].flags, LWM2M_TLV_FLAG_TEXT_FORMAT);
+   CU_ASSERT_EQUAL(dataP[3].length, 1);
+   CU_ASSERT_PTR_NOT_NULL_FATAL(dataP[3].value);
+   CU_ASSERT_EQUAL(dataP[3].value[0], '1');
 
-   lwm2m_tlv_free(10, tlvP);
+   lwm2m_data_free(10, dataP);
    MEMORY_TRACE_AFTER_EQ;
 }
 
@@ -506,65 +506,65 @@ static void test_tlv_decode_bool(void)
    uint8_t data3[] = { 2 };
    bool value;
    int result;
-   lwm2m_tlv_t *tlvP =  lwm2m_tlv_new(10);
-   CU_ASSERT_PTR_NOT_NULL(tlvP);
+   lwm2m_data_t *dataP =  lwm2m_data_new(10);
+   CU_ASSERT_PTR_NOT_NULL(dataP);
 
-   result = lwm2m_tlv_decode_bool(tlvP, &value);
+   result = lwm2m_data_decode_bool(dataP, &value);
    CU_ASSERT_EQUAL(result, 0);
 
-   tlvP[0].length = 2;
-   result = lwm2m_tlv_decode_bool(tlvP, &value);
+   dataP[0].length = 2;
+   result = lwm2m_data_decode_bool(dataP, &value);
    CU_ASSERT_EQUAL(result, 0);
 
-   tlvP[0].flags = LWM2M_TLV_FLAG_STATIC_DATA;
-   tlvP[0].length = 1;
-   tlvP[0].value = data1;
-   result = lwm2m_tlv_decode_bool(tlvP, &value);
+   dataP[0].flags = LWM2M_TLV_FLAG_STATIC_DATA;
+   dataP[0].length = 1;
+   dataP[0].value = data1;
+   result = lwm2m_data_decode_bool(dataP, &value);
    CU_ASSERT_EQUAL(result, 1);
    CU_ASSERT_FALSE(value);
 
-   tlvP[0].value = data2;
-   result = lwm2m_tlv_decode_bool(tlvP, &value);
+   dataP[0].value = data2;
+   result = lwm2m_data_decode_bool(dataP, &value);
    CU_ASSERT_EQUAL(result, 1);
    CU_ASSERT_TRUE(value);
 
-   tlvP[0].value = data3;
-   result = lwm2m_tlv_decode_bool(tlvP, &value);
+   dataP[0].value = data3;
+   result = lwm2m_data_decode_bool(dataP, &value);
    CU_ASSERT_EQUAL(result, 0);
 
-   tlvP[0].flags |= LWM2M_TLV_FLAG_TEXT_FORMAT;
-   tlvP[0].value = (uint8_t *)"0";
-   result = lwm2m_tlv_decode_bool(tlvP, &value);
+   dataP[0].flags |= LWM2M_TLV_FLAG_TEXT_FORMAT;
+   dataP[0].value = (uint8_t *)"0";
+   result = lwm2m_data_decode_bool(dataP, &value);
    CU_ASSERT_EQUAL(result, 1);
    CU_ASSERT_FALSE(value);
 
-   tlvP[0].value = (uint8_t *)"1";
-   result = lwm2m_tlv_decode_bool(tlvP, &value);
+   dataP[0].value = (uint8_t *)"1";
+   result = lwm2m_data_decode_bool(dataP, &value);
    CU_ASSERT_EQUAL(result, 1);
    CU_ASSERT_TRUE(value);
 
-   tlvP[0].value = (uint8_t *)"2";
-   result = lwm2m_tlv_decode_bool(tlvP, &value);
+   dataP[0].value = (uint8_t *)"2";
+   result = lwm2m_data_decode_bool(dataP, &value);
    CU_ASSERT_EQUAL(result, 0);
 
-   lwm2m_tlv_free(10, tlvP);
+   lwm2m_data_free(10, dataP);
    MEMORY_TRACE_AFTER_EQ;
 }
 
 static struct TestTable table[] = {
-        { "test of lwm2m_tlv_new()", test_tlv_new },
-        { "test of lwm2m_tlv_free()", test_tlv_free },
+        { "test of lwm2m_data_new()", test_tlv_new },
+        { "test of lwm2m_data_free()", test_tlv_free },
         { "test of lwm2m_opaqueToTLV()", test_opaqueToTLV },
         { "test of lwm2m_boolToTLV()", test_boolToTLV },
         { "test of lwm2m_intToTLV()", test_intToTLV },
         { "test of lwm2m_decodeTLV()", test_decodeTLV },
         { "test of lwm2m_opaqueToInt()", test_opaqueToInt },
-        { "test of lwm2m_tlv_parse()", test_tlv_parse },
-        { "test of lwm2m_tlv_serialize()", test_tlv_serialize },
-        { "test of lwm2m_tlv_encode_int()", test_tlv_encode_int },
-        { "test of lwm2m_tlv_decode_int()", test_tlv_decode_int },
-        { "test of lwm2m_tlv_encode_bool()", test_tlv_encode_bool },
-        { "test of lwm2m_tlv_decode_bool()", test_tlv_decode_bool },
+        { "test of lwm2m_data_parse()", test_tlv_parse },
+        { "test of lwm2m_data_serialize()", test_tlv_serialize },
+        { "test of lwm2m_data_encode_int()", test_tlv_encode_int },
+        { "test of lwm2m_data_decode_int()", test_tlv_decode_int },
+        { "test of lwm2m_data_encode_bool()", test_tlv_encode_bool },
+        { "test of lwm2m_data_decode_bool()", test_tlv_decode_bool },
         { NULL, NULL },
 };
 

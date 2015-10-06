@@ -53,52 +53,52 @@ typedef struct _server_instance_
     char        binding[4];
 } server_instance_t;
 
-static uint8_t prv_get_value(lwm2m_tlv_t * tlvP,
+static uint8_t prv_get_value(lwm2m_data_t * dataP,
                              server_instance_t * targetP)
 {
     // There are no multiple instance resources
-    tlvP->type = LWM2M_TYPE_RESOURCE;
+    dataP->type = LWM2M_TYPE_RESOURCE;
 
-    switch (tlvP->id)
+    switch (dataP->id)
     {
     case LWM2M_SERVER_SHORT_ID_ID:
-        lwm2m_tlv_encode_int(targetP->shortServerId, tlvP);
-        if (0 != tlvP->length) return COAP_205_CONTENT;
+        lwm2m_data_encode_int(targetP->shortServerId, dataP);
+        if (0 != dataP->length) return COAP_205_CONTENT;
         else return COAP_500_INTERNAL_SERVER_ERROR;
 
     case LWM2M_SERVER_LIFETIME_ID:
-        lwm2m_tlv_encode_int(targetP->lifetime, tlvP);
-        if (0 != tlvP->length) return COAP_205_CONTENT;
+        lwm2m_data_encode_int(targetP->lifetime, dataP);
+        if (0 != dataP->length) return COAP_205_CONTENT;
         else return COAP_500_INTERNAL_SERVER_ERROR;
 
     case LWM2M_SERVER_MIN_PERIOD_ID:
-        lwm2m_tlv_encode_int(targetP->defaultMinPeriod, tlvP);
-        if (0 != tlvP->length) return COAP_205_CONTENT;
+        lwm2m_data_encode_int(targetP->defaultMinPeriod, dataP);
+        if (0 != dataP->length) return COAP_205_CONTENT;
         else return COAP_500_INTERNAL_SERVER_ERROR;
 
     case LWM2M_SERVER_MAX_PERIOD_ID:
-        lwm2m_tlv_encode_int(targetP->defaultMaxPeriod, tlvP);
-        if (0 != tlvP->length) return COAP_205_CONTENT;
+        lwm2m_data_encode_int(targetP->defaultMaxPeriod, dataP);
+        if (0 != dataP->length) return COAP_205_CONTENT;
         else return COAP_500_INTERNAL_SERVER_ERROR;
 
     case LWM2M_SERVER_DISABLE_ID:
         return COAP_405_METHOD_NOT_ALLOWED;
 
     case LWM2M_SERVER_TIMEOUT_ID:
-        lwm2m_tlv_encode_int(targetP->disableTimeout, tlvP);
-        if (0 != tlvP->length) return COAP_205_CONTENT;
+        lwm2m_data_encode_int(targetP->disableTimeout, dataP);
+        if (0 != dataP->length) return COAP_205_CONTENT;
         else return COAP_500_INTERNAL_SERVER_ERROR;
 
     case LWM2M_SERVER_STORING_ID:
-        lwm2m_tlv_encode_bool(targetP->storing, tlvP);
-        if (0 != tlvP->length) return COAP_205_CONTENT;
+        lwm2m_data_encode_bool(targetP->storing, dataP);
+        if (0 != dataP->length) return COAP_205_CONTENT;
         else return COAP_500_INTERNAL_SERVER_ERROR;
 
     case LWM2M_SERVER_BINDING_ID:
-        tlvP->value = (uint8_t*)targetP->binding;
-        tlvP->length = strlen(targetP->binding);
-        tlvP->flags = LWM2M_TLV_FLAG_STATIC_DATA;
-        tlvP->dataType = LWM2M_TYPE_STRING;
+        dataP->value = (uint8_t*)targetP->binding;
+        dataP->length = strlen(targetP->binding);
+        dataP->flags = LWM2M_TLV_FLAG_STATIC_DATA;
+        dataP->dataType = LWM2M_TYPE_STRING;
         return COAP_205_CONTENT;
 
     case LWM2M_SERVER_UPDATE_ID:
@@ -111,7 +111,7 @@ static uint8_t prv_get_value(lwm2m_tlv_t * tlvP,
 
 static uint8_t prv_server_read(uint16_t instanceId,
                                int * numDataP,
-                               lwm2m_tlv_t ** dataArrayP,
+                               lwm2m_data_t ** dataArrayP,
                                lwm2m_object_t * objectP)
 {
     server_instance_t * targetP;
@@ -135,7 +135,7 @@ static uint8_t prv_server_read(uint16_t instanceId,
         };
         int nbRes = sizeof(resList)/sizeof(uint16_t);
 
-        *dataArrayP = lwm2m_tlv_new(nbRes);
+        *dataArrayP = lwm2m_data_new(nbRes);
         if (*dataArrayP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
         *numDataP = nbRes;
         for (i = 0 ; i < nbRes ; i++)
@@ -154,11 +154,11 @@ static uint8_t prv_server_read(uint16_t instanceId,
     return result;
 }
 
-static uint8_t prv_set_int_value(lwm2m_tlv_t * dataArray, uint32_t * data) {
+static uint8_t prv_set_int_value(lwm2m_data_t * dataArray, uint32_t * data) {
     uint8_t result;
     int64_t value;
 
-    if (1 == lwm2m_tlv_decode_int(dataArray, &value))
+    if (1 == lwm2m_data_decode_int(dataArray, &value))
     {
         if (value >= 0 && value <= 0xFFFFFFFF)
         {
@@ -179,7 +179,7 @@ static uint8_t prv_set_int_value(lwm2m_tlv_t * dataArray, uint32_t * data) {
 
 static uint8_t prv_server_write(uint16_t instanceId,
                                 int numData,
-                                lwm2m_tlv_t * dataArray,
+                                lwm2m_data_t * dataArray,
                                 lwm2m_object_t * objectP)
 {
     server_instance_t * targetP;
@@ -253,7 +253,7 @@ static uint8_t prv_server_write(uint16_t instanceId,
         {
             bool value;
 
-            if (1 == lwm2m_tlv_decode_bool(dataArray + i, &value))
+            if (1 == lwm2m_data_decode_bool(dataArray + i, &value))
             {
                 targetP->storing = value;
                 result = COAP_204_CHANGED;
@@ -337,7 +337,7 @@ static uint8_t prv_server_delete(uint16_t id,
 
 static uint8_t prv_server_create(uint16_t instanceId,
                                  int numData,
-                                 lwm2m_tlv_t * dataArray,
+                                 lwm2m_data_t * dataArray,
                                  lwm2m_object_t * objectP)
 {
     server_instance_t * serverInstance;

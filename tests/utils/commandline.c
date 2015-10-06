@@ -290,9 +290,55 @@ void output_tlv(FILE * stream,
     }
 }
 
+void output_data(FILE * stream,
+                 lwm2m_media_type_t format,
+                 uint8_t * data,
+                 int dataLength,
+                 int indent)
+{
+    int i;
+
+    if (data == NULL) return;
+
+    print_indent(stream, indent);
+    fprintf(stream, "%d bytes received of type ", dataLength);
+    switch (format)
+    {
+    case LWM2M_CONTENT_TEXT:
+        fprintf(stream, "text/plain:\r\n");
+        output_buffer(stream, data, dataLength, indent);
+        break;
+
+    case LWM2M_CONTENT_OPAQUE:
+        fprintf(stream, "application/octet-stream:\r\n");
+        output_buffer(stream, data, dataLength, indent);
+        break;
+
+    case LWM2M_CONTENT_TLV:
+        fprintf(stream, "application/vnd.oma.lwm2m+tlv:\r\n");
+        output_tlv(stream, data, dataLength, indent);
+        break;
+
+    case LWM2M_CONTENT_JSON:
+        fprintf(stream, "application/vnd.oma.lwm2m+json:\r\n");
+        print_indent(stream, indent);
+        for (i = 0 ; i < dataLength ; i++)
+        {
+            fprintf(stream, "%c", data[i]);
+        }
+        fprintf(stream, "\n");
+        break;
+
+    default:
+        fprintf(stream, "Unknown (%d):\r\n", format);
+        output_buffer(stream, data, dataLength, indent);
+        break;
+    }
+}
+
 void dump_tlv(FILE * stream,
               int size,
-              lwm2m_tlv_t * tlvP,
+              lwm2m_data_t * dataP,
               int indent)
 {
     int i;
@@ -302,11 +348,11 @@ void dump_tlv(FILE * stream,
         print_indent(stream, indent);
         fprintf(stream, "{\r\n");
         print_indent(stream, indent+1);
-        fprintf(stream, "id: %d\r\n", tlvP[i].id);
+        fprintf(stream, "id: %d\r\n", dataP[i].id);
 
         print_indent(stream, indent+1);
         fprintf(stream, "type: ");
-        switch (tlvP[i].type)
+        switch (dataP[i].type)
         {
         case LWM2M_TYPE_OBJECT_INSTANCE:
             fprintf(stream, "LWM2M_TYPE_OBJECT_INSTANCE\r\n");
@@ -321,46 +367,46 @@ void dump_tlv(FILE * stream,
             fprintf(stream, "LWM2M_TYPE_RESOURCE\r\n");
             break;
         default:
-            fprintf(stream, "unknown (%d)\r\n", (int)tlvP[i].type);
+            fprintf(stream, "unknown (%d)\r\n", (int)dataP[i].type);
             break;
         }
 
         print_indent(stream, indent+1);
         fprintf(stream, "flags: ");
-        if (tlvP[i].flags & LWM2M_TLV_FLAG_STATIC_DATA)
+        if (dataP[i].flags & LWM2M_TLV_FLAG_STATIC_DATA)
         {
             fprintf(stream, "STATIC_DATA");
-            if (tlvP[i].flags & LWM2M_TLV_FLAG_TEXT_FORMAT)
+            if (dataP[i].flags & LWM2M_TLV_FLAG_TEXT_FORMAT)
             {
                 fprintf(stream, " | TEXT_FORMAT");
             }
         }
-        else if (tlvP[i].flags & LWM2M_TLV_FLAG_TEXT_FORMAT)
+        else if (dataP[i].flags & LWM2M_TLV_FLAG_TEXT_FORMAT)
         {
             fprintf(stream, "TEXT_FORMAT");
         }
         fprintf(stream, "\r\n");
 
         print_indent(stream, indent+1);
-        fprintf(stream, "data length: %d\r\n", (int) tlvP[i].length);
+        fprintf(stream, "data length: %d\r\n", (int) dataP[i].length);
 
-        if (tlvP[i].type == LWM2M_TYPE_OBJECT_INSTANCE
-         || tlvP[i].type == LWM2M_TYPE_MULTIPLE_RESOURCE)
+        if (dataP[i].type == LWM2M_TYPE_OBJECT_INSTANCE
+         || dataP[i].type == LWM2M_TYPE_MULTIPLE_RESOURCE)
         {
-            dump_tlv(stream, tlvP[i].length, (lwm2m_tlv_t *)(tlvP[i].value), indent+1);
+            dump_tlv(stream, dataP[i].length, (lwm2m_data_t *)(dataP[i].value), indent+1);
         }
         else
         {
             print_indent(stream, indent+1);
             fprintf(stream, "data type: ");
-            switch (tlvP[i].dataType)
+            switch (dataP[i].dataType)
             {
             case LWM2M_TYPE_INTEGER:
                 fprintf(stream, "Integer");
-                if ((tlvP[i].flags & LWM2M_TLV_FLAG_TEXT_FORMAT) == 0)
+                if ((dataP[i].flags & LWM2M_TLV_FLAG_TEXT_FORMAT) == 0)
                 {
                     int64_t value;
-                    if (1 == lwm2m_tlv_decode_int(tlvP + i, &value))
+                    if (1 == lwm2m_data_decode_int(dataP + i, &value))
                     {
                         fprintf(stream, " (%" PRId64 ")", value);
                     }
@@ -374,10 +420,10 @@ void dump_tlv(FILE * stream,
                 break;
             case LWM2M_TYPE_BOOLEAN:
                 fprintf(stream, "Boolean");
-                if ((tlvP[i].flags & LWM2M_TLV_FLAG_TEXT_FORMAT) == 0)
+                if ((dataP[i].flags & LWM2M_TLV_FLAG_TEXT_FORMAT) == 0)
                 {
                     bool value;
-                    if (1 == lwm2m_tlv_decode_bool(tlvP + i, &value))
+                    if (1 == lwm2m_data_decode_bool(dataP + i, &value))
                     {
                         fprintf(stream, " (%s)", value?"true":"false");
                     }
@@ -397,7 +443,7 @@ void dump_tlv(FILE * stream,
                 break;
             }
             fprintf(stream, "\r\n");
-            output_buffer(stream, tlvP[i].value, tlvP[i].length, indent+1);
+            output_buffer(stream, dataP[i].value, dataP[i].length, indent+1);
         }
         print_indent(stream, indent);
         fprintf(stream, "}\r\n");

@@ -70,8 +70,13 @@
 
 #define LWM2M_DEFAULT_LIFETIME  86400
 
+#ifdef LWM2M_SUPPORT_JSON
+#define REG_LWM2M_RESOURCE_TYPE     ">;rt=\"oma.lwm2m\";ct=1543,"   // Temporary value
+#define REG_LWM2M_RESOURCE_TYPE_LEN 25
+#else
 #define REG_LWM2M_RESOURCE_TYPE     ">;rt=\"oma.lwm2m\","
 #define REG_LWM2M_RESOURCE_TYPE_LEN 17
+#endif
 #define REG_ALT_PATH_LINK           "<%s"REG_LWM2M_RESOURCE_TYPE
 #define REG_OBJECT_PATH             "<%s/%hu>,"
 #define REG_OBJECT_INSTANCE_PATH    "<%s/%hu/%hu>,"
@@ -127,15 +132,16 @@ typedef struct _obs_list_
     lwm2m_observed_t * item;
 } obs_list_t;
 
+
 // defined in uri.c
 int lwm2m_get_number(char * uriString, size_t uriLength);
 lwm2m_uri_t * lwm2m_decode_uri(char * altPath, multi_option_t *uriPath);
 int prv_get_number(uint8_t * uriString, size_t uriLength);
 
 // defined in objects.c
-coap_status_t object_read(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, uint8_t ** bufferP, size_t * lengthP);
-coap_status_t object_write(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, uint8_t * buffer, size_t length);
-coap_status_t object_create(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, uint8_t * buffer, size_t length);
+coap_status_t object_read(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_media_type_t * formatP, uint8_t ** bufferP, size_t * lengthP);
+coap_status_t object_write(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_media_type_t format, uint8_t * buffer, size_t length);
+coap_status_t object_create(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_media_type_t format, uint8_t * buffer, size_t length);
 coap_status_t object_execute(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, uint8_t * buffer, size_t length);
 coap_status_t object_delete(lwm2m_context_t * contextP, lwm2m_uri_t * uriP);
 bool object_isInstanceNew(lwm2m_context_t * contextP, uint16_t objectId, uint16_t instanceId);
@@ -183,6 +189,12 @@ uint8_t handle_bootstrap_request(lwm2m_context_t * contextP, lwm2m_uri_t * uriP,
 void delete_transaction_list(lwm2m_context_t * context);
 void delete_server_list(lwm2m_context_t * context);
 void delete_observed_list(lwm2m_context_t * contextP);
+
+// defined in json.c
+#ifdef LWM2M_SUPPORT_JSON
+int lwm2m_json_parse(uint8_t * buffer, size_t bufferLen, lwm2m_data_t ** dataP);
+int lwm2m_json_serialize(int size, lwm2m_data_t * tlvP, uint8_t ** bufferP);
+#endif
 
 // defined in utils.c
 lwm2m_binding_t lwm2m_stringToBinding(uint8_t *buffer, size_t length);

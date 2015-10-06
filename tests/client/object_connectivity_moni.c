@@ -85,57 +85,57 @@ typedef struct
     int linkUtilization;
 } conn_m_data_t;
 
-static uint8_t prv_set_value(lwm2m_tlv_t * tlvP,
+static uint8_t prv_set_value(lwm2m_data_t * dataP,
                              conn_m_data_t * connDataP)
 {
-    switch (tlvP->id)
+    switch (dataP->id)
     {
     case RES_M_NETWORK_BEARER:
-        lwm2m_tlv_encode_int(VALUE_NETWORK_BEARER_GSM, tlvP);
-        tlvP->type = LWM2M_TYPE_RESOURCE;
-        if (0 != tlvP->length) return COAP_205_CONTENT ;
+        lwm2m_data_encode_int(VALUE_NETWORK_BEARER_GSM, dataP);
+        dataP->type = LWM2M_TYPE_RESOURCE;
+        if (0 != dataP->length) return COAP_205_CONTENT ;
         else return COAP_500_INTERNAL_SERVER_ERROR ;
         break;
 
     case RES_M_AVL_NETWORK_BEARER:
     {
         int riCnt = 1;   // reduced to 1 instance to fit in one block size
-        lwm2m_tlv_t * subTlvP;
-        subTlvP = lwm2m_tlv_new(riCnt);
+        lwm2m_data_t * subTlvP;
+        subTlvP = lwm2m_data_new(riCnt);
         subTlvP[0].flags = 0;
         subTlvP[0].id    = 0;
         subTlvP[0].type  = LWM2M_TYPE_RESOURCE_INSTANCE;
-        lwm2m_tlv_encode_int(VALUE_AVL_NETWORK_BEARER_1, subTlvP);
+        lwm2m_data_encode_int(VALUE_AVL_NETWORK_BEARER_1, subTlvP);
         if (0 == subTlvP[0].length)
         {
-            lwm2m_tlv_free(riCnt, subTlvP);
+            lwm2m_data_free(riCnt, subTlvP);
             return COAP_500_INTERNAL_SERVER_ERROR ;
         }
-        lwm2m_tlv_include(subTlvP, riCnt, tlvP);
+        lwm2m_data_include(subTlvP, riCnt, dataP);
         return COAP_205_CONTENT ;
     }
         break;
 
     case RES_M_RADIO_SIGNAL_STRENGTH: //s-int
-        lwm2m_tlv_encode_int(connDataP->signalStrength, tlvP);
-        tlvP->type = LWM2M_TYPE_RESOURCE;
-        if (0 != tlvP->length)
+        lwm2m_data_encode_int(connDataP->signalStrength, dataP);
+        dataP->type = LWM2M_TYPE_RESOURCE;
+        if (0 != dataP->length)
             return COAP_205_CONTENT ;
         else
             return COAP_500_INTERNAL_SERVER_ERROR ;
         break;
 
     case RES_O_LINK_QUALITY: //s-int
-        lwm2m_tlv_encode_int(connDataP->linkQuality, tlvP);
-        tlvP->type = LWM2M_TYPE_RESOURCE;
-        if (0 != tlvP->length) return COAP_205_CONTENT ;
+        lwm2m_data_encode_int(connDataP->linkQuality, dataP);
+        dataP->type = LWM2M_TYPE_RESOURCE;
+        if (0 != dataP->length) return COAP_205_CONTENT ;
         else return COAP_500_INTERNAL_SERVER_ERROR ;
         break;
 
     case RES_M_IP_ADDRESSES:
     {
         int ri, riCnt = 1;   // reduced to 1 instance to fit in one block size
-        lwm2m_tlv_t* subTlvP = lwm2m_tlv_new(riCnt);
+        lwm2m_data_t* subTlvP = lwm2m_data_new(riCnt);
         for (ri=0; ri<riCnt; ri++)
         {
             subTlvP[ri].flags  = LWM2M_TLV_FLAG_STATIC_DATA;
@@ -146,11 +146,11 @@ static uint8_t prv_set_value(lwm2m_tlv_t * tlvP,
             subTlvP[ri].length = strlen(connDataP->ipAddresses[ri]);
             if (subTlvP[ri].length == 0)
             {
-                lwm2m_tlv_free(riCnt, subTlvP);
+                lwm2m_data_free(riCnt, subTlvP);
                 return COAP_500_INTERNAL_SERVER_ERROR ;
             }
         }
-        lwm2m_tlv_include(subTlvP, riCnt, tlvP);
+        lwm2m_data_include(subTlvP, riCnt, dataP);
         return COAP_205_CONTENT ;
     }
         break;
@@ -158,7 +158,7 @@ static uint8_t prv_set_value(lwm2m_tlv_t * tlvP,
     case RES_O_ROUTER_IP_ADDRESS:
     {
         int ri, riCnt = 1;   // reduced to 1 instance to fit in one block size
-        lwm2m_tlv_t* subTlvP = lwm2m_tlv_new(riCnt);
+        lwm2m_data_t* subTlvP = lwm2m_data_new(riCnt);
         for (ri=0; ri<riCnt; ri++)
         {
             subTlvP[ri].flags  = LWM2M_TLV_FLAG_STATIC_DATA;
@@ -169,19 +169,19 @@ static uint8_t prv_set_value(lwm2m_tlv_t * tlvP,
             subTlvP[ri].length = strlen(connDataP->routerIpAddresses[ri]);
             if (subTlvP[ri].length == 0)
             {
-                lwm2m_tlv_free(riCnt, subTlvP);
+                lwm2m_data_free(riCnt, subTlvP);
                 return COAP_500_INTERNAL_SERVER_ERROR ;
             }
         }
-        lwm2m_tlv_include(subTlvP, riCnt, tlvP);
+        lwm2m_data_include(subTlvP, riCnt, dataP);
         return COAP_205_CONTENT ;
     }
         break;
 
     case RES_O_LINK_UTILIZATION:
-        lwm2m_tlv_encode_int(connDataP->linkUtilization, tlvP);
-        tlvP->type = LWM2M_TYPE_RESOURCE;
-        if (0 != tlvP->length)
+        lwm2m_data_encode_int(connDataP->linkUtilization, dataP);
+        dataP->type = LWM2M_TYPE_RESOURCE;
+        if (0 != dataP->length)
             return COAP_205_CONTENT ;
         else
             return COAP_500_INTERNAL_SERVER_ERROR ;
@@ -190,8 +190,8 @@ static uint8_t prv_set_value(lwm2m_tlv_t * tlvP,
     case RES_O_APN:
     {
         int riCnt = 1;   // reduced to 1 instance to fit in one block size
-        lwm2m_tlv_t * subTlvP;
-        subTlvP = lwm2m_tlv_new(riCnt);
+        lwm2m_data_t * subTlvP;
+        subTlvP = lwm2m_data_new(riCnt);
         subTlvP[0].flags  = LWM2M_TLV_FLAG_STATIC_DATA;
         subTlvP[0].id     = 0;
         subTlvP[0].type   = LWM2M_TYPE_RESOURCE_INSTANCE;
@@ -200,32 +200,32 @@ static uint8_t prv_set_value(lwm2m_tlv_t * tlvP,
         subTlvP[0].length = strlen(VALUE_APN_1);
         if (0 == subTlvP[0].length)
         {
-            lwm2m_tlv_free(riCnt, subTlvP);
+            lwm2m_data_free(riCnt, subTlvP);
             return COAP_500_INTERNAL_SERVER_ERROR ;
         }
-        lwm2m_tlv_include(subTlvP, riCnt, tlvP);
+        lwm2m_data_include(subTlvP, riCnt, dataP);
         return COAP_205_CONTENT;
     }
         break;
 
     case RES_O_CELL_ID:
-        lwm2m_tlv_encode_int(connDataP->cellId, tlvP);
-        tlvP->type = LWM2M_TYPE_RESOURCE;
-        if (0 != tlvP->length) return COAP_205_CONTENT ;
+        lwm2m_data_encode_int(connDataP->cellId, dataP);
+        dataP->type = LWM2M_TYPE_RESOURCE;
+        if (0 != dataP->length) return COAP_205_CONTENT ;
         else return COAP_500_INTERNAL_SERVER_ERROR ;
         break;
 
     case RES_O_SMNC:
-        lwm2m_tlv_encode_int(VALUE_SMNC, tlvP);
-        tlvP->type = LWM2M_TYPE_RESOURCE;
-        if (0 != tlvP->length) return COAP_205_CONTENT ;
+        lwm2m_data_encode_int(VALUE_SMNC, dataP);
+        dataP->type = LWM2M_TYPE_RESOURCE;
+        if (0 != dataP->length) return COAP_205_CONTENT ;
         else return COAP_500_INTERNAL_SERVER_ERROR ;
         break;
 
     case RES_O_SMCC:
-        lwm2m_tlv_encode_int(VALUE_SMCC, tlvP);
-        tlvP->type = LWM2M_TYPE_RESOURCE;
-        if (0 != tlvP->length) return COAP_205_CONTENT ;
+        lwm2m_data_encode_int(VALUE_SMCC, dataP);
+        dataP->type = LWM2M_TYPE_RESOURCE;
+        if (0 != dataP->length) return COAP_205_CONTENT ;
         else return COAP_500_INTERNAL_SERVER_ERROR ;
         break;
 
@@ -236,7 +236,7 @@ static uint8_t prv_set_value(lwm2m_tlv_t * tlvP,
 
 static uint8_t prv_read(uint16_t instanceId,
                         int * numDataP,
-                        lwm2m_tlv_t ** dataArrayP,
+                        lwm2m_data_t ** dataArrayP,
                         lwm2m_object_t * objectP)
 {
     uint8_t result;
@@ -266,7 +266,7 @@ static uint8_t prv_read(uint16_t instanceId,
         };
         int nbRes = sizeof(resList) / sizeof(uint16_t);
 
-        *dataArrayP = lwm2m_tlv_new(nbRes);
+        *dataArrayP = lwm2m_data_new(nbRes);
         if (*dataArrayP == NULL)
             return COAP_500_INTERNAL_SERVER_ERROR ;
         *numDataP = nbRes;
@@ -359,7 +359,7 @@ lwm2m_object_t * get_object_conn_m(void)
     return connObj;
 }
 
-uint8_t connectivity_moni_change(lwm2m_tlv_t * dataArray,
+uint8_t connectivity_moni_change(lwm2m_data_t * dataArray,
                                  lwm2m_object_t * objectP)
 {
     int64_t value;
@@ -371,7 +371,7 @@ uint8_t connectivity_moni_change(lwm2m_tlv_t * dataArray,
     switch (dataArray->id)
     {
     case RES_M_RADIO_SIGNAL_STRENGTH:
-        if (1 == lwm2m_tlv_decode_int(dataArray, &value))
+        if (1 == lwm2m_data_decode_int(dataArray, &value))
         {
             data->signalStrength = value;
             result = COAP_204_CHANGED;
@@ -383,7 +383,7 @@ uint8_t connectivity_moni_change(lwm2m_tlv_t * dataArray,
         break;
 
     case RES_O_LINK_QUALITY:
-        if (1 == lwm2m_tlv_decode_int(dataArray, &value))
+        if (1 == lwm2m_data_decode_int(dataArray, &value))
         {
             data->linkQuality = value;
             result = COAP_204_CHANGED;
@@ -423,7 +423,7 @@ uint8_t connectivity_moni_change(lwm2m_tlv_t * dataArray,
         break;
 
     case RES_O_CELL_ID:
-        if (1 == lwm2m_tlv_decode_int(dataArray, &value))
+        if (1 == lwm2m_data_decode_int(dataArray, &value))
         {
             data->cellId = value;
             result = COAP_204_CHANGED;

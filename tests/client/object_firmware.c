@@ -62,7 +62,7 @@ typedef struct
 
 static uint8_t prv_firmware_read(uint16_t instanceId,
                                  int * numDataP,
-                                 lwm2m_tlv_t ** dataArrayP,
+                                 lwm2m_data_t ** dataArrayP,
                                  lwm2m_object_t * objectP)
 {
     int i;
@@ -78,7 +78,7 @@ static uint8_t prv_firmware_read(uint16_t instanceId,
     // is the server asking for the full object ?
     if (*numDataP == 0)
     {
-        *dataArrayP = lwm2m_tlv_new(3);
+        *dataArrayP = lwm2m_data_new(3);
         if (*dataArrayP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
         *numDataP = 3;
         (*dataArrayP)[0].id = 3;
@@ -99,7 +99,7 @@ static uint8_t prv_firmware_read(uint16_t instanceId,
 
         case RES_M_STATE:
             // firmware update state (int)
-            lwm2m_tlv_encode_int(data->state, *dataArrayP + i);
+            lwm2m_data_encode_int(data->state, *dataArrayP + i);
             (*dataArrayP)[i].type = LWM2M_TYPE_RESOURCE;
 
             if (0 != (*dataArrayP)[i].length) result = COAP_205_CONTENT;
@@ -108,7 +108,7 @@ static uint8_t prv_firmware_read(uint16_t instanceId,
             break;
 
         case RES_O_UPDATE_SUPPORTED_OPJECTS:
-            lwm2m_tlv_encode_int(data->supported, *dataArrayP + i);
+            lwm2m_data_encode_int(data->supported, *dataArrayP + i);
             (*dataArrayP)[i].type = LWM2M_TYPE_RESOURCE;
 
             if (0 != (*dataArrayP)[i].length) result = COAP_205_CONTENT;
@@ -117,7 +117,7 @@ static uint8_t prv_firmware_read(uint16_t instanceId,
             break;
 
         case RES_M_UPDATE_RESULT:
-            lwm2m_tlv_encode_int(data->result, *dataArrayP + i);
+            lwm2m_data_encode_int(data->result, *dataArrayP + i);
             (*dataArrayP)[i].type = LWM2M_TYPE_RESOURCE;
 
             if (0 != (*dataArrayP)[i].length) result = COAP_205_CONTENT;
@@ -137,7 +137,7 @@ static uint8_t prv_firmware_read(uint16_t instanceId,
 
 static uint8_t prv_firmware_write(uint16_t instanceId,
                                   int numData,
-                                  lwm2m_tlv_t * dataArray,
+                                  lwm2m_data_t * dataArray,
                                   lwm2m_object_t * objectP)
 {
     int i;
@@ -168,7 +168,7 @@ static uint8_t prv_firmware_write(uint16_t instanceId,
             break;
 
         case RES_O_UPDATE_SUPPORTED_OPJECTS:
-            if (lwm2m_tlv_decode_bool(&dataArray[i], &bvalue) == 1)
+            if (lwm2m_data_decode_bool(&dataArray[i], &bvalue) == 1)
             {
                 data->supported = bvalue ? 1 : 0;
                 result = COAP_204_CHANGED;

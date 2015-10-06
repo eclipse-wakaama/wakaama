@@ -255,13 +255,16 @@ void lwm2m_resource_value_changed(lwm2m_context_t * contextP,
         obs_list_t * targetP;
         uint8_t * buffer = NULL;
         size_t length = 0;
+        lwm2m_media_type_t format;
 
-        result = object_read(contextP, &listP->item->uri, &buffer, &length);
+        format = LWM2M_CONTENT_TEXT;
+        result = object_read(contextP, &listP->item->uri, &format, &buffer, &length);
         if (result == COAP_205_CONTENT)
         {
             coap_packet_t message[1];
 
             coap_init_message(message, COAP_TYPE_NON, COAP_205_CONTENT, 0);
+            coap_set_header_content_type(message, format);
             coap_set_payload(message, buffer, length);
 
             for (watcherP = listP->item->watcherList ; watcherP != NULL ; watcherP = watcherP->next)
@@ -353,7 +356,7 @@ static void prv_obsRequestCallback(lwm2m_transaction_t * transacP,
         observationP->callback(((lwm2m_client_t*)transacP->peerP)->internalID,
                                &observationP->uri,
                                code,
-                               NULL, 0,
+                               LWM2M_CONTENT_TEXT, NULL, 0,
                                observationP->userData);
         observation_remove(((lwm2m_client_t*)transacP->peerP), observationP);
     }
@@ -362,7 +365,7 @@ static void prv_obsRequestCallback(lwm2m_transaction_t * transacP,
         observationP->callback(((lwm2m_client_t*)transacP->peerP)->internalID,
                                &observationP->uri,
                                0,
-                               packet->payload, packet->payload_len,
+                               packet->content_type, packet->payload, packet->payload_len,
                                observationP->userData);
     }
 }
@@ -491,7 +494,7 @@ bool handle_observe_notify(lwm2m_context_t * contextP,
         observationP->callback(clientID,
                                &observationP->uri,
                                (int)count,
-                               message->payload, message->payload_len,
+                               message->content_type, message->payload, message->payload_len,
                                observationP->userData);
     }
     return true;

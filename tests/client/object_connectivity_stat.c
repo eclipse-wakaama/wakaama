@@ -58,45 +58,45 @@ typedef struct
     bool      collectDataStarted;
 } conn_s_data_t;
 
-static uint8_t prv_set_tlv(lwm2m_tlv_t * tlvP, conn_s_data_t * connStDataP)
+static uint8_t prv_set_tlv(lwm2m_data_t * dataP, conn_s_data_t * connStDataP)
 {
-    switch (tlvP->id) {
+    switch (dataP->id) {
     case RES_O_SMS_TX_COUNTER:
-        lwm2m_tlv_encode_int(connStDataP->smsTxCounter, tlvP);
-        tlvP->type = LWM2M_TYPE_RESOURCE;
-        return (0 != tlvP->length) ? COAP_205_CONTENT : COAP_500_INTERNAL_SERVER_ERROR;
+        lwm2m_data_encode_int(connStDataP->smsTxCounter, dataP);
+        dataP->type = LWM2M_TYPE_RESOURCE;
+        return (0 != dataP->length) ? COAP_205_CONTENT : COAP_500_INTERNAL_SERVER_ERROR;
         break;
     case RES_O_SMS_RX_COUNTER:
-        lwm2m_tlv_encode_int(connStDataP->smsRxCounter, tlvP);
-        tlvP->type = LWM2M_TYPE_RESOURCE;
-        return (0 != tlvP->length) ? COAP_205_CONTENT : COAP_500_INTERNAL_SERVER_ERROR;
+        lwm2m_data_encode_int(connStDataP->smsRxCounter, dataP);
+        dataP->type = LWM2M_TYPE_RESOURCE;
+        return (0 != dataP->length) ? COAP_205_CONTENT : COAP_500_INTERNAL_SERVER_ERROR;
         break;
     case RES_O_TX_DATA:
-        lwm2m_tlv_encode_int(connStDataP->txDataByte/1024, tlvP);
-        tlvP->type = LWM2M_TYPE_RESOURCE;
-        return (0 != tlvP->length) ? COAP_205_CONTENT : COAP_500_INTERNAL_SERVER_ERROR;
+        lwm2m_data_encode_int(connStDataP->txDataByte/1024, dataP);
+        dataP->type = LWM2M_TYPE_RESOURCE;
+        return (0 != dataP->length) ? COAP_205_CONTENT : COAP_500_INTERNAL_SERVER_ERROR;
         break;
     case RES_O_RX_DATA:
-        lwm2m_tlv_encode_int(connStDataP->rxDataByte/1024, tlvP);
-        tlvP->type = LWM2M_TYPE_RESOURCE;
-        return (0 != tlvP->length) ? COAP_205_CONTENT : COAP_500_INTERNAL_SERVER_ERROR;
+        lwm2m_data_encode_int(connStDataP->rxDataByte/1024, dataP);
+        dataP->type = LWM2M_TYPE_RESOURCE;
+        return (0 != dataP->length) ? COAP_205_CONTENT : COAP_500_INTERNAL_SERVER_ERROR;
         break;
     case RES_O_MAX_MESSAGE_SIZE:
-        lwm2m_tlv_encode_int(connStDataP->maxMessageSize, tlvP);
-        tlvP->type = LWM2M_TYPE_RESOURCE;
-        return (0 != tlvP->length) ? COAP_205_CONTENT : COAP_500_INTERNAL_SERVER_ERROR;
+        lwm2m_data_encode_int(connStDataP->maxMessageSize, dataP);
+        dataP->type = LWM2M_TYPE_RESOURCE;
+        return (0 != dataP->length) ? COAP_205_CONTENT : COAP_500_INTERNAL_SERVER_ERROR;
         break;
     case RES_O_AVERAGE_MESSAGE_SIZE:
-        lwm2m_tlv_encode_int(connStDataP->avrMessageSize, tlvP);
-        tlvP->type = LWM2M_TYPE_RESOURCE;
-        return (0 != tlvP->length) ? COAP_205_CONTENT : COAP_500_INTERNAL_SERVER_ERROR;
+        lwm2m_data_encode_int(connStDataP->avrMessageSize, dataP);
+        dataP->type = LWM2M_TYPE_RESOURCE;
+        return (0 != dataP->length) ? COAP_205_CONTENT : COAP_500_INTERNAL_SERVER_ERROR;
         break;
     default:
         return COAP_404_NOT_FOUND ;
     }
 }
 
-static uint8_t prv_read(uint16_t instanceId, int * numDataP, lwm2m_tlv_t** dataArrayP, lwm2m_object_t * objectP)
+static uint8_t prv_read(uint16_t instanceId, int * numDataP, lwm2m_data_t** dataArrayP, lwm2m_object_t * objectP)
 {
     uint8_t result;
     int i;
@@ -120,7 +120,7 @@ static uint8_t prv_read(uint16_t instanceId, int * numDataP, lwm2m_tlv_t** dataA
         };
         int nbRes = sizeof(resList) / sizeof(uint16_t);
 
-        *dataArrayP = lwm2m_tlv_new(nbRes);
+        *dataArrayP = lwm2m_data_new(nbRes);
         if (*dataArrayP == NULL)
             return COAP_500_INTERNAL_SERVER_ERROR ;
         *numDataP = nbRes;

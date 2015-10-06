@@ -38,5 +38,6 @@ int check_end_of_args(char* buffer);
 
 void output_buffer(FILE * stream, uint8_t * buffer, int length, int indent);
 void output_tlv(FILE * stream, uint8_t * buffer, size_t buffer_len, int indent);
-void dump_tlv(FILE * stream, int size, lwm2m_tlv_t * tlvP, int indent);
+void dump_tlv(FILE * stream, int size, lwm2m_data_t * dataP, int indent);
+void output_data(FILE * stream, lwm2m_media_type_t format, uint8_t * buffer, int length, int indent);
 void print_status(FILE * stream, uint8_t status);
