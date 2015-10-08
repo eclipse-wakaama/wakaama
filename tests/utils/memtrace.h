@@ -27,6 +27,10 @@ void trace_free(void* mem, const char* file, const char* function, int lineno);
 void trace_print(int loops, int level);
 void trace_status(int* blocks, size_t* size);
 
+#undef lwm2m_strdup
+#undef lwm2m_malloc
+#undef lwm2m_free
+
 #define lwm2m_strdup(S) trace_strdup(S, __FILE__, __FUNCTION__, __LINE__)
 #define lwm2m_malloc(S) trace_malloc(S, __FILE__, __FUNCTION__, __LINE__)
 #define lwm2m_free(M) trace_free(M, __FILE__, __FUNCTION__, __LINE__)
