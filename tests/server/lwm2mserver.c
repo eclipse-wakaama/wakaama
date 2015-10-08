@@ -71,6 +71,7 @@
 
 #include "commandline.h"
 #include "connection.h"
+#include "memtrace.h"
 
 #define MAX_PACKET_SIZE 1024
 

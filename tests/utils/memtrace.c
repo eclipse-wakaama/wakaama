@@ -15,7 +15,9 @@
  *
  *******************************************************************************/
 
-#include "internals.h"
+#include "memtrace.h"
+#include <stdio.h>
+#include <stdint.h>
 
 #ifdef MEMORY_TRACE
 

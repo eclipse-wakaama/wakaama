@@ -1,6 +1,5 @@
 SET(EXT_SOURCES 
-    ${CMAKE_CURRENT_LIST_DIR}/er-coap-13/er-coap-13.c
-    ${CMAKE_CURRENT_LIST_DIR}/memtrace.c)
+    ${CMAKE_CURRENT_LIST_DIR}/er-coap-13/er-coap-13.c)
 
 SET(CORE_SOURCES
     ${CMAKE_CURRENT_LIST_DIR}/liblwm2m.c

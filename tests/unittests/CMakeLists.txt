@@ -4,9 +4,9 @@ project (lwm2munittests)
   
 SET(LIBLWM2M_DIR ${PROJECT_SOURCE_DIR}/../../core)
 
-add_definitions(-DLWM2M_CLIENT_MODE -DMEMORY_TRACE -DLWM2M_LITTLE_ENDIAN)
+add_definitions(-DLWM2M_CLIENT_MODE -DMEMORY_TRACE -DLWM2M_LITTLE_ENDIAN -DMEMORY_TRACE)
 
-include_directories (${LIBLWM2M_DIR})
+include_directories (${LIBLWM2M_DIR} ${PROJECT_SOURCE_DIR}/../utils)
 
 add_subdirectory(${LIBLWM2M_DIR} ${CMAKE_CURRENT_BINARY_DIR}/core)
 
@@ -15,6 +15,6 @@ SET(SOURCES
     tlvtests.c
     uritests.c)
 
-add_executable(lwm2munittests ${SOURCES} ${CORE_SOURCES})
+add_executable(lwm2munittests ${SOURCES} ${CORE_SOURCES} ../utils/memtrace.c)
 
 target_link_libraries(lwm2munittests cunit)

@@ -56,6 +56,7 @@
 
 #include "lwm2mclient.h"
 #include "liblwm2m.h"
+#include "memtrace.h"
 #include "commandline.h"
 #include "connection.h"
 

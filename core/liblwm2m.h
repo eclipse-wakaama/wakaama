@@ -69,13 +69,9 @@ extern "C" {
 #endif
 
 #ifndef LWM2M_EMBEDDED_MODE
-#ifdef MEMORY_TRACE
-#include "memtrace.h"
-#else
 #define lwm2m_malloc malloc
 #define lwm2m_free free
 #define lwm2m_strdup strdup
-#endif
 #define lwm2m_strncmp strncmp
 #else
 void * lwm2m_malloc(size_t s);

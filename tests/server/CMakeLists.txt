@@ -12,6 +12,6 @@ add_subdirectory(${LIBLWM2M_DIR} ${CMAKE_CURRENT_BINARY_DIR}/core)
 
 # SET(CMAKE_C_FLAGS "-Wall -Wextra -Wfloat-equal -Wshadow -Wpointer-arith -Wcast-align -Wstrict-prototypes -Wwrite-strings -Waggregate-return -Wswitch-default -Wswitch-enum")
 
-SET(SOURCES lwm2mserver.c ../utils/commandline.c ../utils/connection.c)
+SET(SOURCES lwm2mserver.c ../utils/commandline.c ../utils/connection.c ../utils/memtrace.c)
 
 add_executable(lwm2mserver ${SOURCES} ${CORE_SOURCES})
