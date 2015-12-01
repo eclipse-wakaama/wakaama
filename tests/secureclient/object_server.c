@@ -351,7 +351,7 @@ static void prv_server_close(lwm2m_object_t * object)
     }
 }
 
-lwm2m_object_t * get_server_object()
+lwm2m_object_t * get_server_object_with_instance(server_instance_t * firstInstance)
 {
     lwm2m_object_t * serverObj;
 
@@ -371,6 +371,37 @@ lwm2m_object_t * get_server_object()
     serverObj->deleteFunc = prv_server_delete;
     serverObj->executeFunc = prv_server_execute;
     serverObj->closeFunc = prv_server_close;
+    if (firstInstance != NULL)
+        serverObj->instanceList = LWM2M_LIST_ADD(serverObj->instanceList, firstInstance);
+
+    return serverObj;
+}
+
+lwm2m_object_t * get_empty_server_object(){
+	return get_server_object_with_instance(NULL);	
+}
+
+lwm2m_object_t * get_server_object_with_default_instance(int shortID)
+{
+    server_instance_t * serverInstance;
+
+    // Manually create an hardcoded server
+    serverInstance = (server_instance_t *)lwm2m_malloc(sizeof(server_instance_t));
+    if (NULL == serverInstance)
+    {
+        return NULL;
+    }
+
+    memset(serverInstance, 0, sizeof(server_instance_t));
+    serverInstance->instanceId = 0;
+    serverInstance->shortServerId = shortID;
+    serverInstance->lifetime = 300;
+    serverInstance->storing = false;
+    serverInstance->binding[0] = 'U';
+
+    lwm2m_object_t * serverObj = get_server_object_with_instance(serverInstance);
+    if (serverObj == NULL)
+        lwm2m_free(serverInstance);
 
     return serverObj;
 }

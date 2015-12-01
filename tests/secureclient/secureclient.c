@@ -73,8 +73,9 @@
 #include <signal.h>
 
 extern lwm2m_object_t * get_object_device(void);
-extern lwm2m_object_t * get_server_object(void);
-extern lwm2m_object_t * get_security_object(char* url, char * bsPskId, char * psk, uint16_t pskLen);
+extern lwm2m_object_t * get_empty_server_object(void);
+extern lwm2m_object_t * get_server_object_with_default_instance(int shortId);
+extern lwm2m_object_t * get_security_object(int shortId, char* url, char * bsPskId, char * psk, uint16_t pskLen, bool bootstrap);
 extern lwm2m_object_t * get_test_object(void);
 
 
@@ -150,9 +151,10 @@ void print_usage(void)
     fprintf(stdout, "Options:\r\n");
     fprintf(stdout, "  -n NAME\tSet the endpoint name of the Client. Default: testsecureclient\r\n");
     fprintf(stdout, "  -l PORT\tSet the local UDP port of the Client. Default: 56830\r\n");
-    fprintf(stdout, "  -b URL\tSet the bootstrap URL. Default: coap://localhost:5683\r\n");
-    fprintf(stdout, "  -i STRING\tSet the bootstrap PSK identity. If not set use none secure mode\r\n");
-    fprintf(stdout, "  -p HEXSTRING\tSet the bootstrap Pre-Shared-Key. If not set use none secure mode\r\n");
+    fprintf(stdout, "  -b BOOTSTRAP\tIf present use bootstrap.\r\n");
+    fprintf(stdout, "  -u URL\tSet the device management or bootstrap server URL. Default: coap://localhost:5683\r\n");
+    fprintf(stdout, "  -i STRING\tSet the device management or bootstrap server PSK identity. If not set use none secure mode\r\n");
+    fprintf(stdout, "  -p HEXSTRING\tSet the device management or bootstrap server Pre-Shared-Key. If not set use none secure mode\r\n");
     fprintf(stdout, "\r\n");
 }
 
@@ -166,9 +168,10 @@ int main(int argc, char *argv[])
 
     const char * localPort = "56830";
     char * name = "testsecureclient";
-    char * bsUrl = "coap://localhost:5683";
-    char * bsPskId = NULL;
-    char * bsPsk = NULL;
+    char * url = "coap://localhost:5683";
+    char * pskId = NULL;
+    char * psk = NULL;
+    bool bootstrap = false;
 
     int result;
     int i;
@@ -176,7 +179,7 @@ int main(int argc, char *argv[])
 
     memset(&data, 0, sizeof(client_data_t));
 
-    while ((opt = getopt(argc, argv, "l:n:p:i:b:")) != -1)
+    while ((opt = getopt(argc, argv, "u:l:n:p:i:b")) != -1)
     {
         switch (opt)
         {
@@ -186,14 +189,17 @@ int main(int argc, char *argv[])
         case 'l':
             localPort = optarg;
             break;
-        case 'b':
-            bsUrl = optarg;
+        case 'u':
+            url = optarg;
             break;
         case 'i':
-            bsPskId = optarg;
+            pskId = optarg;
             break;
         case 'p':
-            bsPsk = optarg;
+            psk = optarg;
+            break;
+        case 'b':
+            bootstrap = true;
             break;
         default:
             print_usage();
@@ -218,9 +224,9 @@ int main(int argc, char *argv[])
      */
     uint16_t pskLen = -1;
     char * pskBuffer = NULL;
-    if (bsPsk!= NULL)
+    if (psk!= NULL)
     {
-        pskLen = (strlen(bsPsk) / 2);
+        pskLen = (strlen(psk) / 2);
         pskBuffer = malloc(pskLen+1);
         if (NULL == pskBuffer)
         {
@@ -228,18 +234,17 @@ int main(int argc, char *argv[])
             return -1;
         }
         // Hex string to binary
-        char *h = bsPsk;
+        char *h = psk;
         char *b = pskBuffer;
-
         char xlate[] = "0123456789ABCDEF";
 
         for ( ; *h; h += 2, ++b)
         {
-           *b = ((strchr(xlate, *h) - xlate) * 16) + ((strchr(xlate, *(h+1)) - xlate));
+           *b = ((strchr(xlate, toupper(*h)) - xlate) * 16) + ((strchr(xlate, toupper(*(h+1))) - xlate));
         }
     }
 
-    objArray[0] = get_security_object(bsUrl,bsPskId,pskBuffer,pskLen);
+    objArray[0] = get_security_object(123, url, pskId, pskBuffer, pskLen, bootstrap);
     if (NULL == objArray[0])
     {
         fprintf(stderr, "Failed to create security object\r\n");
@@ -247,7 +252,10 @@ int main(int argc, char *argv[])
     }
     data.securityObjP = objArray[0];
 
-    objArray[1] = get_server_object();
+    if (bootstrap)
+        objArray[1] = get_empty_server_object();
+    else
+        objArray[1] = get_server_object_with_default_instance(123);
     if (NULL == objArray[1])
     {
         fprintf(stderr, "Failed to create server object\r\n");

@@ -452,7 +452,7 @@ static void prv_security_close(lwm2m_object_t * objectP)
     }
 }
 
-lwm2m_object_t * get_security_object(char* url, char * bsPskId, char * psk, uint16_t pskLen)
+lwm2m_object_t * get_security_object(int shortId, char* url, char * bsPskId, char * psk, uint16_t pskLen, bool bootstrap)
 {
     lwm2m_object_t * securityObj;
 
@@ -491,8 +491,8 @@ lwm2m_object_t * get_security_object(char* url, char * bsPskId, char * psk, uint
     }
 
 
-    targetP->isBootstrap = true;
-    targetP->shortID = 123;
+    targetP->isBootstrap = bootstrap;
+    targetP->shortID = shortId;
     targetP->clientHoldOffTime = 5;
 
     securityObj->instanceList = LWM2M_LIST_ADD(securityObj->instanceList, targetP);
