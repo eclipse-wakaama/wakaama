@@ -133,7 +133,7 @@ static uint8_t prv_get_value(lwm2m_data_t * dataP,
         dataP->dataType = LWM2M_TYPE_OPAQUE;
         return COAP_205_CONTENT;
 
-    // HOLYSHIT THIS IS SO BROKEN OMA :(
+    /* If you try to use this resource take a look at https://github.com/OpenMobileAlliance/OMA-LwM2M-Public-Review/issues/75 */
     case LWM2M_SECURITY_SMS_SERVER_NUMBER_ID:
         lwm2m_data_encode_int(0, dataP);
         if (0 != dataP->length) return COAP_205_CONTENT;
