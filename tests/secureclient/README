@@ -1,0 +1,2 @@
+Unzip [tinydtls](http://sourceforge.net/projects/tinydtls/) in tests/utils/tinydtls to compile secure client.
+(Currently testing with the 0.8.2 version)
