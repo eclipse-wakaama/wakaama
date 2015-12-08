@@ -349,7 +349,6 @@ typedef uint8_t (*lwm2m_write_callback_t) (uint16_t instanceId, int numData, lwm
 typedef uint8_t (*lwm2m_execute_callback_t) (uint16_t instanceId, uint16_t resourceId, uint8_t * buffer, int length, lwm2m_object_t * objectP);
 typedef uint8_t (*lwm2m_create_callback_t) (uint16_t instanceId, int numData, lwm2m_data_t * dataArray, lwm2m_object_t * objectP);
 typedef uint8_t (*lwm2m_delete_callback_t) (uint16_t instanceId, lwm2m_object_t * objectP);
-typedef void (*lwm2m_close_callback_t) (lwm2m_object_t * objectP);
 
 struct _lwm2m_object_t
 {
@@ -360,7 +359,6 @@ struct _lwm2m_object_t
     lwm2m_execute_callback_t executeFunc;
     lwm2m_create_callback_t  createFunc;
     lwm2m_delete_callback_t  deleteFunc;
-    lwm2m_close_callback_t   closeFunc;
     void *                   userData;
 };
 

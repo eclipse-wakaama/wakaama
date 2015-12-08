@@ -205,12 +205,6 @@ void display_location_object(lwm2m_object_t * object)
 #endif
 }
 
-static void prv_location_close(lwm2m_object_t * object)
-{
-    lwm2m_list_free(object->instanceList);
-    lwm2m_free(object->userData);
-}
-
 /**
   * Convenience function to set the velocity attributes.
   * see 3GPP TS 23.032 V11.0.0(2012-09) page 23,24.
@@ -302,7 +296,6 @@ lwm2m_object_t * get_object_location(void)
         // In fact the library don't need to know the resources of the object, only the server does.
         //
         locationObj->readFunc    = prv_location_read;
-        locationObj->closeFunc   = prv_location_close;
         locationObj->userData    = lwm2m_malloc(sizeof(location_data_t));
 
         // initialize private data structure containing the needed variables
@@ -325,4 +318,12 @@ lwm2m_object_t * get_object_location(void)
     
     return locationObj;
 }
+
+void free_object_location(lwm2m_object_t * object)
+{
+    lwm2m_list_free(object->instanceList);
+    lwm2m_free(object->userData);
+    lwm2m_free(object);
+}
+
 #endif  //LWM2M_CLIENT_MODE

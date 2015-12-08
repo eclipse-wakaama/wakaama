@@ -86,25 +86,6 @@ lwm2m_context_t * lwm2m_init(lwm2m_connect_server_callback_t connectCallback,
 }
 
 #ifdef LWM2M_CLIENT_MODE
-void lwm2m_delete_object_list_content(lwm2m_context_t * context)
-{
-    lwm2m_object_t ** objectList = context->objectList;
-    if (NULL != objectList)
-    {
-        int i;
-        for (i = 0 ; i < context->numObject ; i++)
-        {
-            if (NULL != objectList[i])
-            {
-                if (objectList[i]->closeFunc != NULL)
-                {
-                    objectList[i]->closeFunc(objectList[i]);
-                }
-            }
-        }
-    }
-}
-
 void lwm2m_deregister(lwm2m_context_t * context)
 {
     lwm2m_server_t * server = context->serverList;
@@ -173,7 +154,6 @@ void lwm2m_close(lwm2m_context_t * contextP)
     delete_server_list(contextP);
     delete_bootstrap_server_list(contextP);
     delete_observed_list(contextP);
-    lwm2m_delete_object_list_content(contextP);
     for (i = 0 ; i < contextP->numObject ; i++)
     {
         lwm2m_free(contextP->objectList[i]);

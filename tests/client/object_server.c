@@ -364,15 +364,6 @@ static uint8_t prv_server_create(uint16_t instanceId,
     return result;
 }
 
-static void prv_server_close(lwm2m_object_t * object) {
-    while (object->instanceList != NULL)
-    {
-        server_instance_t * serverInstance = (server_instance_t *)object->instanceList;
-        object->instanceList = object->instanceList->next;
-        lwm2m_free(serverInstance);
-    }
-}
-
 void copy_server_object(lwm2m_object_t * objectDest, lwm2m_object_t * objectSrc)
 {
     memcpy(objectDest, objectSrc, sizeof(lwm2m_object_t));
@@ -419,8 +410,10 @@ void display_server_object(lwm2m_object_t * object)
 #endif
 }
 
-lwm2m_object_t * get_server_object(int serverId, const char* binding,
-                                   int lifetime, bool storing)
+lwm2m_object_t * get_server_object(int serverId,
+                                   const char* binding,
+                                   int lifetime,
+                                   bool storing)
 {
     lwm2m_object_t * serverObj;
 
@@ -455,8 +448,18 @@ lwm2m_object_t * get_server_object(int serverId, const char* binding,
         serverObj->createFunc = prv_server_create;
         serverObj->deleteFunc = prv_server_delete;
         serverObj->executeFunc = prv_server_execute;
-        serverObj->closeFunc = prv_server_close;
     }
 
     return serverObj;
+}
+
+void free_server_object(lwm2m_object_t * object)
+{
+    while (object->instanceList != NULL)
+    {
+        server_instance_t * serverInstance = (server_instance_t *)object->instanceList;
+        object->instanceList = object->instanceList->next;
+        lwm2m_free(serverInstance);
+    }
+    lwm2m_free(object);
 }

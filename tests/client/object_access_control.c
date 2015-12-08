@@ -358,21 +358,6 @@ static uint8_t prv_write(uint16_t instanceId, int numData,
     return prv_write_resources(instanceId, numData, tlvArray, objectP, false);
 }
 
-
-static void prv_close(lwm2m_object_t * objectP)
-{
-    acc_ctrl_oi_t *accCtrlOiT;
-    acc_ctrl_oi_t *accCtrlOiP = (acc_ctrl_oi_t*)objectP->instanceList;
-    while (accCtrlOiP != NULL)
-    {
-        // first free acl (multiple resource!):
-        LWM2M_LIST_FREE(accCtrlOiP->accCtrlValList);
-        accCtrlOiT = accCtrlOiP;
-        accCtrlOiP = accCtrlOiP->next;
-        lwm2m_free(accCtrlOiT);
-    }
-}
-
 static uint8_t prv_delete(uint16_t id, lwm2m_object_t * objectP)
 {
     acc_ctrl_oi_t* targetP;
@@ -437,11 +422,25 @@ lwm2m_object_t * acc_ctrl_create_object(void)
         // Init callbacks, empty instanceList!
         accCtrlObj->readFunc    = prv_read;
         accCtrlObj->writeFunc   = prv_write;
-        accCtrlObj->closeFunc   = prv_close;
         accCtrlObj->createFunc  = prv_create;
         accCtrlObj->deleteFunc  = prv_delete;
     }
     return accCtrlObj;
+}
+
+void acl_ctrl_free_object(lwm2m_object_t * objectP)
+{
+    acc_ctrl_oi_t *accCtrlOiT;
+    acc_ctrl_oi_t *accCtrlOiP = (acc_ctrl_oi_t*)objectP->instanceList;
+    while (accCtrlOiP != NULL)
+    {
+        // first free acl (multiple resource!):
+        LWM2M_LIST_FREE(accCtrlOiP->accCtrlValList);
+        accCtrlOiT = accCtrlOiP;
+        accCtrlOiP = accCtrlOiP->next;
+        lwm2m_free(accCtrlOiT);
+    }
+    lwm2m_free(objectP);
 }
 
 bool  acc_ctrl_obj_add_inst (lwm2m_object_t* accCtrlObjP, uint16_t instId,

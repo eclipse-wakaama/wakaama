@@ -198,10 +198,6 @@ static uint8_t prv_device_execute(uint16_t instanceId,
     return COAP_405_METHOD_NOT_ALLOWED;
 }
 
-static void prv_device_close(lwm2m_object_t * objectP)
-{
-}
-
 lwm2m_object_t * get_object_device()
 {
     /*

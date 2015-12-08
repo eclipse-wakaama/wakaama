@@ -73,11 +73,14 @@
 #include <signal.h>
 
 extern lwm2m_object_t * get_object_device(void);
+extern void free_object_device(lwm2m_object_t * objectP);
 extern lwm2m_object_t * get_server_object(void);
+extern void free_server_object(lwm2m_object_t * object);
 extern lwm2m_object_t * get_security_object(void);
+extern void free_security_object(lwm2m_object_t * objectP);
 extern char * get_server_uri(lwm2m_object_t * objectP, uint16_t secObjInstID);
 extern lwm2m_object_t * get_test_object(void);
-
+extern void free_test_object(lwm2m_object_t * object);
 
 #define MAX_PACKET_SIZE 1024
 
@@ -398,6 +401,11 @@ int main(int argc, char *argv[])
     lwm2m_close(lwm2mH);
     close(data.sock);
     connection_free(data.connList);
+
+    free_security_object(objArray[0]);
+    free_server_object(objArray[1]);
+    free_object_device(objArray[2]);
+    free_test_object(objArray[3]);
 
     fprintf(stdout, "\r\n\n");
 

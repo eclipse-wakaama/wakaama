@@ -397,20 +397,6 @@ static uint8_t prv_security_create(uint16_t instanceId,
 }
 #endif
 
-static void prv_security_close(lwm2m_object_t * objectP)
-{
-    while (objectP->instanceList != NULL)
-    {
-        security_instance_t * securityInstance = (security_instance_t *)objectP->instanceList;
-        objectP->instanceList = objectP->instanceList->next;
-        if (NULL != securityInstance->uri)
-        {
-            lwm2m_free(securityInstance->uri);
-        }
-        lwm2m_free(securityInstance);
-    }
-}
-
 void copy_security_object(lwm2m_object_t * objectDest, lwm2m_object_t * objectSrc)
 {
     memcpy(objectDest, objectSrc, sizeof(lwm2m_object_t));
@@ -457,7 +443,9 @@ void display_security_object(lwm2m_object_t * object)
 #endif
 }
 
-lwm2m_object_t * get_security_object(int serverId, const char* serverUri, bool isBootstrap)
+lwm2m_object_t * get_security_object(int serverId,
+                                     const char* serverUri,
+                                     bool isBootstrap)
 {
     lwm2m_object_t * securityObj;
 
@@ -495,10 +483,24 @@ lwm2m_object_t * get_security_object(int serverId, const char* serverUri, bool i
         securityObj->createFunc = prv_security_create;
         securityObj->deleteFunc = prv_security_delete;
 #endif
-        securityObj->closeFunc = prv_security_close;
     }
 
     return securityObj;
+}
+
+void free_security_object(lwm2m_object_t * objectP)
+{
+    while (objectP->instanceList != NULL)
+    {
+        security_instance_t * securityInstance = (security_instance_t *)objectP->instanceList;
+        objectP->instanceList = objectP->instanceList->next;
+        if (NULL != securityInstance->uri)
+        {
+            lwm2m_free(securityInstance->uri);
+        }
+        lwm2m_free(securityInstance);
+    }
+    lwm2m_free(objectP);
 }
 
 char * get_server_uri(lwm2m_object_t * objectP,
