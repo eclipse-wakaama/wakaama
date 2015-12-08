@@ -628,9 +628,9 @@ void lwm2m_set_monitoring_callback(lwm2m_context_t * contextP, lwm2m_result_call
 
 // Device Management APIs
 int lwm2m_dm_read(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, lwm2m_result_callback_t callback, void * userData);
-int lwm2m_dm_write(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, uint8_t * buffer, int length, lwm2m_result_callback_t callback, void * userData);
-int lwm2m_dm_execute(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, uint8_t * buffer, int length, lwm2m_result_callback_t callback, void * userData);
-int lwm2m_dm_create(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, uint8_t * buffer, int length, lwm2m_result_callback_t callback, void * userData);
+int lwm2m_dm_write(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, lwm2m_media_type_t format, uint8_t * buffer, int length, lwm2m_result_callback_t callback, void * userData);
+int lwm2m_dm_execute(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, lwm2m_media_type_t format, uint8_t * buffer, int length, lwm2m_result_callback_t callback, void * userData);
+int lwm2m_dm_create(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, lwm2m_media_type_t format, uint8_t * buffer, int length, lwm2m_result_callback_t callback, void * userData);
 int lwm2m_dm_delete(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, lwm2m_result_callback_t callback, void * userData);
 
 // Information Reporting APIs
@@ -646,7 +646,7 @@ void lwm2m_set_bootstrap_callback(lwm2m_context_t * contextP, lwm2m_bootstrap_ca
 // Boostrap Interface APIs
 // if uriP is nil, a "Delete /" is sent to the client
 int lwm2m_bootstrap_delete(lwm2m_context_t * contextP, void * sessionH, lwm2m_uri_t * uriP);
-int lwm2m_bootstrap_write(lwm2m_context_t * contextP, void * sessionH, lwm2m_uri_t * uriP, uint8_t * buffer, size_t length);
+int lwm2m_bootstrap_write(lwm2m_context_t * contextP, void * sessionH, lwm2m_uri_t * uriP, lwm2m_media_type_t format, uint8_t * buffer, size_t length);
 int lwm2m_bootstrap_finish(lwm2m_context_t * contextP, void * sessionH);
 
 #endif

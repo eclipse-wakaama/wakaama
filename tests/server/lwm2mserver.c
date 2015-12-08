@@ -300,7 +300,7 @@ static void prv_write_client(char * buffer,
 
     if (!check_end_of_args(end)) goto syntax_error;
 
-    result = lwm2m_dm_write(lwm2mH, clientId, &uri, (uint8_t *)buffer, end - buffer, prv_result_callback, NULL);
+    result = lwm2m_dm_write(lwm2mH, clientId, &uri, LWM2M_CONTENT_TEXT, (uint8_t *)buffer, end - buffer, prv_result_callback, NULL);
 
     if (result == 0)
     {
@@ -340,13 +340,13 @@ static void prv_exec_client(char * buffer,
 
     if (buffer[0] == 0)
     {
-        result = lwm2m_dm_execute(lwm2mH, clientId, &uri, NULL, 0, prv_result_callback, NULL);
+        result = lwm2m_dm_execute(lwm2mH, clientId, &uri, 0, NULL, 0, prv_result_callback, NULL);
     }
     else
     {
         if (!check_end_of_args(end)) goto syntax_error;
 
-        result = lwm2m_dm_execute(lwm2mH, clientId, &uri, (uint8_t *)buffer, end - buffer, prv_result_callback, NULL);
+        result = lwm2m_dm_execute(lwm2mH, clientId, &uri, LWM2M_CONTENT_TEXT, (uint8_t *)buffer, end - buffer, prv_result_callback, NULL);
     }
 
     if (result == 0)
@@ -374,7 +374,7 @@ static void prv_create_client(char * buffer,
     int64_t value;
     uint8_t temp_buffer[MAX_PACKET_SIZE];
     int temp_length = 0;
-
+    lwm2m_media_type_t format = LWM2M_CONTENT_TEXT;
 
     //Get Client ID
     result = prv_read_id(buffer, &clientId);
@@ -401,11 +401,12 @@ static void prv_create_client(char * buffer,
     {
         result = lwm2m_PlainTextToInt64((uint8_t *)buffer, end - buffer, &value);
         temp_length = lwm2m_intToTLV(LWM2M_TYPE_RESOURCE, value, (uint16_t) 1, temp_buffer, MAX_PACKET_SIZE);
+        format = LWM2M_CONTENT_TLV;
     }
    /* End Client dependent part*/
 
     //Create
-    result = lwm2m_dm_create(lwm2mH, clientId,&uri, temp_buffer, temp_length, prv_result_callback, NULL);
+    result = lwm2m_dm_create(lwm2mH, clientId, &uri, format, temp_buffer, temp_length, prv_result_callback, NULL);
 
     if (result == 0)
     {

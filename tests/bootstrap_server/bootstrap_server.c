@@ -228,7 +228,7 @@ static void prv_send_command(internal_data_t * dataP,
         uri.objectId = LWM2M_SECURITY_OBJECT_ID;
         uri.instanceId = endP->cmdList->serverId;
 
-        res = lwm2m_bootstrap_write(dataP->lwm2mH, endP->handle, &uri, serverP->securityData, serverP->securityLen);
+        res = lwm2m_bootstrap_write(dataP->lwm2mH, endP->handle, &uri, LWM2M_CONTENT_TLV, serverP->securityData, serverP->securityLen);
     }
         break;
 
@@ -249,7 +249,7 @@ static void prv_send_command(internal_data_t * dataP,
         uri.objectId = LWM2M_SERVER_OBJECT_ID;
         uri.instanceId = endP->cmdList->serverId;
 
-        res = lwm2m_bootstrap_write(dataP->lwm2mH, endP->handle, &uri, serverP->serverData, serverP->serverLen);
+        res = lwm2m_bootstrap_write(dataP->lwm2mH, endP->handle, &uri, LWM2M_CONTENT_TLV, serverP->serverData, serverP->serverLen);
     }
         break;
 
