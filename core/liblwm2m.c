@@ -154,10 +154,6 @@ void lwm2m_close(lwm2m_context_t * contextP)
     delete_server_list(contextP);
     delete_bootstrap_server_list(contextP);
     delete_observed_list(contextP);
-    for (i = 0 ; i < contextP->numObject ; i++)
-    {
-        lwm2m_free(contextP->objectList[i]);
-    }
     lwm2m_free(contextP->objectList);
     lwm2m_free(contextP->endpointName);
     if (contextP->msisdn != NULL)
