@@ -341,16 +341,6 @@ static uint8_t prv_server_create(uint16_t instanceId,
     return result;
 }
 
-static void prv_server_close(lwm2m_object_t * object)
-{
-    while (object->instanceList != NULL)
-    {
-        server_instance_t * serverInstance = (server_instance_t *)object->instanceList;
-        object->instanceList = object->instanceList->next;
-        lwm2m_free(serverInstance);
-    }
-}
-
 lwm2m_object_t * get_server_object_with_instance(server_instance_t * firstInstance)
 {
     lwm2m_object_t * serverObj;
@@ -370,7 +360,6 @@ lwm2m_object_t * get_server_object_with_instance(server_instance_t * firstInstan
     serverObj->createFunc = prv_server_create;
     serverObj->deleteFunc = prv_server_delete;
     serverObj->executeFunc = prv_server_execute;
-    serverObj->closeFunc = prv_server_close;
     if (firstInstance != NULL)
         serverObj->instanceList = LWM2M_LIST_ADD(serverObj->instanceList, firstInstance);
 
@@ -404,4 +393,15 @@ lwm2m_object_t * get_server_object_with_default_instance(int shortID)
         lwm2m_free(serverInstance);
 
     return serverObj;
+}
+
+void free_server_object(lwm2m_object_t * object)
+{
+    while (object->instanceList != NULL)
+    {
+        server_instance_t * serverInstance = (server_instance_t *)object->instanceList;
+        object->instanceList = object->instanceList->next;
+        lwm2m_free(serverInstance);
+    }
+    lwm2m_free(object);
 }

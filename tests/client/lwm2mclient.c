@@ -597,8 +597,17 @@ static void prv_backup_objects(lwm2m_context_t * context)
 
     for (i = 0; i < BACKUP_OBJECT_COUNT; i++) {
         if (NULL != backupObjectArray[i]) {
-            backupObjectArray[i]->closeFunc(backupObjectArray[i]);
-            lwm2m_free(backupObjectArray[i]);
+            switch (backupObjectArray[i]->objID)
+            {
+            case LWM2M_SECURITY_OBJECT_ID:
+                free_security_object(backupObjectArray[i]);
+                break;
+            case LWM2M_SERVER_OBJECT_ID:
+                free_server_object(backupObjectArray[i]);
+                break;
+            default:
+                break;
+            }
         }
         backupObjectArray[i] = (lwm2m_object_t *)lwm2m_malloc(sizeof(lwm2m_object_t));
         memset(backupObjectArray[i], 0, sizeof(lwm2m_object_t));
@@ -639,13 +648,13 @@ static void prv_restore_objects(lwm2m_context_t * context)
             {
             case LWM2M_SECURITY_OBJECT_ID:
                 // first delete internal content
-                object->closeFunc(object);
+                free_security_object(object);
                 // then restore previous object
                 copy_security_object(object, backupObjectArray[0]);
                 break;
             case LWM2M_SERVER_OBJECT_ID:
                 // first delete internal content
-                object->closeFunc(object);
+                free_server_object(object);
                 // then restore previous object
                 copy_server_object(object, backupObjectArray[1]);
                 break;
@@ -714,8 +723,17 @@ static void close_backup_object()
     int i;
     for (i = 0; i < BACKUP_OBJECT_COUNT; i++) {
         if (NULL != backupObjectArray[i]) {
-            backupObjectArray[i]->closeFunc(backupObjectArray[i]);
-            lwm2m_free(backupObjectArray[i]);
+            switch (backupObjectArray[i]->objID)
+            {
+            case LWM2M_SECURITY_OBJECT_ID:
+                free_security_object(backupObjectArray[i]);
+                break;
+            case LWM2M_SERVER_OBJECT_ID:
+                free_server_object(backupObjectArray[i]);
+                break;
+            default:
+                break;
+            }
         }
     }
 }
@@ -1161,6 +1179,16 @@ int main(int argc, char *argv[])
     }
     close(data.sock);
     connection_free(data.connList);
+
+    free_security_object(objArray[0]);
+    free_server_object(objArray[1]);
+    free_object_device(objArray[2]);
+    free_object_firmware(objArray[3]);
+    free_object_location(objArray[4]);
+    free_test_object(objArray[5]);
+    free_object_conn_m(objArray[6]);
+    free_object_conn_s(objArray[7]);
+    acl_ctrl_free_object(objArray[8]);
 
 #ifdef MEMORY_TRACE
     if (g_quit == 1)

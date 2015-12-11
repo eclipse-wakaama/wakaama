@@ -438,20 +438,6 @@ static uint8_t prv_security_create(uint16_t instanceId,
     return result;
 }
 
-static void prv_security_close(lwm2m_object_t * objectP)
-{
-    while (objectP->instanceList != NULL)
-    {
-        security_instance_t * securityInstance = (security_instance_t *)objectP->instanceList;
-        objectP->instanceList = objectP->instanceList->next;
-        if (NULL != securityInstance->uri)
-        {
-            lwm2m_free(securityInstance->uri);
-        }
-        lwm2m_free(securityInstance);
-    }
-}
-
 lwm2m_object_t * get_security_object(int shortId, char* url, char * bsPskId, char * psk, uint16_t pskLen, bool bootstrap)
 {
     lwm2m_object_t * securityObj;
@@ -498,8 +484,22 @@ lwm2m_object_t * get_security_object(int shortId, char* url, char * bsPskId, cha
     securityObj->instanceList = LWM2M_LIST_ADD(securityObj->instanceList, targetP);
 
     securityObj->readFunc = prv_security_read;
-    securityObj->closeFunc = prv_security_close;
     securityObj->writeFunc = prv_security_write;
     securityObj->createFunc = prv_security_create;
     return securityObj;
+}
+
+void free_security_object(lwm2m_object_t * objectP)
+{
+    while (objectP->instanceList != NULL)
+    {
+        security_instance_t * securityInstance = (security_instance_t *)objectP->instanceList;
+        objectP->instanceList = objectP->instanceList->next;
+        if (NULL != securityInstance->uri)
+        {
+            lwm2m_free(securityInstance->uri);
+        }
+        lwm2m_free(securityInstance);
+    }
+    lwm2m_free(objectP);
 }

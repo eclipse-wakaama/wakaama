@@ -195,20 +195,6 @@ static uint8_t prv_security_read(uint16_t instanceId,
     return result;
 }
 
-static void prv_security_close(lwm2m_object_t * objectP)
-{
-    while (objectP->instanceList != NULL)
-    {
-        security_instance_t * securityInstance = (security_instance_t *)objectP->instanceList;
-        objectP->instanceList = objectP->instanceList->next;
-        if (NULL != securityInstance->uri)
-        {
-            lwm2m_free(securityInstance->uri);
-        }
-        lwm2m_free(securityInstance);
-    }
-}
-
 lwm2m_object_t * get_security_object()
 {
     lwm2m_object_t * securityObj;
@@ -241,10 +227,24 @@ lwm2m_object_t * get_security_object()
         securityObj->instanceList = LWM2M_LIST_ADD(securityObj->instanceList, targetP);
 
         securityObj->readFunc = prv_security_read;
-        securityObj->closeFunc = prv_security_close;
     }
 
     return securityObj;
+}
+
+void free_security_object(lwm2m_object_t * objectP)
+{
+    while (objectP->instanceList != NULL)
+    {
+        security_instance_t * securityInstance = (security_instance_t *)objectP->instanceList;
+        objectP->instanceList = objectP->instanceList->next;
+        if (NULL != securityInstance->uri)
+        {
+            lwm2m_free(securityInstance->uri);
+        }
+        lwm2m_free(securityInstance);
+    }
+    lwm2m_free(objectP);
 }
 
 char * get_server_uri(lwm2m_object_t * objectP,

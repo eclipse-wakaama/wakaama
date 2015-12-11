@@ -286,16 +286,6 @@ static uint8_t prv_exec(uint16_t instanceId,
     }
 }
 
-static void prv_test_close(lwm2m_object_t * object)
-{
-    LWM2M_LIST_FREE(object->instanceList);
-    if (object->userData != NULL)
-    {
-        lwm2m_free(object->userData);
-        object->userData = NULL;
-    }
-}
-
 void display_test_object(lwm2m_object_t * object)
 {
 #ifdef WITH_LOGS
@@ -347,8 +337,19 @@ lwm2m_object_t * get_test_object(void)
         testObj->executeFunc = prv_exec;
         testObj->createFunc = prv_create;
         testObj->deleteFunc = prv_delete;
-        testObj->closeFunc = prv_test_close;
     }
 
     return testObj;
 }
+
+void free_test_object(lwm2m_object_t * object)
+{
+    LWM2M_LIST_FREE(object->instanceList);
+    if (object->userData != NULL)
+    {
+        lwm2m_free(object->userData);
+        object->userData = NULL;
+    }
+    lwm2m_free(object);
+}
+

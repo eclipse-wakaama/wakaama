@@ -751,12 +751,12 @@ int main(int argc, char *argv[])
                 if (numBytes > 1)
                 {
                     buffer[numBytes] = 0;
-                    fprintf(stdout, "STDIN %d bytes '%s'\r\n> ", numBytes, buffer);
                     handle_command(commands, (char*)buffer);
+                    fprintf(stdout, "\r\n");
                 }
                 if (g_quit == 0)
                 {
-                    fprintf(stdout, "\r\n> ");
+                    fprintf(stdout, "> ");
                     fflush(stdout);
                 }
                 else

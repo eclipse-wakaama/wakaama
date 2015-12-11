@@ -521,19 +521,6 @@ static uint8_t prv_device_execute(uint16_t instanceId,
     }
 }
 
-static void prv_device_close(lwm2m_object_t * objectP) {
-    if (NULL != objectP->userData)
-    {
-        lwm2m_free(objectP->userData);
-        objectP->userData = NULL;
-    }
-    if (NULL != objectP->instanceList)
-    {
-        lwm2m_free(objectP->instanceList);
-        objectP->instanceList = NULL;
-    }
-}
-
 void display_device_object(lwm2m_object_t * object)
 {
 #ifdef WITH_LOGS
@@ -589,7 +576,6 @@ lwm2m_object_t * get_object_device()
         deviceObj->readFunc    = prv_device_read;
         deviceObj->writeFunc   = prv_device_write;
         deviceObj->executeFunc = prv_device_execute;
-        deviceObj->closeFunc = prv_device_close;
         deviceObj->userData = lwm2m_malloc(sizeof(device_data_t));
 
         /*
@@ -611,6 +597,22 @@ lwm2m_object_t * get_object_device()
     }
 
     return deviceObj;
+}
+
+void free_object_device(lwm2m_object_t * objectP)
+{
+    if (NULL != objectP->userData)
+    {
+        lwm2m_free(objectP->userData);
+        objectP->userData = NULL;
+    }
+    if (NULL != objectP->instanceList)
+    {
+        lwm2m_free(objectP->instanceList);
+        objectP->instanceList = NULL;
+    }
+
+    lwm2m_free(objectP);
 }
 
 uint8_t device_change(lwm2m_data_t * dataArray,

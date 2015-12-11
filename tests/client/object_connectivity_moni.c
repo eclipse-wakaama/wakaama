@@ -286,12 +286,6 @@ static uint8_t prv_read(uint16_t instanceId,
     return result;
 }
 
-static void prv_close(lwm2m_object_t * objectP)
-{
-    lwm2m_free(objectP->userData);
-    lwm2m_list_free(objectP->instanceList);
-}
-
 lwm2m_object_t * get_object_conn_m(void)
 {
     /*
@@ -331,7 +325,6 @@ lwm2m_object_t * get_object_conn_m(void)
          * know the resources of the object, only the server does.
          */
         connObj->readFunc = prv_read;
-        connObj->closeFunc = prv_close;
         connObj->executeFunc = NULL;
         connObj->userData = lwm2m_malloc(sizeof(conn_m_data_t));
 
@@ -357,6 +350,13 @@ lwm2m_object_t * get_object_conn_m(void)
         }
     }
     return connObj;
+}
+
+void free_object_conn_m(lwm2m_object_t * objectP)
+{
+    lwm2m_free(objectP->userData);
+    lwm2m_list_free(objectP->instanceList);
+    lwm2m_free(objectP);
 }
 
 uint8_t connectivity_moni_change(lwm2m_data_t * dataArray,
