@@ -352,6 +352,7 @@ int lwm2m_bootstrap_delete(lwm2m_context_t * contextP,
 int lwm2m_bootstrap_write(lwm2m_context_t * contextP,
                           void * sessionH,
                           lwm2m_uri_t * uriP,
+                          lwm2m_media_type_t format,
                           uint8_t * buffer,
                           size_t length)
 {
@@ -368,7 +369,7 @@ int lwm2m_bootstrap_write(lwm2m_context_t * contextP,
     transaction = transaction_new(COAP_TYPE_CON, COAP_PUT, NULL, uriP, contextP->nextMID++, 4, NULL, ENDPOINT_UNKNOWN, sessionH);
     if (transaction == NULL) return INTERNAL_SERVER_ERROR_5_00;
 
-    coap_set_header_content_type(transaction->message, LWM2M_CONTENT_TLV);
+    coap_set_header_content_type(transaction->message, format);
     coap_set_payload(transaction->message, buffer, length);
 
     dataP = (bs_data_t *)lwm2m_malloc(sizeof(bs_data_t));
