@@ -521,18 +521,18 @@ typedef struct _lwm2m_observed_
     lwm2m_watcher_t * watcherList;
 } lwm2m_observed_t;
 
-#ifdef LWM2M_BOOTSTRAP
+#ifdef LWM2M_CLIENT_MODE
 
-typedef enum {
-    NOT_BOOTSTRAPPED = 0,
-    BOOTSTRAP_REQUESTED,
-    BOOTSTRAP_CLIENT_HOLD_OFF,
-    BOOTSTRAP_INITIATED,
-    BOOTSTRAP_PENDING,
-    BOOTSTRAP_FINISHED,
-    BOOTSTRAP_FAILED,
-    BOOTSTRAPPED
-} lwm2m_bootstrap_state_t;
+typedef enum
+{
+    STATE_INITIAL = 0,
+    STATE_BOOTSTRAP_REQUIRED,
+    STATE_HOLD_OFF,
+    STATE_CLIENT_INITIATED,
+    STATE_BOOTSTRAPPING,
+    STATE_REGISTERING,
+    STATE_READY
+} lwm2m_client_state_t;
 
 #endif
 /*
@@ -558,9 +558,9 @@ typedef int (*lwm2m_bootstrap_callback_t) (void * sessionH, uint8_t status, lwm2
 typedef struct
 {
 #ifdef LWM2M_CLIENT_MODE
+    lwm2m_client_state_t state;
 #ifdef LWM2M_BOOTSTRAP
-    lwm2m_bootstrap_state_t bsState;
-    time_t              bsStart;
+    time_t               bsStart;
 #endif
     char *              endpointName;
     char *              msisdn;

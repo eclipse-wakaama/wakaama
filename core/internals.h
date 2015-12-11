@@ -169,6 +169,7 @@ coap_status_t handle_registration_request(lwm2m_context_t * contextP, lwm2m_uri_
 void registration_deregister(lwm2m_context_t * contextP, lwm2m_server_t * serverP);
 void prv_freeClient(lwm2m_client_t * clientP);
 void registration_update(lwm2m_context_t * contextP, time_t currentTime, time_t * timeoutP);
+lwm2m_status_t registration_get_status(lwm2m_context_t * contextP);
 
 // defined in packet.c
 coap_status_t message_send(lwm2m_context_t * contextP, coap_packet_t * message, void * sessionH);

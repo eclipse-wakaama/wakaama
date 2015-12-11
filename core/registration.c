@@ -387,6 +387,47 @@ void registration_update(lwm2m_context_t * contextP,
 #endif
 }
 
+/*
+ * Returns STATE_REG_PENDING if at least one registration is still pending
+ * Returns STATE_REGISTERED if no registration is pending and there is at least one server the client is registered to
+ * Returns STATE_REG_FAILED if all registration failed.
+ */
+lwm2m_status_t registration_get_status(lwm2m_context_t * contextP)
+{
+    lwm2m_server_t * targetP;
+    lwm2m_status_t reg_status;
+
+    targetP = contextP->serverList;
+    reg_status = STATE_REG_FAILED;
+
+    while (targetP != NULL)
+    {
+        switch (targetP->status)
+        {
+            case STATE_REGISTERED:
+            case STATE_REG_UPDATE_PENDING:
+                if (reg_status == STATE_REG_FAILED)
+                {
+                    reg_status = STATE_REGISTERED;
+                }
+                break;
+
+            case STATE_REG_PENDING:
+                reg_status = STATE_REG_PENDING;
+                break;
+
+            case STATE_REG_FAILED:
+            case STATE_DEREG_PENDING:
+            case STATE_DEREGISTERED:
+            default:
+                break;
+        }
+        targetP = targetP->next;
+    }
+
+    return reg_status;
+}
+
 static void prv_handleDeregistrationReply(lwm2m_transaction_t * transacP,
                                         void * message)
 {
