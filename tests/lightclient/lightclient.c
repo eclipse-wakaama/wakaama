@@ -295,16 +295,6 @@ int main(int argc, char *argv[])
      */
     signal(SIGINT, handle_sigint);
 
-    /*
-     * This function start your client to the LWM2M servers
-     */
-    result = lwm2m_start(lwm2mH);
-    if (result != 0)
-    {
-        fprintf(stderr, "lwm2m_start() failed: 0x%X\r\n", result);
-        return -1;
-    }
-
     fprintf(stdout, "LWM2M Client \"%s\" started on port %s.\r\nUse Ctrl-C to exit.\r\n\n", name, localPort);
 
     /*

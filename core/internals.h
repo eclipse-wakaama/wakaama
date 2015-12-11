@@ -189,6 +189,7 @@ uint8_t handle_bootstrap_request(lwm2m_context_t * contextP, lwm2m_uri_t * uriP,
 void delete_transaction_list(lwm2m_context_t * context);
 void delete_server_list(lwm2m_context_t * context);
 void delete_observed_list(lwm2m_context_t * contextP);
+int refresh_server_list(lwm2m_context_t * contextP);
 
 // defined in json.c
 #ifdef LWM2M_SUPPORT_JSON

@@ -183,7 +183,7 @@ void update_bootstrap_state(lwm2m_context_t * context,
     else if (context->bsState == BOOTSTRAP_FINISHED)
     {
         context->bsStart = currentTime;
-        if (0 <= lwm2m_start(context))
+        if (0 <= refresh_server_list(context))
         {
             context->bsState = BOOTSTRAPPED;
         }

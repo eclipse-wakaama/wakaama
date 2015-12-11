@@ -665,7 +665,6 @@ static void prv_restore_objects(lwm2m_context_t * context)
     }
 
     // restart the old servers
-    lwm2m_start(context);
     fprintf(stdout, "[BOOTSTRAP] ObjectList restored\r\n");
 }
 
@@ -974,16 +973,6 @@ int main(int argc, char *argv[])
     }
 
     signal(SIGINT, handle_sigint);
-
-    /*
-     * This function start your client to the LWM2M servers
-     */
-    result = lwm2m_start(lwm2mH);
-    if (result != 0)
-    {
-        fprintf(stderr, "lwm2m_start() failed: 0x%X\r\n", result);
-        return -1;
-    }
 
     /**
      * Initialize value changed callback.
