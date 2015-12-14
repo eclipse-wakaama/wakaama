@@ -193,35 +193,113 @@ void print_usage(void)
 
 void print_state(lwm2m_context_t * lwm2mH)
 {
-    fprintf(stdout, "State: ");
+    lwm2m_server_t * targetP;
+
+    fprintf(stderr, "State: ");
     switch(lwm2mH->state)
     {
     case STATE_INITIAL:
-        fprintf(stdout, "STATE_INITIAL");
+        fprintf(stderr, "STATE_INITIAL");
         break;
     case STATE_BOOTSTRAP_REQUIRED:
-        fprintf(stdout, "STATE_BOOTSTRAP_REQUIRED");
-        break;
-    case STATE_HOLD_OFF:
-        fprintf(stdout, "STATE_HOLD_OFF");
-        break;
-    case STATE_CLIENT_INITIATED:
-        fprintf(stdout, "STATE_CLIENT_INITIATED");
+        fprintf(stderr, "STATE_BOOTSTRAP_REQUIRED");
         break;
     case STATE_BOOTSTRAPPING:
-        fprintf(stdout, "STATE_BOOTSTRAPPING");
+        fprintf(stderr, "STATE_BOOTSTRAPPING");
+        break;
+    case STATE_REGISTER_REQUIRED:
+        fprintf(stderr, "STATE_REGISTER_REQUIRED");
         break;
     case STATE_REGISTERING:
-        fprintf(stdout, "STATE_REGISTERING");
+        fprintf(stderr, "STATE_REGISTERING");
         break;
     case STATE_READY:
-        fprintf(stdout, "STATE_READY");
+        fprintf(stderr, "STATE_READY");
         break;
     default:
-        fprintf(stdout, "Unknown !");
+        fprintf(stderr, "Unknown !");
         break;
     }
-    fprintf(stdout, "\r\n");
+    fprintf(stderr, "\r\n");
+
+    targetP = lwm2mH->bootstrapServerList;
+
+    if (lwm2mH->bootstrapServerList == NULL)
+    {
+        fprintf(stderr, "No Bootstrap Server.\r\n");
+    }
+    else
+    {
+        fprintf(stderr, "Bootstrap Servers:\r\n");
+        for (targetP = lwm2mH->serverList ; targetP != NULL ; targetP = targetP->next)
+        {
+            fprintf(stderr, "Security Object ID %d", targetP->secObjInstID);
+            fprintf(stderr, "\tHold Off Time: %lu s", (unsigned long)targetP->lifetime);
+            fprintf(stderr, "\tstatus: ");
+            switch(targetP->status)
+            {
+            case STATE_DEREGISTERED:
+                fprintf(stderr, "DEREGISTERED\r\n");
+                break;
+            case STATE_BS_HOLD_OFF:
+                fprintf(stderr, "CLIENT HOLD OFF\r\n");
+                break;
+            case STATE_BS_INITIATED:
+                fprintf(stderr, "BOOTSTRAP INITIATED\r\n");
+                break;
+            case STATE_BS_PENDING:
+                fprintf(stderr, "BOOTSTRAP PENDING\r\n");
+                break;
+            case STATE_BS_FINISHED:
+                fprintf(stderr, "BOOTSTRAP FINISHED\r\n");
+                break;
+            case STATE_BS_FAILED:
+                fprintf(stderr, "BOOTSTRAP FAILED\r\n");
+                break;
+            default:
+                fprintf(stderr, "INVALID (%d)\r\n", (int)targetP->status);
+            }
+            fprintf(stderr, "\r\n");
+        }
+    }
+
+    if (lwm2mH->serverList == NULL)
+    {
+        fprintf(stderr, "No LWM2M Server.\r\n");
+    }
+    else
+    {
+        fprintf(stderr, "LWM2M Servers:\r\n");
+        for (targetP = lwm2mH->serverList ; targetP != NULL ; targetP = targetP->next)
+        {
+            fprintf(stderr, "Server ID %d", targetP->shortID);
+            fprintf(stderr, "\tstatus: ");
+            switch(targetP->status)
+            {
+            case STATE_DEREGISTERED:
+                fprintf(stderr, "DEREGISTERED\r\n");
+                break;
+            case STATE_REG_PENDING:
+                fprintf(stderr, "REGISTRATION PENDING\r\n");
+                break;
+            case STATE_REGISTERED:
+                fprintf(stderr, "REGISTERED\tlocation: \"%s\"\tLifetime: %lus\r\n", targetP->location, (unsigned long)targetP->lifetime);
+                break;
+            case STATE_REG_UPDATE_PENDING:
+                fprintf(stderr, "REGISTRATION UPDATE PENDING\r\n");
+                break;
+            case STATE_DEREG_PENDING:
+                fprintf(stderr, "DEREGISTRATION PENDING\r\n");
+                break;
+            case STATE_REG_FAILED:
+                fprintf(stderr, "REGISTRATION FAILED\r\n");
+                break;
+            default:
+                fprintf(stderr, "INVALID (%d)\r\n", (int)targetP->status);
+            }
+            fprintf(stderr, "\r\n");
+        }
+    }
 }
 
 #define OBJ_COUNT 4

@@ -280,7 +280,7 @@ int lwm2m_update_registration(lwm2m_context_t * contextP,
 
 void registration_start(lwm2m_context_t * contextP)
 {
-    lwm2m_server_t * targetP = contextP->serverList;
+    lwm2m_server_t * targetP;
 
     targetP = contextP->serverList;
     while (targetP != NULL)

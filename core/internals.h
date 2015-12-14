@@ -158,8 +158,7 @@ bool transaction_handle_response(lwm2m_context_t * contextP, void * fromSessionH
 void transaction_step(lwm2m_context_t * contextP, time_t currentTime, time_t * timeoutP);
 
 // defined in management.c
-coap_status_t handle_dm_request(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, void * fromSessionH, coap_packet_t * message, coap_packet_t * response);
-coap_status_t handle_delete_all(lwm2m_context_t * context);
+coap_status_t handle_dm_request(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_server_t * serverP, coap_packet_t * message, coap_packet_t * response);
 
 // defined in observe.c
 coap_status_t handle_observe_request(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_server_t * serverP, coap_packet_t * message, coap_packet_t * response);
@@ -181,18 +180,18 @@ bool handle_observe_notify(lwm2m_context_t * contextP, void * fromSessionH, coap
 void observation_remove(lwm2m_client_t * clientP, lwm2m_observation_t * observationP);
 
 // defined in bootstrap.c
-void handle_bootstrap_response(lwm2m_context_t * context, coap_packet_t * message, void * fromSessionH);
-void bootstrap_failed(lwm2m_context_t * context);
-void reset_bootstrap_timer(lwm2m_context_t * context);
-void update_bootstrap_state(lwm2m_context_t * contextP, uint32_t currentTime, time_t* timeoutP);
+void bootstrap_step(lwm2m_context_t * contextP, uint32_t currentTime, time_t* timeoutP);
 void delete_bootstrap_server_list(lwm2m_context_t * contextP);
+coap_status_t handle_bootstrap_command(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_server_t * serverP, coap_packet_t * message, coap_packet_t * response);
+coap_status_t handle_delete_all(lwm2m_context_t * context, void * fromSessionH);
+void bootstrap_start(lwm2m_context_t * contextP);
+lwm2m_status_t bootstrap_get_status(lwm2m_context_t * contextP);
 uint8_t handle_bootstrap_request(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, void * fromSessionH, coap_packet_t * message, coap_packet_t * response);
 
 // defined in liblwm2m.c
 void delete_transaction_list(lwm2m_context_t * context);
 void delete_server_list(lwm2m_context_t * context);
 void delete_observed_list(lwm2m_context_t * contextP);
-int refresh_server_list(lwm2m_context_t * contextP);
 
 // defined in json.c
 #ifdef LWM2M_SUPPORT_JSON
@@ -202,6 +201,7 @@ int lwm2m_json_serialize(int size, lwm2m_data_t * tlvP, uint8_t ** bufferP);
 
 // defined in utils.c
 lwm2m_binding_t lwm2m_stringToBinding(uint8_t *buffer, size_t length);
+lwm2m_media_type_t prv_convertMediaType(coap_content_type_t type);
 int prv_isAltPathValid(const char * altPath);
 #ifdef LWM2M_CLIENT_MODE
 lwm2m_server_t * prv_findServer(lwm2m_context_t * contextP, void * fromSessionH);

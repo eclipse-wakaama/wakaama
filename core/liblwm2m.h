@@ -371,12 +371,17 @@ struct _lwm2m_object_t
 
 typedef enum
 {
-    STATE_DEREGISTERED = 0,   // not registered
+    STATE_DEREGISTERED = 0,   // not registered or boostrap not started
     STATE_REG_PENDING,        // registration pending
     STATE_REGISTERED,         // successfully registered
     STATE_REG_FAILED,         // last registration failed
     STATE_REG_UPDATE_PENDING, // registration update pending
-    STATE_DEREG_PENDING       // deregistration pending
+    STATE_DEREG_PENDING,      // deregistration pending
+    STATE_BS_HOLD_OFF,        // bootstrap hold off time
+    STATE_BS_INITIATED,       // bootstrap request sent
+    STATE_BS_PENDING,         // boostrap on going
+    STATE_BS_FINISHED,        // bootstrap done
+    STATE_BS_FAILED           // bootstrap failed
 } lwm2m_status_t;
 
 typedef enum
@@ -395,8 +400,8 @@ typedef struct _lwm2m_server_
     struct _lwm2m_server_ * next;   // matches lwm2m_list_t::next
     uint16_t          secObjInstID; // matches lwm2m_list_t::id
     uint16_t          shortID;      // servers short ID, may be 0 for bootstrap server
-    time_t            lifetime;     // lifetime of the registration in sec or 0 if default value (86400 sec), also used as hold off time for the bootstrap server
-    time_t            registration; // date of the last registration in sec
+    time_t            lifetime;     // lifetime of the registration in sec or 0 if default value (86400 sec), also used as hold off time for bootstrap servers
+    time_t            registration; // date of the last registration in sec or end of client hold off time for bootstrap servers
     lwm2m_binding_t   binding;      // client connection mode with this server
     void *            sessionH;
     lwm2m_status_t    status;
@@ -527,9 +532,8 @@ typedef enum
 {
     STATE_INITIAL = 0,
     STATE_BOOTSTRAP_REQUIRED,
-    STATE_HOLD_OFF,
-    STATE_CLIENT_INITIATED,
     STATE_BOOTSTRAPPING,
+    STATE_REGISTER_REQUIRED,
     STATE_REGISTERING,
     STATE_READY
 } lwm2m_client_state_t;
@@ -559,17 +563,14 @@ typedef struct
 {
 #ifdef LWM2M_CLIENT_MODE
     lwm2m_client_state_t state;
-#ifdef LWM2M_BOOTSTRAP
-    time_t               bsStart;
-#endif
-    char *              endpointName;
-    char *              msisdn;
-    char *              altPath;
-    lwm2m_server_t *    bootstrapServerList;
-    lwm2m_server_t *    serverList;
-    lwm2m_object_t **   objectList;
-    uint16_t            numObject;
-    lwm2m_observed_t *  observedList;
+    char *               endpointName;
+    char *               msisdn;
+    char *               altPath;
+    lwm2m_server_t *     bootstrapServerList;
+    lwm2m_server_t *     serverList;
+    lwm2m_object_t **    objectList;
+    uint16_t             numObject;
+    lwm2m_observed_t *   observedList;
 #endif
 #ifdef LWM2M_SERVER_MODE
     lwm2m_client_t *        clientList;

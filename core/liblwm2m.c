@@ -184,6 +184,33 @@ void lwm2m_close(lwm2m_context_t * contextP)
 }
 
 #ifdef LWM2M_CLIENT_MODE
+static int refresh_server_list(lwm2m_context_t * contextP)
+{
+    // TODO Improve this to keep on-going operations when bootstrap just adds a new server
+    int result;
+    bool cleanup = (NULL != contextP->bootstrapServerList) || (NULL != contextP->serverList);
+    delete_transaction_list(contextP);
+    delete_observed_list(contextP);
+    if (cleanup)
+    {
+        LOG("refresh_server_list: cleanup\n");
+        delete_server_list(contextP);
+        delete_bootstrap_server_list(contextP);
+    }
+    result = object_getServers(contextP);
+    if (0 != result)
+    {
+        LOG("refresh_server_list: security- or server-objects configuration error.\n");
+        if (cleanup)
+        {
+            LOG("refresh_server_list: cleanup on error\n");
+            delete_server_list(contextP);
+            delete_bootstrap_server_list(contextP);
+        }
+    }
+    return result;
+}
+
 int lwm2m_configure(lwm2m_context_t * contextP,
                     const char * endpointName,
                     const char * msisdn,
@@ -278,25 +305,49 @@ int lwm2m_step(lwm2m_context_t * contextP,
     case STATE_INITIAL:
         if (contextP->serverList != NULL)
         {
-            registration_start(contextP);
-            contextP->state = STATE_REGISTERING;
+            contextP->state = STATE_REGISTER_REQUIRED;
+        }
+        else if (contextP->bootstrapServerList != NULL)
+        {
+            // Bootstrapping
+            contextP->state = STATE_BOOTSTRAP_REQUIRED;
         }
         else
         {
-            // Bootstrapping
+            // No server
+            return COAP_503_SERVICE_UNAVAILABLE;
         }
+        *timeoutP = 0;
         break;
 
     case STATE_BOOTSTRAP_REQUIRED:
-        break;
-
-    case STATE_HOLD_OFF:
-        break;
-
-    case STATE_CLIENT_INITIATED:
+        bootstrap_start(contextP);
+        contextP->state = STATE_BOOTSTRAPPING;
+        bootstrap_step(contextP, tv_sec, timeoutP);
         break;
 
     case STATE_BOOTSTRAPPING:
+        switch (bootstrap_get_status(contextP))
+        {
+        case STATE_BS_FINISHED:
+            refresh_server_list(contextP);
+            contextP->state = STATE_REGISTER_REQUIRED;
+            *timeoutP = 0;
+            break;
+
+        case STATE_BS_FAILED:
+            return COAP_503_SERVICE_UNAVAILABLE;
+
+        default:
+            // keep on waiting
+            bootstrap_step(contextP, tv_sec, timeoutP);
+            break;
+        }
+        break;
+
+    case STATE_REGISTER_REQUIRED:
+        registration_start(contextP);
+        contextP->state = STATE_REGISTERING;
         break;
 
     case STATE_REGISTERING:
@@ -308,15 +359,9 @@ int lwm2m_step(lwm2m_context_t * contextP,
             break;
 
         case STATE_REG_FAILED:
-            if (contextP->bootstrapServerList != NULL)
-            {
-                // TODO avoid infinte loop by checking the bootstrap info is different
-                contextP->state = STATE_BOOTSTRAP_REQUIRED;
-            }
-            else
-            {
-                return COAP_503_SERVICE_UNAVAILABLE;
-            }
+            // TODO avoid infinite loop by checking the bootstrap info is different
+            contextP->state = STATE_BOOTSTRAP_REQUIRED;
+            *timeoutP = 0;
             break;
 
         case STATE_REG_PENDING:
@@ -334,18 +379,6 @@ int lwm2m_step(lwm2m_context_t * contextP,
     }
 
     registration_step(contextP, tv_sec, timeoutP);
-
-#ifdef LWM2M_BOOTSTRAP
-    if ((contextP->bsState != BOOTSTRAP_CLIENT_HOLD_OFF) &&
-        (contextP->bsState != BOOTSTRAP_PENDING) &&
-        (contextP->bsState != BOOTSTRAP_FINISHED) &&
-        (contextP->bsState != BOOTSTRAP_FAILED))
-    {
-#endif
-#ifdef LWM2M_BOOTSTRAP
-    }
-    update_bootstrap_state(contextP, tv_sec, timeoutP);
-#endif
 #endif
 
 #ifdef LWM2M_SERVER_MODE
@@ -383,32 +416,3 @@ int lwm2m_step(lwm2m_context_t * contextP,
 
     return 0;
 }
-
-#ifdef LWM2M_CLIENT_MODE
-int refresh_server_list(lwm2m_context_t * contextP)
-{
-    int result;
-    bool cleanup = (NULL != contextP->bootstrapServerList) || (NULL != contextP->serverList);
-    delete_transaction_list(contextP);
-    delete_observed_list(contextP);
-    if (cleanup)
-    {
-        LOG("refresh_server_list: cleanup\n");
-        delete_server_list(contextP);
-        delete_bootstrap_server_list(contextP);
-    }
-    result = object_getServers(contextP);
-    if (0 != result)
-    {
-        LOG("refresh_server_list: security- or server-objects configuration error.\n");
-        if (cleanup)
-        {
-            LOG("refresh_server_list: cleanup on error\n");
-            delete_server_list(contextP);
-            delete_bootstrap_server_list(contextP);
-        }
-    }
-    return result;
-}
-#endif
-

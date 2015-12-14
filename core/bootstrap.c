@@ -23,214 +23,377 @@
 #include <string.h>
 #include <stdio.h>
 
-#ifdef LWM2M_BOOTSTRAP
 #ifdef LWM2M_CLIENT_MODE
 
 #define PRV_QUERY_BUFFER_LENGTH 200
 
-static void prv_handleBootstrapReply(lwm2m_transaction_t * transaction, void * message)
+static void bootstrap_failed(lwm2m_server_t * bootstrapServer)
 {
-    LOG("[BOOTSTRAP] Handling bootstrap reply...\r\n");
-    lwm2m_context_t * context = (lwm2m_context_t *)transaction->userData;
-    coap_packet_t * coapMessage = (coap_packet_t *)message;
-    if (NULL != coapMessage && COAP_TYPE_RST != coapMessage->type)
+    LOG("[BOOTSTRAP] Bootstrap failed\r\n");
+
+    bootstrapServer->status = STATE_BS_FAILED;
+}
+
+static void handle_bootstrap_response(lwm2m_server_t * bootstrapServer,
+                                      coap_packet_t * message)
+{
+    if (COAP_204_CHANGED == message->code)
     {
-        handle_bootstrap_response(context, coapMessage, NULL);
+        LOG("[BOOTSTRAP] Received ACK/2.04, Bootstrap pending, waiting for DEL/PUT from BS server...\r\n");
+        bootstrapServer->status = STATE_BS_PENDING;
     }
     else
     {
-        bootstrap_failed(context);
+        bootstrap_failed(bootstrapServer);
+    }
+}
+
+static void prv_handleBootstrapReply(lwm2m_transaction_t * transaction,
+                                     void * message)
+{
+    lwm2m_server_t * bootstrapServer = (lwm2m_server_t *)transaction->userData;
+    coap_packet_t * coapMessage = (coap_packet_t *)message;
+
+    LOG("[BOOTSTRAP] Handling bootstrap reply...\r\n");
+
+    if (bootstrapServer->status == STATE_BS_INITIATED)
+    {
+        if (NULL != coapMessage && COAP_TYPE_RST != coapMessage->type)
+        {
+            handle_bootstrap_response(bootstrapServer, coapMessage);
+        }
+        else
+        {
+            bootstrap_failed(bootstrapServer);
+        }
     }
 }
 
 // start a device initiated bootstrap
-int bootstrap_initiating_request(lwm2m_context_t * context)
+static void bootstrap_initiating_request(lwm2m_context_t * context,
+                                         lwm2m_server_t * bootstrapServer)
 {
     char query[PRV_QUERY_BUFFER_LENGTH];
     int query_length = 0;
-    lwm2m_transaction_t * transaction = NULL;
 
     query_length = snprintf(query, sizeof(query), "?ep=%s", context->endpointName);
     if (query_length <= 1)
     {
-        return INTERNAL_SERVER_ERROR_5_00;
+        bootstrapServer->status = STATE_BS_FAILED;
+        return;
     }
 
-    // find the first bootstrap server
-    lwm2m_server_t * bootstrapServer = context->bootstrapServerList;
-    while (bootstrapServer != NULL)
+    if (bootstrapServer->sessionH == NULL)
     {
-        if (bootstrapServer->sessionH == NULL)
-        {
-            bootstrapServer->sessionH = context->connectCallback(bootstrapServer->secObjInstID, context->userData);
-        }
-        if (bootstrapServer->sessionH != NULL)
-        {
-            LOG("[BOOTSTRAP] Bootstrap session starting...\r\n");
-            transaction = transaction_new(COAP_TYPE_CON, COAP_POST, NULL, NULL, context->nextMID++, 4, NULL, ENDPOINT_SERVER, (void *)bootstrapServer);
-            if (transaction == NULL)
-            {
-                return INTERNAL_SERVER_ERROR_5_00;
-            }
-            coap_set_header_uri_path(transaction->message, "/"URI_BOOTSTRAP_SEGMENT);
-            coap_set_header_uri_query(transaction->message, query);
-            transaction->callback = prv_handleBootstrapReply;
-            transaction->userData = (void *)context;
-            context->transactionList = (lwm2m_transaction_t *)LWM2M_LIST_ADD(context->transactionList, transaction);
-            if (transaction_send(context, transaction) == 0)
-            {
-                LOG("[BOOTSTRAP] DI bootstrap requested to BS server\r\n");
-                context->bsState = BOOTSTRAP_INITIATED;
-                reset_bootstrap_timer(context);
-            }
-        }
-        else
-        {
-            LOG("No bootstrap session handler found\r\n");
-        }
-        bootstrapServer = bootstrapServer->next;
+        bootstrapServer->sessionH = context->connectCallback(bootstrapServer->secObjInstID, context->userData);
     }
-    return NO_ERROR;
-}
 
-void handle_bootstrap_response(lwm2m_context_t * context,
-        coap_packet_t * message,
-        void * fromSessionH)
-{
-    if (COAP_204_CHANGED == message->code)
+    if (bootstrapServer->sessionH != NULL)
     {
-        context->bsState = BOOTSTRAP_PENDING;
-        LOG("[BOOTSTRAP] Received ACK/2.04, Bootstrap pending, waiting for DEL/PUT from BS server...\r\n");
-        reset_bootstrap_timer(context);
+        lwm2m_transaction_t * transaction = NULL;
+
+        LOG("[BOOTSTRAP] Bootstrap session starting...\r\n");
+
+        transaction = transaction_new(COAP_TYPE_CON, COAP_POST, NULL, NULL, context->nextMID++, 4, NULL, ENDPOINT_SERVER, (void *)bootstrapServer);
+        if (transaction == NULL)
+        {
+            bootstrapServer->status = STATE_BS_FAILED;
+            return;
+        }
+
+        coap_set_header_uri_path(transaction->message, "/"URI_BOOTSTRAP_SEGMENT);
+        coap_set_header_uri_query(transaction->message, query);
+        transaction->callback = prv_handleBootstrapReply;
+        transaction->userData = (void *)bootstrapServer;
+        context->transactionList = (lwm2m_transaction_t *)LWM2M_LIST_ADD(context->transactionList, transaction);
+        if (transaction_send(context, transaction) == 0)
+        {
+            LOG("[BOOTSTRAP] CI bootstrap requested to BS server\r\n");
+            bootstrapServer->status = STATE_BS_INITIATED;
+        }
     }
     else
     {
-        bootstrap_failed(context);
+        LOG("No bootstrap session handler found\r\n");
+        bootstrapServer->status = STATE_BS_FAILED;
     }
 }
 
-void bootstrap_failed(lwm2m_context_t * context)
+void bootstrap_step(lwm2m_context_t * contextP,
+                    uint32_t currentTime,
+                    time_t* timeoutP)
 {
-    reset_bootstrap_timer(context);
-    context->bsState = BOOTSTRAP_FAILED;
-    LOG("[BOOTSTRAP] Bootstrap failed\r\n");
-}
+    lwm2m_server_t * targetP;
 
-void reset_bootstrap_timer(lwm2m_context_t * context)
-{
-    context->bsStart = lwm2m_gettime();
-}
+    targetP = contextP->bootstrapServerList;
+    while (targetP != NULL)
+    {
+        switch (targetP->status)
+        {
+        case STATE_DEREGISTERED:
+            targetP->registration = currentTime + targetP->lifetime;
+            targetP->status = STATE_BS_HOLD_OFF;
+            if (*timeoutP > targetP->lifetime)
+            {
+                *timeoutP = targetP->lifetime;
+            }
+            break;
 
-void update_bootstrap_state(lwm2m_context_t * context,
-        uint32_t currentTime,
-        time_t* timeoutP)
-{
-    if (context->bsState == BOOTSTRAP_REQUESTED)
-    {
-        context->bsState = BOOTSTRAP_CLIENT_HOLD_OFF;
-        context->bsStart = currentTime;
-        LOG("[BOOTSTRAP] Bootstrap requested at: %lu, now waiting during ClientHoldOffTime...\r\n",
-                (unsigned long)context->bsStart);
-    }
-    if (context->bsState == BOOTSTRAP_CLIENT_HOLD_OFF)
-    {
-        lwm2m_server_t * bootstrapServer = context->bootstrapServerList;
-        if (bootstrapServer != NULL)
-        {
-            // get ClientHoldOffTime from bootstrapServer->lifetime
-            // (see objects.c => object_getServers())
-            int32_t timeToBootstrap = (context->bsStart + bootstrapServer->lifetime) - currentTime;
-            LOG("[BOOTSTRAP] ClientHoldOffTime %ld\r\n", (long)timeToBootstrap);
-            if (0 >= timeToBootstrap)
+        case STATE_BS_HOLD_OFF:
+            if (targetP->registration <= currentTime)
             {
-                bootstrap_initiating_request(context);
+                bootstrap_initiating_request(contextP, targetP);
             }
-            else if (timeToBootstrap < *timeoutP)
+            else if (*timeoutP > targetP->registration - currentTime)
             {
-                *timeoutP = timeToBootstrap;
+                *timeoutP = targetP->registration - currentTime;
             }
+            break;
+
+        case STATE_BS_INITIATED:
+        case STATE_BS_PENDING:
+            // waiting
+            break;
+
+        case STATE_BS_FINISHED:
+            // do nothing
+            break;
+
+        case STATE_BS_FAILED:
+            // do nothing
+            break;
+
+        default:
+            break;
         }
-        else
-        {
-            bootstrap_failed(context);
-        }
-    }
-    if (context->bsState == BOOTSTRAP_PENDING)
-    {
-        // Use COAP_DEFAULT_MAX_AGE according proposal in
-        // https://github.com/OpenMobileAlliance/OMA-LwM2M-Public-Review/issues/35
-        int32_t timeToBootstrap = (context->bsStart + COAP_DEFAULT_MAX_AGE) - currentTime;
-        LOG("[BOOTSTRAP] Pending %ld\r\n", (long)timeToBootstrap);
-        if (0 >= timeToBootstrap)
-        {
-            // Time out and no error => bootstrap OK
-            // TODO: add smarter condition for bootstrap success:
-            // 1) security object contains at least one bootstrap server
-            // 2) there are coherent configurations for provisioned DM servers
-            // if these conditions are not met, then bootstrap has failed and previous security
-            // and server object configurations might be restored by client
-            LOG("\r\n[BOOTSTRAP] Bootstrap finished at: %lu (difftime: %lu s)\r\n",
-                    (unsigned long)currentTime, (unsigned long)(currentTime - context->bsStart));
-            context->bsState = BOOTSTRAP_FINISHED;
-            context->bsStart = currentTime;
-            *timeoutP = 1;
-        }
-        else if (timeToBootstrap < *timeoutP)
-        {
-            *timeoutP = timeToBootstrap;
-        }
-    }
-    else if (context->bsState == BOOTSTRAP_FINISHED)
-    {
-        context->bsStart = currentTime;
-        if (0 <= refresh_server_list(context))
-        {
-            context->bsState = BOOTSTRAPPED;
-        }
-        else
-        {
-            bootstrap_failed(context);
-        }
-        // during next step, lwm2m_update_registrations will connect the client to DM server
-    }
-    if (BOOTSTRAP_FAILED == context->bsState)
-    {
-        lwm2m_server_t * bootstrapServer = context->bootstrapServerList;
-        if (bootstrapServer != NULL)
-        {
-            // get ClientHoldOffTime from bootstrapServer->lifetime
-            // (see objects.c => object_getServers())
-            int32_t timeToBootstrap = (context->bsStart + bootstrapServer->lifetime) - currentTime;
-            LOG("[BOOTSTRAP] Bootstrap failed: %lu, now waiting during ClientHoldOffTime %ld ...\r\n",
-                    (unsigned long)context->bsStart, (long)timeToBootstrap);
-            if (0 >= timeToBootstrap)
-            {
-                context->bsState = NOT_BOOTSTRAPPED;
-                context->bsStart = currentTime;
-                LOG("[BOOTSTRAP] Bootstrap failed: retry ...\r\n");
-                *timeoutP = 1;
-            }
-            else if (timeToBootstrap < *timeoutP)
-            {
-                *timeoutP = timeToBootstrap;
-            }
-        }
+
+        targetP = targetP->next;
     }
 }
 
 coap_status_t handle_bootstrap_finish(lwm2m_context_t * context,
                                       void * fromSessionH)
 {
-    if (context->bsState == BOOTSTRAP_PENDING)
+    lwm2m_server_t * bootstrapServer;
+
+    bootstrapServer = utils_findBootstrapServer(context, fromSessionH);
+    if (bootstrapServer != NULL
+     && bootstrapServer->status == STATE_BS_PENDING)
     {
-        context->bsState = BOOTSTRAP_FINISHED;
+        bootstrapServer->status = STATE_BS_FINISHED;
         return COAP_204_CHANGED;
     }
 
     return COAP_IGNORE;
 }
-#endif
 
+/*
+ * Reset the bootstrap servers statuses
+ *
+ * TODO: handle LWM2M Servers the client is registered to ?
+ *
+ */
+void bootstrap_start(lwm2m_context_t * contextP)
+{
+    lwm2m_server_t * targetP;
+
+    targetP = contextP->bootstrapServerList;
+    while (targetP != NULL)
+    {
+        targetP->status = STATE_DEREGISTERED;
+        targetP = targetP->next;
+    }
+}
+
+/*
+ * Returns STATE_BS_PENDING if at least one bootstrap is still pending
+ * Returns STATE_BS_FINISHED if at least one bootstrap succeeded and no bootstrap is pending
+ * Returns STATE_BS_FAILED if all bootstrap failed.
+ */
+lwm2m_status_t bootstrap_get_status(lwm2m_context_t * contextP)
+{
+    lwm2m_server_t * targetP;
+    lwm2m_status_t bs_status;
+
+    targetP = contextP->bootstrapServerList;
+    bs_status = STATE_BS_FAILED;
+
+    while (targetP != NULL)
+    {
+        switch (targetP->status)
+        {
+            case STATE_BS_FINISHED:
+                if (bs_status == STATE_BS_FAILED)
+                {
+                    bs_status = STATE_BS_FINISHED;
+                }
+                break;
+
+            case STATE_BS_HOLD_OFF:
+            case STATE_BS_INITIATED:
+            case STATE_BS_PENDING:
+                bs_status = STATE_BS_PENDING;
+                break;
+
+            default:
+                break;
+        }
+        targetP = targetP->next;
+    }
+
+    return bs_status;
+}
+
+static coap_status_t prv_check_server_status(lwm2m_server_t * serverP)
+{
+    switch (serverP->status)
+    {
+    case STATE_DEREGISTERED:
+        // Should not happen
+        return COAP_IGNORE;
+
+    case STATE_BS_HOLD_OFF:
+        serverP->status = STATE_BS_PENDING;
+        break;
+
+    case STATE_BS_INITIATED:
+        // The ACK was probably lost
+        serverP->status = STATE_BS_PENDING;
+        break;
+
+    case STATE_BS_PENDING:
+        // do nothing
+        break;
+
+    case STATE_BS_FINISHED:
+    case STATE_BS_FAILED:
+    default:
+        return COAP_IGNORE;
+    }
+
+    return COAP_NO_ERROR;
+}
+
+coap_status_t handle_bootstrap_command(lwm2m_context_t * contextP,
+                                       lwm2m_uri_t * uriP,
+                                       lwm2m_server_t * serverP,
+                                       coap_packet_t * message,
+                                       coap_packet_t * response)
+{
+    coap_status_t result;
+    lwm2m_media_type_t format;
+
+    format = prv_convertMediaType(message->content_type);
+
+    result = prv_check_server_status(serverP);
+    if (result != COAP_NO_ERROR) return result;
+
+    switch (message->code)
+    {
+    case COAP_PUT:
+        {
+            if (LWM2M_URI_IS_SET_INSTANCE(uriP))
+            {
+                if (object_isInstanceNew(contextP, uriP->objectId, uriP->instanceId))
+                {
+                    result = object_create(contextP, uriP, format, message->payload, message->payload_len);
+                    if (COAP_201_CREATED == result)
+                    {
+                        result = COAP_204_CHANGED;
+                    }
+                }
+                else
+                {
+                    result = object_write(contextP, uriP, format, message->payload, message->payload_len);
+                }
+            }
+            else
+            {
+                result = BAD_REQUEST_4_00;
+            }
+        }
+        break;
+
+    case COAP_DELETE:
+        {
+            if (LWM2M_URI_IS_SET_INSTANCE(uriP) && !LWM2M_URI_IS_SET_RESOURCE(uriP))
+            {
+                result = object_delete(contextP, uriP);
+            }
+            else
+            {
+                result = BAD_REQUEST_4_00;
+            }
+        }
+        break;
+
+    case COAP_GET:
+    case COAP_POST:
+    default:
+        result = BAD_REQUEST_4_00;
+        break;
+    }
+
+    return result;
+}
+
+static void management_delete_all_instances(lwm2m_object_t * object)
+{
+    if (NULL != object->deleteFunc)
+    {
+        while (NULL != object->instanceList)
+        {
+            object->deleteFunc(object->instanceList->id, object);
+        }
+    }
+}
+
+coap_status_t handle_delete_all(lwm2m_context_t * contextP,
+                                void * fromSessionH)
+{
+    lwm2m_server_t * serverP;
+    coap_status_t result;
+    int i;
+
+    serverP = utils_findBootstrapServer(contextP, fromSessionH);
+    if (serverP == NULL) return COAP_IGNORE;
+    result = prv_check_server_status(serverP);
+    if (result != COAP_NO_ERROR) return result;
+
+    result = COAP_202_DELETED;
+    for (i = 0 ; i < contextP->numObject && result == COAP_202_DELETED ; i++)
+    {
+        lwm2m_object_t * objectP = contextP->objectList[i];
+
+        if (NULL != objectP->instanceList)
+        {
+            if (objectP->deleteFunc)
+            {
+                lwm2m_list_t * targetP;
+
+                targetP = objectP->instanceList;
+                while (NULL != targetP
+                    && result == COAP_202_DELETED)
+                {
+                    if (objectP->objID == LWM2M_SECURITY_OBJECT_ID
+                     && targetP->id == serverP->secObjInstID)
+                    {
+                        // Do not delete the Security Object instance matching the current bootstrap server
+                        targetP = targetP->next;
+                    }
+                    else
+                    {
+                        result = objectP->deleteFunc(targetP->id, objectP);
+                        targetP = objectP->instanceList;
+                    }
+                }
+            }
+            else result = COAP_501_NOT_IMPLEMENTED;
+        }
+    }
+
+    return DELETED_2_02;
+}
 #endif
 
 #ifdef LWM2M_BOOTSTRAP_SERVER_MODE
