@@ -231,7 +231,7 @@ void print_state(lwm2m_context_t * lwm2mH)
     else
     {
         fprintf(stderr, "Bootstrap Servers:\r\n");
-        for (targetP = lwm2mH->serverList ; targetP != NULL ; targetP = targetP->next)
+        for (targetP = lwm2mH->bootstrapServerList ; targetP != NULL ; targetP = targetP->next)
         {
             fprintf(stderr, " - Security Object ID %d", targetP->secObjInstID);
             fprintf(stderr, "\tHold Off Time: %lu s", (unsigned long)targetP->lifetime);

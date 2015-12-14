@@ -186,6 +186,7 @@ coap_status_t handle_bootstrap_command(lwm2m_context_t * contextP, lwm2m_uri_t *
 coap_status_t handle_delete_all(lwm2m_context_t * context, void * fromSessionH);
 void bootstrap_start(lwm2m_context_t * contextP);
 lwm2m_status_t bootstrap_get_status(lwm2m_context_t * contextP);
+coap_status_t handle_bootstrap_finish(lwm2m_context_t * context, void * fromSessionH);
 uint8_t handle_bootstrap_request(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, void * fromSessionH, coap_packet_t * message, coap_packet_t * response);
 
 // defined in liblwm2m.c
