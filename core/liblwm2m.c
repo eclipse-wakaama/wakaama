@@ -314,15 +314,21 @@ next_step:
         break;
 
     case STATE_BOOTSTRAP_REQUIRED:
+#ifdef LWM2M_BOOTSTRAP_MODE
         if (contextP->bootstrapServerList != NULL)
         {
             bootstrap_start(contextP);
             contextP->state = STATE_BOOTSTRAPPING;
             bootstrap_step(contextP, tv_sec, timeoutP);
         }
-        else return COAP_503_SERVICE_UNAVAILABLE;
+        else
+#endif
+        {
+            return COAP_503_SERVICE_UNAVAILABLE;
+        }
         break;
 
+#ifdef LWM2M_BOOTSTRAP_MODE
     case STATE_BOOTSTRAPPING:
         switch (bootstrap_get_status(contextP))
         {
@@ -341,7 +347,7 @@ next_step:
             break;
         }
         break;
-
+#endif
     case STATE_REGISTER_REQUIRED:
         registration_start(contextP);
         contextP->state = STATE_REGISTERING;

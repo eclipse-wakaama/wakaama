@@ -24,6 +24,7 @@
 #include <stdio.h>
 
 #ifdef LWM2M_CLIENT_MODE
+#ifdef LWM2M_BOOTSTRAP_MODE
 
 #define PRV_QUERY_BUFFER_LENGTH 200
 
@@ -394,6 +395,7 @@ coap_status_t handle_delete_all(lwm2m_context_t * contextP,
 
     return DELETED_2_02;
 }
+#endif
 #endif
 
 #ifdef LWM2M_BOOTSTRAP_SERVER_MODE
