@@ -218,8 +218,6 @@ static uint8_t prv_security_write(uint16_t instanceId,
     int i;
     uint8_t result = COAP_204_CHANGED;
 
-    if ((dataArray->flags & LWM2M_TLV_FLAG_BOOTSTRAPPING) == 0) return COAP_401_UNAUTHORIZED;
-
     targetP = (security_instance_t *)lwm2m_list_find(objectP->instanceList, instanceId);
     if (NULL == targetP)
     {
