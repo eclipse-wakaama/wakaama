@@ -843,7 +843,7 @@ int main(int argc, char *argv[])
     data.sock = create_socket(localPort);
     if (data.sock < 0)
     {
-        fprintf(stderr, "Failed to open socket: %d\r\n", errno);
+        fprintf(stderr, "Failed to open socket: %d %s\r\n", errno, strerror(errno));
         return -1;
     }
 
@@ -1071,7 +1071,7 @@ int main(int argc, char *argv[])
         {
             if (errno != EINTR)
             {
-              fprintf(stderr, "Error in select(): %d\r\n", errno);
+              fprintf(stderr, "Error in select(): %d %s\r\n", errno, strerror(errno));
             }
         }
         else if (result > 0)
@@ -1096,7 +1096,7 @@ int main(int argc, char *argv[])
 
                 if (0 > numBytes)
                 {
-                    fprintf(stderr, "Error in recvfrom(): %d\r\n", errno);
+                    fprintf(stderr, "Error in recvfrom(): %d %s\r\n", errno, strerror(errno));
                 }
                 else if (0 < numBytes)
                 {
