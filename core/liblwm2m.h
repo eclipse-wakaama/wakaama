@@ -222,10 +222,7 @@ size_t lwm2m_boolToPlainText(bool data, uint8_t ** bufferP);
  */
 #define LWM2M_TLV_FLAG_STATIC_DATA   0x01
 #define LWM2M_TLV_FLAG_TEXT_FORMAT   0x02
-
-#ifdef LWM2M_BOOTSTRAP
 #define LWM2M_TLV_FLAG_BOOTSTRAPPING 0x04
-#endif
 
 /*
  * Bits 7 and 6 of assigned values for LWM2M_TYPE_RESOURCE,

@@ -297,6 +297,7 @@ int lwm2m_step(lwm2m_context_t * contextP,
     if (tv_sec < 0) return COAP_500_INTERNAL_SERVER_ERROR;
 
 #ifdef LWM2M_CLIENT_MODE
+next_step:
     switch (contextP->state)
     {
     case STATE_INITIAL:
@@ -304,23 +305,22 @@ int lwm2m_step(lwm2m_context_t * contextP,
         {
             contextP->state = STATE_REGISTER_REQUIRED;
         }
-        else if (contextP->bootstrapServerList != NULL)
+        else
         {
             // Bootstrapping
             contextP->state = STATE_BOOTSTRAP_REQUIRED;
         }
-        else
-        {
-            // No server
-            return COAP_503_SERVICE_UNAVAILABLE;
-        }
-        *timeoutP = 0;
+        goto next_step;
         break;
 
     case STATE_BOOTSTRAP_REQUIRED:
-        bootstrap_start(contextP);
-        contextP->state = STATE_BOOTSTRAPPING;
-        bootstrap_step(contextP, tv_sec, timeoutP);
+        if (contextP->bootstrapServerList != NULL)
+        {
+            bootstrap_start(contextP);
+            contextP->state = STATE_BOOTSTRAPPING;
+            bootstrap_step(contextP, tv_sec, timeoutP);
+        }
+        else return COAP_503_SERVICE_UNAVAILABLE;
         break;
 
     case STATE_BOOTSTRAPPING:
@@ -329,7 +329,7 @@ int lwm2m_step(lwm2m_context_t * contextP,
         case STATE_BS_FINISHED:
             refresh_server_list(contextP);
             contextP->state = STATE_REGISTER_REQUIRED;
-            *timeoutP = 0;
+            goto next_step;
             break;
 
         case STATE_BS_FAILED:
@@ -358,7 +358,7 @@ int lwm2m_step(lwm2m_context_t * contextP,
         case STATE_REG_FAILED:
             // TODO avoid infinite loop by checking the bootstrap info is different
             contextP->state = STATE_BOOTSTRAP_REQUIRED;
-            *timeoutP = 0;
+            goto next_step;
             break;
 
         case STATE_REG_PENDING:
