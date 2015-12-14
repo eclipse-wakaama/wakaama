@@ -114,9 +114,7 @@ static void prv_handleRegistrationReply(lwm2m_transaction_t * transacP,
     coap_packet_t * packet = (coap_packet_t *)message;
     lwm2m_server_t * targetP = (lwm2m_server_t *)(transacP->peerP);
 
-    switch(targetP->status)
-    {
-    case STATE_REG_PENDING:
+    if (targetP->status == STATE_REG_PENDING)
     {
         time_t tv_sec = lwm2m_gettime();
         if (tv_sec >= 0)
@@ -139,10 +137,6 @@ static void prv_handleRegistrationReply(lwm2m_transaction_t * transacP,
             targetP->status = STATE_REG_FAILED;
             LOG("    => Registration FAILED\r\n");
         }
-    }
-    break;
-    default:
-        break;
     }
 }
 
@@ -209,9 +203,7 @@ static void prv_handleRegistrationUpdateReply(lwm2m_transaction_t * transacP,
     coap_packet_t * packet = (coap_packet_t *)message;
     lwm2m_server_t * targetP = (lwm2m_server_t *)(transacP->peerP);
 
-    switch(targetP->status)
-    {
-    case STATE_REG_UPDATE_PENDING:
+    if (targetP->status == STATE_REG_UPDATE_PENDING)
     {
         time_t tv_sec = lwm2m_gettime();
         if (tv_sec >= 0)
@@ -228,10 +220,6 @@ static void prv_handleRegistrationUpdateReply(lwm2m_transaction_t * transacP,
             targetP->status = STATE_REG_FAILED;
             LOG("    => Registration update FAILED\r\n");
         }
-    }
-    break;
-    default:
-        break;
     }
 }
 
@@ -290,101 +278,56 @@ int lwm2m_update_registration(lwm2m_context_t * contextP,
     return NOT_FOUND_4_04;
 }
 
-// for each server update the registration if needed
-void registration_update(lwm2m_context_t * contextP,
-                         time_t currentTime,
-                         time_t * timeoutP)
+void registration_start(lwm2m_context_t * contextP)
 {
-    time_t nextUpdate;
-    time_t interval;
     lwm2m_server_t * targetP = contextP->serverList;
-#ifdef LWM2M_BOOTSTRAP
-    bool allServerFailed = true;
-    bool serverRegistered = false;
-
-    while (targetP != NULL)
-    {
-        if (STATE_REGISTERED == targetP->status)
-        {
-            serverRegistered = true;
-            allServerFailed = false;
-            break;
-        }
-        else if (STATE_REG_FAILED != targetP->status) allServerFailed = false;
-        targetP = targetP->next;
-    }
-#endif
 
     targetP = contextP->serverList;
     while (targetP != NULL)
     {
-        switch (targetP->status)
+        if (targetP->status == STATE_DEREGISTERED
+         || targetP->status == STATE_REG_FAILED)
         {
-            case STATE_REGISTERED:
-                nextUpdate = targetP->lifetime;
-                if (30 < nextUpdate)
-                {
-                    nextUpdate -= 15; // update 15s earlier to have a chance to resend
-                }
-
-                interval = targetP->registration + nextUpdate - currentTime;
-                if (0 >= interval)
-                {
-                    LOG("Updating registration...\r\n");
-                    prv_update_registration(contextP, targetP);
-                }
-                else if (interval < *timeoutP)
-                {
-                    *timeoutP = interval;
-                }
-                break;
-
-            case STATE_DEREGISTERED:
-                // TODO: is it disabled?
-                prv_register(contextP, targetP);
-                break;
-
-            case STATE_REG_UPDATE_PENDING:
-                // TODO: check for timeout and retry?
-                break;
-
-            case STATE_DEREG_PENDING:
-                break;
-
-            case STATE_REG_FAILED:
-#ifdef LWM2M_BOOTSTRAP
-                if (serverRegistered || NULL == contextP->bootstrapServerList)
-                {
-#endif
-                    interval = targetP->registration + targetP->lifetime - currentTime;
-                    if (0 >= interval)
-                    {
-                        LOG("Retry registration...\r\n");
-                        prv_register(contextP, targetP);
-                    }
-                    else if (interval < *timeoutP)
-                    {
-                        *timeoutP = interval;
-                    }
-#ifdef LWM2M_BOOTSTRAP
-                }
-#endif
-                break;
-
-            default:
-                break;
+            prv_register(contextP, targetP);
         }
         targetP = targetP->next;
     }
-#ifdef LWM2M_BOOTSTRAP
-    if (allServerFailed && NULL != contextP->bootstrapServerList)
+}
+
+// for each server update the registration if needed
+void registration_step(lwm2m_context_t * contextP,
+                       time_t currentTime,
+                       time_t * timeoutP)
+{
+    lwm2m_server_t * targetP = contextP->serverList;
+
+    targetP = contextP->serverList;
+    while (targetP != NULL)
     {
-        if (BOOTSTRAPPED == contextP->bsState || NOT_BOOTSTRAPPED == contextP->bsState)
+        if (targetP->status == STATE_REGISTERED)
         {
-            contextP->bsState = BOOTSTRAP_REQUESTED;
+            time_t nextUpdate;
+            time_t interval;
+
+            nextUpdate = targetP->lifetime;
+            if (30 < nextUpdate)
+            {
+                nextUpdate -= 15; // update 15s earlier to have a chance to resend
+            }
+
+            interval = targetP->registration + nextUpdate - currentTime;
+            if (0 >= interval)
+            {
+                LOG("Updating registration...\r\n");
+                prv_update_registration(contextP, targetP);
+            }
+            else if (interval < *timeoutP)
+            {
+                *timeoutP = interval;
+            }
         }
+        targetP = targetP->next;
     }
-#endif
 }
 
 /*
@@ -436,13 +379,9 @@ static void prv_handleDeregistrationReply(lwm2m_transaction_t * transacP,
     targetP = (lwm2m_server_t *)(transacP->peerP);
     if (NULL != targetP)
     {
-        switch(targetP->status)
+        if (targetP->status == STATE_DEREG_PENDING)
         {
-        case STATE_DEREG_PENDING:
             targetP->status = STATE_DEREGISTERED;
-            break;
-        default:
-            break;
         }
     }
 }

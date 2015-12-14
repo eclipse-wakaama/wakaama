@@ -279,7 +279,7 @@ int lwm2m_step(lwm2m_context_t * contextP,
     case STATE_INITIAL:
         if (contextP->serverList != NULL)
         {
-            registration_update(contextP, tv_sec, timeoutP);
+            registration_start(contextP);
             contextP->state = STATE_REGISTERING;
         }
         else
@@ -334,6 +334,7 @@ int lwm2m_step(lwm2m_context_t * contextP,
         break;
     }
 
+    registration_step(contextP, tv_sec, timeoutP);
 
 #ifdef LWM2M_BOOTSTRAP
     if ((contextP->bsState != BOOTSTRAP_CLIENT_HOLD_OFF) &&

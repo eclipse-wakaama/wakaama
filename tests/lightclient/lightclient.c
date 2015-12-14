@@ -191,6 +191,39 @@ void print_usage(void)
     fprintf(stdout, "\r\n");
 }
 
+void print_state(lwm2m_context_t * lwm2mH)
+{
+    fprintf(stdout, "State: ");
+    switch(lwm2mH->state)
+    {
+    case STATE_INITIAL:
+        fprintf(stdout, "STATE_INITIAL");
+        break;
+    case STATE_BOOTSTRAP_REQUIRED:
+        fprintf(stdout, "STATE_BOOTSTRAP_REQUIRED");
+        break;
+    case STATE_HOLD_OFF:
+        fprintf(stdout, "STATE_HOLD_OFF");
+        break;
+    case STATE_CLIENT_INITIATED:
+        fprintf(stdout, "STATE_CLIENT_INITIATED");
+        break;
+    case STATE_BOOTSTRAPPING:
+        fprintf(stdout, "STATE_BOOTSTRAPPING");
+        break;
+    case STATE_REGISTERING:
+        fprintf(stdout, "STATE_REGISTERING");
+        break;
+    case STATE_READY:
+        fprintf(stdout, "STATE_READY");
+        break;
+    default:
+        fprintf(stdout, "Unknown !");
+        break;
+    }
+    fprintf(stdout, "\r\n");
+}
+
 #define OBJ_COUNT 4
 
 int main(int argc, char *argv[])
@@ -203,7 +236,6 @@ int main(int argc, char *argv[])
     char * name = "testlwm2mclient";
 
     int result;
-    int i;
     int opt;
 
     memset(&data, 0, sizeof(client_data_t));
@@ -310,6 +342,8 @@ int main(int argc, char *argv[])
 
         FD_ZERO(&readfds);
         FD_SET(data.sock, &readfds);
+
+        print_state(lwm2mH);
 
         /*
          * This function does two things:

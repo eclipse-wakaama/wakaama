@@ -164,10 +164,6 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
 #endif
             if (!LWM2M_URI_IS_SET_INSTANCE(uriP))
             {
-                lwm2m_media_type_t format;
-
-                format = prv_convertMediaType(message->content_type);
-
                 result = object_create(contextP, uriP, format, message->payload, message->payload_len);
                 if (result == COAP_201_CREATED)
                 {
