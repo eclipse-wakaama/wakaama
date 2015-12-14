@@ -264,7 +264,6 @@ int lwm2m_configure(lwm2m_context_t * contextP,
 int lwm2m_step(lwm2m_context_t * contextP,
                time_t * timeoutP)
 {
-    lwm2m_transaction_t * transacP;
     time_t tv_sec;
 #ifdef LWM2M_SERVER_MODE
     lwm2m_client_t * clientP;
@@ -349,40 +348,6 @@ int lwm2m_step(lwm2m_context_t * contextP,
 #endif
 #endif
 
-    transacP = contextP->transactionList;
-    while (transacP != NULL)
-    {
-        // transaction_send() may remove transaction from the linked list
-        lwm2m_transaction_t * nextP = transacP->next;
-        int removed = 0;
-
-        if (transacP->retrans_time <= tv_sec)
-        {
-            removed = transaction_send(contextP, transacP);
-        }
-
-        if (0 == removed)
-        {
-            time_t interval;
-
-            if (transacP->retrans_time > tv_sec)
-            {
-                interval = transacP->retrans_time - tv_sec;
-            }
-            else
-            {
-                interval = 1;
-            }
-
-            if (*timeoutP > interval)
-            {
-                *timeoutP = interval;
-            }
-        }
-
-        transacP = nextP;
-    }
-
 #ifdef LWM2M_SERVER_MODE
     // monitor clients lifetime
     clientP = contextP->clientList;
@@ -413,6 +378,8 @@ int lwm2m_step(lwm2m_context_t * contextP,
         clientP = nextP;
     }
 #endif
+
+    transaction_step(contextP, tv_sec, timeoutP);
 
     return 0;
 }
