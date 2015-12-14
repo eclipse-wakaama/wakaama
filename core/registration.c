@@ -294,41 +294,6 @@ void registration_start(lwm2m_context_t * contextP)
     }
 }
 
-// for each server update the registration if needed
-void registration_step(lwm2m_context_t * contextP,
-                       time_t currentTime,
-                       time_t * timeoutP)
-{
-    lwm2m_server_t * targetP = contextP->serverList;
-
-    targetP = contextP->serverList;
-    while (targetP != NULL)
-    {
-        if (targetP->status == STATE_REGISTERED)
-        {
-            time_t nextUpdate;
-            time_t interval;
-
-            nextUpdate = targetP->lifetime;
-            if (30 < nextUpdate)
-            {
-                nextUpdate -= 15; // update 15s earlier to have a chance to resend
-            }
-
-            interval = targetP->registration + nextUpdate - currentTime;
-            if (0 >= interval)
-            {
-                LOG("Updating registration...\r\n");
-                prv_update_registration(contextP, targetP);
-            }
-            else if (interval < *timeoutP)
-            {
-                *timeoutP = interval;
-            }
-        }
-        targetP = targetP->next;
-    }
-}
 
 /*
  * Returns STATE_REG_PENDING if at least one registration is still pending
@@ -958,6 +923,78 @@ void lwm2m_set_monitoring_callback(lwm2m_context_t * contextP,
     contextP->monitorCallback = callback;
     contextP->monitorUserData = userData;
 }
+#endif
 
+// for each server update the registration if needed
+// for each client check if the registration expired
+void registration_step(lwm2m_context_t * contextP,
+                       time_t currentTime,
+                       time_t * timeoutP)
+{
+#ifdef LWM2M_CLIENT_MODE
+    lwm2m_server_t * targetP = contextP->serverList;
+
+    targetP = contextP->serverList;
+    while (targetP != NULL)
+    {
+        if (targetP->status == STATE_REGISTERED)
+        {
+            time_t nextUpdate;
+            time_t interval;
+
+            nextUpdate = targetP->lifetime;
+            if (30 < nextUpdate)
+            {
+                nextUpdate -= 15; // update 15s earlier to have a chance to resend
+            }
+
+            interval = targetP->registration + nextUpdate - currentTime;
+            if (0 >= interval)
+            {
+                LOG("Updating registration...\r\n");
+                prv_update_registration(contextP, targetP);
+            }
+            else if (interval < *timeoutP)
+            {
+                *timeoutP = interval;
+            }
+        }
+        targetP = targetP->next;
+    }
 
 #endif
+#ifdef LWM2M_SERVER_MODE
+    lwm2m_client_t * clientP;
+
+    // monitor clients lifetime
+    clientP = contextP->clientList;
+    while (clientP != NULL)
+    {
+        lwm2m_client_t * nextP = clientP->next;
+
+        if (clientP->endOfLife <= currentTime)
+        {
+            contextP->clientList = (lwm2m_client_t *)LWM2M_LIST_RM(contextP->clientList, clientP->internalID, NULL);
+            if (contextP->monitorCallback != NULL)
+            {
+                contextP->monitorCallback(clientP->internalID, NULL, DELETED_2_02, LWM2M_CONTENT_TEXT, NULL, 0, contextP->monitorUserData);
+            }
+            prv_freeClient(clientP);
+        }
+        else
+        {
+            time_t interval;
+
+            interval = clientP->endOfLife - currentTime;
+
+            if (*timeoutP > interval)
+            {
+                *timeoutP = interval;
+            }
+        }
+        clientP = nextP;
+    }
+#endif
+
+}
+

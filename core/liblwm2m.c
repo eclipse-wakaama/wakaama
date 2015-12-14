@@ -292,9 +292,6 @@ int lwm2m_step(lwm2m_context_t * contextP,
                time_t * timeoutP)
 {
     time_t tv_sec;
-#ifdef LWM2M_SERVER_MODE
-    lwm2m_client_t * clientP;
-#endif
 
     tv_sec = lwm2m_gettime();
     if (tv_sec < 0) return COAP_500_INTERNAL_SERVER_ERROR;
@@ -378,40 +375,9 @@ int lwm2m_step(lwm2m_context_t * contextP,
         break;
     }
 
+#endif
+
     registration_step(contextP, tv_sec, timeoutP);
-#endif
-
-#ifdef LWM2M_SERVER_MODE
-    // monitor clients lifetime
-    clientP = contextP->clientList;
-    while (clientP != NULL)
-    {
-        lwm2m_client_t * nextP = clientP->next;
-
-        if (clientP->endOfLife <= tv_sec)
-        {
-            contextP->clientList = (lwm2m_client_t *)LWM2M_LIST_RM(contextP->clientList, clientP->internalID, NULL);
-            if (contextP->monitorCallback != NULL)
-            {
-                contextP->monitorCallback(clientP->internalID, NULL, DELETED_2_02, LWM2M_CONTENT_TEXT, NULL, 0, contextP->monitorUserData);
-            }
-            prv_freeClient(clientP);
-        }
-        else
-        {
-            time_t interval;
-
-            interval = clientP->endOfLife - tv_sec;
-
-            if (*timeoutP > interval)
-            {
-                *timeoutP = interval;
-            }
-        }
-        clientP = nextP;
-    }
-#endif
-
     transaction_step(contextP, tv_sec, timeoutP);
 
     return 0;
