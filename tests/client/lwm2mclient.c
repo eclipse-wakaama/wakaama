@@ -303,7 +303,6 @@ static void prv_output_servers(char * buffer,
             default:
                 fprintf(stdout, "INVALID (%d)\r\n", (int)targetP->status);
             }
-            fprintf(stdout, "\r\n");
         }
     }
 
@@ -341,7 +340,6 @@ static void prv_output_servers(char * buffer,
             default:
                 fprintf(stdout, "INVALID (%d)\r\n", (int)targetP->status);
             }
-            fprintf(stdout, "\r\n");
         }
     }
 }

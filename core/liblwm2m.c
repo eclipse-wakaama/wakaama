@@ -283,7 +283,7 @@ int lwm2m_configure(lwm2m_context_t * contextP,
         return COAP_500_INTERNAL_SERVER_ERROR;
     }
 
-    return refresh_server_list(contextP);
+    return COAP_NO_ERROR;
 }
 #endif
 
@@ -301,6 +301,7 @@ next_step:
     switch (contextP->state)
     {
     case STATE_INITIAL:
+        if (0 != refresh_server_list(contextP)) return COAP_503_SERVICE_UNAVAILABLE;
         if (contextP->serverList != NULL)
         {
             contextP->state = STATE_REGISTER_REQUIRED;
@@ -314,7 +315,7 @@ next_step:
         break;
 
     case STATE_BOOTSTRAP_REQUIRED:
-#ifdef LWM2M_BOOTSTRAP_MODE
+#ifdef LWM2M_BOOTSTRAP
         if (contextP->bootstrapServerList != NULL)
         {
             bootstrap_start(contextP);
@@ -328,13 +329,12 @@ next_step:
         }
         break;
 
-#ifdef LWM2M_BOOTSTRAP_MODE
+#ifdef LWM2M_BOOTSTRAP
     case STATE_BOOTSTRAPPING:
         switch (bootstrap_get_status(contextP))
         {
         case STATE_BS_FINISHED:
-            refresh_server_list(contextP);
-            contextP->state = STATE_REGISTER_REQUIRED;
+            contextP->state = STATE_INITIAL;
             goto next_step;
             break;
 

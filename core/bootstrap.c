@@ -24,7 +24,7 @@
 #include <stdio.h>
 
 #ifdef LWM2M_CLIENT_MODE
-#ifdef LWM2M_BOOTSTRAP_MODE
+#ifdef LWM2M_BOOTSTRAP
 
 #define PRV_QUERY_BUFFER_LENGTH 200
 

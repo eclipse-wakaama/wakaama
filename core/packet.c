@@ -130,7 +130,7 @@ static coap_status_t handle_request(lwm2m_context_t * contextP,
         {
             result = handle_dm_request(contextP, uriP, serverP, message, response);
         }
-#ifdef LWM2M_BOOTSTRAP_MODE
+#ifdef LWM2M_BOOTSTRAP
         else
         {
             serverP = utils_findBootstrapServer(contextP, fromSessionH);
@@ -143,7 +143,7 @@ static coap_status_t handle_request(lwm2m_context_t * contextP,
     }
     break;
 
-#ifdef LWM2M_BOOTSTRAP_MODE
+#ifdef LWM2M_BOOTSTRAP
     case LWM2M_URI_FLAG_DELETE_ALL:
         if (COAP_DELETE != message->code)
         {
