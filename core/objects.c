@@ -297,15 +297,70 @@ coap_status_t object_create(lwm2m_context_t * contextP,
 coap_status_t object_delete(lwm2m_context_t * contextP,
                             lwm2m_uri_t * uriP)
 {
-    lwm2m_object_t * targetP;
+    lwm2m_object_t * objectP;
+    coap_status_t result;
 
-    targetP = prv_find_object(contextP, uriP->objectId);
-    if (NULL == targetP) return NOT_FOUND_4_04;
-    if (NULL == targetP->deleteFunc) return METHOD_NOT_ALLOWED_4_05;
+    objectP = prv_find_object(contextP, uriP->objectId);
+    if (NULL == objectP) return NOT_FOUND_4_04;
+    if (NULL == objectP->deleteFunc) return METHOD_NOT_ALLOWED_4_05;
 
     LOG("    Call to object_delete\r\n");
 
-    return targetP->deleteFunc(uriP->instanceId, targetP);
+    if (LWM2M_URI_IS_SET_RESOURCE(uriP))
+    {
+        result = objectP->deleteFunc(uriP->instanceId, objectP);
+    }
+    else
+    {
+        lwm2m_list_t * instanceP;
+
+        result = COAP_202_DELETED;
+        instanceP = objectP->instanceList;
+        while (NULL != instanceP
+            && result == COAP_202_DELETED)
+        {
+            result = objectP->deleteFunc(instanceP->id, objectP);
+            instanceP = objectP->instanceList;
+        }
+    }
+
+    return result;
+}
+
+/*
+ * Delete all instances of an object except for the one with instanceId
+ */
+coap_status_t object_delete_others(lwm2m_context_t * contextP,
+                                   uint16_t objectId,
+                                   uint16_t instanceId)
+{
+    lwm2m_object_t * objectP;
+    lwm2m_list_t * instanceP;
+    coap_status_t result;
+
+    objectP = prv_find_object(contextP, objectId);
+    if (NULL == objectP) return NOT_FOUND_4_04;
+    if (NULL == objectP->deleteFunc) return METHOD_NOT_ALLOWED_4_05;
+
+    LOG("    Call to object_delete_others\r\n");
+
+    result = COAP_202_DELETED;
+    instanceP = objectP->instanceList;
+    while (NULL != instanceP
+        && result == COAP_202_DELETED)
+    {
+        if (instanceP->id == instanceId)
+        {
+            instanceP = instanceP->next;
+        }
+        else
+        {
+            result = objectP->deleteFunc(instanceP->id, objectP);
+            instanceP = objectP->instanceList;
+        }
+    }
+
+    return result;
 }
 
 bool object_isInstanceNew(lwm2m_context_t * contextP,

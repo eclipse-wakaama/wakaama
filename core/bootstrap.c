@@ -202,6 +202,10 @@ void bootstrap_start(lwm2m_context_t * contextP)
     while (targetP != NULL)
     {
         targetP->status = STATE_DEREGISTERED;
+        if (targetP->sessionH == NULL)
+        {
+            targetP->sessionH = contextP->connectCallback(targetP->secObjInstID, contextP->userData);
+        }
         targetP = targetP->next;
     }
 }
@@ -275,6 +279,28 @@ static coap_status_t prv_check_server_status(lwm2m_server_t * serverP)
     return COAP_NO_ERROR;
 }
 
+static coap_status_t prv_bootstrap_object_delete(lwm2m_context_t * contextP,
+                                                 lwm2m_uri_t * uriP,
+                                                 lwm2m_server_t * serverP)
+{
+    if (uriP->objectId == LWM2M_SECURITY_OBJECT_ID)
+    {
+        if (!LWM2M_URI_IS_SET_RESOURCE(uriP))
+        {
+            return object_delete_others(contextP, uriP->objectId, serverP->secObjInstID);
+        }
+        else if (uriP->instanceId == serverP->secObjInstID)
+        {
+            // We do not delete this instance as it matches the current Bootstrap Server
+            // but we return 2.02 anyway so the server is not confused.
+            return COAP_202_DELETED;
+        }
+    }
+
+    // in any other case
+    return object_delete(contextP, uriP);
+}
+
 coap_status_t handle_bootstrap_command(lwm2m_context_t * contextP,
                                        lwm2m_uri_t * uriP,
                                        lwm2m_server_t * serverP,
@@ -317,13 +343,13 @@ coap_status_t handle_bootstrap_command(lwm2m_context_t * contextP,
 
     case COAP_DELETE:
         {
-            if (LWM2M_URI_IS_SET_INSTANCE(uriP) && !LWM2M_URI_IS_SET_RESOURCE(uriP))
+            if (LWM2M_URI_IS_SET_RESOURCE(uriP))
             {
-                result = object_delete(contextP, uriP);
+                result = BAD_REQUEST_4_00;
             }
             else
             {
-                result = BAD_REQUEST_4_00;
+                result = prv_bootstrap_object_delete(contextP, uriP, serverP);
             }
         }
         break;
@@ -336,17 +362,6 @@ coap_status_t handle_bootstrap_command(lwm2m_context_t * contextP,
     }
 
     return result;
-}
-
-static void management_delete_all_instances(lwm2m_object_t * object)
-{
-    if (NULL != object->deleteFunc)
-    {
-        while (NULL != object->instanceList)
-        {
-            object->deleteFunc(object->instanceList->id, object);
-        }
-    }
 }
 
 coap_status_t handle_delete_all(lwm2m_context_t * contextP,
@@ -364,36 +379,16 @@ coap_status_t handle_delete_all(lwm2m_context_t * contextP,
     result = COAP_202_DELETED;
     for (i = 0 ; i < contextP->numObject && result == COAP_202_DELETED ; i++)
     {
-        lwm2m_object_t * objectP = contextP->objectList[i];
+        lwm2m_uri_t uri;
 
-        if (NULL != objectP->instanceList)
-        {
-            if (objectP->deleteFunc)
-            {
-                lwm2m_list_t * targetP;
+        memset(&uri, 0, sizeof(lwm2m_uri_t));
+        uri.flag = LWM2M_URI_FLAG_OBJECT_ID;
+        uri.objectId = contextP->objectList[i]->objID;
 
-                targetP = objectP->instanceList;
-                while (NULL != targetP
-                    && result == COAP_202_DELETED)
-                {
-                    if (objectP->objID == LWM2M_SECURITY_OBJECT_ID
-                     && targetP->id == serverP->secObjInstID)
-                    {
-                        // Do not delete the Security Object instance matching the current bootstrap server
-                        targetP = targetP->next;
-                    }
-                    else
-                    {
-                        result = objectP->deleteFunc(targetP->id, objectP);
-                        targetP = objectP->instanceList;
-                    }
-                }
-            }
-            else result = COAP_501_NOT_IMPLEMENTED;
-        }
+        result = prv_bootstrap_object_delete(contextP, &uri, serverP);
     }
 
-    return DELETED_2_02;
+    return result;
 }
 #endif
 #endif

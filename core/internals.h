@@ -144,6 +144,7 @@ coap_status_t object_write(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m
 coap_status_t object_create(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_media_type_t format, uint8_t * buffer, size_t length);
 coap_status_t object_execute(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, uint8_t * buffer, size_t length);
 coap_status_t object_delete(lwm2m_context_t * contextP, lwm2m_uri_t * uriP);
+coap_status_t object_delete_others(lwm2m_context_t * contextP, uint16_t objectId, uint16_t instanceId);
 bool object_isInstanceNew(lwm2m_context_t * contextP, uint16_t objectId, uint16_t instanceId);
 int prv_getRegisterPayload(lwm2m_context_t * contextP, uint8_t * buffer, size_t length);
 int object_getServers(lwm2m_context_t * contextP);

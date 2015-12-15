@@ -162,13 +162,13 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
 
     case COAP_DELETE:
         {
-            if (LWM2M_URI_IS_SET_INSTANCE(uriP) && !LWM2M_URI_IS_SET_RESOURCE(uriP))
+            if (!LWM2M_URI_IS_SET_INSTANCE(uriP) || LWM2M_URI_IS_SET_RESOURCE(uriP))
             {
-                result = object_delete(contextP, uriP);
+                result = BAD_REQUEST_4_00;
             }
             else
             {
-                result = BAD_REQUEST_4_00;
+                result = object_delete(contextP, uriP);
             }
         }
         break;
