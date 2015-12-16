@@ -377,7 +377,8 @@ typedef enum
     STATE_BS_INITIATED,       // bootstrap request sent
     STATE_BS_PENDING,         // boostrap on going
     STATE_BS_FINISHED,        // bootstrap done
-    STATE_BS_FAILED           // bootstrap failed
+    STATE_BS_FAILED,          // bootstrap failed
+    STATE_DIRTY               // deleted or modified by bootstrap interface
 } lwm2m_status_t;
 
 typedef enum

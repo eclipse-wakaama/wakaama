@@ -253,10 +253,6 @@ static coap_status_t prv_check_server_status(lwm2m_server_t * serverP)
 {
     switch (serverP->status)
     {
-    case STATE_DEREGISTERED:
-        // Should not happen
-        return COAP_IGNORE;
-
     case STATE_BS_HOLD_OFF:
         serverP->status = STATE_BS_PENDING;
         break;
@@ -266,6 +262,8 @@ static coap_status_t prv_check_server_status(lwm2m_server_t * serverP)
         serverP->status = STATE_BS_PENDING;
         break;
 
+    case STATE_DEREGISTERED:
+        // server initiated bootstrap
     case STATE_BS_PENDING:
         // do nothing
         break;
@@ -277,6 +275,44 @@ static coap_status_t prv_check_server_status(lwm2m_server_t * serverP)
     }
 
     return COAP_NO_ERROR;
+}
+
+static void prv_tag_server(lwm2m_context_t * contextP,
+                           uint16_t id)
+{
+    lwm2m_server_t * targetP;
+
+    targetP = (lwm2m_server_t *)LWM2M_LIST_FIND(contextP->bootstrapServerList, id);
+    if (targetP == NULL)
+    {
+        targetP = (lwm2m_server_t *)LWM2M_LIST_FIND(contextP->serverList, id);
+    }
+    if (targetP != NULL)
+    {
+        targetP->status = STATE_DIRTY;
+    }
+}
+
+static void prv_tag_all_servers(lwm2m_context_t * contextP,
+                                lwm2m_server_t * serverP)
+{
+    lwm2m_server_t * targetP;
+
+    targetP = contextP->bootstrapServerList;
+    while (targetP != NULL)
+    {
+        if (targetP != serverP)
+        {
+            targetP->status = STATE_DIRTY;
+        }
+        targetP = targetP->next;
+    }
+    targetP = contextP->serverList;
+    while (targetP != NULL)
+    {
+        targetP->status = STATE_DIRTY;
+        targetP = targetP->next;
+    }
 }
 
 coap_status_t handle_bootstrap_command(lwm2m_context_t * contextP,
@@ -310,6 +346,11 @@ coap_status_t handle_bootstrap_command(lwm2m_context_t * contextP,
                 else
                 {
                     result = object_write(contextP, uriP, format, message->payload, message->payload_len);
+                    if (uriP->objectId == LWM2M_SECURITY_OBJECT_ID
+                     && result == COAP_204_CHANGED)
+                    {
+                        prv_tag_server(contextP, uriP->instanceId);
+                    }
                 }
             }
             else
@@ -328,6 +369,18 @@ coap_status_t handle_bootstrap_command(lwm2m_context_t * contextP,
             else
             {
                 result = object_delete(contextP, uriP);
+                if (uriP->objectId == LWM2M_SECURITY_OBJECT_ID
+                 && result == COAP_202_DELETED)
+                {
+                    if (LWM2M_URI_IS_SET_INSTANCE(uriP))
+                    {
+                        prv_tag_server(contextP, uriP->instanceId);
+                    }
+                    else
+                    {
+                        prv_tag_all_servers(contextP, NULL);
+                    }
+                }
             }
         }
         break;
@@ -337,6 +390,16 @@ coap_status_t handle_bootstrap_command(lwm2m_context_t * contextP,
     default:
         result = BAD_REQUEST_4_00;
         break;
+    }
+
+    if (result == COAP_202_DELETED
+     || result == COAP_204_CHANGED)
+    {
+        if (serverP->status != STATE_BS_PENDING)
+        {
+            serverP->status = STATE_BS_PENDING;
+            contextP->state = STATE_BOOTSTRAPPING;
+        }
     }
 
     return result;
@@ -383,6 +446,10 @@ coap_status_t handle_delete_all(lwm2m_context_t * contextP,
                     result = object_delete(contextP, &uri);
                     instanceP = objectP->instanceList;
                 }
+            }
+            if (result == COAP_202_DELETED)
+            {
+                prv_tag_all_servers(contextP, serverP);
             }
         }
         else
