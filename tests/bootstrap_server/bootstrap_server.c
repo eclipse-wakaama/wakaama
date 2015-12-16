@@ -105,6 +105,21 @@ void print_usage(char * filename,
     fprintf(stdout, "\r\n");
 }
 
+static void prv_print_uri(FILE * fd,
+                          lwm2m_uri_t * uriP)
+{
+    fprintf(fd, "/");
+    if (uriP != NULL)
+    {
+        fprintf(fd, "%hu", uriP->objectId);
+        if (LWM2M_URI_IS_SET_INSTANCE(uriP))
+        {
+            fprintf(fd, "/%d", uriP->instanceId);
+            if (LWM2M_URI_IS_SET_RESOURCE(uriP))
+                fprintf(fd, "/%d", uriP->resourceId);
+        }
+    }
+}
 static void prv_endpoint_free(endpoint_t * endP)
 {
     if (endP != NULL)
@@ -210,6 +225,9 @@ static void prv_send_command(internal_data_t * dataP,
     switch (endP->cmdList->operation)
     {
     case BS_DELETE:
+        fprintf(stdout, "Sending DELETE ");
+        prv_print_uri(stdout, endP->cmdList->uri);
+        fprintf(stdout, " to \"%s\"", endP->name);
         res = lwm2m_bootstrap_delete(dataP->lwm2mH, endP->handle, endP->cmdList->uri);
         break;
 
@@ -229,6 +247,10 @@ static void prv_send_command(internal_data_t * dataP,
         uri.flag = LWM2M_URI_FLAG_OBJECT_ID | LWM2M_URI_FLAG_INSTANCE_ID;
         uri.objectId = LWM2M_SECURITY_OBJECT_ID;
         uri.instanceId = endP->cmdList->serverId;
+
+        fprintf(stdout, "Sending WRITE ");
+        prv_print_uri(stdout, &uri);
+        fprintf(stdout, " to \"%s\"", endP->name);
 
         res = lwm2m_bootstrap_write(dataP->lwm2mH, endP->handle, &uri, LWM2M_CONTENT_TLV, serverP->securityData, serverP->securityLen);
     }
@@ -251,11 +273,18 @@ static void prv_send_command(internal_data_t * dataP,
         uri.objectId = LWM2M_SERVER_OBJECT_ID;
         uri.instanceId = endP->cmdList->serverId;
 
+        fprintf(stdout, "Sending WRITE ");
+        prv_print_uri(stdout, &uri);
+        fprintf(stdout, " to \"%s\"", endP->name);
+
         res = lwm2m_bootstrap_write(dataP->lwm2mH, endP->handle, &uri, LWM2M_CONTENT_TLV, serverP->serverData, serverP->serverLen);
     }
         break;
 
     case BS_FINISH:
+        fprintf(stdout, "Sending BOOTSTRAP FINISH ");
+        fprintf(stdout, " to \"%s\"", endP->name);
+
         res = lwm2m_bootstrap_finish(dataP->lwm2mH, endP->handle);
         break;
 
@@ -265,10 +294,14 @@ static void prv_send_command(internal_data_t * dataP,
 
     if (res == COAP_NO_ERROR)
     {
+        fprintf(stdout, " OK.\r\n");
+
         endP->status = CMD_STATUS_SENT;
     }
     else
     {
+        fprintf(stdout, " failed!\r\n");
+
         endP->status = CMD_STATUS_FAIL;
     }
 }
@@ -330,17 +363,8 @@ static int prv_bootstrap_callback(void * sessionH,
         // Display
         fprintf(stdout, "\r\n Received status ");
         print_status(stdout, status);
-        fprintf(stdout, " for URI /");
-        if (uriP != NULL)
-        {
-            fprintf(stdout, "%hu", uriP->objectId);
-            if (LWM2M_URI_IS_SET_INSTANCE(uriP))
-            {
-                fprintf(stdout, "/%d", uriP->instanceId);
-                if (LWM2M_URI_IS_SET_RESOURCE(uriP))
-                    fprintf(stdout, "/%d", uriP->resourceId);
-            }
-        }
+        fprintf(stdout, " for URI ");
+        prv_print_uri(stdout, uriP);
 
         endP = prv_endpoint_find(dataP, sessionH);
         if (endP == NULL)
