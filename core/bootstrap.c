@@ -455,6 +455,11 @@ coap_status_t handle_delete_all(lwm2m_context_t * contextP,
         else
         {
             result = object_delete(contextP, &uri);
+            if (result == METHOD_NOT_ALLOWED_4_05)
+            {
+                // Fake a successful deletion for static objects like the Device object.
+                result = COAP_202_DELETED;
+            }
         }
     }
 
