@@ -162,7 +162,7 @@ coap_status_t object_read(lwm2m_context_t * contextP,
          && dataP->type == LWM2M_TYPE_RESOURCE
          && (dataP->flags && LWM2M_TLV_FLAG_TEXT_FORMAT) != 0 )
         {
-            *bufferP = (uint8_t *)malloc(dataP->length);
+            *bufferP = (uint8_t *)lwm2m_malloc(dataP->length);
             if (*bufferP == NULL)
             {
                 result = COAP_500_INTERNAL_SERVER_ERROR;
