@@ -96,6 +96,16 @@ void lwm2m_deregister(lwm2m_context_t * context)
     }
 }
 
+static void delete_server(lwm2m_server_t * serverP)
+{
+    // TODO parse transaction and observation to remove the ones related to this server
+    if (NULL != serverP->location)
+    {
+        lwm2m_free(serverP->location);
+    }
+    lwm2m_free(serverP);
+}
+
 void delete_server_list(lwm2m_context_t * context)
 {
     while (NULL != context->serverList)
@@ -103,11 +113,7 @@ void delete_server_list(lwm2m_context_t * context)
         lwm2m_server_t * server;
         server = context->serverList;
         context->serverList = server->next;
-        if (NULL != server->location)
-        {
-            lwm2m_free(server->location);
-        }
-        lwm2m_free(server);
+        delete_server(server);
     }
 }
 
@@ -184,6 +190,50 @@ void lwm2m_close(lwm2m_context_t * contextP)
 }
 
 #ifdef LWM2M_CLIENT_MODE
+static int refresh_server_list(lwm2m_context_t * contextP)
+{
+    lwm2m_server_t * targetP;
+    lwm2m_server_t * nextP;
+
+    // Remove all servers marked as dirty
+    targetP = contextP->bootstrapServerList;
+    contextP->bootstrapServerList = NULL;
+    while (targetP != NULL)
+    {
+        nextP = targetP->next;
+        if (targetP->status != STATE_DIRTY)
+        {
+            targetP->status = STATE_DEREGISTERED;
+            targetP->next = contextP->bootstrapServerList;
+            contextP->bootstrapServerList = targetP;
+        }
+        else
+        {
+            delete_server(targetP);
+        }
+        targetP = nextP;
+    }
+    targetP = contextP->serverList;
+    contextP->serverList = NULL;
+    while (targetP != NULL)
+    {
+        nextP = targetP->next;
+        if (targetP->status != STATE_DIRTY)
+        {
+            // TODO: Should we revert the status to STATE_DEREGISTERED ?
+            targetP->next = contextP->serverList;
+            contextP->serverList = targetP;
+        }
+        else
+        {
+            delete_server(targetP);
+        }
+        targetP = nextP;
+    }
+
+    return object_getServers(contextP);
+}
+
 int lwm2m_configure(lwm2m_context_t * contextP,
                     const char * endpointName,
                     const char * msisdn,
@@ -264,123 +314,102 @@ int lwm2m_configure(lwm2m_context_t * contextP,
 int lwm2m_step(lwm2m_context_t * contextP,
                time_t * timeoutP)
 {
-    lwm2m_transaction_t * transacP;
     time_t tv_sec;
-#ifdef LWM2M_SERVER_MODE
-    lwm2m_client_t * clientP;
-#endif
 
     tv_sec = lwm2m_gettime();
     if (tv_sec < 0) return COAP_500_INTERNAL_SERVER_ERROR;
 
-    transacP = contextP->transactionList;
-    while (transacP != NULL)
-    {
-        // transaction_send() may remove transaction from the linked list
-        lwm2m_transaction_t * nextP = transacP->next;
-        int removed = 0;
-
-        if (transacP->retrans_time <= tv_sec)
-        {
-            removed = transaction_send(contextP, transacP);
-        }
-
-        if (0 == removed)
-        {
-            time_t interval;
-
-            if (transacP->retrans_time > tv_sec)
-            {
-                interval = transacP->retrans_time - tv_sec;
-            }
-            else
-            {
-                interval = 1;
-            }
-
-            if (*timeoutP > interval)
-            {
-                *timeoutP = interval;
-            }
-        }
-
-        transacP = nextP;
-    }
-
 #ifdef LWM2M_CLIENT_MODE
-#ifdef LWM2M_BOOTSTRAP
-    if ((contextP->bsState != BOOTSTRAP_CLIENT_HOLD_OFF) &&
-        (contextP->bsState != BOOTSTRAP_PENDING) &&
-        (contextP->bsState != BOOTSTRAP_FINISHED) &&
-        (contextP->bsState != BOOTSTRAP_FAILED))
-    {
-#endif
-        registration_update(contextP, tv_sec, timeoutP);
-#ifdef LWM2M_BOOTSTRAP
-    }
-    update_bootstrap_state(contextP, tv_sec, timeoutP);
-#endif
-#endif
+    // state can also be modified in handle_bootstrap_command().
 
-#ifdef LWM2M_SERVER_MODE
-    // monitor clients lifetime
-    clientP = contextP->clientList;
-    while (clientP != NULL)
+next_step:
+    switch (contextP->state)
     {
-        lwm2m_client_t * nextP = clientP->next;
-
-        if (clientP->endOfLife <= tv_sec)
+    case STATE_INITIAL:
+        if (0 != refresh_server_list(contextP)) return COAP_503_SERVICE_UNAVAILABLE;
+        if (contextP->serverList != NULL)
         {
-            contextP->clientList = (lwm2m_client_t *)LWM2M_LIST_RM(contextP->clientList, clientP->internalID, NULL);
-            if (contextP->monitorCallback != NULL)
-            {
-                contextP->monitorCallback(clientP->internalID, NULL, DELETED_2_02, LWM2M_CONTENT_TEXT, NULL, 0, contextP->monitorUserData);
-            }
-            prv_freeClient(clientP);
+            contextP->state = STATE_REGISTER_REQUIRED;
         }
         else
         {
-            time_t interval;
-
-            interval = clientP->endOfLife - tv_sec;
-
-            if (*timeoutP > interval)
-            {
-                *timeoutP = interval;
-            }
+            // Bootstrapping
+            contextP->state = STATE_BOOTSTRAP_REQUIRED;
         }
-        clientP = nextP;
-    }
+        goto next_step;
+        break;
+
+    case STATE_BOOTSTRAP_REQUIRED:
+#ifdef LWM2M_BOOTSTRAP
+        if (contextP->bootstrapServerList != NULL)
+        {
+            bootstrap_start(contextP);
+            contextP->state = STATE_BOOTSTRAPPING;
+            bootstrap_step(contextP, tv_sec, timeoutP);
+        }
+        else
 #endif
+        {
+            return COAP_503_SERVICE_UNAVAILABLE;
+        }
+        break;
+
+#ifdef LWM2M_BOOTSTRAP
+    case STATE_BOOTSTRAPPING:
+        switch (bootstrap_get_status(contextP))
+        {
+        case STATE_BS_FINISHED:
+            contextP->state = STATE_INITIAL;
+            goto next_step;
+            break;
+
+        case STATE_BS_FAILED:
+            return COAP_503_SERVICE_UNAVAILABLE;
+
+        default:
+            // keep on waiting
+            bootstrap_step(contextP, tv_sec, timeoutP);
+            break;
+        }
+        break;
+#endif
+    case STATE_REGISTER_REQUIRED:
+        registration_start(contextP);
+        contextP->state = STATE_REGISTERING;
+        break;
+
+    case STATE_REGISTERING:
+    {
+        switch (registration_get_status(contextP))
+        {
+        case STATE_REGISTERED:
+            contextP->state = STATE_READY;
+            break;
+
+        case STATE_REG_FAILED:
+            // TODO avoid infinite loop by checking the bootstrap info is different
+            contextP->state = STATE_BOOTSTRAP_REQUIRED;
+            goto next_step;
+            break;
+
+        case STATE_REG_PENDING:
+        default:
+            // keep on waiting
+            break;
+        }
+    }
+    break;
+
+    case STATE_READY:
+    default:
+        // do nothing
+        break;
+    }
+
+#endif
+
+    registration_step(contextP, tv_sec, timeoutP);
+    transaction_step(contextP, tv_sec, timeoutP);
 
     return 0;
 }
-
-#ifdef LWM2M_CLIENT_MODE
-int lwm2m_start(lwm2m_context_t * contextP)
-{
-    int result;
-    bool cleanup = (NULL != contextP->bootstrapServerList) || (NULL != contextP->serverList);
-    delete_transaction_list(contextP);
-    delete_observed_list(contextP);
-    if (cleanup)
-    {
-        LOG("lwm2m_start: cleanup\n");
-        delete_server_list(contextP);
-        delete_bootstrap_server_list(contextP);
-    }
-    result = object_getServers(contextP);
-    if (0 > result)
-    {
-        LOG("lwm2m_start: security- or server-objects configuration error.\n");
-        if (0 > result && cleanup)
-        {
-            LOG("lwm2m_start: cleanup on error\n");
-            delete_server_list(contextP);
-            delete_bootstrap_server_list(contextP);
-        }
-    }
-    return result;
-}
-#endif
-

@@ -223,10 +223,6 @@ size_t lwm2m_boolToPlainText(bool data, uint8_t ** bufferP);
 #define LWM2M_TLV_FLAG_STATIC_DATA   0x01
 #define LWM2M_TLV_FLAG_TEXT_FORMAT   0x02
 
-#ifdef LWM2M_BOOTSTRAP
-#define LWM2M_TLV_FLAG_BOOTSTRAPPING 0x04
-#endif
-
 /*
  * Bits 7 and 6 of assigned values for LWM2M_TYPE_RESOURCE,
  * LWM2M_TYPE_MULTIPLE_RESOURCE, LWM2M_TYPE_RESOURCE_INSTANCE
@@ -371,12 +367,18 @@ struct _lwm2m_object_t
 
 typedef enum
 {
-    STATE_DEREGISTERED = 0,   // not registered
+    STATE_DEREGISTERED = 0,   // not registered or boostrap not started
     STATE_REG_PENDING,        // registration pending
     STATE_REGISTERED,         // successfully registered
     STATE_REG_FAILED,         // last registration failed
     STATE_REG_UPDATE_PENDING, // registration update pending
-    STATE_DEREG_PENDING       // deregistration pending
+    STATE_DEREG_PENDING,      // deregistration pending
+    STATE_BS_HOLD_OFF,        // bootstrap hold off time
+    STATE_BS_INITIATED,       // bootstrap request sent
+    STATE_BS_PENDING,         // boostrap on going
+    STATE_BS_FINISHED,        // bootstrap done
+    STATE_BS_FAILED,          // bootstrap failed
+    STATE_DIRTY               // deleted or modified by bootstrap interface
 } lwm2m_status_t;
 
 typedef enum
@@ -395,8 +397,8 @@ typedef struct _lwm2m_server_
     struct _lwm2m_server_ * next;   // matches lwm2m_list_t::next
     uint16_t          secObjInstID; // matches lwm2m_list_t::id
     uint16_t          shortID;      // servers short ID, may be 0 for bootstrap server
-    time_t            lifetime;     // lifetime of the registration in sec or 0 if default value (86400 sec), also used as hold off time for the bootstrap server
-    time_t            registration; // date of the last registration in sec
+    time_t            lifetime;     // lifetime of the registration in sec or 0 if default value (86400 sec), also used as hold off time for bootstrap servers
+    time_t            registration; // date of the last registration in sec or end of client hold off time for bootstrap servers
     lwm2m_binding_t   binding;      // client connection mode with this server
     void *            sessionH;
     lwm2m_status_t    status;
@@ -521,18 +523,17 @@ typedef struct _lwm2m_observed_
     lwm2m_watcher_t * watcherList;
 } lwm2m_observed_t;
 
-#ifdef LWM2M_BOOTSTRAP
+#ifdef LWM2M_CLIENT_MODE
 
-typedef enum {
-    NOT_BOOTSTRAPPED = 0,
-    BOOTSTRAP_REQUESTED,
-    BOOTSTRAP_CLIENT_HOLD_OFF,
-    BOOTSTRAP_INITIATED,
-    BOOTSTRAP_PENDING,
-    BOOTSTRAP_FINISHED,
-    BOOTSTRAP_FAILED,
-    BOOTSTRAPPED
-} lwm2m_bootstrap_state_t;
+typedef enum
+{
+    STATE_INITIAL = 0,
+    STATE_BOOTSTRAP_REQUIRED,
+    STATE_BOOTSTRAPPING,
+    STATE_REGISTER_REQUIRED,
+    STATE_REGISTERING,
+    STATE_READY
+} lwm2m_client_state_t;
 
 #endif
 /*
@@ -558,18 +559,15 @@ typedef int (*lwm2m_bootstrap_callback_t) (void * sessionH, uint8_t status, lwm2
 typedef struct
 {
 #ifdef LWM2M_CLIENT_MODE
-#ifdef LWM2M_BOOTSTRAP
-    lwm2m_bootstrap_state_t bsState;
-    time_t              bsStart;
-#endif
-    char *              endpointName;
-    char *              msisdn;
-    char *              altPath;
-    lwm2m_server_t *    bootstrapServerList;
-    lwm2m_server_t *    serverList;
-    lwm2m_object_t **   objectList;
-    uint16_t            numObject;
-    lwm2m_observed_t *  observedList;
+    lwm2m_client_state_t state;
+    char *               endpointName;
+    char *               msisdn;
+    char *               altPath;
+    lwm2m_server_t *     bootstrapServerList;
+    lwm2m_server_t *     serverList;
+    lwm2m_object_t **    objectList;
+    uint16_t             numObject;
+    lwm2m_observed_t *   observedList;
 #endif
 #ifdef LWM2M_SERVER_MODE
     lwm2m_client_t *        clientList;
@@ -605,9 +603,6 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP, uint8_t * buffer, int lengt
 // LWM2M Security Object (ID 0) must be present with either a bootstrap server or a LWM2M server and
 // its matching LWM2M Server Object (ID 1) instance
 int lwm2m_configure(lwm2m_context_t * contextP, const char * endpointName, const char * msisdn, const char * altPath, uint16_t numObject, lwm2m_object_t * objectList[]);
-
-// create objects for known LWM2M Servers.
-int lwm2m_start(lwm2m_context_t * contextP);
 
 // send a registration update to the server specified by the server short identifier
 int lwm2m_update_registration(lwm2m_context_t * contextP, uint16_t shortServerID);

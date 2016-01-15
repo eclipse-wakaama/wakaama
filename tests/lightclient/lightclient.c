@@ -191,6 +191,117 @@ void print_usage(void)
     fprintf(stdout, "\r\n");
 }
 
+void print_state(lwm2m_context_t * lwm2mH)
+{
+    lwm2m_server_t * targetP;
+
+    fprintf(stderr, "State: ");
+    switch(lwm2mH->state)
+    {
+    case STATE_INITIAL:
+        fprintf(stderr, "STATE_INITIAL");
+        break;
+    case STATE_BOOTSTRAP_REQUIRED:
+        fprintf(stderr, "STATE_BOOTSTRAP_REQUIRED");
+        break;
+    case STATE_BOOTSTRAPPING:
+        fprintf(stderr, "STATE_BOOTSTRAPPING");
+        break;
+    case STATE_REGISTER_REQUIRED:
+        fprintf(stderr, "STATE_REGISTER_REQUIRED");
+        break;
+    case STATE_REGISTERING:
+        fprintf(stderr, "STATE_REGISTERING");
+        break;
+    case STATE_READY:
+        fprintf(stderr, "STATE_READY");
+        break;
+    default:
+        fprintf(stderr, "Unknown !");
+        break;
+    }
+    fprintf(stderr, "\r\n");
+
+    targetP = lwm2mH->bootstrapServerList;
+
+    if (lwm2mH->bootstrapServerList == NULL)
+    {
+        fprintf(stderr, "No Bootstrap Server.\r\n");
+    }
+    else
+    {
+        fprintf(stderr, "Bootstrap Servers:\r\n");
+        for (targetP = lwm2mH->bootstrapServerList ; targetP != NULL ; targetP = targetP->next)
+        {
+            fprintf(stderr, " - Security Object ID %d", targetP->secObjInstID);
+            fprintf(stderr, "\tHold Off Time: %lu s", (unsigned long)targetP->lifetime);
+            fprintf(stderr, "\tstatus: ");
+            switch(targetP->status)
+            {
+            case STATE_DEREGISTERED:
+                fprintf(stderr, "DEREGISTERED\r\n");
+                break;
+            case STATE_BS_HOLD_OFF:
+                fprintf(stderr, "CLIENT HOLD OFF\r\n");
+                break;
+            case STATE_BS_INITIATED:
+                fprintf(stderr, "BOOTSTRAP INITIATED\r\n");
+                break;
+            case STATE_BS_PENDING:
+                fprintf(stderr, "BOOTSTRAP PENDING\r\n");
+                break;
+            case STATE_BS_FINISHED:
+                fprintf(stderr, "BOOTSTRAP FINISHED\r\n");
+                break;
+            case STATE_BS_FAILED:
+                fprintf(stderr, "BOOTSTRAP FAILED\r\n");
+                break;
+            default:
+                fprintf(stderr, "INVALID (%d)\r\n", (int)targetP->status);
+            }
+            fprintf(stderr, "\r\n");
+        }
+    }
+
+    if (lwm2mH->serverList == NULL)
+    {
+        fprintf(stderr, "No LWM2M Server.\r\n");
+    }
+    else
+    {
+        fprintf(stderr, "LWM2M Servers:\r\n");
+        for (targetP = lwm2mH->serverList ; targetP != NULL ; targetP = targetP->next)
+        {
+            fprintf(stderr, " - Server ID %d", targetP->shortID);
+            fprintf(stderr, "\tstatus: ");
+            switch(targetP->status)
+            {
+            case STATE_DEREGISTERED:
+                fprintf(stderr, "DEREGISTERED\r\n");
+                break;
+            case STATE_REG_PENDING:
+                fprintf(stderr, "REGISTRATION PENDING\r\n");
+                break;
+            case STATE_REGISTERED:
+                fprintf(stderr, "REGISTERED\tlocation: \"%s\"\tLifetime: %lus\r\n", targetP->location, (unsigned long)targetP->lifetime);
+                break;
+            case STATE_REG_UPDATE_PENDING:
+                fprintf(stderr, "REGISTRATION UPDATE PENDING\r\n");
+                break;
+            case STATE_DEREG_PENDING:
+                fprintf(stderr, "DEREGISTRATION PENDING\r\n");
+                break;
+            case STATE_REG_FAILED:
+                fprintf(stderr, "REGISTRATION FAILED\r\n");
+                break;
+            default:
+                fprintf(stderr, "INVALID (%d)\r\n", (int)targetP->status);
+            }
+            fprintf(stderr, "\r\n");
+        }
+    }
+}
+
 #define OBJ_COUNT 4
 
 int main(int argc, char *argv[])
@@ -203,7 +314,6 @@ int main(int argc, char *argv[])
     char * name = "testlwm2mclient";
 
     int result;
-    int i;
     int opt;
 
     memset(&data, 0, sizeof(client_data_t));
@@ -295,16 +405,6 @@ int main(int argc, char *argv[])
      */
     signal(SIGINT, handle_sigint);
 
-    /*
-     * This function start your client to the LWM2M servers
-     */
-    result = lwm2m_start(lwm2mH);
-    if (result != 0)
-    {
-        fprintf(stderr, "lwm2m_start() failed: 0x%X\r\n", result);
-        return -1;
-    }
-
     fprintf(stdout, "LWM2M Client \"%s\" started on port %s.\r\nUse Ctrl-C to exit.\r\n\n", name, localPort);
 
     /*
@@ -320,6 +420,8 @@ int main(int argc, char *argv[])
 
         FD_ZERO(&readfds);
         FD_SET(data.sock, &readfds);
+
+        print_state(lwm2mH);
 
         /*
          * This function does two things:

@@ -211,13 +211,11 @@ static uint8_t prv_security_write(uint16_t instanceId,
     int i;
     uint8_t result = COAP_204_CHANGED;
 
-    if ((dataArray->flags & LWM2M_TLV_FLAG_BOOTSTRAPPING) == 0) return COAP_401_UNAUTHORIZED;
-
     targetP = (security_instance_t *)lwm2m_list_find(objectP->instanceList, instanceId);
     if (NULL == targetP)
     {
         return COAP_404_NOT_FOUND;
-   }
+    }
 
     i = 0;
     do {
@@ -486,6 +484,7 @@ lwm2m_object_t * get_security_object(int shortId, char* url, char * bsPskId, cha
     securityObj->readFunc = prv_security_read;
     securityObj->writeFunc = prv_security_write;
     securityObj->createFunc = prv_security_create;
+    securityObj->deleteFunc = prv_security_delete;
     return securityObj;
 }
 

@@ -52,81 +52,30 @@
 #include <stdio.h>
 
 
-static lwm2m_media_type_t prv_convertMediaType(coap_content_type_t type)
-{
-    // Here we just check the content type is a valid value for LWM2M
-    switch(type)
-    {
-    case TEXT_PLAIN:
-        return LWM2M_CONTENT_TEXT;
-    case APPLICATION_OCTET_STREAM:
-        return LWM2M_CONTENT_OPAQUE;
-    case LWM2M_CONTENT_TLV:
-        return LWM2M_CONTENT_TLV;
-    case LWM2M_CONTENT_JSON:
-        return LWM2M_CONTENT_JSON;
-
-    default:
-        return LWM2M_CONTENT_TEXT;
-    }
-}
-
 #ifdef LWM2M_CLIENT_MODE
 coap_status_t handle_dm_request(lwm2m_context_t * contextP,
                                 lwm2m_uri_t * uriP,
-                                void * fromSessionH,
+                                lwm2m_server_t * serverP,
                                 coap_packet_t * message,
                                 coap_packet_t * response)
 {
     coap_status_t result;
-    lwm2m_server_t * serverP = NULL;
     lwm2m_media_type_t format;
-
-#ifdef LWM2M_BOOTSTRAP
-    lwm2m_server_t * bsServerP = NULL;
-#endif
 
     format = prv_convertMediaType(message->content_type);
 
-    serverP = prv_findServer(contextP, fromSessionH);
-    if (NULL == serverP)
+    if (uriP->objectId == LWM2M_SECURITY_OBJECT_ID)
     {
-#ifdef LWM2M_BOOTSTRAP
-        bsServerP = utils_findBootstrapServer(contextP, fromSessionH);
-        if (NULL == bsServerP)
-        {
-            // No server found
-            return COAP_IGNORE;
-        }
-#else
-        return COAP_IGNORE;
-#endif
+        return COAP_404_NOT_FOUND;
     }
 
-#ifdef LWM2M_BOOTSTRAP
-    if (contextP->bsState != BOOTSTRAP_PENDING)
+    if (serverP->status != STATE_REGISTERED
+     && serverP->status != STATE_REG_UPDATE_PENDING)
     {
-        if (NULL != bsServerP)
-        {
-            // server initiated bootstrap?
-            // currently not implemented.
-            return NOT_IMPLEMENTED_5_01;
-        }
-        if ( serverP->status != STATE_REGISTERED &&
-                serverP->status != STATE_REG_UPDATE_PENDING)
-        {
-            return COAP_IGNORE;
-        }
+        return COAP_IGNORE;
     }
-    else
-    {
-        if (NULL != serverP)
-        {
-            // Request form management server during bootstrap.
-            return UNAUTHORIZED_4_01;
-        }
-    }
-#endif
+
+    // TODO: check ACL
 
     switch (message->code)
     {
@@ -158,16 +107,8 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
 
     case COAP_POST:
         {
-#ifdef LWM2M_BOOTSTRAP
-            /* no POST during bootstrap */
-            if (contextP->bsState == BOOTSTRAP_PENDING) return METHOD_NOT_ALLOWED_4_05;
-#endif
             if (!LWM2M_URI_IS_SET_INSTANCE(uriP))
             {
-                lwm2m_media_type_t format;
-
-                format = prv_convertMediaType(message->content_type);
-
                 result = object_create(contextP, uriP, format, message->payload, message->payload_len);
                 if (result == COAP_201_CREATED)
                 {
@@ -210,20 +151,7 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
         {
             if (LWM2M_URI_IS_SET_INSTANCE(uriP))
             {
-#ifdef LWM2M_BOOTSTRAP
-                if (contextP->bsState == BOOTSTRAP_PENDING && object_isInstanceNew(contextP, uriP->objectId, uriP->instanceId))
-                {
-                    result = object_create(contextP, uriP, format, message->payload, message->payload_len);
-                    if (COAP_201_CREATED == result)
-                    {
-                        result = COAP_204_CHANGED;
-                    }
-                }
-                else
-#endif
-                {
-                    result = object_write(contextP, uriP, format, message->payload, message->payload_len);
-                }
+                result = object_write(contextP, uriP, format, message->payload, message->payload_len);
             }
             else
             {
@@ -234,13 +162,13 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
 
     case COAP_DELETE:
         {
-            if (LWM2M_URI_IS_SET_INSTANCE(uriP) && !LWM2M_URI_IS_SET_RESOURCE(uriP))
+            if (!LWM2M_URI_IS_SET_INSTANCE(uriP) || LWM2M_URI_IS_SET_RESOURCE(uriP))
             {
-                result = object_delete(contextP, uriP);
+                result = BAD_REQUEST_4_00;
             }
             else
             {
-                result = BAD_REQUEST_4_00;
+                result = object_delete(contextP, uriP);
             }
         }
         break;
@@ -253,39 +181,6 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
     return result;
 }
 
-static void management_delete_all_instances(lwm2m_object_t * object)
-{
-    if (NULL != object->deleteFunc)
-    {
-        while (NULL != object->instanceList)
-        {
-            object->deleteFunc(object->instanceList->id, object);
-        }
-    }
-}
-
-coap_status_t handle_delete_all(lwm2m_context_t * context)
-{
-    lwm2m_object_t ** objectList = context->objectList;
-    if (NULL != objectList)
-    {
-        int i;
-        for (i = 0 ; i < context->numObject ; i++)
-        {
-            // Only security and server objects are deleted upon a DEL /
-            switch (objectList[i]->objID)
-            {
-            case LWM2M_SECURITY_OBJECT_ID:
-            case LWM2M_SERVER_OBJECT_ID:
-                management_delete_all_instances(objectList[i]);
-                break;
-            default:
-                break;
-            }
-        }
-    }
-    return DELETED_2_02;
-}
 #endif
 
 #ifdef LWM2M_SERVER_MODE

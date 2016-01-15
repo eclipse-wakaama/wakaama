@@ -142,11 +142,6 @@ void handle_value_changed(lwm2m_context_t * lwm2mH,
                 return;
             }
             dataP->flags = LWM2M_TLV_FLAG_STATIC_DATA | LWM2M_TLV_FLAG_TEXT_FORMAT;
-#ifdef LWM2M_BOOTSTRAP
-            if (lwm2mH->bsState == BOOTSTRAP_PENDING) {
-                dataP->flags |= LWM2M_TLV_FLAG_BOOTSTRAPPING;
-            }
-#endif
             dataP->id = uri->resourceId;
             dataP->length = valueLength;
             dataP->value = (uint8_t*) value;
@@ -271,41 +266,81 @@ static void prv_output_servers(char * buffer,
     lwm2m_context_t * lwm2mH = (lwm2m_context_t *) user_data;
     lwm2m_server_t * targetP;
 
-    targetP = lwm2mH->serverList;
+    targetP = lwm2mH->bootstrapServerList;
 
-    if (targetP == NULL)
+    if (lwm2mH->bootstrapServerList == NULL)
     {
-        fprintf(stdout, "No server.\r\n");
-        return;
+        fprintf(stdout, "No Bootstrap Server.\r\n");
+    }
+    else
+    {
+        fprintf(stdout, "Bootstrap Servers:\r\n");
+        for (targetP = lwm2mH->bootstrapServerList ; targetP != NULL ; targetP = targetP->next)
+        {
+            fprintf(stdout, " - Security Object ID %d", targetP->secObjInstID);
+            fprintf(stdout, "\tHold Off Time: %lu s", (unsigned long)targetP->lifetime);
+            fprintf(stdout, "\tstatus: ");
+            switch(targetP->status)
+            {
+            case STATE_DEREGISTERED:
+                fprintf(stdout, "DEREGISTERED\r\n");
+                break;
+            case STATE_BS_HOLD_OFF:
+                fprintf(stdout, "CLIENT HOLD OFF\r\n");
+                break;
+            case STATE_BS_INITIATED:
+                fprintf(stdout, "BOOTSTRAP INITIATED\r\n");
+                break;
+            case STATE_BS_PENDING:
+                fprintf(stdout, "BOOTSTRAP PENDING\r\n");
+                break;
+            case STATE_BS_FINISHED:
+                fprintf(stdout, "BOOTSTRAP FINISHED\r\n");
+                break;
+            case STATE_BS_FAILED:
+                fprintf(stdout, "BOOTSTRAP FAILED\r\n");
+                break;
+            default:
+                fprintf(stdout, "INVALID (%d)\r\n", (int)targetP->status);
+            }
+        }
     }
 
-    for (targetP = lwm2mH->serverList ; targetP != NULL ; targetP = targetP->next)
+    if (lwm2mH->serverList == NULL)
     {
-        fprintf(stdout, "Server ID %d:\r\n", targetP->shortID);
-        fprintf(stdout, "\tstatus: ");
-        switch(targetP->status)
+        fprintf(stdout, "No LWM2M Server.\r\n");
+    }
+    else
+    {
+        fprintf(stdout, "LWM2M Servers:\r\n");
+        for (targetP = lwm2mH->serverList ; targetP != NULL ; targetP = targetP->next)
         {
-        case STATE_DEREGISTERED:
-            fprintf(stdout, "DEREGISTERED\r\n");
-            break;
-        case STATE_REG_PENDING:
-            fprintf(stdout, "REGISTRATION PENDING\r\n");
-            break;
-        case STATE_REGISTERED:
-            fprintf(stdout, "REGISTERED location: \"%s\"\r\n", targetP->location);
-            fprintf(stdout, "\tLifetime: %lu s\r\n", (unsigned long)targetP->lifetime);
-            break;
-        case STATE_REG_UPDATE_PENDING:
-            fprintf(stdout, "REGISTRATION UPDATE PENDING\r\n");
-            break;
-        case STATE_DEREG_PENDING:
-            fprintf(stdout, "DEREGISTRATION PENDING\r\n");
-            break;
-        case STATE_REG_FAILED:
-            fprintf(stdout, "REGISTRATION FAILED\r\n");
-            break;
+            fprintf(stdout, " - Server ID %d", targetP->shortID);
+            fprintf(stdout, "\tstatus: ");
+            switch(targetP->status)
+            {
+            case STATE_DEREGISTERED:
+                fprintf(stdout, "DEREGISTERED\r\n");
+                break;
+            case STATE_REG_PENDING:
+                fprintf(stdout, "REGISTRATION PENDING\r\n");
+                break;
+            case STATE_REGISTERED:
+                fprintf(stdout, "REGISTERED\tlocation: \"%s\"\tLifetime: %lus\r\n", targetP->location, (unsigned long)targetP->lifetime);
+                break;
+            case STATE_REG_UPDATE_PENDING:
+                fprintf(stdout, "REGISTRATION UPDATE PENDING\r\n");
+                break;
+            case STATE_DEREG_PENDING:
+                fprintf(stdout, "DEREGISTRATION PENDING\r\n");
+                break;
+            case STATE_REG_FAILED:
+                fprintf(stdout, "REGISTRATION FAILED\r\n");
+                break;
+            default:
+                fprintf(stdout, "INVALID (%d)\r\n", (int)targetP->status);
+            }
         }
-        fprintf(stdout, "\r\n");
     }
 }
 
@@ -488,9 +523,15 @@ static void prv_initiate_bootstrap(char * buffer,
                                    void * user_data)
 {
     lwm2m_context_t * lwm2mH = (lwm2m_context_t *)user_data;
-    if ((lwm2mH->bsState != BOOTSTRAP_CLIENT_HOLD_OFF)
-            && (lwm2mH->bsState != BOOTSTRAP_PENDING)) {
-        lwm2mH->bsState = BOOTSTRAP_REQUESTED;
+    lwm2m_server_t * targetP;
+    
+    // HACK !!!
+    lwm2mH->state = STATE_BOOTSTRAP_REQUIRED;
+    targetP = lwm2mH->bootstrapServerList;
+    while (targetP != NULL)
+    {
+        targetP->lifetime = 0;
+        targetP = targetP->next;
     }
 }
 
@@ -556,38 +597,6 @@ static void prv_display_backup(char * buffer,
                 }
             }
         }
-    }
-}
-
-static void prv_display_bootstrap_state(lwm2m_bootstrap_state_t bootstrapState)
-{
-    switch (bootstrapState) {
-    case NOT_BOOTSTRAPPED:
-        fprintf(stderr, "NOT BOOTSTRAPPED\r\n");
-        break;
-    case BOOTSTRAP_REQUESTED:
-        fprintf(stderr, "DI BOOTSTRAP REQUESTED\r\n");
-        break;
-    case BOOTSTRAP_CLIENT_HOLD_OFF:
-        fprintf(stderr, "DI BOOTSTRAP CLIENT HOLD OFF\r\n");
-        break;
-    case BOOTSTRAP_INITIATED:
-        fprintf(stderr, "DI BOOTSTRAP INITIATED\r\n");
-        break;
-    case BOOTSTRAP_PENDING:
-        fprintf(stderr, "DI BOOTSTRAP PENDING\r\n");
-        break;
-    case BOOTSTRAP_FINISHED:
-        fprintf(stderr, "DI BOOTSTRAP FINISHED\r\n");
-        break;
-    case BOOTSTRAP_FAILED:
-        fprintf(stderr, "DI BOOTSTRAP FAILED\r\n");
-        break;
-    case BOOTSTRAPPED:
-        fprintf(stderr, "BOOTSTRAPPED\r\n");
-        break;
-    default:
-        break;
     }
 }
 
@@ -665,7 +674,6 @@ static void prv_restore_objects(lwm2m_context_t * context)
     }
 
     // restart the old servers
-    lwm2m_start(context);
     fprintf(stdout, "[BOOTSTRAP] ObjectList restored\r\n");
 }
 
@@ -681,41 +689,30 @@ static void prv_connections_free(lwm2m_context_t * context)
     }
 }
 
-static void update_bootstrap_info(lwm2m_bootstrap_state_t * previousBootstrapState,
+static void update_bootstrap_info(lwm2m_client_state_t * previousBootstrapState,
         lwm2m_context_t * context)
 {
-    if (*previousBootstrapState != context->bsState)
+    if (*previousBootstrapState != context->state)
     {
-        *previousBootstrapState = context->bsState;
-        switch(context->bsState)
+        *previousBootstrapState = context->state;
+        switch(context->state)
         {
-            case BOOTSTRAP_CLIENT_HOLD_OFF:
+            case STATE_BOOTSTRAPPING:
 #ifdef WITH_LOGS
                 fprintf(stdout, "[BOOTSTRAP] backup security and server objects\r\n");
 #endif
                 prv_backup_objects(context);
                 break;
-            case BOOTSTRAP_FINISHED:
+            case STATE_REGISTER_REQUIRED:
 #ifdef WITH_LOGS
                 fprintf(stdout, "[BOOTSTRAP] free connections\r\n");
 #endif
                 prv_connections_free(context);
                 break;
-            case BOOTSTRAP_FAILED:
-#ifdef WITH_LOGS
-                fprintf(stdout, "[BOOTSTRAP] restore security and server objects\r\n");
-#endif
-                prv_connections_free(context);
-                prv_restore_objects(context);
-                break;
             default:
                 break;
         }
     }
-
-#ifdef WITH_LOGS
-    prv_display_bootstrap_state(context->bsState);
-#endif
 }
 
 static void close_backup_object()
@@ -761,7 +758,7 @@ int main(int argc, char *argv[])
     lwm2m_context_t * lwm2mH = NULL;
     int i;
     const char * localPort = "56830";
-    const char * server = "localhost";
+    const char * server = "[::1]";
     const char * serverPort = LWM2M_STANDARD_PORT_STR;
     char * name = "testlwm2mclient";
     int lifetime = 300;
@@ -770,7 +767,7 @@ int main(int argc, char *argv[])
     int opt;
     bool bootstrapRequested = false;
 #ifdef LWM2M_BOOTSTRAP
-    lwm2m_bootstrap_state_t previousBootstrapState = NOT_BOOTSTRAPPED;
+    lwm2m_client_state_t previousState = STATE_INITIAL;
 #endif
 
     /*
@@ -790,11 +787,11 @@ int main(int argc, char *argv[])
                                                         "   SERVER: short server id such as 123\r\n", prv_update, NULL},
 #ifdef LWM2M_BOOTSTRAP
             {"bootstrap", "Initiate a DI bootstrap process", NULL, prv_initiate_bootstrap, NULL},
-            {"disp", "Display current objects/instances/resources", NULL, prv_display_objects, NULL},
             {"dispb", "Display current backup of objects/instances/resources\r\n"
                     "\t(only security and server objects are backupped)", NULL, prv_display_backup, NULL},
 #endif
             {"ls", "List Objects and Instances", NULL, prv_object_list, NULL},
+            {"disp", "Display current objects/instances/resources", NULL, prv_display_objects, NULL},
             {"dump", "Dump an Object", "dump URI"
                                        "URI: uri of the Object or Instance such as /3/0, /1\r\n", prv_object_dump, NULL},
             {"quit", "Quit the client gracefully.", NULL, prv_quit, NULL},
@@ -948,20 +945,6 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-#ifdef LWM2M_BOOTSTRAP
-    /*
-     * Bootstrap state initialization
-     */
-    if (bootstrapRequested)
-    {
-        lwm2mH->bsState = BOOTSTRAP_REQUESTED;
-    }
-    else
-    {
-        lwm2mH->bsState = NOT_BOOTSTRAPPED;
-    }
-#endif
-
     /*
      * We configure the liblwm2m library with the name of the client - which shall be unique for each client -
      * the number of objects we will be passing through and the objects array
@@ -974,16 +957,6 @@ int main(int argc, char *argv[])
     }
 
     signal(SIGINT, handle_sigint);
-
-    /*
-     * This function start your client to the LWM2M servers
-     */
-    result = lwm2m_start(lwm2mH);
-    if (result != 0)
-    {
-        fprintf(stderr, "lwm2m_start() failed: 0x%X\r\n", result);
-        return -1;
-    }
 
     /**
      * Initialize value changed callback.
@@ -1056,10 +1029,19 @@ int main(int argc, char *argv[])
         if (result != 0)
         {
             fprintf(stderr, "lwm2m_step() failed: 0x%X\r\n", result);
-            return -1;
+            if(previousState == STATE_BOOTSTRAPPING)
+            {
+#ifdef WITH_LOGS
+                fprintf(stdout, "[BOOTSTRAP] restore security and server objects\r\n");
+#endif
+                prv_connections_free(lwm2mH);
+                prv_restore_objects(lwm2mH);
+                lwm2mH->state = STATE_INITIAL;
+            }
+            else return -1;
         }
 #ifdef LWM2M_BOOTSTRAP
-        update_bootstrap_info(&previousBootstrapState, lwm2mH);
+        update_bootstrap_info(&previousState, lwm2mH);
 #endif
         /*
          * This part will set up an interruption until an event happen on SDTIN or the socket until "tv" timed out (set

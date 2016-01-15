@@ -64,15 +64,6 @@ static lwm2m_object_t * prv_find_object(lwm2m_context_t * contextP,
 {
     int i;
 
-    if (
-#ifdef LWM2M_BOOTSTRAP
-        (contextP->bsState != BOOTSTRAP_PENDING) &&
-#endif
-        (Id == LWM2M_SECURITY_OBJECT_ID))
-    {
-        return NULL;
-    }
-
     for (i = 0 ; i < contextP->numObject ; i++)
     {
         if (contextP->objectList[i]->objID == Id)
@@ -94,10 +85,6 @@ coap_status_t object_read(lwm2m_context_t * contextP,
     lwm2m_object_t * targetP;
     lwm2m_data_t * dataP = NULL;
     int size = 0;
-
-#ifdef LWM2M_BOOTSTRAP
-    if (contextP->bsState == BOOTSTRAP_PENDING) return METHOD_NOT_ALLOWED_4_05;
-#endif
 
     targetP = prv_find_object(contextP, uriP->objectId);
     if (NULL == targetP) return NOT_FOUND_4_04;
@@ -175,7 +162,7 @@ coap_status_t object_read(lwm2m_context_t * contextP,
          && dataP->type == LWM2M_TYPE_RESOURCE
          && (dataP->flags && LWM2M_TLV_FLAG_TEXT_FORMAT) != 0 )
         {
-            *bufferP = (uint8_t *)malloc(dataP->length);
+            *bufferP = (uint8_t *)lwm2m_malloc(dataP->length);
             if (*bufferP == NULL)
             {
                 result = COAP_500_INTERNAL_SERVER_ERROR;
@@ -245,28 +232,9 @@ coap_status_t object_write(lwm2m_context_t * contextP,
     }
     if (result == NO_ERROR)
     {
-#ifdef LWM2M_BOOTSTRAP
-        if (contextP->bsState == BOOTSTRAP_PENDING)
-        {
-            dataP->flags |= LWM2M_TLV_FLAG_BOOTSTRAPPING;
-        }
-#endif
         result = targetP->writeFunc(uriP->instanceId, size, dataP, targetP);
         lwm2m_data_free(size, dataP);
     }
-#ifdef LWM2M_BOOTSTRAP
-    if (contextP->bsState == BOOTSTRAP_PENDING)
-    {
-        if (result == COAP_204_CHANGED)
-        {
-            reset_bootstrap_timer(contextP);
-        }
-        else
-        {
-            bootstrap_failed(contextP);
-        }
-    }
-#endif
     return result;
 }
 
@@ -276,10 +244,6 @@ coap_status_t object_execute(lwm2m_context_t * contextP,
                              size_t length)
 {
     lwm2m_object_t * targetP;
-
-#ifdef LWM2M_BOOTSTRAP
-    if (contextP->bsState == BOOTSTRAP_PENDING) return METHOD_NOT_ALLOWED_4_05;
-#endif
 
     targetP = prv_find_object(contextP, uriP->objectId);
     if (NULL == targetP) return NOT_FOUND_4_04;
@@ -324,12 +288,6 @@ coap_status_t object_create(lwm2m_context_t * contextP,
 
     size = lwm2m_data_parse(buffer, length, format, &dataP);
     if (size == 0) return COAP_500_INTERNAL_SERVER_ERROR;
-#ifdef LWM2M_BOOTSTRAP
-    if (contextP->bsState == BOOTSTRAP_PENDING)
-    {
-        dataP->flags |= LWM2M_TLV_FLAG_BOOTSTRAPPING;
-    }
-#endif
     result = targetP->createFunc(uriP->instanceId, size, dataP, targetP);
     lwm2m_data_free(size, dataP);
 
@@ -339,15 +297,70 @@ coap_status_t object_create(lwm2m_context_t * contextP,
 coap_status_t object_delete(lwm2m_context_t * contextP,
                             lwm2m_uri_t * uriP)
 {
-    lwm2m_object_t * targetP;
+    lwm2m_object_t * objectP;
+    coap_status_t result;
 
-    targetP = prv_find_object(contextP, uriP->objectId);
-    if (NULL == targetP) return NOT_FOUND_4_04;
-    if (NULL == targetP->deleteFunc) return METHOD_NOT_ALLOWED_4_05;
+    objectP = prv_find_object(contextP, uriP->objectId);
+    if (NULL == objectP) return NOT_FOUND_4_04;
+    if (NULL == objectP->deleteFunc) return METHOD_NOT_ALLOWED_4_05;
 
     LOG("    Call to object_delete\r\n");
 
-    return targetP->deleteFunc(uriP->instanceId, targetP);
+    if (LWM2M_URI_IS_SET_RESOURCE(uriP))
+    {
+        result = objectP->deleteFunc(uriP->instanceId, objectP);
+    }
+    else
+    {
+        lwm2m_list_t * instanceP;
+
+        result = COAP_202_DELETED;
+        instanceP = objectP->instanceList;
+        while (NULL != instanceP
+            && result == COAP_202_DELETED)
+        {
+            result = objectP->deleteFunc(instanceP->id, objectP);
+            instanceP = objectP->instanceList;
+        }
+    }
+
+    return result;
+}
+
+/*
+ * Delete all instances of an object except for the one with instanceId
+ */
+coap_status_t object_delete_others(lwm2m_context_t * contextP,
+                                   uint16_t objectId,
+                                   uint16_t instanceId)
+{
+    lwm2m_object_t * objectP;
+    lwm2m_list_t * instanceP;
+    coap_status_t result;
+
+    objectP = prv_find_object(contextP, objectId);
+    if (NULL == objectP) return NOT_FOUND_4_04;
+    if (NULL == objectP->deleteFunc) return METHOD_NOT_ALLOWED_4_05;
+
+    LOG("    Call to object_delete_others\r\n");
+
+    result = COAP_202_DELETED;
+    instanceP = objectP->instanceList;
+    while (NULL != instanceP
+        && result == COAP_202_DELETED)
+    {
+        if (instanceP->id == instanceId)
+        {
+            instanceP = instanceP->next;
+        }
+        else
+        {
+            result = objectP->deleteFunc(instanceP->id, objectP);
+            instanceP = objectP->instanceList;
+        }
+    }
+
+    return result;
 }
 
 bool object_isInstanceNew(lwm2m_context_t * contextP,
@@ -547,84 +560,90 @@ int object_getServers(lwm2m_context_t * contextP)
     securityInstP = securityObjP->instanceList;
     while (securityInstP != NULL)
     {
-        lwm2m_data_t * dataP;
-        int size;
-        lwm2m_server_t * targetP;
-        bool isBootstrap;
-        int64_t value = 0;
-
-        size = 3;
-        dataP = lwm2m_data_new(size);
-        if (dataP == NULL) return -1;
-        dataP[0].id = LWM2M_SECURITY_BOOTSTRAP_ID;
-        dataP[1].id = LWM2M_SECURITY_SHORT_SERVER_ID;
-        dataP[2].id = LWM2M_SECURITY_HOLD_OFF_ID;
-
-        if (securityObjP->readFunc(securityInstP->id, &size, &dataP, securityObjP) != COAP_205_CONTENT)
+        if (LWM2M_LIST_FIND(contextP->bootstrapServerList, securityInstP->id) == NULL
+         && LWM2M_LIST_FIND(contextP->serverList, securityInstP->id) == NULL)
         {
-            lwm2m_data_free(size, dataP);
-            return -1;
-        }
+            // This server is new. eg created by last bootstrap
 
-        targetP = (lwm2m_server_t *)lwm2m_malloc(sizeof(lwm2m_server_t));
-        if (targetP == NULL) {
-            lwm2m_data_free(size, dataP);
-            return -1;
-        }
-        memset(targetP, 0, sizeof(lwm2m_server_t));
-        targetP->secObjInstID = securityInstP->id;
+            lwm2m_data_t * dataP;
+            int size;
+            lwm2m_server_t * targetP;
+            bool isBootstrap;
+            int64_t value = 0;
 
-        if (0 == lwm2m_data_decode_bool(dataP + 0, &isBootstrap))
-        {
-            lwm2m_free(targetP);
-            lwm2m_data_free(size, dataP);
-            return -1;
-        }
+            size = 3;
+            dataP = lwm2m_data_new(size);
+            if (dataP == NULL) return -1;
+            dataP[0].id = LWM2M_SECURITY_BOOTSTRAP_ID;
+            dataP[1].id = LWM2M_SECURITY_SHORT_SERVER_ID;
+            dataP[2].id = LWM2M_SECURITY_HOLD_OFF_ID;
 
-        if (0 == lwm2m_data_decode_int(dataP + 1, &value)
-         || value < (isBootstrap ? 0 : 1) || value > 0xFFFF)                // 0 is forbidden as a Short Server ID
-        {
-            lwm2m_free(targetP);
-            lwm2m_data_free(size, dataP);
-            return -1;
-        }
-        targetP->shortID = value;
+            if (securityObjP->readFunc(securityInstP->id, &size, &dataP, securityObjP) != COAP_205_CONTENT)
+            {
+                lwm2m_data_free(size, dataP);
+                return -1;
+            }
 
-        if (isBootstrap == true)
-        {
-            if (0 == lwm2m_data_decode_int(dataP + 2, &value)
-             || value < 0 || value > 0xFFFFFFFF)             // This is an implementation limit
+            targetP = (lwm2m_server_t *)lwm2m_malloc(sizeof(lwm2m_server_t));
+            if (targetP == NULL) {
+                lwm2m_data_free(size, dataP);
+                return -1;
+            }
+            memset(targetP, 0, sizeof(lwm2m_server_t));
+            targetP->secObjInstID = securityInstP->id;
+
+            if (0 == lwm2m_data_decode_bool(dataP + 0, &isBootstrap))
             {
                 lwm2m_free(targetP);
                 lwm2m_data_free(size, dataP);
                 return -1;
             }
-            // lifetime of a bootstrap server is set to ClientHoldOffTime
-            targetP->lifetime = value;
 
-            contextP->bootstrapServerList = (lwm2m_server_t*)LWM2M_LIST_ADD(contextP->bootstrapServerList, targetP);
-        }
-        else
-        {
-            lwm2m_list_t * serverInstP;     // instanceID of the server in the LWM2M Server Object
-
-            serverInstP = prv_findServerInstance(serverObjP, targetP->shortID);
-            if (serverInstP == NULL)
+            if (0 == lwm2m_data_decode_int(dataP + 1, &value)
+             || value < (isBootstrap ? 0 : 1) || value > 0xFFFF)                // 0 is forbidden as a Short Server ID
             {
                 lwm2m_free(targetP);
                 lwm2m_data_free(size, dataP);
                 return -1;
             }
-            if (0 != prv_getMandatoryInfo(serverObjP, serverInstP->id, targetP))
+            targetP->shortID = value;
+
+            if (isBootstrap == true)
             {
-                lwm2m_free(targetP);
-                lwm2m_data_free(size, dataP);
-                return -1;
+                if (0 == lwm2m_data_decode_int(dataP + 2, &value)
+                 || value < 0 || value > 0xFFFFFFFF)             // This is an implementation limit
+                {
+                    lwm2m_free(targetP);
+                    lwm2m_data_free(size, dataP);
+                    return -1;
+                }
+                // lifetime of a bootstrap server is set to ClientHoldOffTime
+                targetP->lifetime = value;
+
+                contextP->bootstrapServerList = (lwm2m_server_t*)LWM2M_LIST_ADD(contextP->bootstrapServerList, targetP);
             }
-            targetP->status = STATE_DEREGISTERED;
-            contextP->serverList = (lwm2m_server_t*)LWM2M_LIST_ADD(contextP->serverList, targetP);
+            else
+            {
+                lwm2m_list_t * serverInstP;     // instanceID of the server in the LWM2M Server Object
+
+                serverInstP = prv_findServerInstance(serverObjP, targetP->shortID);
+                if (serverInstP == NULL)
+                {
+                    lwm2m_free(targetP);
+                    lwm2m_data_free(size, dataP);
+                    return -1;
+                }
+                if (0 != prv_getMandatoryInfo(serverObjP, serverInstP->id, targetP))
+                {
+                    lwm2m_free(targetP);
+                    lwm2m_data_free(size, dataP);
+                    return -1;
+                }
+                targetP->status = STATE_DEREGISTERED;
+                contextP->serverList = (lwm2m_server_t*)LWM2M_LIST_ADD(contextP->serverList, targetP);
+            }
+            lwm2m_data_free(size, dataP);
         }
-        lwm2m_data_free(size, dataP);
         securityInstP = securityInstP->next;
     }
 

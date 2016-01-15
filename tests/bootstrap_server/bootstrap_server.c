@@ -54,9 +54,11 @@ typedef struct _endpoint_
 
 typedef struct
 {
+    int               sock;
+    connection_t *    connList;
     lwm2m_context_t * lwm2mH;
-    bs_info_t *     bsInfo;
-    endpoint_t *    endpointList;
+    bs_info_t *       bsInfo;
+    endpoint_t *      endpointList;
 } internal_data_t;
 
 /*
@@ -103,6 +105,21 @@ void print_usage(char * filename,
     fprintf(stdout, "\r\n");
 }
 
+static void prv_print_uri(FILE * fd,
+                          lwm2m_uri_t * uriP)
+{
+    fprintf(fd, "/");
+    if (uriP != NULL)
+    {
+        fprintf(fd, "%hu", uriP->objectId);
+        if (LWM2M_URI_IS_SET_INSTANCE(uriP))
+        {
+            fprintf(fd, "/%d", uriP->instanceId);
+            if (LWM2M_URI_IS_SET_RESOURCE(uriP))
+                fprintf(fd, "/%d", uriP->resourceId);
+        }
+    }
+}
 static void prv_endpoint_free(endpoint_t * endP)
 {
     if (endP != NULL)
@@ -208,6 +225,9 @@ static void prv_send_command(internal_data_t * dataP,
     switch (endP->cmdList->operation)
     {
     case BS_DELETE:
+        fprintf(stdout, "Sending DELETE ");
+        prv_print_uri(stdout, endP->cmdList->uri);
+        fprintf(stdout, " to \"%s\"", endP->name);
         res = lwm2m_bootstrap_delete(dataP->lwm2mH, endP->handle, endP->cmdList->uri);
         break;
 
@@ -227,6 +247,10 @@ static void prv_send_command(internal_data_t * dataP,
         uri.flag = LWM2M_URI_FLAG_OBJECT_ID | LWM2M_URI_FLAG_INSTANCE_ID;
         uri.objectId = LWM2M_SECURITY_OBJECT_ID;
         uri.instanceId = endP->cmdList->serverId;
+
+        fprintf(stdout, "Sending WRITE ");
+        prv_print_uri(stdout, &uri);
+        fprintf(stdout, " to \"%s\"", endP->name);
 
         res = lwm2m_bootstrap_write(dataP->lwm2mH, endP->handle, &uri, LWM2M_CONTENT_TLV, serverP->securityData, serverP->securityLen);
     }
@@ -249,11 +273,18 @@ static void prv_send_command(internal_data_t * dataP,
         uri.objectId = LWM2M_SERVER_OBJECT_ID;
         uri.instanceId = endP->cmdList->serverId;
 
+        fprintf(stdout, "Sending WRITE ");
+        prv_print_uri(stdout, &uri);
+        fprintf(stdout, " to \"%s\"", endP->name);
+
         res = lwm2m_bootstrap_write(dataP->lwm2mH, endP->handle, &uri, LWM2M_CONTENT_TLV, serverP->serverData, serverP->serverLen);
     }
         break;
 
     case BS_FINISH:
+        fprintf(stdout, "Sending BOOTSTRAP FINISH ");
+        fprintf(stdout, " to \"%s\"", endP->name);
+
         res = lwm2m_bootstrap_finish(dataP->lwm2mH, endP->handle);
         break;
 
@@ -263,10 +294,14 @@ static void prv_send_command(internal_data_t * dataP,
 
     if (res == COAP_NO_ERROR)
     {
+        fprintf(stdout, " OK.\r\n");
+
         endP->status = CMD_STATUS_SENT;
     }
     else
     {
+        fprintf(stdout, " failed!\r\n");
+
         endP->status = CMD_STATUS_FAIL;
     }
 }
@@ -328,17 +363,8 @@ static int prv_bootstrap_callback(void * sessionH,
         // Display
         fprintf(stdout, "\r\n Received status ");
         print_status(stdout, status);
-        fprintf(stdout, " for URI /");
-        if (uriP != NULL)
-        {
-            fprintf(stdout, "%hu", uriP->objectId);
-            if (LWM2M_URI_IS_SET_INSTANCE(uriP))
-            {
-                fprintf(stdout, "/%d", uriP->instanceId);
-                if (LWM2M_URI_IS_SET_RESOURCE(uriP))
-                    fprintf(stdout, "/%d", uriP->resourceId);
-            }
-        }
+        fprintf(stdout, " for URI ");
+        prv_print_uri(stdout, uriP);
 
         endP = prv_endpoint_find(dataP, sessionH);
         if (endP == NULL)
@@ -387,14 +413,82 @@ static int prv_bootstrap_callback(void * sessionH,
     return COAP_NO_ERROR;
 }
 
+static void prv_bootstrap_client(char * buffer,
+                                 void * user_data)
+{
+    internal_data_t * dataP = (internal_data_t *)user_data;
+    char * uri;
+    char * name;
+    char* end = NULL;
+    char * host;
+    char * port;
+    connection_t * newConnP = NULL;
+
+    uri = buffer;
+    end = get_end_of_arg(buffer);
+    if (end[0] != 0)
+    {
+        *end = 0;
+        buffer = end + 1;
+        name = get_next_arg(buffer, &end);
+    }
+    if (!check_end_of_args(end)) goto syntax_error;
+
+    // parse uri in the form "coaps://[host]:[port]"
+    if (0==strncmp(uri, "coaps://", strlen("coaps://"))) {
+        host = uri+strlen("coaps://");
+    }
+    else if (0==strncmp(uri, "coap://",  strlen("coap://"))) {
+        host = uri+strlen("coap://");
+    }
+    else {
+        goto syntax_error;
+    }
+    port = strrchr(host, ':');
+    if (port == NULL) goto syntax_error;
+    // remove brackets
+    if (host[0] == '[')
+    {
+        host++;
+        if (*(port - 1) == ']')
+        {
+            *(port - 1) = 0;
+        }
+        else goto syntax_error;
+    }
+    // split strings
+    *port = 0;
+    port++;
+
+    fprintf(stderr, "Trying to connect to LWM2M CLient at %s:%s\r\n", host, port);
+    newConnP = connection_create(dataP->connList, dataP->sock, host, port);
+    if (newConnP == NULL) {
+        fprintf(stderr, "Connection creation failed.\r\n");
+        return;
+    }
+    dataP->connList = newConnP;
+
+    // simulate a client bootstrap request.
+    if (COAP_204_CHANGED == prv_bootstrap_callback(newConnP, COAP_NO_ERROR, NULL, name, user_data))
+    {
+        fprintf(stdout, "OK");
+    }
+    else
+    {
+        fprintf(stdout, "Error");
+    }
+    return;
+
+syntax_error:
+    fprintf(stdout, "Syntax error !");
+}
+
 
 int main(int argc, char *argv[])
 {
-    int sock;
     fd_set readfds;
     struct timeval tv;
     int result;
-    connection_t * connList = NULL;
     char * port = "5685";
     internal_data_t data;
     char * filename = "bootstrap_server.ini";
@@ -402,9 +496,13 @@ int main(int argc, char *argv[])
     FILE * fd;
     command_desc_t commands[] =
     {
-            {"q", "Quit the server.", NULL, prv_quit, NULL},
+        {"boot", "Bootstrap a client (Server Initiated).", " boot URI [NAME]\r\n"
+                                    "   URI: uri of the client to bootstrap\r\n"
+                                    "   NAME: endpoint name of the client as in the .ini file (optionnal)\r\n"
+                                    "Example: boot coap://[::1]:56830 testlwm2mclient", prv_bootstrap_client, &data},
+        {"q", "Quit the server.", NULL, prv_quit, NULL},
 
-            COMMAND_END_LIST
+        COMMAND_END_LIST
     };
 
     while ((opt = getopt(argc, argv, "f:p:")) != -1)
@@ -423,14 +521,14 @@ int main(int argc, char *argv[])
         }
     }
 
-    sock = create_socket(port);
-    if (sock < 0)
+    memset(&data, 0, sizeof(internal_data_t));
+
+    data.sock = create_socket(port);
+    if (data.sock < 0)
     {
         fprintf(stderr, "Error opening socket: %d\r\n", errno);
         return -1;
     }
-
-    memset(&data, 0, sizeof(internal_data_t));
 
     data.lwm2mH = lwm2m_init(NULL, prv_buffer_send, NULL);
     if (NULL == data.lwm2mH)
@@ -466,7 +564,7 @@ int main(int argc, char *argv[])
         endpoint_t * endP;
 
         FD_ZERO(&readfds);
-        FD_SET(sock, &readfds);
+        FD_SET(data.sock, &readfds);
         FD_SET(STDIN_FILENO, &readfds);
 
         tv.tv_sec = 60;
@@ -494,13 +592,13 @@ int main(int argc, char *argv[])
             int numBytes;
 
             // Packet received
-            if (FD_ISSET(sock, &readfds))
+            if (FD_ISSET(data.sock, &readfds))
             {
                 struct sockaddr_storage addr;
                 socklen_t addrLen;
 
                 addrLen = sizeof(addr);
-                numBytes = recvfrom(sock, buffer, MAX_PACKET_SIZE, 0, (struct sockaddr *)&addr, &addrLen);
+                numBytes = recvfrom(data.sock, buffer, MAX_PACKET_SIZE, 0, (struct sockaddr *)&addr, &addrLen);
 
                 if (numBytes == -1)
                 {
@@ -530,13 +628,13 @@ int main(int argc, char *argv[])
 
                     output_buffer(stderr, buffer, numBytes, 0);
 
-                    connP = connection_find(connList, &addr, addrLen);
+                    connP = connection_find(data.connList, &addr, addrLen);
                     if (connP == NULL)
                     {
-                        connP = connection_new_incoming(connList, sock, (struct sockaddr *)&addr, addrLen);
+                        connP = connection_new_incoming(data.connList, data.sock, (struct sockaddr *)&addr, addrLen);
                         if (connP != NULL)
                         {
-                            connList = connP;
+                            data.connList = connP;
                         }
                     }
                     if (connP != NULL)
@@ -600,8 +698,8 @@ int main(int argc, char *argv[])
 
         prv_endpoint_free(endP);
     }
-    close(sock);
-    connection_free(connList);
+    close(data.sock);
+    connection_free(data.connList);
 
     return 0;
 }

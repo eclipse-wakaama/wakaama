@@ -21,6 +21,10 @@
 #include <ctype.h>
 #include "connection.h"
 
+// from commandline.c
+void output_buffer(FILE * stream, uint8_t * buffer, int length, int indent);
+
+
 int create_socket(const char * portStr)
 {
     int s = -1;

@@ -474,3 +474,44 @@ int transaction_send(lwm2m_context_t * contextP,
 
     return 0;
 }
+
+void transaction_step(lwm2m_context_t * contextP,
+                      time_t currentTime,
+                      time_t * timeoutP)
+{
+    lwm2m_transaction_t * transacP;
+
+    transacP = contextP->transactionList;
+    while (transacP != NULL)
+    {
+        // transaction_send() may remove transaction from the linked list
+        lwm2m_transaction_t * nextP = transacP->next;
+        int removed = 0;
+
+        if (transacP->retrans_time <= currentTime)
+        {
+            removed = transaction_send(contextP, transacP);
+        }
+
+        if (0 == removed)
+        {
+            time_t interval;
+
+            if (transacP->retrans_time > currentTime)
+            {
+                interval = transacP->retrans_time - currentTime;
+            }
+            else
+            {
+                interval = 1;
+            }
+
+            if (*timeoutP > interval)
+            {
+                *timeoutP = interval;
+            }
+        }
+
+        transacP = nextP;
+    }
+}
