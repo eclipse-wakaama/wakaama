@@ -22,8 +22,6 @@ LWM2M Features
  Bugfixes
  --------
  
-   - Server-side Observer cancellation is not working
- 
  
  Implementation Improvments
  --------------------------
@@ -48,17 +46,6 @@ LWM2M Features
   - Utility functions to easily implements objects
   The utility will just use read and write individual resources. Either statically or
   throught callbacks. See [https://github.com/01org/libdmclient]/tests/mgtobj/utils/static_mo_util.h
-
-  - Remove lwm2m_start() API
-  Its job should be done by lwm2m_configure() or lwm2m_step() at first run or after a bootstrap.
-  
-  - Remove lwm2m_object_t::closeFunc()
-  The lwm2m_object_t data is the sole responsibility of the client application.
-  
-  - Use lwm2m_data_t in server-side APIs
-  This would hides the TLV or JSON marshalling.
-  
-  - Provide an example client (and server) using tinyDTLS
   
   - Put platform specific includes and definitions in a separate header file
   To ease porting to non-POSIX platforms. This header could contain functions for LWM2M_EMBEDDED_MODE,
