@@ -123,9 +123,16 @@ static void test_JSON(char * testBuf,
 
     dump_tlv(stdout, size, tlvP, 0);
     length = lwm2m_data_serialize(size, tlvP, &format, &buffer);
-    dump_json(buffer, length);
+    if (length <= 0)
+    {
+        printf("\n\nSerialize Buffer %s to JSON failed.\n", id);
+    }
+    else
+    {
+        dump_json(buffer, length);
+        lwm2m_free(buffer);
+    }
     lwm2m_data_free(size, tlvP);
-    lwm2m_free(buffer);
 }
 
 static void test_TLV(char * testBuf,
@@ -172,6 +179,41 @@ static void test_TLV(char * testBuf,
         lwm2m_free(buffer);
     }
     lwm2m_data_free(size, tlvP);
+}
+
+static void test_data(lwm2m_data_t * tlvP,
+                      int size,
+                      char * id)
+{
+    int length;
+    uint8_t * buffer;
+    lwm2m_media_type_t format = LWM2M_CONTENT_TLV;
+
+    printf("lwm2m_data_t %s:\n", id);
+    dump_tlv(stdout, size, tlvP, 0);
+    length = lwm2m_data_serialize(size, tlvP, &format, &buffer);
+    if (length <= 0)
+    {
+        printf("\n\nSerialize lwm2m_data_t %s to TLV failed.\n", id);
+    }
+    else
+    {
+        printf("\n\nSerialize lwm2m_data_t %s to TLV:\n", id);
+        output_buffer(stdout, buffer, length, 0);
+        lwm2m_free(buffer);
+    }
+    format = LWM2M_CONTENT_JSON;
+    length = lwm2m_data_serialize(size, tlvP, &format, &buffer);
+    if (length <= 0)
+    {
+        printf("\n\nSerialize lwm2m_data_t %s to JSON failed.\n", id);
+    }
+    else
+    {
+        printf("\n\nSerialize lwm2m_data_t %s to JSON:\n", id);
+        dump_json(buffer, length);
+        lwm2m_free(buffer);
+    }
 }
 
 int main(int argc, char *argv[])
@@ -223,6 +265,43 @@ int main(int argc, char *argv[])
                          {\"n\":\"2/1\",\"v\":-52.0006}]    \
                        }";
 
+    lwm2m_data_t data1[] = {                                                                \
+                             {0, LWM2M_TYPE_RESOURCE, LWM2M_TYPE_UNDEFINED, 0, 0, NULL},    \
+                             {0, LWM2M_TYPE_RESOURCE, LWM2M_TYPE_UNDEFINED, 1, 0, NULL},    \
+                             {0, LWM2M_TYPE_RESOURCE, LWM2M_TYPE_UNDEFINED, 2, 0, NULL},    \
+                             {0, LWM2M_TYPE_RESOURCE, LWM2M_TYPE_UNDEFINED, 3, 0, NULL},    \
+                             {0, LWM2M_TYPE_RESOURCE, LWM2M_TYPE_UNDEFINED, 4, 0, NULL},    \
+                             {0, LWM2M_TYPE_RESOURCE, LWM2M_TYPE_UNDEFINED, 5, 0, NULL},    \
+                             {0, LWM2M_TYPE_RESOURCE, LWM2M_TYPE_UNDEFINED, 6, 0, NULL},    \
+                             {0, LWM2M_TYPE_RESOURCE, LWM2M_TYPE_UNDEFINED, 7, 0, NULL},    \
+                             {0, LWM2M_TYPE_RESOURCE, LWM2M_TYPE_UNDEFINED, 8, 0, NULL},    \
+                             {0, LWM2M_TYPE_RESOURCE, LWM2M_TYPE_UNDEFINED, 9, 0, NULL},    \
+                             {0, LWM2M_TYPE_RESOURCE, LWM2M_TYPE_UNDEFINED, 10, 0, NULL},   \
+                             {0, LWM2M_TYPE_RESOURCE, LWM2M_TYPE_UNDEFINED, 11, 0, NULL},   \
+                             {0, LWM2M_TYPE_RESOURCE, LWM2M_TYPE_UNDEFINED, 12, 0, NULL},   \
+                             {0, LWM2M_TYPE_RESOURCE, LWM2M_TYPE_UNDEFINED, 13, 0, NULL},   \
+                             {0, LWM2M_TYPE_RESOURCE, LWM2M_TYPE_UNDEFINED, 14, 0, NULL},   \
+                             {0, LWM2M_TYPE_RESOURCE, LWM2M_TYPE_UNDEFINED, 15, 0, NULL},   \
+                             {0, LWM2M_TYPE_RESOURCE, LWM2M_TYPE_UNDEFINED, 16, 0, NULL},   \
+                           };
+    lwm2m_data_encode_int(12, data1);
+    lwm2m_data_encode_int(-12, data1 + 1);
+    lwm2m_data_encode_int(255, data1 + 2);
+    lwm2m_data_encode_int(1000, data1 + 3);
+    lwm2m_data_encode_int(-1000, data1 + 4);
+    lwm2m_data_encode_int(65535, data1 + 5);
+    lwm2m_data_encode_int(3000000, data1 + 6);
+    lwm2m_data_encode_int(-3000000, data1 + 7);
+    lwm2m_data_encode_int(4294967295, data1 + 8);
+    lwm2m_data_encode_int(7000000000, data1 + 9);
+    lwm2m_data_encode_int(-7000000000, data1 + 10);
+    lwm2m_data_encode_float(3.14, data1 + 11);
+    lwm2m_data_encode_float(-3.14, data1 + 12);
+    lwm2m_data_encode_float(4E+38, data1 + 13);
+    lwm2m_data_encode_float(-4E+38, data1 + 14);
+    lwm2m_data_encode_bool(true, data1 + 15);
+    lwm2m_data_encode_bool(false, data1 + 16);
+
 
     test_TLV(buffer1, sizeof(buffer1), "1");
     printf("\n\n============\n\n");
@@ -235,5 +314,8 @@ int main(int argc, char *argv[])
     test_JSON(buffer5, strlen(buffer5), "5");
     printf("\n\n============\n\n");
     test_JSON(buffer6, strlen(buffer6), "6");
+    printf("\n\n============\n\n");
+    test_data(data1, sizeof(data1)/sizeof(lwm2m_data_t), "1");
+    printf("\n\n");
 }
 
