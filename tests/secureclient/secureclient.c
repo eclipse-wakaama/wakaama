@@ -154,7 +154,7 @@ void print_usage(void)
     fprintf(stdout, "Options:\r\n");
     fprintf(stdout, "  -n NAME\tSet the endpoint name of the Client. Default: testsecureclient\r\n");
     fprintf(stdout, "  -l PORT\tSet the local UDP port of the Client. Default: 56830\r\n");
-    fprintf(stdout, "  -b BOOTSTRAP\tIf present use bootstrap.\r\n");
+    fprintf(stdout, "  -b \t\tIf present use bootstrap.\r\n");
     fprintf(stdout, "  -u URL\tSet the device management or bootstrap server URL. Default: coap://localhost:5683\r\n");
     fprintf(stdout, "  -i STRING\tSet the device management or bootstrap server PSK identity. If not set use none secure mode\r\n");
     fprintf(stdout, "  -p HEXSTRING\tSet the device management or bootstrap server Pre-Shared-Key. If not set use none secure mode\r\n");
