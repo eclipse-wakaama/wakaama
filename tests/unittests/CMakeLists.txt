@@ -13,7 +13,8 @@ add_subdirectory(${LIBLWM2M_DIR} ${CMAKE_CURRENT_BINARY_DIR}/core)
 SET(SOURCES
     unittests.c
     tlvtests.c
-    uritests.c)
+    uritests.c
+    ../../platforms/Linux/platform.c)
 
 add_executable(lwm2munittests ${SOURCES} ${CORE_SOURCES})
 

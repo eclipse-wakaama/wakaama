@@ -424,17 +424,3 @@ int prv_isAltPathValid(const char * altPath)
     }
     return 1;
 }
-
-#ifndef LWM2M_EMBEDDED_MODE
-time_t lwm2m_gettime(void)
-{
-    struct timeval tv;
-
-    if (0 != gettimeofday(&tv, NULL))
-    {
-        return -1;
-    }
-
-    return tv.tv_sec;
-}
-#endif

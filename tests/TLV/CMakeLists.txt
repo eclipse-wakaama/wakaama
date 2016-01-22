@@ -10,6 +10,6 @@ add_definitions(-DLWM2M_LITTLE_ENDIAN -DLWM2M_SUPPORT_JSON)
 
 add_subdirectory(${LIBLWM2M_DIR} ${CMAKE_CURRENT_BINARY_DIR}/core)
 
-SET(SOURCES decode.c ../utils/commandline.c)
+SET(SOURCES decode.c ../utils/commandline.c ../../platforms/Linux/platform.c ../../platforms/Linux/memtrace.c)
 
 add_executable(tlvdecode ${SOURCES} ${CORE_SOURCES})

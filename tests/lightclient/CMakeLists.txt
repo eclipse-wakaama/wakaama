@@ -13,6 +13,8 @@ add_subdirectory(${LIBLWM2M_DIR} ${CMAKE_CURRENT_BINARY_DIR}/core)
 SET(SOURCES
     lightclient.c
     ../utils/connection.c
+    ../../platforms/Linux/platform.c
+    ../../platforms/Linux/memtrace.c
     object_security.c
     object_server.c
     object_device.c
