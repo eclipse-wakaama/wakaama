@@ -62,10 +62,16 @@
 
 #include "er-coap-13/er-coap-13.h"
 
-#ifdef WITH_LOGS
-#define LOG(...) fprintf(stderr, __VA_ARGS__)
+#ifdef LWM2M_WITH_LOGS
+#define LOG(...) lwm2m_printf(__VA_ARGS__)
+#define LOG_ENTER_FUNC lwm2m_printf("Entering %s()\r\n", __FUNCTION__);
+#define LOG_EXIT_FUNC lwm2m_printf("Exiting %s()\r\n", __FUNCTION__);
+#define LOG_ERROR_EXIT_FUNC lwm2m_printf("Exiting %s() on error\r\n", __FUNCTION__);
 #else
 #define LOG(...)
+#define LOG_ENTER_FUNC(...)
+#define LOG_EXIT_FUNC(...)
+#define LOG_ERROR_EXIT_FUNC(...)
 #endif
 
 #define LWM2M_DEFAULT_LIFETIME  86400

@@ -17,6 +17,8 @@
 #include <liblwm2m.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
+#include <stdarg.h>
 
 #ifndef LWM2M_MEMORY_TRACE
 
@@ -54,4 +56,15 @@ time_t lwm2m_gettime(void)
     }
 
     return tv.tv_sec;
+}
+
+void lwm2m_printf(const char * format, ...)
+{
+    va_list ap;
+
+    va_start(ap, format);
+
+    vfprintf(stderr, format, ap);
+
+    va_end(ap);
 }
