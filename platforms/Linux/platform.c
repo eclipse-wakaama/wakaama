@@ -58,6 +58,19 @@ time_t lwm2m_gettime(void)
     return tv.tv_sec;
 }
 
+int lwm2m_snprintf(char * str,
+                   size_t size,
+                   const char * format, ...)
+{
+    va_list ap;
+
+    va_start(ap, format);
+
+    vsnprintf(str, size, format, ap);
+
+    va_end(ap);
+}
+
 void lwm2m_printf(const char * format, ...)
 {
     va_list ap;
