@@ -1,9 +1,6 @@
 LWM2M Features
 --------------
 
- - Bootstrap interface:
- Implements LWM2M Bootstap Server as a special instance of lwm2m_server_t.
- 
  - Access Control List
  
  - JSON support
@@ -47,9 +44,3 @@ LWM2M Features
   The utility will just use read and write individual resources. Either statically or
   throught callbacks. See [https://github.com/01org/libdmclient]/tests/mgtobj/utils/static_mo_util.h
   
-  - Put platform specific includes and definitions in a separate header file
-  To ease porting to non-POSIX platforms. This header could contain functions for LWM2M_EMBEDDED_MODE,
-  includes like sys/time.h and LWM2M_*_ENDIAN
-  
-  - Replace or abstract snprintf() and sscanf()
-  for embedded platforms
