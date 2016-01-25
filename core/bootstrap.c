@@ -76,13 +76,21 @@ static void bootstrap_initiating_request(lwm2m_context_t * context,
 {
     char query[PRV_QUERY_BUFFER_LENGTH];
     int query_length = 0;
+    int res;
 
-    query_length = snprintf(query, sizeof(query), "?ep=%s", context->endpointName);
-    if (query_length <= 1)
+    query_length = utils_stringCopy(query, PRV_QUERY_BUFFER_LENGTH, "?ep=");
+    if (query_length < 0)
     {
         bootstrapServer->status = STATE_BS_FAILED;
         return;
     }
+    res = utils_stringCopy(query + query_length, PRV_QUERY_BUFFER_LENGTH - query_length, context->endpointName);
+    if (res < 0)
+    {
+        bootstrapServer->status = STATE_BS_FAILED;
+        return;
+    }
+    query_length += res;
 
     if (bootstrapServer->sessionH == NULL)
     {

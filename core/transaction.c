@@ -202,15 +202,15 @@ lwm2m_transaction_t * transaction_new(coap_message_type_t type,
     }
     if (NULL != uriP)
     {
-        result = snprintf(transacP->objStringID, LWM2M_STRING_ID_MAX_LEN, "%hu", uriP->objectId);
-        if (result < 0 || result > LWM2M_STRING_ID_MAX_LEN) goto error;
+        result = utils_intCopy(transacP->objStringID, LWM2M_STRING_ID_MAX_LEN, uriP->objectId);
+        if (result < 0) goto error;
 
         coap_set_header_uri_path_segment(transacP->message, transacP->objStringID);
 
         if (LWM2M_URI_IS_SET_INSTANCE(uriP))
         {
-            result = snprintf(transacP->instanceStringID, LWM2M_STRING_ID_MAX_LEN, "%hu", uriP->instanceId);
-            if (result < 0 || result > LWM2M_STRING_ID_MAX_LEN) goto error;
+            result = utils_intCopy(transacP->instanceStringID, LWM2M_STRING_ID_MAX_LEN, uriP->instanceId);
+            if (result < 0) goto error;
             coap_set_header_uri_path_segment(transacP->message, transacP->instanceStringID);
         }
         else
@@ -222,8 +222,8 @@ lwm2m_transaction_t * transaction_new(coap_message_type_t type,
         }
         if (LWM2M_URI_IS_SET_RESOURCE(uriP))
         {
-            result = snprintf(transacP->resourceStringID, LWM2M_STRING_ID_MAX_LEN, "%hu", uriP->resourceId);
-            if (result < 0 || result > LWM2M_STRING_ID_MAX_LEN) goto error;
+            result = utils_intCopy(transacP->resourceStringID, LWM2M_STRING_ID_MAX_LEN, uriP->resourceId);
+            if (result < 0) goto error;
             coap_set_header_uri_path_segment(transacP->message, transacP->resourceStringID);
         }
     }

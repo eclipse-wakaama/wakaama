@@ -424,3 +424,41 @@ int prv_isAltPathValid(const char * altPath)
     }
     return 1;
 }
+
+// copy a string in a buffer.
+// return the number of copied bytes or -1 if the buffer is not large enough
+int utils_stringCopy(char * buffer,
+                     size_t length,
+                     const char * str)
+{
+    int i;
+
+    for (i = 0 ; i < length && str[i] != 0 ; i++)
+    {
+        buffer[i] = str[i];
+    }
+
+    if (i == length) return -1;
+
+    buffer[i] = 0;
+
+    return i;
+}
+
+int utils_intCopy(char * buffer,
+                  size_t length,
+                  int32_t value)
+{
+#define _PRV_INT32_MAX_STR_LEN 11
+    uint8_t str[_PRV_INT32_MAX_STR_LEN];
+    size_t len;
+
+    len = prv_intToText(value, str, _PRV_INT32_MAX_STR_LEN);
+    if (len == 0) return -1;
+    if (len > length + 1) return -1;
+
+    memcpy(buffer, str + _PRV_INT32_MAX_STR_LEN - len, len);
+    buffer[len] = 0;
+
+    return len;
+}

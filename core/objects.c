@@ -381,69 +381,111 @@ bool object_isInstanceNew(lwm2m_context_t * contextP,
     return true;
 }
 
-int prv_getRegisterPayload(lwm2m_context_t * contextP,
-                           uint8_t * buffer,
-                           size_t length)
+static int prv_getObjectTemplate(lwm2m_context_t * contextP,
+                                 uint8_t * buffer,
+                                 size_t length,
+                                 uint16_t id)
 {
     int index;
-    int i;
     int result;
 
-    // index can not be greater than length
-    index = 0;
+    if (length < REG_OBJECT_MIN_LEN) return -1;
+
+    buffer[0] = '<';
+    index = 1;
 
     if ((contextP->altPath != NULL)
      && (contextP->altPath[0] != 0))
     {
-        result = snprintf((char *)buffer, length, REG_ALT_PATH_LINK, contextP->altPath);
+        result = utils_stringCopy(buffer + index, length - index, contextP->altPath);
+        if (result < 0) return -1;
+        index += result;
+        if (length - index < REG_OBJECT_MIN_LEN - 1) return -1;
+    }
+    buffer[index] = '/';
+    index++;
+
+    result = utils_intCopy(buffer + index, length - index, id);
+    if (result < 0) return -1;
+    index += result;
+
+    if (length - index < REG_OBJECT_MIN_LEN - 3) return -1;
+    buffer[index] = '/';
+    index++;
+
+    return index;
+}
+
+int prv_getRegisterPayload(lwm2m_context_t * contextP,
+                           uint8_t * buffer,
+                           size_t bufferLen)
+{
+    int index;
+    int result;
+    int i;
+
+    // index can not be greater than bufferLen
+    index = 0;
+
+    result = utils_stringCopy(buffer, bufferLen, REG_START);
+    if (result < 0) return 0;
+    index += result;
+
+    if ((contextP->altPath != NULL)
+     && (contextP->altPath[0] != 0))
+    {
+        result = utils_stringCopy(buffer + index, bufferLen - index, contextP->altPath);
     }
     else
     {
-        result = snprintf((char *)buffer, length, REG_ALT_PATH_LINK, "/");
+        result = utils_stringCopy(buffer + index, bufferLen - index, REG_DEFAULT_PATH);
     }
-    if (result > 0 && result <= length)
-    {
-        index = result;
-    }
-    else
-    {
-        return 0;
-    }
+    if (result < 0) return 0;
+    index += result;
+
+    result = utils_stringCopy(buffer + index, bufferLen - index, REG_LWM2M_RESOURCE_TYPE);
+    if (result < 0) return 0;
+    index += result;
 
     for (i = 0 ; i < contextP->numObject ; i++)
     {
+        int start;
+        int length;
+
         if (contextP->objectList[i]->objID == LWM2M_SECURITY_OBJECT_ID) continue;
+
+        start = index;
+        length = prv_getObjectTemplate(contextP, buffer + index, bufferLen - index, contextP->objectList[i]->objID);
+        if (length < 0) return 0;
+        index += length;
 
         if (contextP->objectList[i]->instanceList == NULL)
         {
-            result = snprintf((char *)buffer + index, length - index,
-                              REG_OBJECT_PATH,
-                              contextP->altPath?contextP->altPath:"", contextP->objectList[i]->objID);
-            if (result > 0 && result <= length - index)
-            {
-                index += result;
-            }
-            else
-            {
-                return 0;
-            }
+            index--;
+            result = utils_stringCopy(buffer + index, bufferLen - index, REG_PATH_END);
+            if (result < 0) return 0;
+            index += result;
         }
         else
         {
             lwm2m_list_t * targetP;
             for (targetP = contextP->objectList[i]->instanceList ; targetP != NULL ; targetP = targetP->next)
             {
-                result = snprintf((char *)buffer + index, length - index,
-                                  REG_OBJECT_INSTANCE_PATH,
-                                  contextP->altPath?contextP->altPath:"", contextP->objectList[i]->objID, targetP->id);
-                if (result > 0 && result <= length - index)
+                if (bufferLen - index <= length) return 0;
+
+                if (index != start + length)
                 {
-                    index += result;
+                    memcpy(buffer + index, buffer + start, length);
+                    index += length;
                 }
-                else
-                {
-                    return 0;
-                }
+
+                result = utils_intCopy(buffer + index, bufferLen - index, targetP->id);
+                if (result < 0) return 0;
+                index += result;
+
+                result = utils_stringCopy(buffer + index, bufferLen - index, REG_PATH_END);
+                if (result < 0) return 0;
+                index += result;
             }
         }
     }
