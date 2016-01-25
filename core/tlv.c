@@ -112,6 +112,24 @@ static int prv_create_header(uint8_t * header,
     return header_len;
 }
 
+static void prv_copyValue(void * dst,
+                          void * src,
+                          size_t len)
+{
+#ifdef LWM2M_BIG_ENDIAN
+    memcpy(dst, src, len);
+#else
+#ifdef LWM2M_LITTLE_ENDIAN
+    int i;
+
+    for (i = 0 ; i < len ; i++)
+    {
+        ((uint8_t *)dst)[i] = ((uint8_t *)src)[len - 1 - i];
+    }
+#endif
+#endif
+}
+
 static void prv_encodeInt(int64_t data,
                           uint8_t data_buffer[_PRV_64BIT_BUFFER_SIZE],
                           size_t * lengthP)
@@ -122,44 +140,34 @@ static void prv_encodeInt(int64_t data,
 
     memset(data_buffer, 0, _PRV_64BIT_BUFFER_SIZE);
 
-    if (data < 0)
+    if (data >= INT8_MIN && data <= INT8_MAX)
     {
-        negative = 1;
-        value = 0 - data;
+        *lengthP = 1;
+        data_buffer[0] = data;
     }
-    else
+    else if (data >= INT16_MIN && data <= INT16_MAX)
     {
+        int16_t value;
+
         value = data;
+        *lengthP = 2;
+        data_buffer[0] = (value >> 8) & 0xFF;
+        data_buffer[1] = value & 0xFF;
     }
-
-    do
+    else if (data >= INT32_MIN && data <= INT32_MAX)
     {
-        length++;
-        data_buffer[_PRV_64BIT_BUFFER_SIZE - length] = (value >> (8*(length-1))) & 0xFF;
-    } while (value > (((uint64_t)1 << ((8 * length)-1)) - 1));
+        int32_t value;
 
-    // TLV integer length is 1, 2, 4 or 8
-    switch (length)
-    {
-    case 3:
-        length = 4;
-        break;
-    case 5:
-    case 6:
-    case 7:
-        length = 8;
-        break;
-    default:
-        break;
+        value = data;
+        *lengthP = 4;
+        prv_copyValue(data_buffer, &value, *lengthP);
     }
-
-    if (1 == negative)
+    else if (data >= INT64_MIN && data <= INT64_MAX)
     {
-        data_buffer[_PRV_64BIT_BUFFER_SIZE - length] |= 0x80;
+        *lengthP = 8;
+        prv_copyValue(data_buffer, &data, *lengthP);
     }
-
-    *lengthP = length;
-}
+ }
 
 int lwm2m_opaqueToTLV(lwm2m_tlv_type_t type,
                       uint8_t* dataP,
@@ -273,34 +281,46 @@ int lwm2m_opaqueToInt(uint8_t * buffer,
                       size_t buffer_len,
                       int64_t * dataP)
 {
-    size_t i;
+    *dataP = 0;
 
     switch (buffer_len)
     {
     case 1:
-    case 2:
-    case 4:
-    case 8:
+    {
+        *dataP = (int8_t)buffer[0];
+
         break;
+    }
+
+    case 2:
+    {
+        int16_t value;
+
+        prv_copyValue(&value, buffer, buffer_len);
+
+        *dataP = value;
+        break;
+    }
+
+    case 4:
+    {
+        int32_t value;
+
+        prv_copyValue(&value, buffer, buffer_len);
+
+        *dataP = value;
+        break;
+    }
+
+    case 8:
+        prv_copyValue(dataP, buffer, buffer_len);
+        return buffer_len;
+
     default:
         return 0;
     }
 
-    // first bit is the sign
-    *dataP = buffer[0]&0x7F;
-
-    for (i = 1 ; i < buffer_len ; i++)
-    {
-        *dataP = (*dataP << 8) + (buffer[i]&0xFF);
-    }
-
-    // first bit is the sign
-    if ((uint8_t)(buffer[0]&0x80) == 0x80)
-    {
-        *dataP = 0 - *dataP;
-    }
-
-    return i;
+    return buffer_len;
 }
 
 int lwm2m_opaqueToFloat(uint8_t * buffer,
@@ -313,40 +333,15 @@ int lwm2m_opaqueToFloat(uint8_t * buffer,
     {
         float temp;
 
-#ifdef LWM2M_BIG_ENDIAN
-        memcpy(&temp, buffer, buffer_len);
-#else
-#ifdef LWM2M_LITTLE_ENDIAN
-        {
-            int i;
+        prv_copyValue(&temp, buffer, buffer_len);
 
-            for (i = 0 ; i < 4 ; i++)
-            {
-                (((uint8_t *)&temp)[3 - i]) = buffer[i] & 0xFF;
-            }
-        }
-#endif
-#endif
         *dataP = temp;
     }
     return 4;
 
     case 8:
-#ifdef LWM2M_BIG_ENDIAN
-        memcpy(dataP, buffer, buffer_len);
-#else
-#ifdef LWM2M_LITTLE_ENDIAN
-    {
-        size_t i;
-
-        for (i = 0 ; i < buffer_len ; i++)
-        {
-            (((uint8_t *)dataP)[buffer_len - i - 1]) = buffer[i] & 0xFF;
-        }
-    }
-#endif
-#endif
-    return 8;
+        prv_copyValue(dataP, buffer, buffer_len);
+        return 8;
 
     default:
         return 0;
@@ -664,7 +659,7 @@ void lwm2m_data_encode_int(int64_t value,
         if (dataP->value != NULL)
         {
             memcpy(dataP->value,
-                   buffer + (_PRV_64BIT_BUFFER_SIZE - length),
+                   buffer,
                    length);
             dataP->flags &= ~LWM2M_TLV_FLAG_STATIC_DATA;
             dataP->length = length;
@@ -731,35 +726,12 @@ void lwm2m_data_encode_float(double value,
                 float temp;
 
                 temp = value;
-#ifdef LWM2M_BIG_ENDIAN
-                memcpy(dataP->value, &temp, length);
-#else
-#ifdef LWM2M_LITTLE_ENDIAN
-                {
-                    int i;
 
-                    for (i = 0 ; i < 4 ; i++)
-                    {
-                        dataP->value[i] = ((uint8_t *)&temp)[3 - i];
-                    }
-                }
-#endif
-#endif
+                prv_copyValue(dataP->value, &temp, length);
             }
             else
             {
-#ifdef LWM2M_BIG_ENDIAN
-                memcpy(dataP->value, &value, length);
-#else
-#ifdef LWM2M_LITTLE_ENDIAN
-                size_t i;
-
-                for (i = 0 ; i < length ; i++)
-                {
-                    dataP->value[i] = ((uint8_t *)&value)[7 - i];
-                }
-#endif
-#endif
+                prv_copyValue(dataP->value, &value, length);
             }
 
             dataP->flags &= ~LWM2M_TLV_FLAG_STATIC_DATA;

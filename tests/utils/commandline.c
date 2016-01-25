@@ -417,6 +417,14 @@ void dump_tlv(FILE * stream,
                 break;
             case LWM2M_TYPE_FLOAT:
                 fprintf(stream, "Float");
+                if ((dataP[i].flags & LWM2M_TLV_FLAG_TEXT_FORMAT) == 0)
+                {
+                    double value;
+                    if (1 == lwm2m_data_decode_float(dataP + i, &value))
+                    {
+                        fprintf(stream, " (%f)", value);
+                    }
+                }
                 break;
             case LWM2M_TYPE_BOOLEAN:
                 fprintf(stream, "Boolean");
