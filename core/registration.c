@@ -381,6 +381,27 @@ void registration_deregister(lwm2m_context_t * contextP,
 #endif
 
 #ifdef LWM2M_SERVER_MODE
+static void prv_freeClientObjectList(lwm2m_client_object_t * objects)
+{
+    while (objects != NULL)
+    {
+        lwm2m_client_object_t * objP;
+
+        while (objects->instanceList != NULL)
+        {
+            lwm2m_list_t * target;
+
+            target = objects->instanceList;
+            objects->instanceList = objects->instanceList->next;
+            lwm2m_free(target);
+        }
+
+        objP = objects;
+        objects = objects->next;
+        lwm2m_free(objP);
+    }
+}
+
 static int prv_getParameters(multi_option_t * query,
                              char ** nameP,
                              uint32_t * lifetimeP,
@@ -458,10 +479,145 @@ error:
     return -1;
 }
 
+static uint16_t prv_splitLinkAttribute(uint8_t * data,
+                                       uint16_t length,
+                                       uint16_t * keyStart,
+                                       uint16_t * keyLength,
+                                       uint16_t * valueStart,
+                                       uint16_t * valueLength)
+{
+    uint16_t index;
+    uint16_t end;
+
+    index = 0;
+    while (index < length && data[index] == ' ') index++;
+    if (index == length) return 0;
+
+    *keyStart = index;
+
+    while (index < length && data[index] != REG_ATTR_EQUALS) index++;
+    if (index == *keyStart || index == length) return 0;
+
+    *keyLength = index - *keyStart;
+
+    index++;
+    while (index < length && data[index] == ' ') index++;
+    if (index == length) return 0;
+
+    *valueStart = index;
+
+    while (index < length && data[index] != REG_ATTR_SEPARATOR) index++;
+    end = index;
+
+    index--;
+    while (index > *valueStart && data[index] == ' ') index--;
+    if (index == *valueStart) return 0;
+
+    *valueLength = index - *valueStart + 1;
+
+    return end;
+}
+
+static int prv_parseLinkAttributes(uint8_t * data,
+                                   uint16_t length,
+                                   bool * supportJSON,
+                                   char ** altPath)
+{
+    uint16_t index;
+    uint16_t pathStart;
+    uint16_t pathLength;
+    bool isValid;
+
+    isValid = false;
+
+    // Expecting application/link-format (RFC6690)
+    // leading space were removed before. Remove trailing spaces.
+    while (length > 0 && data[length-1] == ' ') length--;
+
+    // strip open tag
+    if (length >= 2 && data[0] == REG_URI_START)
+    {
+        data += 1;
+        length -= 1;
+    }
+    else
+    {
+        return 0;
+    }
+
+    pathStart = 0;
+    index = length - 1;
+    while (index > 0 && data[index] != REG_URI_END) index--;
+    // link attributes are required
+    if (index == 0 || index == length - 1) return 0;
+
+    // If there is a preceding /, remove it
+    if (data[pathStart] == '/')
+    {
+        pathStart += 1;
+    }
+    pathLength = index - pathStart;
+
+    index++;
+    if (index >= length || data[index] != REG_ATTR_SEPARATOR) return 0;
+    index++;
+
+    while (index < length)
+    {
+        uint16_t result;
+        uint16_t keyStart;
+        uint16_t keyLength;
+        uint16_t valueStart;
+        uint16_t valueLength;
+
+        result = prv_splitLinkAttribute(data + index, length - index, &keyStart, &keyLength, &valueStart, &valueLength);
+        if (result == 0) return 0;
+
+        if (keyLength == REG_ATTR_TYPE_KEY_LEN
+         && 0 == lwm2m_strncmp(REG_ATTR_TYPE_KEY, data + index + keyStart, keyLength))
+        {
+            if (isValid == true) return 0; // declared twice
+            if (valueLength != REG_ATTR_TYPE_VALUE_LEN
+             || 0 != lwm2m_strncmp(REG_ATTR_TYPE_VALUE, data + index + valueStart, valueLength))
+            {
+                return 0;
+            }
+            isValid = true;
+        }
+        else if (keyLength == REG_ATTR_CONTENT_KEY_LEN
+              && 0 == lwm2m_strncmp(REG_ATTR_CONTENT_KEY, data + index + keyStart, keyLength))
+        {
+            if (*supportJSON == true) return 0; // declared twice
+            if (valueLength == REG_ATTR_CONTENT_JSON_LEN
+             && 0 == lwm2m_strncmp(REG_ATTR_CONTENT_JSON, data + index + valueStart, valueLength))
+            {
+                *supportJSON = true;
+            }
+            else
+            {
+                return 0;
+            }
+        }
+        // else ignore this one
+
+        index += result;
+    }
+
+    if (isValid == false) return 0;
+
+    if (pathLength != 0)
+    {
+        *altPath = (char *)lwm2m_malloc(pathLength + 1);
+        if (*altPath == NULL) return 0;
+        memcpy(*altPath, data + pathStart, pathLength);
+        (*altPath)[pathLength] = 0;
+    }
+
+    return 1;
+}
+
 static int prv_getId(uint8_t * data,
                      uint16_t length,
-                     char * altPath,
-                     uint16_t altPathLen,
                      uint16_t * objId,
                      uint16_t * instanceId)
 {
@@ -470,50 +626,50 @@ static int prv_getId(uint8_t * data,
     uint16_t end;
 
     // Expecting application/link-format (RFC6690)
+    // leading space were removed before. Remove trailing spaces.
+    while (length > 0 && data[length-1] == ' ') length--;
+
     // strip open and close tags
-    if (length >= 1 && data[0] == '<' && data[length-1] == '>')
+    if (length >= 1 && data[0] == REG_URI_START && data[length-1] == REG_URI_END)
     {
-        data++;
-        length-=2;
+        data += 1;
+        length -= 2;
     } 
     else
     {
         return 0;
     }
 
-    if (altPath != NULL)
-    {
-        if (length <= altPathLen) return 0;
-        if (0 != lwm2m_strncmp((char *)data, altPath, altPathLen)) return 0;
-        data += altPathLen;
-        length -= altPathLen;
-    }
-
     // If there is a preceding /, remove it
     if (length >= 1 && data[0] == '/')
     {
-        data++;
-        length-=1;
+        data += 1;
+        length -= 1;
     }
 
     limit = 0;
-    while (limit < length && data[limit] != '/' && data[limit] != ' ') limit++;
+    while (limit < length && data[limit] != '/') limit++;
     value = prv_get_number(data, limit);
     if (value < 0 || value >= LWM2M_MAX_ID) return 0;
     *objId = value;
 
-    if (limit != length)
+    if (limit < length)
     {
         limit += 1;
-        end = limit;
-        while (end < length && data[end] != ' ') end++;
-        if (end != limit)
+        data += limit;
+        length -= limit;
+
+        if (length > 0)
         {
-            value = prv_get_number(data + limit, end - limit);
+            value = prv_get_number(data, length);
             if (value >= 0 && value < LWM2M_MAX_ID)
             {
                 *instanceId = value;
                 return 2;
+            }
+            else
+            {
+                return 0;
             }
         }
     }
@@ -523,74 +679,35 @@ static int prv_getId(uint8_t * data,
 
 static lwm2m_client_object_t * prv_decodeRegisterPayload(uint8_t * payload,
                                                          uint16_t payloadLength,
+                                                         bool * supportJSON,
                                                          char ** altPath)
 {
+    uint16_t index;
     lwm2m_client_object_t * objList;
-    uint16_t id;
-    uint16_t instance;
-    uint16_t start;
-    uint16_t end;
-    int result;
-    uint16_t altPathStart;
-    uint16_t altPathEnd;
-    uint16_t altPathLen;
+    bool linkAttrFound;
 
-    objList = NULL;
-    start = 0;
-    altPathStart = 0;
-    altPathEnd = 0;
-    altPathLen = 0;
     *altPath = NULL;
+    *supportJSON = false;
+    objList = NULL;
+    linkAttrFound = false;
+    index = 0;
 
-    // Does the registration payload begin with an alternative path ?
-    while (start < payloadLength && payload[start] == ' ') start++;
-    if (start != payloadLength)
+    while (index <= payloadLength)
     {
-        if (payload[start] == '<')
-        {
-            altPathStart = start + 1;
-        }
-        while (start < payloadLength - 1 && payload[start] != '>') start++;
-        if (start != payloadLength - 1)
-        {
-            altPathEnd = start - 1;
-            if ((payloadLength > altPathEnd + REG_LWM2M_RESOURCE_TYPE_LEN)
-             && (0 == lwm2m_strncmp(REG_LWM2M_RESOURCE_TYPE, (char *) payload + altPathEnd + 1, REG_LWM2M_RESOURCE_TYPE_LEN)))
-            {
-                payload[altPathEnd + 1] = 0;
-                *altPath = lwm2m_strdup((char *)payload + altPathStart);
-                if (*altPath == NULL) return NULL;
-                if (0 == prv_isAltPathValid(*altPath))
-                {
-                    return NULL;
-                }
-                altPathLen = altPathEnd - altPathStart + 1;
-            }
-        }
-    }
+        uint16_t start;
+        uint16_t length;
+        int result;
+        uint16_t id;
+        uint16_t instance;
 
-    if (altPathLen != 0)
-    {
-        start = altPathEnd + 1 + REG_LWM2M_RESOURCE_TYPE_LEN;
-        // If declared alternative path is "/", use NULL instead
-        if (altPathLen == 1)
-        {
-            lwm2m_free(*altPath);
-            *altPath = NULL;
-        }
-    }
-    else
-    {
-        start = 0;
-    }
+        while (index < payloadLength && payload[index] == ' ') index++;
+        if (index == payloadLength) break;
 
-    while (start < payloadLength)
-    {
-        while (start < payloadLength && payload[start] == ' ') start++;
-        if (start == payloadLength) return objList;
-        end = start;
-        while (end < payloadLength && payload[end] != ',') end++;
-        result = prv_getId(payload + start, end - start, *altPath, altPathLen, &id, &instance);
+        start = index;
+        while (index < payloadLength && payload[index] != REG_DELIMITER) index++;
+        length = index - start;
+
+        result = prv_getId(payload + start, length, &id, &instance);
         if (result != 0)
         {
             lwm2m_client_object_t * objectP;
@@ -600,7 +717,7 @@ static lwm2m_client_object_t * prv_decodeRegisterPayload(uint8_t * payload,
             {
                 objectP = (lwm2m_client_object_t *)lwm2m_malloc(sizeof(lwm2m_client_object_t));
                 memset(objectP, 0, sizeof(lwm2m_client_object_t));
-                if (objectP == NULL) return objList;
+                if (objectP == NULL) goto error;
                 objectP->id = id;
                 objList = (lwm2m_client_object_t *)LWM2M_LIST_ADD(objList, objectP);
             }
@@ -618,10 +735,29 @@ static lwm2m_client_object_t * prv_decodeRegisterPayload(uint8_t * payload,
                 }
             }
         }
-        start = end + 1;
+        else if (linkAttrFound == false)
+        {
+            result = prv_parseLinkAttributes(payload + start, length, supportJSON, altPath);
+            if (result == 0) goto error;
+
+            linkAttrFound = true;
+        }
+        else goto error;
+
+        index++;
     }
 
     return objList;
+
+error:
+    if (*altPath != NULL)
+    {
+        lwm2m_free(*altPath);
+        *altPath = NULL;
+    }
+    prv_freeClientObjectList(objList);
+
+    return NULL;
 }
 
 static lwm2m_client_t * prv_getClientByName(lwm2m_context_t * contextP,
@@ -636,27 +772,6 @@ static lwm2m_client_t * prv_getClientByName(lwm2m_context_t * contextP,
     }
 
     return targetP;
-}
-
-static void prv_freeClientObjectList(lwm2m_client_object_t * objects)
-{
-    while (objects != NULL)
-    {
-        lwm2m_client_object_t * objP;
-
-        while (objects->instanceList != NULL)
-        {
-            lwm2m_list_t * target;
-
-            target = objects->instanceList;
-            objects->instanceList = objects->instanceList->next;
-            lwm2m_free(target);
-        }
-
-        objP = objects;
-        objects = objects->next;
-        lwm2m_free(objP);
-    }
 }
 
 void prv_freeClient(lwm2m_client_t * clientP)
@@ -714,6 +829,7 @@ coap_status_t handle_registration_request(lwm2m_context_t * contextP,
         char * altPath;
         lwm2m_binding_t binding;
         lwm2m_client_object_t * objects;
+        bool supportJSON;
         lwm2m_client_t * clientP;
         char location[MAX_LOCATION_LENGTH];
 
@@ -727,7 +843,7 @@ coap_status_t handle_registration_request(lwm2m_context_t * contextP,
             return COAP_400_BAD_REQUEST;
         }
 
-        objects = prv_decodeRegisterPayload(message->payload, message->payload_len, &altPath);
+        objects = prv_decodeRegisterPayload(message->payload, message->payload_len, &supportJSON, &altPath);
 
         switch (uriP->flag & LWM2M_URI_MASK_ID)
         {
@@ -780,6 +896,7 @@ coap_status_t handle_registration_request(lwm2m_context_t * contextP,
             clientP->binding = binding;
             clientP->msisdn = msisdn;
             clientP->altPath = altPath;
+            clientP->supportJSON = supportJSON;
             clientP->lifetime = lifetime;
             clientP->endOfLife = tv_sec + lifetime;
             clientP->objectList = objects;
