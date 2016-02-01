@@ -425,16 +425,40 @@ int prv_isAltPathValid(const char * altPath)
     return 1;
 }
 
-#ifndef LWM2M_EMBEDDED_MODE
-time_t lwm2m_gettime(void)
+// copy a string in a buffer.
+// return the number of copied bytes or -1 if the buffer is not large enough
+int utils_stringCopy(char * buffer,
+                     size_t length,
+                     const char * str)
 {
-    struct timeval tv;
+    int i;
 
-    if (0 != gettimeofday(&tv, NULL))
+    for (i = 0 ; i < length && str[i] != 0 ; i++)
     {
-        return -1;
+        buffer[i] = str[i];
     }
 
-    return tv.tv_sec;
+    if (i == length) return -1;
+
+    buffer[i] = 0;
+
+    return i;
 }
-#endif
+
+int utils_intCopy(char * buffer,
+                  size_t length,
+                  int32_t value)
+{
+#define _PRV_INT32_MAX_STR_LEN 11
+    uint8_t str[_PRV_INT32_MAX_STR_LEN];
+    size_t len;
+
+    len = prv_intToText(value, str, _PRV_INT32_MAX_STR_LEN);
+    if (len == 0) return -1;
+    if (len > length + 1) return -1;
+
+    memcpy(buffer, str + _PRV_INT32_MAX_STR_LEN - len, len);
+    buffer[len] = 0;
+
+    return len;
+}

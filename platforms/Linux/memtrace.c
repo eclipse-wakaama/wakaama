@@ -17,7 +17,7 @@
 
 #include "internals.h"
 
-#ifdef MEMORY_TRACE
+#ifdef LWM2M_MEMORY_TRACE
 
 #undef malloc
 #undef free
@@ -72,16 +72,16 @@ static void prv_trace_add_free_list(memory_entry_t* remove, const char* file, co
     }
 }
 
-char* trace_strdup(const char* str, const char* file, const char* function, int lineno)
+char* lwm2m_trace_strdup(const char* str, const char* file, const char* function, int lineno)
 {
     size_t length = strlen(str);
-    char* result = trace_malloc(length +1, file, function, lineno);
+    char* result = lwm2m_trace_malloc(length +1, file, function, lineno);
     memcpy(result, str, length);
     result[length] = 0;
     return result;
 }
 
-void* trace_malloc(size_t size, const char* file, const char* function, int lineno)
+void* lwm2m_trace_malloc(size_t size, const char* file, const char* function, int lineno)
 {
     static int counter = 0;
     memory_entry_t* entry = malloc(size + sizeof(memory_entry_t));
@@ -100,7 +100,7 @@ void* trace_malloc(size_t size, const char* file, const char* function, int line
     return &(entry->data);
 }
 
-void trace_free(void* mem, const char* file, const char* function, int lineno)
+void lwm2m_trace_free(void* mem, const char* file, const char* function, int lineno)
 {
     if (NULL != mem)
     {

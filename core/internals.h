@@ -62,10 +62,16 @@
 
 #include "er-coap-13/er-coap-13.h"
 
-#ifdef WITH_LOGS
-#define LOG(...) fprintf(stderr, __VA_ARGS__)
+#ifdef LWM2M_WITH_LOGS
+#define LOG(...) lwm2m_printf(__VA_ARGS__)
+#define LOG_ENTER_FUNC lwm2m_printf("Entering %s()\r\n", __FUNCTION__);
+#define LOG_EXIT_FUNC lwm2m_printf("Exiting %s()\r\n", __FUNCTION__);
+#define LOG_ERROR_EXIT_FUNC lwm2m_printf("Exiting %s() on error\r\n", __FUNCTION__);
 #else
 #define LOG(...)
+#define LOG_ENTER_FUNC(...)
+#define LOG_EXIT_FUNC(...)
+#define LOG_ERROR_EXIT_FUNC(...)
 #endif
 
 #define LWM2M_DEFAULT_LIFETIME  86400
@@ -77,7 +83,13 @@
 #define REG_LWM2M_RESOURCE_TYPE     ">;rt=\"oma.lwm2m\","
 #define REG_LWM2M_RESOURCE_TYPE_LEN 17
 #endif
-#define REG_ALT_PATH_LINK           "<%s"REG_LWM2M_RESOURCE_TYPE
+#define REG_START           "<"
+#define REG_DEFAULT_PATH    "/"
+
+#define REG_OBJECT_MIN_LEN  5   // "</n>,"
+#define REG_PATH_END        ">,"
+#define REG_PATH_SEPARATOR  "/"
+
 #define REG_OBJECT_PATH             "<%s/%hu>,"
 #define REG_OBJECT_INSTANCE_PATH    "<%s/%hu/%hu>,"
 
@@ -205,6 +217,8 @@ int lwm2m_json_serialize(int size, lwm2m_data_t * tlvP, uint8_t ** bufferP);
 lwm2m_binding_t lwm2m_stringToBinding(uint8_t *buffer, size_t length);
 lwm2m_media_type_t prv_convertMediaType(coap_content_type_t type);
 int prv_isAltPathValid(const char * altPath);
+int utils_stringCopy(char * buffer, size_t length, const char * str);
+int utils_intCopy(char * buffer, size_t length, int32_t value);
 #ifdef LWM2M_CLIENT_MODE
 lwm2m_server_t * prv_findServer(lwm2m_context_t * contextP, void * fromSessionH);
 lwm2m_server_t * utils_findBootstrapServer(lwm2m_context_t * contextP, void * fromSessionH);

@@ -17,6 +17,8 @@ SET(SOURCES
     lwm2mclient.c
     ../utils/commandline.c
     ../utils/connection.c
+    ../../platforms/Linux/platform.c
+    ../../platforms/Linux/memtrace.c
     system_api.c
     object_security.c
     object_server.c

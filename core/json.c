@@ -653,19 +653,19 @@ static int prv_serializeValue(lwm2m_data_t * tlvP,
     int res;
     int head;
 
-    res = snprintf((char *)(char *)buffer, bufferLen, JSON_RES_ITEM_TEMPLATE, tlvP->id);
+    res = lwm2m_snprintf((char *)(char *)buffer, bufferLen, JSON_RES_ITEM_TEMPLATE, tlvP->id);
     if (res <= 0 || res >= bufferLen) return -1;
 
     switch (tlvP->dataType)
     {
     case LWM2M_TYPE_STRING:
-        res = snprintf((char *)buffer, bufferLen, JSON_ITEM_STRING_BEGIN);
+        res = lwm2m_snprintf((char *)buffer, bufferLen, JSON_ITEM_STRING_BEGIN);
         if (res <= 0 || res >= bufferLen) return -1;
         head = res;
         if (tlvP->length >= bufferLen - head) return -1;
         memcpy(buffer + head, tlvP->value, tlvP->length);
         head += tlvP->length;
-        res = snprintf((char *)buffer + head, bufferLen - head, JSON_ITEM_STRING_END);
+        res = lwm2m_snprintf((char *)buffer + head, bufferLen - head, JSON_ITEM_STRING_END);
         if (res <= 0 || res >= bufferLen - head) return -1;
         res += head;
         break;
@@ -676,7 +676,7 @@ static int prv_serializeValue(lwm2m_data_t * tlvP,
         int64_t value;
 
         if (0 == lwm2m_data_decode_int(tlvP, &value)) return -1;
-        res = snprintf((char *)buffer, bufferLen, JSON_ITEM_INTEGER_TEMPLATE, value);
+        res = lwm2m_snprintf((char *)buffer, bufferLen, JSON_ITEM_INTEGER_TEMPLATE, value);
         if (res <= 0 || res >= bufferLen) return -1;
     }
     break;
@@ -686,7 +686,7 @@ static int prv_serializeValue(lwm2m_data_t * tlvP,
         double value;
 
         if (0 == lwm2m_data_decode_float(tlvP, &value)) return -1;
-        res = snprintf((char *)buffer, bufferLen, JSON_ITEM_FLOAT_TEMPLATE, value);
+        res = lwm2m_snprintf((char *)buffer, bufferLen, JSON_ITEM_FLOAT_TEMPLATE, value);
         if (res <= 0 || res >= bufferLen) return -1;
     }
     break;
@@ -696,20 +696,20 @@ static int prv_serializeValue(lwm2m_data_t * tlvP,
         bool value;
 
         if (0 == lwm2m_data_decode_bool(tlvP, &value)) return -1;
-        res = snprintf((char *)buffer, bufferLen, value?JSON_ITEM_BOOL_TRUE:JSON_ITEM_BOOL_FALSE);
+        res = lwm2m_snprintf((char *)buffer, bufferLen, value?JSON_ITEM_BOOL_TRUE:JSON_ITEM_BOOL_FALSE);
         if (res <= 0 || res >= bufferLen) return -1;
     }
     break;
 
     case LWM2M_TYPE_OPAQUE:
         // TODO: base64 encoding
-        res = snprintf((char *)buffer, bufferLen, JSON_ITEM_STRING_BEGIN);
+        res = lwm2m_snprintf((char *)buffer, bufferLen, JSON_ITEM_STRING_BEGIN);
         if (res <= 0 || res >= bufferLen) return -1;
         head = res;
         if (tlvP->length >= bufferLen - head) return -1;
         memcpy(buffer + head, tlvP->value, tlvP->length);
         head += tlvP->length;
-        res = snprintf((char *)buffer + head, bufferLen - head, JSON_ITEM_STRING_END);
+        res = lwm2m_snprintf((char *)buffer + head, bufferLen - head, JSON_ITEM_STRING_END);
         if (res <= 0 || res >= bufferLen - head) return -1;
         res += head;
         break;
@@ -721,13 +721,13 @@ static int prv_serializeValue(lwm2m_data_t * tlvP,
     case LWM2M_TYPE_UNDEFINED:
         if ((tlvP->flags & LWM2M_TLV_FLAG_TEXT_FORMAT) != 0)
         {
-            res = snprintf((char *)buffer, bufferLen, JSON_ITEM_STRING_BEGIN);
+            res = lwm2m_snprintf((char *)buffer, bufferLen, JSON_ITEM_STRING_BEGIN);
             if (res <= 0 || res >= bufferLen) return -1;
             head = res;
             if (tlvP->length >= bufferLen - head) return -1;
             memcpy(buffer + head, tlvP->value, tlvP->length);
             head += tlvP->length;
-            res = snprintf((char *)buffer + head, bufferLen - head, JSON_ITEM_STRING_END);
+            res = lwm2m_snprintf((char *)buffer + head, bufferLen - head, JSON_ITEM_STRING_END);
             if (res <= 0 || res >= bufferLen - head) return -1;
             res += head;
         } else
@@ -780,7 +780,7 @@ int lwm2m_json_serialize(int size,
             subTlvP = (lwm2m_data_t *)tlvP[index].value;
             for (i = 0 ; i < tlvP[index].length ; i++)
             {
-                res = snprintf((char *)bufferJSON + head, PRV_JSON_BUFFER_SIZE - head, JSON_INST_ITEM_TEMPLATE, tlvP[index].id, subTlvP[i].id);
+                res = lwm2m_snprintf((char *)bufferJSON + head, PRV_JSON_BUFFER_SIZE - head, JSON_INST_ITEM_TEMPLATE, tlvP[index].id, subTlvP[i].id);
                 if (res <= 0 || res >= PRV_JSON_BUFFER_SIZE - head) return 0;
                 head += res;
 
@@ -792,7 +792,7 @@ int lwm2m_json_serialize(int size,
             break;
 
         case LWM2M_TYPE_RESOURCE:
-            res = snprintf((char *)bufferJSON + head, PRV_JSON_BUFFER_SIZE - head, JSON_RES_ITEM_TEMPLATE, tlvP[index].id);
+            res = lwm2m_snprintf((char *)bufferJSON + head, PRV_JSON_BUFFER_SIZE - head, JSON_RES_ITEM_TEMPLATE, tlvP[index].id);
             if (res <= 0 || res >= PRV_JSON_BUFFER_SIZE - head) return 0;
             head += res;
 

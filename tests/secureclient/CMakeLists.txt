@@ -31,6 +31,8 @@ include_directories (${TINYDTLS_SOURCES_DIR})
 SET(SOURCES
     secureclient.c
     ../utils/dtlsconnection.c
+    ../../platforms/Linux/platform.c
+    ../../platforms/Linux/memtrace.c
     object_security.c
     object_server.c
     object_device.c

@@ -69,41 +69,46 @@ static int prv_getRegistrationQuery(lwm2m_context_t * contextP, lwm2m_server_t *
     int index;
     int res;
 
-    index = snprintf(buffer, length, "?ep=%s", contextP->endpointName);
-    if (index <= 1) return 0;
+    index = utils_stringCopy(buffer, length, "?ep=");
+    if (index < 0) return 0;
+    res = utils_stringCopy(buffer + index, length - index, contextP->endpointName);
+    if (res < 0) return 0;
+    index += res;
 
     if (NULL != contextP->msisdn)
     {
-        res = snprintf(buffer + index, length - index, QUERY_DELIMITER QUERY_SMS "%s", contextP->msisdn);
-        if (res <= 1) return 0;
-
+        res = utils_stringCopy(buffer + index, length - index, QUERY_DELIMITER QUERY_SMS);
+        if (res < 0) return 0;
+        index += res;
+        res = utils_stringCopy(buffer + index, length - index, contextP->msisdn);
+        if (res < 0) return 0;
         index += res;
     }
 
     switch (server->binding)
     {
     case BINDING_U:
-        res = snprintf(buffer + index, length - index, "&b=U");
+        res = utils_stringCopy(buffer + index, length - index, "&b=U");
         break;
     case BINDING_UQ:
-        res = snprintf(buffer + index, length - index, "&b=UQ");
+        res = utils_stringCopy(buffer + index, length - index, "&b=UQ");
         break;
     case BINDING_S:
-        res = snprintf(buffer + index, length - index, "&b=S");
+        res = utils_stringCopy(buffer + index, length - index, "&b=S");
         break;
     case BINDING_SQ:
-        res = snprintf(buffer + index, length - index, "&b=SQ");
+        res = utils_stringCopy(buffer + index, length - index, "&b=SQ");
         break;
     case BINDING_US:
-        res = snprintf(buffer + index, length - index, "&b=US");
+        res = utils_stringCopy(buffer + index, length - index, "&b=US");
         break;
     case BINDING_UQS:
-        res = snprintf(buffer + index, length - index, "&b=UQS");
+        res = utils_stringCopy(buffer + index, length - index, "&b=UQS");
         break;
     default:
-        res = 0;
+        res = -1;
     }
-    if (res <= 1) return 0;
+    if (res < 0) return 0;
 
     return index + res;
 }
@@ -162,13 +167,14 @@ static void prv_register(lwm2m_context_t * contextP,
 
     if (0 != server->lifetime)
     {
-        if (snprintf(query + query_length,
-                        PRV_QUERY_BUFFER_LENGTH - query_length,
-                        QUERY_DELIMITER QUERY_LIFETIME "%d",
-                        (int)server->lifetime) <= 0)
-        {
-            return;
-        }
+        int res;
+
+        res = utils_stringCopy(query + query_length, PRV_QUERY_BUFFER_LENGTH - query_length, QUERY_DELIMITER QUERY_LIFETIME);
+        if (res < 0) return;
+        query_length += res;
+        res = utils_intCopy(query + query_length, PRV_QUERY_BUFFER_LENGTH - query_length, server->lifetime);
+        if (res < 0) return;
+        query_length += res;
     }
 
     if (server->sessionH == NULL)
@@ -679,17 +685,19 @@ void prv_freeClient(lwm2m_client_t * clientP)
 static int prv_getLocationString(uint16_t id,
                                  char location[MAX_LOCATION_LENGTH])
 {
+    int index;
     int result;
 
     memset(location, 0, MAX_LOCATION_LENGTH);
 
-    result = snprintf(location, MAX_LOCATION_LENGTH, "/"URI_REGISTRATION_SEGMENT"/%hu", id);
-    if (result <= 0 || result > MAX_LOCATION_LENGTH)
-    {
-        return 0;
-    }
+    result = utils_stringCopy(location, MAX_LOCATION_LENGTH, "/"URI_REGISTRATION_SEGMENT"/");
+    if (result < 0) return 0;
+    index = result;
 
-    return result;
+    result = utils_intCopy(location + index, MAX_LOCATION_LENGTH - index, id);
+    if (result < 0) return 0;
+
+    return index + result;
 }
 
 coap_status_t handle_registration_request(lwm2m_context_t * contextP,
