@@ -381,8 +381,7 @@ bool object_isInstanceNew(lwm2m_context_t * contextP,
     return true;
 }
 
-static int prv_getObjectTemplate(lwm2m_context_t * contextP,
-                                 uint8_t * buffer,
+static int prv_getObjectTemplate(uint8_t * buffer,
                                  size_t length,
                                  uint16_t id)
 {
@@ -392,18 +391,8 @@ static int prv_getObjectTemplate(lwm2m_context_t * contextP,
     if (length < REG_OBJECT_MIN_LEN) return -1;
 
     buffer[0] = '<';
-    index = 1;
-
-    if ((contextP->altPath != NULL)
-     && (contextP->altPath[0] != 0))
-    {
-        result = utils_stringCopy(buffer + index, length - index, contextP->altPath);
-        if (result < 0) return -1;
-        index += result;
-        if (length - index < REG_OBJECT_MIN_LEN - 1) return -1;
-    }
-    buffer[index] = '/';
-    index++;
+    buffer[1] = '/';
+    index = 2;
 
     result = utils_intCopy(buffer + index, length - index, id);
     if (result < 0) return -1;
@@ -455,7 +444,7 @@ int prv_getRegisterPayload(lwm2m_context_t * contextP,
         if (contextP->objectList[i]->objID == LWM2M_SECURITY_OBJECT_ID) continue;
 
         start = index;
-        length = prv_getObjectTemplate(contextP, buffer + index, bufferLen - index, contextP->objectList[i]->objID);
+        length = prv_getObjectTemplate(buffer + index, bufferLen - index, contextP->objectList[i]->objID);
         if (length < 0) return 0;
         index += length;
 
