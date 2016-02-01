@@ -472,6 +472,7 @@ typedef struct _lwm2m_client_
     lwm2m_binding_t         binding;
     char *                  msisdn;
     char *                  altPath;
+    bool                    supportJSON;
     uint32_t                lifetime;
     time_t                  endOfLife;
     void *                  sessionH;

@@ -113,6 +113,21 @@
 #define QUERY_VERSION_FULL      "lwm2m=1.0"
 #define QUERY_VERSION_FULL_LEN  9
 
+#define REG_URI_START       '<'
+#define REG_URI_END         '>'
+#define REG_DELIMITER       ','
+#define REG_ATTR_SEPARATOR  ';'
+#define REG_ATTR_EQUALS     '='
+#define REG_ATTR_TYPE_KEY           "rt"
+#define REG_ATTR_TYPE_KEY_LEN       2
+#define REG_ATTR_TYPE_VALUE         "\"oma.lwm2m\""
+#define REG_ATTR_TYPE_VALUE_LEN     11
+#define REG_ATTR_CONTENT_KEY        "ct"
+#define REG_ATTR_CONTENT_KEY_LEN    2
+#define REG_ATTR_CONTENT_JSON       "1543"   // Temporary value
+#define REG_ATTR_CONTENT_JSON_LEN   4
+
+
 #define LWM2M_URI_FLAG_DM           (uint8_t)0x00
 #define LWM2M_URI_FLAG_DELETE_ALL   (uint8_t)0x10
 #define LWM2M_URI_FLAG_REGISTRATION (uint8_t)0x20
