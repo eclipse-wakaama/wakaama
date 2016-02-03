@@ -456,7 +456,6 @@ typedef struct _lwm2m_observation_
  *
  */
 
-#define LWM2M_ATTR_FLAG_CLEAR           (uint8_t)0x00
 #define LWM2M_ATTR_FLAG_MIN_PERIOD      (uint8_t)0x01
 #define LWM2M_ATTR_FLAG_MAX_PERIOD      (uint8_t)0x02
 #define LWM2M_ATTR_FLAG_GREATER_THAN    (uint8_t)0x04
@@ -465,7 +464,8 @@ typedef struct _lwm2m_observation_
 
 typedef struct
 {
-    uint8_t     flag;
+    uint8_t     toSet;
+    uint8_t     toClear;
     uint32_t    minPeriod;
     uint32_t    maxPeriod;
     float       greaterThan;
@@ -664,7 +664,6 @@ void lwm2m_set_monitoring_callback(lwm2m_context_t * contextP, lwm2m_result_call
 int lwm2m_dm_read(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, lwm2m_result_callback_t callback, void * userData);
 int lwm2m_dm_write(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, lwm2m_media_type_t format, uint8_t * buffer, int length, lwm2m_result_callback_t callback, void * userData);
 int lwm2m_dm_write_attributes(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, lwm2m_attributes_t * attrP, lwm2m_result_callback_t callback, void * userData);
-int lwm2m_dm_clear_attributes(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, uint8_t attrMask, lwm2m_result_callback_t callback, void * userData);
 int lwm2m_dm_execute(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, lwm2m_media_type_t format, uint8_t * buffer, int length, lwm2m_result_callback_t callback, void * userData);
 int lwm2m_dm_create(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, lwm2m_media_type_t format, uint8_t * buffer, int length, lwm2m_result_callback_t callback, void * userData);
 int lwm2m_dm_delete(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, lwm2m_result_callback_t callback, void * userData);

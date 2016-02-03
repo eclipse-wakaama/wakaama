@@ -339,7 +339,7 @@ static void prv_time_client(char * buffer,
     if (result == 0) goto syntax_error;
 
     memset(&attr, 0, sizeof(lwm2m_attributes_t));
-    attr.flag = LWM2M_ATTR_FLAG_MIN_PERIOD | LWM2M_ATTR_FLAG_MAX_PERIOD;
+    attr.toSet = LWM2M_ATTR_FLAG_MIN_PERIOD | LWM2M_ATTR_FLAG_MAX_PERIOD;
 
     buffer = get_next_arg(end, &end);
     if (buffer[0] == 0) goto syntax_error;
@@ -398,7 +398,7 @@ static void prv_attr_client(char * buffer,
     if (result == 0) goto syntax_error;
 
     memset(&attr, 0, sizeof(lwm2m_attributes_t));
-    attr.flag = LWM2M_ATTR_FLAG_LESS_THAN | LWM2M_ATTR_FLAG_GREATER_THAN | LWM2M_ATTR_FLAG_STEP;
+    attr.toSet = LWM2M_ATTR_FLAG_LESS_THAN | LWM2M_ATTR_FLAG_GREATER_THAN | LWM2M_ATTR_FLAG_STEP;
 
     buffer = get_next_arg(end, &end);
     if (buffer[0] == 0) goto syntax_error;
@@ -448,7 +448,7 @@ static void prv_clear_client(char * buffer,
     lwm2m_uri_t uri;
     char * end = NULL;
     int result;
-    uint8_t mask;
+    lwm2m_attributes_t attr;
 
     result = prv_read_id(buffer, &clientId);
     if (result != 1) goto syntax_error;
@@ -459,12 +459,13 @@ static void prv_clear_client(char * buffer,
     result = lwm2m_stringToUri(buffer, end - buffer, &uri);
     if (result == 0) goto syntax_error;
 
-    mask = LWM2M_ATTR_FLAG_LESS_THAN | LWM2M_ATTR_FLAG_GREATER_THAN | LWM2M_ATTR_FLAG_STEP | LWM2M_ATTR_FLAG_MIN_PERIOD | LWM2M_ATTR_FLAG_MAX_PERIOD ;
+    memset(&attr, 0, sizeof(lwm2m_attributes_t));
+    attr.toClear = LWM2M_ATTR_FLAG_LESS_THAN | LWM2M_ATTR_FLAG_GREATER_THAN | LWM2M_ATTR_FLAG_STEP | LWM2M_ATTR_FLAG_MIN_PERIOD | LWM2M_ATTR_FLAG_MAX_PERIOD ;
 
     buffer = get_next_arg(end, &end);
     if (!check_end_of_args(end)) goto syntax_error;
 
-    result = lwm2m_dm_clear_attributes(lwm2mH, clientId, &uri, mask, prv_result_callback, NULL);
+    result = lwm2m_dm_write_attributes(lwm2mH, clientId, &uri, &attr, prv_result_callback, NULL);
 
     if (result == 0)
     {
