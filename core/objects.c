@@ -238,31 +238,6 @@ coap_status_t object_write(lwm2m_context_t * contextP,
     return result;
 }
 
-coap_status_t object_write_attributes(lwm2m_context_t * contextP,
-                                      lwm2m_uri_t * uriP,
-                                      lwm2m_attributes_t * attrP)
-{
-    coap_status_t result = NO_ERROR;
-    lwm2m_object_t * targetP;
-    lwm2m_data_t * dataP = NULL;
-    int size = 0;
-
-    targetP = prv_find_object(contextP, uriP->objectId);
-    if (NULL == targetP) return COAP_404_NOT_FOUND;
-    if (NULL == targetP->readFunc) return COAP_405_METHOD_NOT_ALLOWED;
-    if (NULL == targetP->attributesFunc) return COAP_501_NOT_IMPLEMENTED;
-
-    if (LWM2M_URI_IS_SET_INSTANCE(uriP)
-        && (LWM2M_LIST_FIND(targetP->instanceList, uriP->instanceId) == NULL)) return COAP_404_NOT_FOUND;
-
-    if (0 != (attrP->toSet & (LWM2M_ATTR_FLAG_LESS_THAN | LWM2M_ATTR_FLAG_GREATER_THAN | LWM2M_ATTR_FLAG_STEP))
-        && (attrP->lessThan + 2 * attrP->step >= attrP->greaterThan)) return COAP_400_BAD_REQUEST;
-
-    result = targetP->attributesFunc(uriP, attrP, targetP);
-
-    return result;
-}
-
 coap_status_t object_execute(lwm2m_context_t * contextP,
                              lwm2m_uri_t * uriP,
                              uint8_t * buffer,

@@ -89,11 +89,8 @@ typedef struct _prv_instance_
      */
     struct _prv_instance_ * next;   // matches lwm2m_list_t::next
     uint16_t shortID;               // matches lwm2m_list_t::id
-    lwm2m_attributes_t * meta;
     uint8_t  test;
-    lwm2m_attributes_t * testMeta;
     double   dec;
-    lwm2m_attributes_t * decMeta;
 } prv_instance_t;
 
 static void prv_output_buffer(uint8_t * buffer,
@@ -289,97 +286,6 @@ static uint8_t prv_exec(uint16_t instanceId,
     }
 }
 
-uint8_t prv_attributes(lwm2m_uri_t * uriP,
-                       lwm2m_attributes_t * attrP,
-                       lwm2m_object_t * objectP)
-{
-    lwm2m_attributes_t ** targetP;
-
-    if (LWM2M_URI_IS_SET_INSTANCE(uriP))
-    {
-        prv_instance_t * instP;
-
-        instP = (prv_instance_t *)lwm2m_list_find(objectP->instanceList, uriP->instanceId);
-        if (NULL == instP) return COAP_404_NOT_FOUND;
-
-        if (LWM2M_URI_IS_SET_RESOURCE(uriP))
-        {
-            switch (uriP->resourceId)
-            {
-            case 1:
-                targetP = &(instP->testMeta);
-                break;
-            case 3:
-                targetP = &(instP->decMeta);
-                break;
-            case 2:
-                return COAP_405_METHOD_NOT_ALLOWED;
-            default:
-                return COAP_404_NOT_FOUND;
-            }
-        }
-        else
-        {
-            targetP = &(instP->meta);
-        }
-    }
-    else
-    {
-        targetP = (lwm2m_attributes_t **)&(objectP->userData);
-    }
-
-    if ((attrP->toClear | attrP->toSet) == 0)
-    {
-        // this is a get
-        if (*targetP != NULL)
-        {
-            memcpy(attrP, *targetP, sizeof(lwm2m_attributes_t));
-        }
-        else
-        {
-            memset(attrP, 0, sizeof(lwm2m_attributes_t));
-        }
-    }
-    else
-    {
-        // this is a set
-        if (*targetP == NULL)
-        {
-            if (attrP->toSet == 0) return COAP_204_CHANGED;
-            *targetP = lwm2m_malloc(sizeof(lwm2m_attributes_t));
-            if (*targetP == NULL) COAP_500_INTERNAL_SERVER_ERROR;
-            memcpy(*targetP, attrP, sizeof(lwm2m_attributes_t));
-            (*targetP)->toClear = 0;
-        }
-        else
-        {
-            (*targetP)->toSet &= ~(attrP->toClear);
-            if (attrP->toSet & LWM2M_ATTR_FLAG_MIN_PERIOD)
-            {
-                (*targetP)->minPeriod = attrP->minPeriod;
-            }
-            if (attrP->toSet & LWM2M_ATTR_FLAG_MAX_PERIOD)
-            {
-                (*targetP)->maxPeriod = attrP->maxPeriod;
-            }
-            if (attrP->toSet & LWM2M_ATTR_FLAG_GREATER_THAN)
-            {
-                (*targetP)->greaterThan = attrP->greaterThan;
-            }
-            if (attrP->toSet & LWM2M_ATTR_FLAG_LESS_THAN)
-            {
-                (*targetP)->lessThan = attrP->lessThan;
-            }
-            if (attrP->toSet & LWM2M_ATTR_FLAG_STEP)
-            {
-                (*targetP)->step = attrP->step;
-            }
-        }
-    }
-
-    return COAP_204_CHANGED;
-}
-
 void display_test_object(lwm2m_object_t * object)
 {
 #ifdef WITH_LOGS
@@ -431,7 +337,6 @@ lwm2m_object_t * get_test_object(void)
         testObj->executeFunc = prv_exec;
         testObj->createFunc = prv_create;
         testObj->deleteFunc = prv_delete;
-        testObj->attributesFunc = prv_attributes;
     }
 
     return testObj;

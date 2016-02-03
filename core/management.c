@@ -266,7 +266,7 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
                 }
                 else
                 {
-                    result = object_write_attributes(contextP, uriP, &attr);
+                    result = COAP_501_NOT_IMPLEMENTED; //object_write_attributes(contextP, uriP, &attr);
                 }
             }
             else if (LWM2M_URI_IS_SET_INSTANCE(uriP))
