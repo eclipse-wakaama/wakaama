@@ -317,6 +317,129 @@ syntax_error:
 }
 
 
+static void prv_time_client(char * buffer,
+                            void * user_data)
+{
+    lwm2m_context_t * lwm2mH = (lwm2m_context_t *) user_data;
+    uint16_t clientId;
+    lwm2m_uri_t uri;
+    char * end = NULL;
+    int result;
+    lwm2m_attributes_t attr;
+    int nb;
+    int value;
+
+    result = prv_read_id(buffer, &clientId);
+    if (result != 1) goto syntax_error;
+
+    buffer = get_next_arg(buffer, &end);
+    if (buffer[0] == 0) goto syntax_error;
+
+    result = lwm2m_stringToUri(buffer, end - buffer, &uri);
+    if (result == 0) goto syntax_error;
+
+    memset(&attr, 0, sizeof(lwm2m_attributes_t));
+    attr.flag = LWM2M_ATTR_FLAG_MIN_PERIOD | LWM2M_ATTR_FLAG_MAX_PERIOD;
+
+    buffer = get_next_arg(end, &end);
+    if (buffer[0] == 0) goto syntax_error;
+
+    nb = sscanf(buffer, "%d", &value);
+    if (nb != 1) goto syntax_error;
+    if (value < 0) goto syntax_error;
+    attr.minPeriod = value;
+
+    buffer = get_next_arg(end, &end);
+    if (buffer[0] == 0) goto syntax_error;
+
+    nb = sscanf(buffer, "%d", &value);
+    if (nb != 1) goto syntax_error;
+    if (value < 0) goto syntax_error;
+    attr.maxPeriod = value;
+
+    if (!check_end_of_args(end)) goto syntax_error;
+
+    result = lwm2m_dm_write_attributes(lwm2mH, clientId, &uri, &attr, prv_result_callback, NULL);
+
+    if (result == 0)
+    {
+        fprintf(stdout, "OK");
+    }
+    else
+    {
+        prv_print_error(result);
+    }
+    return;
+
+syntax_error:
+    fprintf(stdout, "Syntax error !");
+}
+
+
+static void prv_attr_client(char * buffer,
+                            void * user_data)
+{
+    lwm2m_context_t * lwm2mH = (lwm2m_context_t *) user_data;
+    uint16_t clientId;
+    lwm2m_uri_t uri;
+    char * end = NULL;
+    int result;
+    lwm2m_attributes_t attr;
+    int nb;
+    float value;
+
+    result = prv_read_id(buffer, &clientId);
+    if (result != 1) goto syntax_error;
+
+    buffer = get_next_arg(buffer, &end);
+    if (buffer[0] == 0) goto syntax_error;
+
+    result = lwm2m_stringToUri(buffer, end - buffer, &uri);
+    if (result == 0) goto syntax_error;
+
+    memset(&attr, 0, sizeof(lwm2m_attributes_t));
+    attr.flag = LWM2M_ATTR_FLAG_LESS_THAN | LWM2M_ATTR_FLAG_GREATER_THAN | LWM2M_ATTR_FLAG_STEP;
+
+    buffer = get_next_arg(end, &end);
+    if (buffer[0] == 0) goto syntax_error;
+
+    nb = sscanf(buffer, "%f", &value);
+    if (nb != 1) goto syntax_error;
+    attr.lessThan = value;
+
+    buffer = get_next_arg(end, &end);
+    if (buffer[0] == 0) goto syntax_error;
+
+    nb = sscanf(buffer, "%f", &value);
+    if (nb != 1) goto syntax_error;
+    attr.greaterThan = value;
+
+    buffer = get_next_arg(end, &end);
+    if (buffer[0] == 0) goto syntax_error;
+
+    nb = sscanf(buffer, "%f", &value);
+    if (nb != 1) goto syntax_error;
+    attr.step = value;
+
+    if (!check_end_of_args(end)) goto syntax_error;
+
+    result = lwm2m_dm_write_attributes(lwm2mH, clientId, &uri, &attr, prv_result_callback, NULL);
+
+    if (result == 0)
+    {
+        fprintf(stdout, "OK");
+    }
+    else
+    {
+        prv_print_error(result);
+    }
+    return;
+
+syntax_error:
+    fprintf(stdout, "Syntax error !");
+}
+
+
 static void prv_exec_client(char * buffer,
                             void * user_data)
 {
@@ -613,6 +736,19 @@ int main(int argc, char *argv[])
                                             "   URI: uri to write to such as /3, /3//2, /3/0/2, /1024/11, /1024//1\r\n"
                                             "   DATA: data to write\r\n"
                                             "Result will be displayed asynchronously.", prv_write_client, NULL},
+            {"time", "Write time-related attributes to a client.", " time CLIENT# URI PMIN PMAX\r\n"
+                                            "   CLIENT#: client number as returned by command 'list'\r\n"
+                                            "   URI: uri to write to such as /3, /3//2, /3/0/2, /1024/11, /1024//1\r\n"
+                                            "   PMIN: Minimum period\r\n"
+                                            "   PMAX: Maximum period\r\n"
+                                            "Result will be displayed asynchronously.", prv_time_client, NULL},
+            {"attr", "Write value-related attributes to a client.", " attr CLIENT# URI LT GT STEP\r\n"
+                                            "   CLIENT#: client number as returned by command 'list'\r\n"
+                                            "   URI: uri to write to such as /3, /3//2, /3/0/2, /1024/11, /1024//1\r\n"
+                                            "   LT: \"Less than\" value\r\n"
+                                            "   GT: \"Greater than\" value\r\n"
+                                            "   STEP: \"Step\" value\r\n"
+                                            "Result will be displayed asynchronously.", prv_attr_client, NULL},
             {"exec", "Execute a client resource.", " exec CLIENT# URI\r\n"
                                             "   CLIENT#: client number as returned by command 'list'\r\n"
                                             "   URI: uri of the resource to execute such as /3/0/2\r\n"

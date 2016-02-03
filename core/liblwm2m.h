@@ -450,6 +450,30 @@ typedef struct _lwm2m_observation_
 } lwm2m_observation_t;
 
 /*
+ * LWM2M Link Attributes
+ *
+ * Used for observation parameters.
+ *
+ */
+
+#define LWM2M_ATTR_FLAG_CLEAR           (uint8_t)0x00
+#define LWM2M_ATTR_FLAG_MIN_PERIOD      (uint8_t)0x01
+#define LWM2M_ATTR_FLAG_MAX_PERIOD      (uint8_t)0x02
+#define LWM2M_ATTR_FLAG_GREATER_THAN    (uint8_t)0x04
+#define LWM2M_ATTR_FLAG_LESS_THAN       (uint8_t)0x08
+#define LWM2M_ATTR_FLAG_STEP            (uint8_t)0x10
+
+typedef struct
+{
+    uint8_t     flag;
+    uint32_t    minPeriod;
+    uint32_t    maxPeriod;
+    float       greaterThan;
+    float       lessThan;
+    float       step;
+} lwm2m_attributes_t;
+
+/*
  * LWM2M Clients
  *
  * Be careful not to mix lwm2m_client_object_t used to store list of objects of remote clients
@@ -639,6 +663,7 @@ void lwm2m_set_monitoring_callback(lwm2m_context_t * contextP, lwm2m_result_call
 // Device Management APIs
 int lwm2m_dm_read(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, lwm2m_result_callback_t callback, void * userData);
 int lwm2m_dm_write(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, lwm2m_media_type_t format, uint8_t * buffer, int length, lwm2m_result_callback_t callback, void * userData);
+int lwm2m_dm_write_attributes(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, lwm2m_attributes_t * attrP, lwm2m_result_callback_t callback, void * userData);
 int lwm2m_dm_execute(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, lwm2m_media_type_t format, uint8_t * buffer, int length, lwm2m_result_callback_t callback, void * userData);
 int lwm2m_dm_create(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, lwm2m_media_type_t format, uint8_t * buffer, int length, lwm2m_result_callback_t callback, void * userData);
 int lwm2m_dm_delete(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, lwm2m_result_callback_t callback, void * userData);

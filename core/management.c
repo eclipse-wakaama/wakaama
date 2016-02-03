@@ -394,4 +394,120 @@ int lwm2m_dm_delete(lwm2m_context_t * contextP,
                               LWM2M_CONTENT_TEXT, NULL, 0,
                               callback, userData);
 }
+
+int lwm2m_dm_write_attributes(lwm2m_context_t * contextP,
+                              uint16_t clientID,
+                              lwm2m_uri_t * uriP,
+                              lwm2m_attributes_t * attrP,
+                              lwm2m_result_callback_t callback,
+                              void * userData)
+{
+#define _PRV_BUFFER_SIZE 32
+    lwm2m_client_t * clientP;
+    lwm2m_transaction_t * transaction;
+    coap_packet_t * coap_pkt;
+    uint8_t buffer[_PRV_BUFFER_SIZE];
+    size_t length;
+
+    if (attrP == NULL) return COAP_400_BAD_REQUEST;
+
+    clientP = (lwm2m_client_t *)lwm2m_list_find((lwm2m_list_t *)contextP->clientList, clientID);
+    if (clientP == NULL) return COAP_404_NOT_FOUND;
+
+    if (0 != (attrP->flag & (LWM2M_ATTR_FLAG_LESS_THAN | LWM2M_ATTR_FLAG_GREATER_THAN | LWM2M_ATTR_FLAG_STEP))
+    && (attrP->lessThan + 2 * attrP->step >= attrP->greaterThan)) return COAP_400_BAD_REQUEST;
+
+    transaction = transaction_new(COAP_TYPE_CON, COAP_PUT, clientP->altPath, uriP, contextP->nextMID++, 4, NULL, ENDPOINT_CLIENT, (void *)clientP);
+    if (transaction == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
+
+    if (callback != NULL)
+    {
+        dm_data_t * dataP;
+
+        dataP = (dm_data_t *)lwm2m_malloc(sizeof(dm_data_t));
+        if (dataP == NULL)
+        {
+            transaction_free(transaction);
+            return COAP_500_INTERNAL_SERVER_ERROR;
+        }
+        memcpy(&dataP->uri, uriP, sizeof(lwm2m_uri_t));
+        dataP->callback = callback;
+        dataP->userData = userData;
+
+        transaction->callback = dm_result_callback;
+        transaction->userData = (void *)dataP;
+    }
+
+    coap_pkt = (coap_packet_t *)transaction->message;
+    free_multi_option(coap_pkt->uri_query);
+    if (attrP->flag & LWM2M_ATTR_FLAG_MIN_PERIOD)
+    {
+        memcpy(buffer, ATTR_MIN_PERIOD_STR, ATTR_MIN_PERIOD_LEN);
+        length = utils_intToText(attrP->minPeriod, buffer + ATTR_MIN_PERIOD_LEN, _PRV_BUFFER_SIZE - ATTR_MIN_PERIOD_LEN);
+        if (length == 0)
+        {
+            transaction_free(transaction);
+            return COAP_500_INTERNAL_SERVER_ERROR;
+        }
+        coap_add_multi_option(&(coap_pkt->uri_query), buffer, ATTR_MIN_PERIOD_LEN + length, 0);
+        SET_OPTION(coap_pkt, COAP_OPTION_URI_QUERY);
+    }
+    if (attrP->flag & LWM2M_ATTR_FLAG_MAX_PERIOD)
+    {
+        memcpy(buffer, ATTR_MAX_PERIOD_STR, ATTR_MAX_PERIOD_LEN);
+        length = utils_intToText(attrP->maxPeriod, buffer + ATTR_MAX_PERIOD_LEN, _PRV_BUFFER_SIZE - ATTR_MAX_PERIOD_LEN);
+        if (length == 0)
+        {
+            transaction_free(transaction);
+            return COAP_500_INTERNAL_SERVER_ERROR;
+        }
+        coap_add_multi_option(&(coap_pkt->uri_query), buffer, ATTR_MAX_PERIOD_LEN + length, 0);
+        SET_OPTION(coap_pkt, COAP_OPTION_URI_QUERY);
+    }
+    if (attrP->flag & LWM2M_ATTR_FLAG_GREATER_THAN)
+    {
+        memcpy(buffer, ATTR_GREATER_THAN_STR, ATTR_GREATER_THAN_LEN);
+        length = utils_floatToText(attrP->greaterThan, buffer + ATTR_GREATER_THAN_LEN, _PRV_BUFFER_SIZE - ATTR_GREATER_THAN_LEN);
+        if (length == 0)
+        {
+            transaction_free(transaction);
+            return COAP_500_INTERNAL_SERVER_ERROR;
+        }
+        coap_add_multi_option(&(coap_pkt->uri_query), buffer, ATTR_GREATER_THAN_LEN + length, 0);
+        SET_OPTION(coap_pkt, COAP_OPTION_URI_QUERY);
+    }
+    if (attrP->flag & LWM2M_ATTR_FLAG_LESS_THAN)
+    {
+        memcpy(buffer, ATTR_LESS_THAN_STR, ATTR_LESS_THAN_LEN);
+        length = utils_floatToText(attrP->lessThan, buffer + ATTR_LESS_THAN_LEN, _PRV_BUFFER_SIZE - ATTR_LESS_THAN_LEN);
+        if (length == 0)
+        {
+            transaction_free(transaction);
+            return COAP_500_INTERNAL_SERVER_ERROR;
+        }
+        coap_add_multi_option(&(coap_pkt->uri_query), buffer, ATTR_LESS_THAN_LEN + length, 0);
+        SET_OPTION(coap_pkt, COAP_OPTION_URI_QUERY);
+    }
+    if (attrP->flag & LWM2M_ATTR_FLAG_STEP)
+    {
+        memcpy(buffer, ATTR_STEP_STR, ATTR_STEP_LEN);
+        length = utils_floatToText(attrP->step, buffer + ATTR_STEP_LEN, _PRV_BUFFER_SIZE - ATTR_STEP_LEN);
+        if (length == 0)
+        {
+            transaction_free(transaction);
+            return COAP_500_INTERNAL_SERVER_ERROR;
+        }
+        coap_add_multi_option(&(coap_pkt->uri_query), buffer, ATTR_STEP_LEN + length, 0);
+        SET_OPTION(coap_pkt, COAP_OPTION_URI_QUERY);
+    }
+
+    contextP->transactionList = (lwm2m_transaction_t *)LWM2M_LIST_ADD(contextP->transactionList, transaction);
+
+    return transaction_send(contextP, transaction);
+
+error:
+    transaction_free(transaction);
+
+}
+
 #endif

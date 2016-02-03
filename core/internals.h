@@ -127,6 +127,19 @@
 #define REG_ATTR_CONTENT_JSON       "1543"   // Temporary value
 #define REG_ATTR_CONTENT_JSON_LEN   4
 
+#define ATTR_MIN_PERIOD_STR      "pmin="
+#define ATTR_MIN_PERIOD_LEN      5
+#define ATTR_MAX_PERIOD_STR      "pmax="
+#define ATTR_MAX_PERIOD_LEN      5
+#define ATTR_GREATER_THAN_STR    "gt="
+#define ATTR_GREATER_THAN_LEN    3
+#define ATTR_LESS_THAN_STR       "lt="
+#define ATTR_LESS_THAN_LEN       3
+#define ATTR_STEP_STR            "stp="
+#define ATTR_STEP_LEN            4
+#define ATTR_DIMENSION_STR       "dim="
+#define ATTR_DIMENSION_LEN       4
+
 
 #define LWM2M_URI_FLAG_DM           (uint8_t)0x00
 #define LWM2M_URI_FLAG_DELETE_ALL   (uint8_t)0x10
