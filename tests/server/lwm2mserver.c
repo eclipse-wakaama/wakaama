@@ -440,6 +440,47 @@ syntax_error:
 }
 
 
+static void prv_clear_client(char * buffer,
+                             void * user_data)
+{
+    lwm2m_context_t * lwm2mH = (lwm2m_context_t *) user_data;
+    uint16_t clientId;
+    lwm2m_uri_t uri;
+    char * end = NULL;
+    int result;
+    uint8_t mask;
+
+    result = prv_read_id(buffer, &clientId);
+    if (result != 1) goto syntax_error;
+
+    buffer = get_next_arg(buffer, &end);
+    if (buffer[0] == 0) goto syntax_error;
+
+    result = lwm2m_stringToUri(buffer, end - buffer, &uri);
+    if (result == 0) goto syntax_error;
+
+    mask = LWM2M_ATTR_FLAG_LESS_THAN | LWM2M_ATTR_FLAG_GREATER_THAN | LWM2M_ATTR_FLAG_STEP | LWM2M_ATTR_FLAG_MIN_PERIOD | LWM2M_ATTR_FLAG_MAX_PERIOD ;
+
+    buffer = get_next_arg(end, &end);
+    if (!check_end_of_args(end)) goto syntax_error;
+
+    result = lwm2m_dm_clear_attributes(lwm2mH, clientId, &uri, mask, prv_result_callback, NULL);
+
+    if (result == 0)
+    {
+        fprintf(stdout, "OK");
+    }
+    else
+    {
+        prv_print_error(result);
+    }
+    return;
+
+syntax_error:
+    fprintf(stdout, "Syntax error !");
+}
+
+
 static void prv_exec_client(char * buffer,
                             void * user_data)
 {
@@ -729,26 +770,30 @@ int main(int argc, char *argv[])
             {"list", "List registered clients.", NULL, prv_output_clients, NULL},
             {"read", "Read from a client.", " read CLIENT# URI\r\n"
                                             "   CLIENT#: client number as returned by command 'list'\r\n"
-                                            "   URI: uri to read such as /3, /3//2, /3/0/2, /1024/11, /1024//1\r\n"
+                                            "   URI: uri to read such as /3, /3/0/2, /1024/11, /1024//1\r\n"
                                             "Result will be displayed asynchronously.", prv_read_client, NULL},
             {"write", "Write to a client.", " write CLIENT# URI DATA\r\n"
                                             "   CLIENT#: client number as returned by command 'list'\r\n"
-                                            "   URI: uri to write to such as /3, /3//2, /3/0/2, /1024/11, /1024//1\r\n"
+                                            "   URI: uri to write to such as /3, /3/0/2, /1024/11, /1024//1\r\n"
                                             "   DATA: data to write\r\n"
                                             "Result will be displayed asynchronously.", prv_write_client, NULL},
             {"time", "Write time-related attributes to a client.", " time CLIENT# URI PMIN PMAX\r\n"
                                             "   CLIENT#: client number as returned by command 'list'\r\n"
-                                            "   URI: uri to write to such as /3, /3//2, /3/0/2, /1024/11, /1024//1\r\n"
+                                            "   URI: uri to write attributes to such as /3, /3/0/2, /1024/11, /1024//1\r\n"
                                             "   PMIN: Minimum period\r\n"
                                             "   PMAX: Maximum period\r\n"
                                             "Result will be displayed asynchronously.", prv_time_client, NULL},
             {"attr", "Write value-related attributes to a client.", " attr CLIENT# URI LT GT STEP\r\n"
                                             "   CLIENT#: client number as returned by command 'list'\r\n"
-                                            "   URI: uri to write to such as /3, /3//2, /3/0/2, /1024/11, /1024//1\r\n"
+                                            "   URI: uri to write attributes to such as /3, /3/0/2, /1024/11, /1024//1\r\n"
                                             "   LT: \"Less than\" value\r\n"
                                             "   GT: \"Greater than\" value\r\n"
                                             "   STEP: \"Step\" value\r\n"
                                             "Result will be displayed asynchronously.", prv_attr_client, NULL},
+            {"clear", "Clear attributes of a client.", " clear CLIENT# URI\r\n"
+                                            "   CLIENT#: client number as returned by command 'list'\r\n"
+                                            "   URI: uri to clear attributes of such as /3, /3/0/2, /1024/11, /1024//1\r\n"
+                                            "Result will be displayed asynchronously.", prv_clear_client, NULL},
             {"exec", "Execute a client resource.", " exec CLIENT# URI\r\n"
                                             "   CLIENT#: client number as returned by command 'list'\r\n"
                                             "   URI: uri of the resource to execute such as /3/0/2\r\n"
