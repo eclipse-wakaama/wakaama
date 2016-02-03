@@ -53,6 +53,113 @@
 
 
 #ifdef LWM2M_CLIENT_MODE
+static int prv_readAttributes(multi_option_t * query,
+                              lwm2m_attributes_t * attrP)
+{
+    int64_t intValue;
+    double floatValue;
+
+    memset(attrP, 0, sizeof(lwm2m_attributes_t));
+
+    while (query != NULL)
+    {
+        if (lwm2m_strncmp((char *)query->data, ATTR_MIN_PERIOD_STR, ATTR_MIN_PERIOD_LEN) == 0)
+        {
+            if (0 != ((attrP->toSet | attrP->toClear) & LWM2M_ATTR_FLAG_MIN_PERIOD)) return -1;
+            if (query->len == ATTR_MIN_PERIOD_LEN) return -1;
+
+            if (1 != lwm2m_PlainTextToInt64(query->data + ATTR_MIN_PERIOD_LEN, query->len - ATTR_MIN_PERIOD_LEN, &intValue)) return -1;
+            if (intValue < 0) return -1;
+
+            attrP->toSet |= LWM2M_ATTR_FLAG_MIN_PERIOD;
+            attrP->minPeriod = intValue;
+        }
+        else if (lwm2m_strncmp((char *)query->data, ATTR_MIN_PERIOD_STR, ATTR_MIN_PERIOD_LEN - 1) == 0)
+        {
+            if (0 != ((attrP->toSet | attrP->toClear) & LWM2M_ATTR_FLAG_MIN_PERIOD)) return -1;
+            if (query->len != ATTR_MIN_PERIOD_LEN - 1) return -1;
+
+            attrP->toClear |= LWM2M_ATTR_FLAG_MIN_PERIOD;
+        }
+        else if (lwm2m_strncmp((char *)query->data, ATTR_MAX_PERIOD_STR, ATTR_MAX_PERIOD_LEN) == 0)
+        {
+            if (0 != ((attrP->toSet | attrP->toClear) & LWM2M_ATTR_FLAG_MAX_PERIOD)) return -1;
+            if (query->len == ATTR_MAX_PERIOD_LEN) return -1;
+
+            if (1 != lwm2m_PlainTextToInt64(query->data + ATTR_MAX_PERIOD_LEN, query->len - ATTR_MAX_PERIOD_LEN, &intValue)) return -1;
+            if (intValue < 0) return -1;
+
+            attrP->toSet |= LWM2M_ATTR_FLAG_MAX_PERIOD;
+            attrP->maxPeriod = intValue;
+        }
+        else if (lwm2m_strncmp((char *)query->data, ATTR_MAX_PERIOD_STR, ATTR_MAX_PERIOD_LEN - 1) == 0)
+        {
+            if (0 != ((attrP->toSet | attrP->toClear) & LWM2M_ATTR_FLAG_MAX_PERIOD)) return -1;
+            if (query->len != ATTR_MAX_PERIOD_LEN - 1) return -1;
+
+            attrP->toClear |= LWM2M_ATTR_FLAG_MAX_PERIOD;
+        }
+        else if (lwm2m_strncmp((char *)query->data, ATTR_GREATER_THAN_STR, ATTR_GREATER_THAN_LEN) == 0)
+        {
+            if (0 != ((attrP->toSet | attrP->toClear) & LWM2M_ATTR_FLAG_GREATER_THAN)) return -1;
+            if (query->len == ATTR_GREATER_THAN_LEN) return -1;
+
+            if (1 != lwm2m_PlainTextToFloat64(query->data + ATTR_GREATER_THAN_LEN, query->len - ATTR_GREATER_THAN_LEN, &floatValue)) return -1;
+            if (floatValue < 0) return -1;
+
+            attrP->toSet |= LWM2M_ATTR_FLAG_GREATER_THAN;
+            attrP->greaterThan = floatValue;
+        }
+        else if (lwm2m_strncmp((char *)query->data, ATTR_GREATER_THAN_STR, ATTR_GREATER_THAN_LEN - 1) == 0)
+        {
+            if (0 != ((attrP->toSet | attrP->toClear) & LWM2M_ATTR_FLAG_GREATER_THAN)) return -1;
+            if (query->len != ATTR_GREATER_THAN_LEN - 1) return -1;
+
+            attrP->toClear |= LWM2M_ATTR_FLAG_GREATER_THAN;
+        }
+        else if (lwm2m_strncmp((char *)query->data, ATTR_LESS_THAN_STR, ATTR_LESS_THAN_LEN) == 0)
+        {
+            if (0 != ((attrP->toSet | attrP->toClear) & LWM2M_ATTR_FLAG_LESS_THAN)) return -1;
+            if (query->len == ATTR_LESS_THAN_LEN) return -1;
+
+            if (1 != lwm2m_PlainTextToFloat64(query->data + ATTR_LESS_THAN_LEN, query->len - ATTR_LESS_THAN_LEN, &floatValue)) return -1;
+            if (floatValue < 0) return -1;
+
+            attrP->toSet |= LWM2M_ATTR_FLAG_LESS_THAN;
+            attrP->lessThan = floatValue;
+        }
+        else if (lwm2m_strncmp((char *)query->data, ATTR_LESS_THAN_STR, ATTR_LESS_THAN_LEN - 1) == 0)
+        {
+            if (0 != ((attrP->toSet | attrP->toClear) & LWM2M_ATTR_FLAG_LESS_THAN)) return -1;
+            if (query->len != ATTR_LESS_THAN_LEN - 1) return -1;
+
+            attrP->toClear |= LWM2M_ATTR_FLAG_LESS_THAN;
+        }
+        else if (lwm2m_strncmp((char *)query->data, ATTR_STEP_STR, ATTR_STEP_LEN) == 0)
+        {
+            if (0 != ((attrP->toSet | attrP->toClear) & LWM2M_ATTR_FLAG_STEP)) return -1;
+            if (query->len == ATTR_STEP_LEN) return -1;
+
+            if (1 != lwm2m_PlainTextToFloat64(query->data + ATTR_STEP_LEN, query->len - ATTR_STEP_LEN, &floatValue)) return -1;
+            if (floatValue < 0) return -1;
+
+            attrP->toSet |= LWM2M_ATTR_FLAG_STEP;
+            attrP->step = floatValue;
+        }
+        else if (lwm2m_strncmp((char *)query->data, ATTR_STEP_STR, ATTR_STEP_LEN - 1) == 0)
+        {
+            if (0 != ((attrP->toSet | attrP->toClear) & LWM2M_ATTR_FLAG_STEP)) return -1;
+            if (query->len != ATTR_STEP_LEN - 1) return -1;
+
+            attrP->toClear |= LWM2M_ATTR_FLAG_STEP;
+        }
+
+        query = query->next;
+    }
+
+    return 0;
+}
+
 coap_status_t handle_dm_request(lwm2m_context_t * contextP,
                                 lwm2m_uri_t * uriP,
                                 lwm2m_server_t * serverP,
@@ -149,13 +256,26 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
 
     case COAP_PUT:
         {
-            if (LWM2M_URI_IS_SET_INSTANCE(uriP))
+            if (IS_OPTION(message, COAP_OPTION_URI_QUERY))
+            {
+                lwm2m_attributes_t attr;
+
+                if (0 != prv_readAttributes(message->uri_query, &attr))
+                {
+                    result = COAP_400_BAD_REQUEST;
+                }
+                else
+                {
+                    result = object_write_attributes(contextP, uriP, &attr);
+                }
+            }
+            else if (LWM2M_URI_IS_SET_INSTANCE(uriP))
             {
                 result = object_write(contextP, uriP, format, message->payload, message->payload_len);
             }
             else
             {
-                result = BAD_REQUEST_4_00;
+                result = COAP_400_BAD_REQUEST;
             }
         }
         break;
@@ -164,7 +284,7 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
         {
             if (!LWM2M_URI_IS_SET_INSTANCE(uriP) || LWM2M_URI_IS_SET_RESOURCE(uriP))
             {
-                result = BAD_REQUEST_4_00;
+                result = COAP_400_BAD_REQUEST;
             }
             else
             {
@@ -174,7 +294,7 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
         break;
 
     default:
-        result = BAD_REQUEST_4_00;
+        result = COAP_400_BAD_REQUEST;
         break;
     }
 

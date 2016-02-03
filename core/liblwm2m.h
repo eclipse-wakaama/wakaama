@@ -345,6 +345,29 @@ typedef struct
 // Invalid URIs: /, //, //2, /1//, /1//3, /1/2/3/, /1/2/3/4
 int lwm2m_stringToUri(const char * buffer, size_t buffer_len, lwm2m_uri_t * uriP);
 
+/*
+ * LWM2M Link Attributes
+ *
+ * Used for observation parameters.
+ *
+ */
+
+#define LWM2M_ATTR_FLAG_MIN_PERIOD      (uint8_t)0x01
+#define LWM2M_ATTR_FLAG_MAX_PERIOD      (uint8_t)0x02
+#define LWM2M_ATTR_FLAG_GREATER_THAN    (uint8_t)0x04
+#define LWM2M_ATTR_FLAG_LESS_THAN       (uint8_t)0x08
+#define LWM2M_ATTR_FLAG_STEP            (uint8_t)0x10
+
+typedef struct
+{
+    uint8_t     toSet;
+    uint8_t     toClear;
+    uint32_t    minPeriod;
+    uint32_t    maxPeriod;
+    float       greaterThan;
+    float       lessThan;
+    float       step;
+} lwm2m_attributes_t;
 
 /*
  * LWM2M Objects
@@ -358,6 +381,7 @@ typedef struct _lwm2m_object_t lwm2m_object_t;
 
 typedef uint8_t (*lwm2m_read_callback_t) (uint16_t instanceId, int * numDataP, lwm2m_data_t ** dataArrayP, lwm2m_object_t * objectP);
 typedef uint8_t (*lwm2m_write_callback_t) (uint16_t instanceId, int numData, lwm2m_data_t * dataArray, lwm2m_object_t * objectP);
+typedef uint8_t (*lwm2m_attributes_callback_t) (lwm2m_uri_t * uriP, lwm2m_attributes_t * attrP, lwm2m_object_t * objectP);
 typedef uint8_t (*lwm2m_execute_callback_t) (uint16_t instanceId, uint16_t resourceId, uint8_t * buffer, int length, lwm2m_object_t * objectP);
 typedef uint8_t (*lwm2m_create_callback_t) (uint16_t instanceId, int numData, lwm2m_data_t * dataArray, lwm2m_object_t * objectP);
 typedef uint8_t (*lwm2m_delete_callback_t) (uint16_t instanceId, lwm2m_object_t * objectP);
@@ -371,6 +395,7 @@ struct _lwm2m_object_t
     lwm2m_execute_callback_t executeFunc;
     lwm2m_create_callback_t  createFunc;
     lwm2m_delete_callback_t  deleteFunc;
+    lwm2m_attributes_callback_t attributesFunc;
     void *                   userData;
 };
 
@@ -448,30 +473,6 @@ typedef struct _lwm2m_observation_
     lwm2m_result_callback_t callback;
     void *                  userData;
 } lwm2m_observation_t;
-
-/*
- * LWM2M Link Attributes
- *
- * Used for observation parameters.
- *
- */
-
-#define LWM2M_ATTR_FLAG_MIN_PERIOD      (uint8_t)0x01
-#define LWM2M_ATTR_FLAG_MAX_PERIOD      (uint8_t)0x02
-#define LWM2M_ATTR_FLAG_GREATER_THAN    (uint8_t)0x04
-#define LWM2M_ATTR_FLAG_LESS_THAN       (uint8_t)0x08
-#define LWM2M_ATTR_FLAG_STEP            (uint8_t)0x10
-
-typedef struct
-{
-    uint8_t     toSet;
-    uint8_t     toClear;
-    uint32_t    minPeriod;
-    uint32_t    maxPeriod;
-    float       greaterThan;
-    float       lessThan;
-    float       step;
-} lwm2m_attributes_t;
 
 /*
  * LWM2M Clients
