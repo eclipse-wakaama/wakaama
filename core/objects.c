@@ -75,6 +75,76 @@ static lwm2m_object_t * prv_find_object(lwm2m_context_t * contextP,
     return NULL;
 }
 
+uint8_t object_checkReadable(lwm2m_context_t * contextP,
+                             lwm2m_uri_t * uriP)
+{
+    coap_status_t result;
+    lwm2m_object_t * targetP;
+    lwm2m_data_t * dataP = NULL;
+    int size;
+
+    targetP = prv_find_object(contextP, uriP->objectId);
+    if (NULL == targetP) return COAP_404_NOT_FOUND;
+    if (NULL == targetP->readFunc) return COAP_405_METHOD_NOT_ALLOWED;
+
+    if (!LWM2M_URI_IS_SET_INSTANCE(uriP)) return COAP_205_CONTENT;
+
+    if (NULL == lwm2m_list_find(targetP->instanceList, uriP->instanceId)) return COAP_404_NOT_FOUND;
+
+    if (!LWM2M_URI_IS_SET_RESOURCE(uriP)) return COAP_205_CONTENT;
+
+    size = 1;
+    dataP = lwm2m_data_new(1);
+    if (dataP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
+
+    dataP->type = LWM2M_TYPE_RESOURCE;
+    dataP->id = uriP->resourceId;
+
+    result = targetP->readFunc(uriP->instanceId, &size, &dataP, targetP);
+    lwm2m_data_free(1, dataP);
+
+    return result;
+}
+
+uint8_t object_checkNumeric(lwm2m_context_t * contextP,
+                            lwm2m_uri_t * uriP)
+{
+    coap_status_t result;
+    lwm2m_object_t * targetP;
+    lwm2m_data_t * dataP = NULL;
+    int size;
+
+    if (!LWM2M_URI_IS_SET_RESOURCE(uriP)) return COAP_405_METHOD_NOT_ALLOWED;
+
+    targetP = prv_find_object(contextP, uriP->objectId);
+    if (NULL == targetP) return COAP_404_NOT_FOUND;
+    if (NULL == targetP->readFunc) return COAP_405_METHOD_NOT_ALLOWED;
+
+    size = 1;
+    dataP = lwm2m_data_new(1);
+    if (dataP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
+
+    dataP->type = LWM2M_TYPE_RESOURCE;
+    dataP->id = uriP->resourceId;
+
+    result = targetP->readFunc(uriP->instanceId, &size, &dataP, targetP);
+    if (result == COAP_205_CONTENT)
+    {
+        switch (dataP->dataType)
+        {
+        case LWM2M_TYPE_INTEGER:
+        case LWM2M_TYPE_FLOAT:
+            break;
+        default:
+            result = COAP_405_METHOD_NOT_ALLOWED;
+        }
+    }
+
+    lwm2m_data_free(1, dataP);
+
+    return result;
+}
+
 coap_status_t object_read(lwm2m_context_t * contextP,
                           lwm2m_uri_t * uriP,
                           lwm2m_media_type_t * formatP,

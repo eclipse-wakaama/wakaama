@@ -549,7 +549,9 @@ typedef struct _lwm2m_watcher_
 {
     struct _lwm2m_watcher_ * next;
 
+    bool active;
     lwm2m_server_t * server;
+    lwm2m_attributes_t * parameters;
     uint8_t token[8];
     size_t tokenLen;
     uint32_t counter;

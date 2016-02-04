@@ -153,6 +153,7 @@ static int prv_readAttributes(multi_option_t * query,
 
             attrP->toClear |= LWM2M_ATTR_FLAG_STEP;
         }
+        else return -1;
 
         query = query->next;
     }
@@ -266,7 +267,7 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
                 }
                 else
                 {
-                    result = COAP_501_NOT_IMPLEMENTED; //object_write_attributes(contextP, uriP, &attr);
+                    result = observe_set_parameters(contextP, uriP, serverP, &attr);
                 }
             }
             else if (LWM2M_URI_IS_SET_INSTANCE(uriP))
@@ -532,8 +533,9 @@ int lwm2m_dm_write_attributes(lwm2m_context_t * contextP,
     if (attrP == NULL) return COAP_400_BAD_REQUEST;
 
     if (0 != (attrP->toSet & attrP->toClear)) return COAP_400_BAD_REQUEST;
-    if (0 != (attrP->toSet & (LWM2M_ATTR_FLAG_LESS_THAN | LWM2M_ATTR_FLAG_GREATER_THAN | LWM2M_ATTR_FLAG_STEP))
-    && (attrP->lessThan + 2 * attrP->step >= attrP->greaterThan)) return COAP_400_BAD_REQUEST;
+    if (0 != (attrP->toSet & ATTR_FLAG_NUMERIC) && !LWM2M_URI_IS_SET_RESOURCE(uriP)) return COAP_400_BAD_REQUEST;
+    if (ATTR_FLAG_NUMERIC == (attrP->toSet & ATTR_FLAG_NUMERIC)
+     && (attrP->lessThan + 2 * attrP->step >= attrP->greaterThan)) return COAP_400_BAD_REQUEST;
 
     clientP = (lwm2m_client_t *)lwm2m_list_find((lwm2m_list_t *)contextP->clientList, clientID);
     if (clientP == NULL) return COAP_404_NOT_FOUND;

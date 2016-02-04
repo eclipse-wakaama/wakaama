@@ -140,6 +140,7 @@
 #define ATTR_DIMENSION_STR       "dim="
 #define ATTR_DIMENSION_LEN       4
 
+#define ATTR_FLAG_NUMERIC (uint8_t)(LWM2M_ATTR_FLAG_LESS_THAN | LWM2M_ATTR_FLAG_GREATER_THAN | LWM2M_ATTR_FLAG_STEP)
 
 #define LWM2M_URI_FLAG_DM           (uint8_t)0x00
 #define LWM2M_URI_FLAG_DELETE_ALL   (uint8_t)0x10
@@ -185,6 +186,8 @@ coap_status_t object_create(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2
 coap_status_t object_execute(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, uint8_t * buffer, size_t length);
 coap_status_t object_delete(lwm2m_context_t * contextP, lwm2m_uri_t * uriP);
 coap_status_t object_delete_others(lwm2m_context_t * contextP, uint16_t objectId, uint16_t instanceId);
+uint8_t object_checkReadable(lwm2m_context_t * contextP, lwm2m_uri_t * uriP);
+uint8_t object_checkNumeric(lwm2m_context_t * contextP, lwm2m_uri_t * uriP);
 bool object_isInstanceNew(lwm2m_context_t * contextP, uint16_t objectId, uint16_t instanceId);
 int prv_getRegisterPayload(lwm2m_context_t * contextP, uint8_t * buffer, size_t length);
 int object_getServers(lwm2m_context_t * contextP);
@@ -204,6 +207,7 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, 
 // defined in observe.c
 coap_status_t handle_observe_request(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_server_t * serverP, coap_packet_t * message, coap_packet_t * response);
 void cancel_observe(lwm2m_context_t * contextP, uint16_t mid, void * fromSessionH);
+coap_status_t observe_set_parameters(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_server_t * serverP, lwm2m_attributes_t * attrP);
 
 // defined in registration.c
 coap_status_t handle_registration_request(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, void * fromSessionH, coap_packet_t * message, coap_packet_t * response);
