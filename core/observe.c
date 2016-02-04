@@ -70,45 +70,6 @@ static lwm2m_observed_t * prv_findObserved(lwm2m_context_t * contextP,
     return targetP;
 }
 
-static obs_list_t * prv_getObservedList(lwm2m_context_t * contextP,
-                                        lwm2m_uri_t * uriP)
-{
-    obs_list_t * resultP;
-    lwm2m_observed_t * targetP;
-
-    resultP = NULL;
-
-    targetP = contextP->observedList;
-    while (targetP != NULL)
-    {
-        if (targetP->uri.objectId == uriP->objectId)
-        {
-            if (!LWM2M_URI_IS_SET_INSTANCE(uriP)
-             || (targetP->uri.flag & LWM2M_URI_FLAG_INSTANCE_ID) == 0
-             || uriP->instanceId == targetP->uri.instanceId)
-            {
-                if (!LWM2M_URI_IS_SET_RESOURCE(uriP)
-                 || (targetP->uri.flag & LWM2M_URI_FLAG_RESOURCE_ID) == 0
-                 || uriP->resourceId == targetP->uri.resourceId)
-                {
-                    obs_list_t * newP;
-
-                    newP = (obs_list_t *)lwm2m_malloc(sizeof(obs_list_t));
-                    if (newP != NULL)
-                    {
-                        newP->item = targetP;
-                        newP->next = resultP;
-                        resultP = newP;
-                    }
-                }
-            }
-        }
-        targetP = targetP->next;
-    }
-
-    return resultP;
-}
-
 static void prv_unlinkObserved(lwm2m_context_t * contextP,
                                lwm2m_observed_t * observedP)
 {
@@ -166,6 +127,7 @@ static lwm2m_watcher_t * prv_getWatcher(lwm2m_context_t * contextP,
         allocatedObserver = true;
         memset(observedP, 0, sizeof(lwm2m_observed_t));
         memcpy(&(observedP->uri), uriP, sizeof(lwm2m_uri_t));
+        observedP->update = false;
         observedP->next = contextP->observedList;
         contextP->observedList = observedP;
     }
@@ -381,47 +343,71 @@ coap_status_t observe_set_parameters(lwm2m_context_t * contextP,
 void lwm2m_resource_value_changed(lwm2m_context_t * contextP,
                                   lwm2m_uri_t * uriP)
 {
-    int result;
-    obs_list_t * listP;
-    lwm2m_watcher_t * watcherP;
+    lwm2m_observed_t * targetP;
 
-    listP = prv_getObservedList(contextP, uriP);
-    while (listP != NULL)
+    targetP = contextP->observedList;
+    while (targetP != NULL)
     {
-        obs_list_t * targetP;
-        uint8_t * buffer = NULL;
-        size_t length = 0;
-        lwm2m_media_type_t format;
-
-        format = LWM2M_CONTENT_TEXT;
-        result = object_read(contextP, &listP->item->uri, &format, &buffer, &length);
-        if (result == COAP_205_CONTENT)
+        if (targetP->uri.objectId == uriP->objectId)
         {
-            coap_packet_t message[1];
-
-            coap_init_message(message, COAP_TYPE_NON, COAP_205_CONTENT, 0);
-            coap_set_header_content_type(message, format);
-            coap_set_payload(message, buffer, length);
-
-            for (watcherP = listP->item->watcherList ; watcherP != NULL ; watcherP = watcherP->next)
+            if (!LWM2M_URI_IS_SET_INSTANCE(uriP)
+             || (targetP->uri.flag & LWM2M_URI_FLAG_INSTANCE_ID) == 0
+             || uriP->instanceId == targetP->uri.instanceId)
             {
-                if (watcherP->active == true)
+                if (!LWM2M_URI_IS_SET_RESOURCE(uriP)
+                 || (targetP->uri.flag & LWM2M_URI_FLAG_RESOURCE_ID) == 0
+                 || uriP->resourceId == targetP->uri.resourceId)
                 {
-                    watcherP->lastMid = contextP->nextMID++;
-                    message->mid = watcherP->lastMid;
-                    coap_set_header_token(message, watcherP->token, watcherP->tokenLen);
-                    coap_set_header_observe(message, watcherP->counter++);
-                    (void)message_send(contextP, message, watcherP->server->sessionH);
+                    targetP->update = true;
                 }
             }
         }
-
-        targetP = listP;
-        listP = listP->next;
-        lwm2m_free(targetP);
+        targetP = targetP->next;
     }
-
 }
+
+void observation_step(lwm2m_context_t * contextP,
+                      time_t currentTime,
+                      time_t * timeoutP)
+{
+    lwm2m_observed_t * targetP;
+
+    for (targetP = contextP->observedList ; targetP != NULL ; targetP = targetP->next)
+    {
+        if (targetP->update == true)
+        {
+            uint8_t * buffer = NULL;
+            size_t length = 0;
+            lwm2m_media_type_t format;
+
+            format = LWM2M_CONTENT_TEXT;
+            if (COAP_205_CONTENT == object_read(contextP, &targetP->uri, &format, &buffer, &length))
+            {
+                lwm2m_watcher_t * watcherP;
+                coap_packet_t message[1];
+
+                coap_init_message(message, COAP_TYPE_NON, COAP_205_CONTENT, 0);
+                coap_set_header_content_type(message, format);
+                coap_set_payload(message, buffer, length);
+
+                for (watcherP = targetP->watcherList ; watcherP != NULL ; watcherP = watcherP->next)
+                {
+                    if (watcherP->active == true)
+                    {
+                        watcherP->lastMid = contextP->nextMID++;
+                        message->mid = watcherP->lastMid;
+                        coap_set_header_token(message, watcherP->token, watcherP->tokenLen);
+                        coap_set_header_observe(message, watcherP->counter++);
+                        (void)message_send(contextP, message, watcherP->server->sessionH);
+                    }
+                }
+            }
+
+            targetP->update = false;
+        }
+    }
+}
+
 #endif
 
 #ifdef LWM2M_SERVER_MODE

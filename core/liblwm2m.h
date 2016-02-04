@@ -563,6 +563,7 @@ typedef struct _lwm2m_observed_
     struct _lwm2m_observed_ * next;
 
     lwm2m_uri_t uri;
+    bool update;
     lwm2m_watcher_t * watcherList;
 } lwm2m_observed_t;
 
