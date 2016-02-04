@@ -27,7 +27,7 @@ void * lwm2m_malloc(size_t s)
     return malloc(s);
 }
 
-void   lwm2m_free(void * p)
+void lwm2m_free(void * p)
 {
     return free(p);
 }
@@ -39,7 +39,7 @@ char * lwm2m_strdup(const char * str)
 
 #endif
 
-int    lwm2m_strncmp(const char * s1,
+int lwm2m_strncmp(const char * s1,
                      const char * s2,
                      size_t n)
 {
@@ -63,12 +63,15 @@ int lwm2m_snprintf(char * str,
                    const char * format, ...)
 {
     va_list ap;
+    int res;
 
     va_start(ap, format);
 
-    vsnprintf(str, size, format, ap);
+    res = vsnprintf(str, size, format, ap);
 
     va_end(ap);
+
+    return res;
 }
 
 void lwm2m_printf(const char * format, ...)
