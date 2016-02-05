@@ -162,12 +162,13 @@ int lwm2m_PlainTextToFloat64(uint8_t * buffer,
     return 1;
 }
 
-static size_t prv_intToText(int64_t data,
-                            uint8_t * string,
-                            size_t length)
+size_t utils_intToText(int64_t data,
+                       uint8_t * string,
+                       size_t length)
 {
     int index;
     bool minus;
+    size_t result;
 
     if (data < 0)
     {
@@ -199,39 +200,24 @@ static size_t prv_intToText(int64_t data,
         index++;
     }
 
-    return length - index;
+    result = length - index;
+
+    if (result < length)
+    {
+        memmove(string, string + index, result);
+    }
+
+    return result;
 }
 
-size_t lwm2m_int64ToPlainText(int64_t data,
-                              uint8_t ** bufferP)
+size_t utils_floatToText(double data,
+                         uint8_t * string,
+                         size_t length)
 {
-#define _PRV_STR_LENGTH 32
-    uint8_t string[_PRV_STR_LENGTH];
-    size_t length;
-
-    length = prv_intToText(data, string, _PRV_STR_LENGTH);
-    if (length == 0) return 0;
-
-    *bufferP = (uint8_t *)lwm2m_malloc(length);
-    if (NULL == *bufferP) return 0;
-
-    memcpy(*bufferP, string + _PRV_STR_LENGTH - length, length);
-
-    return length;
-}
-
-
-size_t lwm2m_float64ToPlainText(double data,
-                                uint8_t ** bufferP)
-{
-#define _PRV_PRECISION 16
-    uint8_t intString[_PRV_STR_LENGTH];
     size_t intLength;
-    uint8_t decString[_PRV_STR_LENGTH];
     size_t decLength;
     int64_t intPart;
     double decPart;
-    int i;
 
     intPart = (int64_t)data;
     decPart = data - intPart;
@@ -246,31 +232,83 @@ size_t lwm2m_float64ToPlainText(double data,
 
     if (decPart <= 1 + FLT_EPSILON)
     {
-        return lwm2m_int64ToPlainText(intPart, bufferP);
+        decPart = 0;
     }
 
-    intLength = prv_intToText(intPart, intString, _PRV_STR_LENGTH);
-    if (intLength == 0) return 0;
-
-    i = 0;
-    do
+    if (intPart == 0 && data < 0)
     {
-        decPart *= 10;
-        i++;
-    } while ((decPart - (int64_t)decPart > 0)
-          && (i < _PRV_PRECISION));
+        // deal with numbers between -1 and 0
+        if (length < 4) return 0;   // "-0.n"
+        string[0] = '-';
+        string[1] = '0';
+        intLength = 2;
+    }
+    else
+    {
+        intLength = utils_intToText(intPart, string, length);
+        if (intLength == 0) return 0;
+    }
+    decLength = 0;
+    if (decPart != 0)
+    {
+        int i;
+        double noiseFloor;
 
-    decLength = prv_intToText(decPart, decString, _PRV_STR_LENGTH);
-    if (decLength <= 1) return 0;
+        if (intLength >= length - 1) return 0;
 
-    *bufferP = (uint8_t *)lwm2m_malloc(intLength + 1 + decLength);
+        i = 0;
+        noiseFloor = FLT_EPSILON;
+        do
+        {
+            decPart *= 10;
+            noiseFloor *= 10;
+            i++;
+        } while (decPart - (int64_t)decPart > noiseFloor);
+
+        decLength = utils_intToText(decPart, string + intLength, length - intLength);
+        if (decLength <= 1) return 0;
+
+        // replace the leading 1 with a dot
+        string[intLength] = '.';
+    }
+
+    return intLength + decLength;
+}
+
+size_t lwm2m_int64ToPlainText(int64_t data,
+                              uint8_t ** bufferP)
+{
+#define _PRV_STR_LENGTH 32
+    uint8_t string[_PRV_STR_LENGTH];
+    size_t length;
+
+    length = utils_intToText(data, string, _PRV_STR_LENGTH);
+    if (length == 0) return 0;
+
+    *bufferP = (uint8_t *)lwm2m_malloc(length);
     if (NULL == *bufferP) return 0;
 
-    memcpy(*bufferP, intString + _PRV_STR_LENGTH - intLength, intLength);
-    (*bufferP)[intLength] = '.';
-    memcpy(*bufferP + intLength + 1, decString + _PRV_STR_LENGTH - decLength + 1, decLength - 1);
+    memcpy(*bufferP, string, length);
 
-    return intLength + decLength;   // +1 for dot, -1 for extra "1" in decPart
+    return length;
+}
+
+
+size_t lwm2m_float64ToPlainText(double data,
+                                uint8_t ** bufferP)
+{
+    uint8_t string[_PRV_STR_LENGTH * 2];
+    size_t length;
+
+    length = utils_floatToText(data, string, _PRV_STR_LENGTH * 2);
+    if (length == 0) return 0;
+
+    *bufferP = (uint8_t *)lwm2m_malloc(length);
+    if (NULL == *bufferP) return 0;
+
+    memcpy(*bufferP, string, length);
+
+    return length;
 }
 
 
@@ -453,7 +491,7 @@ int utils_intCopy(char * buffer,
     uint8_t str[_PRV_INT32_MAX_STR_LEN];
     size_t len;
 
-    len = prv_intToText(value, str, _PRV_INT32_MAX_STR_LEN);
+    len = utils_intToText(value, str, _PRV_INT32_MAX_STR_LEN);
     if (len == 0) return -1;
     if (len > length + 1) return -1;
 

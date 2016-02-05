@@ -322,6 +322,8 @@ coap_status_t coap_parse_message(void *request, uint8_t *data, uint16_t data_len
 void coap_free_header(void *packet);
 
 char * coap_get_multi_option_as_string(multi_option_t * option);
+void coap_add_multi_option(multi_option_t **dst, uint8_t *option, size_t option_len, uint8_t is_static);
+void free_multi_option(multi_option_t *dst);
 
 int coap_get_query_variable(void *packet, const char *name, const char **output);
 int coap_get_post_variable(void *packet, const char *name, const char **output);

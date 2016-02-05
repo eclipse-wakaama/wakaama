@@ -253,7 +253,6 @@ coap_merge_multi_option(uint8_t **dst, size_t *dst_len, uint8_t *option, size_t 
   }
 }
 
-static
 void
 coap_add_multi_option(multi_option_t **dst, uint8_t *option, size_t option_len, uint8_t is_static)
 {
@@ -296,7 +295,6 @@ coap_add_multi_option(multi_option_t **dst, uint8_t *option, size_t option_len, 
   }
 }
 
-static
 void
 free_multi_option(multi_option_t *dst)
 {

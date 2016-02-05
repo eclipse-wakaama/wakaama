@@ -127,6 +127,19 @@
 #define REG_ATTR_CONTENT_JSON       "1543"   // Temporary value
 #define REG_ATTR_CONTENT_JSON_LEN   4
 
+#define ATTR_MIN_PERIOD_STR      "pmin="
+#define ATTR_MIN_PERIOD_LEN      5
+#define ATTR_MAX_PERIOD_STR      "pmax="
+#define ATTR_MAX_PERIOD_LEN      5
+#define ATTR_GREATER_THAN_STR    "gt="
+#define ATTR_GREATER_THAN_LEN    3
+#define ATTR_LESS_THAN_STR       "lt="
+#define ATTR_LESS_THAN_LEN       3
+#define ATTR_STEP_STR            "stp="
+#define ATTR_STEP_LEN            4
+#define ATTR_DIMENSION_STR       "dim="
+#define ATTR_DIMENSION_LEN       4
+
 
 #define LWM2M_URI_FLAG_DM           (uint8_t)0x00
 #define LWM2M_URI_FLAG_DELETE_ALL   (uint8_t)0x10
@@ -234,6 +247,8 @@ lwm2m_media_type_t prv_convertMediaType(coap_content_type_t type);
 int prv_isAltPathValid(const char * altPath);
 int utils_stringCopy(char * buffer, size_t length, const char * str);
 int utils_intCopy(char * buffer, size_t length, int32_t value);
+size_t utils_intToText(int64_t data, uint8_t * string, size_t length);
+size_t utils_floatToText(double data, uint8_t * string, size_t length);
 #ifdef LWM2M_CLIENT_MODE
 lwm2m_server_t * prv_findServer(lwm2m_context_t * contextP, void * fromSessionH);
 lwm2m_server_t * utils_findBootstrapServer(lwm2m_context_t * contextP, void * fromSessionH);
