@@ -462,3 +462,28 @@ int utils_intCopy(char * buffer,
 
     return len;
 }
+
+uint16_t array_newId(uint16_t nbId,
+                     uint16_t * idArray)
+{
+    uint16_t id;
+    uint16_t i;
+
+    id = 0;
+    i = 0;
+
+    while (i < nbId)
+    {
+        if (idArray[i] == id)
+        {
+            id++;
+            i = 0;
+        }
+        else
+        {
+            i++;
+        }
+    }
+
+    return id;
+}

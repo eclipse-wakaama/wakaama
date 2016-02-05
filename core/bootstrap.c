@@ -437,22 +437,21 @@ coap_status_t handle_delete_all(lwm2m_context_t * contextP,
 
         if (objectP->objID == LWM2M_SECURITY_OBJECT_ID)
         {
-            lwm2m_list_t * instanceP;
+            uint16_t * idArray;
+            uint16_t nbId;
+            uint16_t i;
 
-            instanceP = objectP->instanceList;
-            while (NULL != instanceP
-                && result == COAP_202_DELETED)
+            nbId = objectP->instanceFunc(&idArray, objectP);
+            if (nbId == LWM2M_MAX_ID) return COAP_500_INTERNAL_SERVER_ERROR;
+            for (i = 0;
+                 i < nbId && result == COAP_202_DELETED;
+                 i++)
             {
-                if (instanceP->id == serverP->secObjInstID)
-                {
-                    instanceP = instanceP->next;
-                }
-                else
+                if (idArray[i] != serverP->secObjInstID)
                 {
                     uri.flag = LWM2M_URI_FLAG_OBJECT_ID | LWM2M_URI_FLAG_INSTANCE_ID;
-                    uri.instanceId = instanceP->id;
+                    uri.instanceId = idArray[i];
                     result = object_delete(contextP, &uri);
-                    instanceP = objectP->instanceList;
                 }
             }
             if (result == COAP_202_DELETED)

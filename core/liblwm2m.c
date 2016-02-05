@@ -256,6 +256,7 @@ int lwm2m_configure(lwm2m_context_t * contextP,
         if (objectList[i]->objID == LWM2M_SECURITY_OBJECT_ID) found |= 0x01;
         if (objectList[i]->objID == LWM2M_SERVER_OBJECT_ID) found |= 0x02;
         if (objectList[i]->objID == LWM2M_DEVICE_OBJECT_ID) found |= 0x04;
+        if (objectList[i]->instanceFunc == NULL) return COAP_400_BAD_REQUEST;
     }
     if (found != 0x07) return COAP_400_BAD_REQUEST;
     if (altPath != NULL)

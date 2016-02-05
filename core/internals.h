@@ -69,9 +69,9 @@
 #define LOG_ERROR_EXIT_FUNC lwm2m_printf("Exiting %s() on error\r\n", __FUNCTION__);
 #else
 #define LOG(...)
-#define LOG_ENTER_FUNC(...)
-#define LOG_EXIT_FUNC(...)
-#define LOG_ERROR_EXIT_FUNC(...)
+#define LOG_ENTER_FUNC
+#define LOG_EXIT_FUNC
+#define LOG_ERROR_EXIT_FUNC
 #endif
 
 #define LWM2M_DEFAULT_LIFETIME  86400
@@ -237,6 +237,7 @@ int utils_intCopy(char * buffer, size_t length, int32_t value);
 #ifdef LWM2M_CLIENT_MODE
 lwm2m_server_t * prv_findServer(lwm2m_context_t * contextP, void * fromSessionH);
 lwm2m_server_t * utils_findBootstrapServer(lwm2m_context_t * contextP, void * fromSessionH);
+uint16_t array_newId(uint16_t nbId, uint16_t * idArray);
 #endif
 
 #endif
