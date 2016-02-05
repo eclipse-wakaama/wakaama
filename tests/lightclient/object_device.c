@@ -198,6 +198,14 @@ static uint8_t prv_device_execute(uint16_t instanceId,
     return COAP_405_METHOD_NOT_ALLOWED;
 }
 
+static uint16_t prv_device_instance(uint16_t ** idArrayP,
+                                    lwm2m_object_t * objectP)
+{
+    *idArrayP = (uint16_t *)objectP->userData;
+
+    return 1;
+}
+
 lwm2m_object_t * get_object_device()
 {
     /*
@@ -221,17 +229,18 @@ lwm2m_object_t * get_object_device()
          * and its unique instance
          *
          */
-        deviceObj->instanceList = (lwm2m_list_t *)lwm2m_malloc(sizeof(lwm2m_list_t));
-        if (NULL != deviceObj->instanceList)
+        deviceObj->instanceIDs = lwm2m_malloc(sizeof(uint16_t));
+        if (NULL != deviceObj->instanceIDs)
         {
-            memset(deviceObj->instanceList, 0, sizeof(lwm2m_list_t));
+            *deviceObj->instanceIDs = 0;
+            deviceObj->instanceCount = 1;
         }
         else
         {
             lwm2m_free(deviceObj);
             return NULL;
         }
-        
+
         /*
          * And the private function that will access the object.
          * Those function will be called when a read/write/execute query is made by the server. In fact the library don't need to
@@ -252,11 +261,7 @@ void free_object_device(lwm2m_object_t * objectP)
         lwm2m_free(objectP->userData);
         objectP->userData = NULL;
     }
-    if (NULL != objectP->instanceList)
-    {
-        lwm2m_free(objectP->instanceList);
-        objectP->instanceList = NULL;
-    }
+    if (objectP->instanceIDs != NULL) lwm2m_free(objectP->instanceIDs);
 
     lwm2m_free(objectP);
 }

@@ -85,16 +85,11 @@ coap_status_t object_read(lwm2m_context_t * contextP,
     lwm2m_object_t * targetP;
     lwm2m_data_t * dataP = NULL;
     int size;
-    uint16_t * idArray;
-    uint16_t nbId;
     uint16_t i;
 
     targetP = prv_find_object(contextP, uriP->objectId);
     if (NULL == targetP) return NOT_FOUND_4_04;
     if (NULL == targetP->readFunc) return METHOD_NOT_ALLOWED_4_05;
-
-    nbId = targetP->instanceFunc(&idArray, targetP);
-    if (nbId == LWM2M_MAX_ID) return COAP_500_INTERNAL_SERVER_ERROR;
 
     if (LWM2M_URI_IS_SET_INSTANCE(uriP))
     {
@@ -103,19 +98,19 @@ coap_status_t object_read(lwm2m_context_t * contextP,
     else
     {
         // multiple object instances read
-        size = nbId;
+        size = targetP->instanceCount;
         result = COAP_205_CONTENT;
         dataP = lwm2m_data_new(size);
         if (dataP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
     }
 
     for (i = 0;
-         i < nbId && (result == COAP_404_NOT_FOUND || result == COAP_205_CONTENT);
+         i < targetP->instanceCount && (result == COAP_404_NOT_FOUND || result == COAP_205_CONTENT);
          i++)
     {
         if (LWM2M_URI_IS_SET_INSTANCE(uriP))
         {
-            if (idArray[i] == uriP->instanceId)
+            if (targetP->instanceIDs[i] == uriP->instanceId)
             {
                 if (LWM2M_URI_IS_SET_RESOURCE(uriP))
                 {
@@ -132,9 +127,9 @@ coap_status_t object_read(lwm2m_context_t * contextP,
         }
         else
         {
-            result = targetP->readFunc(idArray[i], (int*)&(dataP[i].length), (lwm2m_data_t **)&(dataP[i].value), targetP);
+            result = targetP->readFunc(targetP->instanceIDs[i], (int*)&(dataP[i].length), (lwm2m_data_t **)&(dataP[i].value), targetP);
             dataP[i].type = LWM2M_TYPE_OBJECT_INSTANCE;
-            dataP[i].id = idArray[i];
+            dataP[i].id = targetP->instanceIDs[i];
         }
     }
 
@@ -240,13 +235,7 @@ coap_status_t object_create(lwm2m_context_t * contextP,
 
     if (!LWM2M_URI_IS_SET_INSTANCE(uriP))
     {
-        uint16_t * idArray;
-        uint16_t nbId;
-
-        nbId = targetP->instanceFunc(&idArray, targetP);
-        if (nbId == LWM2M_MAX_ID) return COAP_500_INTERNAL_SERVER_ERROR;
-
-        uriP->instanceId = array_newId(nbId, idArray);
+        uriP->instanceId = array_newId(targetP->instanceCount, targetP->instanceIDs);
         uriP->flag |= LWM2M_URI_FLAG_INSTANCE_ID;
     }
 
@@ -276,18 +265,13 @@ coap_status_t object_delete(lwm2m_context_t * contextP,
     }
     else
     {
-        uint16_t * idArray;
-        uint16_t nbId;
         uint16_t i;
 
-        nbId = objectP->instanceFunc(&idArray, objectP);
-        if (nbId == LWM2M_MAX_ID) return COAP_500_INTERNAL_SERVER_ERROR;
-
         for (i = 0;
-             i < nbId && result == COAP_202_DELETED;
+             i < objectP->instanceCount && result == COAP_202_DELETED;
              i++)
         {
-            result = objectP->deleteFunc(idArray[i], objectP);
+            result = objectP->deleteFunc(objectP->instanceIDs[i], objectP);
         }
     }
 
@@ -302,8 +286,6 @@ coap_status_t object_delete_others(lwm2m_context_t * contextP,
                                    uint16_t instanceId)
 {
     lwm2m_object_t * objectP;
-    uint16_t * idArray;
-    uint16_t nbId;
     uint16_t i;
     coap_status_t result;
 
@@ -313,18 +295,15 @@ coap_status_t object_delete_others(lwm2m_context_t * contextP,
     if (NULL == objectP) return NOT_FOUND_4_04;
     if (NULL == objectP->deleteFunc) return METHOD_NOT_ALLOWED_4_05;
 
-    nbId = objectP->instanceFunc(&idArray, objectP);
-    if (nbId == LWM2M_MAX_ID) return COAP_500_INTERNAL_SERVER_ERROR;
-
     result = COAP_202_DELETED;
 
     for (i = 0;
-         i < nbId && result == COAP_202_DELETED;
+         i < objectP->instanceCount && result == COAP_202_DELETED;
          i++)
     {
-        if (idArray[i] != instanceId)
+        if (objectP->instanceIDs[i] != instanceId)
         {
-            result = objectP->deleteFunc(idArray[i], objectP);
+            result = objectP->deleteFunc(objectP->instanceIDs[i], objectP);
         }
     }
 
@@ -336,8 +315,6 @@ bool object_isInstanceNew(lwm2m_context_t * contextP,
                           uint16_t instanceId)
 {
     lwm2m_object_t * targetP;
-    uint16_t * idArray;
-    uint16_t nbId;
     uint16_t i;
 
     LOG_ENTER_FUNC;
@@ -345,12 +322,9 @@ bool object_isInstanceNew(lwm2m_context_t * contextP,
     targetP = prv_find_object(contextP, objectId);
     if (targetP == NULL) return true;
 
-    nbId = targetP->instanceFunc(&idArray, targetP);
-    if (nbId == LWM2M_MAX_ID) return true;
-
-    for (i = 0; i < nbId ; i++)
+    for (i = 0; i < targetP->instanceCount ; i++)
     {
-        if (idArray[i] == instanceId)
+        if (targetP->instanceIDs[i] == instanceId)
         {
             return false;
         }
@@ -418,20 +392,15 @@ int prv_getRegisterPayload(lwm2m_context_t * contextP,
     {
         int start;
         int length;
-        uint16_t * idArray;
-        uint16_t nbId;
 
         if (contextP->objectList[i]->objID == LWM2M_SECURITY_OBJECT_ID) continue;
-
-        nbId = contextP->objectList[i]->instanceFunc(&idArray, contextP->objectList[i]);
-        if (nbId == LWM2M_MAX_ID) continue;
 
         start = index;
         length = prv_getObjectTemplate(buffer + index, bufferLen - index, contextP->objectList[i]->objID);
         if (length < 0) return 0;
         index += length;
 
-        if (nbId == 0)
+        if (contextP->objectList[i]->instanceCount == 0)
         {
             index--;
             result = utils_stringCopy(buffer + index, bufferLen - index, REG_PATH_END);
@@ -442,7 +411,7 @@ int prv_getRegisterPayload(lwm2m_context_t * contextP,
         {
             uint16_t j;
 
-            for (j = 0; j < nbId ; j++)
+            for (j = 0; j < contextP->objectList[i]->instanceCount ; j++)
             {
                 if (bufferLen - index <= length) return 0;
 
@@ -452,7 +421,7 @@ int prv_getRegisterPayload(lwm2m_context_t * contextP,
                     index += length;
                 }
 
-                result = utils_intCopy(buffer + index, bufferLen - index, idArray[j]);
+                result = utils_intCopy(buffer + index, bufferLen - index, contextP->objectList[i]->instanceIDs[j]);
                 if (result < 0) return 0;
                 index += result;
 
@@ -476,14 +445,9 @@ int prv_getRegisterPayload(lwm2m_context_t * contextP,
 static uint16_t prv_findServerInstance(lwm2m_object_t * objectP,
                                        uint16_t shortID)
 {
-    uint16_t * idArray;
-    uint16_t nbId;
     uint16_t i;
 
-    nbId = objectP->instanceFunc(&idArray, objectP);
-    if (nbId == LWM2M_MAX_ID) return LWM2M_MAX_ID;
-
-    for (i = 0 ; i < nbId ; i++)
+    for (i = 0 ; i < objectP->instanceCount ; i++)
     {
         int64_t value;
         lwm2m_data_t * dataP;
@@ -491,13 +455,13 @@ static uint16_t prv_findServerInstance(lwm2m_object_t * objectP,
 
         size = 1;
         dataP = lwm2m_data_new(size);
-        if (dataP == NULL) return NULL;
+        if (dataP == NULL) return LWM2M_MAX_ID;
         dataP->id = LWM2M_SERVER_SHORT_ID_ID;
 
-        if (objectP->readFunc(idArray[i], &size, &dataP, objectP) != COAP_205_CONTENT)
+        if (objectP->readFunc(objectP->instanceIDs[i], &size, &dataP, objectP) != COAP_205_CONTENT)
         {
             lwm2m_data_free(size, dataP);
-            return NULL;
+            return LWM2M_MAX_ID;
         }
 
         if (1 == lwm2m_data_decode_int(dataP, &value))
@@ -558,8 +522,6 @@ int object_getServers(lwm2m_context_t * contextP)
 {
     lwm2m_object_t * securityObjP = NULL;
     lwm2m_object_t * serverObjP = NULL;
-    uint16_t * idArray;
-    uint16_t nbId;
     int i;
 
     for (i = 0 ; i < contextP->numObject ; i++)
@@ -576,13 +538,10 @@ int object_getServers(lwm2m_context_t * contextP)
 
     if (NULL == securityObjP) return -1;
 
-    nbId = serverObjP->instanceFunc(&idArray, serverObjP);
-    if (nbId == LWM2M_MAX_ID) return -1;
-
-    for (i = 0 ; i < nbId ; i++)
+    for (i = 0 ; i < securityObjP->instanceCount ; i++)
     {
-        if (LWM2M_LIST_FIND(contextP->bootstrapServerList, idArray[i]) == NULL
-         && LWM2M_LIST_FIND(contextP->serverList, idArray[i]) == NULL)
+        if (LWM2M_LIST_FIND(contextP->bootstrapServerList, securityObjP->instanceIDs[i]) == NULL
+         && LWM2M_LIST_FIND(contextP->serverList, securityObjP->instanceIDs[i]) == NULL)
         {
             // This server is new. eg created by last bootstrap
 
@@ -599,7 +558,7 @@ int object_getServers(lwm2m_context_t * contextP)
             dataP[1].id = LWM2M_SECURITY_SHORT_SERVER_ID;
             dataP[2].id = LWM2M_SECURITY_HOLD_OFF_ID;
 
-            if (securityObjP->readFunc(idArray[i], &size, &dataP, securityObjP) != COAP_205_CONTENT)
+            if (securityObjP->readFunc(securityObjP->instanceIDs[i], &size, &dataP, securityObjP) != COAP_205_CONTENT)
             {
                 lwm2m_data_free(size, dataP);
                 return -1;
@@ -611,7 +570,7 @@ int object_getServers(lwm2m_context_t * contextP)
                 return -1;
             }
             memset(targetP, 0, sizeof(lwm2m_server_t));
-            targetP->secObjInstID = idArray[i];
+            targetP->secObjInstID = securityObjP->instanceIDs[i];
 
             if (0 == lwm2m_data_decode_bool(dataP + 0, &isBootstrap))
             {

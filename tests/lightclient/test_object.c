@@ -138,7 +138,7 @@ static uint8_t prv_read(uint16_t instanceId,
     prv_instance_t * targetP;
     int i;
 
-    targetP = (prv_instance_t *)lwm2m_list_find(objectP->instanceList, instanceId);
+    targetP = (prv_instance_t *)lwm2m_list_find(objectP->userData, instanceId);
     if (NULL == targetP) return COAP_404_NOT_FOUND;
 
     if (*numDataP == 0)
@@ -186,7 +186,7 @@ static uint8_t prv_write(uint16_t instanceId,
     prv_instance_t * targetP;
     int i;
 
-    targetP = (prv_instance_t *)lwm2m_list_find(objectP->instanceList, instanceId);
+    targetP = (prv_instance_t *)lwm2m_list_find(objectP->userData, instanceId);
     if (NULL == targetP) return COAP_404_NOT_FOUND;
 
     for (i = 0 ; i < numData ; i++)
@@ -235,11 +235,35 @@ static uint8_t prv_delete(uint16_t id,
                           lwm2m_object_t * objectP)
 {
     prv_instance_t * targetP;
+    uint16_t * newIDs;
 
-    objectP->instanceList = lwm2m_list_remove(objectP->instanceList, id, (lwm2m_list_t **)&targetP);
+    objectP->userData = lwm2m_list_remove(objectP->userData, id, (lwm2m_list_t **)&targetP);
     if (NULL == targetP) return COAP_404_NOT_FOUND;
 
+    if (objectP->instanceCount > 1)
+    {
+        uint16_t i, j;
+
+        newIDs = (uint16_t *)lwm2m_malloc((objectP->instanceCount - 1) * sizeof(uint16_t));
+        if (newIDs == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
+        for (i = j = 0 ; i < objectP->instanceCount ; i++)
+        {
+            if (objectP->instanceIDs[i] != id)
+            {
+                newIDs[j] = objectP->instanceIDs[i];
+                j++;
+            }
+        }
+    }
+    else
+    {
+        newIDs = NULL;
+    }
+
     lwm2m_free(targetP);
+    lwm2m_free(objectP->instanceIDs);
+    objectP->instanceIDs = newIDs;
+    objectP->instanceCount--;
 
     return COAP_202_DELETED;
 }
@@ -251,14 +275,23 @@ static uint8_t prv_create(uint16_t instanceId,
 {
     prv_instance_t * targetP;
     uint8_t result;
-
+    uint16_t * newIDs;
 
     targetP = (prv_instance_t *)lwm2m_malloc(sizeof(prv_instance_t));
     if (NULL == targetP) return COAP_500_INTERNAL_SERVER_ERROR;
     memset(targetP, 0, sizeof(prv_instance_t));
 
     targetP->shortID = instanceId;
-    objectP->instanceList = LWM2M_LIST_ADD(objectP->instanceList, targetP);
+    objectP->userData = LWM2M_LIST_ADD(objectP->userData, targetP);
+
+    newIDs = (uint16_t *)lwm2m_malloc((objectP->instanceCount + 1) * sizeof(uint16_t));
+    if (newIDs == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
+    if (objectP->instanceCount > 0)
+    {
+        memcpy(newIDs, objectP->instanceIDs, objectP->instanceCount);
+        lwm2m_free(objectP->instanceIDs);
+    }
+    objectP->instanceIDs = newIDs;
 
     result = prv_write(instanceId, numData, dataArray, objectP);
 
@@ -281,7 +314,7 @@ static uint8_t prv_exec(uint16_t instanceId,
                         lwm2m_object_t * objectP)
 {
 
-    if (NULL == lwm2m_list_find(objectP->instanceList, instanceId)) return COAP_404_NOT_FOUND;
+    if (NULL == lwm2m_list_find(objectP->userData, instanceId)) return COAP_404_NOT_FOUND;
 
     switch (resourceId)
     {
@@ -314,6 +347,16 @@ lwm2m_object_t * get_test_object(void)
         prv_instance_t * targetP;
 
         memset(testObj, 0, sizeof(lwm2m_object_t));
+        testObj->instanceIDs = lwm2m_malloc( 3 * sizeof(uint16_t));
+        if (NULL != testObj->instanceIDs)
+        {
+            testObj->instanceCount = 3;
+        }
+        else
+        {
+            lwm2m_free(testObj);
+            return NULL;
+        }
 
         testObj->objID = 1024;
         for (i=0 ; i < 3 ; i++)
@@ -325,7 +368,8 @@ lwm2m_object_t * get_test_object(void)
             targetP->test    = 20 + i;
             targetP->dec     = -30 + i + (double)i/100.0;
             targetP->sig     = 0 - i;
-            testObj->instanceList = LWM2M_LIST_ADD(testObj->instanceList, targetP);
+            testObj->userData = LWM2M_LIST_ADD(testObj->userData, targetP);
+            testObj->instanceIDs[i] = targetP->shortID;
         }
         /*
          * From a single instance object, two more functions are available.
@@ -346,11 +390,7 @@ lwm2m_object_t * get_test_object(void)
 
 void free_test_object(lwm2m_object_t * object)
 {
-    LWM2M_LIST_FREE(object->instanceList);
-    if (object->userData != NULL)
-    {
-        lwm2m_free(object->userData);
-        object->userData = NULL;
-    }
+    LWM2M_LIST_FREE(object->userData);
+    if (object->instanceIDs != NULL) lwm2m_free(object->instanceIDs);
     lwm2m_free(object);
 }

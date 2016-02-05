@@ -156,7 +156,7 @@ static uint8_t prv_security_read(uint16_t instanceId,
     uint8_t result;
     int i;
 
-    targetP = (security_instance_t *)lwm2m_list_find(objectP->instanceList, instanceId);
+    targetP = (security_instance_t *)lwm2m_list_find(objectP->userData, instanceId);
     if (NULL == targetP) return COAP_404_NOT_FOUND;
 
     // is the server asking for the full instance ?
@@ -216,6 +216,18 @@ lwm2m_object_t * get_security_object()
             lwm2m_free(securityObj);
             return NULL;
         }
+        securityObj->instanceIDs = lwm2m_malloc(sizeof(uint16_t));
+        if (NULL != securityObj->instanceIDs)
+        {
+            *securityObj->instanceIDs = 0;
+            securityObj->instanceCount = 1;
+        }
+        else
+        {
+            lwm2m_free(targetP);
+            lwm2m_free(securityObj);
+            return NULL;
+        }
 
         memset(targetP, 0, sizeof(security_instance_t));
         targetP->instanceId = 0;
@@ -224,7 +236,7 @@ lwm2m_object_t * get_security_object()
         targetP->shortID = 123;
         targetP->clientHoldOffTime = 10;
 
-        securityObj->instanceList = LWM2M_LIST_ADD(securityObj->instanceList, targetP);
+        securityObj->userData = LWM2M_LIST_ADD(securityObj->userData, targetP);
 
         securityObj->readFunc = prv_security_read;
     }
@@ -234,23 +246,24 @@ lwm2m_object_t * get_security_object()
 
 void free_security_object(lwm2m_object_t * objectP)
 {
-    while (objectP->instanceList != NULL)
+    while (objectP->userData != NULL)
     {
-        security_instance_t * securityInstance = (security_instance_t *)objectP->instanceList;
-        objectP->instanceList = objectP->instanceList->next;
+        security_instance_t * securityInstance = (security_instance_t *)objectP->userData;
+        objectP->userData = ((lwm2m_list_t *)objectP->userData)->next;
         if (NULL != securityInstance->uri)
         {
             lwm2m_free(securityInstance->uri);
         }
         lwm2m_free(securityInstance);
     }
+    if (objectP->instanceIDs != NULL) lwm2m_free(objectP->instanceIDs);
     lwm2m_free(objectP);
 }
 
 char * get_server_uri(lwm2m_object_t * objectP,
                       uint16_t secObjInstID)
 {
-    security_instance_t * targetP = (security_instance_t *)LWM2M_LIST_FIND(objectP->instanceList, secObjInstID);
+    security_instance_t * targetP = (security_instance_t *)LWM2M_LIST_FIND(objectP->userData, secObjInstID);
 
     if (NULL != targetP)
     {

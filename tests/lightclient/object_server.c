@@ -100,7 +100,7 @@ static uint8_t prv_server_read(uint16_t instanceId,
     uint8_t result;
     int i;
 
-    targetP = (server_instance_t *)lwm2m_list_find(objectP->instanceList, instanceId);
+    targetP = (server_instance_t *)lwm2m_list_find(objectP->userData, instanceId);
     if (NULL == targetP) return COAP_404_NOT_FOUND;
 
     // is the server asking for the full instance ?
@@ -167,7 +167,7 @@ static uint8_t prv_server_write(uint16_t instanceId,
     int i;
     uint8_t result;
 
-    targetP = (server_instance_t *)lwm2m_list_find(objectP->instanceList, instanceId);
+    targetP = (server_instance_t *)lwm2m_list_find(objectP->userData, instanceId);
     if (NULL == targetP)
     {
         return COAP_404_NOT_FOUND;
@@ -261,7 +261,7 @@ static uint8_t prv_server_execute(uint16_t instanceId,
 {
     server_instance_t * targetP;
 
-    targetP = (server_instance_t *)lwm2m_list_find(objectP->instanceList, instanceId);
+    targetP = (server_instance_t *)lwm2m_list_find(objectP->userData, instanceId);
     if (NULL == targetP) return COAP_404_NOT_FOUND;
 
     switch (resourceId)
@@ -283,11 +283,35 @@ static uint8_t prv_server_delete(uint16_t id,
                                  lwm2m_object_t * objectP)
 {
     server_instance_t * serverInstance;
+    uint16_t * newIDs;
 
-    objectP->instanceList = lwm2m_list_remove(objectP->instanceList, id, (lwm2m_list_t **)&serverInstance);
+    if (objectP->instanceCount > 1)
+    {
+        uint16_t i, j;
+
+        newIDs = (uint16_t *)lwm2m_malloc((objectP->instanceCount - 1) * sizeof(uint16_t));
+        if (newIDs == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
+        for (i = j = 0 ; i < objectP->instanceCount ; i++)
+        {
+            if (objectP->instanceIDs[i] != id)
+            {
+                newIDs[j] = objectP->instanceIDs[i];
+                j++;
+            }
+        }
+    }
+    else
+    {
+        newIDs = NULL;
+    }
+
+    objectP->userData = lwm2m_list_remove(objectP->userData, id, (lwm2m_list_t **)&serverInstance);
     if (NULL == serverInstance) return COAP_404_NOT_FOUND;
 
     lwm2m_free(serverInstance);
+    lwm2m_free(objectP->instanceIDs);
+    objectP->instanceIDs = newIDs;
+    objectP->instanceCount--;
 
     return COAP_202_DELETED;
 }
@@ -299,13 +323,23 @@ static uint8_t prv_server_create(uint16_t instanceId,
 {
     server_instance_t * serverInstance;
     uint8_t result;
+    uint16_t * newIDs;
 
     serverInstance = (server_instance_t *)lwm2m_malloc(sizeof(server_instance_t));
     if (NULL == serverInstance) return COAP_500_INTERNAL_SERVER_ERROR;
     memset(serverInstance, 0, sizeof(server_instance_t));
 
     serverInstance->instanceId = instanceId;
-    objectP->instanceList = LWM2M_LIST_ADD(objectP->instanceList, serverInstance);
+    objectP->userData = LWM2M_LIST_ADD(objectP->userData, serverInstance);
+
+    newIDs = (uint16_t *)lwm2m_malloc((objectP->instanceCount + 1) * sizeof(uint16_t));
+    if (newIDs == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
+    if (objectP->instanceCount > 0)
+    {
+        memcpy(newIDs, objectP->instanceIDs, objectP->instanceCount);
+        lwm2m_free(objectP->instanceIDs);
+    }
+    objectP->instanceIDs = newIDs;
 
     result = prv_server_write(instanceId, numData, dataArray, objectP);
 
@@ -342,6 +376,18 @@ lwm2m_object_t * get_server_object()
             lwm2m_free(serverObj);
             return NULL;
         }
+        serverObj->instanceIDs = lwm2m_malloc(sizeof(uint16_t));
+        if (NULL != serverObj->instanceIDs)
+        {
+            *serverObj->instanceIDs = 0;
+            serverObj->instanceCount = 1;
+        }
+        else
+        {
+            lwm2m_free(serverInstance);
+            lwm2m_free(serverObj);
+            return NULL;
+        }
 
         memset(serverInstance, 0, sizeof(server_instance_t));
         serverInstance->instanceId = 0;
@@ -349,7 +395,7 @@ lwm2m_object_t * get_server_object()
         serverInstance->lifetime = 300;
         serverInstance->storing = false;
         serverInstance->binding[0] = 'U';
-        serverObj->instanceList = LWM2M_LIST_ADD(serverObj->instanceList, serverInstance);
+        serverObj->userData = LWM2M_LIST_ADD(serverObj->userData, serverInstance);
 
         serverObj->readFunc = prv_server_read;
         serverObj->writeFunc = prv_server_write;
@@ -363,11 +409,12 @@ lwm2m_object_t * get_server_object()
 
 void free_server_object(lwm2m_object_t * object)
 {
-    while (object->instanceList != NULL)
+    while (object->userData != NULL)
     {
-        server_instance_t * serverInstance = (server_instance_t *)object->instanceList;
-        object->instanceList = object->instanceList->next;
+        server_instance_t * serverInstance = (server_instance_t *)object->userData;
+        object->userData = serverInstance->next;
         lwm2m_free(serverInstance);
     }
+    if (object->instanceIDs != NULL) lwm2m_free(object->instanceIDs);
     lwm2m_free(object);
 }
