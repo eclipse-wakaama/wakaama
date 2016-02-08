@@ -127,7 +127,6 @@ static lwm2m_watcher_t * prv_getWatcher(lwm2m_context_t * contextP,
         allocatedObserver = true;
         memset(observedP, 0, sizeof(lwm2m_observed_t));
         memcpy(&(observedP->uri), uriP, sizeof(lwm2m_uri_t));
-        observedP->update = false;
         observedP->next = contextP->observedList;
         contextP->observedList = observedP;
     }
@@ -179,6 +178,7 @@ coap_status_t handle_observe_request(lwm2m_context_t * contextP,
         watcherP->tokenLen = message->token_len;
         memcpy(watcherP->token, message->token, message->token_len);
         watcherP->active = true;
+        watcherP->lastTime = lwm2m_gettime();
 
         coap_set_header_observe(response, watcherP->counter++);
 
@@ -358,7 +358,12 @@ void lwm2m_resource_value_changed(lwm2m_context_t * contextP,
                  || (targetP->uri.flag & LWM2M_URI_FLAG_RESOURCE_ID) == 0
                  || uriP->resourceId == targetP->uri.resourceId)
                 {
-                    targetP->update = true;
+                    lwm2m_watcher_t * watcherP;
+
+                    for (watcherP = targetP->watcherList ; watcherP != NULL ; watcherP = watcherP->next)
+                    {
+                        if ( watcherP->active == true) watcherP->update = true;
+                    }
                 }
             }
         }
@@ -374,36 +379,81 @@ void observation_step(lwm2m_context_t * contextP,
 
     for (targetP = contextP->observedList ; targetP != NULL ; targetP = targetP->next)
     {
-        if (targetP->update == true)
+        lwm2m_watcher_t * watcherP;
+        uint8_t * buffer = NULL;
+        size_t length = 0;
+        lwm2m_media_type_t format = LWM2M_CONTENT_TEXT;
+        coap_packet_t message[1];
+        time_t interval;
+
+        for (watcherP = targetP->watcherList ; watcherP != NULL ; watcherP = watcherP->next)
         {
-            uint8_t * buffer = NULL;
-            size_t length = 0;
-            lwm2m_media_type_t format;
-
-            format = LWM2M_CONTENT_TEXT;
-            if (COAP_205_CONTENT == object_read(contextP, &targetP->uri, &format, &buffer, &length))
+            if (watcherP->active == true)
             {
-                lwm2m_watcher_t * watcherP;
-                coap_packet_t message[1];
-
-                coap_init_message(message, COAP_TYPE_NON, COAP_205_CONTENT, 0);
-                coap_set_header_content_type(message, format);
-                coap_set_payload(message, buffer, length);
-
-                for (watcherP = targetP->watcherList ; watcherP != NULL ; watcherP = watcherP->next)
+                if (watcherP->update == true)
                 {
-                    if (watcherP->active == true)
+                    if (watcherP->parameters != NULL
+                     && (watcherP->parameters->toSet & LWM2M_ATTR_FLAG_MIN_PERIOD) != 0
+                     && watcherP->lastTime + watcherP->parameters->minPeriod > currentTime)
                     {
+                        interval = watcherP->lastTime + watcherP->parameters->minPeriod - currentTime;
+                        if (*timeoutP > interval) *timeoutP = interval;
+                    }
+                    else
+                    {
+                        if (buffer == NULL)
+                        {
+                            if (COAP_205_CONTENT == object_read(contextP, &targetP->uri, &format, &buffer, &length))
+                            {
+                                coap_init_message(message, COAP_TYPE_NON, COAP_205_CONTENT, 0);
+                                coap_set_header_content_type(message, format);
+                                coap_set_payload(message, buffer, length);
+                            }
+                            else
+                            {
+                                buffer = NULL;
+                                break;
+                            }
+                        }
+                        watcherP->lastTime = currentTime;
+                        watcherP->lastMid = contextP->nextMID++;
+                        message->mid = watcherP->lastMid;
+                        coap_set_header_token(message, watcherP->token, watcherP->tokenLen);
+                        coap_set_header_observe(message, watcherP->counter++);
+                        (void)message_send(contextP, message, watcherP->server->sessionH);
+                        watcherP->update = false;
+                    }
+                }
+                if (watcherP->parameters != NULL
+                 && (watcherP->parameters->toSet & LWM2M_ATTR_FLAG_MAX_PERIOD) != 0)
+                {
+                    if (watcherP->lastTime + watcherP->parameters->maxPeriod <= currentTime)
+                    {
+                        if (buffer == NULL)
+                        {
+                            if (COAP_205_CONTENT == object_read(contextP, &targetP->uri, &format, &buffer, &length))
+                            {
+                                coap_init_message(message, COAP_TYPE_NON, COAP_205_CONTENT, 0);
+                                coap_set_header_content_type(message, format);
+                                coap_set_payload(message, buffer, length);
+                            }
+                            else
+                            {
+                                buffer = NULL;
+                                break;
+                            }
+                        }
+                        watcherP->lastTime = currentTime;
                         watcherP->lastMid = contextP->nextMID++;
                         message->mid = watcherP->lastMid;
                         coap_set_header_token(message, watcherP->token, watcherP->tokenLen);
                         coap_set_header_observe(message, watcherP->counter++);
                         (void)message_send(contextP, message, watcherP->server->sessionH);
                     }
+                    interval = watcherP->lastTime + watcherP->parameters->maxPeriod - currentTime;
+                    if (*timeoutP > interval) *timeoutP = interval;
                 }
             }
-
-            targetP->update = false;
         }
     }
 }

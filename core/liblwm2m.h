@@ -550,10 +550,12 @@ typedef struct _lwm2m_watcher_
     struct _lwm2m_watcher_ * next;
 
     bool active;
+    bool update;
     lwm2m_server_t * server;
     lwm2m_attributes_t * parameters;
     uint8_t token[8];
     size_t tokenLen;
+    time_t lastTime;
     uint32_t counter;
     uint16_t lastMid;
 } lwm2m_watcher_t;
@@ -563,7 +565,6 @@ typedef struct _lwm2m_observed_
     struct _lwm2m_observed_ * next;
 
     lwm2m_uri_t uri;
-    bool update;
     lwm2m_watcher_t * watcherList;
 } lwm2m_observed_t;
 
