@@ -455,6 +455,7 @@ void observation_step(lwm2m_context_t * contextP,
                 }
             }
         }
+        if (buffer != NULL) lwm2m_free(buffer);
     }
 }
 
