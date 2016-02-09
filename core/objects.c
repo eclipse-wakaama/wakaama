@@ -145,16 +145,13 @@ uint8_t object_checkNumeric(lwm2m_context_t * contextP,
     return result;
 }
 
-coap_status_t object_read(lwm2m_context_t * contextP,
-                          lwm2m_uri_t * uriP,
-                          lwm2m_media_type_t * formatP,
-                          uint8_t ** bufferP,
-                          size_t * lengthP)
+coap_status_t object_data_read(lwm2m_context_t * contextP,
+                               lwm2m_uri_t * uriP,
+                               int * sizeP,
+                               lwm2m_data_t ** dataP)
 {
     coap_status_t result;
     lwm2m_object_t * targetP;
-    lwm2m_data_t * dataP = NULL;
-    int size = 0;
 
     targetP = prv_find_object(contextP, uriP->objectId);
     if (NULL == targetP) return NOT_FOUND_4_04;
@@ -182,33 +179,26 @@ coap_status_t object_read(lwm2m_context_t * contextP,
             lwm2m_list_t * instanceP;
             int i;
 
-            size = 0;
+            *sizeP = 0;
             for (instanceP = targetP->instanceList; instanceP != NULL ; instanceP = instanceP->next)
             {
-                size++;
+                (*sizeP)++;
             }
 
-            dataP = lwm2m_data_new(size);
-            if (dataP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
+            *dataP = lwm2m_data_new(*sizeP);
+            if (*dataP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
 
             result = COAP_205_CONTENT;
             instanceP = targetP->instanceList;
             i = 0;
             while (instanceP != NULL && result == COAP_205_CONTENT)
             {
-                result = targetP->readFunc(instanceP->id, (int*)&(dataP[i].length), (lwm2m_data_t **)&(dataP[i].value), targetP);
-                dataP[i].type = LWM2M_TYPE_OBJECT_INSTANCE;
-                dataP[i].id = instanceP->id;
+                result = targetP->readFunc(instanceP->id, (int*)&((*dataP)[i].length), (lwm2m_data_t **)&((*dataP)[i].value), targetP);
+                (*dataP)[i].type = LWM2M_TYPE_OBJECT_INSTANCE;
+                (*dataP)[i].id = instanceP->id;
                 i++;
                 instanceP = instanceP->next;
             }
-
-            if (result == COAP_205_CONTENT)
-            {
-                *lengthP = lwm2m_data_serialize(size, dataP, formatP, bufferP);
-                if (*lengthP == 0) result = COAP_500_INTERNAL_SERVER_ERROR;
-            }
-            lwm2m_data_free(size, dataP);
 
             return result;
         }
@@ -217,15 +207,32 @@ coap_status_t object_read(lwm2m_context_t * contextP,
     // single instance read
     if (LWM2M_URI_IS_SET_RESOURCE(uriP))
     {
-        size = 1;
-        dataP = lwm2m_data_new(size);
-        if (dataP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
+        *sizeP = 1;
+        *dataP = lwm2m_data_new(*sizeP);
+        if (*dataP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
 
-        dataP->type = LWM2M_TYPE_RESOURCE;
-        dataP->flags = LWM2M_TLV_FLAG_TEXT_FORMAT;
-        dataP->id = uriP->resourceId;
+        (*dataP)->type = LWM2M_TYPE_RESOURCE;
+        (*dataP)->flags = LWM2M_TLV_FLAG_TEXT_FORMAT;
+        (*dataP)->id = uriP->resourceId;
     }
-    result = targetP->readFunc(uriP->instanceId, &size, &dataP, targetP);
+    result = targetP->readFunc(uriP->instanceId, sizeP, dataP, targetP);
+
+    return result;
+}
+
+coap_status_t object_read(lwm2m_context_t * contextP,
+                          lwm2m_uri_t * uriP,
+                          lwm2m_media_type_t * formatP,
+                          uint8_t ** bufferP,
+                          size_t * lengthP)
+{
+    coap_status_t result;
+    lwm2m_object_t * targetP;
+    lwm2m_data_t * dataP = NULL;
+    int size = 0;
+
+    result = object_data_read(contextP, uriP, &size, &dataP);
+
     if (result == COAP_205_CONTENT)
     {
         if (size == 1
