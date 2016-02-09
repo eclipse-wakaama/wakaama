@@ -183,7 +183,8 @@ void handle_value_changed(lwm2m_context_t * lwm2mH,
     }
 }
 
-static void * prv_connect_server(uint16_t secObjInstID, void * userData)
+void * lwm2m_connect_server(uint16_t secObjInstID,
+                            void * userData)
 {
     client_data_t * dataP;
     char * uri;
@@ -235,29 +236,6 @@ static void * prv_connect_server(uint16_t secObjInstID, void * userData)
 exit:
     lwm2m_free(uri);
     return (void *)newConnP;
-}
-
-static uint8_t prv_buffer_send(void * sessionH,
-                               uint8_t * buffer,
-                               size_t length,
-                               void * userdata)
-{
-    connection_t * connP = (connection_t*) sessionH;
-
-    if (connP == NULL)
-    {
-        fprintf(stderr, "#> failed sending %lu bytes, missing connection\r\n", length);
-        return COAP_500_INTERNAL_SERVER_ERROR ;
-    }
-
-    if (-1 == connection_send(connP, buffer, length))
-    {
-        fprintf(stderr, "#> failed sending %lu bytes\r\n", length);
-        return COAP_500_INTERNAL_SERVER_ERROR ;
-    }
-    conn_s_updateTxStatistic(objArray[7], (uint16_t)length, false);
-    fprintf(stderr, "#> sent %lu bytes\r\n", length);
-    return COAP_NO_ERROR;
 }
 
 static void prv_output_servers(char * buffer,
@@ -938,7 +916,7 @@ int main(int argc, char *argv[])
      * The liblwm2m library is now initialized with the functions that will be in
      * charge of communication
      */
-    lwm2mH = lwm2m_init(prv_connect_server, prv_buffer_send, &data);
+    lwm2mH = lwm2m_init(&data);
     if (NULL == lwm2mH)
     {
         fprintf(stderr, "lwm2m_init() failed\r\n");

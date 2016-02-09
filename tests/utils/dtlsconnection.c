@@ -546,3 +546,32 @@ int connection_handle_packet(dtls_connection_t *connP, uint8_t * buffer, size_t 
         return 0;
     }
 }
+
+uint8_t lwm2m_buffer_send(void * sessionH,
+                          uint8_t * buffer,
+                          size_t length,
+                          void * userdata)
+{
+    dtls_connection_t * connP = (dtls_connection_t*) sessionH;
+
+    if (connP == NULL)
+    {
+        fprintf(stderr, "#> failed sending %lu bytes, missing connection\r\n", length);
+        return COAP_500_INTERNAL_SERVER_ERROR ;
+    }
+
+    if (-1 == connection_send(connP, buffer, length))
+    {
+        fprintf(stderr, "#> failed sending %lu bytes\r\n", length);
+        return COAP_500_INTERNAL_SERVER_ERROR ;
+    }
+
+    return COAP_NO_ERROR;
+}
+
+bool lwm2m_session_is_equal(void * session1,
+                            void * session2,
+                            void * userData)
+{
+    return (session1 == session2);
+}

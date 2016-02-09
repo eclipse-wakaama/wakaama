@@ -107,6 +107,23 @@ int lwm2m_snprintf(char * str, size_t size, const char * format, ...);
 void lwm2m_printf(const char * format, ...);
 #endif
 
+// communication layer
+#ifdef LWM2M_CLIENT_MODE
+// Returns a session handle that MUST uniquely identify a peer.
+// secObjInstID: ID of the Securty Object instance to open a connection to
+// userData: parameter to lwm2m_init()
+void * lwm2m_connect_server(uint16_t secObjInstID, void * userData);
+#endif
+// Send data to a peer
+// Returns COAP_NO_ERROR or a COAP_NNN error code
+// sessionH: session handle identifying the peer (opaque to the core)
+// buffer, length: data to send
+// userData: parameter to lwm2m_init()
+uint8_t lwm2m_buffer_send(void * sessionH, uint8_t * buffer, size_t length, void * userData);
+// Compare two session handles
+// Returns true if the two sessions identify the same peer. false otherwise.
+// userData: parameter to lwm2m_init()
+bool lwm2m_session_is_equal(void * session1, void * session2, void * userData);
 
 /*
  * Error code
@@ -581,11 +598,6 @@ typedef enum
  * LWM2M Context
  */
 
-// The session handle MUST uniquely identify a peer.
-typedef void * (*lwm2m_connect_server_callback_t)(uint16_t secObjInstID, void * userData);
-// The session handle MUST uniquely identify a peer.
-typedef uint8_t (*lwm2m_buffer_send_callback_t)(void * sessionH, uint8_t * buffer, size_t length, void * userData);
-
 #ifdef LWM2M_BOOTSTRAP_SERVER_MODE
 // In all the following APIs, the session handle MUST uniquely identify a peer.
 
@@ -621,15 +633,12 @@ typedef struct
 #endif
     uint16_t                nextMID;
     lwm2m_transaction_t *   transactionList;
-    // communication layer callbacks
-    lwm2m_connect_server_callback_t connectCallback;
-    lwm2m_buffer_send_callback_t    bufferSendCallback;
-    void *                          userData;
+    void *                  userData;
 } lwm2m_context_t;
 
 
 // initialize a liblwm2m context.
-lwm2m_context_t * lwm2m_init(lwm2m_connect_server_callback_t connectCallback, lwm2m_buffer_send_callback_t bufferSendCallback, void * userData);
+lwm2m_context_t * lwm2m_init(void * userData);
 // close a liblwm2m context.
 void lwm2m_close(lwm2m_context_t * contextP);
 

@@ -69,20 +69,6 @@ typedef struct
 
 static int g_quit = 0;
 
-static uint8_t prv_buffer_send(void * sessionH,
-                               uint8_t * buffer,
-                               size_t length,
-                               void * userdata)
-{
-    connection_t * connP = (connection_t*) sessionH;
-
-    if (-1 == connection_send(connP, buffer, length))
-    {
-        return COAP_500_INTERNAL_SERVER_ERROR;
-    }
-    return COAP_NO_ERROR;
-}
-
 static void prv_quit(char * buffer,
                      void * user_data)
 {
@@ -530,7 +516,7 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    data.lwm2mH = lwm2m_init(NULL, prv_buffer_send, NULL);
+    data.lwm2mH = lwm2m_init(NULL);
     if (NULL == data.lwm2mH)
     {
         fprintf(stderr, "lwm2m_init() failed\r\n");

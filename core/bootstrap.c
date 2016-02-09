@@ -94,7 +94,7 @@ static void bootstrap_initiating_request(lwm2m_context_t * context,
 
     if (bootstrapServer->sessionH == NULL)
     {
-        bootstrapServer->sessionH = context->connectCallback(bootstrapServer->secObjInstID, context->userData);
+        bootstrapServer->sessionH = lwm2m_connect_server(bootstrapServer->secObjInstID, context->userData);
     }
 
     if (bootstrapServer->sessionH != NULL)
@@ -212,7 +212,7 @@ void bootstrap_start(lwm2m_context_t * contextP)
         targetP->status = STATE_DEREGISTERED;
         if (targetP->sessionH == NULL)
         {
-            targetP->sessionH = contextP->connectCallback(targetP->secObjInstID, contextP->userData);
+            targetP->sessionH = lwm2m_connect_server(targetP->secObjInstID, contextP->userData);
         }
         targetP = targetP->next;
     }
