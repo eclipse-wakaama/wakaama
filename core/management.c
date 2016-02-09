@@ -105,7 +105,6 @@ static int prv_readAttributes(multi_option_t * query,
             if (query->len == ATTR_GREATER_THAN_LEN) return -1;
 
             if (1 != lwm2m_PlainTextToFloat64(query->data + ATTR_GREATER_THAN_LEN, query->len - ATTR_GREATER_THAN_LEN, &floatValue)) return -1;
-            if (floatValue < 0) return -1;
 
             attrP->toSet |= LWM2M_ATTR_FLAG_GREATER_THAN;
             attrP->greaterThan = floatValue;
@@ -123,7 +122,6 @@ static int prv_readAttributes(multi_option_t * query,
             if (query->len == ATTR_LESS_THAN_LEN) return -1;
 
             if (1 != lwm2m_PlainTextToFloat64(query->data + ATTR_LESS_THAN_LEN, query->len - ATTR_LESS_THAN_LEN, &floatValue)) return -1;
-            if (floatValue < 0) return -1;
 
             attrP->toSet |= LWM2M_ATTR_FLAG_LESS_THAN;
             attrP->lessThan = floatValue;
@@ -192,23 +190,36 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
             uint8_t * buffer = NULL;
             size_t length = 0;
 
-            result = object_read(contextP, uriP, &format, &buffer, &length);
-            if (COAP_205_CONTENT == result)
+            if (IS_OPTION(message, COAP_OPTION_OBSERVE))
             {
-                if (IS_OPTION(message, COAP_OPTION_OBSERVE))
-                {
-                    result = handle_observe_request(contextP, uriP, serverP, message, response);
-                }
+                lwm2m_data_t * dataP = NULL;
+                int size = 0;
+
+                result = object_data_read(contextP, uriP, &size, &dataP);
                 if (COAP_205_CONTENT == result)
                 {
-                    coap_set_header_content_type(response, format);
-                    coap_set_payload(response, buffer, length);
-                    // lwm2m_handle_packet will free buffer
+                    result = handle_observe_request(contextP, uriP, serverP, size, dataP, message, response);
+                    if (COAP_205_CONTENT == result)
+                    {
+                        length = lwm2m_data_serialize(size, dataP, &format, &buffer);
+                        if (length == 0) result = COAP_500_INTERNAL_SERVER_ERROR;
+                    }
+                    lwm2m_data_free(size, dataP);
                 }
-                else
-                {
-                    lwm2m_free(buffer);
-                }
+            }
+            else
+            {
+                result = object_read(contextP, uriP, &format, &buffer, &length);
+            }
+            if (COAP_205_CONTENT == result)
+            {
+                coap_set_header_content_type(response, format);
+                coap_set_payload(response, buffer, length);
+                // lwm2m_handle_packet will free buffer
+            }
+            else
+            {
+                lwm2m_free(buffer);
             }
         }
         break;

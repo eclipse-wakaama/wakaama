@@ -156,6 +156,8 @@ static lwm2m_watcher_t * prv_getWatcher(lwm2m_context_t * contextP,
 coap_status_t handle_observe_request(lwm2m_context_t * contextP,
                                      lwm2m_uri_t * uriP,
                                      lwm2m_server_t * serverP,
+                                     int size,
+                                     lwm2m_data_t * dataP,
                                      coap_packet_t * message,
                                      coap_packet_t * response)
 {
@@ -179,6 +181,21 @@ coap_status_t handle_observe_request(lwm2m_context_t * contextP,
         memcpy(watcherP->token, message->token, message->token_len);
         watcherP->active = true;
         watcherP->lastTime = lwm2m_gettime();
+
+        if (LWM2M_URI_IS_SET_RESOURCE(uriP))
+        {
+            switch (dataP->dataType)
+            {
+            case LWM2M_TYPE_INTEGER:
+                if (1 != lwm2m_data_decode_int(dataP, &(watcherP->lastValue.asInteger))) return COAP_500_INTERNAL_SERVER_ERROR;
+                break;
+            case LWM2M_TYPE_FLOAT:
+                if (1 != lwm2m_data_decode_float(dataP, &(watcherP->lastValue.asFloat))) return COAP_500_INTERNAL_SERVER_ERROR;
+                break;
+            default:
+                break;
+            }
+        }
 
         coap_set_header_observe(response, watcherP->counter++);
 
@@ -293,14 +310,14 @@ coap_status_t observe_set_parameters(lwm2m_context_t * contextP,
         }
         if (0 != (attrP->toSet & LWM2M_ATTR_FLAG_STEP))
         {
-            gt = attrP->step;
+            stp = attrP->step;
         }
         else
         {
-            gt = watcherP->parameters->step;
+            stp = watcherP->parameters->step;
         }
 
-        if (lt + (2 * stp) < gt) return COAP_400_BAD_REQUEST;
+        if (lt + (2 * stp) >= gt) return COAP_400_BAD_REQUEST;
     }
 
     if (watcherP->parameters == NULL)
@@ -382,79 +399,222 @@ void observation_step(lwm2m_context_t * contextP,
         lwm2m_watcher_t * watcherP;
         uint8_t * buffer = NULL;
         size_t length = 0;
+        lwm2m_data_t * dataP = NULL;
+        int size = 0;
+        double floatValue = 0;
+        int64_t integerValue = 0;
+        bool storeValue = false;
         lwm2m_media_type_t format = LWM2M_CONTENT_TEXT;
         coap_packet_t message[1];
         time_t interval;
 
+        if (LWM2M_URI_IS_SET_RESOURCE(&targetP->uri))
+        {
+            if (COAP_205_CONTENT != object_data_read(contextP, &targetP->uri, &size, &dataP)) continue;
+            switch (dataP->dataType)
+            {
+            case LWM2M_TYPE_INTEGER:
+                if (1 != lwm2m_data_decode_int(dataP, &integerValue)) continue;
+                storeValue = true;
+                break;
+            case LWM2M_TYPE_FLOAT:
+                if (1 != lwm2m_data_decode_float(dataP, &floatValue)) continue;
+                storeValue = true;
+                break;
+            default:
+                continue;
+            }
+        }
         for (watcherP = targetP->watcherList ; watcherP != NULL ; watcherP = watcherP->next)
         {
             if (watcherP->active == true)
             {
+                bool notify = false;
+
                 if (watcherP->update == true)
                 {
-                    if (watcherP->parameters != NULL
-                     && (watcherP->parameters->toSet & LWM2M_ATTR_FLAG_MIN_PERIOD) != 0
-                     && watcherP->lastTime + watcherP->parameters->minPeriod > currentTime)
+                    // value changed, should we notify the server ?
+
+                    if (watcherP->parameters == NULL || watcherP->parameters->toSet == 0)
                     {
-                        interval = watcherP->lastTime + watcherP->parameters->minPeriod - currentTime;
-                        if (*timeoutP > interval) *timeoutP = interval;
+                        // no conditions
+                        notify = true;
                     }
-                    else
+
+                    if (notify == false
+                     && watcherP->parameters != NULL
+                     && (watcherP->parameters->toSet & ATTR_FLAG_NUMERIC) != 0)
                     {
-                        if (buffer == NULL)
+                        if ((watcherP->parameters->toSet & LWM2M_ATTR_FLAG_LESS_THAN) != 0)
                         {
-                            if (COAP_205_CONTENT == object_read(contextP, &targetP->uri, &format, &buffer, &length))
+                            // Did we cross the lower treshold ?
+                            switch (dataP->dataType)
                             {
-                                coap_init_message(message, COAP_TYPE_NON, COAP_205_CONTENT, 0);
-                                coap_set_header_content_type(message, format);
-                                coap_set_payload(message, buffer, length);
-                            }
-                            else
-                            {
-                                buffer = NULL;
+                            case LWM2M_TYPE_INTEGER:
+                                if ((integerValue <= watcherP->parameters->lessThan
+                                  && watcherP->lastValue.asInteger > watcherP->parameters->lessThan)
+                                 || (integerValue >= watcherP->parameters->lessThan
+                                  && watcherP->lastValue.asInteger < watcherP->parameters->lessThan))
+                                {
+                                    notify = true;
+                                }
+                                break;
+                            case LWM2M_TYPE_FLOAT:
+                                if ((floatValue <= watcherP->parameters->lessThan
+                                  && watcherP->lastValue.asFloat > watcherP->parameters->lessThan)
+                                 || (floatValue >= watcherP->parameters->lessThan
+                                  && watcherP->lastValue.asFloat < watcherP->parameters->lessThan))
+                                {
+                                    notify = true;
+                                }
+                                break;
+                            default:
                                 break;
                             }
                         }
-                        watcherP->lastTime = currentTime;
-                        watcherP->lastMid = contextP->nextMID++;
-                        message->mid = watcherP->lastMid;
-                        coap_set_header_token(message, watcherP->token, watcherP->tokenLen);
-                        coap_set_header_observe(message, watcherP->counter++);
-                        (void)message_send(contextP, message, watcherP->server->sessionH);
-                        watcherP->update = false;
+                        if ((watcherP->parameters->toSet & LWM2M_ATTR_FLAG_GREATER_THAN) != 0)
+                        {
+                            // Did we cross the upper treshold ?
+                            switch (dataP->dataType)
+                            {
+                            case LWM2M_TYPE_INTEGER:
+                                if ((integerValue <= watcherP->parameters->greaterThan
+                                  && watcherP->lastValue.asInteger > watcherP->parameters->greaterThan)
+                                 || (integerValue >= watcherP->parameters->greaterThan
+                                  && watcherP->lastValue.asInteger < watcherP->parameters->greaterThan))
+                                {
+                                    notify = true;
+                                }
+                                break;
+                            case LWM2M_TYPE_FLOAT:
+                                if ((floatValue <= watcherP->parameters->greaterThan
+                                  && watcherP->lastValue.asFloat > watcherP->parameters->greaterThan)
+                                 || (floatValue >= watcherP->parameters->greaterThan
+                                  && watcherP->lastValue.asFloat < watcherP->parameters->greaterThan))
+                                {
+                                    notify = true;
+                                }
+                                break;
+                            default:
+                                break;
+                            }
+                        }
+                        if ((watcherP->parameters->toSet & LWM2M_ATTR_FLAG_STEP) != 0)
+                        {
+                            switch (dataP->dataType)
+                            {
+                            case LWM2M_TYPE_INTEGER:
+                            {
+                                int64_t diff;
+
+                                diff = integerValue - watcherP->lastValue.asInteger;
+                                if ((diff < 0 && (0 - diff) >= watcherP->parameters->step)
+                                 || (diff >= 0 && diff >= watcherP->parameters->step))
+                                {
+                                    notify = true;
+                                }
+                            }
+                                break;
+                            case LWM2M_TYPE_FLOAT:
+                            {
+                                double diff;
+
+                                diff = floatValue - watcherP->lastValue.asFloat;
+                                if ((diff < 0 && (0 - diff) >= watcherP->parameters->step)
+                                 || (diff >= 0 && diff >= watcherP->parameters->step))
+                                {
+                                    notify = true;
+                                }
+                            }
+                                break;
+                            default:
+                                break;
+                            }
+                        }
+                    }
+
+                    // Is the Maximum Period reached ?
+                    if (notify == false
+                     && watcherP->parameters != NULL
+                     && (watcherP->parameters->toSet & LWM2M_ATTR_FLAG_MAX_PERIOD) != 0)
+                    {
+                        if (watcherP->lastTime + watcherP->parameters->maxPeriod <= currentTime)
+                        {
+                            notify = true;
+                        }
+                    }
+
+                    if ((watcherP->parameters->toSet & LWM2M_ATTR_FLAG_MIN_PERIOD) != 0)
+                    {
+                        if (watcherP->lastTime + watcherP->parameters->minPeriod > currentTime)
+                        {
+                            // Minimum Period did not elapse yet
+                            interval = watcherP->lastTime + watcherP->parameters->minPeriod - currentTime;
+                            if (*timeoutP > interval) *timeoutP = interval;
+                            notify = false;
+                        }
+                        else
+                        {
+                            notify = true;
+                        }
                     }
                 }
-                if (watcherP->parameters != NULL
-                 && (watcherP->parameters->toSet & LWM2M_ATTR_FLAG_MAX_PERIOD) != 0)
+
+                if (notify == true)
                 {
-                    if (watcherP->lastTime + watcherP->parameters->maxPeriod <= currentTime)
+                    if (buffer == NULL)
                     {
-                        if (buffer == NULL)
+                        if (dataP != NULL)
                         {
-                            if (COAP_205_CONTENT == object_read(contextP, &targetP->uri, &format, &buffer, &length))
-                            {
-                                coap_init_message(message, COAP_TYPE_NON, COAP_205_CONTENT, 0);
-                                coap_set_header_content_type(message, format);
-                                coap_set_payload(message, buffer, length);
-                            }
-                            else
+                            length = lwm2m_data_serialize(size, dataP, &format, &buffer);
+                            if (length == 0) break;
+                        }
+                        else
+                        {
+                            if (COAP_205_CONTENT != object_read(contextP, &targetP->uri, &format, &buffer, &length))
                             {
                                 buffer = NULL;
                                 break;
                             }
                         }
-                        watcherP->lastTime = currentTime;
-                        watcherP->lastMid = contextP->nextMID++;
-                        message->mid = watcherP->lastMid;
-                        coap_set_header_token(message, watcherP->token, watcherP->tokenLen);
-                        coap_set_header_observe(message, watcherP->counter++);
-                        (void)message_send(contextP, message, watcherP->server->sessionH);
+                        coap_init_message(message, COAP_TYPE_NON, COAP_205_CONTENT, 0);
+                        coap_set_header_content_type(message, format);
+                        coap_set_payload(message, buffer, length);
                     }
+                    watcherP->lastTime = currentTime;
+                    watcherP->lastMid = contextP->nextMID++;
+                    message->mid = watcherP->lastMid;
+                    coap_set_header_token(message, watcherP->token, watcherP->tokenLen);
+                    coap_set_header_observe(message, watcherP->counter++);
+                    (void)message_send(contextP, message, watcherP->server->sessionH);
+                    watcherP->update = false;
+                }
+
+                // Store this value
+                if (notify == true && storeValue == true)
+                {
+                    switch (dataP->dataType)
+                    {
+                    case LWM2M_TYPE_INTEGER:
+                        watcherP->lastValue.asInteger = integerValue;
+                        break;
+                    case LWM2M_TYPE_FLOAT:
+                        watcherP->lastValue.asFloat = floatValue;
+                        break;
+                    default:
+                        break;
+                    }
+                }
+
+                if (watcherP->parameters != NULL && (watcherP->parameters->toSet & LWM2M_ATTR_FLAG_MAX_PERIOD) != 0)
+                {
+                    // update timers
                     interval = watcherP->lastTime + watcherP->parameters->maxPeriod - currentTime;
                     if (*timeoutP > interval) *timeoutP = interval;
                 }
             }
         }
+        if (dataP != NULL) lwm2m_data_free(size, dataP);
         if (buffer != NULL) lwm2m_free(buffer);
     }
 }

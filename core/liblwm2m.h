@@ -325,8 +325,8 @@ int lwm2m_opaqueToFloat(uint8_t * buffer, size_t buffer_len, double * dataP);
 #define LWM2M_URI_FLAG_INSTANCE_ID  (uint8_t)0x02
 #define LWM2M_URI_FLAG_RESOURCE_ID  (uint8_t)0x01
 
-#define LWM2M_URI_IS_SET_INSTANCE(uri) ((uri->flag & LWM2M_URI_FLAG_INSTANCE_ID) != 0)
-#define LWM2M_URI_IS_SET_RESOURCE(uri) ((uri->flag & LWM2M_URI_FLAG_RESOURCE_ID) != 0)
+#define LWM2M_URI_IS_SET_INSTANCE(uri) (((uri)->flag & LWM2M_URI_FLAG_INSTANCE_ID) != 0)
+#define LWM2M_URI_IS_SET_RESOURCE(uri) (((uri)->flag & LWM2M_URI_FLAG_RESOURCE_ID) != 0)
 
 typedef struct
 {
@@ -468,9 +468,9 @@ typedef struct
     uint8_t     toClear;
     uint32_t    minPeriod;
     uint32_t    maxPeriod;
-    float       greaterThan;
-    float       lessThan;
-    float       step;
+    double      greaterThan;
+    double      lessThan;
+    double      step;
 } lwm2m_attributes_t;
 
 /*
@@ -558,6 +558,11 @@ typedef struct _lwm2m_watcher_
     time_t lastTime;
     uint32_t counter;
     uint16_t lastMid;
+    union
+    {
+        int64_t asInteger;
+        double  asFloat;
+    } lastValue;
 } lwm2m_watcher_t;
 
 typedef struct _lwm2m_observed_

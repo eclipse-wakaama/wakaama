@@ -199,7 +199,7 @@ void transaction_step(lwm2m_context_t * contextP, time_t currentTime, time_t * t
 coap_status_t handle_dm_request(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_server_t * serverP, coap_packet_t * message, coap_packet_t * response);
 
 // defined in observe.c
-coap_status_t handle_observe_request(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_server_t * serverP, coap_packet_t * message, coap_packet_t * response);
+coap_status_t handle_observe_request(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_server_t * serverP, int size, lwm2m_data_t * dataP, coap_packet_t * message, coap_packet_t * response);
 void cancel_observe(lwm2m_context_t * contextP, uint16_t mid, void * fromSessionH);
 coap_status_t observe_set_parameters(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_server_t * serverP, lwm2m_attributes_t * attrP);
 void observation_step(lwm2m_context_t * contextP, time_t currentTime, time_t * timeoutP);
