@@ -203,7 +203,7 @@ coap_status_t handle_observe_request(lwm2m_context_t * contextP,
 
     case 1:
         // cancellation
-        cancel_observe(contextP, message->mid, serverP->sessionH);
+        cancel_observe(contextP, LWM2M_MAX_ID, serverP->sessionH);
         return COAP_205_CONTENT;
 
     default:
@@ -225,7 +225,7 @@ void cancel_observe(lwm2m_context_t * contextP,
     {
         lwm2m_watcher_t * targetP = NULL;
 
-        if (observedP->watcherList->lastMid == mid
+        if ((LWM2M_MAX_ID == mid || observedP->watcherList->lastMid == mid)
          && observedP->watcherList->server->sessionH == fromSessionH)
         {
             targetP = observedP->watcherList;
