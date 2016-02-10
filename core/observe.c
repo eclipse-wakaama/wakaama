@@ -533,17 +533,6 @@ void observation_step(lwm2m_context_t * contextP,
                         }
                     }
 
-                    // Is the Maximum Period reached ?
-                    if (notify == false
-                     && watcherP->parameters != NULL
-                     && (watcherP->parameters->toSet & LWM2M_ATTR_FLAG_MAX_PERIOD) != 0)
-                    {
-                        if (watcherP->lastTime + watcherP->parameters->maxPeriod <= currentTime)
-                        {
-                            notify = true;
-                        }
-                    }
-
                     if ((watcherP->parameters->toSet & LWM2M_ATTR_FLAG_MIN_PERIOD) != 0)
                     {
                         if (watcherP->lastTime + watcherP->parameters->minPeriod > currentTime)
@@ -557,6 +546,17 @@ void observation_step(lwm2m_context_t * contextP,
                         {
                             notify = true;
                         }
+                    }
+                }
+
+                // Is the Maximum Period reached ?
+                if (notify == false
+                 && watcherP->parameters != NULL
+                 && (watcherP->parameters->toSet & LWM2M_ATTR_FLAG_MAX_PERIOD) != 0)
+                {
+                    if (watcherP->lastTime + watcherP->parameters->maxPeriod <= currentTime)
+                    {
+                        notify = true;
                     }
                 }
 
