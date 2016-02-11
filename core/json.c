@@ -29,6 +29,7 @@
 #define JSON_MIN_ARRAY_LEN      21      // e":[{"n":"N","v":X}]}
 #define JSON_MIN_BASE_LEN        7      // n":"N",
 #define JSON_ITEM_MAX_SIZE      36      // with ten characters for value
+#define JSON_MIN_BX_LEN          5      // bt":1
 
 #define JSON_FALSE_STRING  "false"
 #define JSON_TRUE_STRING   "true"
@@ -80,7 +81,7 @@ typedef struct
     uint16_t    resId;
     uint16_t    resInstId;
     _type       type;
-    uint8_t *      value;
+    uint8_t *   value;
     size_t      valueLen;
 } _record_t;
 
@@ -567,82 +568,136 @@ int lwm2m_json_parse(uint8_t * buffer,
     bool eFound = false;
     bool bnFound = false;
     bool btFound = false;
+    int bnStart;
+    int bnLen;
 
     index = prv_skipSpace(buffer, bufferLen);
     if (index == bufferLen) return -1;
 
     if (buffer[index] != '{') return -1;
-    _GO_TO_NEXT_CHAR(index, buffer+index, bufferLen-index);
-    if (buffer[index] != '"') return -1;
-    if (index++ >= bufferLen) return -1;
-    switch (buffer[index])
+    do
     {
-    case 'e':
-    {
-        _record_t * recordArray;
-        int recordIndex;
-
-        if (eFound == true) return -1;
-        eFound = true;
-
-        if (bufferLen-index < JSON_MIN_ARRAY_LEN) return -1;
-        index++;
+        _GO_TO_NEXT_CHAR(index, buffer, bufferLen);
         if (buffer[index] != '"') return -1;
-        _GO_TO_NEXT_CHAR(index, buffer, bufferLen);
-        if (buffer[index] != ':') return -1;
-        _GO_TO_NEXT_CHAR(index, buffer, bufferLen);
-        if (buffer[index] != '[') return -1;
-        _GO_TO_NEXT_CHAR(index, buffer, bufferLen);
-        count = prv_countItems(buffer + index, bufferLen - index);
-        if (count <= 0) return -1;
-        recordArray = (_record_t*)lwm2m_malloc(count * sizeof(_record_t));
-        if (recordArray == NULL) return -1;
-        // at this point we are sure buffer[index] is '{' and all { and } are matching
-        recordIndex = 0;
-        while (recordIndex < count)
+        if (index++ >= bufferLen) return -1;
+        switch (buffer[index])
         {
-            int itemLen;
+        case 'e':
+        {
+            _record_t * recordArray;
+            int recordIndex;
 
-            if (buffer[index] != '{') return -1;
-            itemLen = 0;
-            while (buffer[index + itemLen] != '}') itemLen++;
-            if (0 != prv_parseItem(buffer + index + 1, itemLen - 1, recordArray + recordIndex))
+            if (bufferLen-index < JSON_MIN_ARRAY_LEN) return -1;
+            index++;
+            if (buffer[index] != '"') return -1;
+            if (eFound == true) return -1;
+            eFound = true;
+
+            _GO_TO_NEXT_CHAR(index, buffer, bufferLen);
+            if (buffer[index] != ':') return -1;
+            _GO_TO_NEXT_CHAR(index, buffer, bufferLen);
+            if (buffer[index] != '[') return -1;
+            _GO_TO_NEXT_CHAR(index, buffer, bufferLen);
+            count = prv_countItems(buffer + index, bufferLen - index);
+            if (count <= 0) return -1;
+            recordArray = (_record_t*)lwm2m_malloc(count * sizeof(_record_t));
+            if (recordArray == NULL) return -1;
+            // at this point we are sure buffer[index] is '{' and all { and } are matching
+            recordIndex = 0;
+            while (recordIndex < count)
+            {
+                int itemLen;
+
+                if (buffer[index] != '{') return -1;
+                itemLen = 0;
+                while (buffer[index + itemLen] != '}') itemLen++;
+                if (0 != prv_parseItem(buffer + index + 1, itemLen - 1, recordArray + recordIndex))
+                {
+                    lwm2m_free(recordArray);
+                    return -1;
+                }
+                recordIndex++;
+                index += itemLen;
+                _GO_TO_NEXT_CHAR(index, buffer, bufferLen);
+                switch (buffer[index])
+                {
+                case ',':
+                    _GO_TO_NEXT_CHAR(index, buffer, bufferLen);
+                    break;
+                case ']':
+                    if (recordIndex == count) break;
+                    // else this is an error
+                default:
+                    lwm2m_free(recordArray);
+                    return -1;
+                }
+            }
+            if (buffer[index] != ']')
             {
                 lwm2m_free(recordArray);
                 return -1;
             }
-            recordIndex++;
-            index += itemLen;
-            _GO_TO_NEXT_CHAR(index, buffer, bufferLen);
+            count = prv_convertRecord(recordArray, count, dataP);
+            lwm2m_free(recordArray);
+        }
+        break;
+
+        case 'b':
+            if (bufferLen-index < JSON_MIN_BX_LEN) return -1;
+            index++;
             switch (buffer[index])
             {
-            case ',':
-                _GO_TO_NEXT_CHAR(index, buffer, bufferLen);
+            case 't':
+                index++;
+                if (buffer[index] != '"') return -1;
+                if (btFound == true) return -1;
+                btFound = true;
+
+                // TODO: handle timed values
+                // temp: skip this token
+                while(index < bufferLen && buffer[index] != ',' && buffer[index] != '}') index++;
+                if (index == bufferLen) return -1;
+                index--;
+                // end temp
                 break;
-            case ']':
-                if (recordIndex == count) break;
-                // else this is an error
+            case 'n':
+                {
+                    int next;
+                    int tokenStart;
+                    int tokenLen;
+
+                    index++;
+                    if (buffer[index] != '"') return -1;
+                    if (bnFound == true) return -1;
+                    bnFound = true;
+                    index -= 3;
+                    next = prv_split(buffer+index, bufferLen-index, &tokenStart, &tokenLen, &bnStart, &bnLen);
+                    if (next < 0) return -1;
+                    bnStart += index;
+                    index += next - 1;
+                }
+                break;
             default:
-                lwm2m_free(recordArray);
                 return -1;
             }
-        }
-        if (buffer[index] != ']')
-        {
-            lwm2m_free(recordArray);
+            break;
+
+        default:
             return -1;
         }
-        count = prv_convertRecord(recordArray, count, dataP);
-        lwm2m_free(recordArray);
-    }
-    break;
 
-    case 'b':
-    default:
-        // TODO: support for basename and base time.
-        return 0;
-    }
+        _GO_TO_NEXT_CHAR(index, buffer, bufferLen);
+    } while (buffer[index] == ',');
 
+    if (buffer[index] != '}')
+    {
+        if (*dataP != NULL)
+        {
+            lwm2m_data_free(count, *dataP);
+            *dataP = NULL;
+        }
+        return -1;
+    }
     return count;
 }
 

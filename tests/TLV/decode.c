@@ -244,26 +244,35 @@ int main(int argc, char *argv[])
                          {\"n\":\"13\",\"v\":1367491215},                    \
                          {\"n\":\"14\",\"sv\":\"+02:00\"},                   \
                          {\"n\":\"15\",\"sv\":\"U\"}]                        \
-                       }";
+                      }";
     char * buffer4 = "{\"e\":[                                      \
                          {\"n\":\"0\",\"sv\":\"a \\\"test\\\"\"},   \
                          {\"n\":\"1\",\"v\":2015},                  \
                          {\"n\":\"2/0\",\"bv\":true},               \
                          {\"n\":\"2/1\",\"bv\":false}]              \
-                       }";
+                      }";
     char * buffer5 = "{\"e\":[                              \
                          {    \"n\" :   \"0\",              \
                             \"sv\":\"LWM2M\"},              \
                          {\"v\":2015, \"n\":\"1\"},         \
                          {\"n\":\"2/0\",    \"bv\":true},   \
                          {\"bv\": false, \"n\":\"2/1\"}]    \
-                       }";
+                      }";
     char * buffer6 = "{\"e\":[                              \
                          {\"n\":\"0\",\"v\":1234},          \
                          {\"n\":\"1\",\"v\":56.789},        \
                          {\"n\":\"2/0\",\"v\":0.23},        \
                          {\"n\":\"2/1\",\"v\":-52.0006}]    \
-                       }";
+                      }";
+
+    char * buffer7 = "{\"e\":[                              \
+                         {\"n\":\"0\",\"v\":1234},          \
+                         {\"n\":\"1\",\"v\":56.789},        \
+                         {\"n\":\"2/0\",\"v\":0.23},        \
+                         {\"n\":\"2/1\",\"v\":-52.0006}],   \
+                       \"bn\" : \"/12/0\",                  \
+                       \"bt\" : 1234567                     \
+                      }";
 
     lwm2m_data_t data1[] = {                                                                \
                              {0, LWM2M_TYPE_RESOURCE, LWM2M_TYPE_UNDEFINED, 0, 0, NULL},    \
@@ -303,7 +312,7 @@ int main(int argc, char *argv[])
     lwm2m_data_encode_bool(false, data1 + 16);
 
 
-    test_TLV(buffer1, sizeof(buffer1), "1");
+/*    test_TLV(buffer1, sizeof(buffer1), "1");
     printf("\n\n============\n\n");
     test_TLV(buffer2, sizeof(buffer2), "2");
     printf("\n\n============\n\n");
@@ -315,7 +324,9 @@ int main(int argc, char *argv[])
     printf("\n\n============\n\n");
     test_JSON(buffer6, strlen(buffer6), "6");
     printf("\n\n============\n\n");
+*/    test_JSON(buffer7, strlen(buffer7), "7");
+/*    printf("\n\n============\n\n");
     test_data(data1, sizeof(data1)/sizeof(lwm2m_data_t), "1");
-    printf("\n\n");
+*/    printf("\n\n");
 }
 
