@@ -112,7 +112,7 @@ static void test_JSON(char * testBuf,
     uint8_t * buffer;
     lwm2m_media_type_t format = LWM2M_CONTENT_JSON;
 
-    size = lwm2m_data_parse((uint8_t *)testBuf, testLen, format, &tlvP);
+    size = lwm2m_data_parse(NULL, (uint8_t *)testBuf, testLen, format, &tlvP);
     if (size <= 0)
     {
         printf("\n\nJSON buffer %s decoding failed !\n", id);
@@ -148,7 +148,7 @@ static void test_TLV(char * testBuf,
     printf("Buffer %s:\n", id);
     decode(testBuf, testLen, 0);
     printf("\n\nBuffer %s using lwm2m_data_t:\n", id);
-    size = lwm2m_data_parse((uint8_t *)testBuf, testLen, format, &tlvP);
+    size = lwm2m_data_parse(NULL, (uint8_t *)testBuf, testLen, format, &tlvP);
     dump_tlv(stdout, size, tlvP, 0);
     length = lwm2m_data_serialize(size, tlvP, &format, &buffer);
     if (length != testLen)
@@ -266,8 +266,8 @@ int main(int argc, char *argv[])
                       }";
 
     char * buffer7 = "{\"e\":[                              \
-                         {\"n\":\"0\",\"v\":1234},          \
-                         {\"n\":\"1\",\"v\":56.789},        \
+                         {\"n\":\"1\",\"v\":1234},          \
+                         {\"n\":\"3\",\"v\":56.789},        \
                          {\"n\":\"2/0\",\"v\":0.23},        \
                          {\"n\":\"2/1\",\"v\":-52.0006}],   \
                        \"bn\" : \"/12/0\",                  \

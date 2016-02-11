@@ -203,6 +203,39 @@ void lwm2m_list_free(lwm2m_list_t * head);
 #define LWM2M_LIST_FIND(H,I) lwm2m_list_find((lwm2m_list_t *)H, I)
 #define LWM2M_LIST_FREE(H) lwm2m_list_free((lwm2m_list_t *)H)
 
+/*
+ * URI
+ *
+ * objectId is always set
+ * if instanceId or resourceId is greater than LWM2M_URI_MAX_ID, it means it is not specified
+ *
+ */
+
+#define LWM2M_MAX_ID   ((uint16_t)0xFFFF)
+
+#define LWM2M_URI_FLAG_OBJECT_ID    (uint8_t)0x04
+#define LWM2M_URI_FLAG_INSTANCE_ID  (uint8_t)0x02
+#define LWM2M_URI_FLAG_RESOURCE_ID  (uint8_t)0x01
+
+#define LWM2M_URI_IS_SET_INSTANCE(uri) ((uri->flag & LWM2M_URI_FLAG_INSTANCE_ID) != 0)
+#define LWM2M_URI_IS_SET_RESOURCE(uri) ((uri->flag & LWM2M_URI_FLAG_RESOURCE_ID) != 0)
+
+typedef struct
+{
+    uint8_t     flag;           // indicates which segments are set
+    uint16_t    objectId;
+    uint16_t    instanceId;
+    uint16_t    resourceId;
+} lwm2m_uri_t;
+
+
+#define LWM2M_STRING_ID_MAX_LEN 6
+
+// Parse an URI in LWM2M format and fill the lwm2m_uri_t.
+// Return the number of characters read from buffer or 0 in case of error.
+// Valid URIs: /1, /1/, /1/2, /1/2/, /1/2/3
+// Invalid URIs: /, //, //2, /1//, /1//3, /1/2/3/, /1/2/3/4
+int lwm2m_stringToUri(const char * buffer, size_t buffer_len, lwm2m_uri_t * uriP);
 
 /*
  *  Resource values
@@ -251,7 +284,8 @@ typedef enum
     LWM2M_TYPE_RESOURCE = 0xC0,
     LWM2M_TYPE_MULTIPLE_RESOURCE = 0x80,
     LWM2M_TYPE_RESOURCE_INSTANCE = 0x40,
-    LWM2M_TYPE_OBJECT_INSTANCE = 0x00
+    LWM2M_TYPE_OBJECT_INSTANCE = 0x00,
+    LWM2M_TYPE_OBJECT = 0x10
 } lwm2m_tlv_type_t;
 
 typedef enum
@@ -286,7 +320,7 @@ typedef enum
 } lwm2m_media_type_t;
 
 lwm2m_data_t * lwm2m_data_new(int size);
-int lwm2m_data_parse(uint8_t * buffer, size_t bufferLen, lwm2m_media_type_t format, lwm2m_data_t ** dataP);
+int lwm2m_data_parse(lwm2m_uri_t * uriP, uint8_t * buffer, size_t bufferLen, lwm2m_media_type_t format, lwm2m_data_t ** dataP);
 int lwm2m_data_serialize(int size, lwm2m_data_t * dataP, lwm2m_media_type_t * formatP, uint8_t ** bufferP);
 void lwm2m_data_free(int size, lwm2m_data_t * dataP);
 
@@ -310,41 +344,6 @@ int lwm2m_opaqueToTLV(lwm2m_tlv_type_t type, uint8_t * dataP, size_t data_len, u
 int lwm2m_decodeTLV(uint8_t * buffer, size_t buffer_len, lwm2m_tlv_type_t * oType, uint16_t * oID, size_t * oDataIndex, size_t * oDataLen);
 int lwm2m_opaqueToInt(uint8_t * buffer, size_t buffer_len, int64_t * dataP);
 int lwm2m_opaqueToFloat(uint8_t * buffer, size_t buffer_len, double * dataP);
-
-/*
- * URI
- *
- * objectId is always set
- * if instanceId or resourceId is greater than LWM2M_URI_MAX_ID, it means it is not specified
- *
- */
-
-#define LWM2M_MAX_ID   ((uint16_t)0xFFFF)
-
-#define LWM2M_URI_FLAG_OBJECT_ID    (uint8_t)0x04
-#define LWM2M_URI_FLAG_INSTANCE_ID  (uint8_t)0x02
-#define LWM2M_URI_FLAG_RESOURCE_ID  (uint8_t)0x01
-
-#define LWM2M_URI_IS_SET_INSTANCE(uri) ((uri->flag & LWM2M_URI_FLAG_INSTANCE_ID) != 0)
-#define LWM2M_URI_IS_SET_RESOURCE(uri) ((uri->flag & LWM2M_URI_FLAG_RESOURCE_ID) != 0)
-
-typedef struct
-{
-    uint8_t     flag;           // indicates which segments are set
-    uint16_t    objectId;
-    uint16_t    instanceId;
-    uint16_t    resourceId;
-} lwm2m_uri_t;
-
-
-#define LWM2M_STRING_ID_MAX_LEN 6
-
-// Parse an URI in LWM2M format and fill the lwm2m_uri_t.
-// Return the number of characters read from buffer or 0 in case of error.
-// Valid URIs: /1, /1/, /1/2, /1/2/, /1/2/3
-// Invalid URIs: /, //, //2, /1//, /1//3, /1/2/3/, /1/2/3/4
-int lwm2m_stringToUri(const char * buffer, size_t buffer_len, lwm2m_uri_t * uriP);
-
 
 /*
  * LWM2M Objects

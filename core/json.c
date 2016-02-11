@@ -53,7 +53,7 @@
     {                                   \
         I++;                            \
         I += prv_skipSpace(B+I, L-I);   \
-        if (I == L) return -1;    \
+        if (I == L) goto error;         \
     }
 
 typedef enum
@@ -78,8 +78,7 @@ typedef enum
 
 typedef struct
 {
-    uint16_t    resId;
-    uint16_t    resInstId;
+    uint16_t    ids[4];
     _type       type;
     uint8_t *   value;
     size_t      valueLen;
@@ -269,6 +268,9 @@ static int prv_countItems(uint8_t * buffer,
     if (in == 1) return -1;
 
     return count;
+
+error:
+    return -1;
 }
 
 static int prv_parseItem(uint8_t * buffer,
@@ -277,8 +279,7 @@ static int prv_parseItem(uint8_t * buffer,
 {
     size_t index;
 
-    recordP->resId = LWM2M_MAX_ID;
-    recordP->resInstId = LWM2M_MAX_ID;
+    memset(recordP->ids, 0xFF, 4*sizeof(uint16_t));
     recordP->type = _TYPE_UNSET;
     recordP->value = NULL;
     recordP->valueLen = 0;
@@ -304,9 +305,9 @@ static int prv_parseItem(uint8_t * buffer,
             case 'n':
             {
                 int i;
-                uint32_t readId;
+                int j;
 
-                if (recordP->resId != LWM2M_MAX_ID) return -1;
+                if (recordP->ids[0] != LWM2M_MAX_ID) return -1;
 
                 // Check for " around URI
                 if (valueLen < 3
@@ -315,44 +316,29 @@ static int prv_parseItem(uint8_t * buffer,
                 {
                     return -1;
                 }
-                i = 1;
-                readId = 0;
-                while (i < valueLen-1 && buffer[index+valueStart+i] != '/')
-                {
-                    if (buffer[index+valueStart+i] < '0'
-                     || buffer[index+valueStart+i] > '9')
-                    {
-                        return -1;
-                    }
-                    readId *= 10;
-                    readId += buffer[index+valueStart+i] - '0';
-                    if (readId > LWM2M_MAX_ID) return -1;
-                    i++;
-                }
-                recordP->resId = readId;
-                if (buffer[index+valueStart+i] == '/')
-                {
-                    int j;
+                i = 0;
+                j = 0;
+                do {
+                    uint32_t readId;
 
-                    if (i == valueLen-1) return -1;
-
-                    j = 1;
                     readId = 0;
-                    while (i+j < valueLen-1)
+                    i++;
+                    while (i < valueLen-1 && buffer[index+valueStart+i] != '/')
                     {
-                        if (buffer[index+valueStart+i+j] < '0'
-                         || buffer[index+valueStart+i+j] > '9')
+                        if (buffer[index+valueStart+i] < '0'
+                         || buffer[index+valueStart+i] > '9')
                         {
                             return -1;
                         }
                         readId *= 10;
-                        readId += buffer[index+valueStart+i+j] - '0';
+                        readId += buffer[index+valueStart+i] - '0';
                         if (readId > LWM2M_MAX_ID) return -1;
                         i++;
                     }
-                    recordP->resInstId = readId;
-                }
-                // TODO: support more URIs than just res and res/instance
+                    recordP->ids[j] = readId;
+                    j++;
+                } while (i < valueLen-1 && j < 4 && buffer[index+valueStart+i] == '/');
+                if (i < valueLen-1 ) return -1;
             }
             break;
 
@@ -430,136 +416,261 @@ static int prv_parseItem(uint8_t * buffer,
     return 0;
 }
 
-static int prv_convertRecord(_record_t * recordArray,
+static bool prv_convertValue(_record_t * recordP,
+                             lwm2m_data_t * targetP)
+{
+    switch (recordP->type)
+    {
+    case _TYPE_FALSE:
+        lwm2m_data_encode_bool(false, targetP);
+        break;
+    case _TYPE_TRUE:
+        lwm2m_data_encode_bool(true, targetP);
+        break;
+    case _TYPE_FLOAT:
+    {
+        size_t i;
+
+        i = 0;
+        while (i < recordP->valueLen
+            && recordP->value[i] != '.')
+        {
+            i++;
+        }
+        if (i == recordP->valueLen)
+        {
+            int64_t value;
+
+            if ( 1 != lwm2m_PlainTextToInt64(recordP->value,
+                                             recordP->valueLen,
+                                             &value))
+            {
+                return false;
+            }
+
+            lwm2m_data_encode_int(value, targetP);
+        }
+        else
+        {
+            double value;
+
+            if ( 1 != lwm2m_PlainTextToFloat64(recordP->value,
+                                               recordP->valueLen,
+                                               &value))
+            {
+                return false;
+            }
+
+            lwm2m_data_encode_float(value, targetP);
+        }
+    }
+    break;
+
+        // TODO: Copy string instead of pointing to it
+    case _TYPE_STRING:
+        targetP->flags = LWM2M_TLV_FLAG_STATIC_DATA | LWM2M_TLV_FLAG_TEXT_FORMAT;
+        targetP->dataType = LWM2M_TYPE_STRING;      // or opaque ?
+        targetP->length = recordP->valueLen;
+        targetP->value = recordP->value;
+        break;
+
+    case _TYPE_UNSET:
+    default:
+        return false;
+    }
+
+    return true;
+}
+
+static lwm2m_data_t * prv_findDataItem(lwm2m_data_t * listP,
+                                       int count,
+                                       uint16_t id)
+{
+    int i;
+
+    i = 0;
+    while (i < count)
+    {
+        if (listP[i].id == id)
+        {
+            return listP + i;
+        }
+        i++;
+    }
+
+    return NULL;
+}
+
+static lwm2m_tlv_type_t prv_decreaseLevel(lwm2m_tlv_type_t level)
+{
+    switch(level)
+    {
+    case LWM2M_TYPE_OBJECT:
+        return LWM2M_TYPE_OBJECT_INSTANCE;
+    case LWM2M_TYPE_OBJECT_INSTANCE:
+        return LWM2M_TYPE_RESOURCE;
+    case LWM2M_TYPE_RESOURCE:
+        return LWM2M_TYPE_RESOURCE_INSTANCE;
+    case LWM2M_TYPE_RESOURCE_INSTANCE:
+        return LWM2M_TYPE_RESOURCE_INSTANCE;
+    default:
+        return LWM2M_TYPE_RESOURCE;
+    }
+}
+
+static lwm2m_data_t * prv_extendData(lwm2m_data_t * parentP)
+{
+    lwm2m_data_t * newP;
+
+    newP = lwm2m_data_new(parentP->length + 1);
+    if (newP == NULL) return NULL;
+    memcpy(newP, parentP->value, parentP->length * sizeof(lwm2m_data_t));
+    lwm2m_free(parentP->value);     // do not use lwm2m_data_free() to keep pointed values
+    parentP->value = (uint8_t *)newP;
+    parentP->length += 1;
+
+    return newP + parentP->length - 1;
+}
+
+static int prv_convertRecord(lwm2m_uri_t * uriP,
+                             _record_t * recordArray,
                              int count,
                              lwm2m_data_t ** dataP)
 {
     int index;
-    int tlvIndex;
-    lwm2m_data_t * tlvP;
+    int freeIndex;
+    lwm2m_data_t * rootP;
+    int size;
+    lwm2m_tlv_type_t rootLevel;
 
-    // may be overkill
-    tlvP = lwm2m_data_new(count);
-    if (NULL == tlvP) return -1;
-    tlvIndex = 0;
+    if (uriP == NULL)
+    {
+        size = count;
+        *dataP = lwm2m_data_new(count);
+        if (NULL == *dataP) return -1;
+        rootLevel = LWM2M_TYPE_OBJECT;
+        rootP = *dataP;
+    }
+    else
+    {
+        lwm2m_data_t * parentP;
+        size = 1;
 
+        *dataP = lwm2m_data_new(1);
+        if (NULL == *dataP) return -1;
+        ((lwm2m_data_t *)*dataP)->type = LWM2M_TYPE_OBJECT;
+        ((lwm2m_data_t *)*dataP)->id = uriP->objectId;
+        parentP = *dataP;
+        if (LWM2M_URI_IS_SET_INSTANCE(uriP))
+        {
+            parentP->length = 1;
+            parentP->value = (uint8_t *)lwm2m_data_new(1);
+            if (NULL == parentP->value) goto error;
+            parentP = (lwm2m_data_t *)parentP->value;
+            parentP->type = LWM2M_TYPE_OBJECT_INSTANCE;
+            parentP->id = uriP->instanceId;
+            rootLevel = LWM2M_TYPE_RESOURCE;
+            if (LWM2M_URI_IS_SET_RESOURCE(uriP))
+            {
+                parentP->length = 1;
+                parentP->value = (uint8_t *)lwm2m_data_new(1);
+                if (NULL == parentP->value) goto error;
+                parentP = (lwm2m_data_t *)parentP->value;
+                parentP->type = LWM2M_TYPE_RESOURCE;
+                parentP->id = uriP->resourceId;
+                rootLevel = LWM2M_TYPE_RESOURCE_INSTANCE;
+            }
+        }
+        parentP->length = count;
+        parentP->value = (uint8_t *)lwm2m_data_new(count);
+        if (NULL == parentP->value) goto error;
+        rootP = (lwm2m_data_t *)parentP->value;
+    }
+
+    freeIndex = 0;
     for (index = 0 ; index < count ; index++)
     {
         lwm2m_data_t * targetP;
+        int resSegmentIndex;
+        int i;
 
-        if (recordArray[index].resInstId == LWM2M_MAX_ID)
+        // check URI depth
+        // resSegmentIndex is set to the resource segment position
+        switch(rootLevel)
         {
-            targetP = tlvP + tlvIndex;
-            targetP->type = LWM2M_TYPE_RESOURCE;
-            targetP->id = recordArray[index].resId;
-            tlvIndex++;
-        }
-        else
-        {
-            int resIndex;
-
-            resIndex = 0;
-            while (resIndex < tlvIndex
-                && tlvP[resIndex].id != recordArray[index].resId)
-            {
-                resIndex++;
-            }
-            if (resIndex == tlvIndex)
-            {
-                targetP = lwm2m_data_new(1);
-                if (NULL == targetP) goto error;
-
-                tlvP[resIndex].type = LWM2M_TYPE_MULTIPLE_RESOURCE;
-                tlvP[resIndex].id = recordArray[index].resId;
-                tlvP[resIndex].length = 1;
-                tlvP[resIndex].value = (uint8_t *)targetP;
-
-                tlvIndex++;
-            }
-            else
-            {
-                targetP = lwm2m_data_new(tlvP[resIndex].length + 1);
-                if (NULL == targetP) goto error;
-
-                memcpy(targetP + 1, tlvP[resIndex].value, tlvP[resIndex].length * sizeof(lwm2m_data_t));
-                lwm2m_free(tlvP[resIndex].value);   // do not use lwm2m_data_free() to preserve value pointers
-                tlvP[resIndex].value = (uint8_t *)targetP;
-                tlvP[resIndex].length++;
-            }
-
-            targetP->type = LWM2M_TYPE_RESOURCE_INSTANCE;
-            targetP->id = recordArray[index].resInstId;
-        }
-        switch (recordArray[index].type)
-        {
-        case _TYPE_FALSE:
-            lwm2m_data_encode_bool(false, targetP);
+        case LWM2M_TYPE_OBJECT:
+            resSegmentIndex = 2;
             break;
-        case _TYPE_TRUE:
-            lwm2m_data_encode_bool(true, targetP);
+        case LWM2M_TYPE_OBJECT_INSTANCE:
+            resSegmentIndex = 1;
             break;
-        case _TYPE_FLOAT:
-        {
-            size_t i;
-
-            i = 0;
-            while (i < recordArray[index].valueLen
-                && recordArray[index].value[i] != '.')
-            {
-                i++;
-            }
-            if (i == recordArray[index].valueLen)
-            {
-                int64_t value;
-
-                if ( 1 != lwm2m_PlainTextToInt64(recordArray[index].value,
-                                                 recordArray[index].valueLen,
-                                                 &value))
-                {
-                    goto error;
-                }
-
-                lwm2m_data_encode_int(value, targetP);
-            }
-            else
-            {
-                double value;
-
-                if ( 1 != lwm2m_PlainTextToFloat64(recordArray[index].value,
-                                                   recordArray[index].valueLen,
-                                                   &value))
-                {
-                    goto error;
-                }
-
-                lwm2m_data_encode_float(value, targetP);
-            }
-        }
-        break;
-
-            // TODO: Copy string instead of pointing to it
-        case _TYPE_STRING:
-            targetP->flags = LWM2M_TLV_FLAG_STATIC_DATA | LWM2M_TLV_FLAG_TEXT_FORMAT;
-            targetP->dataType = LWM2M_TYPE_STRING;      // or opaque ?
-            targetP->length = recordArray[index].valueLen;
-            targetP->value = recordArray[index].value;
+        case LWM2M_TYPE_RESOURCE:
+            resSegmentIndex = 0;
             break;
-
-        case _TYPE_UNSET:
+        case LWM2M_TYPE_RESOURCE_INSTANCE:
+            resSegmentIndex = -1;
+            break;
         default:
             goto error;
         }
+        for (i = 0 ; i <= resSegmentIndex ; i++)
+        {
+            if (recordArray[index].ids[i] == LWM2M_MAX_ID) goto error;
+        }
+        if (resSegmentIndex < 2)
+        {
+            if (recordArray[index].ids[resSegmentIndex + 2] != LWM2M_MAX_ID) goto error;
+        }
+
+        targetP = prv_findDataItem(rootP, count, recordArray[index].ids[0]);
+        if (targetP == NULL)
+        {
+            targetP = rootP + freeIndex;
+            freeIndex++;
+            targetP->id = recordArray[index].ids[0];
+            targetP->type = rootLevel;
+        }
+        if (recordArray[index].ids[1] != LWM2M_MAX_ID)
+        {
+            lwm2m_data_t * parentP;
+            lwm2m_tlv_type_t level;
+
+            parentP = targetP;
+            level = prv_decreaseLevel(rootLevel);
+            for (i = 1 ; i <= resSegmentIndex ; i++)
+            {
+                targetP = prv_findDataItem(parentP, count, recordArray[index].ids[i]);
+                if (targetP == NULL)
+                {
+                    targetP = prv_extendData(parentP);
+                    if (targetP == NULL) goto error;
+                    targetP->id = recordArray[index].ids[i];
+                    targetP->type = level;
+                }
+            }
+            if (recordArray[index].ids[resSegmentIndex + 1] != LWM2M_MAX_ID)
+            {
+                targetP->type = LWM2M_TYPE_MULTIPLE_RESOURCE;
+                targetP = prv_extendData(targetP);
+                if (targetP == NULL) goto error;
+                targetP->id = recordArray[index].ids[resSegmentIndex + 1];
+                targetP->type = LWM2M_TYPE_RESOURCE_INSTANCE;
+            }
+
+        }
+
+        if (true != prv_convertValue(recordArray + index, targetP)) goto error;
     }
 
-    *dataP = tlvP;
-    return tlvIndex;
+    return size;
 
 error:
-    lwm2m_data_free(count, tlvP);
+    lwm2m_data_free(size, *dataP);
     return -1;
 }
 
-int lwm2m_json_parse(uint8_t * buffer,
+int lwm2m_json_parse(lwm2m_uri_t * uriP,
+                     uint8_t * buffer,
                      size_t bufferLen,
                      lwm2m_data_t ** dataP)
 {
@@ -570,6 +681,10 @@ int lwm2m_json_parse(uint8_t * buffer,
     bool btFound = false;
     int bnStart;
     int bnLen;
+    _record_t * recordArray;
+
+    *dataP = NULL;
+    recordArray = NULL;
 
     index = prv_skipSpace(buffer, bufferLen);
     if (index == bufferLen) return -1;
@@ -578,43 +693,41 @@ int lwm2m_json_parse(uint8_t * buffer,
     do
     {
         _GO_TO_NEXT_CHAR(index, buffer, bufferLen);
-        if (buffer[index] != '"') return -1;
-        if (index++ >= bufferLen) return -1;
+        if (buffer[index] != '"') goto error;
+        if (index++ >= bufferLen) goto error;
         switch (buffer[index])
         {
         case 'e':
         {
-            _record_t * recordArray;
             int recordIndex;
 
-            if (bufferLen-index < JSON_MIN_ARRAY_LEN) return -1;
+            if (bufferLen-index < JSON_MIN_ARRAY_LEN) goto error;
             index++;
-            if (buffer[index] != '"') return -1;
-            if (eFound == true) return -1;
+            if (buffer[index] != '"') goto error;
+            if (eFound == true) goto error;
             eFound = true;
 
             _GO_TO_NEXT_CHAR(index, buffer, bufferLen);
-            if (buffer[index] != ':') return -1;
+            if (buffer[index] != ':') goto error;
             _GO_TO_NEXT_CHAR(index, buffer, bufferLen);
-            if (buffer[index] != '[') return -1;
+            if (buffer[index] != '[') goto error;
             _GO_TO_NEXT_CHAR(index, buffer, bufferLen);
             count = prv_countItems(buffer + index, bufferLen - index);
-            if (count <= 0) return -1;
+            if (count <= 0) goto error;
             recordArray = (_record_t*)lwm2m_malloc(count * sizeof(_record_t));
-            if (recordArray == NULL) return -1;
+            if (recordArray == NULL) goto error;
             // at this point we are sure buffer[index] is '{' and all { and } are matching
             recordIndex = 0;
             while (recordIndex < count)
             {
                 int itemLen;
 
-                if (buffer[index] != '{') return -1;
+                if (buffer[index] != '{') goto error;
                 itemLen = 0;
                 while (buffer[index + itemLen] != '}') itemLen++;
                 if (0 != prv_parseItem(buffer + index + 1, itemLen - 1, recordArray + recordIndex))
                 {
-                    lwm2m_free(recordArray);
-                    return -1;
+                    goto error;
                 }
                 recordIndex++;
                 index += itemLen;
@@ -628,35 +741,28 @@ int lwm2m_json_parse(uint8_t * buffer,
                     if (recordIndex == count) break;
                     // else this is an error
                 default:
-                    lwm2m_free(recordArray);
-                    return -1;
+                    goto error;
                 }
             }
-            if (buffer[index] != ']')
-            {
-                lwm2m_free(recordArray);
-                return -1;
-            }
-            count = prv_convertRecord(recordArray, count, dataP);
-            lwm2m_free(recordArray);
+            if (buffer[index] != ']') goto error;
         }
         break;
 
         case 'b':
-            if (bufferLen-index < JSON_MIN_BX_LEN) return -1;
+            if (bufferLen-index < JSON_MIN_BX_LEN) goto error;
             index++;
             switch (buffer[index])
             {
             case 't':
                 index++;
-                if (buffer[index] != '"') return -1;
-                if (btFound == true) return -1;
+                if (buffer[index] != '"') goto error;
+                if (btFound == true) goto error;
                 btFound = true;
 
                 // TODO: handle timed values
                 // temp: skip this token
                 while(index < bufferLen && buffer[index] != ',' && buffer[index] != '}') index++;
-                if (index == bufferLen) return -1;
+                if (index == bufferLen) goto error;
                 index--;
                 // end temp
                 break;
@@ -667,38 +773,85 @@ int lwm2m_json_parse(uint8_t * buffer,
                     int tokenLen;
 
                     index++;
-                    if (buffer[index] != '"') return -1;
-                    if (bnFound == true) return -1;
+                    if (buffer[index] != '"') goto error;
+                    if (bnFound == true) goto error;
                     bnFound = true;
                     index -= 3;
                     next = prv_split(buffer+index, bufferLen-index, &tokenStart, &tokenLen, &bnStart, &bnLen);
-                    if (next < 0) return -1;
+                    if (next < 0) goto error;
                     bnStart += index;
                     index += next - 1;
                 }
                 break;
             default:
-                return -1;
+                goto error;
             }
             break;
 
         default:
-            return -1;
+            goto error;
         }
 
         _GO_TO_NEXT_CHAR(index, buffer, bufferLen);
     } while (buffer[index] == ',');
 
-    if (buffer[index] != '}')
+    if (buffer[index] != '}') goto error;
+
+    if (eFound == true)
     {
-        if (*dataP != NULL)
+        lwm2m_uri_t baseURI;
+
+        memset(&baseURI, 0, sizeof(lwm2m_uri_t));
+        if (bnFound == false)
         {
-            lwm2m_data_free(count, *dataP);
-            *dataP = NULL;
+            if (uriP == NULL) goto error;
         }
-        return -1;
+        else
+        {
+            int res;
+
+            // we ignore the request URI and use the bn one.
+
+            // Check for " around URI
+            if (bnLen < 3
+             || buffer[bnStart] != '"'
+             || buffer[bnStart+bnLen-1] != '"')
+            {
+                goto error;
+            }
+            bnStart += 1;
+            bnLen -= 2;
+
+            if (bnLen == 1)
+            {
+                if (buffer[bnStart] != '/') goto error;
+                uriP = NULL;
+            }
+            else
+            {
+                res = lwm2m_stringToUri(buffer + bnStart, bnLen, &baseURI);
+                if (res < 0 || res != bnLen) goto error;
+                uriP = &baseURI;
+            }
+        }
+
+        count = prv_convertRecord(uriP, recordArray, count, dataP);
+        lwm2m_free(recordArray);
     }
+
     return count;
+
+error:
+    if (*dataP != NULL)
+    {
+        lwm2m_data_free(count, *dataP);
+        *dataP = NULL;
+    }
+    if (recordArray != NULL)
+    {
+        lwm2m_free(recordArray);
+    }
+    return -1;
 }
 
 static int prv_serializeValue(lwm2m_data_t * tlvP,

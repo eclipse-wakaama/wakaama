@@ -424,7 +424,8 @@ static int prv_parseTLV(uint8_t * buffer,
     return size;
 }
 
-int lwm2m_data_parse(uint8_t * buffer,
+int lwm2m_data_parse(lwm2m_uri_t * uriP,
+                     uint8_t * buffer,
                      size_t bufferLen,
                      lwm2m_media_type_t format,
                      lwm2m_data_t ** dataP)
@@ -445,7 +446,7 @@ int lwm2m_data_parse(uint8_t * buffer,
 
 #ifdef LWM2M_SUPPORT_JSON
     case LWM2M_CONTENT_JSON:
-        return lwm2m_json_parse(buffer, bufferLen, dataP);
+        return lwm2m_json_parse(uriP, buffer, bufferLen, dataP);
 #endif
 
     default:
