@@ -187,7 +187,7 @@ static void prv_result_callback(uint16_t clientID,
                                 int dataLength,
                                 void * userData)
 {
-    fprintf(stdout, "\r\nClient #%d %d", clientID, uriP->objectId);
+    fprintf(stdout, "\r\nClient #%d /%d", clientID, uriP->objectId);
     if (LWM2M_URI_IS_SET_INSTANCE(uriP))
         fprintf(stdout, "/%d", uriP->instanceId);
     else if (LWM2M_URI_IS_SET_RESOURCE(uriP))
@@ -384,7 +384,7 @@ static void prv_attr_client(char * buffer,
     if (result == 0) goto syntax_error;
 
     memset(&attr, 0, sizeof(lwm2m_attributes_t));
-    attr.toSet = LWM2M_ATTR_FLAG_LESS_THAN | LWM2M_ATTR_FLAG_GREATER_THAN | LWM2M_ATTR_FLAG_STEP;
+    attr.toSet = LWM2M_ATTR_FLAG_LESS_THAN | LWM2M_ATTR_FLAG_GREATER_THAN;
 
     buffer = get_next_arg(end, &end);
     if (buffer[0] == 0) goto syntax_error;
@@ -401,11 +401,14 @@ static void prv_attr_client(char * buffer,
     attr.greaterThan = value;
 
     buffer = get_next_arg(end, &end);
-    if (buffer[0] == 0) goto syntax_error;
+    if (buffer[0] != 0)
+    {
+        nb = sscanf(buffer, "%f", &value);
+        if (nb != 1) goto syntax_error;
+        attr.step = value;
 
-    nb = sscanf(buffer, "%f", &value);
-    if (nb != 1) goto syntax_error;
-    attr.step = value;
+        attr.toSet |= LWM2M_ATTR_FLAG_STEP;
+    }
 
     if (!check_end_of_args(end)) goto syntax_error;
 
@@ -770,7 +773,7 @@ int main(int argc, char *argv[])
                                             "   PMIN: Minimum period\r\n"
                                             "   PMAX: Maximum period\r\n"
                                             "Result will be displayed asynchronously.", prv_time_client, NULL},
-            {"attr", "Write value-related attributes to a client.", " attr CLIENT# URI LT GT STEP\r\n"
+            {"attr", "Write value-related attributes to a client.", " attr CLIENT# URI LT GT [STEP]\r\n"
                                             "   CLIENT#: client number as returned by command 'list'\r\n"
                                             "   URI: uri to write attributes to such as /3, /3/0/2, /1024/11, /1024//1\r\n"
                                             "   LT: \"Less than\" value\r\n"

@@ -116,10 +116,15 @@ void delete_observed_list(lwm2m_context_t * contextP)
     while (NULL != contextP->observedList)
     {
         lwm2m_observed_t * targetP;
+        lwm2m_watcher_t * watcherP;
 
         targetP = contextP->observedList;
         contextP->observedList = contextP->observedList->next;
 
+        for (watcherP = targetP->watcherList ; watcherP != NULL ; watcherP = watcherP->next)
+        {
+            if (watcherP->parameters != NULL) lwm2m_free(watcherP->parameters);
+        }
         LWM2M_LIST_FREE(targetP->watcherList);
 
         lwm2m_free(targetP);
@@ -394,6 +399,7 @@ next_step:
         break;
     }
 
+    observation_step(contextP, tv_sec, timeoutP);
 #endif
 
     registration_step(contextP, tv_sec, timeoutP);
