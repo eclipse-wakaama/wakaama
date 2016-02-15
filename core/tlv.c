@@ -625,11 +625,12 @@ void lwm2m_data_free(int size,
         if ((dataP[i].flags & LWM2M_TLV_FLAG_STATIC_DATA) == 0)
         {
             if (dataP[i].type == LWM2M_TYPE_MULTIPLE_RESOURCE
-             || dataP[i].type == LWM2M_TYPE_OBJECT_INSTANCE)
+            || dataP[i].type == LWM2M_TYPE_OBJECT_INSTANCE
+            || dataP[i].type == LWM2M_TYPE_OBJECT)
             {
                 lwm2m_data_free(dataP[i].length, (lwm2m_data_t *)(dataP[i].value));
             }
-            else
+            else if (dataP[i].value != NULL)
             {
                 lwm2m_free(dataP[i].value);
             }

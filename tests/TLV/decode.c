@@ -102,24 +102,36 @@ static void dump_json(uint8_t * buffer,
     printf("\n");
 }
 
-static void test_JSON(char * testBuf,
+static void test_JSON(char * uriStr,
+                      char * testBuf,
                       size_t testLen,
                       char * id)
 {
     lwm2m_data_t * tlvP;
+    lwm2m_uri_t uri;
     int size;
     int length;
     uint8_t * buffer;
     lwm2m_media_type_t format = LWM2M_CONTENT_JSON;
 
-    size = lwm2m_data_parse(NULL, (uint8_t *)testBuf, testLen, format, &tlvP);
+    if (uriStr != NULL && 0 >= lwm2m_stringToUri(uriStr, strlen(uriStr), &uri))
+    {
+        printf("\n\nInvalid URI \"%s\" for JSON buffer %s !\n", uriStr, id);
+    }
+    size = lwm2m_data_parse((uriStr != NULL)?&uri:NULL, (uint8_t *)testBuf, testLen, format, &tlvP);
     if (size <= 0)
     {
         printf("\n\nJSON buffer %s decoding failed !\n", id);
         return;
     }
+    else if (uriStr != NULL)
+    {
+        printf("\n\nJSON buffer %s decoding with URI \"%s\":\n", id, uriStr);
+    }
     else
+    {
         printf("\n\nJSON buffer %s decoding:\n", id);
+    }
 
     dump_tlv(stdout, size, tlvP, 0);
     length = lwm2m_data_serialize(size, tlvP, &format, &buffer);
@@ -251,7 +263,8 @@ int main(int argc, char *argv[])
                          {\"n\":\"2/0\",\"bv\":true},               \
                          {\"n\":\"2/1\",\"bv\":false}]              \
                       }";
-    char * buffer5 = "{\"e\":[                              \
+    char * buffer5 = "{\"bn\" : \"/65/543\",                \
+                       \"e\":[                              \
                          {    \"n\" :   \"0\",              \
                             \"sv\":\"LWM2M\"},              \
                          {\"v\":2015, \"n\":\"1\"},         \
@@ -259,10 +272,8 @@ int main(int argc, char *argv[])
                          {\"bv\": false, \"n\":\"2/1\"}]    \
                       }";
     char * buffer6 = "{\"e\":[                              \
-                         {\"n\":\"0\",\"v\":1234},          \
-                         {\"n\":\"1\",\"v\":56.789},        \
-                         {\"n\":\"2/0\",\"v\":0.23},        \
-                         {\"n\":\"2/1\",\"v\":-52.0006}]    \
+                         {\"n\":\"0\",\"v\":1234}],   \
+                       \"bn\" : \"/2/3\"                   \
                       }";
 
     char * buffer7 = "{\"e\":[                              \
@@ -312,21 +323,28 @@ int main(int argc, char *argv[])
     lwm2m_data_encode_bool(false, data1 + 16);
 
 
-/*    test_TLV(buffer1, sizeof(buffer1), "1");
+    test_TLV(buffer1, sizeof(buffer1), "1");
     printf("\n\n============\n\n");
     test_TLV(buffer2, sizeof(buffer2), "2");
     printf("\n\n============\n\n");
-    test_JSON(buffer3, strlen(buffer3), "3");
+    test_JSON("/3/0", buffer3, strlen(buffer3), "3");
     printf("\n\n============\n\n");
-    test_JSON(buffer4, strlen(buffer4), "4");
+    test_JSON("/11/3", buffer4, strlen(buffer4), "4");
     printf("\n\n============\n\n");
-    test_JSON(buffer5, strlen(buffer5), "5");
+    test_JSON("/65", buffer5, strlen(buffer5), "5");
     printf("\n\n============\n\n");
-    test_JSON(buffer6, strlen(buffer6), "6");
+    test_JSON(NULL, buffer6, strlen(buffer6), "6");
     printf("\n\n============\n\n");
-*/    test_JSON(buffer7, strlen(buffer7), "7");
-/*    printf("\n\n============\n\n");
+    test_JSON(NULL, buffer7, strlen(buffer7), "7");
+    printf("\n\n============\n\n");
+    test_JSON("/12", buffer7, strlen(buffer7), "7");
+    printf("\n\n============\n\n");
+    test_JSON("/12/0", buffer7, strlen(buffer7), "7");
+    printf("\n\n============\n\n");
+    test_JSON("/12/0/3", buffer7, strlen(buffer7), "7");
+    printf("\n\n============\n\n");
     test_data(data1, sizeof(data1)/sizeof(lwm2m_data_t), "1");
-*/    printf("\n\n");
+    printf("\n\n");
+
 }
 

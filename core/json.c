@@ -491,7 +491,7 @@ static lwm2m_data_t * prv_findDataItem(lwm2m_data_t * listP,
     i = 0;
     while (i < count)
     {
-        if (listP[i].id == id)
+        if (listP[i].length != 0 && listP[i].id == id)
         {
             return listP + i;
         }
@@ -666,7 +666,64 @@ static int prv_convertRecord(lwm2m_uri_t * uriP,
 
 error:
     lwm2m_data_free(size, *dataP);
+    *dataP = NULL;
+
     return -1;
+}
+
+static int prv_data_strip(int size,
+                          lwm2m_data_t * dataP,
+                          lwm2m_data_t ** resultP)
+{
+    int i;
+    int j;
+    int realSize;
+
+    realSize = 0;
+    for (i = 0 ; i < size ; i++)
+    {
+        if (dataP[i].length != 0)
+        {
+            realSize++;
+        }
+    }
+
+    *resultP = lwm2m_data_new(realSize);
+    if (*resultP == NULL) return -1;
+
+    j = 0;
+    for (i = 0 ; i < size ; i++)
+    {
+        if (dataP[i].length != 0)
+        {
+            memcpy((*resultP) + j, dataP + i, sizeof(lwm2m_data_t));
+
+            if (dataP[i].type != LWM2M_TYPE_RESOURCE
+             && dataP[i].type != LWM2M_TYPE_RESOURCE_INSTANCE)
+            {
+                int childLen;
+
+                childLen = prv_data_strip(dataP[i].length, (lwm2m_data_t *)dataP[i].value, (lwm2m_data_t **)&((*resultP)[j].value));
+                if (childLen <= 0)
+                {
+                    // skip this one
+                    j--;
+                }
+                else
+                {
+                    (*resultP)[j].length = childLen;
+                }
+            }
+            else
+            {
+                dataP[i].value = NULL;
+            }
+
+            j++;
+        }
+    }
+
+    return realSize;
 }
 
 int lwm2m_json_parse(lwm2m_uri_t * uriP,
@@ -682,9 +739,11 @@ int lwm2m_json_parse(lwm2m_uri_t * uriP,
     int bnStart;
     int bnLen;
     _record_t * recordArray;
+    lwm2m_data_t * parsedP;
 
     *dataP = NULL;
     recordArray = NULL;
+    parsedP = NULL;
 
     index = prv_skipSpace(buffer, bufferLen);
     if (index == bufferLen) return -1;
@@ -771,13 +830,22 @@ int lwm2m_json_parse(lwm2m_uri_t * uriP,
                     int next;
                     int tokenStart;
                     int tokenLen;
+                    int itemLen;
 
                     index++;
                     if (buffer[index] != '"') goto error;
                     if (bnFound == true) goto error;
                     bnFound = true;
                     index -= 3;
-                    next = prv_split(buffer+index, bufferLen-index, &tokenStart, &tokenLen, &bnStart, &bnLen);
+                    itemLen = 0;
+                    while (buffer[index + itemLen] != '}'
+                        && buffer[index + itemLen] != ','
+                        && index + itemLen < bufferLen)
+                    {
+                        itemLen++;
+                    }
+                    if (index + itemLen == bufferLen) goto error;
+                    next = prv_split(buffer+index, itemLen, &tokenStart, &tokenLen, &bnStart, &bnLen);
                     if (next < 0) goto error;
                     bnStart += index;
                     index += next - 1;
@@ -800,11 +868,14 @@ int lwm2m_json_parse(lwm2m_uri_t * uriP,
     if (eFound == true)
     {
         lwm2m_uri_t baseURI;
+        lwm2m_uri_t * baseUriP;
+        lwm2m_data_t * resultP;
+        int size;
 
         memset(&baseURI, 0, sizeof(lwm2m_uri_t));
         if (bnFound == false)
         {
-            if (uriP == NULL) goto error;
+            baseUriP = uriP;
         }
         else
         {
@@ -825,27 +896,104 @@ int lwm2m_json_parse(lwm2m_uri_t * uriP,
             if (bnLen == 1)
             {
                 if (buffer[bnStart] != '/') goto error;
-                uriP = NULL;
+                baseUriP = NULL;
             }
             else
             {
                 res = lwm2m_stringToUri(buffer + bnStart, bnLen, &baseURI);
                 if (res < 0 || res != bnLen) goto error;
-                uriP = &baseURI;
+                baseUriP = &baseURI;
             }
         }
 
-        count = prv_convertRecord(uriP, recordArray, count, dataP);
+        count = prv_convertRecord(baseUriP, recordArray, count, &parsedP);
         lwm2m_free(recordArray);
+        recordArray = NULL;
+
+        if (count > 0 && uriP != NULL)
+        {
+            if (parsedP->type != LWM2M_TYPE_OBJECT || parsedP->id != uriP->objectId) goto error;
+            if (!LWM2M_URI_IS_SET_INSTANCE(uriP))
+            {
+                size = parsedP->length;
+                resultP = (lwm2m_data_t *)(parsedP->value);
+            }
+            else
+            {
+                int i;
+
+                resultP = NULL;
+                // be permissive and allow full object JSON when requesting for a single instance
+                for (i = 0 ; i < parsedP->length && resultP == NULL; i++)
+                {
+                    lwm2m_data_t * targetP;
+
+                    targetP = (lwm2m_data_t *)(parsedP->value) + i;
+                    if (targetP->id == uriP->instanceId)
+                    {
+                        resultP = ((lwm2m_data_t *)(targetP->value));
+                        size = targetP->length;
+                    }
+                }
+                if (resultP == NULL) goto error;
+                if (LWM2M_URI_IS_SET_RESOURCE(uriP))
+                {
+                    lwm2m_data_t * resP;
+
+                    resP = NULL;
+                    for (i = 0 ; i < size && resP == NULL; i++)
+                    {
+                        lwm2m_data_t * targetP;
+
+                        targetP = resultP + i;
+                        if (targetP->id == uriP->resourceId)
+                        {
+                            if (targetP->type == LWM2M_TYPE_MULTIPLE_RESOURCE)
+                            {
+                                resP = (lwm2m_data_t *)(targetP->value);
+                                size = targetP->length;
+                            }
+                            else
+                            {
+                                size = prv_data_strip(1, targetP, &resP);
+                                if (size <= 0) goto error;
+                                lwm2m_data_free(count, *dataP);
+                                parsedP = NULL;
+                            }
+                        }
+                    }
+                    if (resP == NULL) goto error;
+                    resultP = resP;
+                }
+            }
+        }
+        else
+        {
+            resultP = parsedP;
+            size = count;
+        }
+
+        if (parsedP != NULL)
+        {
+            lwm2m_data_t * tempP;
+            int i;
+
+            size = prv_data_strip(size, resultP, &tempP);
+            if (size <= 0) goto error;
+            lwm2m_data_free(count, parsedP);
+            resultP = tempP;
+        }
+        count = size;
+        *dataP = resultP;
     }
 
     return count;
 
 error:
-    if (*dataP != NULL)
+    if (parsedP != NULL)
     {
-        lwm2m_data_free(count, *dataP);
-        *dataP = NULL;
+        lwm2m_data_free(count, parsedP);
+        parsedP = NULL;
     }
     if (recordArray != NULL)
     {
