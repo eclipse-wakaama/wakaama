@@ -533,7 +533,8 @@ void observation_step(lwm2m_context_t * contextP,
                         }
                     }
 
-                    if ((watcherP->parameters->toSet & LWM2M_ATTR_FLAG_MIN_PERIOD) != 0)
+                    if (watcherP->parameters != NULL
+                     && (watcherP->parameters->toSet & LWM2M_ATTR_FLAG_MIN_PERIOD) != 0)
                     {
                         if (watcherP->lastTime + watcherP->parameters->minPeriod > currentTime)
                         {
