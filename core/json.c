@@ -957,7 +957,7 @@ int lwm2m_json_parse(lwm2m_uri_t * uriP,
                             {
                                 size = prv_data_strip(1, targetP, &resP);
                                 if (size <= 0) goto error;
-                                lwm2m_data_free(count, *dataP);
+                                lwm2m_data_free(count, parsedP);
                                 parsedP = NULL;
                             }
                         }
