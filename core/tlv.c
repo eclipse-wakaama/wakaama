@@ -570,7 +570,8 @@ static int prv_serializeTLV(int size,
     return length;
 }
 
-int lwm2m_data_serialize(int size,
+int lwm2m_data_serialize(lwm2m_uri_t * uriP,
+                         int size,
                          lwm2m_data_t * dataP,
                          lwm2m_media_type_t * formatP,
                          uint8_t ** bufferP)
@@ -605,7 +606,7 @@ int lwm2m_data_serialize(int size,
 
 #ifdef LWM2M_SUPPORT_JSON
     case LWM2M_CONTENT_JSON:
-        return lwm2m_json_serialize(size, dataP, bufferP);
+        return lwm2m_json_serialize(uriP, size, dataP, bufferP);
 #endif
 
     default:

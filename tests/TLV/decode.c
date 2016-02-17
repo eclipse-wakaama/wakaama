@@ -134,7 +134,7 @@ static void test_JSON(char * uriStr,
     }
 
     dump_tlv(stdout, size, tlvP, 0);
-    length = lwm2m_data_serialize(size, tlvP, &format, &buffer);
+    length = lwm2m_data_serialize((uriStr != NULL)?&uri:NULL, size, tlvP, &format, &buffer);
     if (length <= 0)
     {
         printf("\n\nSerialize Buffer %s to JSON failed.\n", id);
@@ -162,7 +162,7 @@ static void test_TLV(char * testBuf,
     printf("\n\nBuffer %s using lwm2m_data_t:\n", id);
     size = lwm2m_data_parse(NULL, (uint8_t *)testBuf, testLen, format, &tlvP);
     dump_tlv(stdout, size, tlvP, 0);
-    length = lwm2m_data_serialize(size, tlvP, &format, &buffer);
+    length = lwm2m_data_serialize(NULL, size, tlvP, &format, &buffer);
     if (length != testLen)
     {
         printf("\n\nSerialize Buffer %s to TLV failed: %d bytes instead of %d\n", id, length, testLen);
@@ -180,7 +180,7 @@ static void test_TLV(char * testBuf,
     }
     lwm2m_free(buffer);
     format = LWM2M_CONTENT_JSON;
-    length = lwm2m_data_serialize(size, tlvP, &format, &buffer);
+    length = lwm2m_data_serialize(NULL, size, tlvP, &format, &buffer);
     if (length <= 0)
     {
         printf("\n\nSerialize Buffer %s to JSON failed.\n", id);
@@ -203,7 +203,7 @@ static void test_data(lwm2m_data_t * tlvP,
 
     printf("lwm2m_data_t %s:\n", id);
     dump_tlv(stdout, size, tlvP, 0);
-    length = lwm2m_data_serialize(size, tlvP, &format, &buffer);
+    length = lwm2m_data_serialize(NULL, size, tlvP, &format, &buffer);
     if (length <= 0)
     {
         printf("\n\nSerialize lwm2m_data_t %s to TLV failed.\n", id);
@@ -215,7 +215,7 @@ static void test_data(lwm2m_data_t * tlvP,
         lwm2m_free(buffer);
     }
     format = LWM2M_CONTENT_JSON;
-    length = lwm2m_data_serialize(size, tlvP, &format, &buffer);
+    length = lwm2m_data_serialize(NULL, size, tlvP, &format, &buffer);
     if (length <= 0)
     {
         printf("\n\nSerialize lwm2m_data_t %s to JSON failed.\n", id);
@@ -287,6 +287,34 @@ int main(int argc, char *argv[])
                        \"bt\" : 1234567                     \
                       }";
 
+    char * buffer8 = "{ \"bn\":\"/\",                                       \
+                        \"e\":[                                             \
+                          {\"n\":\"34/0/1\",\"sv\":\"8613800755500\"},      \
+                          {\"n\":\"34/0/2\",\"v\":1},                       \
+                          {\"n\":\"66/0/0\",\"sv\":\"myService1\"},         \
+                          {\"n\":\"66/0/1\",\"sv\":\"Internet.15.234\"},    \
+                          {\"n\":\"66/1/0\",\"sv\":\"myService2\"},         \
+                          {\"n\":\"66/1/1\",\"sv\":\"Internet.15.235\"},    \
+                          {\"n\":\"31/0/0\",\"sv\":\"85.76.76.84\"},        \
+                          {\"n\":\"31/0/1\",\"sv\":\"85.76.255.255\"}]      \
+                      }";
+
+    char * buffer9 = "{ \"bn\":\"/\",                                       \
+                        \"e\":[                                             \
+                          {\"n\":\"34/0/0/0\",\"ov\":\"66:0\"},             \
+                          {\"n\":\"34/0/0/1\",\"ov\":\"66:1\"},             \
+                          {\"n\":\"34/0/1\",\"sv\":\"8613800755500\"},      \
+                          {\"n\":\"34/0/2\",\"v\":1},                       \
+                          {\"n\":\"66/0/0\",\"sv\":\"myService1\"},         \
+                          {\"n\":\"66/0/1\",\"sv\":\"Internet.15.234\"},    \
+                          {\"n\":\"66/0/2\",\"ov\":\"31:0\"},               \
+                          {\"n\":\"66/1/0\",\"sv\":\"myService2\"},         \
+                          {\"n\":\"66/1/1\",\"sv\":\"Internet.15.235\"},    \
+                          {\"n\":\"66/1/2\",\"ov\":\"FFFF:FFFF\"},          \
+                          {\"n\":\"31/0/0\",\"sv\":\"85.76.76.84\"},        \
+                          {\"n\":\"31/0/1\",\"sv\":\"85.76.255.255\"}]      \
+                      }";
+
     lwm2m_data_t data1[] = {                                                                \
                              {0, LWM2M_TYPE_RESOURCE, LWM2M_TYPE_UNDEFINED, 0, 0, NULL},    \
                              {0, LWM2M_TYPE_RESOURCE, LWM2M_TYPE_UNDEFINED, 1, 0, NULL},    \
@@ -344,6 +372,8 @@ int main(int argc, char *argv[])
     test_JSON("/12/0", buffer7, strlen(buffer7), "7");
     printf("\n\n============\n\n");
     test_JSON("/12/0/3", buffer7, strlen(buffer7), "7");
+    printf("\n\n============\n\n");
+    test_JSON(NULL, buffer8, strlen(buffer8), "8");
     printf("\n\n============\n\n");
     test_data(data1, sizeof(data1)/sizeof(lwm2m_data_t), "1");
     for (i = 0 ; i < sizeof(data1)/sizeof(lwm2m_data_t) ; i++)

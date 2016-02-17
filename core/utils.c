@@ -219,6 +219,8 @@ size_t utils_floatToText(double data,
     int64_t intPart;
     double decPart;
 
+    if (data <= INT64_MIN || data >= INT64_MAX) return 0;
+
     intPart = (int64_t)data;
     decPart = data - intPart;
     if (decPart < 0)
