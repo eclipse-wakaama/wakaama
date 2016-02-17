@@ -114,19 +114,6 @@ Contains code snippets which are:
 #define COAP_RESPONSE_TIMEOUT_TICKS         (CLOCK_SECOND * COAP_RESPONSE_TIMEOUT)
 #define COAP_RESPONSE_TIMEOUT_BACKOFF_MASK  ((CLOCK_SECOND * COAP_RESPONSE_TIMEOUT * (COAP_RESPONSE_RANDOM_FACTOR - 1)) + 1.5)
 
-static int prv_check_addr(void * leftSessionH,
-                          void * rightSessionH)
-{
-    if ((leftSessionH == NULL)
-     || (rightSessionH == NULL)
-     || (leftSessionH != rightSessionH))
-    {
-        return 0;
-    }
-
-    return 1;
-}
-
 static int prv_transaction_check_finished(lwm2m_transaction_t * transacP,
         coap_packet_t * receivedMessage)
 {
@@ -313,7 +300,7 @@ bool transaction_handle_response(lwm2m_context_t * contextP,
             break;
         }
 
-        if (prv_check_addr(fromSessionH, targetSessionH))
+        if (lwm2m_session_is_equal(fromSessionH, targetSessionH, contextP->userData) == true)
         {
             if (!transacP->ack_received)
             {
@@ -450,8 +437,7 @@ int transaction_send(lwm2m_context_t * contextP,
                 return COAP_500_INTERNAL_SERVER_ERROR;
             }
 
-            contextP->bufferSendCallback(targetSessionH,
-                                         transacP->buffer, transacP->buffer_len, contextP->userData);
+            (void)lwm2m_buffer_send(targetSessionH, transacP->buffer, transacP->buffer_len, contextP->userData);
 
             transacP->retrans_time += timeout;
             ++transacP->retrans_counter;

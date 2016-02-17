@@ -57,26 +57,14 @@
 #include <stdio.h>
 
 
-lwm2m_context_t * lwm2m_init(lwm2m_connect_server_callback_t connectCallback,
-        lwm2m_buffer_send_callback_t bufferSendCallback,
-        void * userData)
+lwm2m_context_t * lwm2m_init(void * userData)
 {
     lwm2m_context_t * contextP;
-
-    if (NULL == bufferSendCallback)
-        return NULL;
-
-#ifdef LWM2M_CLIENT_MODE
-    if (NULL == connectCallback)
-        return NULL;
-#endif
 
     contextP = (lwm2m_context_t *)lwm2m_malloc(sizeof(lwm2m_context_t));
     if (NULL != contextP)
     {
         memset(contextP, 0, sizeof(lwm2m_context_t));
-        contextP->connectCallback = connectCallback;
-        contextP->bufferSendCallback = bufferSendCallback;
         contextP->userData = userData;
         srand(time(NULL));
         contextP->nextMID = rand();

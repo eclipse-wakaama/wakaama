@@ -226,7 +226,7 @@ void cancel_observe(lwm2m_context_t * contextP,
         lwm2m_watcher_t * targetP = NULL;
 
         if ((LWM2M_MAX_ID == mid || observedP->watcherList->lastMid == mid)
-         && observedP->watcherList->server->sessionH == fromSessionH)
+         && lwm2m_session_is_equal(observedP->watcherList->server->sessionH, fromSessionH, contextP->userData))
         {
             targetP = observedP->watcherList;
             observedP->watcherList = observedP->watcherList->next;
@@ -238,7 +238,7 @@ void cancel_observe(lwm2m_context_t * contextP,
             parentP = observedP->watcherList;
             while (parentP->next != NULL
                 && (parentP->next->lastMid != mid
-                 || parentP->next->server->sessionH != fromSessionH))
+                 || lwm2m_session_is_equal(parentP->next->server->sessionH, fromSessionH, contextP->userData)))
             {
                 parentP = parentP->next;
             }

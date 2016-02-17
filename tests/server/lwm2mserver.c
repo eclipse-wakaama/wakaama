@@ -83,20 +83,6 @@ static void prv_print_error(uint8_t status)
     fprintf(stdout, "\r\n");
 }
 
-static uint8_t prv_buffer_send(void * sessionH,
-                               uint8_t * buffer,
-                               size_t length,
-                               void * userdata)
-{
-    connection_t * connP = (connection_t*) sessionH;
-
-    if (-1 == connection_send(connP, buffer, length))
-    {
-        return COAP_500_INTERNAL_SERVER_ERROR;
-    }
-    return COAP_NO_ERROR;
-}
-
 static char * prv_dump_binding(lwm2m_binding_t binding)
 {
     switch (binding)
@@ -832,7 +818,7 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    lwm2mH = lwm2m_init(NULL, prv_buffer_send, NULL);
+    lwm2mH = lwm2m_init(NULL);
     if (NULL == lwm2mH)
     {
         fprintf(stderr, "lwm2m_init() failed\r\n");
