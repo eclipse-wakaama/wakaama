@@ -436,7 +436,7 @@ static int prv_add_server(bs_info_t * infoP,
     }
 
     format = LWM2M_CONTENT_TLV;
-    serverP->securityLen = lwm2m_data_serialize(size, tlvP, &format, &(serverP->securityData));
+    serverP->securityLen = lwm2m_data_serialize(NULL, size, tlvP, &format, &(serverP->securityData));
     if (serverP->securityLen <= 0) goto error;
     lwm2m_data_free(size, tlvP);
 
@@ -469,7 +469,7 @@ static int prv_add_server(bs_info_t * infoP,
         tlvP[3].value = "U";
         tlvP[3].length = 1;
 
-        serverP->serverLen = lwm2m_data_serialize(size, tlvP, &format, &(serverP->serverData));
+        serverP->serverLen = lwm2m_data_serialize(NULL, size, tlvP, &format, &(serverP->serverData));
         if (serverP->serverLen <= 0) goto error;
         lwm2m_data_free(size, tlvP);
     }

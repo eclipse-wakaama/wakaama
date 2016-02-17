@@ -179,7 +179,7 @@ static void prv_register(lwm2m_context_t * contextP,
 
     if (server->sessionH == NULL)
     {
-        server->sessionH = contextP->connectCallback(server->secObjInstID, contextP->userData);
+        server->sessionH = lwm2m_connect_server(server->secObjInstID, contextP->userData);
     }
 
     if (NULL != server->sessionH)
