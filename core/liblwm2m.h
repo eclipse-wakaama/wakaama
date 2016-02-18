@@ -97,11 +97,6 @@ int lwm2m_strncmp(const char * s1, const char * s2, size_t n);
 // Per POSIX specifications, time_t is a signed integer.
 time_t lwm2m_gettime(void);
 
-#ifdef LWM2M_SUPPORT_JSON
-// Same usage as C89 snprintf(). Used conversions are "%d", "%.16g" and "%PRId64"
-int lwm2m_snprintf(char * str, size_t size, const char * format, ...);
-#endif
-
 #ifdef LWM2M_WITH_LOGS
 // Same usage as C89 printf()
 void lwm2m_printf(const char * format, ...);
