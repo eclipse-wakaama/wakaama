@@ -723,6 +723,7 @@ void print_usage(void)
     fprintf(stdout, "  -l PORT\tSet the local UDP port of the Client. Default: 56830\r\n");
     fprintf(stdout, "  -h HOST\tSet the hostname of the LWM2M Server to connect to. Default: localhost\r\n");
     fprintf(stdout, "  -p PORT\tSet the port of the LWM2M Server to connect to. Default: "LWM2M_STANDARD_PORT_STR"\r\n");
+    fprintf(stdout, "  -4\t\tUse IPv4 connection. Default: IPv6 connection\r\n");
     fprintf(stdout, "  -t TIME\tSet the lifetime of the Client. Default: 300\r\n");
     fprintf(stdout, "  -b\t\tBootstrap requested.\r\n");
     fprintf(stdout, "  -c\t\tChange battery level over time.\r\n");
@@ -744,6 +745,7 @@ int main(int argc, char *argv[])
     time_t reboot_time = 0;
     int opt;
     bool bootstrapRequested = false;
+    bool useIPv6 = true;
 #ifdef LWM2M_BOOTSTRAP
     lwm2m_client_state_t previousState = STATE_INITIAL;
 #endif
@@ -780,7 +782,7 @@ int main(int argc, char *argv[])
 
     memset(&data, 0, sizeof(client_data_t));
 
-    while ((opt = getopt(argc, argv, "bcl:n:p:t:h:")) != -1)
+    while ((opt = getopt(argc, argv, "bcl:n:p:t:h:4")) != -1)
     {
         switch (opt)
         {
@@ -805,6 +807,9 @@ int main(int argc, char *argv[])
         case 'p':
             serverPort = optarg;
             break;
+        case '4':
+            useIPv6 = false;
+            break;
         default:
             print_usage();
             return 0;
@@ -812,8 +817,9 @@ int main(int argc, char *argv[])
     }
 
     /*
-     *This call an internal function that create an IPV6 socket on the port 5683.
+     *This calls an internal function that creates a socket on the port 5683.
      */
+    connection_enable_IPv6(useIPv6);
     fprintf(stderr, "Trying to bind LWM2M Client to port %s\r\n", localPort);
     data.sock = create_socket(localPort);
     if (data.sock < 0)
