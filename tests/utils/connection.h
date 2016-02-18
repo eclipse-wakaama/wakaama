@@ -19,6 +19,7 @@
 #define CONNECTION_H_
 
 #include <stdio.h>
+#include <stdbool.h>
 #include <unistd.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -26,9 +27,9 @@
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <liblwm2m.h>
-
 #define LWM2M_STANDARD_PORT_STR "5683"
 #define LWM2M_STANDARD_PORT      5683
+
 
 typedef struct _connection_t
 {
@@ -47,5 +48,8 @@ connection_t * connection_create(connection_t * connList, int sock, char * host,
 void connection_free(connection_t * connList);
 
 int connection_send(connection_t *connP, uint8_t * buffer, size_t length);
+
+void connection_enable_IPv6(bool enable);
+bool connection_is_IPv6_enabled();
 
 #endif

@@ -24,6 +24,8 @@
 // from commandline.c
 void output_buffer(FILE * stream, uint8_t * buffer, int length, int indent);
 
+// status of IPv6 mode
+static bool connection_IPv6_enabled = true;
 
 int create_socket(const char * portStr)
 {
@@ -33,7 +35,7 @@ int create_socket(const char * portStr)
     struct addrinfo *p;
 
     memset(&hints, 0, sizeof hints);
-    hints.ai_family = AF_INET6;
+    hints.ai_family = connection_IPv6_enabled ? AF_INET6 : AF_INET;
     hints.ai_socktype = SOCK_DGRAM;
     hints.ai_flags = AI_PASSIVE;
 
@@ -217,4 +219,12 @@ bool lwm2m_session_is_equal(void * session1,
                             void * userData)
 {
     return (session1 == session2);
+}
+
+// Functions for managment of IPv6 mode
+void connection_enable_IPv6(bool enable) {
+    connection_IPv6_enabled = enable;
+}
+bool connection_is_IPv6_enabled() {
+    return connection_IPv6_enabled;
 }
