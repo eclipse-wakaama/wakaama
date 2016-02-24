@@ -420,7 +420,7 @@ lwm2m_server_t * utils_findBootstrapServer(lwm2m_context_t * contextP,
 
     targetP = contextP->bootstrapServerList;
     while (targetP != NULL
-        && lwm2m_session_is_equal(targetP->sessionH, fromSessionH, contextP->userData))
+        && false == lwm2m_session_is_equal(targetP->sessionH, fromSessionH, contextP->userData))
     {
         targetP = targetP->next;
     }
