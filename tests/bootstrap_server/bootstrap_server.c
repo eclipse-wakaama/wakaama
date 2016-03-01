@@ -12,6 +12,7 @@
  *
  * Contributors:
  *    David Navarro, Intel Corporation - initial API and implementation
+ *    Christian Renz - Please refer to git log
  *
  *******************************************************************************/
 
@@ -59,6 +60,7 @@ typedef struct
     lwm2m_context_t * lwm2mH;
     bs_info_t *       bsInfo;
     endpoint_t *      endpointList;
+    int               addressFamily;
 } internal_data_t;
 
 /*
@@ -88,6 +90,7 @@ void print_usage(char * filename,
     fprintf(stdout, "Options:\r\n");
     fprintf(stdout, "  -f FILE\tSpecify BootStrap Information file. Default: ./%s\r\n", filename);
     fprintf(stdout, "  -p PORT\tSet the local UDP port of the Client. Default: %s\r\n", port);
+    fprintf(stdout, "  -4\t\tUse IPv4 connection. Default: IPv6 connection\r\n");
     fprintf(stdout, "\r\n");
 }
 
@@ -447,7 +450,7 @@ static void prv_bootstrap_client(char * buffer,
     port++;
 
     fprintf(stderr, "Trying to connect to LWM2M CLient at %s:%s\r\n", host, port);
-    newConnP = connection_create(dataP->connList, dataP->sock, host, port);
+    newConnP = connection_create(dataP->connList, dataP->sock, host, port, dataP->addressFamily);
     if (newConnP == NULL) {
         fprintf(stderr, "Connection creation failed.\r\n");
         return;
@@ -491,7 +494,11 @@ int main(int argc, char *argv[])
         COMMAND_END_LIST
     };
 
-    while ((opt = getopt(argc, argv, "f:p:")) != -1)
+    memset(&data, 0, sizeof(internal_data_t));
+
+    data.addressFamily = AF_INET6;
+
+    while ((opt = getopt(argc, argv, "f:p:4")) != -1)
     {
         switch (opt)
         {
@@ -501,15 +508,16 @@ int main(int argc, char *argv[])
         case 'p':
             port = optarg;
             break;
+        case '4':
+            data.addressFamily = AF_INET;
+            break;
         default:
             print_usage(filename, port);
             return 0;
         }
     }
 
-    memset(&data, 0, sizeof(internal_data_t));
-
-    data.sock = create_socket(port);
+    data.sock = create_socket(port, data.addressFamily);
     if (data.sock < 0)
     {
         fprintf(stderr, "Error opening socket: %d\r\n", errno);

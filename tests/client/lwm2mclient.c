@@ -20,7 +20,8 @@
  *    Toby Jaffey - Please refer to git log
  *    Bosch Software Innovations GmbH - Please refer to git log
  *    Pascal Rieux - Please refer to git log
- *    
+ *    Christian Renz - Please refer to git log
+ *
  *******************************************************************************/
 
 /*
@@ -75,6 +76,8 @@
 #include <signal.h>
 
 #define MAX_PACKET_SIZE 1024
+#define DEFAULT_SERVER_IPV6 "[::1]"
+#define DEFAULT_SERVER_IPV4 "127.0.0.1"
 
 int g_reboot = 0;
 static int g_quit = 0;
@@ -92,6 +95,7 @@ typedef struct
     lwm2m_object_t * serverObject;
     int sock;
     connection_t * connList;
+    int addressFamily;
 } client_data_t;
 
 static void prv_quit(char * buffer,
@@ -134,7 +138,7 @@ void handle_value_changed(lwm2m_context_t * lwm2mH,
         {
             lwm2m_data_t * dataP;
             int result;
-            
+
             dataP = lwm2m_data_new(1);
             if (dataP == NULL)
             {
@@ -158,7 +162,7 @@ void handle_value_changed(lwm2m_context_t * lwm2mH,
                     break;
                 }
             }
-            
+
             if (COAP_204_CHANGED != result)
             {
                 fprintf(stderr, "Failed to change value!\n");
@@ -225,7 +229,7 @@ void * lwm2m_connect_server(uint16_t secObjInstID,
     port++;
 
     fprintf(stderr, "Trying to connect to LWM2M Server at %s:%s\r\n", host, port);
-    newConnP = connection_create(dataP->connList, dataP->sock, host, port);
+    newConnP = connection_create(dataP->connList, dataP->sock, host, port, dataP->addressFamily);
     if (newConnP == NULL) {
         fprintf(stderr, "Connection creation failed.\r\n");
     }
@@ -502,7 +506,7 @@ static void prv_initiate_bootstrap(char * buffer,
 {
     lwm2m_context_t * lwm2mH = (lwm2m_context_t *)user_data;
     lwm2m_server_t * targetP;
-    
+
     // HACK !!!
     lwm2mH->state = STATE_BOOTSTRAP_REQUIRED;
     targetP = lwm2mH->bootstrapServerList;
@@ -723,6 +727,7 @@ void print_usage(void)
     fprintf(stdout, "  -l PORT\tSet the local UDP port of the Client. Default: 56830\r\n");
     fprintf(stdout, "  -h HOST\tSet the hostname of the LWM2M Server to connect to. Default: localhost\r\n");
     fprintf(stdout, "  -p PORT\tSet the port of the LWM2M Server to connect to. Default: "LWM2M_STANDARD_PORT_STR"\r\n");
+    fprintf(stdout, "  -4\t\tUse IPv4 connection. Default: IPv6 connection\r\n");
     fprintf(stdout, "  -t TIME\tSet the lifetime of the Client. Default: 300\r\n");
     fprintf(stdout, "  -b\t\tBootstrap requested.\r\n");
     fprintf(stdout, "  -c\t\tChange battery level over time.\r\n");
@@ -736,7 +741,7 @@ int main(int argc, char *argv[])
     lwm2m_context_t * lwm2mH = NULL;
     int i;
     const char * localPort = "56830";
-    const char * server = "[::1]";
+    const char * server = NULL;
     const char * serverPort = LWM2M_STANDARD_PORT_STR;
     char * name = "testlwm2mclient";
     int lifetime = 300;
@@ -779,8 +784,9 @@ int main(int argc, char *argv[])
     };
 
     memset(&data, 0, sizeof(client_data_t));
+    data.addressFamily = AF_INET6;
 
-    while ((opt = getopt(argc, argv, "bcl:n:p:t:h:")) != -1)
+    while ((opt = getopt(argc, argv, "bcl:n:p:t:h:4")) != -1)
     {
         switch (opt)
         {
@@ -805,17 +811,25 @@ int main(int argc, char *argv[])
         case 'p':
             serverPort = optarg;
             break;
+        case '4':
+            data.addressFamily = AF_INET;
+            break;
         default:
             print_usage();
             return 0;
         }
     }
 
+    if (!server)
+    {
+        server = (AF_INET == data.addressFamily ? DEFAULT_SERVER_IPV4 : DEFAULT_SERVER_IPV6);
+    }
+
     /*
      *This call an internal function that create an IPV6 socket on the port 5683.
      */
     fprintf(stderr, "Trying to bind LWM2M Client to port %s\r\n", localPort);
-    data.sock = create_socket(localPort);
+    data.sock = create_socket(localPort, data.addressFamily);
     if (data.sock < 0)
     {
         fprintf(stderr, "Failed to open socket: %d %s\r\n", errno, strerror(errno));

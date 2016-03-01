@@ -12,6 +12,7 @@
  *
  * Contributors:
  *    Simon Bernard - initial API and implementation
+ *    Christian Renz - Please refer to git log
  *
  *******************************************************************************/
 
@@ -46,11 +47,11 @@ typedef struct _dtls_connection_t
     dtls_context_t * dtlsContext;
 } dtls_connection_t;
 
-int create_socket(const char * portStr);
+int create_socket(const char * portStr, int ai_family);
 
 dtls_connection_t * connection_find(dtls_connection_t * connList, const struct sockaddr_storage * addr, size_t addrLen);
 dtls_connection_t * connection_new_incoming(dtls_connection_t * connList, int sock, const struct sockaddr * addr, size_t addrLen);
-dtls_connection_t * connection_create(dtls_connection_t * connList, int sock, lwm2m_object_t * securityObj, int instanceId, lwm2m_context_t * lwm2mH);
+dtls_connection_t * connection_create(dtls_connection_t * connList, int sock, lwm2m_object_t * securityObj, int instanceId, lwm2m_context_t * lwm2mH, int addressFamily);
 
 void connection_free(dtls_connection_t * connList);
 
