@@ -20,7 +20,8 @@
  *    Toby Jaffey - Please refer to git log
  *    Bosch Software Innovations GmbH - Please refer to git log
  *    Pascal Rieux - Please refer to git log
- *    
+ *    Christian Renz - Please refer to git log
+ *
  *******************************************************************************/
 
 /*
@@ -93,6 +94,7 @@ typedef struct
     int sock;
     dtls_connection_t * connList;
     lwm2m_context_t * lwm2mH;
+    int addressFamily;
 } client_data_t;
 
 
@@ -114,7 +116,7 @@ void * lwm2m_connect_server(uint16_t secObjInstID,
     if (instance == NULL) return NULL;
 
 
-    newConnP = connection_create(dataP->connList, dataP->sock, securityObj, instance->id, dataP->lwm2mH);
+    newConnP = connection_create(dataP->connList, dataP->sock, securityObj, instance->id, dataP->lwm2mH, dataP->addressFamily);
     if (newConnP == NULL)
     {
         fprintf(stderr, "Connection creation failed.\n");
@@ -132,6 +134,7 @@ void print_usage(void)
     fprintf(stdout, "Options:\r\n");
     fprintf(stdout, "  -n NAME\tSet the endpoint name of the Client. Default: testsecureclient\r\n");
     fprintf(stdout, "  -l PORT\tSet the local UDP port of the Client. Default: 56830\r\n");
+    fprintf(stdout, "  -4\t\tUse IPv4 connection. Default: IPv6 connection\r\n");
     fprintf(stdout, "  -b \t\tIf present use bootstrap.\r\n");
     fprintf(stdout, "  -u URL\tSet the device management or bootstrap server URL. Default: coap://localhost:5683\r\n");
     fprintf(stdout, "  -i STRING\tSet the device management or bootstrap server PSK identity. If not set use none secure mode\r\n");
@@ -159,8 +162,9 @@ int main(int argc, char *argv[])
     int opt;
 
     memset(&data, 0, sizeof(client_data_t));
+    data.addressFamily = AF_INET6;
 
-    while ((opt = getopt(argc, argv, "u:l:n:p:i:b")) != -1)
+    while ((opt = getopt(argc, argv, "u:l:n:p:i:b4")) != -1)
     {
         switch (opt)
         {
@@ -182,6 +186,9 @@ int main(int argc, char *argv[])
         case 'b':
             bootstrap = true;
             break;
+        case '4':
+            data.addressFamily = AF_INET;
+            break;
         default:
             print_usage();
             return 0;
@@ -192,7 +199,7 @@ int main(int argc, char *argv[])
      *This call an internal function that create an IPv6 socket on the port 5683.
      */
     fprintf(stderr, "Trying to bind LWM2M Client to port %s\r\n", localPort);
-    data.sock = create_socket(localPort);
+    data.sock = create_socket(localPort, data.addressFamily);
     if (data.sock < 0)
     {
         fprintf(stderr, "Failed to open socket: %d %s\r\n", errno, strerror(errno));

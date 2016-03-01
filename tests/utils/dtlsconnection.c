@@ -12,6 +12,7 @@
  *
  * Contributors:
  *    David Navarro, Intel Corporation - initial API and implementation
+ *    Christian Renz - Please refer to git log
  *
  *******************************************************************************/
 
@@ -311,7 +312,7 @@ int sockaddr_cmp(struct sockaddr *x, struct sockaddr *y)
     }
 }
 
-int create_socket(const char * portStr)
+int create_socket(const char * portStr, int ai_family)
 {
     int s = -1;
     struct addrinfo hints;
@@ -319,7 +320,7 @@ int create_socket(const char * portStr)
     struct addrinfo *p;
 
     memset(&hints, 0, sizeof hints);
-    hints.ai_family = AF_INET6;
+    hints.ai_family = ai_family;
     hints.ai_socktype = SOCK_DGRAM;
     hints.ai_flags = AI_PASSIVE;
 
@@ -393,7 +394,8 @@ dtls_connection_t * connection_create(dtls_connection_t * connList,
                                  int sock,
                                  lwm2m_object_t * securityObj,
                                  int instanceId,
-                                 lwm2m_context_t * lwm2mH)
+                                 lwm2m_context_t * lwm2mH,
+                                 int addressFamily)
 {
     struct addrinfo hints;
     struct addrinfo *servinfo = NULL;
@@ -408,7 +410,7 @@ dtls_connection_t * connection_create(dtls_connection_t * connList,
     char * port;
 
     memset(&hints, 0, sizeof(hints));
-    hints.ai_family = AF_UNSPEC;
+    hints.ai_family = addressFamily;
     hints.ai_socktype = SOCK_DGRAM;
 
     uri = security_get_uri(securityObj, instanceId, uriBuf, URI_LENGTH);
@@ -487,12 +489,12 @@ dtls_connection_t * connection_create(dtls_connection_t * connList,
             {
                 connP->dtlsContext = get_dtls_context(connP);
             }
-            else 
+            else
             {
                 // no dtls session
                 connP->dtlsSession = NULL;
             }
-        } 
+        }
     }
 
     if (NULL != servinfo) free(servinfo);

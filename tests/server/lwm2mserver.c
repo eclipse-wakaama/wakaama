@@ -17,6 +17,7 @@
  *    Toby Jaffey - Please refer to git log
  *    Julien Vermillard - Please refer to git log
  *    Bosch Software Innovations GmbH - Please refer to git log
+ *    Christian Renz - Please refer to git log
  *
  *******************************************************************************/
 
@@ -740,8 +741,11 @@ void handle_sigint(int signum)
 
 void print_usage(void)
 {
-    fprintf(stderr, "Usage: lwm2mserver\r\n");
+    fprintf(stderr, "Usage: lwm2mserver [OPTION]\r\n");
     fprintf(stderr, "Launch a LWM2M server on localhost port "LWM2M_STANDARD_PORT_STR".\r\n\n");
+    fprintf(stdout, "Options:\r\n");
+    fprintf(stdout, "  -4\t\tUse IPv4 connection. Default: IPv6 connection\r\n");
+    fprintf(stdout, "\r\n");
 }
 
 
@@ -754,6 +758,8 @@ int main(int argc, char *argv[])
     lwm2m_context_t * lwm2mH = NULL;
     int i;
     connection_t * connList = NULL;
+    int addressFamily = AF_INET6;
+    int opt;
 
     command_desc_t commands[] =
     {
@@ -811,7 +817,21 @@ int main(int argc, char *argv[])
             COMMAND_END_LIST
     };
 
-    sock = create_socket(LWM2M_STANDARD_PORT_STR);
+    while ((opt = getopt(argc, argv, "4")) != -1)
+    {
+        switch (opt)
+        {
+        case '4':
+            addressFamily = AF_INET;
+            break;
+        default:
+            print_usage();
+            return 0;
+        }
+    }
+
+
+    sock = create_socket(LWM2M_STANDARD_PORT_STR, addressFamily);
     if (sock < 0)
     {
         fprintf(stderr, "Error opening socket: %d\r\n", errno);

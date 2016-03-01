@@ -24,8 +24,7 @@
 // from commandline.c
 void output_buffer(FILE * stream, uint8_t * buffer, int length, int indent);
 
-
-int create_socket(const char * portStr)
+int create_socket(const char * portStr, int addressFamily)
 {
     int s = -1;
     struct addrinfo hints;
@@ -33,7 +32,7 @@ int create_socket(const char * portStr)
     struct addrinfo *p;
 
     memset(&hints, 0, sizeof hints);
-    hints.ai_family = AF_INET6;
+    hints.ai_family = addressFamily;
     hints.ai_socktype = SOCK_DGRAM;
     hints.ai_flags = AI_PASSIVE;
 
@@ -102,7 +101,8 @@ connection_t * connection_new_incoming(connection_t * connList,
 connection_t * connection_create(connection_t * connList,
                                  int sock,
                                  char * host,
-                                 char * port)
+                                 char * port,
+                                 int addressFamily)
 {
     struct addrinfo hints;
     struct addrinfo *servinfo = NULL;
@@ -113,7 +113,7 @@ connection_t * connection_create(connection_t * connList,
     connection_t * connP = NULL;
 
     memset(&hints, 0, sizeof(hints));
-    hints.ai_family = AF_UNSPEC;
+    hints.ai_family = addressFamily;
     hints.ai_socktype = SOCK_DGRAM;
 
     if (0 != getaddrinfo(host, port, &hints, &servinfo) || servinfo == NULL) return NULL;
@@ -172,8 +172,18 @@ int connection_send(connection_t *connP,
 
     s[0] = 0;
 
-    inet_ntop(connP->addr.sin6_family, &connP->addr.sin6_addr, s, INET6_ADDRSTRLEN);
-    port = connP->addr.sin6_port;
+    if (AF_INET == connP->addr.sin6_family)
+    {
+        struct sockaddr_in *saddr = (struct sockaddr_in *)&connP->addr;
+        inet_ntop(saddr->sin_family, &saddr->sin_addr, s, INET6_ADDRSTRLEN);
+        port = saddr->sin_port;
+    }
+    else if (AF_INET6 == connP->addr.sin6_family)
+    {
+        struct sockaddr_in6 *saddr = (struct sockaddr_in6 *)&connP->addr;
+        inet_ntop(saddr->sin6_family, &saddr->sin6_addr, s, INET6_ADDRSTRLEN);
+        port = saddr->sin6_port;
+    }
 
     fprintf(stderr, "Sending %d bytes to [%s]:%hu\r\n", length, s, ntohs(port));
 
