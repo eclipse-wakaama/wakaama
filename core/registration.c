@@ -148,32 +148,31 @@ static void prv_handleRegistrationReply(lwm2m_transaction_t * transacP,
 #define PRV_QUERY_BUFFER_LENGTH 200
 
 // send the registration for a single server
-static void prv_register(lwm2m_context_t * contextP,
-                         lwm2m_server_t * server)
+static uint8_t prv_register(lwm2m_context_t * contextP,
+                            lwm2m_server_t * server)
 {
     char query[200];
     int query_length;
     uint8_t payload[512];
     int payload_length;
-
     lwm2m_transaction_t * transaction;
 
     payload_length = prv_getRegisterPayload(contextP, payload, sizeof(payload));
-    if (payload_length == 0) return;
+    if (payload_length == 0) return COAP_500_INTERNAL_SERVER_ERROR;
 
     query_length = prv_getRegistrationQuery(contextP, server, query, sizeof(query));
 
-    if (query_length == 0) return;
+    if (query_length == 0) return COAP_500_INTERNAL_SERVER_ERROR;
 
     if (0 != server->lifetime)
     {
         int res;
 
         res = utils_stringCopy(query + query_length, PRV_QUERY_BUFFER_LENGTH - query_length, QUERY_DELIMITER QUERY_LIFETIME);
-        if (res < 0) return;
+        if (res < 0) return COAP_500_INTERNAL_SERVER_ERROR;
         query_length += res;
         res = utils_intCopy(query + query_length, PRV_QUERY_BUFFER_LENGTH - query_length, server->lifetime);
-        if (res < 0) return;
+        if (res < 0) return COAP_500_INTERNAL_SERVER_ERROR;
         query_length += res;
     }
 
@@ -182,25 +181,25 @@ static void prv_register(lwm2m_context_t * contextP,
         server->sessionH = lwm2m_connect_server(server->secObjInstID, contextP->userData);
     }
 
-    if (NULL != server->sessionH)
-    {
-        transaction = transaction_new(COAP_TYPE_CON, COAP_POST, NULL, NULL, contextP->nextMID++, 4, NULL, ENDPOINT_SERVER, (void *)server);
-        if (transaction == NULL) return;
+    if (NULL == server->sessionH) return COAP_503_SERVICE_UNAVAILABLE;
 
-        coap_set_header_uri_path(transaction->message, "/"URI_REGISTRATION_SEGMENT);
-        coap_set_header_uri_query(transaction->message, query);
-        coap_set_header_content_type(transaction->message, LWM2M_CONTENT_LINK);
-        coap_set_payload(transaction->message, payload, payload_length);
+    transaction = transaction_new(COAP_TYPE_CON, COAP_POST, NULL, NULL, contextP->nextMID++, 4, NULL, ENDPOINT_SERVER, (void *)server);
+    if (transaction == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
 
-        transaction->callback = prv_handleRegistrationReply;
-        transaction->userData = (void *) server;
+    coap_set_header_uri_path(transaction->message, "/"URI_REGISTRATION_SEGMENT);
+    coap_set_header_uri_query(transaction->message, query);
+    coap_set_header_content_type(transaction->message, LWM2M_CONTENT_LINK);
+    coap_set_payload(transaction->message, payload, payload_length);
 
-        contextP->transactionList = (lwm2m_transaction_t *)LWM2M_LIST_ADD(contextP->transactionList, transaction);
-        if (transaction_send(contextP, transaction) == 0)
-        {
-            server->status = STATE_REG_PENDING;
-        }
-    }
+    transaction->callback = prv_handleRegistrationReply;
+    transaction->userData = (void *) server;
+
+    contextP->transactionList = (lwm2m_transaction_t *)LWM2M_LIST_ADD(contextP->transactionList, transaction);
+    if (transaction_send(contextP, transaction) != 0) return COAP_500_INTERNAL_SERVER_ERROR;
+
+    server->status = STATE_REG_PENDING;
+
+    return COAP_NO_ERROR;
 }
 
 static void prv_handleRegistrationUpdateReply(lwm2m_transaction_t * transacP,
@@ -284,20 +283,25 @@ int lwm2m_update_registration(lwm2m_context_t * contextP,
     return NOT_FOUND_4_04;
 }
 
-void registration_start(lwm2m_context_t * contextP)
+uint8_t registration_start(lwm2m_context_t * contextP)
 {
     lwm2m_server_t * targetP;
+    uint8_t result;
+
+    result = COAP_NO_ERROR;
 
     targetP = contextP->serverList;
-    while (targetP != NULL)
+    while (targetP != NULL && result == COAP_NO_ERROR)
     {
         if (targetP->status == STATE_DEREGISTERED
          || targetP->status == STATE_REG_FAILED)
         {
-            prv_register(contextP, targetP);
+            result = prv_register(contextP, targetP);
         }
         targetP = targetP->next;
     }
+
+    return result;
 }
 
 
