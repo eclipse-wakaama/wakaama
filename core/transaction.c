@@ -392,15 +392,16 @@ int transaction_send(lwm2m_context_t * contextP,
 
     if (!transacP->ack_received)
     {
-        long unsigned timeout = COAP_RESPONSE_TIMEOUT;
+        long unsigned timeout;
 
         if (0 == transacP->retrans_counter)
         {
             time_t tv_sec = lwm2m_gettime();
             if (0 <= tv_sec)
             {
-                transacP->retrans_time = tv_sec;
+                transacP->retrans_time = tv_sec + COAP_RESPONSE_TIMEOUT;
                 transacP->retrans_counter = 1;
+                timeout = 0;
             }
             else
             {
@@ -409,10 +410,10 @@ int transaction_send(lwm2m_context_t * contextP,
         }
         else
         {
-            timeout = COAP_RESPONSE_TIMEOUT * transacP->retrans_counter;
+            timeout = COAP_RESPONSE_TIMEOUT << (transacP->retrans_counter - 1);
         }
 
-        if (COAP_MAX_RETRANSMIT >= transacP->retrans_counter)
+        if (COAP_MAX_RETRANSMIT + 1 >= transacP->retrans_counter)
         {
             void * targetSessionH = NULL;
 
@@ -443,7 +444,7 @@ int transaction_send(lwm2m_context_t * contextP,
             (void)lwm2m_buffer_send(targetSessionH, transacP->buffer, transacP->buffer_len, contextP->userData);
 
             transacP->retrans_time += timeout;
-            ++transacP->retrans_counter;
+            transacP->retrans_counter += 1;
         }
         else
         {
@@ -499,6 +500,10 @@ void transaction_step(lwm2m_context_t * contextP,
             {
                 *timeoutP = interval;
             }
+        }
+        else
+        {
+            *timeoutP = 1;
         }
 
         transacP = nextP;
