@@ -577,24 +577,14 @@ coap_serialize_message(void *packet, uint8_t *buffer)
   coap_free_header(packet);
 
   /* Pack payload */
-  if ((option - coap_pkt->buffer)<=COAP_MAX_HEADER_SIZE)
+  /* Payload marker */
+  if (coap_pkt->payload_len)
   {
-    /* Payload marker */
-    if (coap_pkt->payload_len)
-    {
-      *option = 0xFF;
-      ++option;
-    }
+    *option = 0xFF;
+    ++option;
+  }
 
-    memmove(option, coap_pkt->payload, coap_pkt->payload_len);
-  }
-  else
-  {
-    /* An error occured. Caller must check for !=0. */
-    coap_pkt->buffer = NULL;
-    coap_error_message = "Serialized header exceeds COAP_MAX_HEADER_SIZE";
-    return 0;
-  }
+  memmove(option, coap_pkt->payload, coap_pkt->payload_len);
 
   PRINTF("-Done %u B (header len %u, payload len %u)-\n", coap_pkt->payload_len + option - buffer, option - buffer, coap_pkt->payload_len);
 
