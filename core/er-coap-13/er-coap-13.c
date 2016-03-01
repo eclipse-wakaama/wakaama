@@ -411,6 +411,109 @@ coap_free_header(void *packet)
 }
 
 /*-----------------------------------------------------------------------------------*/
+size_t coap_serialize_get_size(void *packet)
+{
+    coap_packet_t *const coap_pkt = (coap_packet_t *) packet;
+    size_t length = 0;
+
+    length = COAP_HEADER_LEN + coap_pkt->payload_len;
+
+    if (IS_OPTION(coap_pkt, COAP_OPTION_IF_MATCH))
+    {
+        length += COAP_MAX_OPTION_HEADER_LEN + coap_pkt->if_match_len;
+    }
+    if (IS_OPTION(coap_pkt, COAP_OPTION_URI_HOST))
+    {
+        length += COAP_MAX_OPTION_HEADER_LEN + coap_pkt->uri_host_len;
+    }
+    if (IS_OPTION(coap_pkt, COAP_OPTION_ETAG))
+    {
+        length += COAP_MAX_OPTION_HEADER_LEN + coap_pkt->etag_len;
+    }
+    if (IS_OPTION(coap_pkt, COAP_OPTION_IF_NONE_MATCH))
+    {
+        // can be stored in extended fields
+        length += COAP_MAX_OPTION_HEADER_LEN;
+    }
+    if (IS_OPTION(coap_pkt, COAP_OPTION_OBSERVE))
+    {
+        // can be stored in extended fields
+        length += COAP_MAX_OPTION_HEADER_LEN;
+    }
+    if (IS_OPTION(coap_pkt, COAP_OPTION_URI_PORT))
+    {
+        // can be stored in extended fields
+        length += COAP_MAX_OPTION_HEADER_LEN;
+    }
+    if (IS_OPTION(coap_pkt, COAP_OPTION_LOCATION_PATH))
+    {
+        multi_option_t * optP;
+
+        for (optP = coap_pkt->location_path ; optP != NULL ; optP = optP->next)
+        {
+            length += COAP_MAX_OPTION_HEADER_LEN + optP->len;
+        }
+    }
+    if (IS_OPTION(coap_pkt, COAP_OPTION_URI_PATH))
+    {
+        multi_option_t * optP;
+
+        for (optP = coap_pkt->uri_path ; optP != NULL ; optP = optP->next)
+        {
+            length += COAP_MAX_OPTION_HEADER_LEN + optP->len;
+        }
+    }
+    if (IS_OPTION(coap_pkt, COAP_OPTION_CONTENT_TYPE))
+    {
+        // can be stored in extended fields
+        length += COAP_MAX_OPTION_HEADER_LEN;
+    }
+    if (IS_OPTION(coap_pkt, COAP_OPTION_MAX_AGE))
+    {
+        // can be stored in extended fields
+        length += COAP_MAX_OPTION_HEADER_LEN;
+    }
+    if (IS_OPTION(coap_pkt, COAP_OPTION_URI_QUERY))
+    {
+        multi_option_t * optP;
+
+        for (optP = coap_pkt->uri_query ; optP != NULL ; optP = optP->next)
+        {
+            length += COAP_MAX_OPTION_HEADER_LEN + optP->len;
+        }
+    }
+    if (IS_OPTION(coap_pkt, COAP_OPTION_ACCEPT))
+    {
+        length += coap_pkt->accept_num * COAP_MAX_OPTION_HEADER_LEN;
+    }
+    if (IS_OPTION(coap_pkt, COAP_OPTION_LOCATION_QUERY))
+    {
+        length += COAP_MAX_OPTION_HEADER_LEN + coap_pkt->location_query_len;
+    }
+    if (IS_OPTION(coap_pkt, COAP_OPTION_BLOCK2))
+    {
+        // can be stored in extended fields
+        length += COAP_MAX_OPTION_HEADER_LEN;
+    }
+    if (IS_OPTION(coap_pkt, COAP_OPTION_BLOCK1))
+    {
+        // can be stored in extended fields
+        length += COAP_MAX_OPTION_HEADER_LEN;
+    }
+    if (IS_OPTION(coap_pkt, COAP_OPTION_SIZE))
+    {
+        // can be stored in extended fields
+        length += COAP_MAX_OPTION_HEADER_LEN;
+    }
+    if (IS_OPTION(coap_pkt, COAP_OPTION_PROXY_URI))
+    {
+        length += COAP_MAX_OPTION_HEADER_LEN + coap_pkt->proxy_uri_len;
+    }
+
+    return length;
+}
+
+/*-----------------------------------------------------------------------------------*/
 size_t
 coap_serialize_message(void *packet, uint8_t *buffer)
 {

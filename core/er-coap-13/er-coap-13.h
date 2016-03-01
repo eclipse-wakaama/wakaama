@@ -65,6 +65,8 @@
 #define COAP_TOKEN_LEN                       8 /* The maximum number of bytes for the Token */
 #define COAP_MAX_ACCEPT_NUM                  2 /* The maximum number of accept preferences to parse/store */
 
+#define COAP_MAX_OPTION_HEADER_LEN           5
+
 #define COAP_HEADER_VERSION_MASK             0xC0
 #define COAP_HEADER_VERSION_POSITION         6
 #define COAP_HEADER_TYPE_MASK                0x30
@@ -317,6 +319,7 @@ extern char *coap_error_message;
 uint16_t coap_get_mid(void);
 
 void coap_init_message(void *packet, coap_message_type_t type, uint8_t code, uint16_t mid);
+size_t coap_serialize_get_size(void *packet);
 size_t coap_serialize_message(void *packet, uint8_t *buffer);
 coap_status_t coap_parse_message(void *request, uint8_t *data, uint16_t data_len);
 void coap_free_header(void *packet);

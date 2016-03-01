@@ -374,8 +374,10 @@ int transaction_send(lwm2m_context_t * contextP,
 
     if (transacP->buffer == NULL)
     {
-        transacP->buffer = (uint8_t*)lwm2m_malloc(COAP_MAX_HEADER_SIZE
-                                                + ((coap_packet_t *)(transacP->message))->payload_len);
+        transacP->buffer_len = coap_serialize_get_size(transacP->message);
+        if (transacP->buffer_len == 0) return COAP_500_INTERNAL_SERVER_ERROR;
+
+        transacP->buffer = (uint8_t*)lwm2m_malloc(transacP->buffer_len);
         if (transacP->buffer == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
 
         transacP->buffer_len = coap_serialize_message(transacP->message, transacP->buffer);
@@ -383,6 +385,7 @@ int transaction_send(lwm2m_context_t * contextP,
         {
             lwm2m_free(transacP->buffer);
             transacP->buffer = NULL;
+            transaction_remove(contextP, transacP);
             return COAP_500_INTERNAL_SERVER_ERROR;
         }
     }
