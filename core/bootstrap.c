@@ -341,7 +341,15 @@ coap_status_t handle_bootstrap_command(lwm2m_context_t * contextP,
     {
     case COAP_PUT:
         {
-            if (LWM2M_URI_IS_SET_INSTANCE(uriP))
+            if (!LWM2M_URI_IS_SET_INSTANCE(uriP))
+            {                
+                result = object_create(contextP, uriP, format, message->payload, message->payload_len);
+                if (COAP_201_CREATED == result)
+                {
+                    result = COAP_204_CHANGED;
+                }            
+            }
+            else
             {
                 if (object_isInstanceNew(contextP, uriP->objectId, uriP->instanceId))
                 {
@@ -360,10 +368,6 @@ coap_status_t handle_bootstrap_command(lwm2m_context_t * contextP,
                         prv_tag_server(contextP, uriP->instanceId);
                     }
                 }
-            }
-            else
-            {
-                result = BAD_REQUEST_4_00;
             }
         }
         break;

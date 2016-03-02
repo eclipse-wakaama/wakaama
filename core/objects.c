@@ -339,6 +339,7 @@ coap_status_t object_create(lwm2m_context_t * contextP,
     lwm2m_data_t * dataP = NULL;
     int size = 0;
     uint8_t result;
+    int i;
 
     if (length == 0 || buffer == 0)
     {
@@ -365,7 +366,18 @@ coap_status_t object_create(lwm2m_context_t * contextP,
 
     size = lwm2m_data_parse(buffer, length, format, &dataP);
     if (size == 0) return COAP_500_INTERNAL_SERVER_ERROR;
-    result = targetP->createFunc(uriP->instanceId, size, dataP, targetP);
+
+    if( dataP->type == LWM2M_TYPE_OBJECT_INSTANCE)
+    {
+        for (i = 0 ; i < size ; i++)
+        {
+            result = targetP->createFunc(uriP->instanceId, dataP->length, (lwm2m_data_t *)(dataP[i].value), targetP);
+        }
+    }
+    else
+    {
+        result = targetP->createFunc(uriP->instanceId, size, dataP, targetP);
+    }
     lwm2m_data_free(size, dataP);
 
     return result;
