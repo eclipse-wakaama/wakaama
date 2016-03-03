@@ -758,4 +758,40 @@ int object_getServers(lwm2m_context_t * contextP)
     return 0;
 }
 
+coap_status_t object_createInstance(lwm2m_context_t * contextP,
+                            lwm2m_uri_t * uriP,
+                            lwm2m_data_t * dataP)
+{
+    lwm2m_object_t * targetP;
+    coap_status_t result;
+
+    targetP = prv_find_object(contextP, uriP->objectId);
+    if (NULL == targetP) return NOT_FOUND_4_04;
+
+    if (NULL == targetP->createFunc) 
+    {
+        return METHOD_NOT_ALLOWED_4_05;
+    }
+
+    result = targetP->createFunc(lwm2m_list_newId(targetP->instanceList), dataP->length, (lwm2m_data_t *)(dataP->value), targetP);
+}
+
+coap_status_t object_writeInstance(lwm2m_context_t * contextP,
+                            lwm2m_uri_t * uriP,
+                            lwm2m_data_t * dataP)
+{
+    lwm2m_object_t * targetP;
+    coap_status_t result;
+
+    targetP = prv_find_object(contextP, uriP->objectId);
+    if (NULL == targetP) return NOT_FOUND_4_04;
+
+    if (NULL == targetP->writeFunc) 
+    {
+        return METHOD_NOT_ALLOWED_4_05;
+    }
+
+    result = targetP->writeFunc(dataP->id, dataP->length, (lwm2m_data_t *)(dataP->value), targetP);
+}
+
 #endif
