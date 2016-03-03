@@ -297,7 +297,7 @@ static void prv_tag_server(lwm2m_context_t * contextP,
     }
     if (targetP != NULL)
     {
-        targetP->status = STATE_DIRTY;
+        targetP->dirty = true;
     }
 }
 
@@ -311,14 +311,14 @@ static void prv_tag_all_servers(lwm2m_context_t * contextP,
     {
         if (targetP != serverP)
         {
-            targetP->status = STATE_DIRTY;
+            targetP->dirty = true;
         }
         targetP = targetP->next;
     }
     targetP = contextP->serverList;
     while (targetP != NULL)
     {
-        targetP->status = STATE_DIRTY;
+        targetP->dirty = true;
         targetP = targetP->next;
     }
 }
