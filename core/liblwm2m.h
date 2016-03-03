@@ -60,7 +60,7 @@ extern "C" {
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
-#include <sys/time.h>
+#include <time.h>
 
 #ifdef LWM2M_SERVER_MODE
 #define LWM2M_SUPPORT_JSON
