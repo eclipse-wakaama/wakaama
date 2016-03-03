@@ -373,7 +373,9 @@ coap_status_t message_send(lwm2m_context_t * contextP,
     size_t pktBufferLen = 0;
     size_t allocLen;
 
-    allocLen = COAP_MAX_HEADER_SIZE + message->payload_len;
+    allocLen = coap_serialize_get_size(message);
+    if (allocLen == 0) return COAP_500_INTERNAL_SERVER_ERROR;
+
     pktBuffer = (uint8_t *)lwm2m_malloc(allocLen);
     if (pktBuffer != NULL)
     {
