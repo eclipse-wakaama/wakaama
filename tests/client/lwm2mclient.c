@@ -228,7 +228,7 @@ void * lwm2m_connect_server(uint16_t secObjInstID,
     *port = 0;
     port++;
 
-    fprintf(stderr, "Trying to connect to LWM2M Server at %s:%s\r\n", host, port);
+    fprintf(stderr, "Opening connection to server at %s:%s\r\n", host, port);
     newConnP = connection_create(dataP->connList, dataP->sock, host, port, dataP->addressFamily);
     if (newConnP == NULL) {
         fprintf(stderr, "Connection creation failed.\r\n");
@@ -749,6 +749,8 @@ int main(int argc, char *argv[])
     time_t reboot_time = 0;
     int opt;
     bool bootstrapRequested = false;
+    bool serverPortChanged = false;
+
 #ifdef LWM2M_BOOTSTRAP
     lwm2m_client_state_t previousState = STATE_INITIAL;
 #endif
@@ -792,6 +794,7 @@ int main(int argc, char *argv[])
         {
         case 'b':
             bootstrapRequested = true;
+            if (!serverPortChanged) serverPort = LWM2M_BSSERVER_PORT_STR;
             break;
         case 'c':
             batterylevelchanging = 1;
@@ -810,6 +813,7 @@ int main(int argc, char *argv[])
             break;
         case 'p':
             serverPort = optarg;
+            serverPortChanged = true;
             break;
         case '4':
             data.addressFamily = AF_INET;
