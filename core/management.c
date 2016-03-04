@@ -207,6 +207,13 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
                     lwm2m_data_free(size, dataP);
                 }
             }
+            else if (IS_OPTION(message, COAP_OPTION_ACCEPT)
+                  && message->accept_num == 1
+                  && message->accept[0] == APPLICATION_LINK_FORMAT)
+            {
+                format = APPLICATION_LINK_FORMAT;
+                result = object_discover(contextP, uriP, &buffer, &length);
+            }
             else
             {
                 result = object_read(contextP, uriP, &format, &buffer, &length);
@@ -681,7 +688,7 @@ int lwm2m_dm_discover(lwm2m_context_t * contextP,
     transaction = transaction_new(COAP_TYPE_CON, COAP_GET, clientP->altPath, uriP, contextP->nextMID++, 4, NULL, ENDPOINT_CLIENT, (void *)clientP);
     if (transaction == NULL) return INTERNAL_SERVER_ERROR_5_00;
 
-    coap_set_header_accept(transaction->message, APPLICATION_LINK_FORMAT);
+    coap_set_header_accept(transaction->message, LWM2M_CONTENT_LINK);
 
     if (callback != NULL)
     {

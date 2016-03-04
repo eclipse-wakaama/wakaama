@@ -133,6 +133,40 @@ static uint8_t prv_server_read(uint16_t instanceId,
     return result;
 }
 
+static uint8_t prv_server_discover(uint16_t instanceId,
+                                   int * numDataP,
+                                   lwm2m_data_t ** dataArrayP,
+                                   lwm2m_object_t * objectP)
+{
+    uint8_t result;
+    int i;
+
+    // is the server asking for the full object ?
+    if (*numDataP == 0)
+    {
+        uint16_t resList[] = {
+            LWM2M_SERVER_SHORT_ID_ID,
+            LWM2M_SERVER_LIFETIME_ID,
+            LWM2M_SERVER_STORING_ID,
+            LWM2M_SERVER_BINDING_ID,
+            LWM2M_SERVER_DISABLE_ID,
+            LWM2M_SERVER_UPDATE_ID
+        };
+        int nbRes = sizeof(resList)/sizeof(uint16_t);
+
+        *dataArrayP = lwm2m_data_new(nbRes);
+        if (*dataArrayP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
+        *numDataP = nbRes;
+        for (i = 0 ; i < nbRes ; i++)
+        {
+            (*dataArrayP)[i].id = resList[i];
+            (*dataArrayP)[i].type = LWM2M_TYPE_RESOURCE;
+        }
+    }
+
+    return COAP_205_CONTENT;
+}
+
 static uint8_t prv_set_int_value(lwm2m_data_t * dataArray,
                                  uint32_t * data)
 {
@@ -356,6 +390,7 @@ lwm2m_object_t * get_server_object()
         serverObj->createFunc = prv_server_create;
         serverObj->deleteFunc = prv_server_delete;
         serverObj->executeFunc = prv_server_execute;
+        serverObj->discoverFunc = prv_server_discover;
     }
 
     return serverObj;

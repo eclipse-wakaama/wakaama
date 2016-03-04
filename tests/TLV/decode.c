@@ -94,7 +94,7 @@ static void dump_json(uint8_t * buffer,
 {
     int i;
 
-    printf("JSON length: %d\n", length);
+    printf("Length: %d\n", length);
     for (i = 0 ; i < length ; i++)
     {
         printf("%c", buffer[i]);
@@ -141,6 +141,18 @@ static void test_JSON(char * uriStr,
     }
     else
     {
+        dump_json(buffer, length);
+        lwm2m_free(buffer);
+    }
+    format = LWM2M_CONTENT_LINK;
+    length = lwm2m_data_serialize((uriStr != NULL)?&uri:NULL, size, tlvP, &format, &buffer);
+    if (length <= 0)
+    {
+        printf("\n\nSerialize lwm2m_data_t %s to link-format failed.\n", id);
+    }
+    else
+    {
+        printf("\n\nSerialize lwm2m_data_t %s to link-format:\n", id);
         dump_json(buffer, length);
         lwm2m_free(buffer);
     }

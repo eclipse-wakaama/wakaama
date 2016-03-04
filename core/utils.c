@@ -390,6 +390,8 @@ lwm2m_media_type_t prv_convertMediaType(coap_content_type_t type)
         return LWM2M_CONTENT_TLV;
     case LWM2M_CONTENT_JSON:
         return LWM2M_CONTENT_JSON;
+    case APPLICATION_LINK_FORMAT:
+        return LWM2M_CONTENT_LINK;
 
     default:
         return LWM2M_CONTENT_TEXT;

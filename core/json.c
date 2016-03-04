@@ -22,6 +22,66 @@
 #include <stdio.h>
 #include <inttypes.h>
 
+#define PRV_LINK_BUFFER_SIZE  1024
+#define PRV_JSON_URI_MAX_LEN    18      // /65535/65535/65535
+
+#define LINK_ITEM_START             "<"
+#define LINK_ITEM_START_SIZE        1
+#define LINK_ITEM_END               ">,"
+#define LINK_ITEM_END_SIZE          2
+#define LINK_ITEM_DIM_START         ">;dim="
+#define LINK_ITEM_DIM_START_SIZE    6
+#define LINK_ITEM_DIM_END           ","
+#define LINK_ITEM_DIM_END_SIZE      1
+#define LINK_URI_SEPARATOR          "/"
+#define LINK_URI_SEPARATOR_SIZE     1
+
+static int prv_getBaseURI(lwm2m_uri_t * uriP,
+                          uint8_t * buffer,
+                          size_t bufferLen,
+                          lwm2m_tlv_type_t * depthP)
+{
+    size_t head;
+    int res;
+
+    if (uriP == NULL) return 0;
+
+    buffer[0] = '/';
+    head = 1;
+
+    res = utils_intToText(uriP->objectId, buffer + head, bufferLen - head);
+    if (res <= 0) return -1;
+    head += res;
+    if (head >= bufferLen - 1) return -1;
+    *depthP = LWM2M_TYPE_OBJECT_INSTANCE;
+
+    if (LWM2M_URI_IS_SET_INSTANCE(uriP))
+    {
+        buffer[head] = '/';
+        head++;
+        res = utils_intToText(uriP->instanceId, buffer + head, bufferLen - head);
+        if (res <= 0) return -1;
+        head += res;
+        if (head >= bufferLen - 1) return -1;
+        *depthP = LWM2M_TYPE_RESOURCE;
+        if (LWM2M_URI_IS_SET_RESOURCE(uriP))
+        {
+            buffer[head] = '/';
+            head++;
+            res = utils_intToText(uriP->resourceId, buffer + head, bufferLen - head);
+            if (res <= 0) return -1;
+            head += res;
+            if (head >= bufferLen - 1) return -1;
+            *depthP = LWM2M_TYPE_RESOURCE_INSTANCE;
+        }
+    }
+
+    buffer[head] = '/';
+    head++;
+
+    return head;
+}
+
 #ifdef LWM2M_SUPPORT_JSON
 
 #define PRV_JSON_BUFFER_SIZE 1024
@@ -30,7 +90,6 @@
 #define JSON_MIN_BASE_LEN        7      // n":"N",
 #define JSON_ITEM_MAX_SIZE      36      // with ten characters for value
 #define JSON_MIN_BX_LEN          5      // bt":1
-#define PRV_JSON_URI_MAX_LEN    18      // /65535/65535/65535
 
 #define JSON_FALSE_STRING  "false"
 #define JSON_TRUE_STRING   "true"
@@ -1131,52 +1190,6 @@ static int prv_serializeValue(lwm2m_data_t * tlvP,
     return head;
 }
 
-static int prv_getBaseURI(lwm2m_uri_t * uriP,
-                          uint8_t * buffer,
-                          size_t bufferLen,
-                          lwm2m_tlv_type_t * depthP)
-{
-    size_t head;
-    int res;
-
-    if (uriP == NULL) return 0;
-
-    buffer[0] = '/';
-    head = 1;
-
-    res = utils_intToText(uriP->objectId, buffer + head, bufferLen - head);
-    if (res <= 0) return -1;
-    head += res;
-    if (head >= bufferLen -1) return -1;
-    *depthP = LWM2M_TYPE_OBJECT_INSTANCE;
-
-    if (LWM2M_URI_IS_SET_INSTANCE(uriP))
-    {
-        buffer[head] = '/';
-        head++;
-        res = utils_intToText(uriP->instanceId, buffer + head, bufferLen - head);
-        if (res <= 0) return -1;
-        head += res;
-        if (head >= bufferLen -1) return -1;
-        *depthP = LWM2M_TYPE_RESOURCE;
-        if (LWM2M_URI_IS_SET_RESOURCE(uriP))
-        {
-            buffer[head] = '/';
-            head++;
-            res = utils_intToText(uriP->resourceId, buffer + head, bufferLen - head);
-            if (res <= 0) return -1;
-            head += res;
-            if (head >= bufferLen -1) return -1;
-            *depthP = LWM2M_TYPE_RESOURCE_INSTANCE;
-        }
-    }
-
-    buffer[head] = '/';
-    head++;
-
-    return head;
-}
-
 int prv_serializeData(lwm2m_data_t * tlvP,
                       uint8_t * parentUriStr,
                       size_t parentUriLen,
@@ -1340,3 +1353,141 @@ int lwm2m_json_serialize(lwm2m_uri_t * uriP,
 }
 
 #endif
+
+static int prv_serializeLinkData(lwm2m_data_t * tlvP,
+                                 uint8_t * parentUriStr,
+                                 size_t parentUriLen,
+                                 uint8_t * buffer,
+                                 size_t bufferLen)
+{
+    int head;
+    int res;
+
+    head = 0;
+
+    switch (tlvP->type)
+    {
+    case LWM2M_TYPE_RESOURCE:
+    case LWM2M_TYPE_MULTIPLE_RESOURCE:
+        if (bufferLen < LINK_ITEM_START_SIZE) return -1;
+        memcpy(buffer + head, LINK_ITEM_START, LINK_ITEM_START_SIZE);
+        head = LINK_ITEM_START_SIZE;
+
+        if (parentUriLen > 0)
+        {
+            if (bufferLen - head < parentUriLen) return -1;
+            memcpy(buffer + head, parentUriStr, parentUriLen);
+            head += parentUriLen;
+        }
+
+        if (bufferLen - head < LINK_URI_SEPARATOR_SIZE) return -1;
+        memcpy(buffer + head, LINK_URI_SEPARATOR, LINK_URI_SEPARATOR_SIZE);
+        head += LINK_URI_SEPARATOR_SIZE;
+
+        res = utils_intToText(tlvP->id, buffer + head, bufferLen - head);
+        if (res <= 0) return -1;
+        head += res;
+
+        if (tlvP->type == LWM2M_TYPE_MULTIPLE_RESOURCE)
+        {
+            if (bufferLen - head < LINK_ITEM_DIM_START_SIZE) return -1;
+            memcpy(buffer + head, LINK_ITEM_DIM_START, LINK_ITEM_DIM_START_SIZE);
+            head += LINK_ITEM_DIM_START_SIZE;
+
+            res = utils_intToText(tlvP->length, buffer + head, bufferLen - head);
+            if (res <= 0) return -1;
+            head += res;
+
+            if (bufferLen - head < LINK_ITEM_DIM_END_SIZE) return -1;
+            memcpy(buffer + head, LINK_ITEM_DIM_END, LINK_ITEM_DIM_END_SIZE);
+            head += LINK_ITEM_DIM_END_SIZE;
+        }
+        else
+        {
+            if (bufferLen - head < LINK_ITEM_END_SIZE) return -1;
+            memcpy(buffer + head, LINK_ITEM_END, LINK_ITEM_END_SIZE);
+            head += LINK_ITEM_END_SIZE;
+        }
+        break;
+
+    case LWM2M_TYPE_OBJECT:
+    case LWM2M_TYPE_OBJECT_INSTANCE:
+    {
+        char uriStr[PRV_JSON_URI_MAX_LEN];
+        size_t uriLen;
+        int index;
+
+        if (parentUriLen > 0)
+        {
+            if (PRV_JSON_URI_MAX_LEN < parentUriLen) return -1;
+            memcpy(uriStr, parentUriStr, parentUriLen);
+            uriLen = parentUriLen;
+        }
+        else
+        {
+            uriLen = 0;
+        }
+
+        if (PRV_JSON_URI_MAX_LEN - uriLen < LINK_URI_SEPARATOR_SIZE) return -1;
+        memcpy(uriStr + uriLen, LINK_URI_SEPARATOR, LINK_URI_SEPARATOR_SIZE);
+        uriLen += LINK_URI_SEPARATOR_SIZE;
+
+        res = utils_intToText(tlvP->id, uriStr + uriLen, PRV_JSON_URI_MAX_LEN - uriLen);
+        if (res <= 0) return -1;
+        uriLen += res;
+
+        head = 0;
+        for (index = 0 ; index < tlvP->length ; index++)
+        {
+            res = prv_serializeLinkData(((lwm2m_data_t *)tlvP->value) + index, uriStr, uriLen, buffer + head, bufferLen - head);
+            if (res < 0) return -1;
+            head += res;
+        }
+    }
+    break;
+
+    default:
+        return -1;
+    }
+fprintf(stdout, "URI: %.*s, id: %d, head: %d\r\n", parentUriLen, parentUriStr, tlvP->id, head);
+    return head;
+}
+
+int prv_serializeLink(lwm2m_uri_t * uriP,
+                      int size,
+                      lwm2m_data_t * dataP,
+                      uint8_t ** bufferP)
+{
+    uint8_t bufferLink[PRV_LINK_BUFFER_SIZE];
+    char baseUriStr[PRV_JSON_URI_MAX_LEN];
+    size_t baseUriLen;
+    lwm2m_tlv_type_t level;
+    int index;
+    size_t head;
+
+    baseUriLen = prv_getBaseURI(uriP, baseUriStr, PRV_JSON_URI_MAX_LEN, &level);
+    if (baseUriLen < 0) return -1;
+    if (level == LWM2M_TYPE_RESOURCE_INSTANCE) return -1;
+    baseUriLen -= 1;
+
+    head = 0;
+    for (index = 0 ; index < size && head < PRV_LINK_BUFFER_SIZE ; index++)
+    {
+        int res;
+
+        res = prv_serializeLinkData(dataP + index, baseUriStr, baseUriLen, bufferLink + head, PRV_LINK_BUFFER_SIZE - head);
+        if (res < 0) return -1;
+        head += res;
+    }
+
+    if (head > 0)
+    {
+        head -= 1;
+
+        *bufferP = (uint8_t *)lwm2m_malloc(head);
+        if (*bufferP == NULL) return 0;
+        memcpy(*bufferP, bufferLink, head);
+    }
+
+    return (int)head;
+}
