@@ -194,7 +194,7 @@ static int refresh_server_list(lwm2m_context_t * contextP)
     while (targetP != NULL)
     {
         nextP = targetP->next;
-        if (targetP->status != STATE_DIRTY)
+        if (!targetP->dirty)
         {
             targetP->status = STATE_DEREGISTERED;
             targetP->next = contextP->bootstrapServerList;
@@ -211,7 +211,7 @@ static int refresh_server_list(lwm2m_context_t * contextP)
     while (targetP != NULL)
     {
         nextP = targetP->next;
-        if (targetP->status != STATE_DIRTY)
+        if (!targetP->dirty)
         {
             // TODO: Should we revert the status to STATE_DEREGISTERED ?
             targetP->next = contextP->serverList;

@@ -411,7 +411,6 @@ typedef enum
     STATE_BS_PENDING,         // boostrap on going
     STATE_BS_FINISHED,        // bootstrap done
     STATE_BS_FAILED,          // bootstrap failed
-    STATE_DIRTY               // deleted or modified by bootstrap interface
 } lwm2m_status_t;
 
 typedef enum
@@ -436,6 +435,7 @@ typedef struct _lwm2m_server_
     void *            sessionH;
     lwm2m_status_t    status;
     char *            location;
+    bool              dirty;
 } lwm2m_server_t;
 
 
