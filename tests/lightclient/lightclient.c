@@ -20,7 +20,8 @@
  *    Toby Jaffey - Please refer to git log
  *    Bosch Software Innovations GmbH - Please refer to git log
  *    Pascal Rieux - Please refer to git log
- *    
+ *    Christian Renz - Please refer to git log
+ *
  *******************************************************************************/
 
 /*
@@ -92,6 +93,7 @@ typedef struct
     lwm2m_object_t * securityObjP;
     int sock;
     connection_t * connList;
+    int addressFamily;
 } client_data_t;
 
 
@@ -146,7 +148,7 @@ void * lwm2m_connect_server(uint16_t secObjInstID,
     *port = 0;
     port++;
 
-    newConnP = connection_create(dataP->connList, dataP->sock, host, port);
+    newConnP = connection_create(dataP->connList, dataP->sock, host, port, dataP->addressFamily);
     if (newConnP == NULL) {
         fprintf(stderr, "Connection creation failed.\r\n");
     }
@@ -166,6 +168,7 @@ void print_usage(void)
     fprintf(stdout, "Options:\r\n");
     fprintf(stdout, "  -n NAME\tSet the endpoint name of the Client. Default: testlightclient\r\n");
     fprintf(stdout, "  -l PORT\tSet the local UDP port of the Client. Default: 56830\r\n");
+    fprintf(stdout, "  -4\t\tUse IPv4 connection. Default: IPv6 connection\r\n");
     fprintf(stdout, "\r\n");
 }
 
@@ -296,7 +299,9 @@ int main(int argc, char *argv[])
 
     memset(&data, 0, sizeof(client_data_t));
 
-    while ((opt = getopt(argc, argv, "l:n:t:")) != -1)
+    data.addressFamily = AF_INET6;
+
+    while ((opt = getopt(argc, argv, "l:n:t:4")) != -1)
     {
         switch (opt)
         {
@@ -305,6 +310,9 @@ int main(int argc, char *argv[])
             break;
         case 'l':
             localPort = optarg;
+            break;
+        case '4':
+            data.addressFamily = AF_INET;
             break;
         default:
             print_usage();
@@ -316,7 +324,7 @@ int main(int argc, char *argv[])
      *This call an internal function that create an IPv6 socket on the port 5683.
      */
     fprintf(stderr, "Trying to bind LWM2M Client to port %s\r\n", localPort);
-    data.sock = create_socket(localPort);
+    data.sock = create_socket(localPort, data.addressFamily);
     if (data.sock < 0)
     {
         fprintf(stderr, "Failed to open socket: %d %s\r\n", errno, strerror(errno));

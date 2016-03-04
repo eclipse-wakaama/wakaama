@@ -194,7 +194,7 @@ static int refresh_server_list(lwm2m_context_t * contextP)
     while (targetP != NULL)
     {
         nextP = targetP->next;
-        if (targetP->status != STATE_DIRTY)
+        if (!targetP->dirty)
         {
             targetP->status = STATE_DEREGISTERED;
             targetP->next = contextP->bootstrapServerList;
@@ -211,7 +211,7 @@ static int refresh_server_list(lwm2m_context_t * contextP)
     while (targetP != NULL)
     {
         nextP = targetP->next;
-        if (targetP->status != STATE_DIRTY)
+        if (!targetP->dirty)
         {
             // TODO: Should we revert the status to STATE_DEREGISTERED ?
             targetP->next = contextP->serverList;
@@ -308,6 +308,7 @@ int lwm2m_step(lwm2m_context_t * contextP,
                time_t * timeoutP)
 {
     time_t tv_sec;
+    int result;
 
     tv_sec = lwm2m_gettime();
     if (tv_sec < 0) return COAP_500_INTERNAL_SERVER_ERROR;
@@ -367,7 +368,8 @@ next_step:
         break;
 #endif
     case STATE_REGISTER_REQUIRED:
-        registration_start(contextP);
+        result = registration_start(contextP);
+        if (COAP_NO_ERROR != result) return result;
         contextP->state = STATE_REGISTERING;
         break;
 

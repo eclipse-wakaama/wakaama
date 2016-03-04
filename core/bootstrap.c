@@ -297,7 +297,7 @@ static void prv_tag_server(lwm2m_context_t * contextP,
     }
     if (targetP != NULL)
     {
-        targetP->status = STATE_DIRTY;
+        targetP->dirty = true;
     }
 }
 
@@ -311,14 +311,14 @@ static void prv_tag_all_servers(lwm2m_context_t * contextP,
     {
         if (targetP != serverP)
         {
-            targetP->status = STATE_DIRTY;
+            targetP->dirty = true;
         }
         targetP = targetP->next;
     }
     targetP = contextP->serverList;
     while (targetP != NULL)
     {
-        targetP->status = STATE_DIRTY;
+        targetP->dirty = true;
         targetP = targetP->next;
     }
 }
@@ -363,7 +363,57 @@ coap_status_t handle_bootstrap_command(lwm2m_context_t * contextP,
             }
             else
             {
-                result = BAD_REQUEST_4_00;
+                lwm2m_data_t * dataP = NULL;
+                int size = 0;
+                int i;
+
+                if (message->payload_len == 0 || message->payload == 0)
+                {
+                    result = BAD_REQUEST_4_00;
+                }
+                else
+                {
+                    size = lwm2m_data_parse(uriP, message->payload, message->payload_len, format, &dataP);
+                    if (size == 0)
+                    {
+                        result = COAP_500_INTERNAL_SERVER_ERROR;
+                        break;
+                    }
+
+                    for (i = 0 ; i < size ; i++)
+                    {
+                        if(dataP[i].type == LWM2M_TYPE_OBJECT_INSTANCE)
+                        {
+                            if (object_isInstanceNew(contextP, uriP->objectId, dataP[i].id))
+                            {
+                                result = object_createInstance(contextP, uriP, &dataP[i]);
+                                if (COAP_201_CREATED == result)
+                                {
+                                    result = COAP_204_CHANGED;
+                                }
+                            }
+                            else
+                            {
+                                result = object_writeInstance(contextP, uriP, &dataP[i]);
+                                if (uriP->objectId == LWM2M_SECURITY_OBJECT_ID
+                                 && result == COAP_204_CHANGED)
+                                {
+                                    prv_tag_server(contextP, dataP[i].id);
+                                }
+                            }
+                            
+                            if(result != COAP_204_CHANGED) // Stop object create or write when result is error
+                            {
+                                break;
+                            }
+                        }
+                        else
+                        {
+                            result = COAP_400_BAD_REQUEST;
+                        }
+                    }
+                    lwm2m_data_free(size, dataP);
+                }
             }
         }
         break;

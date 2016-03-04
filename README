@@ -1,6 +1,7 @@
 Wakaama (formerly liblwm2m) is an implementation of the Open Mobile Alliance's LightWeight M2M
 protocol (LWM2M).
 
+Developers mailing list: https://dev.eclipse.org/mailman/listinfo/wakaama-dev
 
 Source Layout
 -------------
@@ -60,10 +61,13 @@ To compile the test server
 In the any directory, run the following commands:
     cmake [liblwm2m directory]/tests/server
     make
-    ./lwm2mserver
+    ./lwm2mserver [Options]
 
 The lwm2mserver listens on UDP port 5683. It features a basic command line
 interface. Type 'help' for a list of supported commands.
+
+Options are:
+  -4		Use IPv4 connection. Default: IPv6 connection
 
 
 To compile the test client
@@ -85,18 +89,18 @@ The lwm2mclient features nine LWM2M objects:
     - Location Object (id: 6) as a skeleton.
     - Connectivity Statistics Object (id: 7) as a skeleton.
     - a test object (id: 1024) with the following description:
-    
+
                            Multiple
           Object |  ID  | Instances | Mandatoty |
            Test  | 1024 |    Yes    |    No     |
-         
+
            Ressources:
                        Supported    Multiple
            Name | ID | Operations | Instances | Mandatory |  Type   | Range |
            test |  1 |    R/W     |    No     |    Yes    | Integer | 0-255 |
            exec |  2 |     E      |    No     |    Yes    |         |       |
            dec  |  3 |    R/W     |    No     |    Yes    |  Float  |       |
-    
+
 The lwm2mclient opens udp port 56830 and tries to register to a LWM2M Server at
 127.0.0.1:5683. It features a basic command line interface. Type 'help' for a
 list of supported commands.
@@ -106,6 +110,7 @@ Options are:
   -l PORT	Set the local UDP port of the Client. Default: 56830
   -h HOST	Set the hostname of the LWM2M Server to connect to. Default: localhost
   -p HOST	Set the port of the LWM2M Server to connect to. Default: 5683
+  -4		Use IPv4 connection. Default: IPv6 connection
   -t TIME	Set the lifetime of the Client. Default: 300
   -b		Bootstrap requested.
   -c		Change battery level over time.
@@ -135,3 +140,4 @@ The lightclient does not feature any command-line interface.
 Options are:
   -n NAME	Set the endpoint name of the Client. Default: testlightclient
   -l PORT	Set the local UDP port of the Client. Default: 56830
+  -4		Use IPv4 connection. Default: IPv6 connection
