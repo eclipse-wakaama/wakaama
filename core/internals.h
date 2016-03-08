@@ -221,6 +221,7 @@ coap_status_t message_send(lwm2m_context_t * contextP, coap_packet_t * message, 
 // defined in observe.c
 bool handle_observe_notify(lwm2m_context_t * contextP, void * fromSessionH, coap_packet_t * message, coap_packet_t * response);
 void observation_remove(lwm2m_client_t * clientP, lwm2m_observation_t * observationP);
+lwm2m_observed_t * observed_find(lwm2m_context_t * contextP, lwm2m_uri_t * uriP);
 
 // defined in bootstrap.c
 void bootstrap_step(lwm2m_context_t * contextP, uint32_t currentTime, time_t* timeoutP);
