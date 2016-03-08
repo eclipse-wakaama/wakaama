@@ -229,14 +229,28 @@ static void prv_handleRegistrationUpdateReply(lwm2m_transaction_t * transacP,
 }
 
 static int prv_update_registration(lwm2m_context_t * contextP,
-                                   lwm2m_server_t * server)
+                                   lwm2m_server_t * server,
+                                   bool withObjects)
 {
     lwm2m_transaction_t * transaction;
+    uint8_t payload[512];
+    int payload_length;
 
     transaction = transaction_new(COAP_TYPE_CON, COAP_POST, NULL, NULL, contextP->nextMID++, 4, NULL, ENDPOINT_SERVER, (void *)server);
-    if (transaction == NULL) return INTERNAL_SERVER_ERROR_5_00;
+    if (transaction == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
 
     coap_set_header_uri_path(transaction->message, server->location);
+
+    if (withObjects == true)
+    {
+        payload_length = prv_getRegisterPayload(contextP, payload, sizeof(payload));
+        if (payload_length == 0)
+        {
+            transaction_free(transaction);
+            return COAP_500_INTERNAL_SERVER_ERROR;
+        }
+        coap_set_payload(transaction->message, payload, payload_length);
+    }
 
     transaction->callback = prv_handleRegistrationUpdateReply;
     transaction->userData = (void *) server;
@@ -248,39 +262,52 @@ static int prv_update_registration(lwm2m_context_t * contextP,
         server->status = STATE_REG_UPDATE_PENDING;
     }
 
-    return 0;
+    return COAP_NO_ERROR;
 }
 
 // update the registration of a given server
 int lwm2m_update_registration(lwm2m_context_t * contextP,
-                              uint16_t shortServerID)
+                              uint16_t shortServerID,
+                              bool withObjects)
 {
     lwm2m_server_t * targetP;
+    uint8_t result;
+
+    result = COAP_NO_ERROR;
 
     targetP = contextP->serverList;
     if (targetP == NULL)
     {
         if (object_getServers(contextP) == -1)
         {
-            return NOT_FOUND_4_04;
+            return COAP_404_NOT_FOUND;
         }
     }
-    while (targetP != NULL)
+    while (targetP != NULL && result == COAP_NO_ERROR)
     {
-        if (targetP->shortID == shortServerID)
+        if (shortServerID != 0)
         {
-            // found the server, trigger the update transaction
-            return prv_update_registration(contextP, targetP);
+            if (targetP->shortID == shortServerID)
+            {
+                // found the server, trigger the update transaction
+                return prv_update_registration(contextP, targetP, withObjects);
+            }
         }
         else
         {
-            // try next server
-            targetP = targetP->next;
+            result = prv_update_registration(contextP, targetP, withObjects);
         }
+        targetP = targetP->next;
     }
 
-    // no server found
-    return NOT_FOUND_4_04;
+    if (shortServerID != 0
+     && targetP == NULL)
+    {
+        // no server found
+        result = COAP_404_NOT_FOUND;
+    }
+
+    return result;
 }
 
 uint8_t registration_start(lwm2m_context_t * contextP)
@@ -1081,7 +1108,7 @@ void registration_step(lwm2m_context_t * contextP,
             if (0 >= interval)
             {
                 LOG("Updating registration...\r\n");
-                prv_update_registration(contextP, targetP);
+                prv_update_registration(contextP, targetP, false);
             }
             else if (interval < *timeoutP)
             {

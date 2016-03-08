@@ -662,9 +662,13 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP, uint8_t * buffer, int lengt
 // LWM2M Security Object (ID 0) must be present with either a bootstrap server or a LWM2M server and
 // its matching LWM2M Server Object (ID 1) instance
 int lwm2m_configure(lwm2m_context_t * contextP, const char * endpointName, const char * msisdn, const char * altPath, uint16_t numObject, lwm2m_object_t * objectList[]);
+int lwm2m_add_object(lwm2m_context_t * contextP, lwm2m_object_t * objectP);
+int lwm2m_remove_object(lwm2m_context_t * contextP, uint16_t id);
 
 // send a registration update to the server specified by the server short identifier
-int lwm2m_update_registration(lwm2m_context_t * contextP, uint16_t shortServerID);
+// or all if the ID is 0.
+// If withObjects is true, the registration update contains the object list.
+int lwm2m_update_registration(lwm2m_context_t * contextP, uint16_t shortServerID, bool withObjects);
 
 void lwm2m_resource_value_changed(lwm2m_context_t * contextP, lwm2m_uri_t * uriP);
 #endif

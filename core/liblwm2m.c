@@ -301,6 +301,78 @@ int lwm2m_configure(lwm2m_context_t * contextP,
 
     return COAP_NO_ERROR;
 }
+
+int lwm2m_add_object(lwm2m_context_t * contextP,
+                     lwm2m_object_t * objectP)
+{
+    uint16_t i;
+    lwm2m_object_t ** newList;
+
+    for (i = 0 ; i < contextP->numObject ; i++)
+    {
+        if (contextP->objectList[i]->objID == objectP->objID) return COAP_406_NOT_ACCEPTABLE;
+    }
+
+    newList = (lwm2m_object_t **)lwm2m_malloc((contextP->numObject + 1) * sizeof(lwm2m_object_t *));
+    if (newList == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
+
+    memcpy(newList, contextP->objectList, contextP->numObject * sizeof(lwm2m_object_t *));
+    newList[contextP->numObject] = objectP;
+
+    lwm2m_free(contextP->objectList);
+    contextP->objectList = newList;
+    contextP->numObject += 1;
+
+    if (contextP->state == STATE_READY)
+    {
+        return lwm2m_update_registration(contextP, 0, true);
+    }
+
+    return COAP_NO_ERROR;
+}
+
+int lwm2m_remove_object(lwm2m_context_t * contextP,
+                        uint16_t id)
+{
+    uint16_t i;
+    lwm2m_object_t ** newList;
+
+    i = 0;
+    while (i < contextP->numObject
+        && contextP->objectList[i]->objID != id)
+    {
+        i++;
+    }
+    if (i == contextP->numObject) return COAP_404_NOT_FOUND;
+
+    if (contextP->numObject > 1)
+    {
+        newList = (lwm2m_object_t **)lwm2m_malloc((contextP->numObject - 1) * sizeof(lwm2m_object_t *));
+        if (newList == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
+
+        if (i > 0)
+        {
+            memcpy(newList, contextP->objectList, i * sizeof(lwm2m_object_t *));
+        }
+        memcpy(newList + i, contextP->objectList + i + 1, (contextP->numObject - i - 1) * sizeof(lwm2m_object_t *));
+    }
+    else
+    {
+        newList = NULL;
+    }
+
+    lwm2m_free(contextP->objectList);
+    contextP->objectList = newList;
+    contextP->numObject -= 1;
+
+    if (contextP->state == STATE_READY)
+    {
+        return lwm2m_update_registration(contextP, 0, true);
+    }
+
+    return 0;
+}
+
 #endif
 
 
