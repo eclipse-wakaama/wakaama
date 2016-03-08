@@ -19,6 +19,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <sys/time.h>
 
 #ifndef LWM2M_MEMORY_TRACE
 
