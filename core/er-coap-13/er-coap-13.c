@@ -416,7 +416,7 @@ size_t coap_serialize_get_size(void *packet)
     coap_packet_t *const coap_pkt = (coap_packet_t *) packet;
     size_t length = 0;
 
-    length = COAP_HEADER_LEN + coap_pkt->payload_len;
+    length = COAP_HEADER_LEN + coap_pkt->payload_len + coap_pkt->token_len;
 
     if (IS_OPTION(coap_pkt, COAP_OPTION_IF_MATCH))
     {
