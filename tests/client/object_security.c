@@ -486,7 +486,7 @@ lwm2m_object_t * get_security_object(int serverId,
     return securityObj;
 }
 
-void free_security_object(lwm2m_object_t * objectP)
+void clean_security_object(lwm2m_object_t * objectP)
 {
     while (objectP->instanceList != NULL)
     {
@@ -498,7 +498,6 @@ void free_security_object(lwm2m_object_t * objectP)
         }
         lwm2m_free(securityInstance);
     }
-    lwm2m_free(objectP);
 }
 
 char * get_server_uri(lwm2m_object_t * objectP,
