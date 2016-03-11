@@ -16,7 +16,7 @@ set(TINYDTLS_SOURCES
     ${TINYDTLS_SOURCES_DIR}/crypto.c
     ${TINYDTLS_SOURCES_DIR}/ccm.c
     ${TINYDTLS_SOURCES_DIR}/hmac.c
-    ${TINYDTLS_SOURCES_DIR}/debug.c
+    ${TINYDTLS_SOURCES_DIR}/dtls_debug.c
     ${TINYDTLS_SOURCES_DIR}/netq.c
     ${TINYDTLS_SOURCES_DIR}/peer.c
     ${TINYDTLS_SOURCES_DIR}/dtls_time.c
