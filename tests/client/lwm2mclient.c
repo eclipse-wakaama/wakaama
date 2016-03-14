@@ -638,10 +638,12 @@ static void prv_backup_objects(lwm2m_context_t * context)
             switch (backupObjectArray[i]->objID)
             {
             case LWM2M_SECURITY_OBJECT_ID:
-                free_security_object(backupObjectArray[i]);
+                clean_security_object(backupObjectArray[i]);
+                lwm2m_free(backupObjectArray[i]);
                 break;
             case LWM2M_SERVER_OBJECT_ID:
-                free_server_object(backupObjectArray[i]);
+                clean_server_object(backupObjectArray[i]);
+                lwm2m_free(backupObjectArray[i]);
                 break;
             default:
                 break;
@@ -686,13 +688,13 @@ static void prv_restore_objects(lwm2m_context_t * context)
             {
             case LWM2M_SECURITY_OBJECT_ID:
                 // first delete internal content
-                free_security_object(object);
+                clean_security_object(object);
                 // then restore previous object
                 copy_security_object(object, backupObjectArray[0]);
                 break;
             case LWM2M_SERVER_OBJECT_ID:
                 // first delete internal content
-                free_server_object(object);
+                clean_server_object(object);
                 // then restore previous object
                 copy_server_object(object, backupObjectArray[1]);
                 break;
@@ -752,10 +754,12 @@ static void close_backup_object()
             switch (backupObjectArray[i]->objID)
             {
             case LWM2M_SECURITY_OBJECT_ID:
-                free_security_object(backupObjectArray[i]);
+                clean_security_object(backupObjectArray[i]);
+                lwm2m_free(backupObjectArray[i]);
                 break;
             case LWM2M_SERVER_OBJECT_ID:
-                free_server_object(backupObjectArray[i]);
+                clean_server_object(backupObjectArray[i]);
+                lwm2m_free(backupObjectArray[i]);
                 break;
             default:
                 break;
@@ -1207,8 +1211,10 @@ int main(int argc, char *argv[])
     close(data.sock);
     connection_free(data.connList);
 
-    free_security_object(objArray[0]);
-    free_server_object(objArray[1]);
+    clean_security_object(objArray[0]);
+    lwm2m_free(objArray[0]);
+    clean_server_object(objArray[1]);
+    lwm2m_free(objArray[1]);
     free_object_device(objArray[2]);
     free_object_firmware(objArray[3]);
     free_object_location(objArray[4]);

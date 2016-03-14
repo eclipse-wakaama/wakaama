@@ -61,7 +61,7 @@ void display_test_object(lwm2m_object_t * objectP);
  * object_server.c
  */
 lwm2m_object_t * get_server_object(int serverId, const char* binding, int lifetime, bool storing);
-void free_server_object(lwm2m_object_t * object);
+void clean_server_object(lwm2m_object_t * object);
 void display_server_object(lwm2m_object_t * objectP);
 void copy_server_object(lwm2m_object_t * objectDest, lwm2m_object_t * objectSrc);
 
@@ -103,7 +103,7 @@ void system_reboot(void);
  * object_security.c
  */
 lwm2m_object_t * get_security_object(int serverId, const char* serverUri, bool isBootstrap);
-void free_security_object(lwm2m_object_t * objectP);
+void clean_security_object(lwm2m_object_t * objectP);
 char * get_server_uri(lwm2m_object_t * objectP, uint16_t secObjInstID);
 void display_security_object(lwm2m_object_t * objectP);
 void copy_security_object(lwm2m_object_t * objectDest, lwm2m_object_t * objectSrc);
