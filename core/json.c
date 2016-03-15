@@ -916,10 +916,6 @@ int lwm2m_json_parse(lwm2m_uri_t * uriP,
             }
             else
             {
-                if (buffer[bnStart + bnLen - 1] == '/')
-                {
-                    bnLen--;
-                }
                 res = lwm2m_stringToUri(buffer + bnStart, bnLen, &baseURI);
                 if (res < 0 || res != bnLen) goto error;
                 baseUriP = &baseURI;
@@ -1175,6 +1171,9 @@ static int prv_getBaseURI(lwm2m_uri_t * uriP,
         }
     }
 
+    buffer[head] = '/';
+    head++;
+
     return head;
 }
 
@@ -1294,14 +1293,14 @@ int lwm2m_json_serialize(lwm2m_uri_t * uriP,
     {
         int res;
 
-        baseUriStr[baseUriLen] = '/';
-        baseUriLen++;
         res = utils_intToText(tlvP->id, baseUriStr + baseUriLen, PRV_JSON_URI_MAX_LEN - baseUriLen);
         if (res <= 0) return -1;
         baseUriLen += res;
         if (baseUriLen >= PRV_JSON_URI_MAX_LEN -1) return -1;
         size = tlvP->length;
         tlvP = (lwm2m_data_t *)(tlvP->value);
+        baseUriStr[baseUriLen] = '/';
+        baseUriLen++;
     }
 
     if (baseUriLen > 0)
