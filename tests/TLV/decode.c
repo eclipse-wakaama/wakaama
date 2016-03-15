@@ -353,7 +353,7 @@ int main(int argc, char *argv[])
     lwm2m_data_encode_bool(false, data1 + 16);
 
 
-/*    test_TLV(buffer1, sizeof(buffer1), "1");
+    test_TLV(buffer1, sizeof(buffer1), "1");
     printf("\n\n============\n\n");
     test_TLV(buffer2, sizeof(buffer2), "2");
     printf("\n\n============\n\n");
@@ -375,7 +375,7 @@ int main(int argc, char *argv[])
     printf("\n\n============\n\n");
     test_JSON(NULL, buffer8, strlen(buffer8), "11");
     printf("\n\n============\n\n");
- */   test_data(data1, sizeof(data1)/sizeof(lwm2m_data_t), "11");
+    test_data(data1, sizeof(data1)/sizeof(lwm2m_data_t), "11");
     for (i = 0 ; i < sizeof(data1)/sizeof(lwm2m_data_t) ; i++)
     {
         if (data1[i].value != NULL) lwm2m_free(data1[i].value);
