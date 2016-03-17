@@ -183,7 +183,6 @@ static uint8_t prv_discover(uint16_t instanceId,
                             lwm2m_data_t ** dataArrayP,
                             lwm2m_object_t * objectP)
 {
-    uint8_t result;
     int i;
 
     // is the server asking for the full object ?
@@ -201,7 +200,22 @@ static uint8_t prv_discover(uint16_t instanceId,
         (*dataArrayP)[3].id = 4;
         (*dataArrayP)[3].type = LWM2M_TYPE_RESOURCE;
     }
-
+    else
+    {
+        for (i = 0; i < *numDataP; i++)
+        {
+            switch ((*dataArrayP)[i].id)
+            {
+            case 1:
+            case 2:
+            case 3:
+            case 4:
+                break;
+            default:
+                return COAP_404_NOT_FOUND;
+            }
+        }
+    }
     return COAP_205_CONTENT;
 }
 

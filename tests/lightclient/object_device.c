@@ -189,6 +189,8 @@ static uint8_t prv_device_discover(uint16_t instanceId,
         return COAP_404_NOT_FOUND;
     }
 
+    result = COAP_205_CONTENT;
+
     // is the server asking for the full object ?
     if (*numDataP == 0)
     {
@@ -209,8 +211,24 @@ static uint8_t prv_device_discover(uint16_t instanceId,
             (*dataArrayP)[i].type = LWM2M_TYPE_RESOURCE;
         }
     }
+    else
+    {
+        for (i = 0; i < *numDataP && result == COAP_205_CONTENT; i++)
+        {
+            switch ((*dataArrayP)[i].id)
+            {
+            case RES_O_MANUFACTURER:
+            case RES_O_MODEL_NUMBER:
+            case RES_M_BINDING_MODES:
+            case RES_M_REBOOT:
+                break;
+            default:
+                result = COAP_404_NOT_FOUND;
+            }
+        }
+    }
 
-    return COAP_205_CONTENT;
+    return result;
 }
 
 static uint8_t prv_device_execute(uint16_t instanceId,

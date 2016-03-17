@@ -141,15 +141,20 @@ static uint8_t prv_server_discover(uint16_t instanceId,
     uint8_t result;
     int i;
 
+    result = COAP_205_CONTENT;
+
     // is the server asking for the full object ?
     if (*numDataP == 0)
     {
         uint16_t resList[] = {
             LWM2M_SERVER_SHORT_ID_ID,
             LWM2M_SERVER_LIFETIME_ID,
+            LWM2M_SERVER_MIN_PERIOD_ID,
+            LWM2M_SERVER_MAX_PERIOD_ID,
+            LWM2M_SERVER_DISABLE_ID,
+            LWM2M_SERVER_TIMEOUT_ID,
             LWM2M_SERVER_STORING_ID,
             LWM2M_SERVER_BINDING_ID,
-            LWM2M_SERVER_DISABLE_ID,
             LWM2M_SERVER_UPDATE_ID
         };
         int nbRes = sizeof(resList)/sizeof(uint16_t);
@@ -163,8 +168,29 @@ static uint8_t prv_server_discover(uint16_t instanceId,
             (*dataArrayP)[i].type = LWM2M_TYPE_RESOURCE;
         }
     }
+    else
+    {
+        for (i = 0; i < *numDataP && result == COAP_205_CONTENT; i++)
+        {
+            switch ((*dataArrayP)[i].id)
+            {
+            case LWM2M_SERVER_SHORT_ID_ID:
+            case LWM2M_SERVER_LIFETIME_ID:
+            case LWM2M_SERVER_MIN_PERIOD_ID:
+            case LWM2M_SERVER_MAX_PERIOD_ID:
+            case LWM2M_SERVER_DISABLE_ID:
+            case LWM2M_SERVER_TIMEOUT_ID:
+            case LWM2M_SERVER_STORING_ID:
+            case LWM2M_SERVER_BINDING_ID:
+            case LWM2M_SERVER_UPDATE_ID:
+                break;
+            default:
+                result = COAP_404_NOT_FOUND;
+            }
+        }
+    }
 
-    return COAP_205_CONTENT;
+    return result;
 }
 
 static uint8_t prv_set_int_value(lwm2m_data_t * dataArray,
