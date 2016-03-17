@@ -567,7 +567,7 @@ void observation_step(lwm2m_context_t * contextP,
                     {
                         if (dataP != NULL)
                         {
-                            length = lwm2m_data_serialize(size, dataP, &format, &buffer);
+                            length = lwm2m_data_serialize(&targetP->uri, size, dataP, &format, &buffer);
                             if (length == 0) break;
                         }
                         else

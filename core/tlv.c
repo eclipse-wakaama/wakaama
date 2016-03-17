@@ -424,7 +424,8 @@ static int prv_parseTLV(uint8_t * buffer,
     return size;
 }
 
-int lwm2m_data_parse(uint8_t * buffer,
+int lwm2m_data_parse(lwm2m_uri_t * uriP,
+                     uint8_t * buffer,
                      size_t bufferLen,
                      lwm2m_media_type_t format,
                      lwm2m_data_t ** dataP)
@@ -445,7 +446,7 @@ int lwm2m_data_parse(uint8_t * buffer,
 
 #ifdef LWM2M_SUPPORT_JSON
     case LWM2M_CONTENT_JSON:
-        return lwm2m_json_parse(buffer, bufferLen, dataP);
+        return lwm2m_json_parse(uriP, buffer, bufferLen, dataP);
 #endif
 
     default:
@@ -569,7 +570,8 @@ static int prv_serializeTLV(int size,
     return length;
 }
 
-int lwm2m_data_serialize(int size,
+int lwm2m_data_serialize(lwm2m_uri_t * uriP,
+                         int size,
                          lwm2m_data_t * dataP,
                          lwm2m_media_type_t * formatP,
                          uint8_t ** bufferP)
@@ -604,7 +606,7 @@ int lwm2m_data_serialize(int size,
 
 #ifdef LWM2M_SUPPORT_JSON
     case LWM2M_CONTENT_JSON:
-        return lwm2m_json_serialize(size, dataP, bufferP);
+        return lwm2m_json_serialize(uriP, size, dataP, bufferP);
 #endif
 
     default:
@@ -624,11 +626,12 @@ void lwm2m_data_free(int size,
         if ((dataP[i].flags & LWM2M_TLV_FLAG_STATIC_DATA) == 0)
         {
             if (dataP[i].type == LWM2M_TYPE_MULTIPLE_RESOURCE
-             || dataP[i].type == LWM2M_TYPE_OBJECT_INSTANCE)
+            || dataP[i].type == LWM2M_TYPE_OBJECT_INSTANCE
+            || dataP[i].type == LWM2M_TYPE_OBJECT)
             {
                 lwm2m_data_free(dataP[i].length, (lwm2m_data_t *)(dataP[i].value));
             }
-            else
+            else if (dataP[i].value != NULL)
             {
                 lwm2m_free(dataP[i].value);
             }

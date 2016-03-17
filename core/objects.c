@@ -252,7 +252,7 @@ coap_status_t object_read(lwm2m_context_t * contextP,
         }
         else
         {
-            *lengthP = lwm2m_data_serialize(size, dataP, formatP, bufferP);
+            *lengthP = lwm2m_data_serialize(uriP, size, dataP, formatP, bufferP);
             if (*lengthP == 0) result = COAP_500_INTERNAL_SERVER_ERROR;
         }
     }
@@ -300,7 +300,7 @@ coap_status_t object_write(lwm2m_context_t * contextP,
         }
         else
         {
-            size = lwm2m_data_parse(buffer, length, format, &dataP);
+            size = lwm2m_data_parse(uriP, buffer, length, format, &dataP);
             if (size == 0)
             {
                 result = COAP_500_INTERNAL_SERVER_ERROR;
@@ -363,7 +363,7 @@ coap_status_t object_create(lwm2m_context_t * contextP,
         uriP->flag |= LWM2M_URI_FLAG_INSTANCE_ID;
     }
 
-    size = lwm2m_data_parse(buffer, length, format, &dataP);
+    size = lwm2m_data_parse(uriP, buffer, length, format, &dataP);
     if (size == 0) return COAP_500_INTERNAL_SERVER_ERROR;
     result = targetP->createFunc(uriP->instanceId, size, dataP, targetP);
     lwm2m_data_free(size, dataP);

@@ -201,7 +201,7 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
                     result = handle_observe_request(contextP, uriP, serverP, size, dataP, message, response);
                     if (COAP_205_CONTENT == result)
                     {
-                        length = lwm2m_data_serialize(size, dataP, &format, &buffer);
+                        length = lwm2m_data_serialize(uriP, size, dataP, &format, &buffer);
                         if (length == 0) result = COAP_500_INTERNAL_SERVER_ERROR;
                     }
                     lwm2m_data_free(size, dataP);

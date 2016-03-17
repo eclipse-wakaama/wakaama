@@ -373,7 +373,7 @@ coap_status_t handle_bootstrap_command(lwm2m_context_t * contextP,
                 }
                 else
                 {
-                    size = lwm2m_data_parse(message->payload, message->payload_len, format, &dataP);
+                    size = lwm2m_data_parse(uriP, message->payload, message->payload_len, format, &dataP);
                     if (size == 0)
                     {
                         result = COAP_500_INTERNAL_SERVER_ERROR;

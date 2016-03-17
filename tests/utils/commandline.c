@@ -354,6 +354,9 @@ void dump_tlv(FILE * stream,
         fprintf(stream, "type: ");
         switch (dataP[i].type)
         {
+        case LWM2M_TYPE_OBJECT:
+            fprintf(stream, "LWM2M_TYPE_OBJECT\r\n");
+            break;
         case LWM2M_TYPE_OBJECT_INSTANCE:
             fprintf(stream, "LWM2M_TYPE_OBJECT_INSTANCE\r\n");
             break;
@@ -391,6 +394,7 @@ void dump_tlv(FILE * stream,
         fprintf(stream, "data length: %d\r\n", (int) dataP[i].length);
 
         if (dataP[i].type == LWM2M_TYPE_OBJECT_INSTANCE
+         || dataP[i].type == LWM2M_TYPE_OBJECT
          || dataP[i].type == LWM2M_TYPE_MULTIPLE_RESOURCE)
         {
             dump_tlv(stream, dataP[i].length, (lwm2m_data_t *)(dataP[i].value), indent+1);
