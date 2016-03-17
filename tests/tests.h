@@ -29,5 +29,7 @@ CU_ErrorCode add_tests(CU_pSuite pSuite, struct TestTable* testTable);
 CU_ErrorCode create_uri_suit();
 CU_ErrorCode create_tlv_suit();
 CU_ErrorCode create_object_read_suit();
+CU_ErrorCode create_convert_numbers_suit();
+CU_ErrorCode create_tlv_json_suit();
 
 #endif /* TESTS_H_ */
