@@ -112,6 +112,7 @@ void output_tlv(FILE * stream,
         case LWM2M_TYPE_RESOURCE:
             fprintf(stream, "Resource");
             break;
+        case LWM2M_TYPE_OBJECT:
         default:
             printf("unknown (%d)", (int)type);
             break;
@@ -190,7 +191,7 @@ void output_data(FILE * stream,
         }
         fprintf(stream, "\n");
         break;
-
+    case LWM2M_CONTENT_LINK:
     default:
         fprintf(stream, "Unknown (%d):\r\n", format);
         output_buffer(stream, data, dataLength, indent);
@@ -312,6 +313,7 @@ void dump_data_t(FILE * stream,
             case LWM2M_TYPE_OPAQUE:
                 fprintf(stream, "Opaque");
                 break;
+            default:
             case LWM2M_TYPE_UNDEFINED:
                 fprintf(stream, "Undefined");
                 break;
