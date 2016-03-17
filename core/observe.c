@@ -376,8 +376,8 @@ lwm2m_observed_t * observed_find(lwm2m_context_t * contextP,
                      return targetP;
                  }
              }
-            targetP = targetP->next;
         }
+        targetP = targetP->next;
     }
 
     return NULL;

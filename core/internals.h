@@ -127,6 +127,8 @@
 #define REG_ATTR_CONTENT_JSON       "1543"   // Temporary value
 #define REG_ATTR_CONTENT_JSON_LEN   4
 
+#define ATTR_SERVER_ID_STR       "ep="
+#define ATTR_SERVER_ID_LEN       3
 #define ATTR_MIN_PERIOD_STR      "pmin="
 #define ATTR_MIN_PERIOD_LEN      5
 #define ATTR_MAX_PERIOD_STR      "pmax="
@@ -243,7 +245,7 @@ void delete_observed_list(lwm2m_context_t * contextP);
 int lwm2m_json_parse(lwm2m_uri_t * uriP, uint8_t * buffer, size_t bufferLen, lwm2m_data_t ** dataP);
 int lwm2m_json_serialize(lwm2m_uri_t * uriP, int size, lwm2m_data_t * tlvP, uint8_t ** bufferP);
 #endif
-int prv_serializeLink(lwm2m_uri_t * uriP, int size, lwm2m_data_t * dataP, uint8_t ** bufferP);
+int prv_serializeLink(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, int size, lwm2m_data_t * dataP, uint8_t ** bufferP);
 
 // defined in utils.c
 lwm2m_binding_t lwm2m_stringToBinding(uint8_t *buffer, size_t length);

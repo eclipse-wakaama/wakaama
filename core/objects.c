@@ -455,6 +455,7 @@ coap_status_t object_discover(lwm2m_context_t * contextP,
 
             dataP->type = LWM2M_TYPE_RESOURCE;
             dataP->id = uriP->resourceId;
+            uriP->flag &= ~LWM2M_URI_FLAG_RESOURCE_ID;
         }
 
         result = targetP->discoverFunc(uriP->instanceId, &size, &dataP, targetP);
@@ -489,11 +490,11 @@ coap_status_t object_discover(lwm2m_context_t * contextP,
 
     if (result == COAP_205_CONTENT)
     {
-        lwm2m_media_type_t format;
+        int len;
 
-        format = LWM2M_CONTENT_LINK;
-        *lengthP = lwm2m_data_serialize(uriP, size, dataP, &format, bufferP);
-        if (*lengthP == 0) result = COAP_500_INTERNAL_SERVER_ERROR;
+        len = prv_serializeLink(contextP, uriP, size, dataP, bufferP);
+        if (len <= 0) result = COAP_500_INTERNAL_SERVER_ERROR;
+        else *lengthP = len;
     }
     lwm2m_data_free(size, dataP);
 
