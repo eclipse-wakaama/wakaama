@@ -63,7 +63,12 @@ extern "C" {
 #include <time.h>
 
 #ifdef LWM2M_SERVER_MODE
+#undef LWM2M_SUPPORT_JSON
 #define LWM2M_SUPPORT_JSON
+#endif
+
+#if defined(LWM2M_BOOTSTRAP) && defined(LWM2M_BOOTSTRAP_SERVER_MODE)
+#error "LWM2M_BOOTSTRAP and LWM2M_BOOTSTRAP_SERVER_MODE cannot be defined at the same time!"
 #endif
 
 /*
@@ -337,11 +342,11 @@ int lwm2m_data_serialize(lwm2m_uri_t * uriP, int size, lwm2m_data_t * dataP, lwm
 void lwm2m_data_free(int size, lwm2m_data_t * dataP);
 
 void lwm2m_data_encode_int(int64_t value, lwm2m_data_t * dataP);
-int lwm2m_data_decode_int(lwm2m_data_t * dataP, int64_t * valueP);
+int lwm2m_data_decode_int(const lwm2m_data_t * dataP, int64_t * valueP);
 void lwm2m_data_encode_float(double value, lwm2m_data_t * dataP);
-int lwm2m_data_decode_float(lwm2m_data_t * dataP, double * valueP);
+int lwm2m_data_decode_float(const lwm2m_data_t * dataP, double * valueP);
 void lwm2m_data_encode_bool(bool value, lwm2m_data_t * dataP);
-int lwm2m_data_decode_bool(lwm2m_data_t * dataP, bool * valueP);
+int lwm2m_data_decode_bool(const lwm2m_data_t * dataP, bool * valueP);
 void lwm2m_data_include(lwm2m_data_t * subDataP, size_t count, lwm2m_data_t * dataP);
 
 
@@ -353,9 +358,9 @@ void lwm2m_data_include(lwm2m_data_t * subDataP, size_t count, lwm2m_data_t * da
 int lwm2m_intToTLV(lwm2m_tlv_type_t type, int64_t data, uint16_t id, uint8_t * buffer, size_t buffer_len);
 int lwm2m_boolToTLV(lwm2m_tlv_type_t type, bool value, uint16_t id, uint8_t * buffer, size_t buffer_len);
 int lwm2m_opaqueToTLV(lwm2m_tlv_type_t type, uint8_t * dataP, size_t data_len, uint16_t id, uint8_t * buffer, size_t buffer_len);
-int lwm2m_decodeTLV(uint8_t * buffer, size_t buffer_len, lwm2m_tlv_type_t * oType, uint16_t * oID, size_t * oDataIndex, size_t * oDataLen);
-int lwm2m_opaqueToInt(uint8_t * buffer, size_t buffer_len, int64_t * dataP);
-int lwm2m_opaqueToFloat(uint8_t * buffer, size_t buffer_len, double * dataP);
+int lwm2m_decodeTLV(const uint8_t * buffer, size_t buffer_len, lwm2m_tlv_type_t * oType, uint16_t * oID, size_t * oDataIndex, size_t * oDataLen);
+int lwm2m_opaqueToInt(const uint8_t * buffer, size_t buffer_len, int64_t * dataP);
+int lwm2m_opaqueToFloat(const uint8_t * buffer, size_t buffer_len, double * dataP);
 
 /*
  * LWM2M Objects

@@ -15,8 +15,6 @@
  *    
  *******************************************************************************/
 
-#include <stdio.h>
-
 #define COMMAND_END_LIST {NULL, NULL, NULL, NULL, NULL}
 
 typedef void (*command_handler_t) (char * args, void * user_data);
@@ -35,9 +33,3 @@ void handle_command(command_desc_t * commandArray, char * buffer);
 char* get_end_of_arg(char* buffer);
 char * get_next_arg(char * buffer, char **end);
 int check_end_of_args(char* buffer);
-
-void output_buffer(FILE * stream, uint8_t * buffer, int length, int indent);
-void output_tlv(FILE * stream, uint8_t * buffer, size_t buffer_len, int indent);
-void dump_tlv(FILE * stream, int size, lwm2m_data_t * dataP, int indent);
-void output_data(FILE * stream, lwm2m_media_type_t format, uint8_t * buffer, int length, int indent);
-void print_status(FILE * stream, uint8_t status);

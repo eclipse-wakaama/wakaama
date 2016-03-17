@@ -58,6 +58,7 @@
 #include "lwm2mclient.h"
 #include "liblwm2m.h"
 #include "commandline.h"
+#include "output_utils.h"
 #include "connection.h"
 
 #include <string.h>
@@ -402,7 +403,7 @@ static void prv_instance_dump(lwm2m_object_t * objectP,
         return;
     }
 
-    dump_tlv(stdout, numData, dataArray, 0);
+    dump_data_t(stdout, numData, dataArray, 0);
 }
 
 

@@ -1,3 +1,4 @@
+# Object files, release bundles
 *.o
 *.lo
 *~
@@ -5,14 +6,19 @@
 *.pc
 *.tgz
 *.gz
+*.user
 .dirstamp
 
-Makefile
-
+# Eclipse
 .cproject
 .project
 .settings
 
+# QtCreator
+build-*
+
+# In source build
+Makefile
 CMakeCache.txt
 CMakeFiles
 Debug

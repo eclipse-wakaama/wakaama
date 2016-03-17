@@ -22,148 +22,10 @@
 #include <ctype.h>
 #include <unistd.h>
 #include <inttypes.h>
-#include "liblwm2m.h"
-
-#include "commandline.h"
-
-#define HELP_COMMAND "help"
-#define HELP_DESC    "Type '"HELP_COMMAND" [COMMAND]' for more details on a command."
-#define UNKNOWN_CMD_MSG "Unknown command. Type '"HELP_COMMAND"' for help."
+#include "output_utils.h"
 
 
-static command_desc_t * prv_find_command(command_desc_t * commandArray,
-                                         char * buffer,
-                                         size_t length)
-{
-    int i;
-
-    if (length == 0) return NULL;
-
-    i = 0;
-    while (commandArray[i].name != NULL
-        && (strlen(commandArray[i].name) != length || strncmp(buffer, commandArray[i].name, length)))
-    {
-        i++;
-    }
-
-    if (commandArray[i].name == NULL)
-    {
-        return NULL;
-    }
-    else
-    {
-        return &commandArray[i];
-    }
-}
-
-static void prv_displayHelp(command_desc_t * commandArray,
-                            char * buffer)
-{
-    command_desc_t * cmdP;
-    int length;
-
-    // find end of first argument
-    length = 0;
-    while (buffer[length] != 0 && !isspace(buffer[length]&0xff))
-        length++;
-
-    cmdP = prv_find_command(commandArray, buffer, length);
-
-    if (cmdP == NULL)
-    {
-        int i;
-
-        fprintf(stdout, HELP_COMMAND"\t"HELP_DESC"\r\n");
-
-        for (i = 0 ; commandArray[i].name != NULL ; i++)
-        {
-            fprintf(stdout, "%s\t%s\r\n", commandArray[i].name, commandArray[i].shortDesc);
-        }
-    }
-    else
-    {
-        fprintf(stdout, "%s\r\n", cmdP->longDesc?cmdP->longDesc:cmdP->shortDesc);
-    }
-}
-
-
-void handle_command(command_desc_t * commandArray,
-                    char * buffer)
-{
-    command_desc_t * cmdP;
-    int length;
-
-    // find end of command name
-    length = 0;
-    while (buffer[length] != 0 && !isspace(buffer[length]&0xFF))
-        length++;
-
-    cmdP = prv_find_command(commandArray, buffer, length);
-    if (cmdP != NULL)
-    {
-        while (buffer[length] != 0 && isspace(buffer[length]&0xFF))
-            length++;
-        cmdP->callback(buffer + length, cmdP->userData);
-    }
-    else
-    {
-        if (!strncmp(buffer, HELP_COMMAND, length))
-        {
-            while (buffer[length] != 0 && isspace(buffer[length]&0xFF))
-                length++;
-            prv_displayHelp(commandArray, buffer + length);
-        }
-        else
-        {
-            fprintf(stdout, UNKNOWN_CMD_MSG"\r\n");
-        }
-    }
-}
-
-static char* prv_end_of_space(char* buffer)
-{
-    while (isspace(buffer[0]&0xff))
-    {
-        buffer++;
-    }
-    return buffer;
-}
-
-char* get_end_of_arg(char* buffer)
-{
-    while (buffer[0] != 0 && !isspace(buffer[0]&0xFF))
-    {
-        buffer++;
-    }
-    return buffer;
-}
-
-char * get_next_arg(char * buffer, char** end)
-{
-    // skip arg
-    buffer = get_end_of_arg(buffer);
-    // skip space
-    buffer = prv_end_of_space(buffer);
-    if (NULL != end)
-    {
-        *end = get_end_of_arg(buffer);
-    }
-
-    return buffer;
-}
-
-int check_end_of_args(char* buffer)
-{
-    buffer = prv_end_of_space(buffer);
-
-    return (0 == buffer[0]);
-}
-
-/**********************************************************
- * Display Functions
- */
-
-static void print_indent(FILE * stream,
+void print_indent(FILE * stream,
                          int num)
 {
     int i;
@@ -173,7 +35,7 @@ static void print_indent(FILE * stream,
 }
 
 void output_buffer(FILE * stream,
-                   uint8_t * buffer,
+                   const uint8_t * buffer,
                    int length,
                    int indent)
 {
@@ -217,7 +79,7 @@ void output_buffer(FILE * stream,
 }
 
 void output_tlv(FILE * stream,
-                uint8_t * buffer,
+                const uint8_t * buffer,
                 size_t buffer_len,
                 int indent)
 {
@@ -250,6 +112,7 @@ void output_tlv(FILE * stream,
         case LWM2M_TYPE_RESOURCE:
             fprintf(stream, "Resource");
             break;
+        case LWM2M_TYPE_OBJECT:
         default:
             printf("unknown (%d)", (int)type);
             break;
@@ -292,7 +155,7 @@ void output_tlv(FILE * stream,
 
 void output_data(FILE * stream,
                  lwm2m_media_type_t format,
-                 uint8_t * data,
+                 const uint8_t * data,
                  int dataLength,
                  int indent)
 {
@@ -328,7 +191,7 @@ void output_data(FILE * stream,
         }
         fprintf(stream, "\n");
         break;
-
+    case LWM2M_CONTENT_LINK:
     default:
         fprintf(stream, "Unknown (%d):\r\n", format);
         output_buffer(stream, data, dataLength, indent);
@@ -336,9 +199,9 @@ void output_data(FILE * stream,
     }
 }
 
-void dump_tlv(FILE * stream,
+void dump_data_t(FILE * stream,
               int size,
-              lwm2m_data_t * dataP,
+              const lwm2m_data_t * dataP,
               int indent)
 {
     int i;
@@ -397,7 +260,7 @@ void dump_tlv(FILE * stream,
          || dataP[i].type == LWM2M_TYPE_OBJECT
          || dataP[i].type == LWM2M_TYPE_MULTIPLE_RESOURCE)
         {
-            dump_tlv(stream, dataP[i].length, (lwm2m_data_t *)(dataP[i].value), indent+1);
+            dump_data_t(stream, dataP[i].length, (lwm2m_data_t *)(dataP[i].value), indent+1);
         }
         else
         {
@@ -450,6 +313,7 @@ void dump_tlv(FILE * stream,
             case LWM2M_TYPE_OPAQUE:
                 fprintf(stream, "Opaque");
                 break;
+            default:
             case LWM2M_TYPE_UNDEFINED:
                 fprintf(stream, "Undefined");
                 break;
