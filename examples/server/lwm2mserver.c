@@ -70,6 +70,7 @@
 #include <signal.h>
 #include <inttypes.h>
 
+#include "output_utils.h"
 #include "commandline.h"
 #include "connection.h"
 

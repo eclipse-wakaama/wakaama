@@ -36,6 +36,7 @@
 #include <inttypes.h>
 
 #include "commandline.h"
+#include "output_utils.h"
 #include "connection.h"
 #include "bootstrap_info.h"
 
