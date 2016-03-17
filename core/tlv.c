@@ -113,7 +113,7 @@ static int prv_create_header(uint8_t * header,
 }
 
 static void prv_copyValue(void * dst,
-                          void * src,
+                          const void * src,
                           size_t len)
 {
 #ifdef LWM2M_BIG_ENDIAN
@@ -216,7 +216,7 @@ int lwm2m_intToTLV(lwm2m_tlv_type_t type,
     return lwm2m_opaqueToTLV(type, data_buffer + (_PRV_64BIT_BUFFER_SIZE - length), length, id, buffer, buffer_len);
 }
 
-int lwm2m_decodeTLV(uint8_t * buffer,
+int lwm2m_decodeTLV(const uint8_t * buffer,
                     size_t buffer_len,
                     lwm2m_tlv_type_t * oType,
                     uint16_t * oID,
@@ -277,7 +277,7 @@ int lwm2m_decodeTLV(uint8_t * buffer,
     return *oDataIndex + *oDataLen;
 }
 
-int lwm2m_opaqueToInt(uint8_t * buffer,
+int lwm2m_opaqueToInt(const uint8_t * buffer,
                       size_t buffer_len,
                       int64_t * dataP)
 {
@@ -323,7 +323,7 @@ int lwm2m_opaqueToInt(uint8_t * buffer,
     return buffer_len;
 }
 
-int lwm2m_opaqueToFloat(uint8_t * buffer,
+int lwm2m_opaqueToFloat(const uint8_t * buffer,
                         size_t buffer_len,
                         double * dataP)
 {
@@ -670,7 +670,7 @@ void lwm2m_data_encode_int(int64_t value,
     }
 }
 
-int lwm2m_data_decode_int(lwm2m_data_t * dataP,
+int lwm2m_data_decode_int(const lwm2m_data_t * dataP,
                           int64_t * valueP)
 {
     int result;
@@ -743,7 +743,7 @@ void lwm2m_data_encode_float(double value,
     }
 }
 
-int lwm2m_data_decode_float(lwm2m_data_t * dataP,
+int lwm2m_data_decode_float(const lwm2m_data_t * dataP,
                             double * valueP)
 {
     int result;
@@ -806,7 +806,7 @@ void lwm2m_data_encode_bool(bool value,
     }
 }
 
-int lwm2m_data_decode_bool(lwm2m_data_t * dataP,
+int lwm2m_data_decode_bool(const lwm2m_data_t * dataP,
                            bool * valueP)
 {
     if (dataP->length != 1) return 0;
