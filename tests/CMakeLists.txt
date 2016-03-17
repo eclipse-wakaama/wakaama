@@ -1,21 +1,31 @@
-cmake_minimum_required (VERSION 2.8.3)
-
-project (lwm2munittests)
-  
-SET(LIBLWM2M_DIR ${PROJECT_SOURCE_DIR}/../../core)
-
-add_definitions(-DLWM2M_CLIENT_MODE -DMEMORY_TRACE -DLWM2M_LITTLE_ENDIAN)
-
-include_directories (${LIBLWM2M_DIR})
-
-add_subdirectory(${LIBLWM2M_DIR} ${CMAKE_CURRENT_BINARY_DIR}/core)
+cmake_minimum_required (VERSION 2.8.12)
 
 SET(SOURCES
+    tests.h
+    memtest.h
     unittests.c
     tlvtests.c
     uritests.c
-    ../../platforms/Linux/platform.c)
+    convert_numbers_test.c
+    tlv_json_lwm2m_data_test.c
+    ../examples/utils/output_utils.c)
 
-add_executable(lwm2munittests ${SOURCES} ${CORE_SOURCES})
+project (lwm2munittests)
 
-target_link_libraries(lwm2munittests cunit)
+# Enable all warnings for this test build
+add_definitions(-Wall -Wextra -Wfloat-equal -Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings -Waggregate-return -Wswitch-default -Wswitch-enum)
+
+# Enable CMake Test Framework (CTest) which make testing available by
+# a "test" target. For "make" this is "make test".
+enable_testing ()
+
+include_directories(../examples/utils)
+
+add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/../core" libLwm2m)
+add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/../platforms/Linux" libplatform)
+
+add_executable(${PROJECT_NAME} ${SOURCES})
+target_link_libraries(${PROJECT_NAME} libLwm2m_client_with_json libplatform cunit)
+#set_target_properties (test_lib PROPERTIES LINK_FLAGS -Wl,-lcunit)
+
+add_test (test_all ${PROJECT_NAME})

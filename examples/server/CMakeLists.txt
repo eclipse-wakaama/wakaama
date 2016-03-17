@@ -1,17 +1,22 @@
-cmake_minimum_required (VERSION 2.8.3)
+cmake_minimum_required (VERSION 2.8.12)
+
+SET(SOURCES
+    lwm2mserver.c
+    ../utils/commandline.c
+    ../utils/commandline.h
+    ../utils/output_utils.c
+    ../utils/output_utils.h)
 
 project (lwm2mserver)
 
-SET(LIBLWM2M_DIR ${PROJECT_SOURCE_DIR}/../../core)
+if (NOT DEFINED PLATFORM)
+    set(PLATFORM "Linux")
+endif()
 
-add_definitions(-DLWM2M_SERVER_MODE -DWITH_LOGS -DLWM2M_LITTLE_ENDIAN)
+include_directories(../utils)
+add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/../../core" libLwm2m_${PROJECT_NAME})
 
-include_directories (${LIBLWM2M_DIR} ${PROJECT_SOURCE_DIR}/../utils)
+add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/../../platforms/${PLATFORM}" libplatform)
 
-add_subdirectory(${LIBLWM2M_DIR} ${CMAKE_CURRENT_BINARY_DIR}/core)
-
-# SET(CMAKE_C_FLAGS "-Wall -Wextra -Wfloat-equal -Wshadow -Wpointer-arith -Wcast-align -Wstrict-prototypes -Wwrite-strings -Waggregate-return -Wswitch-default -Wswitch-enum")
-
-SET(SOURCES lwm2mserver.c ../utils/commandline.c ../utils/connection.c ../../platforms/Linux/platform.c ../../platforms/Linux/memtrace.c)
-
-add_executable(lwm2mserver ${SOURCES} ${CORE_SOURCES})
+add_executable(${PROJECT_NAME} ${SOURCES})
+target_link_libraries(${PROJECT_NAME} libLwm2m_server libplatform)
