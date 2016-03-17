@@ -130,14 +130,19 @@ static void prv_copyValue(void * dst,
 #endif
 }
 
+/**
+ * Encode an integer value to a byte representation.
+ * @param data        Input value
+ * @param data_buffer Result in data_buffer is in big endian encoding
+ *                    Negative values are represented in two's complement as of
+ *                    OMA-TS-LightweightM2M-V1_0-20160308-D, Appendix C
+ * @param lengthP     The length of the result. For values < 0xff length is 1,
+ *                    for values < 0xffff length is 2 and so on.
+ */
 static void prv_encodeInt(int64_t data,
                           uint8_t data_buffer[_PRV_64BIT_BUFFER_SIZE],
                           size_t * lengthP)
 {
-    uint64_t value;
-    int negative = 0;
-    size_t length = 0;
-
     memset(data_buffer, 0, _PRV_64BIT_BUFFER_SIZE);
 
     if (data >= INT8_MIN && data <= INT8_MAX)
@@ -213,7 +218,7 @@ int lwm2m_intToTLV(lwm2m_tlv_type_t type,
 
     prv_encodeInt(data, data_buffer, &length);
 
-    return lwm2m_opaqueToTLV(type, data_buffer + (_PRV_64BIT_BUFFER_SIZE - length), length, id, buffer, buffer_len);
+    return lwm2m_opaqueToTLV(type, data_buffer, length, id, buffer, buffer_len);
 }
 
 int lwm2m_decodeTLV(const uint8_t * buffer,
