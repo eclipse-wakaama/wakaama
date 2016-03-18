@@ -17,10 +17,18 @@
 
 
 #include <stdio.h>
+#include <stdint.h>
 
 #include "CUnit/Basic.h"
 
 #include "tests.h"
+
+// stub function
+void * lwm2m_connect_server(uint16_t secObjInstID,
+                            void * userData)
+{
+    return (void *)secObjInstID;
+}
 
 CU_ErrorCode add_tests(CU_pSuite pSuite, struct TestTable* testTable)
 {

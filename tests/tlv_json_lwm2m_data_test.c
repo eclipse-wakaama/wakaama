@@ -25,7 +25,7 @@
 #include <stdio.h>
 #include <ctype.h> // isspace
 
-#include "output_utils.h"
+#include "commandline.h"
 
 #include "tests.h"
 #include "CUnit/Basic.h"
