@@ -5,11 +5,11 @@ git submodule update
 
 You need to install the packages libtool and autoreconf.
 
-In the wakaama/tests/utils/tinydtls run the following commands:
+In the wakaama/examples/utils/tinydtls run the following commands:
 autoreconf -i
 ./configure
 
 You can then build the secureclient using the commands:
-cmake wakaama/tests/secureclient
+cmake wakaama/examples/secureclient
 make
 

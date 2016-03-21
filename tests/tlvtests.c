@@ -125,24 +125,24 @@ static void test_intToTLV()
     CU_ASSERT_EQUAL(buffer[0], 0xE4);
     CU_ASSERT_EQUAL(buffer[1], 0x22);
     CU_ASSERT_EQUAL(buffer[2], 0x55);
-    CU_ASSERT_EQUAL(buffer[3], 0x80);
-    CU_ASSERT_EQUAL(buffer[4], 0x01);
-    CU_ASSERT_EQUAL(buffer[5], 0x02);
-    CU_ASSERT_EQUAL(buffer[6], 0x03);
+    CU_ASSERT_EQUAL(buffer[3], 0xff); // two's complement in big endian
+    CU_ASSERT_EQUAL(buffer[4], 0xfe);
+    CU_ASSERT_EQUAL(buffer[5], 0xfd);
+    CU_ASSERT_EQUAL(buffer[6], 0xfd);
 
     result = lwm2m_intToTLV(LWM2M_TYPE_RESOURCE, -0x0102030405060708, 55, buffer, sizeof(buffer));
     CU_ASSERT_EQUAL(result, 11);
     CU_ASSERT_EQUAL(buffer[0], 0xC8);
     CU_ASSERT_EQUAL(buffer[1], 55);
     CU_ASSERT_EQUAL(buffer[2], 0x08);
-    CU_ASSERT_EQUAL(buffer[3], 0x81);
-    CU_ASSERT_EQUAL(buffer[4], 0x02);
-    CU_ASSERT_EQUAL(buffer[5], 0x03);
-    CU_ASSERT_EQUAL(buffer[6], 0x04);
-    CU_ASSERT_EQUAL(buffer[7], 0x05);
-    CU_ASSERT_EQUAL(buffer[8], 0x06);
-    CU_ASSERT_EQUAL(buffer[9], 0x07);
-    CU_ASSERT_EQUAL(buffer[10], 0x08);
+    CU_ASSERT_EQUAL(buffer[3], 0xfe); // two's complement in big endian
+    CU_ASSERT_EQUAL(buffer[4], 0xfd);
+    CU_ASSERT_EQUAL(buffer[5], 0xfc);
+    CU_ASSERT_EQUAL(buffer[6], 0xfb);
+    CU_ASSERT_EQUAL(buffer[7], 0xfa);
+    CU_ASSERT_EQUAL(buffer[8], 0xf9);
+    CU_ASSERT_EQUAL(buffer[9], 0xf8);
+    CU_ASSERT_EQUAL(buffer[10], 0xf8);
 
     MEMORY_TRACE_AFTER_EQ;
 }
@@ -196,28 +196,30 @@ static void test_decodeTLV()
 static void test_opaqueToInt()
 {
     MEMORY_TRACE_BEFORE;
+    // Data represented in big endian, two'2 complement
     uint8_t data1[] = {1 };
     uint8_t data2[] = {1, 2 };
-    uint8_t data3[] = {0x81, 2, 3, 4 };
-    uint8_t data4[] = {0x81, 2, 3, 4, 5, 6, 7, 8 };
+    uint8_t data3[] = {0xfe, 0xfd, 0xfc, 0xfc};
+    uint8_t data4[] = {0xfe, 0xfd, 0xfc, 0xfb, 0xfa, 0xf9, 0xf8, 0xf8};
+    // Result in platform endianess
     int64_t value = 0;
-    int result;
+    int length;
 
 
-    result = lwm2m_opaqueToInt(data1, sizeof(data1), &value);
-    CU_ASSERT_EQUAL(result, 1);
+    length = lwm2m_opaqueToInt(data1, sizeof(data1), &value);
+    CU_ASSERT_EQUAL(length, 1);
     CU_ASSERT_EQUAL(value, 1);
 
-    result = lwm2m_opaqueToInt(data2, sizeof(data2), &value);
-    CU_ASSERT_EQUAL(result, 2);
+    length = lwm2m_opaqueToInt(data2, sizeof(data2), &value);
+    CU_ASSERT_EQUAL(length, 2);
     CU_ASSERT_EQUAL(value, 0x102);
 
-    result = lwm2m_opaqueToInt(data3, sizeof(data3), &value);
-    CU_ASSERT_EQUAL(result, 4);
+    length = lwm2m_opaqueToInt(data3, sizeof(data3), &value);
+    CU_ASSERT_EQUAL(length, 4);
     CU_ASSERT_EQUAL(value, -0x1020304);
 
-    result = lwm2m_opaqueToInt(data4, sizeof(data4), &value);
-    CU_ASSERT_EQUAL(result, 8);
+    length = lwm2m_opaqueToInt(data4, sizeof(data4), &value);
+    CU_ASSERT_EQUAL(length, 8);
     CU_ASSERT_EQUAL(value, -0x102030405060708);
 
     MEMORY_TRACE_AFTER_EQ;
@@ -236,7 +238,7 @@ static void test_tlv_parse()
     lwm2m_data_t *dataP;
     lwm2m_data_t *tlvSubP;
 
-    result = lwm2m_data_parse(data1, sizeof(data1), &dataP);
+    result = lwm2m_data_parse(NULL, data1, sizeof(data1), LWM2M_CONTENT_TLV, &dataP);
     CU_ASSERT_EQUAL(result, 1);
     CU_ASSERT_PTR_NOT_NULL_FATAL(dataP);
     CU_ASSERT_EQUAL(dataP->type, LWM2M_TYPE_RESOURCE);
@@ -245,7 +247,7 @@ static void test_tlv_parse()
     CU_ASSERT(0 == memcmp(dataP->value, &data1[2], 3));
     lwm2m_data_free(result, dataP);
 
-    result = lwm2m_data_parse(data2, sizeof(data2), &dataP);
+    result = lwm2m_data_parse(NULL, data2, sizeof(data2), LWM2M_CONTENT_TLV, &dataP);
     CU_ASSERT_EQUAL(result, 1);
     CU_ASSERT_PTR_NOT_NULL_FATAL(dataP);
     CU_ASSERT_EQUAL(dataP->type, LWM2M_TYPE_OBJECT_INSTANCE);
@@ -265,7 +267,7 @@ static void test_tlv_parse()
     CU_ASSERT(0 == memcmp(tlvSubP[1].value, &data2[12], 9));
     lwm2m_data_free(result, dataP);
 
-    result = lwm2m_data_parse(data3, sizeof(data3), &dataP);
+    result = lwm2m_data_parse(NULL, data3, sizeof(data3), LWM2M_CONTENT_TLV, &dataP);
     CU_ASSERT_EQUAL(result, 1);
     CU_ASSERT_PTR_NOT_NULL_FATAL(dataP);
     CU_ASSERT_EQUAL(dataP->type, LWM2M_TYPE_OBJECT_INSTANCE);
@@ -333,7 +335,8 @@ static void test_tlv_serialize()
     tlvSubP[0].length = sizeof(data2);
     tlvSubP[0].value = data2;
 
-    result = lwm2m_data_serialize(1, dataP, &buffer);
+    lwm2m_media_type_t media_type = LWM2M_CONTENT_TLV;
+    result = lwm2m_data_serialize(NULL, 1, dataP, &media_type, &buffer);
     CU_ASSERT_EQUAL(result, sizeof(data2) + sizeof(data1) + 11);
 
     CU_ASSERT_EQUAL(buffer[0], 0x08);
@@ -362,8 +365,6 @@ static void test_tlv_serialize()
 static void test_tlv_encode_int(void)
 {
    MEMORY_TRACE_BEFORE;
-   uint8_t data1[] = { 0x92, 0x34 };
-   uint8_t data2[] = { 0x7f, 0x34, 0x56, 0x78, 0x91, 0x22, 0x33, 0x44 };
    lwm2m_data_t *dataP =  lwm2m_data_new(10);
    CU_ASSERT_PTR_NOT_NULL(dataP);
 
@@ -381,6 +382,7 @@ static void test_tlv_encode_int(void)
    CU_ASSERT_PTR_NOT_NULL_FATAL(dataP[1].value);
    CU_ASSERT(0 == memcmp(dataP[1].value, "18", 2));
 
+   uint8_t data1[] = { 0xed, 0xcc };
    lwm2m_data_encode_int(-0x1234, &dataP[2]);
    dataP[2].type = LWM2M_TYPE_RESOURCE;
    CU_ASSERT_EQUAL(dataP[2].length, 2);
@@ -394,6 +396,7 @@ static void test_tlv_encode_int(void)
    CU_ASSERT_PTR_NOT_NULL_FATAL(dataP[3].value);
    CU_ASSERT(0 == memcmp(dataP[3].value, "-14678", 6));
 
+   uint8_t data2[] = { 0x7f, 0x34, 0x56, 0x78, 0x91, 0x22, 0x33, 0x44 };
    lwm2m_data_encode_int(0x7f34567891223344, &dataP[4]);
    dataP[4].type = LWM2M_TYPE_RESOURCE;
    CU_ASSERT_EQUAL(dataP[4].length, 8);
@@ -408,7 +411,7 @@ static void test_tlv_decode_int(void)
 {
    MEMORY_TRACE_BEFORE;
    uint8_t data1[] = { 0x12, 0x34 };
-   uint8_t data2[] = { 0x92, 0x34 };
+   uint8_t data2[] = { 0xed, 0xcc };
    uint8_t data3[] = { 0x7f, 0x34, 0x56, 0x78, 0x91, 0x22, 0x33, 0x44 };
    int64_t value;
    int result;
@@ -579,6 +582,5 @@ CU_ErrorCode create_tlv_suit()
 
    return add_tests(pSuite, table);
 }
-
 
 
