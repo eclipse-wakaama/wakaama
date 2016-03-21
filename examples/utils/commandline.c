@@ -329,6 +329,16 @@ void output_data(FILE * stream,
         fprintf(stream, "\n");
         break;
 
+    case LWM2M_CONTENT_LINK:
+        fprintf(stream, "application/link-format:\r\n");
+        print_indent(stream, indent);
+        for (i = 0 ; i < dataLength ; i++)
+        {
+            fprintf(stream, "%c", data[i]);
+        }
+        fprintf(stream, "\n");
+        break;
+
     default:
         fprintf(stream, "Unknown (%d):\r\n", format);
         output_buffer(stream, data, dataLength, indent);

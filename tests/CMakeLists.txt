@@ -17,11 +17,11 @@ SET(SOURCES
     unittests.c
     tlvtests.c
     uritests.c
-	convert_numbers_test.c
-	tlv_json_lwm2m_data_test.c
+    convert_numbers_test.c
+    tlv_json_lwm2m_data_test.c
     ${PROJECT_SOURCE_DIR}/../platforms/Linux/platform.c
-	${PROJECT_SOURCE_DIR}/../platforms/Linux/connection.c
-	${PROJECT_SOURCE_DIR}/../examples/utils/commandline.c)
+    ${PROJECT_SOURCE_DIR}/../platforms/Linux/connection.c
+    ${PROJECT_SOURCE_DIR}/../examples/utils/commandline.c)
 
 add_executable(lwm2munittests ${SOURCES} ${CORE_SOURCES})
 

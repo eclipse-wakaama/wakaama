@@ -207,6 +207,13 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
                     lwm2m_data_free(size, dataP);
                 }
             }
+            else if (IS_OPTION(message, COAP_OPTION_ACCEPT)
+                  && message->accept_num == 1
+                  && message->accept[0] == APPLICATION_LINK_FORMAT)
+            {
+                format = APPLICATION_LINK_FORMAT;
+                result = object_discover(contextP, uriP, &buffer, &length);
+            }
             else
             {
                 result = object_read(contextP, uriP, &format, &buffer, &length);
@@ -658,6 +665,45 @@ int lwm2m_dm_write_attributes(lwm2m_context_t * contextP,
     {
         coap_add_multi_option(&(coap_pkt->uri_query), ATTR_STEP_STR, ATTR_STEP_LEN - 1, 0);
         SET_OPTION(coap_pkt, COAP_OPTION_URI_QUERY);
+    }
+
+    contextP->transactionList = (lwm2m_transaction_t *)LWM2M_LIST_ADD(contextP->transactionList, transaction);
+
+    return transaction_send(contextP, transaction);
+}
+
+int lwm2m_dm_discover(lwm2m_context_t * contextP,
+                      uint16_t clientID,
+                      lwm2m_uri_t * uriP,
+                      lwm2m_result_callback_t callback,
+                      void * userData)
+{
+    lwm2m_client_t * clientP;
+    lwm2m_transaction_t * transaction;
+    dm_data_t * dataP;
+
+    clientP = (lwm2m_client_t *)lwm2m_list_find((lwm2m_list_t *)contextP->clientList, clientID);
+    if (clientP == NULL) return COAP_404_NOT_FOUND;
+
+    transaction = transaction_new(COAP_TYPE_CON, COAP_GET, clientP->altPath, uriP, contextP->nextMID++, 4, NULL, ENDPOINT_CLIENT, (void *)clientP);
+    if (transaction == NULL) return INTERNAL_SERVER_ERROR_5_00;
+
+    coap_set_header_accept(transaction->message, LWM2M_CONTENT_LINK);
+
+    if (callback != NULL)
+    {
+        dataP = (dm_data_t *)lwm2m_malloc(sizeof(dm_data_t));
+        if (dataP == NULL)
+        {
+            transaction_free(transaction);
+            return COAP_500_INTERNAL_SERVER_ERROR;
+        }
+        memcpy(&dataP->uri, uriP, sizeof(lwm2m_uri_t));
+        dataP->callback = callback;
+        dataP->userData = userData;
+
+        transaction->callback = dm_result_callback;
+        transaction->userData = (void *)dataP;
     }
 
     contextP->transactionList = (lwm2m_transaction_t *)LWM2M_LIST_ADD(contextP->transactionList, transaction);

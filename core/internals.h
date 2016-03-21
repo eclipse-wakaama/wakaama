@@ -127,6 +127,8 @@
 #define REG_ATTR_CONTENT_JSON       "1543"   // Temporary value
 #define REG_ATTR_CONTENT_JSON_LEN   4
 
+#define ATTR_SERVER_ID_STR       "ep="
+#define ATTR_SERVER_ID_LEN       3
 #define ATTR_MIN_PERIOD_STR      "pmin="
 #define ATTR_MIN_PERIOD_LEN      5
 #define ATTR_MAX_PERIOD_STR      "pmax="
@@ -180,6 +182,7 @@ coap_status_t object_create(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2
 coap_status_t object_execute(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, uint8_t * buffer, size_t length);
 coap_status_t object_delete(lwm2m_context_t * contextP, lwm2m_uri_t * uriP);
 coap_status_t object_delete_others(lwm2m_context_t * contextP, uint16_t objectId, uint16_t instanceId);
+coap_status_t object_discover(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, uint8_t ** bufferP, size_t * lengthP);
 uint8_t object_checkReadable(lwm2m_context_t * contextP, lwm2m_uri_t * uriP);
 uint8_t object_checkNumeric(lwm2m_context_t * contextP, lwm2m_uri_t * uriP);
 bool object_isInstanceNew(lwm2m_context_t * contextP, uint16_t objectId, uint16_t instanceId);
@@ -220,6 +223,7 @@ coap_status_t message_send(lwm2m_context_t * contextP, coap_packet_t * message, 
 // defined in observe.c
 bool handle_observe_notify(lwm2m_context_t * contextP, void * fromSessionH, coap_packet_t * message, coap_packet_t * response);
 void observation_remove(lwm2m_client_t * clientP, lwm2m_observation_t * observationP);
+lwm2m_observed_t * observed_find(lwm2m_context_t * contextP, lwm2m_uri_t * uriP);
 
 // defined in bootstrap.c
 void bootstrap_step(lwm2m_context_t * contextP, uint32_t currentTime, time_t* timeoutP);
@@ -241,6 +245,7 @@ void delete_observed_list(lwm2m_context_t * contextP);
 int lwm2m_json_parse(lwm2m_uri_t * uriP, uint8_t * buffer, size_t bufferLen, lwm2m_data_t ** dataP);
 int lwm2m_json_serialize(lwm2m_uri_t * uriP, int size, lwm2m_data_t * tlvP, uint8_t ** bufferP);
 #endif
+int prv_serializeLink(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, int size, lwm2m_data_t * dataP, uint8_t ** bufferP);
 
 // defined in utils.c
 lwm2m_binding_t lwm2m_stringToBinding(uint8_t *buffer, size_t length);

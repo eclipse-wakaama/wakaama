@@ -6,7 +6,7 @@ SET(LIBLWM2M_DIR ${PROJECT_SOURCE_DIR}/../../core)
 
 add_definitions(-DLWM2M_CLIENT_MODE -DLWM2M_LITTLE_ENDIAN -DLWM2M_BOOTSTRAP)
 
-include_directories (${LIBLWM2M_DIR} ${PROJECT_SOURCE_DIR}/../utils)
+include_directories (${LIBLWM2M_DIR} ${PROJECT_SOURCE_DIR}/../utils ${PROJECT_SOURCE_DIR}/../../platforms/Linux)
 
 add_subdirectory(${LIBLWM2M_DIR} ${CMAKE_CURRENT_BINARY_DIR}/core)
 
@@ -30,7 +30,7 @@ include_directories (${TINYDTLS_SOURCES_DIR})
 
 SET(SOURCES
     secureclient.c
-    ../utils/dtlsconnection.c
+    ../../platforms/Linux/connection.c
     ../../platforms/Linux/platform.c
     ../../platforms/Linux/memtrace.c
     object_security.c

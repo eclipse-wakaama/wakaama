@@ -178,6 +178,47 @@ static uint8_t prv_read(uint16_t instanceId,
     return COAP_205_CONTENT;
 }
 
+static uint8_t prv_discover(uint16_t instanceId,
+                            int * numDataP,
+                            lwm2m_data_t ** dataArrayP,
+                            lwm2m_object_t * objectP)
+{
+    int i;
+
+    // is the server asking for the full object ?
+    if (*numDataP == 0)
+    {
+        *dataArrayP = lwm2m_data_new(4);
+        if (*dataArrayP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
+        *numDataP = 4;
+        (*dataArrayP)[0].id = 1;
+        (*dataArrayP)[0].type = LWM2M_TYPE_RESOURCE;
+        (*dataArrayP)[1].id = 2;
+        (*dataArrayP)[1].type = LWM2M_TYPE_RESOURCE;
+        (*dataArrayP)[2].id = 3;
+        (*dataArrayP)[2].type = LWM2M_TYPE_RESOURCE;
+        (*dataArrayP)[3].id = 4;
+        (*dataArrayP)[3].type = LWM2M_TYPE_RESOURCE;
+    }
+    else
+    {
+        for (i = 0; i < *numDataP; i++)
+        {
+            switch ((*dataArrayP)[i].id)
+            {
+            case 1:
+            case 2:
+            case 3:
+            case 4:
+                break;
+            default:
+                return COAP_404_NOT_FOUND;
+            }
+        }
+    }
+    return COAP_205_CONTENT;
+}
+
 static uint8_t prv_write(uint16_t instanceId,
                          int numData,
                          lwm2m_data_t * dataArray,
@@ -339,6 +380,7 @@ lwm2m_object_t * get_test_object(void)
         testObj->executeFunc = prv_exec;
         testObj->createFunc = prv_create;
         testObj->deleteFunc = prv_delete;
+        testObj->discoverFunc = prv_discover;
     }
 
     return testObj;

@@ -133,6 +133,66 @@ static uint8_t prv_server_read(uint16_t instanceId,
     return result;
 }
 
+static uint8_t prv_server_discover(uint16_t instanceId,
+                                   int * numDataP,
+                                   lwm2m_data_t ** dataArrayP,
+                                   lwm2m_object_t * objectP)
+{
+    uint8_t result;
+    int i;
+
+    result = COAP_205_CONTENT;
+
+    // is the server asking for the full object ?
+    if (*numDataP == 0)
+    {
+        uint16_t resList[] = {
+            LWM2M_SERVER_SHORT_ID_ID,
+            LWM2M_SERVER_LIFETIME_ID,
+            LWM2M_SERVER_MIN_PERIOD_ID,
+            LWM2M_SERVER_MAX_PERIOD_ID,
+            LWM2M_SERVER_DISABLE_ID,
+            LWM2M_SERVER_TIMEOUT_ID,
+            LWM2M_SERVER_STORING_ID,
+            LWM2M_SERVER_BINDING_ID,
+            LWM2M_SERVER_UPDATE_ID
+        };
+        int nbRes = sizeof(resList)/sizeof(uint16_t);
+
+        *dataArrayP = lwm2m_data_new(nbRes);
+        if (*dataArrayP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
+        *numDataP = nbRes;
+        for (i = 0 ; i < nbRes ; i++)
+        {
+            (*dataArrayP)[i].id = resList[i];
+            (*dataArrayP)[i].type = LWM2M_TYPE_RESOURCE;
+        }
+    }
+    else
+    {
+        for (i = 0; i < *numDataP && result == COAP_205_CONTENT; i++)
+        {
+            switch ((*dataArrayP)[i].id)
+            {
+            case LWM2M_SERVER_SHORT_ID_ID:
+            case LWM2M_SERVER_LIFETIME_ID:
+            case LWM2M_SERVER_MIN_PERIOD_ID:
+            case LWM2M_SERVER_MAX_PERIOD_ID:
+            case LWM2M_SERVER_DISABLE_ID:
+            case LWM2M_SERVER_TIMEOUT_ID:
+            case LWM2M_SERVER_STORING_ID:
+            case LWM2M_SERVER_BINDING_ID:
+            case LWM2M_SERVER_UPDATE_ID:
+                break;
+            default:
+                result = COAP_404_NOT_FOUND;
+            }
+        }
+    }
+
+    return result;
+}
+
 static uint8_t prv_set_int_value(lwm2m_data_t * dataArray,
                                  uint32_t * data)
 {
@@ -356,6 +416,7 @@ lwm2m_object_t * get_server_object()
         serverObj->createFunc = prv_server_create;
         serverObj->deleteFunc = prv_server_delete;
         serverObj->executeFunc = prv_server_execute;
+        serverObj->discoverFunc = prv_server_discover;
     }
 
     return serverObj;

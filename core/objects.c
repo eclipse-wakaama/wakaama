@@ -154,68 +154,55 @@ coap_status_t object_data_read(lwm2m_context_t * contextP,
     lwm2m_object_t * targetP;
 
     targetP = prv_find_object(contextP, uriP->objectId);
-    if (NULL == targetP) return NOT_FOUND_4_04;
-    if (NULL == targetP->readFunc) return METHOD_NOT_ALLOWED_4_05;
-    if (targetP->instanceList == NULL)
-    {
-        // this is a single instance object
-        if (LWM2M_URI_IS_SET_INSTANCE(uriP) && (uriP->instanceId != 0))
-        {
-            return COAP_404_NOT_FOUND;
-        }
-    }
-    else
-    {
-        if (LWM2M_URI_IS_SET_INSTANCE(uriP))
-        {
-            if (NULL == lwm2m_list_find(targetP->instanceList, uriP->instanceId))
-            {
-                return COAP_404_NOT_FOUND;
-            }
-        }
-        else
-        {
-            // multiple object instances read
-            lwm2m_list_t * instanceP;
-            int i;
+    if (NULL == targetP) return COAP_404_NOT_FOUND;
+    if (NULL == targetP->readFunc) return COAP_405_METHOD_NOT_ALLOWED;
+    if (targetP->instanceList == NULL) return COAP_404_NOT_FOUND;
 
-            *sizeP = 0;
-            for (instanceP = targetP->instanceList; instanceP != NULL ; instanceP = instanceP->next)
-            {
-                (*sizeP)++;
-            }
+    if (LWM2M_URI_IS_SET_INSTANCE(uriP))
+    {
+        if (NULL == lwm2m_list_find(targetP->instanceList, uriP->instanceId)) return COAP_404_NOT_FOUND;
 
+        // single instance read
+        if (LWM2M_URI_IS_SET_RESOURCE(uriP))
+        {
+            *sizeP = 1;
             *dataP = lwm2m_data_new(*sizeP);
             if (*dataP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
 
-            result = COAP_205_CONTENT;
-            instanceP = targetP->instanceList;
-            i = 0;
-            while (instanceP != NULL && result == COAP_205_CONTENT)
-            {
-                result = targetP->readFunc(instanceP->id, (int*)&((*dataP)[i].length), (lwm2m_data_t **)&((*dataP)[i].value), targetP);
-                (*dataP)[i].type = LWM2M_TYPE_OBJECT_INSTANCE;
-                (*dataP)[i].id = instanceP->id;
-                i++;
-                instanceP = instanceP->next;
-            }
-
-            return result;
+            (*dataP)->type = LWM2M_TYPE_RESOURCE;
+            (*dataP)->flags = LWM2M_TLV_FLAG_TEXT_FORMAT;
+            (*dataP)->id = uriP->resourceId;
         }
-    }
 
-    // single instance read
-    if (LWM2M_URI_IS_SET_RESOURCE(uriP))
+        result = targetP->readFunc(uriP->instanceId, sizeP, dataP, targetP);
+    }
+    else
     {
-        *sizeP = 1;
+        // multiple object instances read
+        lwm2m_list_t * instanceP;
+        int i;
+
+        *sizeP = 0;
+        for (instanceP = targetP->instanceList; instanceP != NULL ; instanceP = instanceP->next)
+        {
+            (*sizeP)++;
+        }
+
         *dataP = lwm2m_data_new(*sizeP);
         if (*dataP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
 
-        (*dataP)->type = LWM2M_TYPE_RESOURCE;
-        (*dataP)->flags = LWM2M_TLV_FLAG_TEXT_FORMAT;
-        (*dataP)->id = uriP->resourceId;
+        result = COAP_205_CONTENT;
+        instanceP = targetP->instanceList;
+        i = 0;
+        while (instanceP != NULL && result == COAP_205_CONTENT)
+        {
+            result = targetP->readFunc(instanceP->id, (int*)&((*dataP)[i].length), (lwm2m_data_t **)&((*dataP)[i].value), targetP);
+            (*dataP)[i].type = LWM2M_TYPE_OBJECT_INSTANCE;
+            (*dataP)[i].id = instanceP->id;
+            i++;
+            instanceP = instanceP->next;
+        }
     }
-    result = targetP->readFunc(uriP->instanceId, sizeP, dataP, targetP);
 
     return result;
 }
@@ -436,6 +423,80 @@ coap_status_t object_delete_others(lwm2m_context_t * contextP,
             instanceP = objectP->instanceList;
         }
     }
+
+    return result;
+}
+
+coap_status_t object_discover(lwm2m_context_t * contextP,
+                              lwm2m_uri_t * uriP,
+                              uint8_t ** bufferP,
+                              size_t * lengthP)
+{
+    coap_status_t result;
+    lwm2m_object_t * targetP;
+    lwm2m_data_t * dataP = NULL;
+    int size = 0;
+
+    targetP = prv_find_object(contextP, uriP->objectId);
+    if (NULL == targetP) return COAP_404_NOT_FOUND;
+    if (NULL == targetP->discoverFunc) return COAP_501_NOT_IMPLEMENTED;
+    if (targetP->instanceList == NULL) return COAP_404_NOT_FOUND;
+
+    if (LWM2M_URI_IS_SET_INSTANCE(uriP))
+    {
+        if (NULL == lwm2m_list_find(targetP->instanceList, uriP->instanceId)) return COAP_404_NOT_FOUND;
+
+        // single instance read
+        if (LWM2M_URI_IS_SET_RESOURCE(uriP))
+        {
+            size = 1;
+            dataP = lwm2m_data_new(size);
+            if (dataP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
+
+            dataP->type = LWM2M_TYPE_RESOURCE;
+            dataP->id = uriP->resourceId;
+            uriP->flag &= ~LWM2M_URI_FLAG_RESOURCE_ID;
+        }
+
+        result = targetP->discoverFunc(uriP->instanceId, &size, &dataP, targetP);
+    }
+    else
+    {
+        // multiple object instances read
+        lwm2m_list_t * instanceP;
+        int i;
+
+        size = 0;
+        for (instanceP = targetP->instanceList; instanceP != NULL ; instanceP = instanceP->next)
+        {
+            size++;
+        }
+
+        dataP = lwm2m_data_new(size);
+        if (dataP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
+
+        result = COAP_205_CONTENT;
+        instanceP = targetP->instanceList;
+        i = 0;
+        while (instanceP != NULL && result == COAP_205_CONTENT)
+        {
+            result = targetP->discoverFunc(instanceP->id, (int*)&(dataP[i].length), (lwm2m_data_t **)&(dataP[i].value), targetP);
+            dataP[i].type = LWM2M_TYPE_OBJECT_INSTANCE;
+            dataP[i].id = instanceP->id;
+            i++;
+            instanceP = instanceP->next;
+        }
+    }
+
+    if (result == COAP_205_CONTENT)
+    {
+        int len;
+
+        len = prv_serializeLink(contextP, uriP, size, dataP, bufferP);
+        if (len <= 0) result = COAP_500_INTERNAL_SERVER_ERROR;
+        else *lengthP = len;
+    }
+    lwm2m_data_free(size, dataP);
 
     return result;
 }

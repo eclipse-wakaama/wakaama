@@ -10,13 +10,13 @@ IF(CMAKE_BUILD_TYPE MATCHES Debug)
 add_definitions(-DLWM2M_WITH_LOGS)
 ENDIF(CMAKE_BUILD_TYPE MATCHES Debug)
 
-include_directories (${LIBLWM2M_DIR} ${PROJECT_SOURCE_DIR}/../utils)
+include_directories (${LIBLWM2M_DIR} ${PROJECT_SOURCE_DIR}/../utils ${PROJECT_SOURCE_DIR}/../../platforms/Linux)
 
 add_subdirectory(${LIBLWM2M_DIR} ${CMAKE_CURRENT_BINARY_DIR}/core)
 
 SET(SOURCES
     lightclient.c
-    ../utils/connection.c
+    ../../platforms/Linux/connection.c
     ../../platforms/Linux/platform.c
     ../../platforms/Linux/memtrace.c
     object_security.c

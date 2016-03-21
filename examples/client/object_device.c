@@ -429,6 +429,88 @@ static uint8_t prv_device_read(uint16_t instanceId,
     return result;
 }
 
+static uint8_t prv_device_discover(uint16_t instanceId,
+                                   int * numDataP,
+                                   lwm2m_data_t ** dataArrayP,
+                                   lwm2m_object_t * objectP)
+{
+    uint8_t result;
+    int i;
+
+    // this is a single instance object
+    if (instanceId != 0)
+    {
+        return COAP_404_NOT_FOUND;
+    }
+
+    result = COAP_205_CONTENT;
+
+    // is the server asking for the full object ?
+    if (*numDataP == 0)
+    {
+        uint16_t resList[] = {
+            RES_O_MANUFACTURER,
+            RES_O_MODEL_NUMBER,
+            RES_O_SERIAL_NUMBER,
+            RES_O_FIRMWARE_VERSION,
+            RES_M_REBOOT,
+            RES_O_FACTORY_RESET,
+            RES_O_AVL_POWER_SOURCES,
+            RES_O_POWER_SOURCE_VOLTAGE,
+            RES_O_POWER_SOURCE_CURRENT,
+            RES_O_BATTERY_LEVEL,
+            RES_O_MEMORY_FREE,
+            RES_M_ERROR_CODE,
+            RES_O_RESET_ERROR_CODE,
+            RES_O_CURRENT_TIME,
+            RES_O_UTC_OFFSET,
+            RES_O_TIMEZONE,
+            RES_M_BINDING_MODES
+        };
+        int nbRes = sizeof(resList) / sizeof(uint16_t);
+
+        *dataArrayP = lwm2m_data_new(nbRes);
+        if (*dataArrayP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
+        *numDataP = nbRes;
+        for (i = 0; i < nbRes; i++)
+        {
+            (*dataArrayP)[i].id = resList[i];
+            (*dataArrayP)[i].type = LWM2M_TYPE_RESOURCE;
+        }
+    }
+    else
+    {
+        for (i = 0; i < *numDataP && result == COAP_205_CONTENT; i++)
+        {
+            switch ((*dataArrayP)[i].id)
+            {
+            case RES_O_MANUFACTURER:
+            case RES_O_MODEL_NUMBER:
+            case RES_O_SERIAL_NUMBER:
+            case RES_O_FIRMWARE_VERSION:
+            case RES_M_REBOOT:
+            case RES_O_FACTORY_RESET:
+            case RES_O_AVL_POWER_SOURCES:
+            case RES_O_POWER_SOURCE_VOLTAGE:
+            case RES_O_POWER_SOURCE_CURRENT:
+            case RES_O_BATTERY_LEVEL:
+            case RES_O_MEMORY_FREE:
+            case RES_M_ERROR_CODE:
+            case RES_O_RESET_ERROR_CODE:
+            case RES_O_CURRENT_TIME:
+            case RES_O_UTC_OFFSET:
+            case RES_O_TIMEZONE:
+            case RES_M_BINDING_MODES:
+                break;
+            default:
+                result = COAP_404_NOT_FOUND;
+            }
+        }
+    }
+
+    return result;
+}
+
 static uint8_t prv_device_write(uint16_t instanceId,
                                 int numData,
                                 lwm2m_data_t * dataArray,
@@ -573,9 +655,10 @@ lwm2m_object_t * get_object_device()
          * Those function will be called when a read/write/execute query is made by the server. In fact the library don't need to
          * know the resources of the object, only the server does.
          */
-        deviceObj->readFunc    = prv_device_read;
-        deviceObj->writeFunc   = prv_device_write;
-        deviceObj->executeFunc = prv_device_execute;
+        deviceObj->readFunc     = prv_device_read;
+        deviceObj->discoverFunc = prv_device_discover;
+        deviceObj->writeFunc    = prv_device_write;
+        deviceObj->executeFunc  = prv_device_execute;
         deviceObj->userData = lwm2m_malloc(sizeof(device_data_t));
 
         /*

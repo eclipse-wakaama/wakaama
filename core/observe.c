@@ -357,6 +357,32 @@ coap_status_t observe_set_parameters(lwm2m_context_t * contextP,
     return COAP_204_CHANGED;
 }
 
+lwm2m_observed_t * observed_find(lwm2m_context_t * contextP,
+                                 lwm2m_uri_t * uriP)
+{
+    lwm2m_observed_t * targetP;
+
+    targetP = contextP->observedList;
+    while (targetP != NULL)
+    {
+        if (targetP->uri.objectId == uriP->objectId)
+        {
+            if ((!LWM2M_URI_IS_SET_INSTANCE(uriP) && !LWM2M_URI_IS_SET_INSTANCE(&(targetP->uri)))
+             || (LWM2M_URI_IS_SET_INSTANCE(uriP) && LWM2M_URI_IS_SET_INSTANCE(&(targetP->uri)) && (uriP->instanceId == targetP->uri.instanceId)))
+             {
+                 if ((!LWM2M_URI_IS_SET_RESOURCE(uriP) && !LWM2M_URI_IS_SET_RESOURCE(&(targetP->uri)))
+                     || (LWM2M_URI_IS_SET_RESOURCE(uriP) && LWM2M_URI_IS_SET_RESOURCE(&(targetP->uri)) && (uriP->resourceId == targetP->uri.resourceId)))
+                 {
+                     return targetP;
+                 }
+             }
+        }
+        targetP = targetP->next;
+    }
+
+    return NULL;
+}
+
 void lwm2m_resource_value_changed(lwm2m_context_t * contextP,
                                   lwm2m_uri_t * uriP)
 {
