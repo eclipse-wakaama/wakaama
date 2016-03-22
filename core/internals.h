@@ -145,6 +145,7 @@
 #define ATTR_FLAG_NUMERIC (uint8_t)(LWM2M_ATTR_FLAG_LESS_THAN | LWM2M_ATTR_FLAG_GREATER_THAN | LWM2M_ATTR_FLAG_STEP)
 
 #define LWM2M_TLV_HEADER_MAX_LENGTH 6
+#define _PRV_64BIT_BUFFER_SIZE 8
 
 #define LWM2M_URI_FLAG_DM           (uint8_t)0x00
 #define LWM2M_URI_FLAG_DELETE_ALL   (uint8_t)0x10
@@ -261,6 +262,7 @@ int lwm2m_PlainTextToFloat64(uint8_t * buffer, int length, double * dataP);
 size_t lwm2m_int64ToPlainText(int64_t data, uint8_t ** bufferP);
 size_t lwm2m_float64ToPlainText(double data, uint8_t ** bufferP);
 size_t lwm2m_boolToPlainText(bool data, uint8_t ** bufferP);
+void utils_copyValue(void * dst, const void * src, size_t len);
 
 // defined in tlv.c
 int lwm2m_intToTLV(lwm2m_tlv_type_t type, int64_t data, uint16_t id, uint8_t * buffer, size_t buffer_len);
@@ -268,6 +270,9 @@ int lwm2m_boolToTLV(lwm2m_tlv_type_t type, bool value, uint16_t id, uint8_t * bu
 int lwm2m_opaqueToTLV(lwm2m_tlv_type_t type, uint8_t * dataP, size_t data_len, uint16_t id, uint8_t * buffer, size_t buffer_len);
 int lwm2m_opaqueToInt(const uint8_t * buffer, size_t buffer_len, int64_t * dataP);
 int lwm2m_opaqueToFloat(const uint8_t * buffer, size_t buffer_len, double * dataP);
+void prv_encodeInt(int64_t data, uint8_t data_buffer[_PRV_64BIT_BUFFER_SIZE], size_t * lengthP);
+int lwm2m_tlv_parse(uint8_t * buffer, size_t bufferLen, lwm2m_data_t ** dataP);
+int lwm2m_tlv_serialize(int size, lwm2m_data_t * dataP, uint8_t ** bufferP);
 
 #ifdef LWM2M_CLIENT_MODE
 lwm2m_server_t * prv_findServer(lwm2m_context_t * contextP, void * fromSessionH);

@@ -504,3 +504,21 @@ int utils_intCopy(char * buffer,
 
     return len;
 }
+
+void utils_copyValue(void * dst,
+                     const void * src,
+                     size_t len)
+{
+#ifdef LWM2M_BIG_ENDIAN
+    memcpy(dst, src, len);
+#else
+#ifdef LWM2M_LITTLE_ENDIAN
+    int i;
+
+    for (i = 0; i < len; i++)
+    {
+        ((uint8_t *)dst)[i] = ((uint8_t *)src)[len - 1 - i];
+    }
+#endif
+#endif
+}
