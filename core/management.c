@@ -198,7 +198,7 @@ coap_status_t dm_handleRequest(lwm2m_context_t * contextP,
                 result = object_readData(contextP, uriP, &size, &dataP);
                 if (COAP_205_CONTENT == result)
                 {
-                    result = handle_observe_request(contextP, uriP, serverP, size, dataP, message, response);
+                    result = observe_handleRequest(contextP, uriP, serverP, size, dataP, message, response);
                     if (COAP_205_CONTENT == result)
                     {
                         length = lwm2m_data_serialize(uriP, size, dataP, &format, &buffer);
@@ -285,7 +285,7 @@ coap_status_t dm_handleRequest(lwm2m_context_t * contextP,
                 }
                 else
                 {
-                    result = observe_set_parameters(contextP, uriP, serverP, &attr);
+                    result = observe_setParameters(contextP, uriP, serverP, &attr);
                 }
             }
             else if (LWM2M_URI_IS_SET_INSTANCE(uriP))

@@ -204,10 +204,13 @@ void transaction_step(lwm2m_context_t * contextP, time_t currentTime, time_t * t
 coap_status_t dm_handleRequest(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_server_t * serverP, coap_packet_t * message, coap_packet_t * response);
 
 // defined in observe.c
-coap_status_t handle_observe_request(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_server_t * serverP, int size, lwm2m_data_t * dataP, coap_packet_t * message, coap_packet_t * response);
-void cancel_observe(lwm2m_context_t * contextP, uint16_t mid, void * fromSessionH);
-coap_status_t observe_set_parameters(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_server_t * serverP, lwm2m_attributes_t * attrP);
-void observation_step(lwm2m_context_t * contextP, time_t currentTime, time_t * timeoutP);
+coap_status_t observe_handleRequest(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_server_t * serverP, int size, lwm2m_data_t * dataP, coap_packet_t * message, coap_packet_t * response);
+void observe_cancel(lwm2m_context_t * contextP, uint16_t mid, void * fromSessionH);
+coap_status_t observe_setParameters(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_server_t * serverP, lwm2m_attributes_t * attrP);
+void observe_step(lwm2m_context_t * contextP, time_t currentTime, time_t * timeoutP);
+bool observe_handleNotify(lwm2m_context_t * contextP, void * fromSessionH, coap_packet_t * message, coap_packet_t * response);
+void observe_remove(lwm2m_client_t * clientP, lwm2m_observation_t * observationP);
+lwm2m_observed_t * observe_findByUri(lwm2m_context_t * contextP, lwm2m_uri_t * uriP);
 
 // defined in registration.c
 coap_status_t handle_registration_request(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, void * fromSessionH, coap_packet_t * message, coap_packet_t * response);
@@ -219,11 +222,6 @@ lwm2m_status_t registration_get_status(lwm2m_context_t * contextP);
 
 // defined in packet.c
 coap_status_t message_send(lwm2m_context_t * contextP, coap_packet_t * message, void * sessionH);
-
-// defined in observe.c
-bool handle_observe_notify(lwm2m_context_t * contextP, void * fromSessionH, coap_packet_t * message, coap_packet_t * response);
-void observation_remove(lwm2m_client_t * clientP, lwm2m_observation_t * observationP);
-lwm2m_observed_t * observed_find(lwm2m_context_t * contextP, lwm2m_uri_t * uriP);
 
 // defined in bootstrap.c
 void bootstrap_step(lwm2m_context_t * contextP, uint32_t currentTime, time_t* timeoutP);

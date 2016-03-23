@@ -473,7 +473,7 @@ next_step:
         break;
     }
 
-    observation_step(contextP, tv_sec, timeoutP);
+    observe_step(contextP, tv_sec, timeoutP);
 #endif
 
     registration_step(contextP, tv_sec, timeoutP);

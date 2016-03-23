@@ -98,7 +98,7 @@ static void handle_reset(lwm2m_context_t * contextP,
                          coap_packet_t * message)
 {
 #ifdef LWM2M_CLIENT_MODE
-    cancel_observe(contextP, message->mid, fromSessionH);
+    observe_cancel(contextP, message->mid, fromSessionH);
 #endif
 }
 
@@ -315,7 +315,7 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
                     if (!done && IS_OPTION(message, COAP_OPTION_OBSERVE) &&
                         ((message->code == COAP_204_CHANGED) || (message->code == COAP_205_CONTENT)))
                     {
-                        done = handle_observe_notify(contextP, fromSessionH, message, response);
+                        done = observe_handleNotify(contextP, fromSessionH, message, response);
                     }
 #endif
                     if (!done && message->type == COAP_TYPE_CON )

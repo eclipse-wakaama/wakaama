@@ -1378,7 +1378,7 @@ static int prv_serializeAttributes(lwm2m_context_t * contextP,
 
     if (contextP == NULL) return 0;
 
-    observedP = observed_find(contextP, uriP);
+    observedP = observe_findByUri(contextP, uriP);
     if (observedP == NULL || observedP->watcherList == NULL) return 0;
 
     head = 0;
