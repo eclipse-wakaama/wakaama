@@ -16,7 +16,7 @@
  *    
  *******************************************************************************/
 
-#include "liblwm2m.h"
+#include "internals.h"
 #include "tests.h"
 #include "CUnit/Basic.h"
 
@@ -41,7 +41,7 @@ static void test_lwm2m_PlainTextToInt64(void)
     {
         int64_t res;
 
-        if (lwm2m_PlainTextToInt64((unsigned char*)tests[i], strlen(tests[i]), &res) != 1)
+        if (utils_plainTextToInt64((unsigned char*)tests[i], strlen(tests[i]), &res) != 1)
             res = -1;
 
         CU_ASSERT_EQUAL(res, tests_expected_int[i]);
@@ -55,7 +55,7 @@ static void test_lwm2m_PlainTextToFloat64(void)
     {
         double res;
 
-        if (lwm2m_PlainTextToFloat64((unsigned char*)tests[i], strlen(tests[i]), &res) != 1)
+        if (utils_plainTextToFloat64((unsigned char*)tests[i], strlen(tests[i]), &res) != 1)
             res = -1;
 
         CU_ASSERT_DOUBLE_EQUAL(res, tests_expected_float[i], 0.0001);
@@ -70,7 +70,7 @@ static void test_lwm2m_int64ToPlainText(void)
         char * res = (char*)"";
         int len;
 
-        len = lwm2m_int64ToPlainText(ints[i], (uint8_t**)&res);
+        len = utils_int64ToPlainText(ints[i], (uint8_t**)&res);
 
         CU_ASSERT_FATAL(len);
         CU_ASSERT_NSTRING_EQUAL(res, ints_expected[i],len);
@@ -88,7 +88,7 @@ static void test_lwm2m_float64ToPlainText(void)
         char * res;
         int len;
 
-        len = lwm2m_float64ToPlainText(floats[i], (uint8_t**)&res);
+        len = utils_float64ToPlainText(floats[i], (uint8_t**)&res);
 
         CU_ASSERT_FATAL(len);
         CU_ASSERT_NSTRING_EQUAL(res, floats_expected[i],len);
@@ -100,10 +100,10 @@ static void test_lwm2m_float64ToPlainText(void)
 }
 
 static struct TestTable table[] = {
-        { "test of lwm2m_PlainTextToInt64()", test_lwm2m_PlainTextToInt64 },
-        { "test of lwm2m_PlainTextToFloat64()", test_lwm2m_PlainTextToFloat64 },
-        { "test of lwm2m_int64ToPlainText()", test_lwm2m_int64ToPlainText },
-        { "test of lwm2m_float64ToPlainText()", test_lwm2m_float64ToPlainText },
+        { "test of utils_plainTextToInt64()", test_lwm2m_PlainTextToInt64 },
+        { "test of utils_plainTextToFloat64()", test_lwm2m_PlainTextToFloat64 },
+        { "test of utils_int64ToPlainText()", test_lwm2m_int64ToPlainText },
+        { "test of utils_float64ToPlainText()", test_lwm2m_float64ToPlainText },
         { NULL, NULL },
 };
 

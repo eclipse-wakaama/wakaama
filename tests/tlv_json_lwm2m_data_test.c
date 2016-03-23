@@ -38,7 +38,14 @@ static void test_data(const char * uriStr,
 {
     lwm2m_uri_t uri;
     uint8_t * buffer;
-    int length = lwm2m_data_serialize((uriStr != NULL)?&uri:NULL, size, tlvP, &format, &buffer);
+    int length;
+    
+    if (uriStr != NULL)
+    {
+        lwm2m_stringToUri(uriStr, strlen(uriStr), &uri);
+    }
+
+    length = lwm2m_data_serialize((uriStr != NULL) ? &uri : NULL, size, tlvP, &format, &buffer);
     if (length <= 0)
     {
         printf("Serialize lwm2m_data_t %s to %s failed.\n", id, format==LWM2M_CONTENT_JSON?"JSON":"TLV");
@@ -63,7 +70,14 @@ static void test_data_and_compare(const char * uriStr,
 {
     lwm2m_uri_t uri;
     uint8_t * buffer;
-    size_t length = lwm2m_data_serialize((uriStr != NULL)?&uri:NULL, size, tlvP, &format, &buffer);
+    int length;
+    
+    if (uriStr != NULL)
+    {
+        lwm2m_stringToUri(uriStr, strlen(uriStr), &uri);
+    }
+
+    length = lwm2m_data_serialize((uriStr != NULL) ? &uri : NULL, size, tlvP, &format, &buffer);
     if (length <= 0)
     {
         printf("Serialize lwm2m_data_t %s to TLV failed.\n", id);
@@ -146,19 +160,25 @@ static void test_raw(const char * uriStr,
 {
     lwm2m_data_t * tlvP;
     lwm2m_uri_t uri;
-    int size = lwm2m_data_parse((uriStr != NULL)?&uri:NULL, (uint8_t *)testBuf, testLen,
-                                format, &tlvP);
+    int size;
+    
+    if (uriStr != NULL)
+    {
+        lwm2m_stringToUri(uriStr, strlen(uriStr), &uri);
+    }
+
+    size = lwm2m_data_parse((uriStr != NULL) ? &uri : NULL, (uint8_t *)testBuf, testLen, format, &tlvP);
     CU_ASSERT_TRUE_FATAL(size>0);
 
     // Serialize to the same format and compare to the input buffer
     test_data_and_compare(uriStr, format, tlvP, size, id, (uint8_t*)testBuf, testLen);
 
-    // Serialize to the other format respectivly.
-    if (format == LWM2M_CONTENT_TLV) {
-        make_all_objects_string_types(tlvP, size);
-        test_data(uriStr, LWM2M_CONTENT_JSON, tlvP, size, id);
-    } else if (format == LWM2M_CONTENT_JSON)
+    // Serialize to the TLV format
+    // the reverse is not possible as TLV format loses the data type information
+    if (format == LWM2M_CONTENT_JSON)
+    {
         test_data(uriStr, LWM2M_CONTENT_TLV, tlvP, size, id);
+    }
 }
 
 static void test_raw_expected(const char * uriStr,

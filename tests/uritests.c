@@ -17,7 +17,6 @@
 
 #include "tests.h"
 #include "CUnit/Basic.h"
-#include "liblwm2m.h"
 #include "internals.h"
 #include "memtest.h"
 
@@ -37,40 +36,40 @@ static void test_uri_decode(void)
     MEMORY_TRACE_BEFORE;
 
     /* "/rd" */
-    uri = lwm2m_decode_uri(NULL, &reg);
+    uri = uri_decode(NULL, &reg);
     CU_ASSERT_PTR_NOT_NULL_FATAL(uri);
     CU_ASSERT_EQUAL(uri->flag, LWM2M_URI_FLAG_REGISTRATION);
     lwm2m_free(uri);
 
     /* "/rd/5a3f" */
     reg.next = &location;
-    uri = lwm2m_decode_uri(NULL, &reg);
+    uri = uri_decode(NULL, &reg);
     /* should not fail, error in uri_parse */
     /* CU_ASSERT_PTR_NOT_NULL(uri); */
     lwm2m_free(uri);
 
     /* "/rd/5312" */
     reg.next = &locationDecimal;
-    uri = lwm2m_decode_uri(NULL, &reg);
+    uri = uri_decode(NULL, &reg);
     CU_ASSERT_PTR_NOT_NULL_FATAL(uri);
     CU_ASSERT_EQUAL(uri->flag, LWM2M_URI_FLAG_REGISTRATION | LWM2M_URI_FLAG_OBJECT_ID);
     CU_ASSERT_EQUAL(uri->objectId, 5312);
     lwm2m_free(uri);
 
     /* "/bs" */
-    uri = lwm2m_decode_uri(NULL, &boot);
+    uri = uri_decode(NULL, &boot);
     CU_ASSERT_PTR_NOT_NULL_FATAL(uri);
     CU_ASSERT_EQUAL(uri->flag, LWM2M_URI_FLAG_BOOTSTRAP);
     lwm2m_free(uri);
 
     /* "/bs/5a3f" */
     boot.next = &location;
-    uri = lwm2m_decode_uri(NULL, &boot);
+    uri = uri_decode(NULL, &boot);
     CU_ASSERT_PTR_NULL(uri);
     lwm2m_free(uri);
 
     /* "/9050/11/0" */
-    uri = lwm2m_decode_uri(NULL, &oID);
+    uri = uri_decode(NULL, &oID);
     CU_ASSERT_PTR_NOT_NULL_FATAL(uri);
     CU_ASSERT_EQUAL(uri->flag, LWM2M_URI_FLAG_DM | LWM2M_URI_FLAG_OBJECT_ID | LWM2M_URI_FLAG_INSTANCE_ID | LWM2M_URI_FLAG_RESOURCE_ID);
     CU_ASSERT_EQUAL(uri->objectId, 9050);
@@ -79,7 +78,7 @@ static void test_uri_decode(void)
     lwm2m_free(uri);
 
     /* "/11/0" */
-    uri = lwm2m_decode_uri(NULL, &iID);
+    uri = uri_decode(NULL, &iID);
     CU_ASSERT_PTR_NOT_NULL_FATAL(uri);
     CU_ASSERT_EQUAL(uri->flag, LWM2M_URI_FLAG_DM | LWM2M_URI_FLAG_OBJECT_ID | LWM2M_URI_FLAG_INSTANCE_ID);
     CU_ASSERT_EQUAL(uri->objectId, 11);
@@ -87,7 +86,7 @@ static void test_uri_decode(void)
     lwm2m_free(uri);
 
     /* "/0" */
-    uri = lwm2m_decode_uri(NULL, &rID);
+    uri = uri_decode(NULL, &rID);
     CU_ASSERT_PTR_NOT_NULL_FATAL(uri);
     CU_ASSERT_EQUAL(uri->flag, LWM2M_URI_FLAG_DM | LWM2M_URI_FLAG_OBJECT_ID);
     CU_ASSERT_EQUAL(uri->objectId, 0);
@@ -95,13 +94,13 @@ static void test_uri_decode(void)
 
     /* "/9050/11/0/555" */
     rID.next = &extraID;
-    uri = lwm2m_decode_uri(NULL, &oID);
+    uri = uri_decode(NULL, &oID);
     CU_ASSERT_PTR_NULL(uri);
     lwm2m_free(uri);
 
     /* "/0/5a3f" */
     rID.next = &location;
-    uri = lwm2m_decode_uri(NULL, &rID);
+    uri = uri_decode(NULL, &rID);
     CU_ASSERT_PTR_NULL(uri);
     lwm2m_free(uri);
 
