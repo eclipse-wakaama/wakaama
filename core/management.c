@@ -195,7 +195,7 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
                 lwm2m_data_t * dataP = NULL;
                 int size = 0;
 
-                result = object_data_read(contextP, uriP, &size, &dataP);
+                result = object_readData(contextP, uriP, &size, &dataP);
                 if (COAP_205_CONTENT == result)
                 {
                     result = handle_observe_request(contextP, uriP, serverP, size, dataP, message, response);

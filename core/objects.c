@@ -145,7 +145,7 @@ uint8_t object_checkNumeric(lwm2m_context_t * contextP,
     return result;
 }
 
-coap_status_t object_data_read(lwm2m_context_t * contextP,
+coap_status_t object_readData(lwm2m_context_t * contextP,
                                lwm2m_uri_t * uriP,
                                int * sizeP,
                                lwm2m_data_t ** dataP)
@@ -218,7 +218,7 @@ coap_status_t object_read(lwm2m_context_t * contextP,
     lwm2m_data_t * dataP = NULL;
     int size = 0;
 
-    result = object_data_read(contextP, uriP, &size, &dataP);
+    result = object_readData(contextP, uriP, &size, &dataP);
 
     if (result == COAP_205_CONTENT)
     {
@@ -391,42 +391,6 @@ coap_status_t object_delete(lwm2m_context_t * contextP,
     return result;
 }
 
-/*
- * Delete all instances of an object except for the one with instanceId
- */
-coap_status_t object_delete_others(lwm2m_context_t * contextP,
-                                   uint16_t objectId,
-                                   uint16_t instanceId)
-{
-    lwm2m_object_t * objectP;
-    lwm2m_list_t * instanceP;
-    coap_status_t result;
-
-    objectP = prv_find_object(contextP, objectId);
-    if (NULL == objectP) return NOT_FOUND_4_04;
-    if (NULL == objectP->deleteFunc) return METHOD_NOT_ALLOWED_4_05;
-
-    LOG("    Call to object_delete_others\r\n");
-
-    result = COAP_202_DELETED;
-    instanceP = objectP->instanceList;
-    while (NULL != instanceP
-        && result == COAP_202_DELETED)
-    {
-        if (instanceP->id == instanceId)
-        {
-            instanceP = instanceP->next;
-        }
-        else
-        {
-            result = objectP->deleteFunc(instanceP->id, objectP);
-            instanceP = objectP->instanceList;
-        }
-    }
-
-    return result;
-}
-
 coap_status_t object_discover(lwm2m_context_t * contextP,
                               lwm2m_uri_t * uriP,
                               uint8_t ** bufferP,
@@ -543,7 +507,7 @@ static int prv_getObjectTemplate(uint8_t * buffer,
     return index;
 }
 
-int prv_getRegisterPayload(lwm2m_context_t * contextP,
+int object_getRegisterPayload(lwm2m_context_t * contextP,
                            uint8_t * buffer,
                            size_t bufferLen)
 {

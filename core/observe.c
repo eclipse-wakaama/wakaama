@@ -436,7 +436,7 @@ void observation_step(lwm2m_context_t * contextP,
 
         if (LWM2M_URI_IS_SET_RESOURCE(&targetP->uri))
         {
-            if (COAP_205_CONTENT != object_data_read(contextP, &targetP->uri, &size, &dataP)) continue;
+            if (COAP_205_CONTENT != object_readData(contextP, &targetP->uri, &size, &dataP)) continue;
             switch (dataP->dataType)
             {
             case LWM2M_TYPE_INTEGER:
