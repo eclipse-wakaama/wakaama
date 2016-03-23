@@ -53,7 +53,7 @@
 #include <float.h>
 
 
-int lwm2m_PlainTextToInt64(uint8_t * buffer,
+int utils_plainTextToInt64(uint8_t * buffer,
                            int length,
                            int64_t * dataP)
 {
@@ -98,7 +98,7 @@ int lwm2m_PlainTextToInt64(uint8_t * buffer,
     return 1;
 }
 
-int lwm2m_PlainTextToFloat64(uint8_t * buffer,
+int utils_plainTextToFloat64(uint8_t * buffer,
                              int length,
                              double * dataP)
 {
@@ -277,7 +277,7 @@ size_t utils_floatToText(double data,
     return intLength + decLength;
 }
 
-size_t lwm2m_int64ToPlainText(int64_t data,
+size_t utils_int64ToPlainText(int64_t data,
                               uint8_t ** bufferP)
 {
 #define _PRV_STR_LENGTH 32
@@ -296,7 +296,7 @@ size_t lwm2m_int64ToPlainText(int64_t data,
 }
 
 
-size_t lwm2m_float64ToPlainText(double data,
+size_t utils_float64ToPlainText(double data,
                                 uint8_t ** bufferP)
 {
     uint8_t string[_PRV_STR_LENGTH * 2];
@@ -314,13 +314,13 @@ size_t lwm2m_float64ToPlainText(double data,
 }
 
 
-size_t lwm2m_boolToPlainText(bool data,
+size_t utils_boolToPlainText(bool data,
                              uint8_t ** bufferP)
 {
-    return lwm2m_int64ToPlainText((int64_t)(data?1:0), bufferP);
+    return utils_int64ToPlainText((int64_t)(data?1:0), bufferP);
 }
 
-lwm2m_binding_t lwm2m_stringToBinding(uint8_t * buffer,
+lwm2m_binding_t utils_stringToBinding(uint8_t * buffer,
                                       size_t length)
 {
     if (length == 0) return BINDING_UNKNOWN;
@@ -377,7 +377,7 @@ lwm2m_binding_t lwm2m_stringToBinding(uint8_t * buffer,
     return BINDING_UNKNOWN;
 }
 
-lwm2m_media_type_t prv_convertMediaType(coap_content_type_t type)
+lwm2m_media_type_t utils_convertMediaType(coap_content_type_t type)
 {
     // Here we just check the content type is a valid value for LWM2M
     switch(type)
@@ -438,7 +438,7 @@ lwm2m_server_t * utils_findBootstrapServer(lwm2m_context_t * contextP,
 #endif
 }
 
-int prv_isAltPathValid(const char * altPath)
+int utils_isAltPathValid(const char * altPath)
 {
     int i;
 

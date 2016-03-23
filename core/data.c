@@ -72,7 +72,7 @@ void lwm2m_data_encode_int(int64_t value,
     if ((dataP->flags & LWM2M_TLV_FLAG_TEXT_FORMAT) != 0)
     {
         dataP->flags &= ~LWM2M_TLV_FLAG_STATIC_DATA;
-        dataP->length = lwm2m_int64ToPlainText(value, &dataP->value);
+        dataP->length = utils_int64ToPlainText(value, &dataP->value);
     }
     else
     {
@@ -102,7 +102,7 @@ int lwm2m_data_decode_int(const lwm2m_data_t * dataP,
 
     if ((dataP->flags & LWM2M_TLV_FLAG_TEXT_FORMAT) != 0)
     {
-        result = lwm2m_PlainTextToInt64(dataP->value, dataP->length, valueP);
+        result = utils_plainTextToInt64(dataP->value, dataP->length, valueP);
     }
     else
     {
@@ -129,7 +129,7 @@ void lwm2m_data_encode_float(double value,
     if ((dataP->flags & LWM2M_TLV_FLAG_TEXT_FORMAT) != 0)
     {
         dataP->flags &= ~LWM2M_TLV_FLAG_STATIC_DATA;
-        dataP->length = lwm2m_float64ToPlainText(value, &dataP->value);
+        dataP->length = utils_float64ToPlainText(value, &dataP->value);
     }
     else
     {
@@ -175,7 +175,7 @@ int lwm2m_data_decode_float(const lwm2m_data_t * dataP,
 
     if ((dataP->flags & LWM2M_TLV_FLAG_TEXT_FORMAT) != 0)
     {
-        result = lwm2m_PlainTextToFloat64(dataP->value, dataP->length, valueP);
+        result = utils_plainTextToFloat64(dataP->value, dataP->length, valueP);
     }
     else
     {

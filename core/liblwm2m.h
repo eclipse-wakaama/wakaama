@@ -256,25 +256,6 @@ typedef struct
 int lwm2m_stringToUri(const char * buffer, size_t buffer_len, lwm2m_uri_t * uriP);
 
 /*
- *  Resource values
- */
-
-// defined in utils.c
-int lwm2m_PlainTextToInt64(uint8_t * buffer, int length, int64_t * dataP);
-int lwm2m_PlainTextToFloat64(uint8_t * buffer, int length, double * dataP);
-
-/*
- * These utility functions allocate a new buffer storing the plain text
- * representation of data. They return the size in bytes of the buffer
- * or 0 in case of error.
- * There is no trailing '\0' character in the buffer.
- */
-size_t lwm2m_int64ToPlainText(int64_t data, uint8_t ** bufferP);
-size_t lwm2m_float64ToPlainText(double data, uint8_t ** bufferP);
-size_t lwm2m_boolToPlainText(bool data, uint8_t ** bufferP);
-
-
-/*
  * TLV
  */
 

@@ -253,7 +253,7 @@ int lwm2m_configure(lwm2m_context_t * contextP,
     if (found != 0x07) return COAP_400_BAD_REQUEST;
     if (altPath != NULL)
     {
-        if (0 == prv_isAltPathValid(altPath))
+        if (0 == utils_isAltPathValid(altPath))
         {
             return COAP_400_BAD_REQUEST;
         }

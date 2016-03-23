@@ -452,7 +452,7 @@ static bool prv_convertValue(_record_t * recordP,
         {
             int64_t value;
 
-            if ( 1 != lwm2m_PlainTextToInt64(recordP->value,
+            if ( 1 != utils_plainTextToInt64(recordP->value,
                                              recordP->valueLen,
                                              &value))
             {
@@ -465,7 +465,7 @@ static bool prv_convertValue(_record_t * recordP,
         {
             double value;
 
-            if ( 1 != lwm2m_PlainTextToFloat64(recordP->value,
+            if ( 1 != utils_plainTextToFloat64(recordP->value,
                                                recordP->valueLen,
                                                &value))
             {

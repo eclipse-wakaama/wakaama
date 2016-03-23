@@ -332,7 +332,7 @@ coap_status_t bootstrap_handleCommand(lwm2m_context_t * contextP,
     coap_status_t result;
     lwm2m_media_type_t format;
 
-    format = prv_convertMediaType(message->content_type);
+    format = utils_convertMediaType(message->content_type);
 
     result = prv_checkServerStatus(serverP);
     if (result != COAP_NO_ERROR) return result;

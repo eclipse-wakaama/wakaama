@@ -657,7 +657,7 @@ static int prv_getMandatoryInfo(lwm2m_object_t * objectP,
     }
     targetP->lifetime = value;
 
-    targetP->binding = lwm2m_stringToBinding(dataP[1].value, dataP[1].length);
+    targetP->binding = utils_stringToBinding(dataP[1].value, dataP[1].length);
 
     lwm2m_data_free(size, dataP);
 

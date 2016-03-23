@@ -253,21 +253,23 @@ lwm2m_status_t bootstrap_getStatus(lwm2m_context_t * contextP);
 int json_parse(lwm2m_uri_t * uriP, uint8_t * buffer, size_t bufferLen, lwm2m_data_t ** dataP);
 int json_serialize(lwm2m_uri_t * uriP, int size, lwm2m_data_t * tlvP, uint8_t ** bufferP);
 #endif
+
+// defined in discover.c
 int discover_serialize(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, int size, lwm2m_data_t * dataP, uint8_t ** bufferP);
 
 // defined in utils.c
-lwm2m_binding_t lwm2m_stringToBinding(uint8_t *buffer, size_t length);
-lwm2m_media_type_t prv_convertMediaType(coap_content_type_t type);
-int prv_isAltPathValid(const char * altPath);
+lwm2m_binding_t utils_stringToBinding(uint8_t *buffer, size_t length);
+lwm2m_media_type_t utils_convertMediaType(coap_content_type_t type);
+int utils_isAltPathValid(const char * altPath);
 int utils_stringCopy(char * buffer, size_t length, const char * str);
 int utils_intCopy(char * buffer, size_t length, int32_t value);
 size_t utils_intToText(int64_t data, uint8_t * string, size_t length);
 size_t utils_floatToText(double data, uint8_t * string, size_t length);
-int lwm2m_PlainTextToInt64(uint8_t * buffer, int length, int64_t * dataP);
-int lwm2m_PlainTextToFloat64(uint8_t * buffer, int length, double * dataP);
-size_t lwm2m_int64ToPlainText(int64_t data, uint8_t ** bufferP);
-size_t lwm2m_float64ToPlainText(double data, uint8_t ** bufferP);
-size_t lwm2m_boolToPlainText(bool data, uint8_t ** bufferP);
+int utils_plainTextToInt64(uint8_t * buffer, int length, int64_t * dataP);
+int utils_plainTextToFloat64(uint8_t * buffer, int length, double * dataP);
+size_t utils_int64ToPlainText(int64_t data, uint8_t ** bufferP);
+size_t utils_float64ToPlainText(double data, uint8_t ** bufferP);
+size_t utils_boolToPlainText(bool data, uint8_t ** bufferP);
 void utils_copyValue(void * dst, const void * src, size_t len);
 
 // defined in tlv.c
