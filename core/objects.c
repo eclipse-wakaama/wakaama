@@ -262,11 +262,11 @@ coap_status_t object_write(lwm2m_context_t * contextP,
     targetP = prv_findObject(contextP, uriP->objectId);
     if (NULL == targetP)
     {
-        result = NOT_FOUND_4_04;
+        result = COAP_404_NOT_FOUND;
     }
     else if (NULL == targetP->writeFunc)
     {
-        result = METHOD_NOT_ALLOWED_4_05;
+        result = COAP_405_METHOD_NOT_ALLOWED;
     }
     else
     {
@@ -310,8 +310,8 @@ coap_status_t object_execute(lwm2m_context_t * contextP,
     lwm2m_object_t * targetP;
 
     targetP = prv_findObject(contextP, uriP->objectId);
-    if (NULL == targetP) return NOT_FOUND_4_04;
-    if (NULL == targetP->executeFunc) return METHOD_NOT_ALLOWED_4_05;
+    if (NULL == targetP) return COAP_404_NOT_FOUND;
+    if (NULL == targetP->executeFunc) return COAP_405_METHOD_NOT_ALLOWED;
 
     return targetP->executeFunc(uriP->instanceId, uriP->resourceId, buffer, length, targetP);
 }
@@ -329,12 +329,12 @@ coap_status_t object_create(lwm2m_context_t * contextP,
 
     if (length == 0 || buffer == 0)
     {
-        return BAD_REQUEST_4_00;
+        return COAP_400_BAD_REQUEST;
     }
 
     targetP = prv_findObject(contextP, uriP->objectId);
-    if (NULL == targetP) return NOT_FOUND_4_04;
-    if (NULL == targetP->createFunc) return METHOD_NOT_ALLOWED_4_05;
+    if (NULL == targetP) return COAP_404_NOT_FOUND;
+    if (NULL == targetP->createFunc) return COAP_405_METHOD_NOT_ALLOWED;
 
     if (LWM2M_URI_IS_SET_INSTANCE(uriP))
     {
@@ -365,8 +365,8 @@ coap_status_t object_delete(lwm2m_context_t * contextP,
     coap_status_t result;
 
     objectP = prv_findObject(contextP, uriP->objectId);
-    if (NULL == objectP) return NOT_FOUND_4_04;
-    if (NULL == objectP->deleteFunc) return METHOD_NOT_ALLOWED_4_05;
+    if (NULL == objectP) return COAP_404_NOT_FOUND;
+    if (NULL == objectP->deleteFunc) return COAP_405_METHOD_NOT_ALLOWED;
 
     LOG("    Call to object_delete\r\n");
 
@@ -791,11 +791,11 @@ coap_status_t object_createInstance(lwm2m_context_t * contextP,
     coap_status_t result;
 
     targetP = prv_findObject(contextP, uriP->objectId);
-    if (NULL == targetP) return NOT_FOUND_4_04;
+    if (NULL == targetP) return COAP_404_NOT_FOUND;
 
     if (NULL == targetP->createFunc) 
     {
-        return METHOD_NOT_ALLOWED_4_05;
+        return COAP_405_METHOD_NOT_ALLOWED;
     }
 
     result = targetP->createFunc(lwm2m_list_newId(targetP->instanceList), dataP->length, (lwm2m_data_t *)(dataP->value), targetP);
@@ -809,11 +809,11 @@ coap_status_t object_writeInstance(lwm2m_context_t * contextP,
     coap_status_t result;
 
     targetP = prv_findObject(contextP, uriP->objectId);
-    if (NULL == targetP) return NOT_FOUND_4_04;
+    if (NULL == targetP) return COAP_404_NOT_FOUND;
 
     if (NULL == targetP->writeFunc) 
     {
-        return METHOD_NOT_ALLOWED_4_05;
+        return COAP_405_METHOD_NOT_ALLOWED;
     }
 
     result = targetP->writeFunc(dataP->id, dataP->length, (lwm2m_data_t *)(dataP->value), targetP);

@@ -369,7 +369,7 @@ coap_status_t bootstrap_handleCommand(lwm2m_context_t * contextP,
 
                 if (message->payload_len == 0 || message->payload == 0)
                 {
-                    result = BAD_REQUEST_4_00;
+                    result = COAP_400_BAD_REQUEST;
                 }
                 else
                 {
@@ -422,7 +422,7 @@ coap_status_t bootstrap_handleCommand(lwm2m_context_t * contextP,
         {
             if (LWM2M_URI_IS_SET_RESOURCE(uriP))
             {
-                result = BAD_REQUEST_4_00;
+                result = COAP_400_BAD_REQUEST;
             }
             else
             {
@@ -446,7 +446,7 @@ coap_status_t bootstrap_handleCommand(lwm2m_context_t * contextP,
     case COAP_GET:
     case COAP_POST:
     default:
-        result = BAD_REQUEST_4_00;
+        result = COAP_400_BAD_REQUEST;
         break;
     }
 
@@ -513,7 +513,7 @@ coap_status_t bootstrap_handleDeleteAll(lwm2m_context_t * contextP,
         else
         {
             result = object_delete(contextP, &uri);
-            if (result == METHOD_NOT_ALLOWED_4_05)
+            if (result == COAP_405_METHOD_NOT_ALLOWED)
             {
                 // Fake a successful deletion for static objects like the Device object.
                 result = COAP_202_DELETED;
@@ -614,7 +614,7 @@ int lwm2m_bootstrap_delete(lwm2m_context_t * contextP,
     bs_data_t * dataP;
 
     transaction = transaction_new(COAP_TYPE_CON, COAP_DELETE, NULL, uriP, contextP->nextMID++, 4, NULL, ENDPOINT_UNKNOWN, sessionH);
-    if (transaction == NULL) return INTERNAL_SERVER_ERROR_5_00;
+    if (transaction == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
 
     dataP = (bs_data_t *)lwm2m_malloc(sizeof(bs_data_t));
     if (dataP == NULL)
@@ -660,7 +660,7 @@ int lwm2m_bootstrap_write(lwm2m_context_t * contextP,
     }
 
     transaction = transaction_new(COAP_TYPE_CON, COAP_PUT, NULL, uriP, contextP->nextMID++, 4, NULL, ENDPOINT_UNKNOWN, sessionH);
-    if (transaction == NULL) return INTERNAL_SERVER_ERROR_5_00;
+    if (transaction == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
 
     coap_set_header_content_type(transaction->message, format);
     coap_set_payload(transaction->message, buffer, length);
@@ -691,7 +691,7 @@ int lwm2m_bootstrap_finish(lwm2m_context_t * contextP,
     bs_data_t * dataP;
 
     transaction = transaction_new(COAP_TYPE_CON, COAP_POST, NULL, NULL, contextP->nextMID++, 4, NULL, ENDPOINT_UNKNOWN, sessionH);
-    if (transaction == NULL) return INTERNAL_SERVER_ERROR_5_00;
+    if (transaction == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
 
     coap_set_header_uri_path(transaction->message, "/"URI_BOOTSTRAP_SEGMENT);
 

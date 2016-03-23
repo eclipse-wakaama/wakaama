@@ -128,7 +128,7 @@ static void prv_handleRegistrationReply(lwm2m_transaction_t * transacP,
         {
             targetP->registration = tv_sec;
         }
-        if (packet != NULL && packet->code == CREATED_2_01)
+        if (packet != NULL && packet->code == COAP_201_CREATED)
         {
             targetP->status = STATE_REGISTERED;
             if (NULL != targetP->location)
@@ -217,7 +217,7 @@ static void prv_handleRegistrationUpdateReply(lwm2m_transaction_t * transacP,
         {
             targetP->registration = tv_sec;
         }
-        if (packet != NULL && packet->code == CHANGED_2_04)
+        if (packet != NULL && packet->code == COAP_204_CHANGED)
         {
             targetP->status = STATE_REGISTERED;
             LOG("    => REGISTERED\r\n");
@@ -956,7 +956,7 @@ coap_status_t registration_handleRequest(lwm2m_context_t * contextP,
 
             if (contextP->monitorCallback != NULL)
             {
-                contextP->monitorCallback(clientP->internalID, NULL, CREATED_2_01, LWM2M_CONTENT_TEXT, NULL, 0, contextP->monitorUserData);
+                contextP->monitorCallback(clientP->internalID, NULL, COAP_201_CREATED, LWM2M_CONTENT_TEXT, NULL, 0, contextP->monitorUserData);
             }
             result = COAP_201_CREATED;
             break;
@@ -1060,7 +1060,7 @@ coap_status_t registration_handleRequest(lwm2m_context_t * contextP,
         if (clientP == NULL) return COAP_400_BAD_REQUEST;
         if (contextP->monitorCallback != NULL)
         {
-            contextP->monitorCallback(clientP->internalID, NULL, DELETED_2_02, LWM2M_CONTENT_TEXT, NULL, 0, contextP->monitorUserData);
+            contextP->monitorCallback(clientP->internalID, NULL, COAP_202_DELETED, LWM2M_CONTENT_TEXT, NULL, 0, contextP->monitorUserData);
         }
         registration_freeClient(clientP);
         result = COAP_202_DELETED;
@@ -1135,7 +1135,7 @@ void registration_step(lwm2m_context_t * contextP,
             contextP->clientList = (lwm2m_client_t *)LWM2M_LIST_RM(contextP->clientList, clientP->internalID, NULL);
             if (contextP->monitorCallback != NULL)
             {
-                contextP->monitorCallback(clientP->internalID, NULL, DELETED_2_02, LWM2M_CONTENT_TEXT, NULL, 0, contextP->monitorUserData);
+                contextP->monitorCallback(clientP->internalID, NULL, COAP_202_DELETED, LWM2M_CONTENT_TEXT, NULL, 0, contextP->monitorUserData);
             }
             registration_freeClient(clientP);
         }

@@ -139,6 +139,7 @@ bool lwm2m_session_is_equal(void * session1, void * session2, void * userData);
 #define COAP_205_CONTENT                (uint8_t)0x45
 #define COAP_400_BAD_REQUEST            (uint8_t)0x80
 #define COAP_401_UNAUTHORIZED           (uint8_t)0x81
+#define COAP_402_BAD_OPTION             (uint8_t)0x82
 #define COAP_404_NOT_FOUND              (uint8_t)0x84
 #define COAP_405_METHOD_NOT_ALLOWED     (uint8_t)0x85
 #define COAP_406_NOT_ACCEPTABLE         (uint8_t)0x86
@@ -661,8 +662,8 @@ void lwm2m_resource_value_changed(lwm2m_context_t * contextP, lwm2m_uri_t * uriP
 
 #ifdef LWM2M_SERVER_MODE
 // Clients registration/deregistration monitoring API.
-// When a LWM2M client registers, the callback is called with status CREATED_2_01.
-// When a LWM2M client deregisters, the callback is called with status DELETED_2_02.
+// When a LWM2M client registers, the callback is called with status COAP_201_CREATED.
+// When a LWM2M client deregisters, the callback is called with status COAP_202_DELETED.
 // clientID is the internal ID of the LWM2M Client.
 // The callback's parameters uri, data, dataLength are always NULL.
 // The lwm2m_client_t is present in the lwm2m_context_t's clientList when the callback is called. On a deregistration, it deleted when the callback returns.

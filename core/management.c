@@ -401,7 +401,7 @@ static int prv_makeOperation(lwm2m_context_t * contextP,
     if (clientP == NULL) return COAP_404_NOT_FOUND;
 
     transaction = transaction_new(COAP_TYPE_CON, method, clientP->altPath, uriP, contextP->nextMID++, 4, NULL, ENDPOINT_CLIENT, (void *)clientP);
-    if (transaction == NULL) return INTERNAL_SERVER_ERROR_5_00;
+    if (transaction == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
 
     if (buffer != NULL)
     {
@@ -686,7 +686,7 @@ int lwm2m_dm_discover(lwm2m_context_t * contextP,
     if (clientP == NULL) return COAP_404_NOT_FOUND;
 
     transaction = transaction_new(COAP_TYPE_CON, COAP_GET, clientP->altPath, uriP, contextP->nextMID++, 4, NULL, ENDPOINT_CLIENT, (void *)clientP);
-    if (transaction == NULL) return INTERNAL_SERVER_ERROR_5_00;
+    if (transaction == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
 
     coap_set_header_accept(transaction->message, LWM2M_CONTENT_LINK);
 

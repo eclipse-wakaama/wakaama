@@ -219,12 +219,12 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
             if (message->type == COAP_TYPE_CON)
             {
                 /* Reliable CON requests are answered with an ACK. */
-                coap_init_message(response, COAP_TYPE_ACK, CONTENT_2_05, message->mid);
+                coap_init_message(response, COAP_TYPE_ACK, COAP_205_CONTENT, message->mid);
             }
             else
             {
                 /* Unreliable NON requests are answered with a NON as well. */
-                coap_init_message(response, COAP_TYPE_NON, CONTENT_2_05, contextP->nextMID++);
+                coap_init_message(response, COAP_TYPE_NON, COAP_205_CONTENT, contextP->nextMID++);
             }
 
             /* mirror token */
@@ -245,11 +245,11 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
             if (coap_error_code==NO_ERROR)
             {
                 /* Apply blockwise transfers. */
-                if ( IS_OPTION(message, COAP_OPTION_BLOCK1) && response->code<BAD_REQUEST_4_00 && !IS_OPTION(response, COAP_OPTION_BLOCK1) )
+                if ( IS_OPTION(message, COAP_OPTION_BLOCK1) && response->code<COAP_400_BAD_REQUEST && !IS_OPTION(response, COAP_OPTION_BLOCK1) )
                 {
                     LOG("Block1 NOT IMPLEMENTED\n");
 
-                    coap_error_code = NOT_IMPLEMENTED_5_01;
+                    coap_error_code = COAP_501_NOT_IMPLEMENTED;
                     coap_error_message = "NoBlock1Support";
                 }
                 else if ( IS_OPTION(message, COAP_OPTION_BLOCK2) )
@@ -262,7 +262,7 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
                         {
                             LOG("handle_incoming_data(): block_offset >= response->payload_len\n");
 
-                            response->code = BAD_OPTION_4_02;
+                            response->code = COAP_402_BAD_OPTION;
                             coap_set_payload(response, "BlockOutOfScope", 15); /* a const char str[] and sizeof(str) produces larger code size */
                         }
                         else
@@ -354,7 +354,7 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
         /* Set to sendable error code. */
         if (coap_error_code >= 192)
         {
-            coap_error_code = INTERNAL_SERVER_ERROR_5_00;
+            coap_error_code = COAP_500_INTERNAL_SERVER_ERROR;
         }
         /* Reuse input buffer for error message. */
         coap_init_message(message, COAP_TYPE_ACK, coap_error_code, message->mid);
@@ -368,7 +368,7 @@ coap_status_t message_send(lwm2m_context_t * contextP,
                            coap_packet_t * message,
                            void * sessionH)
 {
-    coap_status_t result = INTERNAL_SERVER_ERROR_5_00;
+    coap_status_t result = COAP_500_INTERNAL_SERVER_ERROR;
     uint8_t * pktBuffer;
     size_t pktBufferLen = 0;
     size_t allocLen;

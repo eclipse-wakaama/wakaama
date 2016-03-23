@@ -11,7 +11,7 @@ include_directories (${LIBLWM2M_DIR} ${PROJECT_SOURCE_DIR}/../examples/utils ${P
 add_subdirectory(${LIBLWM2M_DIR} ${CMAKE_CURRENT_BINARY_DIR}/core)
 
 # Enable all warnings for this test build  
-# add_definitions(-Wall -Wextra -Wfloat-equal -Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings -Waggregate-return -Wswitch-default -Wswitch-enum)  
+add_definitions(-Wall -Wextra -Wfloat-equal -Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings -Waggregate-return -Wswitch-default -Wswitch-enum)  
 
 SET(SOURCES
     unittests.c
