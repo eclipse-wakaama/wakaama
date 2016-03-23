@@ -228,7 +228,7 @@ void output_tlv(FILE * stream,
     int length = 0;
     int result;
 
-    while (0 != (result = lwm2m_decodeTLV((uint8_t*)buffer + length, buffer_len - length, &type, &id, &dataIndex, &dataLen)))
+    while (0 != (result = lwm2m_decode_TLV((uint8_t*)buffer + length, buffer_len - length, &type, &id, &dataIndex, &dataLen)))
     {
         print_indent(stream, indent);
         fprintf(stream, "{\r\n");

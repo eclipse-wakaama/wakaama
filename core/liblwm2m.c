@@ -84,7 +84,7 @@ void lwm2m_deregister(lwm2m_context_t * context)
     }
 }
 
-static void delete_server(lwm2m_server_t * serverP)
+static void prv_deleteServer(lwm2m_server_t * serverP)
 {
     // TODO parse transaction and observation to remove the ones related to this server
     if (NULL != serverP->location)
@@ -94,14 +94,14 @@ static void delete_server(lwm2m_server_t * serverP)
     lwm2m_free(serverP);
 }
 
-void delete_server_list(lwm2m_context_t * context)
+static void prv_deleteServerList(lwm2m_context_t * context)
 {
     while (NULL != context->serverList)
     {
         lwm2m_server_t * server;
         server = context->serverList;
         context->serverList = server->next;
-        delete_server(server);
+        prv_deleteServer(server);
     }
 }
 
@@ -111,7 +111,7 @@ static void prv_deleteBootstrapServerList(lwm2m_context_t * contextP)
     contextP->bootstrapServerList = NULL;
 }
 
-void delete_observed_list(lwm2m_context_t * contextP)
+static void prv_deleteObservedList(lwm2m_context_t * contextP)
 {
     while (NULL != contextP->observedList)
     {
@@ -132,7 +132,7 @@ void delete_observed_list(lwm2m_context_t * contextP)
 }
 #endif
 
-void delete_transaction_list(lwm2m_context_t * context)
+void prv_deleteTransactionList(lwm2m_context_t * context)
 {
     while (NULL != context->transactionList)
     {
@@ -150,9 +150,9 @@ void lwm2m_close(lwm2m_context_t * contextP)
     int i;
 
     lwm2m_deregister(contextP);
-    delete_server_list(contextP);
+    prv_deleteServerList(contextP);
     prv_deleteBootstrapServerList(contextP);
-    delete_observed_list(contextP);
+    prv_deleteObservedList(contextP);
     lwm2m_free(contextP->objectList);
     lwm2m_free(contextP->endpointName);
     if (contextP->msisdn != NULL)
@@ -178,12 +178,12 @@ void lwm2m_close(lwm2m_context_t * contextP)
     }
 #endif
 
-    delete_transaction_list(contextP);
+    prv_deleteTransactionList(contextP);
     lwm2m_free(contextP);
 }
 
 #ifdef LWM2M_CLIENT_MODE
-static int refresh_server_list(lwm2m_context_t * contextP)
+static int prv_refreshServerList(lwm2m_context_t * contextP)
 {
     lwm2m_server_t * targetP;
     lwm2m_server_t * nextP;
@@ -202,7 +202,7 @@ static int refresh_server_list(lwm2m_context_t * contextP)
         }
         else
         {
-            delete_server(targetP);
+            prv_deleteServer(targetP);
         }
         targetP = nextP;
     }
@@ -219,7 +219,7 @@ static int refresh_server_list(lwm2m_context_t * contextP)
         }
         else
         {
-            delete_server(targetP);
+            prv_deleteServer(targetP);
         }
         targetP = nextP;
     }
@@ -392,7 +392,7 @@ next_step:
     switch (contextP->state)
     {
     case STATE_INITIAL:
-        if (0 != refresh_server_list(contextP)) return COAP_503_SERVICE_UNAVAILABLE;
+        if (0 != prv_refreshServerList(contextP)) return COAP_503_SERVICE_UNAVAILABLE;
         if (contextP->serverList != NULL)
         {
             contextP->state = STATE_REGISTER_REQUIRED;

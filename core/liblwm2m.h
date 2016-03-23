@@ -225,7 +225,7 @@ void lwm2m_list_free(lwm2m_list_t * head);
  * URI
  *
  * objectId is always set
- * if instanceId or resourceId is greater than LWM2M_URI_MAX_ID, it means it is not specified
+ * instanceId or resourceId are set according to the flag bit-field
  *
  */
 
@@ -256,10 +256,8 @@ typedef struct
 int lwm2m_stringToUri(const char * buffer, size_t buffer_len, lwm2m_uri_t * uriP);
 
 /*
- * TLV
+ * The lwm2m_data_t is used to store LWM2M resource values in a hierarchical way.
  */
-
-#define LWM2M_TLV_HEADER_MAX_LENGTH 6
 
 /*
  * Bitmask for the lwm2m_data_t::flag
@@ -331,6 +329,7 @@ void lwm2m_data_encode_bool(bool value, lwm2m_data_t * dataP);
 int lwm2m_data_decode_bool(const lwm2m_data_t * dataP, bool * valueP);
 void lwm2m_data_include(lwm2m_data_t * subDataP, size_t count, lwm2m_data_t * dataP);
 
+
 /*
  * Utility function to parse TLV buffers directly
  *
@@ -342,7 +341,10 @@ void lwm2m_data_include(lwm2m_data_t * subDataP, size_t count, lwm2m_data_t * da
  * oDataIndex: (OUT) index of the data of the parsed TLV record in the buffer
  * oDataLen: (OUT) length of the data of the parsed TLV record
  */
-int lwm2m_decodeTLV(const uint8_t * buffer, size_t buffer_len, lwm2m_tlv_type_t * oType, uint16_t * oID, size_t * oDataIndex, size_t * oDataLen);
+
+#define LWM2M_TLV_HEADER_MAX_LENGTH 6
+
+int lwm2m_decode_TLV(const uint8_t * buffer, size_t buffer_len, lwm2m_tlv_type_t * oType, uint16_t * oID, size_t * oDataIndex, size_t * oDataLen);
 
 
 /*

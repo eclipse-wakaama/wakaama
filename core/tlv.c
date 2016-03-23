@@ -158,7 +158,7 @@ static int prv_boolToTLV(lwm2m_tlv_type_t type,
     return prv_intToTLV(type, value ? 1 : 0, id, buffer, buffer_len);
 }
 
-int lwm2m_decodeTLV(const uint8_t * buffer,
+int lwm2m_decode_TLV(const uint8_t * buffer,
                     size_t buffer_len,
                     lwm2m_tlv_type_t * oType,
                     uint16_t * oID,
@@ -234,7 +234,7 @@ int tlv_parse(uint8_t * buffer,
 
     *dataP = NULL;
 
-    while (0 != (result = lwm2m_decodeTLV((uint8_t*)buffer + index, bufferLen - index, &type, &id, &dataIndex, &dataLen)))
+    while (0 != (result = lwm2m_decode_TLV((uint8_t*)buffer + index, bufferLen - index, &type, &id, &dataIndex, &dataLen)))
     {
         lwm2m_data_t * newTlvP;
 
