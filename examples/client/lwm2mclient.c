@@ -21,6 +21,7 @@
  *    Bosch Software Innovations GmbH - Please refer to git log
  *    Pascal Rieux - Please refer to git log
  *    Christian Renz - Please refer to git log
+ *    Ricky Liu - Please refer to git log
  *
  *******************************************************************************/
 
@@ -58,7 +59,11 @@
 #include "lwm2mclient.h"
 #include "liblwm2m.h"
 #include "commandline.h"
+#ifdef LWM2M_SUPPORT_DTLS
+#include "dtlsconnection.h"
+#else
 #include "connection.h"
+#endif
 
 #include <string.h>
 #include <stdlib.h>
@@ -94,7 +99,12 @@ typedef struct
     lwm2m_object_t * securityObjP;
     lwm2m_object_t * serverObject;
     int sock;
+#ifdef LWM2M_SUPPORT_DTLS
+    dtls_connection_t * connList;
+    lwm2m_context_t * lwm2mH;
+#else
     connection_t * connList;
+#endif
     int addressFamily;
 } client_data_t;
 
@@ -187,6 +197,31 @@ void handle_value_changed(lwm2m_context_t * lwm2mH,
     }
 }
 
+#ifdef LWM2M_SUPPORT_DTLS
+void * lwm2m_connect_server(uint16_t secObjInstID,
+                            void * userData)
+{
+  client_data_t * dataP;
+  lwm2m_list_t * instance;
+  dtls_connection_t * newConnP = NULL;
+  dataP = (client_data_t *)userData;
+  lwm2m_object_t  * securityObj = dataP->securityObjP;
+  
+  instance = LWM2M_LIST_FIND(dataP->securityObjP->instanceList, secObjInstID);
+  if (instance == NULL) return NULL;
+  
+  
+  newConnP = connection_create(dataP->connList, dataP->sock, securityObj, instance->id, dataP->lwm2mH, dataP->addressFamily);
+  if (newConnP == NULL)
+  {
+      fprintf(stderr, "Connection creation failed.\n");
+      return NULL;
+  }
+  
+  dataP->connList = newConnP;
+  return (void *)newConnP;
+}
+#else
 void * lwm2m_connect_server(uint16_t secObjInstID,
                             void * userData)
 {
@@ -241,6 +276,7 @@ exit:
     lwm2m_free(uri);
     return (void *)newConnP;
 }
+#endif
 
 static void prv_output_servers(char * buffer,
                                void * user_data)
@@ -782,6 +818,10 @@ void print_usage(void)
     fprintf(stdout, "  -t TIME\tSet the lifetime of the Client. Default: 300\r\n");
     fprintf(stdout, "  -b\t\tBootstrap requested.\r\n");
     fprintf(stdout, "  -c\t\tChange battery level over time.\r\n");
+#ifdef LWM2M_SUPPORT_DTLS    
+    fprintf(stdout, "  -i STRING\tSet the device management or bootstrap server PSK identity. If not set use none secure mode\r\n");
+    fprintf(stdout, "  -p HEXSTRING\tSet the device management or bootstrap server Pre-Shared-Key. If not set use none secure mode\r\n");    
+#endif
     fprintf(stdout, "\r\n");
 }
 
@@ -805,6 +845,11 @@ int main(int argc, char *argv[])
 #ifdef LWM2M_BOOTSTRAP
     lwm2m_client_state_t previousState = STATE_INITIAL;
 #endif
+
+    char * pskId = NULL;
+    char * psk = NULL;
+    uint16_t pskLen = -1;
+    char * pskBuffer = NULL;
 
     /*
      * The function start by setting up the command line interface (which may or not be useful depending on your project)
@@ -841,7 +886,11 @@ int main(int argc, char *argv[])
     memset(&data, 0, sizeof(client_data_t));
     data.addressFamily = AF_INET6;
 
+#ifdef LWM2M_SUPPORT_DTLS
+    while ((opt = getopt(argc, argv, "bcl:n:p:t:i:s:h:4")) != -1)
+#else
     while ((opt = getopt(argc, argv, "bcl:n:p:t:h:4")) != -1)
+#endif
     {
         switch (opt)
         {
@@ -855,6 +904,14 @@ int main(int argc, char *argv[])
         case 't':
             sscanf(optarg, "%d", &lifetime);
             break;
+#ifdef LWM2M_SUPPORT_DTLS
+        case 'i':
+            pskId = optarg;
+            break;
+        case 's':
+            psk = optarg;
+            break;
+#endif						
         case 'n':
             name = optarg;
             break;
@@ -897,13 +954,35 @@ int main(int argc, char *argv[])
      * Now the main function fill an array with each object, this list will be later passed to liblwm2m.
      * Those functions are located in their respective object file.
      */
+#ifdef LWM2M_SUPPORT_DTLS
+    if (psk!= NULL)
+    {
+        pskLen = (strlen(psk) / 2);
+        pskBuffer = malloc(pskLen+1);
+        if (NULL == pskBuffer)
+        {
+            fprintf(stderr, "Failed to create PSK binary buffer\r\n");
+            return -1;
+        }
+        // Hex string to binary
+        char *h = psk;
+        char *b = pskBuffer;
+        char xlate[] = "0123456789ABCDEF";
+
+        for ( ; *h; h += 2, ++b)
+        {
+           *b = ((strchr(xlate, toupper(*h)) - xlate) * 16) + ((strchr(xlate, toupper(*(h+1))) - xlate));
+        }
+    }
+#endif
+
     char serverUri[50];
     int serverId = 123;
     sprintf (serverUri, "coap://%s:%s", server, serverPort);
 #ifdef LWM2M_BOOTSTRAP
-    objArray[0] = get_security_object(serverId, serverUri, bootstrapRequested);
+    objArray[0] = get_security_object(serverId, serverUri, pskId, pskBuffer, pskLen, bootstrapRequested);
 #else
-    objArray[0] = get_security_object(serverId, serverUri, false);
+    objArray[0] = get_security_object(serverId, serverUri, pskId, pskBuffer, pskLen, false);
 #endif
     if (NULL == objArray[0])
     {
@@ -993,6 +1072,10 @@ int main(int argc, char *argv[])
         fprintf(stderr, "lwm2m_init() failed\r\n");
         return -1;
     }
+	
+#ifdef LWM2M_SUPPORT_DTLS
+    data.lwm2mH = lwm2mH;
+#endif
 
     /*
      * We configure the liblwm2m library with the name of the client - which shall be unique for each client -
@@ -1133,8 +1216,12 @@ int main(int argc, char *argv[])
                 {
                     char s[INET6_ADDRSTRLEN];
                     in_port_t port;
-                    connection_t * connP;
 
+#ifdef LWM2M_SUPPORT_DTLS
+                    dtls_connection_t * connP;
+#else
+                    connection_t * connP;
+#endif
                     if (AF_INET == addr.ss_family)
                     {
                         struct sockaddr_in *saddr = (struct sockaddr_in *)&addr;
@@ -1160,7 +1247,15 @@ int main(int argc, char *argv[])
                         /*
                          * Let liblwm2m respond to the query depending on the context
                          */
+#ifdef LWM2M_SUPPORT_DTLS
+                        int result = connection_handle_packet(connP, buffer, numBytes);
+						if (0 != result)
+                        {
+                             printf("error handling message %d\n",result);
+                        }
+#else
                         lwm2m_handle_packet(lwm2mH, buffer, numBytes, connP);
+#endif
                         conn_s_updateRxStatistic(objArray[7], numBytes, false);
                     }
                     else

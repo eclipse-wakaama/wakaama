@@ -102,7 +102,7 @@ void system_reboot(void);
 /*
  * object_security.c
  */
-lwm2m_object_t * get_security_object(int serverId, const char* serverUri, bool isBootstrap);
+lwm2m_object_t * get_security_object(int serverId, const char* serverUri, char * bsPskId, char * psk, uint16_t pskLen, bool isBootstrap);
 void clean_security_object(lwm2m_object_t * objectP);
 char * get_server_uri(lwm2m_object_t * objectP, uint16_t secObjInstID);
 void display_security_object(lwm2m_object_t * objectP);
