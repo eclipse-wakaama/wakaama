@@ -142,6 +142,21 @@
 #define ATTR_DIMENSION_STR       "dim="
 #define ATTR_DIMENSION_LEN       4
 
+#define URI_MAX_STRING_LEN    18      // /65535/65535/65535
+
+#define LINK_ITEM_START             "<"
+#define LINK_ITEM_START_SIZE        1
+#define LINK_ITEM_END               ">,"
+#define LINK_ITEM_END_SIZE          2
+#define LINK_ITEM_DIM_START         ">;dim="
+#define LINK_ITEM_DIM_START_SIZE    6
+#define LINK_ITEM_ATTR_END          ","
+#define LINK_ITEM_ATTR_END_SIZE     1
+#define LINK_URI_SEPARATOR          "/"
+#define LINK_URI_SEPARATOR_SIZE     1
+#define LINK_ATTR_SEPARATOR         ";"
+#define LINK_ATTR_SEPARATOR_SIZE    1
+
 #define ATTR_FLAG_NUMERIC (uint8_t)(LWM2M_ATTR_FLAG_LESS_THAN | LWM2M_ATTR_FLAG_GREATER_THAN | LWM2M_ATTR_FLAG_STEP)
 
 #define LWM2M_TLV_HEADER_MAX_LENGTH 6
@@ -175,6 +190,7 @@ typedef struct
 // defined in uri.c
 lwm2m_uri_t * uri_decode(char * altPath, multi_option_t *uriPath);
 int uri_getNumber(uint8_t * uriString, size_t uriLength);
+int uri_toString(lwm2m_uri_t * uriP, uint8_t * buffer, size_t bufferLen, lwm2m_tlv_type_t * depthP);
 
 // defined in objects.c
 coap_status_t object_readData(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, int * sizeP, lwm2m_data_t ** dataP);
@@ -234,10 +250,10 @@ lwm2m_status_t bootstrap_getStatus(lwm2m_context_t * contextP);
 
 // defined in json.c
 #ifdef LWM2M_SUPPORT_JSON
-int lwm2m_json_parse(lwm2m_uri_t * uriP, uint8_t * buffer, size_t bufferLen, lwm2m_data_t ** dataP);
-int lwm2m_json_serialize(lwm2m_uri_t * uriP, int size, lwm2m_data_t * tlvP, uint8_t ** bufferP);
+int json_parse(lwm2m_uri_t * uriP, uint8_t * buffer, size_t bufferLen, lwm2m_data_t ** dataP);
+int json_serialize(lwm2m_uri_t * uriP, int size, lwm2m_data_t * tlvP, uint8_t ** bufferP);
 #endif
-int prv_serializeLink(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, int size, lwm2m_data_t * dataP, uint8_t ** bufferP);
+int discover_serialize(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, int size, lwm2m_data_t * dataP, uint8_t ** bufferP);
 
 // defined in utils.c
 lwm2m_binding_t lwm2m_stringToBinding(uint8_t *buffer, size_t length);

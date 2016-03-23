@@ -456,7 +456,7 @@ coap_status_t object_discover(lwm2m_context_t * contextP,
     {
         int len;
 
-        len = prv_serializeLink(contextP, uriP, size, dataP, bufferP);
+        len = discover_serialize(contextP, uriP, size, dataP, bufferP);
         if (len <= 0) result = COAP_500_INTERNAL_SERVER_ERROR;
         else *lengthP = len;
     }

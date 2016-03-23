@@ -312,7 +312,7 @@ int lwm2m_data_parse(lwm2m_uri_t * uriP,
 
 #ifdef LWM2M_SUPPORT_JSON
     case LWM2M_CONTENT_JSON:
-        return lwm2m_json_parse(uriP, buffer, bufferLen, dataP);
+        return json_parse(uriP, buffer, bufferLen, dataP);
 #endif
 
     default:
@@ -356,11 +356,11 @@ int lwm2m_data_serialize(lwm2m_uri_t * uriP,
 
 #ifdef LWM2M_CLIENT_MODE
     case LWM2M_CONTENT_LINK:
-        return prv_serializeLink(NULL, uriP, size, dataP, bufferP);
+        return discover_serialize(NULL, uriP, size, dataP, bufferP);
 #endif
 #ifdef LWM2M_SUPPORT_JSON
     case LWM2M_CONTENT_JSON:
-        return lwm2m_json_serialize(uriP, size, dataP, bufferP);
+        return json_serialize(uriP, size, dataP, bufferP);
 #endif
 
     default:

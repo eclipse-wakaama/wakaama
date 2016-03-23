@@ -22,75 +22,6 @@
 #include <stdio.h>
 #include <inttypes.h>
 
-#define PRV_LINK_BUFFER_SIZE  1024
-#define PRV_JSON_URI_MAX_LEN    18      // /65535/65535/65535
-
-#define LINK_ITEM_START             "<"
-#define LINK_ITEM_START_SIZE        1
-#define LINK_ITEM_END               ">,"
-#define LINK_ITEM_END_SIZE          2
-#define LINK_ITEM_DIM_START         ">;dim="
-#define LINK_ITEM_DIM_START_SIZE    6
-#define LINK_ITEM_ATTR_END          ","
-#define LINK_ITEM_ATTR_END_SIZE     1
-#define LINK_URI_SEPARATOR          "/"
-#define LINK_URI_SEPARATOR_SIZE     1
-#define LINK_ATTR_SEPARATOR         ";"
-#define LINK_ATTR_SEPARATOR_SIZE    1
-
-#define PRV_CONCAT_STR(buf, len, index, str, str_len)    \
-    {                                                    \
-        if ((len)-(index) < (str_len)) return -1;        \
-        memcpy((buf)+(index), (str), (str_len));         \
-        (index) += (str_len);                            \
-    }
-
-static int prv_getBaseURI(lwm2m_uri_t * uriP,
-                          uint8_t * buffer,
-                          size_t bufferLen,
-                          lwm2m_tlv_type_t * depthP)
-{
-    size_t head;
-    int res;
-
-    buffer[0] = '/';
-
-    if (uriP == NULL) return -1;
-
-    head = 1;
-
-    res = utils_intToText(uriP->objectId, buffer + head, bufferLen - head);
-    if (res <= 0) return -1;
-    head += res;
-    if (head >= bufferLen - 1) return -1;
-    *depthP = LWM2M_TYPE_OBJECT_INSTANCE;
-
-    if (LWM2M_URI_IS_SET_INSTANCE(uriP))
-    {
-        buffer[head] = '/';
-        head++;
-        res = utils_intToText(uriP->instanceId, buffer + head, bufferLen - head);
-        if (res <= 0) return -1;
-        head += res;
-        if (head >= bufferLen - 1) return -1;
-        *depthP = LWM2M_TYPE_RESOURCE;
-        if (LWM2M_URI_IS_SET_RESOURCE(uriP))
-        {
-            buffer[head] = '/';
-            head++;
-            res = utils_intToText(uriP->resourceId, buffer + head, bufferLen - head);
-            if (res <= 0) return -1;
-            head += res;
-            if (head >= bufferLen - 1) return -1;
-            *depthP = LWM2M_TYPE_RESOURCE_INSTANCE;
-        }
-    }
-
-    buffer[head] = '/';
-    head++;
-
-    return head;
-}
 
 #ifdef LWM2M_SUPPORT_JSON
 
@@ -756,9 +687,9 @@ error:
     return -1;
 }
 
-static int prv_data_strip(int size,
-                          lwm2m_data_t * dataP,
-                          lwm2m_data_t ** resultP)
+static int prv_dataStrip(int size,
+                         lwm2m_data_t * dataP,
+                         lwm2m_data_t ** resultP)
 {
     int i;
     int j;
@@ -788,7 +719,7 @@ static int prv_data_strip(int size,
             {
                 int childLen;
 
-                childLen = prv_data_strip(dataP[i].length, (lwm2m_data_t *)dataP[i].value, (lwm2m_data_t **)&((*resultP)[j].value));
+                childLen = prv_dataStrip(dataP[i].length, (lwm2m_data_t *)dataP[i].value, (lwm2m_data_t **)&((*resultP)[j].value));
                 if (childLen <= 0)
                 {
                     // skip this one
@@ -811,10 +742,10 @@ static int prv_data_strip(int size,
     return realSize;
 }
 
-int lwm2m_json_parse(lwm2m_uri_t * uriP,
-                     uint8_t * buffer,
-                     size_t bufferLen,
-                     lwm2m_data_t ** dataP)
+int json_parse(lwm2m_uri_t * uriP,
+               uint8_t * buffer,
+               size_t bufferLen,
+               lwm2m_data_t ** dataP)
 {
     size_t index;
     int count = 0;
@@ -1040,7 +971,7 @@ int lwm2m_json_parse(lwm2m_uri_t * uriP,
                             }
                             else
                             {
-                                size = prv_data_strip(1, targetP, &resP);
+                                size = prv_dataStrip(1, targetP, &resP);
                                 if (size <= 0) goto error;
                                 lwm2m_data_free(count, parsedP);
                                 parsedP = NULL;
@@ -1063,7 +994,7 @@ int lwm2m_json_parse(lwm2m_uri_t * uriP,
             lwm2m_data_t * tempP;
             int i;
 
-            size = prv_data_strip(size, resultP, &tempP);
+            size = prv_dataStrip(size, resultP, &tempP);
             if (size <= 0) goto error;
             lwm2m_data_free(count, parsedP);
             resultP = tempP;
@@ -1239,13 +1170,13 @@ int prv_serializeData(lwm2m_data_t * tlvP,
     case LWM2M_TYPE_OBJECT_INSTANCE:
     case LWM2M_TYPE_MULTIPLE_RESOURCE:
     {
-        char uriStr[PRV_JSON_URI_MAX_LEN];
+        char uriStr[URI_MAX_STRING_LEN];
         size_t uriLen;
         int index;
 
         if (parentUriLen > 0)
         {
-            if (PRV_JSON_URI_MAX_LEN < parentUriLen) return -1;
+            if (URI_MAX_STRING_LEN < parentUriLen) return -1;
             memcpy(uriStr, parentUriStr, parentUriLen);
             uriLen = parentUriLen;
         }
@@ -1253,7 +1184,7 @@ int prv_serializeData(lwm2m_data_t * tlvP,
         {
             uriLen = 0;
         }
-        res = utils_intToText(tlvP->id, uriStr + uriLen, PRV_JSON_URI_MAX_LEN - uriLen);
+        res = utils_intToText(tlvP->id, uriStr + uriLen, URI_MAX_STRING_LEN - uriLen);
         if (res <= 0) return -1;
         uriLen += res;
         uriStr[uriLen] = '/';
@@ -1276,22 +1207,22 @@ int prv_serializeData(lwm2m_data_t * tlvP,
     return head;
 }
 
-int lwm2m_json_serialize(lwm2m_uri_t * uriP,
-                         int size,
-                         lwm2m_data_t * tlvP,
-                         uint8_t ** bufferP)
+int json_serialize(lwm2m_uri_t * uriP,
+                   int size,
+                   lwm2m_data_t * tlvP,
+                   uint8_t ** bufferP)
 {
     int index;
     size_t head;
     uint8_t bufferJSON[PRV_JSON_BUFFER_SIZE];
-    char baseUriStr[PRV_JSON_URI_MAX_LEN];
+    char baseUriStr[URI_MAX_STRING_LEN];
     size_t baseUriLen;
     lwm2m_tlv_type_t rootLevel;
 
     if (size == 0) return 0;
     if (tlvP == NULL) return -1;
 
-    baseUriLen = prv_getBaseURI(uriP, baseUriStr, PRV_JSON_URI_MAX_LEN, &rootLevel);
+    baseUriLen = uri_toString(uriP, baseUriStr, URI_MAX_STRING_LEN, &rootLevel);
     if (baseUriLen < 0) return -1;
 
     if (baseUriLen > 0)
@@ -1316,10 +1247,10 @@ int lwm2m_json_serialize(lwm2m_uri_t * uriP,
     {
         int res;
 
-        res = utils_intToText(tlvP->id, baseUriStr + baseUriLen, PRV_JSON_URI_MAX_LEN - baseUriLen);
+        res = utils_intToText(tlvP->id, baseUriStr + baseUriLen, URI_MAX_STRING_LEN - baseUriLen);
         if (res <= 0) return -1;
         baseUriLen += res;
-        if (baseUriLen >= PRV_JSON_URI_MAX_LEN -1) return -1;
+        if (baseUriLen >= URI_MAX_STRING_LEN -1) return -1;
         size = tlvP->length;
         tlvP = (lwm2m_data_t *)(tlvP->value);
         baseUriStr[baseUriLen] = '/';
@@ -1362,303 +1293,4 @@ int lwm2m_json_serialize(lwm2m_uri_t * uriP,
     return (int)head;
 }
 
-#endif
-
-#ifdef LWM2M_CLIENT_MODE
-static int prv_serializeAttributes(lwm2m_context_t * contextP,
-                                   lwm2m_uri_t * uriP,
-                                   uint8_t * buffer,
-                                   size_t uriLen,
-                                   size_t bufferLen)
-{
-    lwm2m_observed_t * observedP;
-    lwm2m_watcher_t * watcherP;
-    int head;
-    int res;
-
-    if (contextP == NULL) return 0;
-
-    observedP = observe_findByUri(contextP, uriP);
-    if (observedP == NULL || observedP->watcherList == NULL) return 0;
-
-    head = 0;
-    for (watcherP = observedP->watcherList ; watcherP != NULL ; watcherP = watcherP->next)
-    {
-        lwm2m_attributes_t * paramP;
-
-        paramP = watcherP->parameters;
-        if (paramP == NULL || paramP->toSet == 0) continue;
-
-        if (observedP->watcherList->next != NULL)
-        {
-            // multiple servers
-            memcpy(buffer + head, buffer, uriLen);
-
-            PRV_CONCAT_STR(buffer, bufferLen, head, LINK_ATTR_SEPARATOR, LINK_ATTR_SEPARATOR_SIZE);
-            PRV_CONCAT_STR(buffer, bufferLen, head, ATTR_SERVER_ID_STR, ATTR_SERVER_ID_LEN);
-
-            res = utils_intToText(watcherP->server->shortID, buffer + head, bufferLen - head);
-            if (res <= 0) return -1;
-            head += res;
-        }
-        else
-        {
-            head = uriLen;
-        }
-
-        if (paramP->toSet & LWM2M_ATTR_FLAG_MIN_PERIOD)
-        {
-            PRV_CONCAT_STR(buffer, bufferLen, head, LINK_ATTR_SEPARATOR, LINK_ATTR_SEPARATOR_SIZE);
-            PRV_CONCAT_STR(buffer, bufferLen, head, ATTR_MIN_PERIOD_STR, ATTR_MIN_PERIOD_LEN);
-
-            res = utils_intToText(paramP->minPeriod, buffer + head, bufferLen - head);
-            if (res <= 0) return -1;
-            head += res;
-        }
-        if (paramP->toSet & LWM2M_ATTR_FLAG_MAX_PERIOD)
-        {
-            PRV_CONCAT_STR(buffer, bufferLen, head, LINK_ATTR_SEPARATOR, LINK_ATTR_SEPARATOR_SIZE);
-            PRV_CONCAT_STR(buffer, bufferLen, head, ATTR_MAX_PERIOD_STR, ATTR_MAX_PERIOD_LEN);
-
-            res = utils_intToText(paramP->maxPeriod, buffer + head, bufferLen - head);
-            if (res <= 0) return -1;
-            head += res;
-        }
-        if (paramP->toSet & LWM2M_ATTR_FLAG_GREATER_THAN)
-        {
-            PRV_CONCAT_STR(buffer, bufferLen, head, LINK_ATTR_SEPARATOR, LINK_ATTR_SEPARATOR_SIZE);
-            PRV_CONCAT_STR(buffer, bufferLen, head, ATTR_GREATER_THAN_STR, ATTR_GREATER_THAN_LEN);
-
-            res = utils_floatToText(paramP->greaterThan, buffer + head, bufferLen - head);
-            if (res <= 0) return -1;
-            head += res;
-        }
-        if (paramP->toSet & LWM2M_ATTR_FLAG_LESS_THAN)
-        {
-            PRV_CONCAT_STR(buffer, bufferLen, head, LINK_ATTR_SEPARATOR, LINK_ATTR_SEPARATOR_SIZE);
-            PRV_CONCAT_STR(buffer, bufferLen, head, ATTR_LESS_THAN_STR, ATTR_LESS_THAN_LEN);
-
-            res = utils_floatToText(paramP->lessThan, buffer + head, bufferLen - head);
-            if (res <= 0) return -1;
-            head += res;
-        }
-        if (paramP->toSet & LWM2M_ATTR_FLAG_STEP)
-        {
-            PRV_CONCAT_STR(buffer, bufferLen, head, LINK_ATTR_SEPARATOR, LINK_ATTR_SEPARATOR_SIZE);
-            PRV_CONCAT_STR(buffer, bufferLen, head, ATTR_STEP_STR, ATTR_STEP_LEN);
-
-            res = utils_floatToText(paramP->step, buffer + head, bufferLen - head);
-            if (res <= 0) return -1;
-            head += res;
-        }
-        PRV_CONCAT_STR(buffer, bufferLen, head, LINK_ITEM_ATTR_END, LINK_ITEM_ATTR_END_SIZE);
-    }
-
-    if (head > 0) head -= uriLen;
-
-    return head;
-}
-
-static int prv_serializeLinkData(lwm2m_context_t * contextP,
-                                 lwm2m_data_t * tlvP,
-                                 lwm2m_uri_t * parentUriP,
-                                 uint8_t * parentUriStr,
-                                 size_t parentUriLen,
-                                 uint8_t * buffer,
-                                 size_t bufferLen)
-{
-    int head;
-    int res;
-    lwm2m_uri_t uri;
-
-    head = 0;
-
-    switch (tlvP->type)
-    {
-    case LWM2M_TYPE_RESOURCE:
-    case LWM2M_TYPE_MULTIPLE_RESOURCE:
-        if (bufferLen < LINK_ITEM_START_SIZE) return -1;
-        memcpy(buffer + head, LINK_ITEM_START, LINK_ITEM_START_SIZE);
-        head = LINK_ITEM_START_SIZE;
-
-        if (parentUriLen > 0)
-        {
-            if (bufferLen - head < parentUriLen) return -1;
-            memcpy(buffer + head, parentUriStr, parentUriLen);
-            head += parentUriLen;
-        }
-
-        if (bufferLen - head < LINK_URI_SEPARATOR_SIZE) return -1;
-        memcpy(buffer + head, LINK_URI_SEPARATOR, LINK_URI_SEPARATOR_SIZE);
-        head += LINK_URI_SEPARATOR_SIZE;
-
-        res = utils_intToText(tlvP->id, buffer + head, bufferLen - head);
-        if (res <= 0) return -1;
-        head += res;
-
-        if (tlvP->type == LWM2M_TYPE_MULTIPLE_RESOURCE)
-        {
-            if (bufferLen - head < LINK_ITEM_DIM_START_SIZE) return -1;
-            memcpy(buffer + head, LINK_ITEM_DIM_START, LINK_ITEM_DIM_START_SIZE);
-            head += LINK_ITEM_DIM_START_SIZE;
-
-            res = utils_intToText(tlvP->length, buffer + head, bufferLen - head);
-            if (res <= 0) return -1;
-            head += res;
-
-            if (bufferLen - head < LINK_ITEM_ATTR_END_SIZE) return -1;
-            memcpy(buffer + head, LINK_ITEM_ATTR_END, LINK_ITEM_ATTR_END_SIZE);
-            head += LINK_ITEM_ATTR_END_SIZE;
-        }
-        else
-        {
-            if (bufferLen - head < LINK_ITEM_END_SIZE) return -1;
-            memcpy(buffer + head, LINK_ITEM_END, LINK_ITEM_END_SIZE);
-            head += LINK_ITEM_END_SIZE;
-        }
-
-        memcpy(&uri, parentUriP, sizeof(lwm2m_uri_t));
-        uri.resourceId = tlvP->id;
-        uri.flag |= LWM2M_URI_FLAG_RESOURCE_ID;
-        res = prv_serializeAttributes(contextP, &uri, buffer, head - 1, bufferLen);
-        if (res < 0) return -1;    // careful, 0 is valid
-        if (res > 0) head += res - 1;
-
-        break;
-
-    case LWM2M_TYPE_OBJECT_INSTANCE:
-    {
-        char uriStr[PRV_JSON_URI_MAX_LEN];
-        size_t uriLen;
-        int index;
-
-        if (parentUriLen > 0)
-        {
-            if (PRV_JSON_URI_MAX_LEN < parentUriLen) return -1;
-            memcpy(uriStr, parentUriStr, parentUriLen);
-            uriLen = parentUriLen;
-        }
-        else
-        {
-            uriLen = 0;
-        }
-
-        if (PRV_JSON_URI_MAX_LEN - uriLen < LINK_URI_SEPARATOR_SIZE) return -1;
-        memcpy(uriStr + uriLen, LINK_URI_SEPARATOR, LINK_URI_SEPARATOR_SIZE);
-        uriLen += LINK_URI_SEPARATOR_SIZE;
-
-        res = utils_intToText(tlvP->id, uriStr + uriLen, PRV_JSON_URI_MAX_LEN - uriLen);
-        if (res <= 0) return -1;
-        uriLen += res;
-
-        memcpy(&uri, parentUriP, sizeof(lwm2m_uri_t));
-        uri.instanceId = tlvP->id;
-        uri.flag |= LWM2M_URI_FLAG_INSTANCE_ID;
-
-        head = 0;
-        PRV_CONCAT_STR(buffer, bufferLen, head, LINK_ITEM_START, LINK_ITEM_START_SIZE);
-        PRV_CONCAT_STR(buffer, bufferLen, head, uriStr, uriLen);
-        PRV_CONCAT_STR(buffer, bufferLen, head, LINK_ITEM_END, LINK_ITEM_END_SIZE);
-        res = prv_serializeAttributes(contextP, &uri, buffer, head - 1, bufferLen);
-        if (res < 0) return -1;    // careful, 0 is valid
-        if (res == 0) head = 0;    // rewind
-        else head += res - 1;
-
-        for (index = 0 ; index < tlvP->length ; index++)
-        {
-            res = prv_serializeLinkData(contextP, ((lwm2m_data_t *)tlvP->value) + index, &uri, uriStr, uriLen, buffer + head, bufferLen - head);
-            if (res < 0) return -1;
-            head += res;
-        }
-    }
-    break;
-
-    case LWM2M_TYPE_OBJECT:
-    default:
-        return -1;
-    }
-
-    return head;
-}
-
-int prv_serializeLink(lwm2m_context_t * contextP,
-                      lwm2m_uri_t * uriP,
-                      int size,
-                      lwm2m_data_t * dataP,
-                      uint8_t ** bufferP)
-{
-    uint8_t bufferLink[PRV_LINK_BUFFER_SIZE];
-    char baseUriStr[PRV_JSON_URI_MAX_LEN];
-    int baseUriLen;
-    lwm2m_tlv_type_t level;
-    int index;
-    size_t head;
-    int res;
-    lwm2m_uri_t tempUri;
-
-    baseUriLen = prv_getBaseURI(uriP, baseUriStr, PRV_JSON_URI_MAX_LEN, &level);
-    if (baseUriLen < 0) return -1;
-    baseUriLen -= 1;
-
-    head = 0;
-    memset(&tempUri, 0, sizeof(lwm2m_uri_t));
-
-    // get object level attributes
-    PRV_CONCAT_STR(bufferLink, PRV_LINK_BUFFER_SIZE, head, LINK_ITEM_START, LINK_ITEM_START_SIZE);
-    PRV_CONCAT_STR(bufferLink, PRV_LINK_BUFFER_SIZE, head, LINK_URI_SEPARATOR, LINK_URI_SEPARATOR_SIZE);
-    res = utils_intToText(uriP->objectId, bufferLink + head, PRV_LINK_BUFFER_SIZE - head);
-    if (res <= 0) return -1;
-    head += res;
-    PRV_CONCAT_STR(bufferLink, PRV_LINK_BUFFER_SIZE, head, LINK_ITEM_END, LINK_ITEM_END_SIZE);
-    tempUri.objectId = uriP->objectId;
-    res = prv_serializeAttributes(contextP, &tempUri, bufferLink, head - 1, PRV_LINK_BUFFER_SIZE);
-    if (res < 0) return -1;    // careful, 0 is valid
-    if (res == 0) head = 0;    // rewind
-    else head += res - 1;
-    if (LWM2M_URI_IS_SET_INSTANCE(uriP))
-    {
-        size_t subHead;
-
-        // get object instance level attributes
-        subHead = 0;
-        PRV_CONCAT_STR(bufferLink + head, PRV_LINK_BUFFER_SIZE - head, subHead, LINK_ITEM_START, LINK_ITEM_START_SIZE);
-        PRV_CONCAT_STR(bufferLink + head, PRV_LINK_BUFFER_SIZE - head, subHead, LINK_URI_SEPARATOR, LINK_URI_SEPARATOR_SIZE);
-        res = utils_intToText(uriP->objectId, bufferLink + head + subHead, PRV_LINK_BUFFER_SIZE - head - subHead);
-        if (res <= 0) return -1;
-        subHead += res;
-        PRV_CONCAT_STR(bufferLink + head, PRV_LINK_BUFFER_SIZE - head, subHead, LINK_URI_SEPARATOR, LINK_URI_SEPARATOR_SIZE);
-        res = utils_intToText(uriP->instanceId, bufferLink + head + subHead, PRV_LINK_BUFFER_SIZE - head - subHead);
-        if (res <= 0) return -1;
-        subHead += res;
-        PRV_CONCAT_STR(bufferLink + head, PRV_LINK_BUFFER_SIZE - head, subHead, LINK_ITEM_END, LINK_ITEM_END_SIZE);
-        tempUri.instanceId = uriP->instanceId;
-        tempUri.flag = LWM2M_URI_FLAG_INSTANCE_ID;
-        res = prv_serializeAttributes(contextP, &tempUri, bufferLink + head, head + subHead - 1, PRV_LINK_BUFFER_SIZE);
-        if (res < 0) return -1;    // careful, 0 is valid
-        if (res == 0) subHead = 0;    // rewind
-        else subHead += res - 1;
-
-        head += subHead;
-    }
-
-    for (index = 0 ; index < size && head < PRV_LINK_BUFFER_SIZE ; index++)
-    {
-        int res;
-
-        res = prv_serializeLinkData(contextP, dataP + index, uriP, baseUriStr, baseUriLen, bufferLink + head, PRV_LINK_BUFFER_SIZE - head);
-        if (res < 0) return -1;
-        head += res;
-    }
-
-    if (head > 0)
-    {
-        head -= 1;
-
-        *bufferP = (uint8_t *)lwm2m_malloc(head);
-        if (*bufferP == NULL) return 0;
-        memcpy(*bufferP, bufferLink, head);
-    }
-
-    return (int)head;
-}
 #endif

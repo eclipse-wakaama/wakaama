@@ -16,5 +16,6 @@ SET(CORE_SOURCES
     ${CMAKE_CURRENT_LIST_DIR}/management.c
     ${CMAKE_CURRENT_LIST_DIR}/observe.c
     ${CMAKE_CURRENT_LIST_DIR}/json.c
+    ${CMAKE_CURRENT_LIST_DIR}/discover.c
     ${EXT_SOURCES}
     PARENT_SCOPE)
