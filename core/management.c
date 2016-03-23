@@ -159,7 +159,7 @@ static int prv_readAttributes(multi_option_t * query,
     return 0;
 }
 
-coap_status_t handle_dm_request(lwm2m_context_t * contextP,
+coap_status_t dm_handleRequest(lwm2m_context_t * contextP,
                                 lwm2m_uri_t * uriP,
                                 lwm2m_server_t * serverP,
                                 coap_packet_t * message,
@@ -326,7 +326,7 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
 
 #define ID_AS_STRING_MAX_LEN 8
 
-static void dm_result_callback(lwm2m_transaction_t * transacP,
+static void prv_resultCallback(lwm2m_transaction_t * transacP,
                                void * message)
 {
     dm_data_t * dataP = (dm_data_t *)transacP->userData;
@@ -354,14 +354,14 @@ static void dm_result_callback(lwm2m_transaction_t * transacP,
             locationString = coap_get_multi_option_as_string(packet->location_path);
             if (locationString == NULL)
             {
-                LOG("Error: coap_get_multi_option_as_string() failed for Location_path option in dm_result_callback()\n");
+                LOG("Error: coap_get_multi_option_as_string() failed for Location_path option in prv_resultCallback()\n");
                 return;
             }
 
             result = lwm2m_stringToUri(locationString, strlen(locationString), &locationUri);
             if (result == 0)
             {
-                LOG("Error: lwm2m_stringToUri() failed for Location_path option in dm_result_callback()\n");
+                LOG("Error: lwm2m_stringToUri() failed for Location_path option in prv_resultCallback()\n");
                 lwm2m_free(locationString);
                 return;
             }
@@ -383,15 +383,15 @@ static void dm_result_callback(lwm2m_transaction_t * transacP,
     lwm2m_free(dataP);
 }
 
-static int prv_make_operation(lwm2m_context_t * contextP,
-                              uint16_t clientID,
-                              lwm2m_uri_t * uriP,
-                              coap_method_t method,
-                              lwm2m_media_type_t format,
-                              uint8_t * buffer,
-                              int length,
-                              lwm2m_result_callback_t callback,
-                              void * userData)
+static int prv_makeOperation(lwm2m_context_t * contextP,
+                             uint16_t clientID,
+                             lwm2m_uri_t * uriP,
+                             coap_method_t method,
+                             lwm2m_media_type_t format,
+                             uint8_t * buffer,
+                             int length,
+                             lwm2m_result_callback_t callback,
+                             void * userData)
 {
     lwm2m_client_t * clientP;
     lwm2m_transaction_t * transaction;
@@ -422,7 +422,7 @@ static int prv_make_operation(lwm2m_context_t * contextP,
         dataP->callback = callback;
         dataP->userData = userData;
 
-        transaction->callback = dm_result_callback;
+        transaction->callback = prv_resultCallback;
         transaction->userData = (void *)dataP;
     }
 
@@ -437,7 +437,7 @@ int lwm2m_dm_read(lwm2m_context_t * contextP,
                   lwm2m_result_callback_t callback,
                   void * userData)
 {
-    return prv_make_operation(contextP, clientID, uriP,
+    return prv_makeOperation(contextP, clientID, uriP,
                               COAP_GET,
                               LWM2M_CONTENT_TEXT,
                               NULL, 0,
@@ -461,14 +461,14 @@ int lwm2m_dm_write(lwm2m_context_t * contextP,
 
     if (LWM2M_URI_IS_SET_RESOURCE(uriP))
     {
-        return prv_make_operation(contextP, clientID, uriP,
+        return prv_makeOperation(contextP, clientID, uriP,
                                   COAP_PUT,
                                   format, buffer, length,
                                   callback, userData);
     }
     else
     {
-        return prv_make_operation(contextP, clientID, uriP,
+        return prv_makeOperation(contextP, clientID, uriP,
                                   COAP_POST,
                                   format, buffer, length,
                                   callback, userData);
@@ -489,7 +489,7 @@ int lwm2m_dm_execute(lwm2m_context_t * contextP,
         return COAP_400_BAD_REQUEST;
     }
 
-    return prv_make_operation(contextP, clientID, uriP,
+    return prv_makeOperation(contextP, clientID, uriP,
                               COAP_POST,
                               format, buffer, length,
                               callback, userData);
@@ -510,7 +510,7 @@ int lwm2m_dm_create(lwm2m_context_t * contextP,
         return COAP_400_BAD_REQUEST;
     }
 
-    return prv_make_operation(contextP, clientID, uriP,
+    return prv_makeOperation(contextP, clientID, uriP,
                               COAP_POST,
                               format, buffer, length,
                               callback, userData);
@@ -528,7 +528,7 @@ int lwm2m_dm_delete(lwm2m_context_t * contextP,
         return COAP_400_BAD_REQUEST;
     }
 
-    return prv_make_operation(contextP, clientID, uriP,
+    return prv_makeOperation(contextP, clientID, uriP,
                               COAP_DELETE,
                               LWM2M_CONTENT_TEXT, NULL, 0,
                               callback, userData);
@@ -575,7 +575,7 @@ int lwm2m_dm_write_attributes(lwm2m_context_t * contextP,
         dataP->callback = callback;
         dataP->userData = userData;
 
-        transaction->callback = dm_result_callback;
+        transaction->callback = prv_resultCallback;
         transaction->userData = (void *)dataP;
     }
 
@@ -702,7 +702,7 @@ int lwm2m_dm_discover(lwm2m_context_t * contextP,
         dataP->callback = callback;
         dataP->userData = userData;
 
-        transaction->callback = dm_result_callback;
+        transaction->callback = prv_resultCallback;
         transaction->userData = (void *)dataP;
     }
 

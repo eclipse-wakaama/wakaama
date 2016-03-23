@@ -59,8 +59,8 @@
 #include <stdio.h>
 
 
-static lwm2m_object_t * prv_find_object(lwm2m_context_t * contextP,
-                                        uint16_t Id)
+static lwm2m_object_t * prv_findObject(lwm2m_context_t * contextP,
+                                       uint16_t Id)
 {
     int i;
 
@@ -83,7 +83,7 @@ uint8_t object_checkReadable(lwm2m_context_t * contextP,
     lwm2m_data_t * dataP = NULL;
     int size;
 
-    targetP = prv_find_object(contextP, uriP->objectId);
+    targetP = prv_findObject(contextP, uriP->objectId);
     if (NULL == targetP) return COAP_404_NOT_FOUND;
     if (NULL == targetP->readFunc) return COAP_405_METHOD_NOT_ALLOWED;
 
@@ -116,7 +116,7 @@ uint8_t object_checkNumeric(lwm2m_context_t * contextP,
 
     if (!LWM2M_URI_IS_SET_RESOURCE(uriP)) return COAP_405_METHOD_NOT_ALLOWED;
 
-    targetP = prv_find_object(contextP, uriP->objectId);
+    targetP = prv_findObject(contextP, uriP->objectId);
     if (NULL == targetP) return COAP_404_NOT_FOUND;
     if (NULL == targetP->readFunc) return COAP_405_METHOD_NOT_ALLOWED;
 
@@ -153,7 +153,7 @@ coap_status_t object_readData(lwm2m_context_t * contextP,
     coap_status_t result;
     lwm2m_object_t * targetP;
 
-    targetP = prv_find_object(contextP, uriP->objectId);
+    targetP = prv_findObject(contextP, uriP->objectId);
     if (NULL == targetP) return COAP_404_NOT_FOUND;
     if (NULL == targetP->readFunc) return COAP_405_METHOD_NOT_ALLOWED;
     if (targetP->instanceList == NULL) return COAP_404_NOT_FOUND;
@@ -259,7 +259,7 @@ coap_status_t object_write(lwm2m_context_t * contextP,
     lwm2m_data_t * dataP = NULL;
     int size = 0;
 
-    targetP = prv_find_object(contextP, uriP->objectId);
+    targetP = prv_findObject(contextP, uriP->objectId);
     if (NULL == targetP)
     {
         result = NOT_FOUND_4_04;
@@ -309,7 +309,7 @@ coap_status_t object_execute(lwm2m_context_t * contextP,
 {
     lwm2m_object_t * targetP;
 
-    targetP = prv_find_object(contextP, uriP->objectId);
+    targetP = prv_findObject(contextP, uriP->objectId);
     if (NULL == targetP) return NOT_FOUND_4_04;
     if (NULL == targetP->executeFunc) return METHOD_NOT_ALLOWED_4_05;
 
@@ -332,7 +332,7 @@ coap_status_t object_create(lwm2m_context_t * contextP,
         return BAD_REQUEST_4_00;
     }
 
-    targetP = prv_find_object(contextP, uriP->objectId);
+    targetP = prv_findObject(contextP, uriP->objectId);
     if (NULL == targetP) return NOT_FOUND_4_04;
     if (NULL == targetP->createFunc) return METHOD_NOT_ALLOWED_4_05;
 
@@ -364,7 +364,7 @@ coap_status_t object_delete(lwm2m_context_t * contextP,
     lwm2m_object_t * objectP;
     coap_status_t result;
 
-    objectP = prv_find_object(contextP, uriP->objectId);
+    objectP = prv_findObject(contextP, uriP->objectId);
     if (NULL == objectP) return NOT_FOUND_4_04;
     if (NULL == objectP->deleteFunc) return METHOD_NOT_ALLOWED_4_05;
 
@@ -401,7 +401,7 @@ coap_status_t object_discover(lwm2m_context_t * contextP,
     lwm2m_data_t * dataP = NULL;
     int size = 0;
 
-    targetP = prv_find_object(contextP, uriP->objectId);
+    targetP = prv_findObject(contextP, uriP->objectId);
     if (NULL == targetP) return COAP_404_NOT_FOUND;
     if (NULL == targetP->discoverFunc) return COAP_501_NOT_IMPLEMENTED;
     if (targetP->instanceList == NULL) return COAP_404_NOT_FOUND;
@@ -471,7 +471,7 @@ bool object_isInstanceNew(lwm2m_context_t * contextP,
 {
     lwm2m_object_t * targetP;
 
-    targetP = prv_find_object(contextP, objectId);
+    targetP = prv_findObject(contextP, objectId);
     if (targetP != NULL)
     {
         if (NULL != lwm2m_list_find(targetP->instanceList, instanceId))
@@ -790,7 +790,7 @@ coap_status_t object_createInstance(lwm2m_context_t * contextP,
     lwm2m_object_t * targetP;
     coap_status_t result;
 
-    targetP = prv_find_object(contextP, uriP->objectId);
+    targetP = prv_findObject(contextP, uriP->objectId);
     if (NULL == targetP) return NOT_FOUND_4_04;
 
     if (NULL == targetP->createFunc) 
@@ -808,7 +808,7 @@ coap_status_t object_writeInstance(lwm2m_context_t * contextP,
     lwm2m_object_t * targetP;
     coap_status_t result;
 
-    targetP = prv_find_object(contextP, uriP->objectId);
+    targetP = prv_findObject(contextP, uriP->objectId);
     if (NULL == targetP) return NOT_FOUND_4_04;
 
     if (NULL == targetP->writeFunc) 

@@ -128,7 +128,7 @@ static coap_status_t handle_request(lwm2m_context_t * contextP,
         serverP = prv_findServer(contextP, fromSessionH);
         if (serverP != NULL)
         {
-            result = handle_dm_request(contextP, uriP, serverP, message, response);
+            result = dm_handleRequest(contextP, uriP, serverP, message, response);
         }
 #ifdef LWM2M_BOOTSTRAP
         else
