@@ -166,7 +166,7 @@ static coap_status_t handle_request(lwm2m_context_t * contextP,
 
 #ifdef LWM2M_SERVER_MODE
     case LWM2M_URI_FLAG_REGISTRATION:
-        result = handle_registration_request(contextP, uriP, fromSessionH, message, response);
+        result = registration_handleRequest(contextP, uriP, fromSessionH, message, response);
         break;
 #endif
 #ifdef LWM2M_BOOTSTRAP_SERVER_MODE

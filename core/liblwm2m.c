@@ -174,7 +174,7 @@ void lwm2m_close(lwm2m_context_t * contextP)
         clientP = contextP->clientList;
         contextP->clientList = contextP->clientList->next;
 
-        prv_freeClient(clientP);
+        registration_freeClient(clientP);
     }
 #endif
 
@@ -447,7 +447,7 @@ next_step:
 
     case STATE_REGISTERING:
     {
-        switch (registration_get_status(contextP))
+        switch (registration_getStatus(contextP))
         {
         case STATE_REGISTERED:
             contextP->state = STATE_READY;
