@@ -225,18 +225,12 @@ coap_status_t message_send(lwm2m_context_t * contextP, coap_packet_t * message, 
 
 // defined in bootstrap.c
 void bootstrap_step(lwm2m_context_t * contextP, uint32_t currentTime, time_t* timeoutP);
-void delete_bootstrap_server_list(lwm2m_context_t * contextP);
-coap_status_t handle_bootstrap_command(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_server_t * serverP, coap_packet_t * message, coap_packet_t * response);
-coap_status_t handle_delete_all(lwm2m_context_t * context, void * fromSessionH);
+coap_status_t bootstrap_handleCommand(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_server_t * serverP, coap_packet_t * message, coap_packet_t * response);
+coap_status_t bootstrap_handleDeleteAll(lwm2m_context_t * context, void * fromSessionH);
+coap_status_t bootstrap_handleFinish(lwm2m_context_t * context, void * fromSessionH);
+uint8_t bootstrap_handleRequest(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, void * fromSessionH, coap_packet_t * message, coap_packet_t * response);
 void bootstrap_start(lwm2m_context_t * contextP);
-lwm2m_status_t bootstrap_get_status(lwm2m_context_t * contextP);
-coap_status_t handle_bootstrap_finish(lwm2m_context_t * context, void * fromSessionH);
-uint8_t handle_bootstrap_request(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, void * fromSessionH, coap_packet_t * message, coap_packet_t * response);
-
-// defined in liblwm2m.c
-void delete_transaction_list(lwm2m_context_t * context);
-void delete_server_list(lwm2m_context_t * context);
-void delete_observed_list(lwm2m_context_t * contextP);
+lwm2m_status_t bootstrap_getStatus(lwm2m_context_t * contextP);
 
 // defined in json.c
 #ifdef LWM2M_SUPPORT_JSON

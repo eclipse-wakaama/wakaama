@@ -105,7 +105,7 @@ void delete_server_list(lwm2m_context_t * context)
     }
 }
 
-void delete_bootstrap_server_list(lwm2m_context_t * contextP)
+static void prv_deleteBootstrapServerList(lwm2m_context_t * contextP)
 {
     LWM2M_LIST_FREE(contextP->bootstrapServerList);
     contextP->bootstrapServerList = NULL;
@@ -151,7 +151,7 @@ void lwm2m_close(lwm2m_context_t * contextP)
 
     lwm2m_deregister(contextP);
     delete_server_list(contextP);
-    delete_bootstrap_server_list(contextP);
+    prv_deleteBootstrapServerList(contextP);
     delete_observed_list(contextP);
     lwm2m_free(contextP->objectList);
     lwm2m_free(contextP->endpointName);
@@ -386,7 +386,7 @@ int lwm2m_step(lwm2m_context_t * contextP,
     if (tv_sec < 0) return COAP_500_INTERNAL_SERVER_ERROR;
 
 #ifdef LWM2M_CLIENT_MODE
-    // state can also be modified in handle_bootstrap_command().
+    // state can also be modified in bootstrap_handleCommand().
 
 next_step:
     switch (contextP->state)
@@ -422,7 +422,7 @@ next_step:
 
 #ifdef LWM2M_BOOTSTRAP
     case STATE_BOOTSTRAPPING:
-        switch (bootstrap_get_status(contextP))
+        switch (bootstrap_getStatus(contextP))
         {
         case STATE_BS_FINISHED:
             contextP->state = STATE_INITIAL;
