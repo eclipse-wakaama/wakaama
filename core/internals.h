@@ -173,9 +173,8 @@ typedef struct
 #endif
 
 // defined in uri.c
-int lwm2m_get_number(char * uriString, size_t uriLength);
-lwm2m_uri_t * lwm2m_decode_uri(char * altPath, multi_option_t *uriPath);
-int prv_get_number(uint8_t * uriString, size_t uriLength);
+lwm2m_uri_t * uri_decode(char * altPath, multi_option_t *uriPath);
+int uri_getNumber(uint8_t * uriString, size_t uriLength);
 
 // defined in objects.c
 coap_status_t object_data_read(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, int * sizeP, lwm2m_data_t ** dataP);

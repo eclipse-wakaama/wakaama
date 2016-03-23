@@ -111,9 +111,9 @@ static coap_status_t handle_request(lwm2m_context_t * contextP,
     coap_status_t result = COAP_IGNORE;
 
 #ifdef LWM2M_CLIENT_MODE
-    uriP = lwm2m_decode_uri(contextP->altPath, message->uri_path);
+    uriP = uri_decode(contextP->altPath, message->uri_path);
 #else
-    uriP = lwm2m_decode_uri(NULL, message->uri_path);
+    uriP = uri_decode(NULL, message->uri_path);
 #endif
 
     if (uriP == NULL) return COAP_400_BAD_REQUEST;
