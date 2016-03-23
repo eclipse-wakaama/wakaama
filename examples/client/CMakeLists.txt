@@ -13,10 +13,30 @@ include_directories (${LIBLWM2M_DIR} ${PROJECT_SOURCE_DIR}/../utils ${PROJECT_SO
 add_subdirectory(${LIBLWM2M_DIR} ${CMAKE_CURRENT_BINARY_DIR}/core)
 # SET(CMAKE_C_FLAGS "-Wall -Wextra -Wfloat-equal -Wshadow -Wpointer-arith -Wcast-align -Wstrict-prototypes -Wwrite-strings -Waggregate-return -Wswitch-default -Wswitch-enum")
 
+if(DTLS)
+  add_definitions(-DWITH_TINYDTLS -DWITH_SHA256)
+  set(TINYDTLS_SOURCES_DIR ${CMAKE_CURRENT_LIST_DIR}/../../platforms/Linux/tinydtls)
+  set(TINYDTLS_SOURCES
+	${TINYDTLS_SOURCES_DIR}/dtls.c
+    ${TINYDTLS_SOURCES_DIR}/crypto.c
+    ${TINYDTLS_SOURCES_DIR}/ccm.c
+    ${TINYDTLS_SOURCES_DIR}/hmac.c
+    ${TINYDTLS_SOURCES_DIR}/dtls_debug.c
+    ${TINYDTLS_SOURCES_DIR}/netq.c
+    ${TINYDTLS_SOURCES_DIR}/peer.c
+    ${TINYDTLS_SOURCES_DIR}/dtls_time.c
+    ${TINYDTLS_SOURCES_DIR}/session.c
+    ${TINYDTLS_SOURCES_DIR}/sha2/sha2.c
+    ${TINYDTLS_SOURCES_DIR}/aes/rijndael.c
+    ${TINYDTLS_SOURCES_DIR}/sha2/sha2.c
+    ${TINYDTLS_SOURCES_DIR}/ecc/ecc.c)
+
+endif()
+
+include_directories (${TINYDTLS_SOURCES_DIR})
 SET(SOURCES
     lwm2mclient.c
     ../utils/commandline.c
-    ../../platforms/Linux/connection.c
     ../../platforms/Linux/platform.c
     ../../platforms/Linux/memtrace.c
     system_api.c
@@ -30,4 +50,10 @@ SET(SOURCES
     object_access_control.c
     test_object.c)
 
-add_executable(lwm2mclient ${SOURCES} ${CORE_SOURCES})
+if(DTLS)
+  SET(SOURCES ${SOURCES} ../../platforms/Linux/dtlsconnection.c)
+  add_executable(lwm2mclient_dtls ${SOURCES} ${TINYDTLS_SOURCES} ${CORE_SOURCES})
+else()
+  SET(SOURCES ${SOURCES} ../../platforms/Linux/connection.c)
+  add_executable(lwm2mclient ${SOURCES} ${CORE_SOURCES})
+endif()
