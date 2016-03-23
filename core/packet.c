@@ -125,7 +125,7 @@ static coap_status_t handle_request(lwm2m_context_t * contextP,
     {
         lwm2m_server_t * serverP;
 
-        serverP = prv_findServer(contextP, fromSessionH);
+        serverP = utils_findServer(contextP, fromSessionH);
         if (serverP != NULL)
         {
             result = dm_handleRequest(contextP, uriP, serverP, message, response);

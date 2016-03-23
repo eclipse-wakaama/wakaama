@@ -399,8 +399,8 @@ lwm2m_media_type_t utils_convertMediaType(coap_content_type_t type)
 }
 
 #ifdef LWM2M_CLIENT_MODE
-lwm2m_server_t * prv_findServer(lwm2m_context_t * contextP,
-                                void * fromSessionH)
+lwm2m_server_t * utils_findServer(lwm2m_context_t * contextP,
+                                  void * fromSessionH)
 {
     lwm2m_server_t * targetP;
 
@@ -521,4 +521,119 @@ void utils_copyValue(void * dst,
     }
 #endif
 #endif
+}
+
+int utils_opaqueToInt(const uint8_t * buffer,
+                      size_t buffer_len,
+                      int64_t * dataP)
+{
+    *dataP = 0;
+
+    switch (buffer_len)
+    {
+    case 1:
+    {
+        *dataP = (int8_t)buffer[0];
+
+        break;
+    }
+
+    case 2:
+    {
+        int16_t value;
+
+        utils_copyValue(&value, buffer, buffer_len);
+
+        *dataP = value;
+        break;
+    }
+
+    case 4:
+    {
+        int32_t value;
+
+        utils_copyValue(&value, buffer, buffer_len);
+
+        *dataP = value;
+        break;
+    }
+
+    case 8:
+        utils_copyValue(dataP, buffer, buffer_len);
+        return buffer_len;
+
+    default:
+        return 0;
+    }
+
+    return buffer_len;
+}
+
+int utils_opaqueToFloat(const uint8_t * buffer,
+                        size_t buffer_len,
+                        double * dataP)
+{
+    switch (buffer_len)
+    {
+    case 4:
+    {
+        float temp;
+
+        utils_copyValue(&temp, buffer, buffer_len);
+
+        *dataP = temp;
+    }
+    return 4;
+
+    case 8:
+        utils_copyValue(dataP, buffer, buffer_len);
+        return 8;
+
+    default:
+        return 0;
+    }
+}
+
+/**
+* Encode an integer value to a byte representation.
+* @param data        Input value
+* @param data_buffer Result in data_buffer is in big endian encoding
+*                    Negative values are represented in two's complement as of
+*                    OMA-TS-LightweightM2M-V1_0-20160308-D, Appendix C
+* @param lengthP     The length of the result. For values < 0xff length is 1,
+*                    for values < 0xffff length is 2 and so on.
+*/
+void utils_encodeInt(int64_t data,
+                     uint8_t data_buffer[_PRV_64BIT_BUFFER_SIZE],
+                     size_t * lengthP)
+{
+    memset(data_buffer, 0, _PRV_64BIT_BUFFER_SIZE);
+
+    if (data >= INT8_MIN && data <= INT8_MAX)
+    {
+        *lengthP = 1;
+        data_buffer[0] = data;
+    }
+    else if (data >= INT16_MIN && data <= INT16_MAX)
+    {
+        int16_t value;
+
+        value = data;
+        *lengthP = 2;
+        data_buffer[0] = (value >> 8) & 0xFF;
+        data_buffer[1] = value & 0xFF;
+    }
+    else if (data >= INT32_MIN && data <= INT32_MAX)
+    {
+        int32_t value;
+
+        value = data;
+        *lengthP = 4;
+        utils_copyValue(data_buffer, &value, *lengthP);
+    }
+    else if (data >= INT64_MIN && data <= INT64_MAX)
+    {
+        *lengthP = 8;
+        utils_copyValue(data_buffer, &data, *lengthP);
+    }
 }

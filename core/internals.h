@@ -248,6 +248,10 @@ uint8_t bootstrap_handleRequest(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, 
 void bootstrap_start(lwm2m_context_t * contextP);
 lwm2m_status_t bootstrap_getStatus(lwm2m_context_t * contextP);
 
+// defined in tlv.c
+int tlv_parse(uint8_t * buffer, size_t bufferLen, lwm2m_data_t ** dataP);
+int tlv_serialize(int size, lwm2m_data_t * dataP, uint8_t ** bufferP);
+
 // defined in json.c
 #ifdef LWM2M_SUPPORT_JSON
 int json_parse(lwm2m_uri_t * uriP, uint8_t * buffer, size_t bufferLen, lwm2m_data_t ** dataP);
@@ -271,19 +275,11 @@ size_t utils_int64ToPlainText(int64_t data, uint8_t ** bufferP);
 size_t utils_float64ToPlainText(double data, uint8_t ** bufferP);
 size_t utils_boolToPlainText(bool data, uint8_t ** bufferP);
 void utils_copyValue(void * dst, const void * src, size_t len);
-
-// defined in tlv.c
-int lwm2m_intToTLV(lwm2m_tlv_type_t type, int64_t data, uint16_t id, uint8_t * buffer, size_t buffer_len);
-int lwm2m_boolToTLV(lwm2m_tlv_type_t type, bool value, uint16_t id, uint8_t * buffer, size_t buffer_len);
-int lwm2m_opaqueToTLV(lwm2m_tlv_type_t type, uint8_t * dataP, size_t data_len, uint16_t id, uint8_t * buffer, size_t buffer_len);
-int lwm2m_opaqueToInt(const uint8_t * buffer, size_t buffer_len, int64_t * dataP);
-int lwm2m_opaqueToFloat(const uint8_t * buffer, size_t buffer_len, double * dataP);
-void prv_encodeInt(int64_t data, uint8_t data_buffer[_PRV_64BIT_BUFFER_SIZE], size_t * lengthP);
-int lwm2m_tlv_parse(uint8_t * buffer, size_t bufferLen, lwm2m_data_t ** dataP);
-int lwm2m_tlv_serialize(int size, lwm2m_data_t * dataP, uint8_t ** bufferP);
-
+int utils_opaqueToInt(const uint8_t * buffer, size_t buffer_len, int64_t * dataP);
+int utils_opaqueToFloat(const uint8_t * buffer, size_t buffer_len, double * dataP);
+void utils_encodeInt(int64_t data, uint8_t data_buffer[_PRV_64BIT_BUFFER_SIZE], size_t * lengthP);
 #ifdef LWM2M_CLIENT_MODE
-lwm2m_server_t * prv_findServer(lwm2m_context_t * contextP, void * fromSessionH);
+lwm2m_server_t * utils_findServer(lwm2m_context_t * contextP, void * fromSessionH);
 lwm2m_server_t * utils_findBootstrapServer(lwm2m_context_t * contextP, void * fromSessionH);
 #endif
 

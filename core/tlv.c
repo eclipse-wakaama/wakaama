@@ -60,10 +60,10 @@ static int prv_getHeaderLength(uint16_t id,
     return length;
 }
 
-static int prv_create_header(uint8_t * header,
-                             lwm2m_tlv_type_t type,
-                             uint16_t id,
-                             size_t data_len)
+static int prv_createHeader(uint8_t * header,
+                            lwm2m_tlv_type_t type,
+                            uint16_t id,
+                            size_t data_len)
 {
     int header_len;
     int offset;
@@ -111,61 +111,17 @@ static int prv_create_header(uint8_t * header,
     return header_len;
 }
 
-/**
- * Encode an integer value to a byte representation.
- * @param data        Input value
- * @param data_buffer Result in data_buffer is in big endian encoding
- *                    Negative values are represented in two's complement as of
- *                    OMA-TS-LightweightM2M-V1_0-20160308-D, Appendix C
- * @param lengthP     The length of the result. For values < 0xff length is 1,
- *                    for values < 0xffff length is 2 and so on.
- */
-void prv_encodeInt(int64_t data,
-                   uint8_t data_buffer[_PRV_64BIT_BUFFER_SIZE],
-                   size_t * lengthP)
-{
-    memset(data_buffer, 0, _PRV_64BIT_BUFFER_SIZE);
-
-    if (data >= INT8_MIN && data <= INT8_MAX)
-    {
-        *lengthP = 1;
-        data_buffer[0] = data;
-    }
-    else if (data >= INT16_MIN && data <= INT16_MAX)
-    {
-        int16_t value;
-
-        value = data;
-        *lengthP = 2;
-        data_buffer[0] = (value >> 8) & 0xFF;
-        data_buffer[1] = value & 0xFF;
-    }
-    else if (data >= INT32_MIN && data <= INT32_MAX)
-    {
-        int32_t value;
-
-        value = data;
-        *lengthP = 4;
-        utils_copyValue(data_buffer, &value, *lengthP);
-    }
-    else if (data >= INT64_MIN && data <= INT64_MAX)
-    {
-        *lengthP = 8;
-        utils_copyValue(data_buffer, &data, *lengthP);
-    }
- }
-
-int lwm2m_opaqueToTLV(lwm2m_tlv_type_t type,
-                      uint8_t* dataP,
-                      size_t data_len,
-                      uint16_t id,
-                      uint8_t * buffer,
-                      size_t buffer_len)
+static int prv_opaqueToTLV(lwm2m_tlv_type_t type,
+                           uint8_t* dataP,
+                           size_t data_len,
+                           uint16_t id,
+                           uint8_t * buffer,
+                           size_t buffer_len)
 {
     uint8_t header[LWM2M_TLV_HEADER_MAX_LENGTH];
     size_t header_len;
 
-    header_len = prv_create_header(header, type, id, data_len);
+    header_len = prv_createHeader(header, type, id, data_len);
 
     if (buffer_len < data_len + header_len) return 0;
 
@@ -176,20 +132,11 @@ int lwm2m_opaqueToTLV(lwm2m_tlv_type_t type,
     return header_len + data_len;
 }
 
-int lwm2m_boolToTLV(lwm2m_tlv_type_t type,
-                    bool value,
-                    uint16_t id,
-                    uint8_t * buffer,
-                    size_t buffer_len)
-{
-    return lwm2m_intToTLV(type, value?1:0, id, buffer, buffer_len);
-}
-
-int lwm2m_intToTLV(lwm2m_tlv_type_t type,
-                   int64_t data,
-                   uint16_t id,
-                   uint8_t * buffer,
-                   size_t buffer_len)
+static int prv_intToTLV(lwm2m_tlv_type_t type,
+                        int64_t data,
+                        uint16_t id,
+                        uint8_t * buffer,
+                        size_t buffer_len)
 {
     uint8_t data_buffer[_PRV_64BIT_BUFFER_SIZE];
     size_t length = 0;
@@ -197,9 +144,18 @@ int lwm2m_intToTLV(lwm2m_tlv_type_t type,
     if (type != LWM2M_TYPE_RESOURCE_INSTANCE && type != LWM2M_TYPE_RESOURCE)
         return 0;
 
-    prv_encodeInt(data, data_buffer, &length);
+    utils_encodeInt(data, data_buffer, &length);
 
-    return lwm2m_opaqueToTLV(type, data_buffer, length, id, buffer, buffer_len);
+    return prv_opaqueToTLV(type, data_buffer, length, id, buffer, buffer_len);
+}
+
+static int prv_boolToTLV(lwm2m_tlv_type_t type,
+                         bool value,
+                         uint16_t id,
+                         uint8_t * buffer,
+                         size_t buffer_len)
+{
+    return prv_intToTLV(type, value ? 1 : 0, id, buffer, buffer_len);
 }
 
 int lwm2m_decodeTLV(const uint8_t * buffer,
@@ -263,80 +219,10 @@ int lwm2m_decodeTLV(const uint8_t * buffer,
     return *oDataIndex + *oDataLen;
 }
 
-int lwm2m_opaqueToInt(const uint8_t * buffer,
-                      size_t buffer_len,
-                      int64_t * dataP)
-{
-    *dataP = 0;
 
-    switch (buffer_len)
-    {
-    case 1:
-    {
-        *dataP = (int8_t)buffer[0];
-
-        break;
-    }
-
-    case 2:
-    {
-        int16_t value;
-
-        utils_copyValue(&value, buffer, buffer_len);
-
-        *dataP = value;
-        break;
-    }
-
-    case 4:
-    {
-        int32_t value;
-
-        utils_copyValue(&value, buffer, buffer_len);
-
-        *dataP = value;
-        break;
-    }
-
-    case 8:
-        utils_copyValue(dataP, buffer, buffer_len);
-        return buffer_len;
-
-    default:
-        return 0;
-    }
-
-    return buffer_len;
-}
-
-int lwm2m_opaqueToFloat(const uint8_t * buffer,
-                        size_t buffer_len,
-                        double * dataP)
-{
-    switch (buffer_len)
-    {
-    case 4:
-    {
-        float temp;
-
-        utils_copyValue(&temp, buffer, buffer_len);
-
-        *dataP = temp;
-    }
-    return 4;
-
-    case 8:
-        utils_copyValue(dataP, buffer, buffer_len);
-        return 8;
-
-    default:
-        return 0;
-    }
-}
-
-int lwm2m_tlv_parse(uint8_t * buffer,
-                    size_t bufferLen,
-                    lwm2m_data_t ** dataP)
+int tlv_parse(uint8_t * buffer,
+              size_t bufferLen,
+              lwm2m_data_t ** dataP)
 {
     lwm2m_tlv_type_t type;
     uint16_t id;
@@ -372,7 +258,7 @@ int lwm2m_tlv_parse(uint8_t * buffer,
         (*dataP)[size].id = id;
         if (type == LWM2M_TYPE_OBJECT_INSTANCE || type == LWM2M_TYPE_MULTIPLE_RESOURCE)
         {
-            (*dataP)[size].length = lwm2m_tlv_parse(buffer + index + dataIndex,
+            (*dataP)[size].length = tlv_parse(buffer + index + dataIndex,
                                                     dataLen,
                                                     (lwm2m_data_t **)&((*dataP)[size].value));
             if ((*dataP)[size].length == 0)
@@ -437,9 +323,9 @@ static int prv_getLength(int size,
 }
 
 
-int lwm2m_tlv_serialize(int size,
-                        lwm2m_data_t * dataP,
-                        uint8_t ** bufferP)
+int tlv_serialize(int size,
+                  lwm2m_data_t * dataP,
+                  uint8_t ** bufferP)
 {
     int length;
     int index;
@@ -465,14 +351,14 @@ int lwm2m_tlv_serialize(int size,
                 uint8_t * tmpBuffer;
                 int tmpLength;
 
-                tmpLength = lwm2m_tlv_serialize(dataP[i].length, (lwm2m_data_t *)dataP[i].value, &tmpBuffer);
+                tmpLength = tlv_serialize(dataP[i].length, (lwm2m_data_t *)dataP[i].value, &tmpBuffer);
                 if (tmpLength == 0)
                 {
                     length = 0;
                 }
                 else
                 {
-                    headerLen = prv_create_header((uint8_t*)(*bufferP) + index, dataP[i].type, dataP[i].id, tmpLength);
+                    headerLen = prv_createHeader((uint8_t*)(*bufferP) + index, dataP[i].type, dataP[i].id, tmpLength);
                     index += headerLen;
                     memcpy(*bufferP + index, tmpBuffer, tmpLength);
                     index += tmpLength;
@@ -484,7 +370,7 @@ int lwm2m_tlv_serialize(int size,
         case LWM2M_TYPE_RESOURCE_INSTANCE:
         case LWM2M_TYPE_RESOURCE:
             {
-                headerLen = prv_create_header((uint8_t*)(*bufferP) + index, dataP[i].type, dataP[i].id, dataP[i].length);
+                headerLen = prv_createHeader((uint8_t*)(*bufferP) + index, dataP[i].type, dataP[i].id, dataP[i].length);
                 if (headerLen == 0)
                 {
                     length = 0;

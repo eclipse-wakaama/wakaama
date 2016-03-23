@@ -79,7 +79,7 @@ void lwm2m_data_encode_int(int64_t value,
         uint8_t buffer[_PRV_64BIT_BUFFER_SIZE];
         size_t length = 0;
 
-        prv_encodeInt(value, buffer, &length);
+        utils_encodeInt(value, buffer, &length);
 
         dataP->value = (uint8_t *)lwm2m_malloc(length);
         if (dataP->value != NULL)
@@ -106,7 +106,7 @@ int lwm2m_data_decode_int(const lwm2m_data_t * dataP,
     }
     else
     {
-        result = lwm2m_opaqueToInt(dataP->value, dataP->length, valueP);
+        result = utils_opaqueToInt(dataP->value, dataP->length, valueP);
         if (result == dataP->length)
         {
             result = 1;
@@ -179,7 +179,7 @@ int lwm2m_data_decode_float(const lwm2m_data_t * dataP,
     }
     else
     {
-        result = lwm2m_opaqueToFloat(dataP->value, dataP->length, valueP);
+        result = utils_opaqueToFloat(dataP->value, dataP->length, valueP);
         if (result == dataP->length)
         {
             result = 1;
@@ -308,7 +308,7 @@ int lwm2m_data_parse(lwm2m_uri_t * uriP,
         return 1;
 
     case LWM2M_CONTENT_TLV:
-        return lwm2m_tlv_parse(buffer, bufferLen, dataP);
+        return tlv_parse(buffer, bufferLen, dataP);
 
 #ifdef LWM2M_SUPPORT_JSON
     case LWM2M_CONTENT_JSON:
@@ -352,7 +352,7 @@ int lwm2m_data_serialize(lwm2m_uri_t * uriP,
         return dataP->length;
 
     case LWM2M_CONTENT_TLV:
-        return lwm2m_tlv_serialize(size, dataP, bufferP);
+        return tlv_serialize(size, dataP, bufferP);
 
 #ifdef LWM2M_CLIENT_MODE
     case LWM2M_CONTENT_LINK:
