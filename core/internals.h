@@ -197,7 +197,7 @@ lwm2m_transaction_t * transaction_new(coap_message_type_t type, coap_method_t me
 int transaction_send(lwm2m_context_t * contextP, lwm2m_transaction_t * transacP);
 void transaction_free(lwm2m_transaction_t * transacP);
 void transaction_remove(lwm2m_context_t * contextP, lwm2m_transaction_t * transacP);
-bool transaction_handle_response(lwm2m_context_t * contextP, void * fromSessionH, coap_packet_t * message, coap_packet_t * response);
+bool transaction_handleResponse(lwm2m_context_t * contextP, void * fromSessionH, coap_packet_t * message, coap_packet_t * response);
 void transaction_step(lwm2m_context_t * contextP, time_t currentTime, time_t * timeoutP);
 
 // defined in management.c

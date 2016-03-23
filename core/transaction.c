@@ -114,8 +114,8 @@ Contains code snippets which are:
 #define COAP_RESPONSE_TIMEOUT_TICKS         (CLOCK_SECOND * COAP_RESPONSE_TIMEOUT)
 #define COAP_RESPONSE_TIMEOUT_BACKOFF_MASK  ((CLOCK_SECOND * COAP_RESPONSE_TIMEOUT * (COAP_RESPONSE_RANDOM_FACTOR - 1)) + 1.5)
 
-static int prv_transaction_check_finished(lwm2m_transaction_t * transacP,
-        coap_packet_t * receivedMessage)
+static int prv_checkFinished(lwm2m_transaction_t * transacP,
+                             coap_packet_t * receivedMessage)
 {
     int len;
     const uint8_t* token;
@@ -258,7 +258,7 @@ void transaction_remove(lwm2m_context_t * contextP,
     transaction_free(transacP);
 }
 
-bool transaction_handle_response(lwm2m_context_t * contextP,
+bool transaction_handleResponse(lwm2m_context_t * contextP,
                                  void * fromSessionH,
                                  coap_packet_t * message,
                                  coap_packet_t * response)
@@ -315,7 +315,7 @@ bool transaction_handle_response(lwm2m_context_t * contextP,
                 }
             }
 
-            if (reset || prv_transaction_check_finished(transacP, message))
+            if (reset || prv_checkFinished(transacP, message))
             {
                 // HACK: If a message is sent from the monitor callback,
                 // it will arrive before the registration ACK.

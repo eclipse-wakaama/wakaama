@@ -309,7 +309,7 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
             case COAP_TYPE_NON:
             case COAP_TYPE_CON:
                 {
-                    bool done = transaction_handle_response(contextP, fromSessionH, message, response);
+                    bool done = transaction_handleResponse(contextP, fromSessionH, message, response);
 
 #ifdef LWM2M_SERVER_MODE
                     if (!done && IS_OPTION(message, COAP_OPTION_OBSERVE) &&
@@ -329,11 +329,11 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
             case COAP_TYPE_RST:
                 /* Cancel possible subscriptions. */
                 handle_reset(contextP, fromSessionH, message);
-                transaction_handle_response(contextP, fromSessionH, message, NULL);
+                transaction_handleResponse(contextP, fromSessionH, message, NULL);
                 break;
 
             case COAP_TYPE_ACK:
-                transaction_handle_response(contextP, fromSessionH, message, NULL);
+                transaction_handleResponse(contextP, fromSessionH, message, NULL);
                 break;
 
             default:
