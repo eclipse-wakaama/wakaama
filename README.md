@@ -48,6 +48,7 @@ Several compilation switches are used:
  - LWM2M_BOOTSTRAP_SERVER_MODE to enable LWM2M Bootstrap Server interfaces.
  - LWM2M_BOOTSTRAP to enable LWM2M Bootstrap support in a LWM2M Client.
  - LWM2M_SUPPORT_JSON to enable JSON payload support (implicit when defining LWM2M_SERVER_MODE)
+ - LWM2M_SUPPORT_DTLS to enable DTLS support (require tinydtls)
 Depending on your platform, you need to define LWM2M_BIG_ENDIAN or LWM2M_LITTLE_ENDIAN.
 LWM2M_CLIENT_MODE and LWM2M_SERVER_MODE can be defined at the same time.
 
@@ -77,6 +78,12 @@ In the any directory, run the following commands:
     cmake [liblwm2m directory]/tests/client
     make
     ./lwm2mclient [Options]
+
+With DTLS feature:
+    cmake -DDTLS=1 [liblwm2m directory]/tests/client
+    make
+    ./lwm2mclient_dtls [Options]
+
 
 The lwm2mclient features nine LWM2M objects:
     - Security Object (id: 0)
@@ -114,6 +121,10 @@ Options are:
   -t TIME	Set the lifetime of the Client. Default: 300
   -b		Bootstrap requested.
   -c		Change battery level over time.
+  
+If DTLS feature enable:
+  -i Set the device management or bootstrap server PSK identity. If not set use none secure mode
+  -s Set the device management or bootstrap server Pre-Shared-Key. If not set use none secure mode
 
 To launch a bootstrap session:
 ./lwm2mclient -b
