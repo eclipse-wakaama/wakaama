@@ -58,10 +58,9 @@ static int prv_textSerialize(lwm2m_data_t * dataP,
         return (int)utils_boolToPlainText(value, bufferP);
     }
 
-    case LWM2M_TYPE_OPAQUE:
-        // TODO: base64 encoding
     case LWM2M_TYPE_OBJECT_LINK:
         // TODO: implement
+    case LWM2M_TYPE_OPAQUE:
     case LWM2M_TYPE_UNDEFINED:
     default:
         return 0;
@@ -328,6 +327,11 @@ int lwm2m_data_serialize(lwm2m_uri_t * uriP,
             *formatP = LWM2M_CONTENT_TLV;
 #endif
         }
+    }
+    if (*formatP == LWM2M_CONTENT_TEXT
+     && dataP->dataType == LWM2M_TYPE_OPAQUE)
+    {
+        *formatP = LWM2M_CONTENT_OPAQUE;
     }
 
     switch (*formatP)

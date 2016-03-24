@@ -1105,19 +1105,17 @@ static int prv_serializeValue(lwm2m_data_t * tlvP,
     break;
 
     case LWM2M_TYPE_OPAQUE:
-        // TODO: base64 encoding
         if (bufferLen < JSON_ITEM_STRING_BEGIN_SIZE) return -1;
         memcpy(buffer, JSON_ITEM_STRING_BEGIN, JSON_ITEM_STRING_BEGIN_SIZE);
         head = JSON_ITEM_STRING_BEGIN_SIZE;
 
-        if (bufferLen - head < tlvP->length) return -1;
-        memcpy(buffer + head, tlvP->value, tlvP->length);
-        head += tlvP->length;
+        res = utils_base64Encode(tlvP->value, tlvP->length, buffer, bufferLen - head);
+        if (res == 0) return -1;
+        head += res;
 
         if (bufferLen - head < JSON_ITEM_STRING_END_SIZE) return -1;
         memcpy(buffer + head, JSON_ITEM_STRING_END, JSON_ITEM_STRING_END_SIZE);
         head += JSON_ITEM_STRING_END_SIZE;
-
         break;
 
     case LWM2M_TYPE_OBJECT_LINK:
