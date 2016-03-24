@@ -479,7 +479,7 @@ static bool prv_convertValue(_record_t * recordP,
 
         // TODO: Copy string instead of pointing to it
     case _TYPE_STRING:
-        targetP->flags = LWM2M_TLV_FLAG_STATIC_DATA | LWM2M_TLV_FLAG_TEXT_FORMAT;
+        targetP->flags = LWM2M_TLV_FLAG_STATIC_DATA;
         targetP->dataType = LWM2M_TYPE_STRING;      // or opaque ?
         targetP->length = recordP->valueLen;
         targetP->value = recordP->value;

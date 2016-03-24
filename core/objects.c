@@ -170,7 +170,6 @@ coap_status_t object_readData(lwm2m_context_t * contextP,
             if (*dataP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
 
             (*dataP)->type = LWM2M_TYPE_RESOURCE;
-            (*dataP)->flags = LWM2M_TLV_FLAG_TEXT_FORMAT;
             (*dataP)->id = uriP->resourceId;
         }
 
@@ -222,26 +221,8 @@ coap_status_t object_read(lwm2m_context_t * contextP,
 
     if (result == COAP_205_CONTENT)
     {
-        if (size == 1
-         && dataP->type == LWM2M_TYPE_RESOURCE
-         && (dataP->flags && LWM2M_TLV_FLAG_TEXT_FORMAT) != 0 )
-        {
-            *bufferP = (uint8_t *)lwm2m_malloc(dataP->length);
-            if (*bufferP == NULL)
-            {
-                result = COAP_500_INTERNAL_SERVER_ERROR;
-            }
-            else
-            {
-                memcpy(*bufferP, dataP->value, dataP->length);
-                *lengthP = dataP->length;
-            }
-        }
-        else
-        {
-            *lengthP = lwm2m_data_serialize(uriP, size, dataP, formatP, bufferP);
-            if (*lengthP == 0) result = COAP_500_INTERNAL_SERVER_ERROR;
-        }
+        *lengthP = lwm2m_data_serialize(uriP, size, dataP, formatP, bufferP);
+        if (*lengthP == 0) result = COAP_500_INTERNAL_SERVER_ERROR;
     }
     lwm2m_data_free(size, dataP);
 
@@ -270,28 +251,10 @@ coap_status_t object_write(lwm2m_context_t * contextP,
     }
     else
     {
-        if (LWM2M_URI_IS_SET_RESOURCE(uriP))
+        size = lwm2m_data_parse(uriP, buffer, length, format, &dataP);
+        if (size == 0)
         {
-            size = 1;
-            dataP = lwm2m_data_new(size);
-            if (dataP == NULL)
-            {
-                return COAP_500_INTERNAL_SERVER_ERROR;
-            }
-
-            dataP->flags = LWM2M_TLV_FLAG_TEXT_FORMAT | LWM2M_TLV_FLAG_STATIC_DATA;
-            dataP->type = LWM2M_TYPE_RESOURCE;
-            dataP->id = uriP->resourceId;
-            dataP->length = length;
-            dataP->value = (uint8_t *)buffer;
-        }
-        else
-        {
-            size = lwm2m_data_parse(uriP, buffer, length, format, &dataP);
-            if (size == 0)
-            {
-                result = COAP_500_INTERNAL_SERVER_ERROR;
-            }
+            result = COAP_406_NOT_ACCEPTABLE;
         }
     }
     if (result == NO_ERROR)

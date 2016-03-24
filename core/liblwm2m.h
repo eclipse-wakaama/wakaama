@@ -264,11 +264,8 @@ int lwm2m_stringToUri(const char * buffer, size_t buffer_len, lwm2m_uri_t * uriP
  * Bitmask for the lwm2m_data_t::flag
  * LWM2M_TLV_FLAG_STATIC_DATA specifies that lwm2m_data_t::value
  * points to static memory and must no be freeed by the caller.
- * LWM2M_TLV_FLAG_TEXT_FORMAT specifies that lwm2m_data_t::value
- * is expressed or requested in plain text format.
  */
 #define LWM2M_TLV_FLAG_STATIC_DATA   0x01
-#define LWM2M_TLV_FLAG_TEXT_FORMAT   0x02
 
 /*
  * Bits 7 and 6 of assigned values for LWM2M_TYPE_RESOURCE,
@@ -289,6 +286,7 @@ typedef enum
 typedef enum
 {
     LWM2M_TYPE_UNDEFINED = 0,
+    LWM2M_TYPE_AS_TEXT,
     LWM2M_TYPE_STRING,
     LWM2M_TYPE_INTEGER,
     LWM2M_TYPE_FLOAT,
