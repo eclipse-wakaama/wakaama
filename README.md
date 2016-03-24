@@ -5,31 +5,30 @@ Developers mailing list: https://dev.eclipse.org/mailman/listinfo/wakaama-dev
 
 Source Layout
 -------------
-
--+- core                   (the LWM2M engine)
- |    |
- |    +- er-coap-13        (Erbium's CoAP engine from
- |                          http://people.inf.ethz.ch/mkovatsc/erbium.php, modified
- |                          to run on linux)
- |
- +- platforms              (example ports on various platforms)
- |
- +- tests                  (test applications.)
- |
- +- examples
-      |
-      +- bootstrap_server  (a command-line LWM2M bootstrap server)
-      |
-      +- client            (a command-line LWM2M client with several test objects)
-      |
-      +- lightclient       (a very simple command-line LWM2M client with several test objects)
-      |
-      +- misc              (application unit-testing miscellaneous utility functions of the core)
-      |
-      +- server            (a command-line LWM2M server)
-      |
-      +- utils             (utility functions for connection handling and command-
-                            line interface)
+    -+- core                   (the LWM2M engine)
+     |    |
+     |    +- er-coap-13        (Erbium's CoAP engine from
+     |                          http://people.inf.ethz.ch/mkovatsc/erbium.php, modified
+     |                          to run on linux)
+     |
+     +- platforms              (example ports on various platforms)
+     |
+     +- tests                  (test cases)
+     |
+     +- examples
+          |
+          +- bootstrap_server  (a command-line LWM2M bootstrap server)
+          |
+          +- client            (a command-line LWM2M client with several test objects)
+          |
+          +- lightclient       (a very simple command-line LWM2M client with several test objects)
+          |
+          +- misc              (application unit-testing miscellaneous utility functions of the core)
+          |
+          +- server            (a command-line LWM2M server)
+          |
+          +- utils             (utility functions for connection handling and command-
+                                line interface)
 
 
 Compiling
@@ -50,51 +49,50 @@ Depending on your platform, you need to define LWM2M_BIG_ENDIAN or LWM2M_LITTLE_
 LWM2M_CLIENT_MODE and LWM2M_SERVER_MODE can be defined at the same time.
 
 
-Testing
--------
+Examples
+--------
+There are some example applications provided to test the server, client and bootstrap capabilities of Wakaama.
+The following recipes assume you are on a unix like platform and you have cmake and make installed.
 
-To compile the test server
- - - - - - - - - - - - - -
-
-In the any directory, run the following commands:
-    cmake [liblwm2m directory]/examples/server
-    make
-    ./lwm2mserver [Options]
+### Server example
+ * Create a build directory and change to that.
+ * ``cmake [liblwm2m directory]/examples/server``
+ * ``make``
+ * ``./lwm2mserver [Options]``
 
 The lwm2mserver listens on UDP port 5683. It features a basic command line
 interface. Type 'help' for a list of supported commands.
 
 Options are:
-  -4		Use IPv4 connection. Default: IPv6 connection
+ - -4		Use IPv4 connection. Default: IPv6 connection
 
 
-To compile the test client
- - - - - - - - - - - - - -
-
-In the any directory, run the following commands:
-    cmake [liblwm2m directory]/examples/client
-    make
-    ./lwm2mclient [Options]
+### Test client example
+ * Create a build directory and change to that.
+ * ``cmake [liblwm2m directory]/examples/client``
+ * ``make``
+ * ``./lwm2mclient [Options]``
 
 DTLS feature requires tinydtls submodule. Look at examples/client/README.md for an example of how 
 to include tinydtls.
 
 Build with tinydtls:
-    cmake -DDTLS=1 [liblwm2m directory]/examples/client
-    make
-    ./lwm2mclient_dtls [Options]
+ * Create a build directory and change to that.
+ * ``cmake -DDTLS=1 [liblwm2m directory]/examples/client``
+ * ``make``
+ * ``./lwm2mclient_dtls [Options]``
 
 The lwm2mclient features nine LWM2M objects:
-    - Security Object (id: 0)
-    - Server Object (id: 1)
-    - Access Control Object (id: 2) as a skeleton
-    - Device Object (id: 3) containing hard-coded values from the Example LWM2M
-    Client of Appendix E of the LWM2M Technical Specification.
-    - Connectivity Monitoring Object (id: 2) as a skeleton
-    - Firmware Update Object (id: 5) as a skeleton.
-    - Location Object (id: 6) as a skeleton.
-    - Connectivity Statistics Object (id: 7) as a skeleton.
-    - a test object (id: 1024) with the following description:
+ - Security Object (id: 0)
+ - Server Object (id: 1)
+ - Access Control Object (id: 2) as a skeleton
+ - Device Object (id: 3) containing hard-coded values from the Example LWM2M
+ Client of Appendix E of the LWM2M Technical Specification.
+ - Connectivity Monitoring Object (id: 2) as a skeleton
+ - Firmware Update Object (id: 5) as a skeleton.
+ - Location Object (id: 6) as a skeleton.
+ - Connectivity Statistics Object (id: 7) as a skeleton.
+ - a test object (id: 1024) with the following description:
 
                            Multiple
           Object |  ID  | Instances | Mandatoty |
@@ -112,42 +110,43 @@ The lwm2mclient opens udp port 56830 and tries to register to a LWM2M Server at
 list of supported commands.
 
 Options are:
-  -n NAME	Set the endpoint name of the Client. Default: testlwm2mclient
-  -l PORT	Set the local UDP port of the Client. Default: 56830
-  -h HOST	Set the hostname of the LWM2M Server to connect to. Default: localhost
-  -p HOST	Set the port of the LWM2M Server to connect to. Default: 5683
-  -4		Use IPv4 connection. Default: IPv6 connection
-  -t TIME	Set the lifetime of the Client. Default: 300
-  -b		Bootstrap requested.
-  -c		Change battery level over time.
+- -n NAME	Set the endpoint name of the Client. Default: testlwm2mclient
+- -l PORT	Set the local UDP port of the Client. Default: 56830
+- -h HOST	Set the hostname of the LWM2M Server to connect to. Default: localhost
+- -p HOST	Set the port of the LWM2M Server to connect to. Default: 5683
+- -4		Use IPv4 connection. Default: IPv6 connection
+- -t TIME	Set the lifetime of the Client. Default: 300
+- -b		Bootstrap requested.
+- -c		Change battery level over time.
   
 If DTLS feature enable:
-  -i Set the device management or bootstrap server PSK identity. If not set use none secure mode
-  -s Set the device management or bootstrap server Pre-Shared-Key. If not set use none secure mode
+- -i Set the device management or bootstrap server PSK identity. If not set use none secure mode
+- -s Set the device management or bootstrap server Pre-Shared-Key. If not set use none secure mode
 
 To launch a bootstrap session:
-./lwm2mclient -b
+``./lwm2mclient -b``
 
 
-To compile a simpler test client
- - - - - - - - - - - - - - - - -
+### Simpler test client example
 
 In the any directory, run the following commands:
-    cmake [liblwm2m directory]/examples/lightclient
-    make
-    ./lightclient [Options]
+ * Create a build directory and change to that.
+ * ``cmake [liblwm2m directory]/examples/lightclient``
+ * ``make``
+ * ``./lightclient [Options]``
 
 The lightclient is much simpler that the lwm2mclient and features only four
 LWM2M objects:
-    - Security Object (id: 0)
-    - Server Object (id: 1)
-    - Device Object (id: 3) containing hard-coded values from the Example LWM2M
-    Client of Appendix E of the LWM2M Technical Specification.
-    - Test object (id: 1024) from the lwm2mclient as described above.
+ - Security Object (id: 0)
+ - Server Object (id: 1)
+ - Device Object (id: 3) containing hard-coded values from the Example LWM2M
+ Client of Appendix E of the LWM2M Technical Specification.
+ - Test object (id: 1024) from the lwm2mclient as described above.
 
 The lightclient does not feature any command-line interface.
 
 Options are:
-  -n NAME	Set the endpoint name of the Client. Default: testlightclient
-  -l PORT	Set the local UDP port of the Client. Default: 56830
-  -4		Use IPv4 connection. Default: IPv6 connection
+ -  -n NAME	Set the endpoint name of the Client. Default: testlightclient
+ - -l PORT	Set the local UDP port of the Client. Default: 56830
+ - -4		Use IPv4 connection. Default: IPv6 connection
+
