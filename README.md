@@ -14,7 +14,9 @@ Source Layout
  |
  +- platforms              (example ports on various platforms)
  |
- +- tests                  (example and test applications)
+ +- tests                  (test applications.)
+ |
+ +- examples
       |
       +- bootstrap_server  (a command-line LWM2M bootstrap server)
       |
@@ -26,10 +28,6 @@ Source Layout
       |
       +- server            (a command-line LWM2M server)
       |
-      +- TLV               (application decoding two hard-coded TLV buffers)
-      |
-      +- unittests         (various unit tests using the CUnit framework)
-      |
       +- utils             (utility functions for connection handling and command-
                             line interface)
 
@@ -38,7 +36,7 @@ Compiling
 ---------
 
 Despite its name, liblwm2m is not a library but files to be built with an
-application. liblwm2m uses CMake. Look at tests/server/CMakeLists.txt for an
+application. liblwm2m uses CMake. Look at examples/server/CMakeLists.txt for an
 example of how to include it.
 Several compilation switches are used:
  - LWM2M_BIG_ENDIAN if your target platform uses big-endian format.
@@ -59,7 +57,7 @@ To compile the test server
  - - - - - - - - - - - - -
 
 In the any directory, run the following commands:
-    cmake [liblwm2m directory]/tests/server
+    cmake [liblwm2m directory]/examples/server
     make
     ./lwm2mserver [Options]
 
@@ -74,9 +72,17 @@ To compile the test client
  - - - - - - - - - - - - -
 
 In the any directory, run the following commands:
-    cmake [liblwm2m directory]/tests/client
+    cmake [liblwm2m directory]/examples/client
     make
     ./lwm2mclient [Options]
+
+DTLS feature requires tinydtls submodule. Look at examples/client/README.md for an example of how 
+to include tinydtls.
+
+Build with tinydtls:
+    cmake -DDTLS=1 [liblwm2m directory]/examples/client
+    make
+    ./lwm2mclient_dtls [Options]
 
 The lwm2mclient features nine LWM2M objects:
     - Security Object (id: 0)
@@ -114,6 +120,10 @@ Options are:
   -t TIME	Set the lifetime of the Client. Default: 300
   -b		Bootstrap requested.
   -c		Change battery level over time.
+  
+If DTLS feature enable:
+  -i Set the device management or bootstrap server PSK identity. If not set use none secure mode
+  -s Set the device management or bootstrap server Pre-Shared-Key. If not set use none secure mode
 
 To launch a bootstrap session:
 ./lwm2mclient -b
@@ -123,7 +133,7 @@ To compile a simpler test client
  - - - - - - - - - - - - - - - -
 
 In the any directory, run the following commands:
-    cmake [liblwm2m directory]/tests/lightclient
+    cmake [liblwm2m directory]/examples/lightclient
     make
     ./lightclient [Options]
 
