@@ -79,7 +79,7 @@ void lwm2m_data_encode_int(int64_t value,
         uint8_t buffer[_PRV_64BIT_BUFFER_SIZE];
         size_t length = 0;
 
-        utils_encodeInt(value, buffer, &length);
+        length = utils_encodeInt(value, buffer);
 
         dataP->value = (uint8_t *)lwm2m_malloc(length);
         if (dataP->value != NULL)

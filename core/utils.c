@@ -596,22 +596,23 @@ int utils_opaqueToFloat(const uint8_t * buffer,
 
 /**
 * Encode an integer value to a byte representation.
+* Returns the length of the result. For values < 0xff length is 1,
+* for values < 0xffff length is 2 and so on.
 * @param data        Input value
 * @param data_buffer Result in data_buffer is in big endian encoding
 *                    Negative values are represented in two's complement as of
 *                    OMA-TS-LightweightM2M-V1_0-20160308-D, Appendix C
-* @param lengthP     The length of the result. For values < 0xff length is 1,
-*                    for values < 0xffff length is 2 and so on.
 */
-void utils_encodeInt(int64_t data,
-                     uint8_t data_buffer[_PRV_64BIT_BUFFER_SIZE],
-                     size_t * lengthP)
+size_t utils_encodeInt(int64_t data,
+                       uint8_t data_buffer[_PRV_64BIT_BUFFER_SIZE])
 {
+    size_t length = 0;
+
     memset(data_buffer, 0, _PRV_64BIT_BUFFER_SIZE);
 
     if (data >= INT8_MIN && data <= INT8_MAX)
     {
-        *lengthP = 1;
+        length = 1;
         data_buffer[0] = data;
     }
     else if (data >= INT16_MIN && data <= INT16_MAX)
@@ -619,7 +620,7 @@ void utils_encodeInt(int64_t data,
         int16_t value;
 
         value = data;
-        *lengthP = 2;
+        length = 2;
         data_buffer[0] = (value >> 8) & 0xFF;
         data_buffer[1] = value & 0xFF;
     }
@@ -628,12 +629,14 @@ void utils_encodeInt(int64_t data,
         int32_t value;
 
         value = data;
-        *lengthP = 4;
-        utils_copyValue(data_buffer, &value, *lengthP);
+        length = 4;
+        utils_copyValue(data_buffer, &value, length);
     }
     else if (data >= INT64_MIN && data <= INT64_MAX)
     {
-        *lengthP = 8;
-        utils_copyValue(data_buffer, &data, *lengthP);
+        length = 8;
+        utils_copyValue(data_buffer, &data, length);
     }
+
+    return length;
 }

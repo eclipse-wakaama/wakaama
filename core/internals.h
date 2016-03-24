@@ -277,7 +277,7 @@ size_t utils_boolToPlainText(bool data, uint8_t ** bufferP);
 void utils_copyValue(void * dst, const void * src, size_t len);
 int utils_opaqueToInt(const uint8_t * buffer, size_t buffer_len, int64_t * dataP);
 int utils_opaqueToFloat(const uint8_t * buffer, size_t buffer_len, double * dataP);
-void utils_encodeInt(int64_t data, uint8_t data_buffer[_PRV_64BIT_BUFFER_SIZE], size_t * lengthP);
+size_t utils_encodeInt(int64_t data, uint8_t data_buffer[_PRV_64BIT_BUFFER_SIZE]);
 #ifdef LWM2M_CLIENT_MODE
 lwm2m_server_t * utils_findServer(lwm2m_context_t * contextP, void * fromSessionH);
 lwm2m_server_t * utils_findBootstrapServer(lwm2m_context_t * contextP, void * fromSessionH);

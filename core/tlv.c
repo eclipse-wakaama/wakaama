@@ -144,7 +144,7 @@ static int prv_intToTLV(lwm2m_tlv_type_t type,
     if (type != LWM2M_TYPE_RESOURCE_INSTANCE && type != LWM2M_TYPE_RESOURCE)
         return 0;
 
-    utils_encodeInt(data, data_buffer, &length);
+    length = utils_encodeInt(data, data_buffer);
 
     return prv_opaqueToTLV(type, data_buffer, length, id, buffer, buffer_len);
 }
