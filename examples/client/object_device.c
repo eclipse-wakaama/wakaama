@@ -674,6 +674,7 @@ lwm2m_object_t * get_object_device()
         }
         else
         {
+            lwm2m_free(deviceObj->instanceList);
             lwm2m_free(deviceObj);
             deviceObj = NULL;
         }
