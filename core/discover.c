@@ -140,7 +140,13 @@ static int prv_serializeLinkData(lwm2m_context_t * contextP,
 
     switch (tlvP->type)
     {
-    case LWM2M_TYPE_RESOURCE:
+    case LWM2M_TYPE_UNDEFINED:
+    case LWM2M_TYPE_STRING:
+    case LWM2M_TYPE_OPAQUE:
+    case LWM2M_TYPE_INTEGER:
+    case LWM2M_TYPE_FLOAT:
+    case LWM2M_TYPE_BOOLEAN:
+    case LWM2M_TYPE_OBJECT_LINK:
     case LWM2M_TYPE_MULTIPLE_RESOURCE:
         if (bufferLen < LINK_ITEM_START_SIZE) return -1;
         memcpy(buffer + head, LINK_ITEM_START, LINK_ITEM_START_SIZE);
@@ -167,7 +173,7 @@ static int prv_serializeLinkData(lwm2m_context_t * contextP,
             memcpy(buffer + head, LINK_ITEM_DIM_START, LINK_ITEM_DIM_START_SIZE);
             head += LINK_ITEM_DIM_START_SIZE;
 
-            res = utils_intToText(tlvP->length, buffer + head, bufferLen - head);
+            res = utils_intToText(tlvP->value.asChildren.num, buffer + head, bufferLen - head);
             if (res <= 0) return -1;
             head += res;
 
@@ -229,9 +235,9 @@ static int prv_serializeLinkData(lwm2m_context_t * contextP,
         if (res == 0) head = 0;    // rewind
         else head += res - 1;
 
-        for (index = 0; index < tlvP->length; index++)
+        for (index = 0; index < tlvP->value.asChildren.num; index++)
         {
-            res = prv_serializeLinkData(contextP, ((lwm2m_data_t *)tlvP->value) + index, &uri, uriStr, uriLen, buffer + head, bufferLen - head);
+            res = prv_serializeLinkData(contextP, tlvP->value.asChildren.array + index, &uri, uriStr, uriLen, buffer + head, bufferLen - head);
             if (res < 0) return -1;
             head += res;
         }
@@ -255,13 +261,12 @@ int discover_serialize(lwm2m_context_t * contextP,
     uint8_t bufferLink[PRV_LINK_BUFFER_SIZE];
     char baseUriStr[URI_MAX_STRING_LEN];
     int baseUriLen;
-    lwm2m_tlv_type_t level;
     int index;
     size_t head;
     int res;
     lwm2m_uri_t tempUri;
 
-    baseUriLen = uri_toString(uriP, baseUriStr, URI_MAX_STRING_LEN, &level);
+    baseUriLen = uri_toString(uriP, baseUriStr, URI_MAX_STRING_LEN, NULL);
     if (baseUriLen < 0) return -1;
     baseUriLen -= 1;
 

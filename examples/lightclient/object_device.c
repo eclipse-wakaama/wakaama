@@ -101,31 +101,20 @@ static uint8_t prv_set_value(lwm2m_data_t * dataP)
     switch (dataP->id)
     {
     case RES_O_MANUFACTURER:
-        dataP->value  = (uint8_t*)PRV_MANUFACTURER;
-        dataP->length = strlen(PRV_MANUFACTURER);
-        dataP->flags  = LWM2M_TLV_FLAG_STATIC_DATA;
-        dataP->type     = LWM2M_TYPE_RESOURCE;
-        dataP->dataType = LWM2M_TYPE_STRING;
+        lwm2m_data_encode_string(PRV_MANUFACTURER, dataP);
         return COAP_205_CONTENT;
 
     case RES_O_MODEL_NUMBER:
-        dataP->value  = (uint8_t*)PRV_MODEL_NUMBER;
-        dataP->length = strlen(PRV_MODEL_NUMBER);
-        dataP->flags  = LWM2M_TLV_FLAG_STATIC_DATA;
-        dataP->type     = LWM2M_TYPE_RESOURCE;
-        dataP->dataType = LWM2M_TYPE_STRING;
+        lwm2m_data_encode_string(PRV_MODEL_NUMBER, dataP);
         return COAP_205_CONTENT;
 
     case RES_M_REBOOT:
         return COAP_405_METHOD_NOT_ALLOWED;
       
     case RES_M_BINDING_MODES:
-        dataP->value  = (uint8_t*)PRV_BINDING_MODE;
-        dataP->length = strlen(PRV_BINDING_MODE);
-        dataP->flags  = LWM2M_TLV_FLAG_STATIC_DATA;
-        dataP->type     = LWM2M_TYPE_RESOURCE;
-        dataP->dataType = LWM2M_TYPE_STRING;
+        lwm2m_data_encode_string(PRV_BINDING_MODE, dataP);
         return COAP_205_CONTENT;
+
 
     default:
         return COAP_404_NOT_FOUND;
@@ -208,7 +197,6 @@ static uint8_t prv_device_discover(uint16_t instanceId,
         for (i = 0 ; i < nbRes ; i++)
         {
             (*dataArrayP)[i].id = resList[i];
-            (*dataArrayP)[i].type = LWM2M_TYPE_RESOURCE;
         }
     }
     else

@@ -253,7 +253,7 @@ int lwm2m_stringToUri(const char * buffer,
 int uri_toString(lwm2m_uri_t * uriP,
                  uint8_t * buffer,
                  size_t bufferLen,
-                 lwm2m_tlv_type_t * depthP)
+                 uri_depth_t * depthP)
 {
     size_t head;
     int res;
@@ -268,7 +268,7 @@ int uri_toString(lwm2m_uri_t * uriP,
     if (res <= 0) return -1;
     head += res;
     if (head >= bufferLen - 1) return -1;
-    *depthP = LWM2M_TYPE_OBJECT_INSTANCE;
+    if (depthP) *depthP = URI_DEPTH_OBJECT_INSTANCE;
 
     if (LWM2M_URI_IS_SET_INSTANCE(uriP))
     {
@@ -278,7 +278,7 @@ int uri_toString(lwm2m_uri_t * uriP,
         if (res <= 0) return -1;
         head += res;
         if (head >= bufferLen - 1) return -1;
-        *depthP = LWM2M_TYPE_RESOURCE;
+        if (depthP) *depthP = URI_DEPTH_RESOURCE;
         if (LWM2M_URI_IS_SET_RESOURCE(uriP))
         {
             buffer[head] = '/';
@@ -287,7 +287,7 @@ int uri_toString(lwm2m_uri_t * uriP,
             if (res <= 0) return -1;
             head += res;
             if (head >= bufferLen - 1) return -1;
-            *depthP = LWM2M_TYPE_RESOURCE_INSTANCE;
+            if (depthP) *depthP = URI_DEPTH_RESOURCE_INSTANCE;
         }
     }
 

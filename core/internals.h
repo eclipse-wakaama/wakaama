@@ -143,6 +143,7 @@
 #define ATTR_DIMENSION_LEN       4
 
 #define URI_MAX_STRING_LEN    18      // /65535/65535/65535
+#define _PRV_64BIT_BUFFER_SIZE 8
 
 #define LINK_ITEM_START             "<"
 #define LINK_ITEM_START_SIZE        1
@@ -159,9 +160,6 @@
 
 #define ATTR_FLAG_NUMERIC (uint8_t)(LWM2M_ATTR_FLAG_LESS_THAN | LWM2M_ATTR_FLAG_GREATER_THAN | LWM2M_ATTR_FLAG_STEP)
 
-#define LWM2M_TLV_HEADER_MAX_LENGTH 6
-#define _PRV_64BIT_BUFFER_SIZE 8
-
 #define LWM2M_URI_FLAG_DM           (uint8_t)0x00
 #define LWM2M_URI_FLAG_DELETE_ALL   (uint8_t)0x10
 #define LWM2M_URI_FLAG_REGISTRATION (uint8_t)0x20
@@ -177,6 +175,14 @@ typedef struct
     void * userData;
 } dm_data_t;
 
+typedef enum
+{
+    URI_DEPTH_OBJECT,
+    URI_DEPTH_OBJECT_INSTANCE,
+    URI_DEPTH_RESOURCE,
+    URI_DEPTH_RESOURCE_INSTANCE
+} uri_depth_t;
+
 #ifdef LWM2M_BOOTSTRAP_SERVER_MODE
 typedef struct
 {
@@ -190,7 +196,7 @@ typedef struct
 // defined in uri.c
 lwm2m_uri_t * uri_decode(char * altPath, multi_option_t *uriPath);
 int uri_getNumber(uint8_t * uriString, size_t uriLength);
-int uri_toString(lwm2m_uri_t * uriP, uint8_t * buffer, size_t bufferLen, lwm2m_tlv_type_t * depthP);
+int uri_toString(lwm2m_uri_t * uriP, uint8_t * buffer, size_t bufferLen, uri_depth_t * depthP);
 
 // defined in objects.c
 coap_status_t object_readData(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, int * sizeP, lwm2m_data_t ** dataP);
@@ -250,12 +256,12 @@ lwm2m_status_t bootstrap_getStatus(lwm2m_context_t * contextP);
 
 // defined in tlv.c
 int tlv_parse(uint8_t * buffer, size_t bufferLen, lwm2m_data_t ** dataP);
-int tlv_serialize(int size, lwm2m_data_t * dataP, uint8_t ** bufferP);
+size_t tlv_serialize(bool isResourceInstance, int size, lwm2m_data_t * dataP, uint8_t ** bufferP);
 
 // defined in json.c
 #ifdef LWM2M_SUPPORT_JSON
 int json_parse(lwm2m_uri_t * uriP, uint8_t * buffer, size_t bufferLen, lwm2m_data_t ** dataP);
-int json_serialize(lwm2m_uri_t * uriP, int size, lwm2m_data_t * tlvP, uint8_t ** bufferP);
+size_t json_serialize(lwm2m_uri_t * uriP, int size, lwm2m_data_t * tlvP, uint8_t ** bufferP);
 #endif
 
 // defined in discover.c

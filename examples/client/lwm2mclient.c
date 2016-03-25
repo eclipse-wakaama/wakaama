@@ -155,10 +155,8 @@ void handle_value_changed(lwm2m_context_t * lwm2mH,
                 fprintf(stderr, "Internal allocation failure !\n");
                 return;
             }
-            dataP->flags = LWM2M_TLV_FLAG_STATIC_DATA | LWM2M_TLV_FLAG_TEXT_FORMAT;
             dataP->id = uri->resourceId;
-            dataP->length = valueLength;
-            dataP->value = (uint8_t*) value;
+            lwm2m_data_encode_nstring(value, valueLength, dataP);
 
             result = object->writeFunc(uri->instanceId, 1, dataP, object);
             if (COAP_405_METHOD_NOT_ALLOWED == result)

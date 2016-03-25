@@ -89,44 +89,22 @@ static uint8_t prv_res2tlv(lwm2m_data_t* dataP,
     switch (dataP->id)     // location resourceId
     {
     case RES_M_LATITUDE:
-        dataP->value  = (uint8_t*)locDataP->latitude;
-        dataP->length = strlen(locDataP->latitude);
-        dataP->flags  = LWM2M_TLV_FLAG_STATIC_DATA;
-        dataP->type   = LWM2M_TYPE_RESOURCE;
-        dataP->dataType = LWM2M_TYPE_STRING;
+        lwm2m_data_encode_string(locDataP->latitude, dataP);
         break;
     case RES_M_LONGITUDE:
-        dataP->value  = (uint8_t*)locDataP->longitude;
-        dataP->length = strlen(locDataP->latitude);
-        dataP->flags  = LWM2M_TLV_FLAG_STATIC_DATA;
-        dataP->type   = LWM2M_TYPE_RESOURCE;
-        dataP->dataType = LWM2M_TYPE_STRING;
+        lwm2m_data_encode_string(locDataP->longitude, dataP);
         break;
     case RES_O_ALTITUDE:
-        dataP->value  = (uint8_t*)locDataP->altitude;
-        dataP->length = strlen(locDataP->altitude);
-        dataP->flags  = LWM2M_TLV_FLAG_STATIC_DATA;
-        dataP->type   = LWM2M_TYPE_RESOURCE;
-        dataP->dataType = LWM2M_TYPE_STRING;
+        lwm2m_data_encode_string(locDataP->altitude, dataP);
         break;
     case RES_O_UNCERTAINTY:
-        dataP->value  = (uint8_t*)locDataP->uncertainty;
-        dataP->length = strlen(locDataP->uncertainty);
-        dataP->flags  = LWM2M_TLV_FLAG_STATIC_DATA;
-        dataP->type   = LWM2M_TYPE_RESOURCE;
-        dataP->dataType = LWM2M_TYPE_STRING;
+        lwm2m_data_encode_string(locDataP->uncertainty, dataP);
         break;
     case RES_O_VELOCITY:
-        dataP->value  = locDataP->velocity;
-        dataP->length = VELOCITY_OCTETS;
-        dataP->flags  = LWM2M_TLV_FLAG_STATIC_DATA;
-        dataP->type   = LWM2M_TYPE_RESOURCE;
-        dataP->dataType = LWM2M_TYPE_OPAQUE;
+        lwm2m_data_encode_string(locDataP->velocity, dataP);
         break;
     case RES_M_TIMESTAMP:
         lwm2m_data_encode_int(locDataP->timestamp, dataP);
-        dataP->type   = LWM2M_TYPE_RESOURCE;
-        dataP->dataType = LWM2M_TYPE_TIME;
         break;
     default:
         ret = COAP_404_NOT_FOUND;
