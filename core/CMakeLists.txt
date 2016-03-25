@@ -7,6 +7,7 @@ SET(CORE_SOURCES
     ${CMAKE_CURRENT_LIST_DIR}/utils.c
     ${CMAKE_CURRENT_LIST_DIR}/objects.c
     ${CMAKE_CURRENT_LIST_DIR}/tlv.c
+    ${CMAKE_CURRENT_LIST_DIR}/data.c
     ${CMAKE_CURRENT_LIST_DIR}/list.c
     ${CMAKE_CURRENT_LIST_DIR}/packet.c
     ${CMAKE_CURRENT_LIST_DIR}/transaction.c
@@ -15,5 +16,6 @@ SET(CORE_SOURCES
     ${CMAKE_CURRENT_LIST_DIR}/management.c
     ${CMAKE_CURRENT_LIST_DIR}/observe.c
     ${CMAKE_CURRENT_LIST_DIR}/json.c
+    ${CMAKE_CURRENT_LIST_DIR}/discover.c
     ${EXT_SOURCES}
     PARENT_SCOPE)

@@ -63,8 +63,9 @@ extern "C" {
 #include <time.h>
 
 #ifdef LWM2M_SERVER_MODE
-#undef LWM2M_SUPPORT_JSON
+#ifndef LWM2M_SUPPORT_JSON
 #define LWM2M_SUPPORT_JSON
+#endif
 #endif
 
 #if defined(LWM2M_BOOTSTRAP) && defined(LWM2M_BOOTSTRAP_SERVER_MODE)
@@ -138,6 +139,7 @@ bool lwm2m_session_is_equal(void * session1, void * session2, void * userData);
 #define COAP_205_CONTENT                (uint8_t)0x45
 #define COAP_400_BAD_REQUEST            (uint8_t)0x80
 #define COAP_401_UNAUTHORIZED           (uint8_t)0x81
+#define COAP_402_BAD_OPTION             (uint8_t)0x82
 #define COAP_404_NOT_FOUND              (uint8_t)0x84
 #define COAP_405_METHOD_NOT_ALLOWED     (uint8_t)0x85
 #define COAP_406_NOT_ACCEPTABLE         (uint8_t)0x86
@@ -224,7 +226,7 @@ void lwm2m_list_free(lwm2m_list_t * head);
  * URI
  *
  * objectId is always set
- * if instanceId or resourceId is greater than LWM2M_URI_MAX_ID, it means it is not specified
+ * instanceId or resourceId are set according to the flag bit-field
  *
  */
 
@@ -255,29 +257,8 @@ typedef struct
 int lwm2m_stringToUri(const char * buffer, size_t buffer_len, lwm2m_uri_t * uriP);
 
 /*
- *  Resource values
+ * The lwm2m_data_t is used to store LWM2M resource values in a hierarchical way.
  */
-
-// defined in utils.c
-int lwm2m_PlainTextToInt64(uint8_t * buffer, int length, int64_t * dataP);
-int lwm2m_PlainTextToFloat64(uint8_t * buffer, int length, double * dataP);
-
-/*
- * These utility functions allocate a new buffer storing the plain text
- * representation of data. They return the size in bytes of the buffer
- * or 0 in case of error.
- * There is no trailing '\0' character in the buffer.
- */
-size_t lwm2m_int64ToPlainText(int64_t data, uint8_t ** bufferP);
-size_t lwm2m_float64ToPlainText(double data, uint8_t ** bufferP);
-size_t lwm2m_boolToPlainText(bool data, uint8_t ** bufferP);
-
-
-/*
- * TLV
- */
-
-#define LWM2M_TLV_HEADER_MAX_LENGTH 6
 
 /*
  * Bitmask for the lwm2m_data_t::flag
@@ -351,16 +332,21 @@ void lwm2m_data_include(lwm2m_data_t * subDataP, size_t count, lwm2m_data_t * da
 
 
 /*
- * These utility functions fill the buffer with a TLV record containing
- * the data. They return the size in bytes of the TLV record, 0 in case
- * of error.
+ * Utility function to parse TLV buffers directly
+ *
+ * Returned value: number of bytes parsed
+ * buffer: buffer to parse
+ * buffer_len: length in bytes of buffer
+ * oType: (OUT) type of the parsed TLV record
+ * oID: (OUT) ID of the parsed TLV record
+ * oDataIndex: (OUT) index of the data of the parsed TLV record in the buffer
+ * oDataLen: (OUT) length of the data of the parsed TLV record
  */
-int lwm2m_intToTLV(lwm2m_tlv_type_t type, int64_t data, uint16_t id, uint8_t * buffer, size_t buffer_len);
-int lwm2m_boolToTLV(lwm2m_tlv_type_t type, bool value, uint16_t id, uint8_t * buffer, size_t buffer_len);
-int lwm2m_opaqueToTLV(lwm2m_tlv_type_t type, uint8_t * dataP, size_t data_len, uint16_t id, uint8_t * buffer, size_t buffer_len);
-int lwm2m_decodeTLV(const uint8_t * buffer, size_t buffer_len, lwm2m_tlv_type_t * oType, uint16_t * oID, size_t * oDataIndex, size_t * oDataLen);
-int lwm2m_opaqueToInt(const uint8_t * buffer, size_t buffer_len, int64_t * dataP);
-int lwm2m_opaqueToFloat(const uint8_t * buffer, size_t buffer_len, double * dataP);
+
+#define LWM2M_TLV_HEADER_MAX_LENGTH 6
+
+int lwm2m_decode_TLV(const uint8_t * buffer, size_t buffer_len, lwm2m_tlv_type_t * oType, uint16_t * oID, size_t * oDataIndex, size_t * oDataLen);
+
 
 /*
  * LWM2M Objects
@@ -676,8 +662,8 @@ void lwm2m_resource_value_changed(lwm2m_context_t * contextP, lwm2m_uri_t * uriP
 
 #ifdef LWM2M_SERVER_MODE
 // Clients registration/deregistration monitoring API.
-// When a LWM2M client registers, the callback is called with status CREATED_2_01.
-// When a LWM2M client deregisters, the callback is called with status DELETED_2_02.
+// When a LWM2M client registers, the callback is called with status COAP_201_CREATED.
+// When a LWM2M client deregisters, the callback is called with status COAP_202_DELETED.
 // clientID is the internal ID of the LWM2M Client.
 // The callback's parameters uri, data, dataLength are always NULL.
 // The lwm2m_client_t is present in the lwm2m_context_t's clientList when the callback is called. On a deregistration, it deleted when the callback returns.

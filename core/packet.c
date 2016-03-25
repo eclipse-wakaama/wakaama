@@ -98,7 +98,7 @@ static void handle_reset(lwm2m_context_t * contextP,
                          coap_packet_t * message)
 {
 #ifdef LWM2M_CLIENT_MODE
-    cancel_observe(contextP, message->mid, fromSessionH);
+    observe_cancel(contextP, message->mid, fromSessionH);
 #endif
 }
 
@@ -111,9 +111,9 @@ static coap_status_t handle_request(lwm2m_context_t * contextP,
     coap_status_t result = COAP_IGNORE;
 
 #ifdef LWM2M_CLIENT_MODE
-    uriP = lwm2m_decode_uri(contextP->altPath, message->uri_path);
+    uriP = uri_decode(contextP->altPath, message->uri_path);
 #else
-    uriP = lwm2m_decode_uri(NULL, message->uri_path);
+    uriP = uri_decode(NULL, message->uri_path);
 #endif
 
     if (uriP == NULL) return COAP_400_BAD_REQUEST;
@@ -125,10 +125,10 @@ static coap_status_t handle_request(lwm2m_context_t * contextP,
     {
         lwm2m_server_t * serverP;
 
-        serverP = prv_findServer(contextP, fromSessionH);
+        serverP = utils_findServer(contextP, fromSessionH);
         if (serverP != NULL)
         {
-            result = handle_dm_request(contextP, uriP, serverP, message, response);
+            result = dm_handleRequest(contextP, uriP, serverP, message, response);
         }
 #ifdef LWM2M_BOOTSTRAP
         else
@@ -136,7 +136,7 @@ static coap_status_t handle_request(lwm2m_context_t * contextP,
             serverP = utils_findBootstrapServer(contextP, fromSessionH);
             if (serverP != NULL)
             {
-                result = handle_bootstrap_command(contextP, uriP, serverP, message, response);
+                result = bootstrap_handleCommand(contextP, uriP, serverP, message, response);
             }
         }
 #endif
@@ -151,14 +151,14 @@ static coap_status_t handle_request(lwm2m_context_t * contextP,
         }
         else
         {
-            result = handle_delete_all(contextP, fromSessionH);
+            result = bootstrap_handleDeleteAll(contextP, fromSessionH);
         }
         break;
 
     case LWM2M_URI_FLAG_BOOTSTRAP:
         if (message->code == COAP_POST)
         {
-            result = handle_bootstrap_finish(contextP, fromSessionH);
+            result = bootstrap_handleFinish(contextP, fromSessionH);
         }
         break;
 #endif
@@ -166,12 +166,12 @@ static coap_status_t handle_request(lwm2m_context_t * contextP,
 
 #ifdef LWM2M_SERVER_MODE
     case LWM2M_URI_FLAG_REGISTRATION:
-        result = handle_registration_request(contextP, uriP, fromSessionH, message, response);
+        result = registration_handleRequest(contextP, uriP, fromSessionH, message, response);
         break;
 #endif
 #ifdef LWM2M_BOOTSTRAP_SERVER_MODE
     case LWM2M_URI_FLAG_BOOTSTRAP:
-        result = handle_bootstrap_request(contextP, uriP, fromSessionH, message, response);
+        result = bootstrap_handleRequest(contextP, uriP, fromSessionH, message, response);
         break;
 #endif
     default:
@@ -219,12 +219,12 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
             if (message->type == COAP_TYPE_CON)
             {
                 /* Reliable CON requests are answered with an ACK. */
-                coap_init_message(response, COAP_TYPE_ACK, CONTENT_2_05, message->mid);
+                coap_init_message(response, COAP_TYPE_ACK, COAP_205_CONTENT, message->mid);
             }
             else
             {
                 /* Unreliable NON requests are answered with a NON as well. */
-                coap_init_message(response, COAP_TYPE_NON, CONTENT_2_05, contextP->nextMID++);
+                coap_init_message(response, COAP_TYPE_NON, COAP_205_CONTENT, contextP->nextMID++);
             }
 
             /* mirror token */
@@ -245,11 +245,11 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
             if (coap_error_code==NO_ERROR)
             {
                 /* Apply blockwise transfers. */
-                if ( IS_OPTION(message, COAP_OPTION_BLOCK1) && response->code<BAD_REQUEST_4_00 && !IS_OPTION(response, COAP_OPTION_BLOCK1) )
+                if ( IS_OPTION(message, COAP_OPTION_BLOCK1) && response->code<COAP_400_BAD_REQUEST && !IS_OPTION(response, COAP_OPTION_BLOCK1) )
                 {
                     LOG("Block1 NOT IMPLEMENTED\n");
 
-                    coap_error_code = NOT_IMPLEMENTED_5_01;
+                    coap_error_code = COAP_501_NOT_IMPLEMENTED;
                     coap_error_message = "NoBlock1Support";
                 }
                 else if ( IS_OPTION(message, COAP_OPTION_BLOCK2) )
@@ -262,7 +262,7 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
                         {
                             LOG("handle_incoming_data(): block_offset >= response->payload_len\n");
 
-                            response->code = BAD_OPTION_4_02;
+                            response->code = COAP_402_BAD_OPTION;
                             coap_set_payload(response, "BlockOutOfScope", 15); /* a const char str[] and sizeof(str) produces larger code size */
                         }
                         else
@@ -309,13 +309,13 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
             case COAP_TYPE_NON:
             case COAP_TYPE_CON:
                 {
-                    bool done = transaction_handle_response(contextP, fromSessionH, message, response);
+                    bool done = transaction_handleResponse(contextP, fromSessionH, message, response);
 
 #ifdef LWM2M_SERVER_MODE
                     if (!done && IS_OPTION(message, COAP_OPTION_OBSERVE) &&
                         ((message->code == COAP_204_CHANGED) || (message->code == COAP_205_CONTENT)))
                     {
-                        done = handle_observe_notify(contextP, fromSessionH, message, response);
+                        done = observe_handleNotify(contextP, fromSessionH, message, response);
                     }
 #endif
                     if (!done && message->type == COAP_TYPE_CON )
@@ -329,11 +329,11 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
             case COAP_TYPE_RST:
                 /* Cancel possible subscriptions. */
                 handle_reset(contextP, fromSessionH, message);
-                transaction_handle_response(contextP, fromSessionH, message, NULL);
+                transaction_handleResponse(contextP, fromSessionH, message, NULL);
                 break;
 
             case COAP_TYPE_ACK:
-                transaction_handle_response(contextP, fromSessionH, message, NULL);
+                transaction_handleResponse(contextP, fromSessionH, message, NULL);
                 break;
 
             default:
@@ -354,7 +354,7 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
         /* Set to sendable error code. */
         if (coap_error_code >= 192)
         {
-            coap_error_code = INTERNAL_SERVER_ERROR_5_00;
+            coap_error_code = COAP_500_INTERNAL_SERVER_ERROR;
         }
         /* Reuse input buffer for error message. */
         coap_init_message(message, COAP_TYPE_ACK, coap_error_code, message->mid);
@@ -368,7 +368,7 @@ coap_status_t message_send(lwm2m_context_t * contextP,
                            coap_packet_t * message,
                            void * sessionH)
 {
-    coap_status_t result = INTERNAL_SERVER_ERROR_5_00;
+    coap_status_t result = COAP_500_INTERNAL_SERVER_ERROR;
     uint8_t * pktBuffer;
     size_t pktBufferLen = 0;
     size_t allocLen;

@@ -563,7 +563,7 @@ static void prv_create_client(char * buffer,
     char * end = NULL;
     int result;
     int64_t value;
-    uint8_t temp_buffer[MAX_PACKET_SIZE];
+    uint8_t * temp_buffer = NULL;
     int temp_length = 0;
     lwm2m_media_type_t format = LWM2M_CONTENT_TEXT;
 
@@ -590,9 +590,20 @@ static void prv_create_client(char * buffer,
 
     if (uri.objectId == 1024)
     {
-        result = lwm2m_PlainTextToInt64((uint8_t *)buffer, end - buffer, &value);
-        temp_length = lwm2m_intToTLV(LWM2M_TYPE_RESOURCE, value, (uint16_t) 1, temp_buffer, MAX_PACKET_SIZE);
+        lwm2m_data_t * dataP;
+
+        dataP = lwm2m_data_new(1);
+        if (dataP == NULL)
+        {
+            fprintf(stdout, "Allocation error !");
+            return;
+        }
+        lwm2m_data_encode_int(value, dataP);
+        dataP->type = LWM2M_TYPE_RESOURCE;
+        dataP->id = 1;
+
         format = LWM2M_CONTENT_TLV;
+        temp_length = lwm2m_data_serialize(NULL, 1, dataP, &format, &temp_buffer);
     }
    /* End Client dependent part*/
 

@@ -228,7 +228,7 @@ void output_tlv(FILE * stream,
     int length = 0;
     int result;
 
-    while (0 != (result = lwm2m_decodeTLV((uint8_t*)buffer + length, buffer_len - length, &type, &id, &dataIndex, &dataLen)))
+    while (0 != (result = lwm2m_decode_TLV((uint8_t*)buffer + length, buffer_len - length, &type, &id, &dataIndex, &dataLen)))
     {
         print_indent(stream, indent);
         fprintf(stream, "{\r\n");
@@ -266,21 +266,25 @@ void output_tlv(FILE * stream,
         {
             int64_t intValue;
             double floatValue;
+            uint8_t tmp;
 
             print_indent(stream, indent+2);
             fprintf(stream, "data (%ld bytes):\r\n", dataLen);
             output_buffer(stream, (uint8_t*)buffer + length + dataIndex, dataLen, indent+2);
 
-            if (0 < lwm2m_opaqueToInt(buffer + length + dataIndex, dataLen, &intValue))
+            tmp = buffer[length + dataIndex + dataLen];
+            buffer[length + dataIndex + dataLen] = 0;
+            if (0 < sscanf(buffer + length + dataIndex, "%"PRId64, &intValue))
             {
                 print_indent(stream, indent+2);
                 fprintf(stream, "data as Integer: %" PRId64 "\r\n", intValue);
             }
-            if (0 < lwm2m_opaqueToFloat(buffer + length + dataIndex, dataLen, &floatValue))
+            if (0 < sscanf(buffer + length + dataIndex, "%g", &floatValue))
             {
                 print_indent(stream, indent+2);
                 fprintf(stream, "data as Float: %.16g\r\n", floatValue);
             }
+            buffer[length + dataIndex + dataLen] = tmp;
         }
         print_indent(stream, indent+1);
         fprintf(stream, "}\r\n");

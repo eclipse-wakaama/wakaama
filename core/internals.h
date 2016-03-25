@@ -142,7 +142,25 @@
 #define ATTR_DIMENSION_STR       "dim="
 #define ATTR_DIMENSION_LEN       4
 
+#define URI_MAX_STRING_LEN    18      // /65535/65535/65535
+
+#define LINK_ITEM_START             "<"
+#define LINK_ITEM_START_SIZE        1
+#define LINK_ITEM_END               ">,"
+#define LINK_ITEM_END_SIZE          2
+#define LINK_ITEM_DIM_START         ">;dim="
+#define LINK_ITEM_DIM_START_SIZE    6
+#define LINK_ITEM_ATTR_END          ","
+#define LINK_ITEM_ATTR_END_SIZE     1
+#define LINK_URI_SEPARATOR          "/"
+#define LINK_URI_SEPARATOR_SIZE     1
+#define LINK_ATTR_SEPARATOR         ";"
+#define LINK_ATTR_SEPARATOR_SIZE    1
+
 #define ATTR_FLAG_NUMERIC (uint8_t)(LWM2M_ATTR_FLAG_LESS_THAN | LWM2M_ATTR_FLAG_GREATER_THAN | LWM2M_ATTR_FLAG_STEP)
+
+#define LWM2M_TLV_HEADER_MAX_LENGTH 6
+#define _PRV_64BIT_BUFFER_SIZE 8
 
 #define LWM2M_URI_FLAG_DM           (uint8_t)0x00
 #define LWM2M_URI_FLAG_DELETE_ALL   (uint8_t)0x10
@@ -170,93 +188,98 @@ typedef struct
 #endif
 
 // defined in uri.c
-int lwm2m_get_number(char * uriString, size_t uriLength);
-lwm2m_uri_t * lwm2m_decode_uri(char * altPath, multi_option_t *uriPath);
-int prv_get_number(uint8_t * uriString, size_t uriLength);
+lwm2m_uri_t * uri_decode(char * altPath, multi_option_t *uriPath);
+int uri_getNumber(uint8_t * uriString, size_t uriLength);
+int uri_toString(lwm2m_uri_t * uriP, uint8_t * buffer, size_t bufferLen, lwm2m_tlv_type_t * depthP);
 
 // defined in objects.c
-coap_status_t object_data_read(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, int * sizeP, lwm2m_data_t ** dataP);
+coap_status_t object_readData(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, int * sizeP, lwm2m_data_t ** dataP);
 coap_status_t object_read(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_media_type_t * formatP, uint8_t ** bufferP, size_t * lengthP);
 coap_status_t object_write(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_media_type_t format, uint8_t * buffer, size_t length);
 coap_status_t object_create(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_media_type_t format, uint8_t * buffer, size_t length);
 coap_status_t object_execute(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, uint8_t * buffer, size_t length);
 coap_status_t object_delete(lwm2m_context_t * contextP, lwm2m_uri_t * uriP);
-coap_status_t object_delete_others(lwm2m_context_t * contextP, uint16_t objectId, uint16_t instanceId);
 coap_status_t object_discover(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, uint8_t ** bufferP, size_t * lengthP);
 uint8_t object_checkReadable(lwm2m_context_t * contextP, lwm2m_uri_t * uriP);
 uint8_t object_checkNumeric(lwm2m_context_t * contextP, lwm2m_uri_t * uriP);
 bool object_isInstanceNew(lwm2m_context_t * contextP, uint16_t objectId, uint16_t instanceId);
-int prv_getRegisterPayload(lwm2m_context_t * contextP, uint8_t * buffer, size_t length);
+int object_getRegisterPayload(lwm2m_context_t * contextP, uint8_t * buffer, size_t length);
 int object_getServers(lwm2m_context_t * contextP);
 coap_status_t object_createInstance(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_data_t * dataP);
 coap_status_t object_writeInstance(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_data_t * dataP);
 
 // defined in transaction.c
 lwm2m_transaction_t * transaction_new(coap_message_type_t type, coap_method_t method, char * altPath, lwm2m_uri_t * uriP, uint16_t mID, uint8_t token_len, uint8_t* token, lwm2m_endpoint_type_t peerType, void * peerP);
-
 int transaction_send(lwm2m_context_t * contextP, lwm2m_transaction_t * transacP);
 void transaction_free(lwm2m_transaction_t * transacP);
 void transaction_remove(lwm2m_context_t * contextP, lwm2m_transaction_t * transacP);
-bool transaction_handle_response(lwm2m_context_t * contextP, void * fromSessionH, coap_packet_t * message, coap_packet_t * response);
+bool transaction_handleResponse(lwm2m_context_t * contextP, void * fromSessionH, coap_packet_t * message, coap_packet_t * response);
 void transaction_step(lwm2m_context_t * contextP, time_t currentTime, time_t * timeoutP);
 
 // defined in management.c
-coap_status_t handle_dm_request(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_server_t * serverP, coap_packet_t * message, coap_packet_t * response);
+coap_status_t dm_handleRequest(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_server_t * serverP, coap_packet_t * message, coap_packet_t * response);
 
 // defined in observe.c
-coap_status_t handle_observe_request(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_server_t * serverP, int size, lwm2m_data_t * dataP, coap_packet_t * message, coap_packet_t * response);
-void cancel_observe(lwm2m_context_t * contextP, uint16_t mid, void * fromSessionH);
-coap_status_t observe_set_parameters(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_server_t * serverP, lwm2m_attributes_t * attrP);
-void observation_step(lwm2m_context_t * contextP, time_t currentTime, time_t * timeoutP);
+coap_status_t observe_handleRequest(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_server_t * serverP, int size, lwm2m_data_t * dataP, coap_packet_t * message, coap_packet_t * response);
+void observe_cancel(lwm2m_context_t * contextP, uint16_t mid, void * fromSessionH);
+coap_status_t observe_setParameters(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_server_t * serverP, lwm2m_attributes_t * attrP);
+void observe_step(lwm2m_context_t * contextP, time_t currentTime, time_t * timeoutP);
+bool observe_handleNotify(lwm2m_context_t * contextP, void * fromSessionH, coap_packet_t * message, coap_packet_t * response);
+void observe_remove(lwm2m_client_t * clientP, lwm2m_observation_t * observationP);
+lwm2m_observed_t * observe_findByUri(lwm2m_context_t * contextP, lwm2m_uri_t * uriP);
 
 // defined in registration.c
-coap_status_t handle_registration_request(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, void * fromSessionH, coap_packet_t * message, coap_packet_t * response);
+coap_status_t registration_handleRequest(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, void * fromSessionH, coap_packet_t * message, coap_packet_t * response);
 void registration_deregister(lwm2m_context_t * contextP, lwm2m_server_t * serverP);
-void prv_freeClient(lwm2m_client_t * clientP);
+void registration_freeClient(lwm2m_client_t * clientP);
 uint8_t registration_start(lwm2m_context_t * contextP);
 void registration_step(lwm2m_context_t * contextP, time_t currentTime, time_t * timeoutP);
-lwm2m_status_t registration_get_status(lwm2m_context_t * contextP);
+lwm2m_status_t registration_getStatus(lwm2m_context_t * contextP);
 
 // defined in packet.c
 coap_status_t message_send(lwm2m_context_t * contextP, coap_packet_t * message, void * sessionH);
 
-// defined in observe.c
-bool handle_observe_notify(lwm2m_context_t * contextP, void * fromSessionH, coap_packet_t * message, coap_packet_t * response);
-void observation_remove(lwm2m_client_t * clientP, lwm2m_observation_t * observationP);
-lwm2m_observed_t * observed_find(lwm2m_context_t * contextP, lwm2m_uri_t * uriP);
-
 // defined in bootstrap.c
 void bootstrap_step(lwm2m_context_t * contextP, uint32_t currentTime, time_t* timeoutP);
-void delete_bootstrap_server_list(lwm2m_context_t * contextP);
-coap_status_t handle_bootstrap_command(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_server_t * serverP, coap_packet_t * message, coap_packet_t * response);
-coap_status_t handle_delete_all(lwm2m_context_t * context, void * fromSessionH);
+coap_status_t bootstrap_handleCommand(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_server_t * serverP, coap_packet_t * message, coap_packet_t * response);
+coap_status_t bootstrap_handleDeleteAll(lwm2m_context_t * context, void * fromSessionH);
+coap_status_t bootstrap_handleFinish(lwm2m_context_t * context, void * fromSessionH);
+uint8_t bootstrap_handleRequest(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, void * fromSessionH, coap_packet_t * message, coap_packet_t * response);
 void bootstrap_start(lwm2m_context_t * contextP);
-lwm2m_status_t bootstrap_get_status(lwm2m_context_t * contextP);
-coap_status_t handle_bootstrap_finish(lwm2m_context_t * context, void * fromSessionH);
-uint8_t handle_bootstrap_request(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, void * fromSessionH, coap_packet_t * message, coap_packet_t * response);
+lwm2m_status_t bootstrap_getStatus(lwm2m_context_t * contextP);
 
-// defined in liblwm2m.c
-void delete_transaction_list(lwm2m_context_t * context);
-void delete_server_list(lwm2m_context_t * context);
-void delete_observed_list(lwm2m_context_t * contextP);
+// defined in tlv.c
+int tlv_parse(uint8_t * buffer, size_t bufferLen, lwm2m_data_t ** dataP);
+int tlv_serialize(int size, lwm2m_data_t * dataP, uint8_t ** bufferP);
 
 // defined in json.c
 #ifdef LWM2M_SUPPORT_JSON
-int lwm2m_json_parse(lwm2m_uri_t * uriP, uint8_t * buffer, size_t bufferLen, lwm2m_data_t ** dataP);
-int lwm2m_json_serialize(lwm2m_uri_t * uriP, int size, lwm2m_data_t * tlvP, uint8_t ** bufferP);
+int json_parse(lwm2m_uri_t * uriP, uint8_t * buffer, size_t bufferLen, lwm2m_data_t ** dataP);
+int json_serialize(lwm2m_uri_t * uriP, int size, lwm2m_data_t * tlvP, uint8_t ** bufferP);
 #endif
-int prv_serializeLink(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, int size, lwm2m_data_t * dataP, uint8_t ** bufferP);
+
+// defined in discover.c
+int discover_serialize(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, int size, lwm2m_data_t * dataP, uint8_t ** bufferP);
 
 // defined in utils.c
-lwm2m_binding_t lwm2m_stringToBinding(uint8_t *buffer, size_t length);
-lwm2m_media_type_t prv_convertMediaType(coap_content_type_t type);
-int prv_isAltPathValid(const char * altPath);
+lwm2m_binding_t utils_stringToBinding(uint8_t *buffer, size_t length);
+lwm2m_media_type_t utils_convertMediaType(coap_content_type_t type);
+int utils_isAltPathValid(const char * altPath);
 int utils_stringCopy(char * buffer, size_t length, const char * str);
 int utils_intCopy(char * buffer, size_t length, int32_t value);
 size_t utils_intToText(int64_t data, uint8_t * string, size_t length);
 size_t utils_floatToText(double data, uint8_t * string, size_t length);
+int utils_plainTextToInt64(uint8_t * buffer, int length, int64_t * dataP);
+int utils_plainTextToFloat64(uint8_t * buffer, int length, double * dataP);
+size_t utils_int64ToPlainText(int64_t data, uint8_t ** bufferP);
+size_t utils_float64ToPlainText(double data, uint8_t ** bufferP);
+size_t utils_boolToPlainText(bool data, uint8_t ** bufferP);
+void utils_copyValue(void * dst, const void * src, size_t len);
+int utils_opaqueToInt(const uint8_t * buffer, size_t buffer_len, int64_t * dataP);
+int utils_opaqueToFloat(const uint8_t * buffer, size_t buffer_len, double * dataP);
+size_t utils_encodeInt(int64_t data, uint8_t data_buffer[_PRV_64BIT_BUFFER_SIZE]);
 #ifdef LWM2M_CLIENT_MODE
-lwm2m_server_t * prv_findServer(lwm2m_context_t * contextP, void * fromSessionH);
+lwm2m_server_t * utils_findServer(lwm2m_context_t * contextP, void * fromSessionH);
 lwm2m_server_t * utils_findBootstrapServer(lwm2m_context_t * contextP, void * fromSessionH);
 #endif
 

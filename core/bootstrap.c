@@ -28,15 +28,15 @@
 
 #define PRV_QUERY_BUFFER_LENGTH 200
 
-static void bootstrap_failed(lwm2m_server_t * bootstrapServer)
+static void prv_bootstrapFailed(lwm2m_server_t * bootstrapServer)
 {
     LOG("[BOOTSTRAP] Bootstrap failed\r\n");
 
     bootstrapServer->status = STATE_BS_FAILED;
 }
 
-static void handle_bootstrap_response(lwm2m_server_t * bootstrapServer,
-                                      coap_packet_t * message)
+static void prv_handleResponse(lwm2m_server_t * bootstrapServer,
+                               coap_packet_t * message)
 {
     if (COAP_204_CHANGED == message->code)
     {
@@ -45,7 +45,7 @@ static void handle_bootstrap_response(lwm2m_server_t * bootstrapServer,
     }
     else
     {
-        bootstrap_failed(bootstrapServer);
+        prv_bootstrapFailed(bootstrapServer);
     }
 }
 
@@ -61,18 +61,18 @@ static void prv_handleBootstrapReply(lwm2m_transaction_t * transaction,
     {
         if (NULL != coapMessage && COAP_TYPE_RST != coapMessage->type)
         {
-            handle_bootstrap_response(bootstrapServer, coapMessage);
+            prv_handleResponse(bootstrapServer, coapMessage);
         }
         else
         {
-            bootstrap_failed(bootstrapServer);
+            prv_bootstrapFailed(bootstrapServer);
         }
     }
 }
 
 // start a device initiated bootstrap
-static void bootstrap_initiating_request(lwm2m_context_t * context,
-                                         lwm2m_server_t * bootstrapServer)
+static void prv_requestBootstrap(lwm2m_context_t * context,
+                                 lwm2m_server_t * bootstrapServer)
 {
     char query[PRV_QUERY_BUFFER_LENGTH];
     int query_length = 0;
@@ -151,7 +151,7 @@ void bootstrap_step(lwm2m_context_t * contextP,
         case STATE_BS_HOLD_OFF:
             if (targetP->registration <= currentTime)
             {
-                bootstrap_initiating_request(contextP, targetP);
+                prv_requestBootstrap(contextP, targetP);
             }
             else if (*timeoutP > targetP->registration - currentTime)
             {
@@ -180,8 +180,8 @@ void bootstrap_step(lwm2m_context_t * contextP,
     }
 }
 
-coap_status_t handle_bootstrap_finish(lwm2m_context_t * context,
-                                      void * fromSessionH)
+coap_status_t bootstrap_handleFinish(lwm2m_context_t * context,
+                                     void * fromSessionH)
 {
     lwm2m_server_t * bootstrapServer;
 
@@ -223,7 +223,7 @@ void bootstrap_start(lwm2m_context_t * contextP)
  * Returns STATE_BS_FINISHED if at least one bootstrap succeeded and no bootstrap is pending
  * Returns STATE_BS_FAILED if all bootstrap failed.
  */
-lwm2m_status_t bootstrap_get_status(lwm2m_context_t * contextP)
+lwm2m_status_t bootstrap_getStatus(lwm2m_context_t * contextP)
 {
     lwm2m_server_t * targetP;
     lwm2m_status_t bs_status;
@@ -257,7 +257,7 @@ lwm2m_status_t bootstrap_get_status(lwm2m_context_t * contextP)
     return bs_status;
 }
 
-static coap_status_t prv_check_server_status(lwm2m_server_t * serverP)
+static coap_status_t prv_checkServerStatus(lwm2m_server_t * serverP)
 {
     switch (serverP->status)
     {
@@ -285,8 +285,8 @@ static coap_status_t prv_check_server_status(lwm2m_server_t * serverP)
     return COAP_NO_ERROR;
 }
 
-static void prv_tag_server(lwm2m_context_t * contextP,
-                           uint16_t id)
+static void prv_tagServer(lwm2m_context_t * contextP,
+                          uint16_t id)
 {
     lwm2m_server_t * targetP;
 
@@ -301,8 +301,8 @@ static void prv_tag_server(lwm2m_context_t * contextP,
     }
 }
 
-static void prv_tag_all_servers(lwm2m_context_t * contextP,
-                                lwm2m_server_t * serverP)
+static void prv_tagAllServer(lwm2m_context_t * contextP,
+                             lwm2m_server_t * serverP)
 {
     lwm2m_server_t * targetP;
 
@@ -323,18 +323,18 @@ static void prv_tag_all_servers(lwm2m_context_t * contextP,
     }
 }
 
-coap_status_t handle_bootstrap_command(lwm2m_context_t * contextP,
-                                       lwm2m_uri_t * uriP,
-                                       lwm2m_server_t * serverP,
-                                       coap_packet_t * message,
-                                       coap_packet_t * response)
+coap_status_t bootstrap_handleCommand(lwm2m_context_t * contextP,
+                                      lwm2m_uri_t * uriP,
+                                      lwm2m_server_t * serverP,
+                                      coap_packet_t * message,
+                                      coap_packet_t * response)
 {
     coap_status_t result;
     lwm2m_media_type_t format;
 
-    format = prv_convertMediaType(message->content_type);
+    format = utils_convertMediaType(message->content_type);
 
-    result = prv_check_server_status(serverP);
+    result = prv_checkServerStatus(serverP);
     if (result != COAP_NO_ERROR) return result;
 
     switch (message->code)
@@ -357,7 +357,7 @@ coap_status_t handle_bootstrap_command(lwm2m_context_t * contextP,
                     if (uriP->objectId == LWM2M_SECURITY_OBJECT_ID
                      && result == COAP_204_CHANGED)
                     {
-                        prv_tag_server(contextP, uriP->instanceId);
+                        prv_tagServer(contextP, uriP->instanceId);
                     }
                 }
             }
@@ -369,7 +369,7 @@ coap_status_t handle_bootstrap_command(lwm2m_context_t * contextP,
 
                 if (message->payload_len == 0 || message->payload == 0)
                 {
-                    result = BAD_REQUEST_4_00;
+                    result = COAP_400_BAD_REQUEST;
                 }
                 else
                 {
@@ -398,7 +398,7 @@ coap_status_t handle_bootstrap_command(lwm2m_context_t * contextP,
                                 if (uriP->objectId == LWM2M_SECURITY_OBJECT_ID
                                  && result == COAP_204_CHANGED)
                                 {
-                                    prv_tag_server(contextP, dataP[i].id);
+                                    prv_tagServer(contextP, dataP[i].id);
                                 }
                             }
                             
@@ -422,7 +422,7 @@ coap_status_t handle_bootstrap_command(lwm2m_context_t * contextP,
         {
             if (LWM2M_URI_IS_SET_RESOURCE(uriP))
             {
-                result = BAD_REQUEST_4_00;
+                result = COAP_400_BAD_REQUEST;
             }
             else
             {
@@ -432,11 +432,11 @@ coap_status_t handle_bootstrap_command(lwm2m_context_t * contextP,
                 {
                     if (LWM2M_URI_IS_SET_INSTANCE(uriP))
                     {
-                        prv_tag_server(contextP, uriP->instanceId);
+                        prv_tagServer(contextP, uriP->instanceId);
                     }
                     else
                     {
-                        prv_tag_all_servers(contextP, NULL);
+                        prv_tagAllServer(contextP, NULL);
                     }
                 }
             }
@@ -446,7 +446,7 @@ coap_status_t handle_bootstrap_command(lwm2m_context_t * contextP,
     case COAP_GET:
     case COAP_POST:
     default:
-        result = BAD_REQUEST_4_00;
+        result = COAP_400_BAD_REQUEST;
         break;
     }
 
@@ -463,8 +463,8 @@ coap_status_t handle_bootstrap_command(lwm2m_context_t * contextP,
     return result;
 }
 
-coap_status_t handle_delete_all(lwm2m_context_t * contextP,
-                                void * fromSessionH)
+coap_status_t bootstrap_handleDeleteAll(lwm2m_context_t * contextP,
+                                        void * fromSessionH)
 {
     lwm2m_server_t * serverP;
     coap_status_t result;
@@ -472,7 +472,7 @@ coap_status_t handle_delete_all(lwm2m_context_t * contextP,
 
     serverP = utils_findBootstrapServer(contextP, fromSessionH);
     if (serverP == NULL) return COAP_IGNORE;
-    result = prv_check_server_status(serverP);
+    result = prv_checkServerStatus(serverP);
     if (result != COAP_NO_ERROR) return result;
 
     result = COAP_202_DELETED;
@@ -507,13 +507,13 @@ coap_status_t handle_delete_all(lwm2m_context_t * contextP,
             }
             if (result == COAP_202_DELETED)
             {
-                prv_tag_all_servers(contextP, serverP);
+                prv_tagAllServer(contextP, serverP);
             }
         }
         else
         {
             result = object_delete(contextP, &uri);
-            if (result == METHOD_NOT_ALLOWED_4_05)
+            if (result == COAP_405_METHOD_NOT_ALLOWED)
             {
                 // Fake a successful deletion for static objects like the Device object.
                 result = COAP_202_DELETED;
@@ -527,11 +527,11 @@ coap_status_t handle_delete_all(lwm2m_context_t * contextP,
 #endif
 
 #ifdef LWM2M_BOOTSTRAP_SERVER_MODE
-uint8_t handle_bootstrap_request(lwm2m_context_t * contextP,
-                                 lwm2m_uri_t * uriP,
-                                 void * fromSessionH,
-                                 coap_packet_t * message,
-                                 coap_packet_t * response)
+uint8_t bootstrap_handleRequest(lwm2m_context_t * contextP,
+                                lwm2m_uri_t * uriP,
+                                void * fromSessionH,
+                                coap_packet_t * message,
+                                coap_packet_t * response)
 {
     uint8_t result;
     char * name;
@@ -570,7 +570,7 @@ void lwm2m_set_bootstrap_callback(lwm2m_context_t * contextP,
     contextP->bootstrapUserData = userData;
 }
 
-static void bs_result_callback(lwm2m_transaction_t * transacP,
+static void prv_resultCallback(lwm2m_transaction_t * transacP,
                                void * message)
 {
     bs_data_t * dataP = (bs_data_t *)transacP->userData;
@@ -614,7 +614,7 @@ int lwm2m_bootstrap_delete(lwm2m_context_t * contextP,
     bs_data_t * dataP;
 
     transaction = transaction_new(COAP_TYPE_CON, COAP_DELETE, NULL, uriP, contextP->nextMID++, 4, NULL, ENDPOINT_UNKNOWN, sessionH);
-    if (transaction == NULL) return INTERNAL_SERVER_ERROR_5_00;
+    if (transaction == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
 
     dataP = (bs_data_t *)lwm2m_malloc(sizeof(bs_data_t));
     if (dataP == NULL)
@@ -634,7 +634,7 @@ int lwm2m_bootstrap_delete(lwm2m_context_t * contextP,
     dataP->callback = contextP->bootstrapCallback;
     dataP->userData = contextP->bootstrapUserData;
 
-    transaction->callback = bs_result_callback;
+    transaction->callback = prv_resultCallback;
     transaction->userData = (void *)dataP;
 
     contextP->transactionList = (lwm2m_transaction_t *)LWM2M_LIST_ADD(contextP->transactionList, transaction);
@@ -660,7 +660,7 @@ int lwm2m_bootstrap_write(lwm2m_context_t * contextP,
     }
 
     transaction = transaction_new(COAP_TYPE_CON, COAP_PUT, NULL, uriP, contextP->nextMID++, 4, NULL, ENDPOINT_UNKNOWN, sessionH);
-    if (transaction == NULL) return INTERNAL_SERVER_ERROR_5_00;
+    if (transaction == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
 
     coap_set_header_content_type(transaction->message, format);
     coap_set_payload(transaction->message, buffer, length);
@@ -676,7 +676,7 @@ int lwm2m_bootstrap_write(lwm2m_context_t * contextP,
     dataP->callback = contextP->bootstrapCallback;
     dataP->userData = contextP->bootstrapUserData;
 
-    transaction->callback = bs_result_callback;
+    transaction->callback = prv_resultCallback;
     transaction->userData = (void *)dataP;
 
     contextP->transactionList = (lwm2m_transaction_t *)LWM2M_LIST_ADD(contextP->transactionList, transaction);
@@ -691,7 +691,7 @@ int lwm2m_bootstrap_finish(lwm2m_context_t * contextP,
     bs_data_t * dataP;
 
     transaction = transaction_new(COAP_TYPE_CON, COAP_POST, NULL, NULL, contextP->nextMID++, 4, NULL, ENDPOINT_UNKNOWN, sessionH);
-    if (transaction == NULL) return INTERNAL_SERVER_ERROR_5_00;
+    if (transaction == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
 
     coap_set_header_uri_path(transaction->message, "/"URI_BOOTSTRAP_SEGMENT);
 
@@ -705,7 +705,7 @@ int lwm2m_bootstrap_finish(lwm2m_context_t * contextP,
     dataP->callback = contextP->bootstrapCallback;
     dataP->userData = contextP->bootstrapUserData;
 
-    transaction->callback = bs_result_callback;
+    transaction->callback = prv_resultCallback;
     transaction->userData = (void *)dataP;
 
     contextP->transactionList = (lwm2m_transaction_t *)LWM2M_LIST_ADD(contextP->transactionList, transaction);
