@@ -2,16 +2,23 @@ cmake_minimum_required (VERSION 2.8.3)
 
 project (bootstrap_server)
 
-SET(LIBLWM2M_DIR ${PROJECT_SOURCE_DIR}/../../core)
+include(${CMAKE_CURRENT_LIST_DIR}/../../core/wakaama.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/../../platforms/Linux/platform.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/../utils/utils.cmake)
 
-add_definitions(-DLWM2M_LITTLE_ENDIAN -DWITH_LOGS -DLWM2M_BOOTSTRAP_SERVER_MODE)
+set(CMAKE_C_FLAGS_DEBUG ${CMAKE_C_FLAGS_DEBUG} -DWITH_LOGS)
+add_definitions(-DLWM2M_BOOTSTRAP_SERVER_MODE)
+add_definitions(${PLATFORM_DEFINITIONS} ${WAKAAMA_DEFINITIONS})
 
-include_directories (${LIBLWM2M_DIR} ${PROJECT_SOURCE_DIR}/../utils ${PROJECT_SOURCE_DIR}/../../platforms/Linux)
+include_directories (${WAKAAMA_SOURCES_DIR} ${PLATFORM_INCLUDE_DIRS} ${UTILS_SOURCES_DIR})
 
-add_subdirectory(${LIBLWM2M_DIR} ${CMAKE_CURRENT_BINARY_DIR}/core)
+SET(SOURCES
+    bootstrap_server.c
+    bootstrap_info.c
+    bootstrap_info.h
+    )
 
-# SET(CMAKE_C_FLAGS "-Wall -Wextra -Wfloat-equal -Wshadow -Wpointer-arith -Wcast-align -Wstrict-prototypes -Wwrite-strings -Waggregate-return -Wswitch-default -Wswitch-enum")
+SET(AUXILIARY_FILES
+    bootstrap_server.ini)
 
-SET(SOURCES bootstrap_server.c bootstrap_info.c ../utils/commandline.c ../../platforms/Linux/connection.c ../../platforms/Linux/platform.c ../../platforms/Linux/memtrace.c)
-
-add_executable(bootstrap_server ${SOURCES} ${CORE_SOURCES})
+add_executable(${PROJECT_NAME} ${SOURCES} ${AUXILIARY_FILES} ${WAKAAMA_SOURCES} ${PLATFORM_SOURCES} ${UTILS_SOURCES})
