@@ -14,13 +14,7 @@ add_definitions(-Wall -Wextra -Wfloat-equal -Wshadow -Wpointer-arith -Wcast-alig
 include_directories (${WAKAAMA_SOURCES_DIR} ${PLATFORM_INCLUDE_DIRS} ${UTILS_SOURCES_DIR})
 
 
-SET(SOURCES
-    unittests.c
-    tlvtests.c
-    uritests.c
-    convert_numbers_test.c
-    tlv_json_lwm2m_data_test.c
-    )
+file(GLOB SOURCES "*.c")
 
 add_executable(${PROJECT_NAME} ${SOURCES} ${WAKAAMA_SOURCES} ${PLATFORM_SOURCES} ${UTILS_SOURCES})
 target_link_libraries(lwm2munittests cunit)
