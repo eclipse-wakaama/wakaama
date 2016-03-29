@@ -32,7 +32,7 @@ set(WAKAAMA_SOURCES
 
 # This will not work for multi project cmake generators like the Visual Studio Generator
 if(CMAKE_BUILD_TYPE MATCHES Debug)
-   set(WAKAAMA_DEFINITIONS -DLWM2M_WITH_LOGS PARENT_SCOPE)
+   set(WAKAAMA_DEFINITIONS ${WAKAAMA_DEFINITIONS} -DLWM2M_WITH_LOGS)
 endif()
 
 # Automatically determine endianess. This can be overwritten by setting LWM2M_LITTLE_ENDIAN

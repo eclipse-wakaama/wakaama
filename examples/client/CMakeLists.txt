@@ -8,7 +8,6 @@ include(${CMAKE_CURRENT_LIST_DIR}/../../core/wakaama.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/../../platforms/Linux/platform.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/../utils/utils.cmake)
 
-set(CMAKE_C_FLAGS_DEBUG ${CMAKE_C_FLAGS_DEBUG} -DWITH_LOGS)
 add_definitions(-DLWM2M_CLIENT_MODE -DLWM2M_BOOTSTRAP -DLWM2M_SUPPORT_JSON)
 add_definitions(${PLATFORM_DEFINITIONS} ${WAKAAMA_DEFINITIONS})
 
@@ -30,3 +29,6 @@ SET(SOURCES
     )
 
 add_executable(${PROJECT_NAME} ${SOURCES} ${WAKAAMA_SOURCES} ${PLATFORM_SOURCES} ${UTILS_SOURCES})
+
+# Add WITH_LOGS to debug variant
+set_property(TARGET ${PROJECT_NAME} APPEND PROPERTY COMPILE_DEFINITIONS $<$<CONFIG:Debug>:WITH_LOGS>)
