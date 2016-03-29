@@ -335,9 +335,7 @@ int tlv_parse(uint8_t * buffer,
         }
         else
         {
-            (*dataP)[size].type = LWM2M_TYPE_OPAQUE;
-            (*dataP)[size].value.asBuffer.length = dataLen;
-            (*dataP)[size].value.asBuffer.buffer = buffer + index + dataIndex;
+            lwm2m_data_encode_opaque(buffer + index + dataIndex, dataLen, (*dataP) + size);
         }
         size++;
         index += result;

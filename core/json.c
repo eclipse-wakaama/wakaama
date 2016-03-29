@@ -526,6 +526,34 @@ static uri_depth_t prv_decreaseLevel(uri_depth_t level)
     }
 }
 
+static uri_depth_t prv_typeToLevel(lwm2m_data_type_t type)
+{
+    switch (type)
+    {
+    case LWM2M_TYPE_OBJECT:
+        return URI_DEPTH_OBJECT;
+
+    case LWM2M_TYPE_OBJECT_INSTANCE:
+        return URI_DEPTH_OBJECT_INSTANCE;
+
+    case LWM2M_TYPE_MULTIPLE_RESOURCE:
+        return URI_DEPTH_RESOURCE;
+
+
+    case LWM2M_TYPE_STRING:
+    case LWM2M_TYPE_INTEGER:
+    case LWM2M_TYPE_FLOAT:
+    case LWM2M_TYPE_BOOLEAN:
+    case LWM2M_TYPE_OPAQUE:
+    case LWM2M_TYPE_OBJECT_LINK:
+        return URI_DEPTH_RESOURCE;
+
+    case LWM2M_TYPE_UNDEFINED:
+    default:
+        return URI_DEPTH_RESOURCE;
+    }
+}
+
 static lwm2m_data_t * prv_extendData(lwm2m_data_t * parentP)
 {
     lwm2m_data_t * newP;
@@ -1220,7 +1248,7 @@ size_t json_serialize(lwm2m_uri_t * uriP,
         // check that data is consistent
         for (index = 0 ; index < size ; index++)
         {
-            if (tlvP[index].type != rootLevel)
+            if (prv_typeToLevel(tlvP[index].type) != rootLevel)
             {
                 if (rootLevel != URI_DEPTH_RESOURCE
                  || tlvP[index].type != LWM2M_TYPE_MULTIPLE_RESOURCE)

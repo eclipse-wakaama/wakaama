@@ -146,7 +146,7 @@ void lwm2m_data_encode_string(const char * string,
     }
 }
 
-void lwm2m_data_encode_opaque(int8_t * buffer,
+void lwm2m_data_encode_opaque(uint8_t * buffer,
                               size_t length,
                               lwm2m_data_t * dataP)
 {

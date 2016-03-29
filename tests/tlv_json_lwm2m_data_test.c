@@ -70,7 +70,7 @@ static void test_data_and_compare(const char * uriStr,
 {
     lwm2m_uri_t uri;
     uint8_t * buffer;
-    int length;
+    size_t length;
     
     if (uriStr != NULL)
     {
@@ -134,13 +134,19 @@ static void test_data_and_compare(const char * uriStr,
 // data types, therefore hardcode all objects to be strings.
 static void make_all_objects_string_types(lwm2m_data_t * tlvP, int size)
 {
-    for (int i=0;i<size;++i) {
-        if (tlvP[i].dataType != LWM2M_TYPE_UNDEFINED)
-            continue;
-        tlvP[i].dataType = LWM2M_TYPE_STRING;
-        if (tlvP[i].type==LWM2M_TYPE_MULTIPLE_RESOURCE)
-            for (int j=0;j<tlvP[i].length;++j)
-                ((lwm2m_data_t *)tlvP[i].value)[j].dataType = LWM2M_TYPE_STRING;
+    for (int i=0 ; i<size ; ++i)
+    {
+        if (tlvP[i].type == LWM2M_TYPE_OPAQUE)
+        {
+            tlvP[i].type = LWM2M_TYPE_STRING;
+        }
+        else if (tlvP[i].type == LWM2M_TYPE_MULTIPLE_RESOURCE)
+        {
+            for (int j = 0; j < tlvP[i].value.asChildren.num; ++j)
+            {
+                tlvP[i].value.asChildren.array[j].type = LWM2M_TYPE_STRING;
+            }
+        }
     }
 }
 
@@ -363,25 +369,14 @@ static void test_9(void)
 }
 static void test_10(void)
 {
-    lwm2m_data_t data1[] = {                                                                \
-                             {0, LWM2M_TYPE_RESOURCE, LWM2M_TYPE_UNDEFINED, 0, 0, NULL},    \
-                             {0, LWM2M_TYPE_RESOURCE, LWM2M_TYPE_UNDEFINED, 1, 0, NULL},    \
-                             {0, LWM2M_TYPE_RESOURCE, LWM2M_TYPE_UNDEFINED, 2, 0, NULL},    \
-                             {0, LWM2M_TYPE_RESOURCE, LWM2M_TYPE_UNDEFINED, 3, 0, NULL},    \
-                             {0, LWM2M_TYPE_RESOURCE, LWM2M_TYPE_UNDEFINED, 4, 0, NULL},    \
-                             {0, LWM2M_TYPE_RESOURCE, LWM2M_TYPE_UNDEFINED, 5, 0, NULL},    \
-                             {0, LWM2M_TYPE_RESOURCE, LWM2M_TYPE_UNDEFINED, 6, 0, NULL},    \
-                             {0, LWM2M_TYPE_RESOURCE, LWM2M_TYPE_UNDEFINED, 7, 0, NULL},    \
-                             {0, LWM2M_TYPE_RESOURCE, LWM2M_TYPE_UNDEFINED, 8, 0, NULL},    \
-                             {0, LWM2M_TYPE_RESOURCE, LWM2M_TYPE_UNDEFINED, 9, 0, NULL},    \
-                             {0, LWM2M_TYPE_RESOURCE, LWM2M_TYPE_UNDEFINED, 10, 0, NULL},   \
-                             {0, LWM2M_TYPE_RESOURCE, LWM2M_TYPE_UNDEFINED, 11, 0, NULL},   \
-                             {0, LWM2M_TYPE_RESOURCE, LWM2M_TYPE_UNDEFINED, 12, 0, NULL},   \
-                             {0, LWM2M_TYPE_RESOURCE, LWM2M_TYPE_UNDEFINED, 13, 0, NULL},   \
-                             {0, LWM2M_TYPE_RESOURCE, LWM2M_TYPE_UNDEFINED, 14, 0, NULL},   \
-                             {0, LWM2M_TYPE_RESOURCE, LWM2M_TYPE_UNDEFINED, 15, 0, NULL},   \
-                             {0, LWM2M_TYPE_RESOURCE, LWM2M_TYPE_UNDEFINED, 16, 0, NULL},   \
-                           };
+    lwm2m_data_t * data1 = lwm2m_data_new(17);
+    int i;
+
+    for (i = 0; i < 17; i++)
+    {
+        data1[i].id = i;
+    }
+
     lwm2m_data_encode_int(12, data1);
     lwm2m_data_encode_int(-12, data1 + 1);
     lwm2m_data_encode_int(255, data1 + 2);
