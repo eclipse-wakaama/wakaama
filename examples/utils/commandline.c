@@ -367,15 +367,15 @@ void dump_tlv(FILE * stream,
         {
         case LWM2M_TYPE_OBJECT:
             fprintf(stream, "LWM2M_TYPE_OBJECT\r\n");
-            dump_tlv(stream, dataP[i].value.asChildren.num, dataP[i].value.asChildren.array, indent + 1);
+            dump_tlv(stream, dataP[i].value.asChildren.count, dataP[i].value.asChildren.array, indent + 1);
             break;
         case LWM2M_TYPE_OBJECT_INSTANCE:
             fprintf(stream, "LWM2M_TYPE_OBJECT_INSTANCE\r\n");
-            dump_tlv(stream, dataP[i].value.asChildren.num, dataP[i].value.asChildren.array, indent + 1);
+            dump_tlv(stream, dataP[i].value.asChildren.count, dataP[i].value.asChildren.array, indent + 1);
             break;
         case LWM2M_TYPE_MULTIPLE_RESOURCE:
             fprintf(stream, "LWM2M_TYPE_MULTIPLE_RESOURCE\r\n");
-            dump_tlv(stream, dataP[i].value.asChildren.num, dataP[i].value.asChildren.array, indent + 1);
+            dump_tlv(stream, dataP[i].value.asChildren.count, dataP[i].value.asChildren.array, indent + 1);
             break;
         case LWM2M_TYPE_UNDEFINED:
             fprintf(stream, "LWM2M_TYPE_UNDEFINED\r\n");

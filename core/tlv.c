@@ -324,10 +324,10 @@ int tlv_parse(uint8_t * buffer,
         (*dataP)[size].id = id;
         if (type == LWM2M_TYPE_OBJECT_INSTANCE || type == LWM2M_TYPE_MULTIPLE_RESOURCE)
         {
-            (*dataP)[size].value.asChildren.num = tlv_parse(buffer + index + dataIndex,
+            (*dataP)[size].value.asChildren.count = tlv_parse(buffer + index + dataIndex,
                                                           dataLen,
                                                           &((*dataP)[size].value.asChildren.array));
-            if ((*dataP)[size].value.asChildren.num == 0)
+            if ((*dataP)[size].value.asChildren.count == 0)
             {
                 lwm2m_data_free(size + 1, *dataP);
                 return 0;
@@ -362,7 +362,7 @@ static size_t prv_getLength(int size,
             {
                 int subLength;
 
-                subLength = prv_getLength(dataP[i].value.asChildren.num, dataP[i].value.asChildren.array);
+                subLength = prv_getLength(dataP[i].value.asChildren.count, dataP[i].value.asChildren.array);
                 if (subLength == -1)
                 {
                     length = -1;
@@ -454,7 +454,7 @@ size_t tlv_serialize(bool isResourceInstance,
                 uint8_t * tmpBuffer;
                 size_t tmpLength;
 
-                tmpLength = tlv_serialize(isInstance, dataP[i].value.asChildren.num, dataP[i].value.asChildren.array, &tmpBuffer);
+                tmpLength = tlv_serialize(isInstance, dataP[i].value.asChildren.count, dataP[i].value.asChildren.array, &tmpBuffer);
                 if (tmpLength == 0)
                 {
                     length = 0;

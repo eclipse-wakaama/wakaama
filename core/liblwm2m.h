@@ -302,7 +302,7 @@ struct _lwm2m_data_t
         } asBuffer;
         struct
         {
-            size_t         num;
+            size_t         count;
             lwm2m_data_t * array;
         } asChildren;
     } value;

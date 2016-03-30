@@ -173,7 +173,7 @@ static int prv_serializeLinkData(lwm2m_context_t * contextP,
             memcpy(buffer + head, LINK_ITEM_DIM_START, LINK_ITEM_DIM_START_SIZE);
             head += LINK_ITEM_DIM_START_SIZE;
 
-            res = utils_intToText(tlvP->value.asChildren.num, buffer + head, bufferLen - head);
+            res = utils_intToText(tlvP->value.asChildren.count, buffer + head, bufferLen - head);
             if (res <= 0) return -1;
             head += res;
 
@@ -235,7 +235,7 @@ static int prv_serializeLinkData(lwm2m_context_t * contextP,
         if (res == 0) head = 0;    // rewind
         else head += res - 1;
 
-        for (index = 0; index < tlvP->value.asChildren.num; index++)
+        for (index = 0; index < tlvP->value.asChildren.count; index++)
         {
             res = prv_serializeLinkData(contextP, tlvP->value.asChildren.array + index, &uri, uriStr, uriLen, buffer + head, bufferLen - head);
             if (res < 0) return -1;

@@ -264,7 +264,7 @@ static uint8_t prv_write_resources(uint16_t instanceId, int numData,
                 int ri;
                 lwm2m_data_t* subTlvArray = tlvArray[i].value.asChildren.array;
 
-                if (tlvArray[i].value.asChildren.num == 0)
+                if (tlvArray[i].value.asChildren.count == 0)
                 {
                     result = COAP_204_CHANGED;
                 }
@@ -274,7 +274,7 @@ static uint8_t prv_write_resources(uint16_t instanceId, int numData,
                 }
                 else
                 {
-                    for (ri=0; tlvArray[i].value.asChildren.num; ri++)
+                    for (ri=0; tlvArray[i].value.asChildren.count; ri++)
                     {
                         if (1 != lwm2m_data_decode_int(&subTlvArray[ri], &value))
                         {

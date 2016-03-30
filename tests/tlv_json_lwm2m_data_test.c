@@ -142,7 +142,7 @@ static void make_all_objects_string_types(lwm2m_data_t * tlvP, int size)
         }
         else if (tlvP[i].type == LWM2M_TYPE_MULTIPLE_RESOURCE)
         {
-            for (int j = 0; j < tlvP[i].value.asChildren.num; ++j)
+            for (int j = 0; j < tlvP[i].value.asChildren.count; ++j)
             {
                 tlvP[i].value.asChildren.array[j].type = LWM2M_TYPE_STRING;
             }

@@ -192,7 +192,7 @@ coap_status_t object_readData(lwm2m_context_t * contextP,
         i = 0;
         while (instanceP != NULL && result == COAP_205_CONTENT)
         {
-            result = targetP->readFunc(instanceP->id, (int*)&((*dataP)[i].value.asChildren.num), &((*dataP)[i].value.asChildren.array), targetP);
+            result = targetP->readFunc(instanceP->id, (int*)&((*dataP)[i].value.asChildren.count), &((*dataP)[i].value.asChildren.array), targetP);
             (*dataP)[i].type = LWM2M_TYPE_OBJECT_INSTANCE;
             (*dataP)[i].id = instanceP->id;
             i++;
@@ -403,7 +403,7 @@ coap_status_t object_discover(lwm2m_context_t * contextP,
         i = 0;
         while (instanceP != NULL && result == COAP_205_CONTENT)
         {
-            result = targetP->discoverFunc(instanceP->id, (int*)&(dataP[i].value.asChildren.num), &(dataP[i].value.asChildren.array), targetP);
+            result = targetP->discoverFunc(instanceP->id, (int*)&(dataP[i].value.asChildren.count), &(dataP[i].value.asChildren.array), targetP);
             dataP[i].type = LWM2M_TYPE_OBJECT_INSTANCE;
             dataP[i].id = instanceP->id;
             i++;
@@ -757,7 +757,7 @@ coap_status_t object_createInstance(lwm2m_context_t * contextP,
         return COAP_405_METHOD_NOT_ALLOWED;
     }
 
-    result = targetP->createFunc(lwm2m_list_newId(targetP->instanceList), dataP->value.asChildren.num, dataP->value.asChildren.array, targetP);
+    result = targetP->createFunc(lwm2m_list_newId(targetP->instanceList), dataP->value.asChildren.count, dataP->value.asChildren.array, targetP);
 }
 
 coap_status_t object_writeInstance(lwm2m_context_t * contextP,
@@ -775,7 +775,7 @@ coap_status_t object_writeInstance(lwm2m_context_t * contextP,
         return COAP_405_METHOD_NOT_ALLOWED;
     }
 
-    result = targetP->writeFunc(dataP->id, dataP->value.asChildren.num, dataP->value.asChildren.array, targetP);
+    result = targetP->writeFunc(dataP->id, dataP->value.asChildren.count, dataP->value.asChildren.array, targetP);
 }
 
 #endif

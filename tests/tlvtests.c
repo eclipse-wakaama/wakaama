@@ -143,7 +143,7 @@ static void test_tlv_parse()
     CU_ASSERT_PTR_NOT_NULL_FATAL(dataP);
     CU_ASSERT_EQUAL(dataP->type, LWM2M_TYPE_OBJECT_INSTANCE);
     CU_ASSERT_EQUAL(dataP->id, 0x203);
-    CU_ASSERT_EQUAL(dataP->value.asChildren.num, 2);
+    CU_ASSERT_EQUAL(dataP->value.asChildren.count, 2);
     CU_ASSERT_PTR_NOT_NULL_FATAL(dataP->value.asChildren.array);
     tlvSubP = dataP->value.asChildren.array;
 
@@ -163,13 +163,13 @@ static void test_tlv_parse()
     CU_ASSERT_PTR_NOT_NULL_FATAL(dataP);
     CU_ASSERT_EQUAL(dataP->type, LWM2M_TYPE_OBJECT_INSTANCE);
     CU_ASSERT_EQUAL(dataP->id, 11);
-    CU_ASSERT_EQUAL(dataP->value.asChildren.num, 1);
+    CU_ASSERT_EQUAL(dataP->value.asChildren.count, 1);
     CU_ASSERT_PTR_NOT_NULL_FATAL(dataP->value.asChildren.array);
     tlvSubP = dataP->value.asChildren.array;
 
     CU_ASSERT_EQUAL(tlvSubP[0].type, LWM2M_TYPE_MULTIPLE_RESOURCE);
     CU_ASSERT_EQUAL(tlvSubP[0].id, 77);
-    CU_ASSERT_EQUAL(tlvSubP[0].value.asChildren.num, 2);
+    CU_ASSERT_EQUAL(tlvSubP[0].value.asChildren.count, 2);
     CU_ASSERT_PTR_NOT_NULL_FATAL(tlvSubP[0].value.asChildren.array);
     tlvSubP = tlvSubP[0].value.asChildren.array;
 
@@ -212,7 +212,7 @@ static void test_tlv_serialize()
 
     tlvSubP[1].type = LWM2M_TYPE_MULTIPLE_RESOURCE;
     tlvSubP[1].id = 77;
-    tlvSubP[1].value.asChildren.num = 1;
+    tlvSubP[1].value.asChildren.count = 1;
     tlvSubP[1].value.asChildren.array = lwm2m_data_new(1);
     CU_ASSERT_PTR_NOT_NULL_FATAL(tlvSubP[1].value.asChildren.array);
     tlvRscInstP = tlvSubP[1].value.asChildren.array;
@@ -228,7 +228,7 @@ static void test_tlv_serialize()
     dataP->id = 3;
     lwm2m_data_include(tlvSubP, 2, dataP);
     CU_ASSERT_EQUAL(dataP->type, LWM2M_TYPE_OBJECT_INSTANCE);
-    CU_ASSERT_EQUAL(dataP->value.asChildren.num, 2);
+    CU_ASSERT_EQUAL(dataP->value.asChildren.count, 2);
     CU_ASSERT_EQUAL(dataP->value.asChildren.array, tlvSubP);
 
     lwm2m_media_type_t media_type = LWM2M_CONTENT_TLV;

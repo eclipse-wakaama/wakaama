@@ -96,7 +96,7 @@ void lwm2m_data_free(int size,
         case LWM2M_TYPE_MULTIPLE_RESOURCE:
         case LWM2M_TYPE_OBJECT_INSTANCE:
         case LWM2M_TYPE_OBJECT:
-            lwm2m_data_free(dataP[i].value.asChildren.num, dataP[i].value.asChildren.array);
+            lwm2m_data_free(dataP[i].value.asChildren.count, dataP[i].value.asChildren.array);
             break;
 
         case LWM2M_TYPE_STRING:
@@ -352,7 +352,7 @@ void lwm2m_data_include(lwm2m_data_t * subDataP,
     default:
         return;
     }
-    dataP->value.asChildren.num = count;
+    dataP->value.asChildren.count = count;
     dataP->value.asChildren.array = subDataP;
 }
 
