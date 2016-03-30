@@ -15,21 +15,13 @@
  *
  *******************************************************************************/
 
-#ifndef TESTS_H_
-#define TESTS_H_
+#include <stdio.h>
+#include <stdint.h>
 
-#include "CUnit/CUError.h"
+void * lwm2m_connect_server(uint16_t secObjInstID,
+                            void * userData)
+{
+    (void)userData;
+    return (void *)secObjInstID;
+}
 
-struct TestTable {
-    const char* name;
-    CU_TestFunc function;
-};
-
-CU_ErrorCode add_tests(CU_pSuite pSuite, struct TestTable* testTable);
-CU_ErrorCode create_uri_suit();
-CU_ErrorCode create_tlv_suit();
-CU_ErrorCode create_object_read_suit();
-CU_ErrorCode create_convert_numbers_suit();
-CU_ErrorCode create_tlv_json_suit();
-
-#endif /* TESTS_H_ */

@@ -16,15 +16,16 @@
  *    
  *******************************************************************************/
 
-#include "internals.h"
-#include "tests.h"
-#include "CUnit/Basic.h"
+#include <gtest/gtest.h>
 
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <inttypes.h>
+
+#include "internals.h"
+#include "liblwm2m.h"
 
 const char * tests[]={"1", "-114" , "2", "0", "-2", "919293949596979899", "-98979969594939291", "999999999999999999999999999999", "1.2" , "0.134" , "432f.43" , "0.01", "1.00000000000002", NULL};
 int64_t tests_expected_int[]={1,-114,2,0,-2,919293949596979899,-98979969594939291,-1,-1,-1,-1,-1,-1};
@@ -35,7 +36,7 @@ const char* ints_expected[] = {"12","-114","1", "134", "43243","0","-215025"};
 double floats[]={12, -114 , -30 , 1.02 , 134.000235 , 0.43243 , 0, -21.5025, -0.0925, 0.98765};
 const char* floats_expected[] = {"12","-114","-30", "1.02", "134.000235","0.43243","0","-21.5025","-0.0925","0.98765"};
 
-static void test_lwm2m_PlainTextToInt64(void)
+TEST(convert_numbers_tests, test_lwm2m_PlainTextToInt64)
 {
     for (int i = 0 ; tests[i] != NULL ; i++)
     {
@@ -44,12 +45,12 @@ static void test_lwm2m_PlainTextToInt64(void)
         if (utils_plainTextToInt64((unsigned char*)tests[i], strlen(tests[i]), &res) != 1)
             res = -1;
 
-        CU_ASSERT_EQUAL(res, tests_expected_int[i]);
+        ASSERT_EQ(res, tests_expected_int[i]);
         //printf ("%i \"%s\" -> fail (%li)\n", i , tests[i], res );
     }
 }
 
-static void test_lwm2m_PlainTextToFloat64(void)
+TEST(convert_numbers_tests, test_lwm2m_PlainTextToFloat64)
 {
     for (int i = 0 ; tests[i] != NULL ; i++)
     {
@@ -58,12 +59,12 @@ static void test_lwm2m_PlainTextToFloat64(void)
         if (utils_plainTextToFloat64((unsigned char*)tests[i], strlen(tests[i]), &res) != 1)
             res = -1;
 
-        CU_ASSERT_DOUBLE_EQUAL(res, tests_expected_float[i], 0.0001);
+        ASSERT_NEAR(res, tests_expected_float[i], 0.0001);
         //printf ("%i \"%s\" -> fail (%f)\n", i , tests[i], res );
     }
 }
 
-static void test_lwm2m_int64ToPlainText(void)
+TEST(convert_numbers_tests, test_lwm2m_int64ToPlainText)
 {
     for (unsigned i = 0 ; i < sizeof(ints)/sizeof(int64_t); i++)
     {
@@ -72,8 +73,8 @@ static void test_lwm2m_int64ToPlainText(void)
 
         len = utils_int64ToPlainText(ints[i], (uint8_t**)&res);
 
-        CU_ASSERT_FATAL(len);
-        CU_ASSERT_NSTRING_EQUAL(res, ints_expected[i],len);
+        ASSERT_TRUE(len);
+        ASSERT_TRUE(strncmp(res, ints_expected[i],len)==0);
         //printf ("%i \"%i\" -> fail (%s)\n", i , ints[i], res );
 
         if (len>0)
@@ -81,7 +82,7 @@ static void test_lwm2m_int64ToPlainText(void)
     }
 }
 
-static void test_lwm2m_float64ToPlainText(void)
+TEST(convert_numbers_tests, test_lwm2m_float64ToPlainText)
 {
     for (unsigned i = 0 ; i < sizeof(floats)/sizeof(floats[0]); i++)
     {
@@ -90,33 +91,11 @@ static void test_lwm2m_float64ToPlainText(void)
 
         len = utils_float64ToPlainText(floats[i], (uint8_t**)&res);
 
-        CU_ASSERT_FATAL(len);
-        CU_ASSERT_NSTRING_EQUAL(res, floats_expected[i],len);
+        ASSERT_TRUE(len);
+        ASSERT_TRUE(strncmp(res, floats_expected[i],len)==0);
         //printf ("%i \"%.16g\" -> fail (%s)\n", i , floats[i], res );
 
         if (len>0)
             lwm2m_free(res);
     }
 }
-
-static struct TestTable table[] = {
-        { "test of utils_plainTextToInt64()", test_lwm2m_PlainTextToInt64 },
-        { "test of utils_plainTextToFloat64()", test_lwm2m_PlainTextToFloat64 },
-        { "test of utils_int64ToPlainText()", test_lwm2m_int64ToPlainText },
-        { "test of utils_float64ToPlainText()", test_lwm2m_float64ToPlainText },
-        { NULL, NULL },
-};
-
-CU_ErrorCode create_convert_numbers_suit()
-{
-   CU_pSuite pSuite = NULL;
-
-   pSuite = CU_add_suite("Suite_ConvertNumbers", NULL, NULL);
-   if (NULL == pSuite) {
-      return CU_get_error();
-   }
-
-   return add_tests(pSuite, table);
-}
-
-

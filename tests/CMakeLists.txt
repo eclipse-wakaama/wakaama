@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 2.8.3)
+cmake_minimum_required (VERSION 2.8.12)
 
 project (lwm2munittests)
 
@@ -13,11 +13,19 @@ add_definitions(-Wall -Wextra -Wfloat-equal -Wshadow -Wpointer-arith -Wcast-alig
 
 include_directories (${WAKAAMA_SOURCES_DIR} ${PLATFORM_INCLUDE_DIRS} ${UTILS_SOURCES_DIR})
 
+## Prepare gtest
+find_package(GTest REQUIRED)
+include_directories( ${GTEST_INCLUDE_DIRS})
 
-file(GLOB SOURCES "*.c")
+## Prepare for coverage measuring
+if(${COVERAGE})
+        set(CMAKE_CXX_FLAGS "-g -O0 -fprofile-arcs -ftest-coverage")
+endif()
 
-add_executable(${PROJECT_NAME} ${SOURCES} ${WAKAAMA_SOURCES} ${PLATFORM_SOURCES} ${UTILS_SOURCES})
-target_link_libraries(lwm2munittests cunit)
+file(GLOB SOURCES "*.c" "*.h" "*.cpp")
+
+add_executable(${PROJECT_NAME} ${SOURCES} ${WAKAAMA_SOURCES} ${PLATFORM_SOURCES} ${UTILS_SOURCES} ${GTEST_FILES})
+target_link_libraries(${PROJECT_NAME} ${GTEST_BOTH_LIBRARIES})
 
 # Enable CMake Test Framework (CTest) which make testing available by
 # a "test" target. For "make" this is "make test"
