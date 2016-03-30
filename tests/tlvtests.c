@@ -18,6 +18,7 @@
 #include "tests.h"
 #include "CUnit/Basic.h"
 #include "internals.h"
+#include "liblwm2m.h"
 #include "memtest.h"
 
 static void fill(uint8_t *data, int size) {

@@ -1,28 +1,26 @@
 cmake_minimum_required (VERSION 2.8.3)
 
 project (lwm2munittests)
-  
-SET(LIBLWM2M_DIR ${PROJECT_SOURCE_DIR}/../core)
 
-add_definitions(-DLWM2M_CLIENT_MODE -DLWM2M_SUPPORT_JSON -DLWM2M_LITTLE_ENDIAN)
+include(${CMAKE_CURRENT_LIST_DIR}/../core/wakaama.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/../platforms/Linux/platform.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/../examples/utils/utils.cmake)
 
-include_directories (${LIBLWM2M_DIR} ${PROJECT_SOURCE_DIR}/../examples/utils ${PROJECT_SOURCE_DIR}/../core)
-
-add_subdirectory(${LIBLWM2M_DIR} ${CMAKE_CURRENT_BINARY_DIR}/core)
-
+add_definitions(-DLWM2M_CLIENT_MODE -DLWM2M_SUPPORT_JSON)
+add_definitions(${PLATFORM_DEFINITIONS} ${WAKAAMA_DEFINITIONS})
 # Enable all warnings for this test build  
 add_definitions(-Wall -Wextra -Wfloat-equal -Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings -Waggregate-return -Wswitch-default -Wswitch-enum)  
 
-SET(SOURCES
-    unittests.c
-    tlvtests.c
-    uritests.c
-    convert_numbers_test.c
-    tlv_json_lwm2m_data_test.c
-    ${PROJECT_SOURCE_DIR}/../platforms/Linux/platform.c
-    ${PROJECT_SOURCE_DIR}/../platforms/Linux/connection.c
-    ${PROJECT_SOURCE_DIR}/../examples/utils/commandline.c)
+include_directories (${WAKAAMA_SOURCES_DIR} ${PLATFORM_INCLUDE_DIRS} ${UTILS_SOURCES_DIR})
 
-add_executable(lwm2munittests ${SOURCES} ${CORE_SOURCES})
 
+file(GLOB SOURCES "*.c")
+
+add_executable(${PROJECT_NAME} ${SOURCES} ${WAKAAMA_SOURCES} ${PLATFORM_SOURCES} ${UTILS_SOURCES})
 target_link_libraries(lwm2munittests cunit)
+
+# Enable CMake Test Framework (CTest) which make testing available by
+# a "test" target. For "make" this is "make test"
+enable_testing()
+
+add_test (test_all ${PROJECT_NAME})

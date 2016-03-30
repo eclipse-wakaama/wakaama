@@ -2,26 +2,25 @@ cmake_minimum_required (VERSION 2.8.3)
 
 project (lightclient)
 
-SET(LIBLWM2M_DIR ${PROJECT_SOURCE_DIR}/../../core)
+include(${CMAKE_CURRENT_LIST_DIR}/../../core/wakaama.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/../../platforms/Linux/platform.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/../utils/utils.cmake)
 
-add_definitions(-DLWM2M_CLIENT_MODE -DLWM2M_LITTLE_ENDIAN)
+add_definitions(-DLWM2M_CLIENT_MODE)
+add_definitions(${PLATFORM_DEFINITIONS} ${WAKAAMA_DEFINITIONS})
 
-IF(CMAKE_BUILD_TYPE MATCHES Debug)
-add_definitions(-DLWM2M_WITH_LOGS)
-ENDIF(CMAKE_BUILD_TYPE MATCHES Debug)
 
-include_directories (${LIBLWM2M_DIR} ${PROJECT_SOURCE_DIR}/../utils ${PROJECT_SOURCE_DIR}/../../platforms/Linux)
-
-add_subdirectory(${LIBLWM2M_DIR} ${CMAKE_CURRENT_BINARY_DIR}/core)
+include_directories (${WAKAAMA_SOURCES_DIR} ${PLATFORM_INCLUDE_DIRS} ${UTILS_SOURCES_DIR})
 
 SET(SOURCES
     lightclient.c
-    ../../platforms/Linux/connection.c
-    ../../platforms/Linux/platform.c
-    ../../platforms/Linux/memtrace.c
     object_security.c
     object_server.c
     object_device.c
-    test_object.c)
+    test_object.c
+    )
 
-add_executable(lightclient ${SOURCES} ${CORE_SOURCES})
+add_executable(${PROJECT_NAME} ${SOURCES} ${WAKAAMA_SOURCES} ${PLATFORM_SOURCES} ${UTILS_SOURCES})
+
+# Add WITH_LOGS to debug variant
+set_property(TARGET ${PROJECT_NAME} APPEND PROPERTY COMPILE_DEFINITIONS $<$<CONFIG:Debug>:WITH_LOGS>)
