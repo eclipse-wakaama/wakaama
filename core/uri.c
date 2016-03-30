@@ -260,7 +260,11 @@ int uri_toString(lwm2m_uri_t * uriP,
 
     buffer[0] = '/';
 
-    if (uriP == NULL) return -1;
+    if (uriP == NULL)
+    {
+        if (depthP) *depthP = URI_DEPTH_OBJECT;
+        return 1;
+    }
 
     head = 1;
 

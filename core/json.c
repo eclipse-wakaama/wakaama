@@ -1226,6 +1226,146 @@ int prv_serializeData(lwm2m_data_t * tlvP,
     return head;
 }
 
+static size_t prv_findAndCheckData(lwm2m_uri_t * uriP,
+                                   uri_depth_t level,
+                                   size_t size,
+                                   lwm2m_data_t * tlvP,
+                                   lwm2m_data_t ** targetP)
+{
+    int index;
+    size_t result;
+
+    if (size > 1)
+    {
+        if (tlvP[0].type == LWM2M_TYPE_OBJECT || tlvP[0].type == LWM2M_TYPE_OBJECT_INSTANCE)
+        {
+            for (index = 0; index < size; index++)
+            {
+                if (tlvP[index].type != tlvP[0].type)
+                {
+                    *targetP = NULL;
+                    return 0;
+                }
+            }
+        }
+        else
+        {
+            for (index = 0; index < size; index++)
+            {
+                if (tlvP[index].type == LWM2M_TYPE_OBJECT || tlvP[index].type == LWM2M_TYPE_OBJECT_INSTANCE)
+                {
+                    *targetP = NULL;
+                    return 0;
+                }
+            }
+        }
+    }
+
+    *targetP = NULL;
+    result = 0;
+    switch (level)
+    {
+    case URI_DEPTH_OBJECT:
+        if (tlvP[0].type == LWM2M_TYPE_OBJECT)
+        {
+            *targetP = tlvP;
+            result = size;
+        }
+        break;
+
+    case URI_DEPTH_OBJECT_INSTANCE:
+        switch (tlvP[0].type)
+        {
+        case LWM2M_TYPE_OBJECT:
+            for (index = 0; index < size; index++)
+            {
+                if (tlvP[index].id == uriP->objectId)
+                {
+                    return prv_findAndCheckData(uriP, level, tlvP[index].value.asChildren.num, tlvP[index].value.asChildren.array, targetP);
+                }
+            }
+            break;
+        case LWM2M_TYPE_OBJECT_INSTANCE:
+            *targetP = tlvP;
+            result = size;
+            break;
+        default:
+            break;
+        }
+        break;
+
+    case URI_DEPTH_RESOURCE:
+        switch (tlvP[0].type)
+        {
+        case LWM2M_TYPE_OBJECT:
+            for (index = 0; index < size; index++)
+            {
+                if (tlvP[index].id == uriP->objectId)
+                {
+                    return prv_findAndCheckData(uriP, level, tlvP[index].value.asChildren.num, tlvP[index].value.asChildren.array, targetP);
+                }
+            }
+            break;
+        case LWM2M_TYPE_OBJECT_INSTANCE:
+            for (index = 0; index < size; index++)
+            {
+                if (tlvP[index].id == uriP->instanceId)
+                {
+                    return prv_findAndCheckData(uriP, level, tlvP[index].value.asChildren.num, tlvP[index].value.asChildren.array, targetP);
+                }
+            }
+            break;
+        default:
+            *targetP = tlvP;
+            result = size;
+            break;
+        }
+        break;
+
+    case URI_DEPTH_RESOURCE_INSTANCE:
+        switch (tlvP[0].type)
+        {
+        case LWM2M_TYPE_OBJECT:
+            for (index = 0; index < size; index++)
+            {
+                if (tlvP[index].id == uriP->objectId)
+                {
+                    return prv_findAndCheckData(uriP, level, tlvP[index].value.asChildren.num, tlvP[index].value.asChildren.array, targetP);
+                }
+            }
+            break;
+        case LWM2M_TYPE_OBJECT_INSTANCE:
+            for (index = 0; index < size; index++)
+            {
+                if (tlvP[index].id == uriP->instanceId)
+                {
+                    return prv_findAndCheckData(uriP, level, tlvP[index].value.asChildren.num, tlvP[index].value.asChildren.array, targetP);
+                }
+            }
+            break;
+        case LWM2M_TYPE_MULTIPLE_RESOURCE:
+            for (index = 0; index < size; index++)
+            {
+                if (tlvP[index].id == uriP->resourceId)
+                {
+                    return prv_findAndCheckData(uriP, level, tlvP[index].value.asChildren.num, tlvP[index].value.asChildren.array, targetP);
+                }
+            }
+            break;
+        default:
+            *targetP = tlvP;
+            result = size;
+            break;
+        }
+        break;
+
+    default:
+        break;
+    }
+
+    return result;
+}
+
 size_t json_serialize(lwm2m_uri_t * uriP,
                       int size,
                       lwm2m_data_t * tlvP,
@@ -1237,40 +1377,30 @@ size_t json_serialize(lwm2m_uri_t * uriP,
     char baseUriStr[URI_MAX_STRING_LEN];
     size_t baseUriLen;
     uri_depth_t rootLevel;
+    size_t num;
+    lwm2m_data_t * targetP;
 
     if (size == 0 || tlvP == NULL) return 0;
 
     baseUriLen = uri_toString(uriP, baseUriStr, URI_MAX_STRING_LEN, &rootLevel);
     if (baseUriLen < 0) return 0;
 
-    if (baseUriLen > 0)
-    {
-        // check that data is consistent
-        for (index = 0 ; index < size ; index++)
-        {
-            if (prv_typeToLevel(tlvP[index].type) != rootLevel)
-            {
-                if (rootLevel != URI_DEPTH_RESOURCE
-                 || tlvP[index].type != LWM2M_TYPE_MULTIPLE_RESOURCE)
-                {
-                    return 0;
-                }
-            }
-        }
-    }
+    num = prv_findAndCheckData(uriP, rootLevel, size, tlvP, &targetP);
+    if (num == 0) return num;
 
-    while (size == 1
-        && tlvP->type != URI_DEPTH_RESOURCE
-        && tlvP->type != URI_DEPTH_RESOURCE_INSTANCE)
+    while (num == 1
+        && (targetP->type == LWM2M_TYPE_OBJECT
+         || targetP->type == LWM2M_TYPE_OBJECT_INSTANCE
+         || targetP->type == LWM2M_TYPE_MULTIPLE_RESOURCE))
     {
         int res;
 
-        res = utils_intToText(tlvP->id, baseUriStr + baseUriLen, URI_MAX_STRING_LEN - baseUriLen);
+        res = utils_intToText(targetP->id, baseUriStr + baseUriLen, URI_MAX_STRING_LEN - baseUriLen);
         if (res <= 0) return 0;
         baseUriLen += res;
         if (baseUriLen >= URI_MAX_STRING_LEN -1) return 0;
-        size = tlvP->value.asChildren.num;
-        tlvP = tlvP->value.asChildren.array;
+        num = targetP->value.asChildren.num;
+        targetP = targetP->value.asChildren.array;
         baseUriStr[baseUriLen] = '/';
         baseUriLen++;
     }
@@ -1290,11 +1420,11 @@ size_t json_serialize(lwm2m_uri_t * uriP,
         head = JSON_HEADER_SIZE;
     }
 
-    for (index = 0 ; index < size && head < PRV_JSON_BUFFER_SIZE ; index++)
+    for (index = 0 ; index < num && head < PRV_JSON_BUFFER_SIZE ; index++)
     {
         int res;
 
-        res = prv_serializeData(tlvP + index, NULL, 0, bufferJSON + head, PRV_JSON_BUFFER_SIZE - head);
+        res = prv_serializeData(targetP + index, NULL, 0, bufferJSON + head, PRV_JSON_BUFFER_SIZE - head);
         if (res < 0) return 0;
         head += res;
     }

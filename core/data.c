@@ -356,6 +356,14 @@ void lwm2m_data_include(lwm2m_data_t * subDataP,
     dataP->value.asChildren.array = subDataP;
 }
 
+void lwm2m_data_encode_instances(lwm2m_data_t * subDataP,
+                                 size_t count,
+                                 lwm2m_data_t * dataP)
+{
+    lwm2m_data_include(subDataP, count, dataP);
+    dataP->type = LWM2M_TYPE_MULTIPLE_RESOURCE;
+}
+
 int lwm2m_data_parse(lwm2m_uri_t * uriP,
                      uint8_t * buffer,
                      size_t bufferLen,

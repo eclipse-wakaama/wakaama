@@ -101,7 +101,7 @@ static uint8_t prv_set_value(lwm2m_data_t * dataP,
         subTlvP = lwm2m_data_new(riCnt);
         subTlvP[0].id    = 0;
         lwm2m_data_encode_int(VALUE_AVL_NETWORK_BEARER_1, subTlvP);
-        lwm2m_data_include(subTlvP, riCnt, dataP);
+        lwm2m_data_encode_instances(subTlvP, riCnt, dataP);
         return COAP_205_CONTENT ;
     }
 
@@ -122,7 +122,7 @@ static uint8_t prv_set_value(lwm2m_data_t * dataP,
             subTlvP[ri].id = ri;
             lwm2m_data_encode_string(connDataP->ipAddresses[ri], subTlvP + ri);
         }
-        lwm2m_data_include(subTlvP, riCnt, dataP);
+        lwm2m_data_encode_instances(subTlvP, riCnt, dataP);
         return COAP_205_CONTENT ;
     }
         break;
@@ -136,7 +136,7 @@ static uint8_t prv_set_value(lwm2m_data_t * dataP,
             subTlvP[ri].id = ri;
             lwm2m_data_encode_string(connDataP->routerIpAddresses[ri], subTlvP + ri);
         }
-        lwm2m_data_include(subTlvP, riCnt, dataP);
+        lwm2m_data_encode_instances(subTlvP, riCnt, dataP);
         return COAP_205_CONTENT ;
     }
         break;
@@ -152,7 +152,7 @@ static uint8_t prv_set_value(lwm2m_data_t * dataP,
         subTlvP = lwm2m_data_new(riCnt);
         subTlvP[0].id     = 0;
         lwm2m_data_encode_string(VALUE_APN_1, subTlvP);
-        lwm2m_data_include(subTlvP, riCnt, dataP);
+        lwm2m_data_encode_instances(subTlvP, riCnt, dataP);
         return COAP_205_CONTENT;
     }
         break;

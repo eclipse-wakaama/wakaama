@@ -200,7 +200,7 @@ static uint8_t prv_set_value(lwm2m_data_t * dataP,
         subTlvP[1].id = 1;
         lwm2m_data_encode_int(PRV_POWER_SOURCE_2, subTlvP + 1);
 
-        lwm2m_data_include(subTlvP, 2, dataP);
+        lwm2m_data_encode_instances(subTlvP, 2, dataP);
 
         return COAP_205_CONTENT;
     }
@@ -216,7 +216,7 @@ static uint8_t prv_set_value(lwm2m_data_t * dataP,
         subTlvP[1].id = 1;
         lwm2m_data_encode_int(PRV_POWER_VOLTAGE_2, subTlvP + 1);
 
-        lwm2m_data_include(subTlvP, 2, dataP);
+        lwm2m_data_encode_instances(subTlvP, 2, dataP);
 
         return COAP_205_CONTENT;
     }
@@ -232,7 +232,7 @@ static uint8_t prv_set_value(lwm2m_data_t * dataP,
         subTlvP[1].id = 1;
         lwm2m_data_encode_int(PRV_POWER_CURRENT_2, &subTlvP[1]);
  
-        lwm2m_data_include(subTlvP, 2, dataP);
+        lwm2m_data_encode_instances(subTlvP, 2, dataP);
 
         return COAP_205_CONTENT;
     }
@@ -254,7 +254,7 @@ static uint8_t prv_set_value(lwm2m_data_t * dataP,
         subTlvP[0].id = 0;
         lwm2m_data_encode_int(devDataP->error, subTlvP);
 
-        lwm2m_data_include(subTlvP, 1, dataP);
+        lwm2m_data_encode_instances(subTlvP, 1, dataP);
 
         return COAP_205_CONTENT;
     }        
