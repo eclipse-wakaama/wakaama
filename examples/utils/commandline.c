@@ -20,7 +20,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <ctype.h>
-#include <unistd.h>
 #include <inttypes.h>
 #include "liblwm2m.h"
 

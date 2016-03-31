@@ -19,11 +19,22 @@
 #define CONNECTION_H_
 
 #include <stdio.h>
+#include <stdint.h>
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
+#include <Winsock2.h>
+#include <ws2tcpip.h>
+#define LOG_ERR 3
+typedef uint16_t in_port_t;
+#else
 #include <unistd.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <sys/socket.h>
+#include <sys/select.h>
+#endif
 #include <sys/stat.h>
 #include <liblwm2m.h>
 
