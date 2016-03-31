@@ -16,3 +16,8 @@ else()
     set(PLATFORM_INCLUDE_DIRS ${PLATFORM_SOURCES_DIR})
 endif()
 
+if(MSVC)
+	set(PLATFORM_SOURCES ${PLATFORM_SOURCES}
+		${PLATFORM_SOURCES_DIR}/visual_studio_compiler/getopt.c)
+	set(PLATFORM_INCLUDE_DIRS ${PLATFORM_INCLUDE_DIRS} ${PLATFORM_SOURCES_DIR}/visual_studio_compiler)
+endif()
