@@ -60,87 +60,79 @@ typedef struct _security_instance_
 static uint8_t prv_get_value(lwm2m_data_t * dataP,
                              security_instance_t * targetP)
 {
-    // There are no multiple instance ressources
-    dataP->type = LWM2M_TYPE_RESOURCE;
 
     switch (dataP->id)
     {
     case LWM2M_SECURITY_URI_ID:
-        dataP->value = (uint8_t*)targetP->uri;
-        dataP->length = strlen(targetP->uri);
-        dataP->flags = LWM2M_TLV_FLAG_STATIC_DATA;
-        dataP->dataType = LWM2M_TYPE_STRING;
+        lwm2m_data_encode_string(targetP->uri, dataP);
         return COAP_205_CONTENT;
 
     case LWM2M_SECURITY_BOOTSTRAP_ID:
         lwm2m_data_encode_bool(targetP->isBootstrap, dataP);
-        if (0 != dataP->length) return COAP_205_CONTENT;
-        else return COAP_500_INTERNAL_SERVER_ERROR;
+        return COAP_205_CONTENT;
 
     case LWM2M_SECURITY_SECURITY_ID:
         lwm2m_data_encode_int(LWM2M_SECURITY_MODE_NONE, dataP);
-        if (0 != dataP->length) return COAP_205_CONTENT;
-        else return COAP_500_INTERNAL_SERVER_ERROR;
+        return COAP_205_CONTENT;
 
     case LWM2M_SECURITY_PUBLIC_KEY_ID:
         // Here we return an opaque of 1 byte containing 0
-        dataP->value = (uint8_t*)"";
-        dataP->length = 1;
-        dataP->flags = LWM2M_TLV_FLAG_STATIC_DATA;
-        dataP->dataType = LWM2M_TYPE_OPAQUE;
+        {
+            uint8_t value = 0;
+
+            lwm2m_data_encode_opaque(&value, 1, dataP);
+        }
         return COAP_205_CONTENT;
 
     case LWM2M_SECURITY_SERVER_PUBLIC_KEY_ID:
         // Here we return an opaque of 1 byte containing 0
-        dataP->value = (uint8_t*)"";
-        dataP->length = 1;
-        dataP->flags = LWM2M_TLV_FLAG_STATIC_DATA;
-        dataP->dataType = LWM2M_TYPE_OPAQUE;
+        {
+            uint8_t value = 0;
+
+            lwm2m_data_encode_opaque(&value, 1, dataP);
+        }
         return COAP_205_CONTENT;
 
     case LWM2M_SECURITY_SECRET_KEY_ID:
         // Here we return an opaque of 1 byte containing 0
-        dataP->value = (uint8_t*)"";
-        dataP->length = 1;
-        dataP->flags = LWM2M_TLV_FLAG_STATIC_DATA;
-        dataP->dataType = LWM2M_TYPE_OPAQUE;
+        {
+            uint8_t value = 0;
+
+            lwm2m_data_encode_opaque(&value, 1, dataP);
+        }
         return COAP_205_CONTENT;
 
     case LWM2M_SECURITY_SMS_SECURITY_ID:
         lwm2m_data_encode_int(LWM2M_SECURITY_MODE_NONE, dataP);
-        if (0 != dataP->length) return COAP_205_CONTENT;
-        else return COAP_500_INTERNAL_SERVER_ERROR;
+        return COAP_205_CONTENT;
 
     case LWM2M_SECURITY_SMS_KEY_PARAM_ID:
         // Here we return an opaque of 6 bytes containing a buggy value
-        dataP->value = (uint8_t*)"12345";
-        dataP->length = 6;
-        dataP->flags = LWM2M_TLV_FLAG_STATIC_DATA;
-        dataP->dataType = LWM2M_TYPE_OPAQUE;
+        {
+            char * value = "12345";
+            lwm2m_data_encode_opaque((uint8_t *)value, 6, dataP);
+        }
         return COAP_205_CONTENT;
 
     case LWM2M_SECURITY_SMS_SECRET_KEY_ID:
         // Here we return an opaque of 32 bytes containing a buggy value
-        dataP->value = (uint8_t*)"1234567890abcdefghijklmnopqrstu";
-        dataP->length = 32;
-        dataP->flags = LWM2M_TLV_FLAG_STATIC_DATA;
-        dataP->dataType = LWM2M_TYPE_OPAQUE;
+        {
+            char * value = "1234567890abcdefghijklmnopqrstu";
+            lwm2m_data_encode_opaque((uint8_t *)value, 32, dataP);
+        }
         return COAP_205_CONTENT;
 
     case LWM2M_SECURITY_SMS_SERVER_NUMBER_ID:
         lwm2m_data_encode_int(0, dataP);
-        if (0 != dataP->length) return COAP_205_CONTENT;
-        else return COAP_500_INTERNAL_SERVER_ERROR;
+        return COAP_205_CONTENT;
 
     case LWM2M_SECURITY_SHORT_SERVER_ID:
         lwm2m_data_encode_int(targetP->shortID, dataP);
-        if (0 != dataP->length) return COAP_205_CONTENT;
-        else return COAP_500_INTERNAL_SERVER_ERROR;
+        return COAP_205_CONTENT;
 
     case LWM2M_SECURITY_HOLD_OFF_ID:
         lwm2m_data_encode_int(targetP->clientHoldOffTime, dataP);
-        if (0 != dataP->length) return COAP_205_CONTENT;
-        else return COAP_500_INTERNAL_SERVER_ERROR;
+        return COAP_205_CONTENT;
 
     default:
         return COAP_404_NOT_FOUND;

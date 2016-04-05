@@ -56,49 +56,37 @@ typedef struct _server_instance_
 static uint8_t prv_get_value(lwm2m_data_t * dataP,
                              server_instance_t * targetP)
 {
-    // There are no multiple instance resources
-    dataP->type = LWM2M_TYPE_RESOURCE;
-
     switch (dataP->id)
     {
     case LWM2M_SERVER_SHORT_ID_ID:
         lwm2m_data_encode_int(targetP->shortServerId, dataP);
-        if (0 != dataP->length) return COAP_205_CONTENT;
-        else return COAP_500_INTERNAL_SERVER_ERROR;
+        return COAP_205_CONTENT;
 
     case LWM2M_SERVER_LIFETIME_ID:
         lwm2m_data_encode_int(targetP->lifetime, dataP);
-        if (0 != dataP->length) return COAP_205_CONTENT;
-        else return COAP_500_INTERNAL_SERVER_ERROR;
+        return COAP_205_CONTENT;
 
     case LWM2M_SERVER_MIN_PERIOD_ID:
         lwm2m_data_encode_int(targetP->defaultMinPeriod, dataP);
-        if (0 != dataP->length) return COAP_205_CONTENT;
-        else return COAP_500_INTERNAL_SERVER_ERROR;
+        return COAP_205_CONTENT;
 
     case LWM2M_SERVER_MAX_PERIOD_ID:
         lwm2m_data_encode_int(targetP->defaultMaxPeriod, dataP);
-        if (0 != dataP->length) return COAP_205_CONTENT;
-        else return COAP_500_INTERNAL_SERVER_ERROR;
+        return COAP_205_CONTENT;
 
     case LWM2M_SERVER_DISABLE_ID:
         return COAP_405_METHOD_NOT_ALLOWED;
 
     case LWM2M_SERVER_TIMEOUT_ID:
         lwm2m_data_encode_int(targetP->disableTimeout, dataP);
-        if (0 != dataP->length) return COAP_205_CONTENT;
-        else return COAP_500_INTERNAL_SERVER_ERROR;
+        return COAP_205_CONTENT;
 
     case LWM2M_SERVER_STORING_ID:
         lwm2m_data_encode_bool(targetP->storing, dataP);
-        if (0 != dataP->length) return COAP_205_CONTENT;
-        else return COAP_500_INTERNAL_SERVER_ERROR;
+        return COAP_205_CONTENT;
 
     case LWM2M_SERVER_BINDING_ID:
-        dataP->value = (uint8_t*)targetP->binding;
-        dataP->length = strlen(targetP->binding);
-        dataP->flags = LWM2M_TLV_FLAG_STATIC_DATA;
-        dataP->dataType = LWM2M_TYPE_STRING;
+        lwm2m_data_encode_string(targetP->binding, dataP);
         return COAP_205_CONTENT;
 
     case LWM2M_SERVER_UPDATE_ID:
@@ -186,7 +174,6 @@ static uint8_t prv_server_discover(uint16_t instanceId,
         for (i = 0; i < nbRes; i++)
         {
             (*dataArrayP)[i].id = resList[i];
-            (*dataArrayP)[i].type = LWM2M_TYPE_RESOURCE;
         }
     }
     else
@@ -312,15 +299,16 @@ static uint8_t prv_server_write(uint16_t instanceId,
         break;
 
         case LWM2M_SERVER_BINDING_ID:
-            if ((dataArray[i].length > 0 && dataArray[i].length <= 3)
-             && (strncmp((char*)dataArray[i].value, "U",   dataArray[i].length) == 0
-              || strncmp((char*)dataArray[i].value, "UQ",  dataArray[i].length) == 0
-              || strncmp((char*)dataArray[i].value, "S",   dataArray[i].length) == 0
-              || strncmp((char*)dataArray[i].value, "SQ",  dataArray[i].length) == 0
-              || strncmp((char*)dataArray[i].value, "US",  dataArray[i].length) == 0
-              || strncmp((char*)dataArray[i].value, "UQS", dataArray[i].length) == 0))
+            if (dataArray[i].type == LWM2M_TYPE_STRING
+             && dataArray[i].value.asBuffer.length > 0 && dataArray[i].value.asBuffer.length <= 3
+             && (strncmp((char*)dataArray[i].value.asBuffer.buffer, "U", dataArray[i].value.asBuffer.length) == 0
+              || strncmp((char*)dataArray[i].value.asBuffer.buffer, "UQ", dataArray[i].value.asBuffer.length) == 0
+              || strncmp((char*)dataArray[i].value.asBuffer.buffer, "S", dataArray[i].value.asBuffer.length) == 0
+              || strncmp((char*)dataArray[i].value.asBuffer.buffer, "SQ", dataArray[i].value.asBuffer.length) == 0
+              || strncmp((char*)dataArray[i].value.asBuffer.buffer, "US", dataArray[i].value.asBuffer.length) == 0
+              || strncmp((char*)dataArray[i].value.asBuffer.buffer, "UQS", dataArray[i].value.asBuffer.length) == 0))
             {
-                strncpy(targetP->binding, (char*)dataArray[i].value, dataArray[i].length);
+                strncpy(targetP->binding, (char*)dataArray[i].value.asBuffer.buffer, dataArray[i].value.asBuffer.length);
                 result = COAP_204_CHANGED;
             }
             else

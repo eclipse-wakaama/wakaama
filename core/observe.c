@@ -184,7 +184,7 @@ coap_status_t observe_handleRequest(lwm2m_context_t * contextP,
 
         if (LWM2M_URI_IS_SET_RESOURCE(uriP))
         {
-            switch (dataP->dataType)
+            switch (dataP->type)
             {
             case LWM2M_TYPE_INTEGER:
                 if (1 != lwm2m_data_decode_int(dataP, &(watcherP->lastValue.asInteger))) return COAP_500_INTERNAL_SERVER_ERROR;
@@ -437,7 +437,7 @@ void observe_step(lwm2m_context_t * contextP,
         if (LWM2M_URI_IS_SET_RESOURCE(&targetP->uri))
         {
             if (COAP_205_CONTENT != object_readData(contextP, &targetP->uri, &size, &dataP)) continue;
-            switch (dataP->dataType)
+            switch (dataP->type)
             {
             case LWM2M_TYPE_INTEGER:
                 if (1 != lwm2m_data_decode_int(dataP, &integerValue)) continue;
@@ -474,7 +474,7 @@ void observe_step(lwm2m_context_t * contextP,
                         if ((watcherP->parameters->toSet & LWM2M_ATTR_FLAG_LESS_THAN) != 0)
                         {
                             // Did we cross the lower treshold ?
-                            switch (dataP->dataType)
+                            switch (dataP->type)
                             {
                             case LWM2M_TYPE_INTEGER:
                                 if ((integerValue <= watcherP->parameters->lessThan
@@ -501,7 +501,7 @@ void observe_step(lwm2m_context_t * contextP,
                         if ((watcherP->parameters->toSet & LWM2M_ATTR_FLAG_GREATER_THAN) != 0)
                         {
                             // Did we cross the upper treshold ?
-                            switch (dataP->dataType)
+                            switch (dataP->type)
                             {
                             case LWM2M_TYPE_INTEGER:
                                 if ((integerValue <= watcherP->parameters->greaterThan
@@ -527,7 +527,7 @@ void observe_step(lwm2m_context_t * contextP,
                         }
                         if ((watcherP->parameters->toSet & LWM2M_ATTR_FLAG_STEP) != 0)
                         {
-                            switch (dataP->dataType)
+                            switch (dataP->type)
                             {
                             case LWM2M_TYPE_INTEGER:
                             {
@@ -620,7 +620,7 @@ void observe_step(lwm2m_context_t * contextP,
                 // Store this value
                 if (notify == true && storeValue == true)
                 {
-                    switch (dataP->dataType)
+                    switch (dataP->type)
                     {
                     case LWM2M_TYPE_INTEGER:
                         watcherP->lastValue.asInteger = integerValue;

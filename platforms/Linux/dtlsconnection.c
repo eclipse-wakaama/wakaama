@@ -20,6 +20,7 @@
 #include <string.h>
 #include <ctype.h>
 #include "dtlsconnection.h"
+#include "commandline.h"
 
 #define COAP_PORT "5683"
 #define COAPS_PORT "5684"
@@ -35,13 +36,12 @@ char * security_get_uri(lwm2m_object_t * obj, int instanceId, char * uriBuffer, 
 
     obj->readFunc(instanceId, &size, &dataP, obj);
     if (dataP != NULL &&
-            dataP->dataType == LWM2M_TYPE_STRING &&
-            dataP->type == LWM2M_TYPE_RESOURCE &&
-            dataP->length > 0)
+            dataP->type == LWM2M_TYPE_STRING &&
+            dataP->value.asBuffer.length > 0)
     {
-        if (bufferSize > dataP->length){
-            memset(uriBuffer,0,dataP->length+1);
-            strncpy(uriBuffer,dataP->value,dataP->length);
+        if (bufferSize > dataP->value.asBuffer.length){
+            memset(uriBuffer,0,dataP->value.asBuffer.length+1);
+            strncpy(uriBuffer,dataP->value.asBuffer.buffer,dataP->value.asBuffer.length);
             lwm2m_data_free(size, dataP);
             return uriBuffer;
         }
@@ -51,26 +51,20 @@ char * security_get_uri(lwm2m_object_t * obj, int instanceId, char * uriBuffer, 
 }
 
 int64_t security_get_mode(lwm2m_object_t * obj, int instanceId){
+    int64_t mode;
     int size = 1;
     lwm2m_data_t * dataP = lwm2m_data_new(size);
     dataP->id = 2; // security mode
 
     obj->readFunc(instanceId, &size, &dataP, obj);
-    if (dataP != NULL &&
-            dataP->dataType == LWM2M_TYPE_INTEGER &&
-            dataP->type == LWM2M_TYPE_RESOURCE &&
-            dataP->length > 0)
+    if (0 != lwm2m_data_decode_int(dataP,&mode))
     {
-        int64_t mode;
-        if (0 != lwm2m_data_decode_int(dataP,&mode))
-        {
-            lwm2m_data_free(size, dataP);
-            return mode;
-        }
+        lwm2m_data_free(size, dataP);
+        return mode;
     }
 
     lwm2m_data_free(size, dataP);
-    printf("Unable to get security mode : use not secure mode");
+    fprintf(stderr, "Unable to get security mode : use not secure mode");
     return LWM2M_SECURITY_MODE_NONE;
 }
 
@@ -81,12 +75,10 @@ char * security_get_public_id(lwm2m_object_t * obj, int instanceId, int * length
 
     obj->readFunc(instanceId, &size, &dataP, obj);
     if (dataP != NULL &&
-            dataP->dataType == LWM2M_TYPE_OPAQUE &&
-            dataP->type == LWM2M_TYPE_RESOURCE &&
-            dataP->flags == LWM2M_TLV_FLAG_STATIC_DATA)
+            dataP->type == LWM2M_TYPE_OPAQUE)
     {
-            *length = dataP->length;
-            return dataP->value;
+            *length = dataP->value.asBuffer.length;
+            return dataP->value.asBuffer.buffer;
     }else{
         return NULL;
     }
@@ -100,12 +92,10 @@ char * security_get_secret_key(lwm2m_object_t * obj, int instanceId, int * lengt
 
     obj->readFunc(instanceId, &size, &dataP, obj);
     if (dataP != NULL &&
-            dataP->dataType == LWM2M_TYPE_OPAQUE &&
-            dataP->type == LWM2M_TYPE_RESOURCE &&
-            dataP->flags == LWM2M_TLV_FLAG_STATIC_DATA)
+            dataP->type == LWM2M_TYPE_OPAQUE)
     {
-            *length = dataP->length;
-            return dataP->value;
+        *length = dataP->value.asBuffer.length;
+        return dataP->value.asBuffer.buffer;
     }else{
         return NULL;
     }

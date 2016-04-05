@@ -92,65 +92,37 @@ static uint8_t prv_set_value(lwm2m_data_t * dataP,
     {
     case RES_M_NETWORK_BEARER:
         lwm2m_data_encode_int(VALUE_NETWORK_BEARER_GSM, dataP);
-        dataP->type = LWM2M_TYPE_RESOURCE;
-        if (0 != dataP->length) return COAP_205_CONTENT ;
-        else return COAP_500_INTERNAL_SERVER_ERROR ;
-        break;
+        return COAP_205_CONTENT;
 
     case RES_M_AVL_NETWORK_BEARER:
     {
         int riCnt = 1;   // reduced to 1 instance to fit in one block size
         lwm2m_data_t * subTlvP;
         subTlvP = lwm2m_data_new(riCnt);
-        subTlvP[0].flags = 0;
         subTlvP[0].id    = 0;
-        subTlvP[0].type  = LWM2M_TYPE_RESOURCE_INSTANCE;
         lwm2m_data_encode_int(VALUE_AVL_NETWORK_BEARER_1, subTlvP);
-        if (0 == subTlvP[0].length)
-        {
-            lwm2m_data_free(riCnt, subTlvP);
-            return COAP_500_INTERNAL_SERVER_ERROR ;
-        }
-        lwm2m_data_include(subTlvP, riCnt, dataP);
+        lwm2m_data_encode_instances(subTlvP, riCnt, dataP);
         return COAP_205_CONTENT ;
     }
-        break;
 
     case RES_M_RADIO_SIGNAL_STRENGTH: //s-int
         lwm2m_data_encode_int(connDataP->signalStrength, dataP);
-        dataP->type = LWM2M_TYPE_RESOURCE;
-        if (0 != dataP->length)
-            return COAP_205_CONTENT ;
-        else
-            return COAP_500_INTERNAL_SERVER_ERROR ;
-        break;
+        return COAP_205_CONTENT;
 
     case RES_O_LINK_QUALITY: //s-int
         lwm2m_data_encode_int(connDataP->linkQuality, dataP);
-        dataP->type = LWM2M_TYPE_RESOURCE;
-        if (0 != dataP->length) return COAP_205_CONTENT ;
-        else return COAP_500_INTERNAL_SERVER_ERROR ;
-        break;
+        return COAP_205_CONTENT ;
 
     case RES_M_IP_ADDRESSES:
     {
         int ri, riCnt = 1;   // reduced to 1 instance to fit in one block size
         lwm2m_data_t* subTlvP = lwm2m_data_new(riCnt);
-        for (ri=0; ri<riCnt; ri++)
+        for (ri = 0; ri < riCnt; ri++)
         {
-            subTlvP[ri].flags  = LWM2M_TLV_FLAG_STATIC_DATA;
-            subTlvP[ri].id     = 0;
-            subTlvP[ri].type   = LWM2M_TYPE_RESOURCE_INSTANCE;
-            subTlvP[ri].dataType = LWM2M_TYPE_STRING;
-            subTlvP[ri].value  = (uint8_t*) connDataP->ipAddresses[ri];
-            subTlvP[ri].length = strlen(connDataP->ipAddresses[ri]);
-            if (subTlvP[ri].length == 0)
-            {
-                lwm2m_data_free(riCnt, subTlvP);
-                return COAP_500_INTERNAL_SERVER_ERROR ;
-            }
+            subTlvP[ri].id = ri;
+            lwm2m_data_encode_string(connDataP->ipAddresses[ri], subTlvP + ri);
         }
-        lwm2m_data_include(subTlvP, riCnt, dataP);
+        lwm2m_data_encode_instances(subTlvP, riCnt, dataP);
         return COAP_205_CONTENT ;
     }
         break;
@@ -161,73 +133,41 @@ static uint8_t prv_set_value(lwm2m_data_t * dataP,
         lwm2m_data_t* subTlvP = lwm2m_data_new(riCnt);
         for (ri=0; ri<riCnt; ri++)
         {
-            subTlvP[ri].flags  = LWM2M_TLV_FLAG_STATIC_DATA;
-            subTlvP[ri].id     = 0;
-            subTlvP[ri].type   = LWM2M_TYPE_RESOURCE_INSTANCE;
-            subTlvP[ri].dataType = LWM2M_TYPE_STRING;
-            subTlvP[ri].value  = (uint8_t*) connDataP->routerIpAddresses[ri];
-            subTlvP[ri].length = strlen(connDataP->routerIpAddresses[ri]);
-            if (subTlvP[ri].length == 0)
-            {
-                lwm2m_data_free(riCnt, subTlvP);
-                return COAP_500_INTERNAL_SERVER_ERROR ;
-            }
+            subTlvP[ri].id = ri;
+            lwm2m_data_encode_string(connDataP->routerIpAddresses[ri], subTlvP + ri);
         }
-        lwm2m_data_include(subTlvP, riCnt, dataP);
+        lwm2m_data_encode_instances(subTlvP, riCnt, dataP);
         return COAP_205_CONTENT ;
     }
         break;
 
     case RES_O_LINK_UTILIZATION:
         lwm2m_data_encode_int(connDataP->linkUtilization, dataP);
-        dataP->type = LWM2M_TYPE_RESOURCE;
-        if (0 != dataP->length)
-            return COAP_205_CONTENT ;
-        else
-            return COAP_500_INTERNAL_SERVER_ERROR ;
-        break;
+        return COAP_205_CONTENT;
 
     case RES_O_APN:
     {
         int riCnt = 1;   // reduced to 1 instance to fit in one block size
         lwm2m_data_t * subTlvP;
         subTlvP = lwm2m_data_new(riCnt);
-        subTlvP[0].flags  = LWM2M_TLV_FLAG_STATIC_DATA;
         subTlvP[0].id     = 0;
-        subTlvP[0].type   = LWM2M_TYPE_RESOURCE_INSTANCE;
-        subTlvP[0].dataType = LWM2M_TYPE_STRING;
-        subTlvP[0].value  = (uint8_t*) VALUE_APN_1;
-        subTlvP[0].length = strlen(VALUE_APN_1);
-        if (0 == subTlvP[0].length)
-        {
-            lwm2m_data_free(riCnt, subTlvP);
-            return COAP_500_INTERNAL_SERVER_ERROR ;
-        }
-        lwm2m_data_include(subTlvP, riCnt, dataP);
+        lwm2m_data_encode_string(VALUE_APN_1, subTlvP);
+        lwm2m_data_encode_instances(subTlvP, riCnt, dataP);
         return COAP_205_CONTENT;
     }
         break;
 
     case RES_O_CELL_ID:
         lwm2m_data_encode_int(connDataP->cellId, dataP);
-        dataP->type = LWM2M_TYPE_RESOURCE;
-        if (0 != dataP->length) return COAP_205_CONTENT ;
-        else return COAP_500_INTERNAL_SERVER_ERROR ;
-        break;
+        return COAP_205_CONTENT ;
 
     case RES_O_SMNC:
         lwm2m_data_encode_int(VALUE_SMNC, dataP);
-        dataP->type = LWM2M_TYPE_RESOURCE;
-        if (0 != dataP->length) return COAP_205_CONTENT ;
-        else return COAP_500_INTERNAL_SERVER_ERROR ;
-        break;
+        return COAP_205_CONTENT ;
 
     case RES_O_SMCC:
         lwm2m_data_encode_int(VALUE_SMCC, dataP);
-        dataP->type = LWM2M_TYPE_RESOURCE;
-        if (0 != dataP->length) return COAP_205_CONTENT ;
-        else return COAP_500_INTERNAL_SERVER_ERROR ;
-        break;
+        return COAP_205_CONTENT ;
 
     default:
         return COAP_404_NOT_FOUND ;
@@ -395,29 +335,29 @@ uint8_t connectivity_moni_change(lwm2m_data_t * dataArray,
         break;
 
     case RES_M_IP_ADDRESSES:
-        if (sizeof(data->ipAddresses[0]) <= dataArray->length)
+        if (sizeof(data->ipAddresses[0]) <= dataArray->value.asBuffer.length)
         {
             result = COAP_400_BAD_REQUEST;
         }
         else
         {
             memset(data->ipAddresses[0], 0, sizeof(data->ipAddresses[0]));
-            memcpy(data->ipAddresses[0], dataArray->value, dataArray->length);
-            data->ipAddresses[0][dataArray->length] = 0;
+            memcpy(data->ipAddresses[0], dataArray->value.asBuffer.buffer, dataArray->value.asBuffer.length);
+            data->ipAddresses[0][dataArray->value.asBuffer.length] = 0;
             result = COAP_204_CHANGED;
         }
         break;
 
     case RES_O_ROUTER_IP_ADDRESS:
-        if (sizeof(data->routerIpAddresses[0]) <= dataArray->length)
+        if (sizeof(data->routerIpAddresses[0]) <= dataArray->value.asBuffer.length)
         {
             result = COAP_400_BAD_REQUEST;
         }
         else
         {
             memset(data->routerIpAddresses[0], 0, sizeof(data->routerIpAddresses[0]));
-            memcpy(data->routerIpAddresses[0], dataArray->value, dataArray->length);
-            data->routerIpAddresses[0][dataArray->length] = 0;
+            memcpy(data->routerIpAddresses[0], dataArray->value.asBuffer.buffer, dataArray->value.asBuffer.length);
+            data->routerIpAddresses[0][dataArray->value.asBuffer.length] = 0;
             result = COAP_204_CHANGED;
         }
         break;

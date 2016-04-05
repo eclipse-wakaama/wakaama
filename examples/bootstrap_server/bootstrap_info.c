@@ -387,52 +387,33 @@ static int prv_add_server(bs_info_t * infoP,
     if (tlvP == NULL) goto error;
 
     // LWM2M Server URI
-    tlvP[0].type = LWM2M_TYPE_RESOURCE;
     tlvP[0].id = LWM2M_SECURITY_URI_ID;
-    tlvP[0].dataType = LWM2M_TYPE_STRING;
-    tlvP[0].flags = LWM2M_TLV_FLAG_STATIC_DATA;
-    tlvP[0].value = (uint8_t *)dataP->uri;
-    tlvP[0].length = strlen(dataP->uri);
+    lwm2m_data_encode_string(dataP->uri, tlvP);
 
     // Bootstrap Server
-    tlvP[1].type = LWM2M_TYPE_RESOURCE;
     tlvP[1].id = LWM2M_SECURITY_BOOTSTRAP_ID;
     lwm2m_data_encode_bool(dataP->isBootstrap, tlvP + 1);
 
     // Short Server ID
-    tlvP[2].type = LWM2M_TYPE_RESOURCE;
     tlvP[2].id = LWM2M_SECURITY_SHORT_SERVER_ID;
     lwm2m_data_encode_int(dataP->id, tlvP + 2);
 
     // Security Mode
-    tlvP[3].type = LWM2M_TYPE_RESOURCE;
     tlvP[3].id = LWM2M_SECURITY_SECURITY_ID;
     lwm2m_data_encode_int(dataP->securityMode, tlvP + 3);
 
     if (size > 4)
     {
-        tlvP[4].type = LWM2M_TYPE_RESOURCE;
         tlvP[4].id = LWM2M_SECURITY_PUBLIC_KEY_ID;
-        tlvP[4].dataType = LWM2M_TYPE_OPAQUE;
-        tlvP[4].flags = LWM2M_TLV_FLAG_STATIC_DATA;
-        tlvP[4].value = dataP->publicKey;
-        tlvP[4].length = dataP->publicKeyLen;
+        lwm2m_data_encode_opaque(dataP->publicKey, dataP->publicKeyLen, tlvP + 4);
 
-        tlvP[5].type = LWM2M_TYPE_RESOURCE;
         tlvP[5].id = LWM2M_SECURITY_SECRET_KEY_ID;
-        tlvP[5].dataType = LWM2M_TYPE_OPAQUE;
-        tlvP[5].flags = LWM2M_TLV_FLAG_STATIC_DATA;
-        tlvP[5].value = dataP->secretKey;
-        tlvP[5].length = dataP->secretKeyLen;
+        lwm2m_data_encode_opaque(dataP->secretKey, dataP->secretKeyLen, tlvP + 5);
 
         if (size == 7)
         {
-            tlvP[6].type = LWM2M_TYPE_RESOURCE;
             tlvP[6].id = LWM2M_SECURITY_SERVER_PUBLIC_KEY_ID;
-            tlvP[6].dataType = LWM2M_TYPE_OPAQUE;
-            tlvP[6].flags = LWM2M_TLV_FLAG_STATIC_DATA;
-            tlvP[6].value = dataP->serverKey;
-            tlvP[6].length = dataP->serverKeyLen;
+            lwm2m_data_encode_opaque(dataP->serverKey, dataP->serverKeyLen, tlvP + 5);
         }
     }
 
@@ -448,27 +429,20 @@ static int prv_add_server(bs_info_t * infoP,
         if (tlvP == NULL) goto error;
 
         // Short Server ID
-        tlvP[0].type = LWM2M_TYPE_RESOURCE;
         tlvP[0].id = LWM2M_SERVER_SHORT_ID_ID;
         lwm2m_data_encode_int(dataP->id, tlvP);
 
         // Lifetime
-        tlvP[1].type = LWM2M_TYPE_RESOURCE;
         tlvP[1].id = LWM2M_SERVER_LIFETIME_ID;
         lwm2m_data_encode_int(dataP->lifetime, tlvP + 1);
 
         // Notification Storing
-        tlvP[2].type = LWM2M_TYPE_RESOURCE;
         tlvP[2].id = LWM2M_SERVER_STORING_ID;
         lwm2m_data_encode_bool(false, tlvP + 2);
 
         // Binding
-        tlvP[3].type = LWM2M_TYPE_RESOURCE;
         tlvP[3].id = LWM2M_SERVER_BINDING_ID;
-        tlvP[3].dataType = LWM2M_TYPE_STRING;
-        tlvP[3].flags = LWM2M_TLV_FLAG_STATIC_DATA;
-        tlvP[3].value = "U";
-        tlvP[3].length = 1;
+        lwm2m_data_encode_string("U", tlvP + 3);
 
         serverP->serverLen = lwm2m_data_serialize(NULL, size, tlvP, &format, &(serverP->serverData));
         if (serverP->serverLen <= 0) goto error;

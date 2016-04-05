@@ -221,7 +221,7 @@ void output_tlv(FILE * stream,
                 size_t buffer_len,
                 int indent)
 {
-    lwm2m_tlv_type_t type;
+    lwm2m_data_type_t type;
     uint16_t id;
     size_t dataIndex;
     size_t dataLen;
@@ -241,14 +241,11 @@ void output_tlv(FILE * stream,
         case LWM2M_TYPE_OBJECT_INSTANCE:
             fprintf(stream, "Object Instance");
             break;
-        case LWM2M_TYPE_RESOURCE_INSTANCE:
-            fprintf(stream, "Resource Instance");
-            break;
         case LWM2M_TYPE_MULTIPLE_RESOURCE:
             fprintf(stream, "Multiple Instances");
             break;
-        case LWM2M_TYPE_RESOURCE:
-            fprintf(stream, "Resource");
+        case LWM2M_TYPE_OPAQUE:
+            fprintf(stream, "Resource Value");
             break;
         default:
             printf("unknown (%d)", (int)type);
@@ -370,106 +367,51 @@ void dump_tlv(FILE * stream,
         {
         case LWM2M_TYPE_OBJECT:
             fprintf(stream, "LWM2M_TYPE_OBJECT\r\n");
+            dump_tlv(stream, dataP[i].value.asChildren.count, dataP[i].value.asChildren.array, indent + 1);
             break;
         case LWM2M_TYPE_OBJECT_INSTANCE:
             fprintf(stream, "LWM2M_TYPE_OBJECT_INSTANCE\r\n");
-            break;
-        case LWM2M_TYPE_RESOURCE_INSTANCE:
-            fprintf(stream, "LWM2M_TYPE_RESOURCE_INSTANCE\r\n");
+            dump_tlv(stream, dataP[i].value.asChildren.count, dataP[i].value.asChildren.array, indent + 1);
             break;
         case LWM2M_TYPE_MULTIPLE_RESOURCE:
             fprintf(stream, "LWM2M_TYPE_MULTIPLE_RESOURCE\r\n");
+            dump_tlv(stream, dataP[i].value.asChildren.count, dataP[i].value.asChildren.array, indent + 1);
             break;
-        case LWM2M_TYPE_RESOURCE:
-            fprintf(stream, "LWM2M_TYPE_RESOURCE\r\n");
+        case LWM2M_TYPE_UNDEFINED:
+            fprintf(stream, "LWM2M_TYPE_UNDEFINED\r\n");
+            break;
+        case LWM2M_TYPE_STRING:
+            fprintf(stream, "LWM2M_TYPE_STRING\r\n");
+            print_indent(stream, indent + 1);
+            fprintf(stream, "\"%.*s\"\r\n", dataP[i].value.asBuffer.length, dataP[i].value.asBuffer.buffer);
+            break;
+        case LWM2M_TYPE_OPAQUE:
+            fprintf(stream, "LWM2M_TYPE_OPAQUE\r\n");
+            output_buffer(stream, dataP[i].value.asBuffer.buffer, dataP[i].value.asBuffer.length, indent + 1);
+            break;
+        case LWM2M_TYPE_INTEGER:
+            fprintf(stream, "LWM2M_TYPE_INTEGER: ");
+            print_indent(stream, indent + 1);
+            fprintf(stream, "%" PRId64, dataP[i].value.asInteger);
+            fprintf(stream, "\r\n");
+            break;
+        case LWM2M_TYPE_FLOAT:
+            fprintf(stream, "LWM2M_TYPE_FLOAT: ");
+            print_indent(stream, indent + 1);
+            fprintf(stream, "%f", dataP[i].value.asInteger);
+            fprintf(stream, "\r\n");
+            break;
+        case LWM2M_TYPE_BOOLEAN:
+            fprintf(stream, "LWM2M_TYPE_BOOLEAN: ");
+            fprintf(stream, "%s", dataP[i].value.asBoolean ? "true" : "false");
+            fprintf(stream, "\r\n");
+            break;
+        case LWM2M_TYPE_OBJECT_LINK:
+            fprintf(stream, "LWM2M_TYPE_OBJECT_LINK\r\n");
             break;
         default:
             fprintf(stream, "unknown (%d)\r\n", (int)dataP[i].type);
             break;
-        }
-
-        print_indent(stream, indent+1);
-        fprintf(stream, "flags: ");
-        if (dataP[i].flags & LWM2M_TLV_FLAG_STATIC_DATA)
-        {
-            fprintf(stream, "STATIC_DATA");
-            if (dataP[i].flags & LWM2M_TLV_FLAG_TEXT_FORMAT)
-            {
-                fprintf(stream, " | TEXT_FORMAT");
-            }
-        }
-        else if (dataP[i].flags & LWM2M_TLV_FLAG_TEXT_FORMAT)
-        {
-            fprintf(stream, "TEXT_FORMAT");
-        }
-        fprintf(stream, "\r\n");
-
-        print_indent(stream, indent+1);
-        fprintf(stream, "data length: %d\r\n", (int) dataP[i].length);
-
-        if (dataP[i].type == LWM2M_TYPE_OBJECT_INSTANCE
-         || dataP[i].type == LWM2M_TYPE_OBJECT
-         || dataP[i].type == LWM2M_TYPE_MULTIPLE_RESOURCE)
-        {
-            dump_tlv(stream, dataP[i].length, (lwm2m_data_t *)(dataP[i].value), indent+1);
-        }
-        else
-        {
-            print_indent(stream, indent+1);
-            fprintf(stream, "data type: ");
-            switch (dataP[i].dataType)
-            {
-            case LWM2M_TYPE_INTEGER:
-                fprintf(stream, "Integer");
-                if ((dataP[i].flags & LWM2M_TLV_FLAG_TEXT_FORMAT) == 0)
-                {
-                    int64_t value;
-                    if (1 == lwm2m_data_decode_int(dataP + i, &value))
-                    {
-                        fprintf(stream, " (%" PRId64 ")", value);
-                    }
-                }
-                break;
-            case LWM2M_TYPE_STRING:
-                fprintf(stream, "String");
-                break;
-            case LWM2M_TYPE_FLOAT:
-                fprintf(stream, "Float");
-                if ((dataP[i].flags & LWM2M_TLV_FLAG_TEXT_FORMAT) == 0)
-                {
-                    double value;
-                    if (1 == lwm2m_data_decode_float(dataP + i, &value))
-                    {
-                        fprintf(stream, " (%f)", value);
-                    }
-                }
-                break;
-            case LWM2M_TYPE_BOOLEAN:
-                fprintf(stream, "Boolean");
-                if ((dataP[i].flags & LWM2M_TLV_FLAG_TEXT_FORMAT) == 0)
-                {
-                    bool value;
-                    if (1 == lwm2m_data_decode_bool(dataP + i, &value))
-                    {
-                        fprintf(stream, " (%s)", value?"true":"false");
-                    }
-                }
-                break;
-            case LWM2M_TYPE_TIME:
-                fprintf(stream, "Time");
-                break;
-            case LWM2M_TYPE_OBJECT_LINK:
-                fprintf(stream, "Object Link");
-                break;
-            case LWM2M_TYPE_OPAQUE:
-                fprintf(stream, "Opaque");
-                break;
-            case LWM2M_TYPE_UNDEFINED:
-                fprintf(stream, "Undefined");
-                break;
-            }
-            fprintf(stream, "\r\n");
-            output_buffer(stream, dataP[i].value, dataP[i].length, indent+1);
         }
         print_indent(stream, indent);
         fprintf(stream, "}\r\n");

@@ -156,23 +156,19 @@ static uint8_t prv_read(uint16_t instanceId,
         switch ((*dataArrayP)[i].id)
         {
         case 1:
-            (*dataArrayP)[i].type = LWM2M_TYPE_RESOURCE;
             lwm2m_data_encode_int(targetP->test, *dataArrayP + i);
             break;
         case 2:
             return COAP_405_METHOD_NOT_ALLOWED;
         case 3:
-            (*dataArrayP)[i].type = LWM2M_TYPE_RESOURCE;
             lwm2m_data_encode_float(targetP->dec, *dataArrayP + i);
             break;
         case 4:
-            (*dataArrayP)[i].type = LWM2M_TYPE_RESOURCE;
             lwm2m_data_encode_int(targetP->sig, *dataArrayP + i);
             break;
         default:
             return COAP_404_NOT_FOUND;
         }
-        if ((*dataArrayP)[i].length == 0) return COAP_500_INTERNAL_SERVER_ERROR;
     }
 
     return COAP_205_CONTENT;
@@ -192,13 +188,9 @@ static uint8_t prv_discover(uint16_t instanceId,
         if (*dataArrayP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
         *numDataP = 4;
         (*dataArrayP)[0].id = 1;
-        (*dataArrayP)[0].type = LWM2M_TYPE_RESOURCE;
         (*dataArrayP)[1].id = 2;
-        (*dataArrayP)[1].type = LWM2M_TYPE_RESOURCE;
         (*dataArrayP)[2].id = 3;
-        (*dataArrayP)[2].type = LWM2M_TYPE_RESOURCE;
         (*dataArrayP)[3].id = 4;
-        (*dataArrayP)[3].type = LWM2M_TYPE_RESOURCE;
     }
     else
     {

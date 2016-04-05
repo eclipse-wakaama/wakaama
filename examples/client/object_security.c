@@ -84,82 +84,55 @@ typedef struct _security_instance_
 static uint8_t prv_get_value(lwm2m_data_t * dataP,
                              security_instance_t * targetP)
 {
-    // There are no multiple instance ressources
-    dataP->type = LWM2M_TYPE_RESOURCE;
-
     switch (dataP->id)
     {
     case LWM2M_SECURITY_URI_ID:
-        dataP->value = (uint8_t*)targetP->uri;
-        dataP->length = strlen(targetP->uri);
-        dataP->flags = LWM2M_TLV_FLAG_STATIC_DATA;
-        dataP->dataType = LWM2M_TYPE_STRING;
+        lwm2m_data_encode_string(targetP->uri, dataP);
         return COAP_205_CONTENT;
 
     case LWM2M_SECURITY_BOOTSTRAP_ID:
         lwm2m_data_encode_bool(targetP->isBootstrap, dataP);
-        if (0 != dataP->length) return COAP_205_CONTENT;
-        else return COAP_500_INTERNAL_SERVER_ERROR;
+        return COAP_205_CONTENT;
 
     case LWM2M_SECURITY_SECURITY_ID:
         lwm2m_data_encode_int(targetP->securityMode, dataP);
-        if (0 != dataP->length) return COAP_205_CONTENT;
-        else return COAP_500_INTERNAL_SERVER_ERROR;
+        return COAP_205_CONTENT;
 
     case LWM2M_SECURITY_PUBLIC_KEY_ID:
-        dataP->value = (uint8_t*)targetP->publicIdentity;
-        dataP->length = targetP->publicIdLen;
-        dataP->flags = LWM2M_TLV_FLAG_STATIC_DATA;
-        dataP->dataType = LWM2M_TYPE_OPAQUE;
+        lwm2m_data_encode_opaque(targetP->publicIdentity, targetP->publicIdLen, dataP);
         return COAP_205_CONTENT;
 
     case LWM2M_SECURITY_SERVER_PUBLIC_KEY_ID:
-        dataP->value = (uint8_t*)targetP->serverPublicKey;
-        dataP->length = targetP->serverPublicKeyLen;
-        dataP->flags = LWM2M_TLV_FLAG_STATIC_DATA;
-        dataP->dataType = LWM2M_TYPE_OPAQUE;
+        lwm2m_data_encode_opaque(targetP->serverPublicKey, targetP->serverPublicKeyLen, dataP);
         return COAP_205_CONTENT;
 
     case LWM2M_SECURITY_SECRET_KEY_ID:
-        dataP->value = (uint8_t*)targetP->secretKey;
-        dataP->length = targetP->secretKeyLen;
-        dataP->flags = LWM2M_TLV_FLAG_STATIC_DATA;
-        dataP->dataType = LWM2M_TYPE_OPAQUE;
+        lwm2m_data_encode_opaque(targetP->secretKey, targetP->secretKeyLen, dataP);
         return COAP_205_CONTENT;
 
     case LWM2M_SECURITY_SMS_SECURITY_ID:
         lwm2m_data_encode_int(targetP->smsSecurityMode, dataP);
-        if (0 != dataP->length) return COAP_205_CONTENT;
-        else return COAP_500_INTERNAL_SERVER_ERROR;
+        return COAP_205_CONTENT;
 
     case LWM2M_SECURITY_SMS_KEY_PARAM_ID:
-        dataP->value = (uint8_t*)targetP->smsParams;
-        dataP->length = targetP->smsParamsLen;
-        dataP->flags = LWM2M_TLV_FLAG_STATIC_DATA;
-        dataP->dataType = LWM2M_TYPE_OPAQUE;
+        lwm2m_data_encode_opaque(targetP->smsParams, targetP->smsParamsLen, dataP);
         return COAP_205_CONTENT;
 
     case LWM2M_SECURITY_SMS_SECRET_KEY_ID:
-        dataP->value = (uint8_t*)targetP->smsSecret;
-        dataP->length = targetP->smsSecretLen;
-        dataP->flags = LWM2M_TLV_FLAG_STATIC_DATA;
-        dataP->dataType = LWM2M_TYPE_OPAQUE;
+        lwm2m_data_encode_opaque(targetP->smsSecret, targetP->smsSecretLen, dataP);
         return COAP_205_CONTENT;
 
     case LWM2M_SECURITY_SMS_SERVER_NUMBER_ID:
         lwm2m_data_encode_int(0, dataP);
-        if (0 != dataP->length) return COAP_205_CONTENT;
-        else return COAP_500_INTERNAL_SERVER_ERROR;
+        return COAP_205_CONTENT;
 
     case LWM2M_SECURITY_SHORT_SERVER_ID:
         lwm2m_data_encode_int(targetP->shortID, dataP);
-        if (0 != dataP->length) return COAP_205_CONTENT;
-        else return COAP_500_INTERNAL_SERVER_ERROR;
+        return COAP_205_CONTENT;
 
     case LWM2M_SECURITY_HOLD_OFF_ID:
         lwm2m_data_encode_int(targetP->clientHoldOffTime, dataP);
-        if (0 != dataP->length) return COAP_205_CONTENT;
-        else return COAP_500_INTERNAL_SERVER_ERROR;
+        return COAP_205_CONTENT;
 
     default:
         return COAP_404_NOT_FOUND;
@@ -237,11 +210,11 @@ static uint8_t prv_security_write(uint16_t instanceId,
         {
         case LWM2M_SECURITY_URI_ID:
             if (targetP->uri != NULL) lwm2m_free(targetP->uri);
-            targetP->uri = (char *)lwm2m_malloc(dataArray[i].length + 1);
-            memset(targetP->uri, 0, dataArray[i].length + 1);
+            targetP->uri = (char *)lwm2m_malloc(dataArray[i].value.asBuffer.length + 1);
+            memset(targetP->uri, 0, dataArray[i].value.asBuffer.length + 1);
             if (targetP->uri != NULL)
             {
-                strncpy(targetP->uri, (char*)dataArray[i].value, dataArray[i].length);
+                strncpy(targetP->uri, (char*)dataArray[i].value.asBuffer.buffer, dataArray[i].value.asBuffer.length);
                 result = COAP_204_CHANGED;
             }
             else
@@ -285,12 +258,12 @@ static uint8_t prv_security_write(uint16_t instanceId,
         break;
         case LWM2M_SECURITY_PUBLIC_KEY_ID:
             if (targetP->publicIdentity != NULL) lwm2m_free(targetP->publicIdentity);
-            targetP->publicIdentity = (char *)lwm2m_malloc(dataArray[i].length+1);
-            memset(targetP->publicIdentity, 0, dataArray[i].length + 1);
+            targetP->publicIdentity = (char *)lwm2m_malloc(dataArray[i].value.asBuffer.length +1);
+            memset(targetP->publicIdentity, 0, dataArray[i].value.asBuffer.length + 1);
             if (targetP->publicIdentity != NULL)
             {
-                memcpy(targetP->publicIdentity, (char*)dataArray[i].value, dataArray[i].length);
-                targetP->publicIdLen = dataArray[i].length;
+                memcpy(targetP->publicIdentity, (char*)dataArray[i].value.asBuffer.buffer, dataArray[i].value.asBuffer.length);
+                targetP->publicIdLen = dataArray[i].value.asBuffer.length;
                 result = COAP_204_CHANGED;
             }
             else
@@ -301,12 +274,12 @@ static uint8_t prv_security_write(uint16_t instanceId,
 
         case LWM2M_SECURITY_SERVER_PUBLIC_KEY_ID:
             if (targetP->serverPublicKey != NULL) lwm2m_free(targetP->serverPublicKey);
-            targetP->serverPublicKey = (char *)lwm2m_malloc(dataArray[i].length+1);
-            memset(targetP->serverPublicKey, 0, dataArray[i].length + 1);
+            targetP->serverPublicKey = (char *)lwm2m_malloc(dataArray[i].value.asBuffer.length +1);
+            memset(targetP->serverPublicKey, 0, dataArray[i].value.asBuffer.length + 1);
             if (targetP->serverPublicKey != NULL)
             {
-                memcpy(targetP->serverPublicKey, (char*)dataArray[i].value, dataArray[i].length);
-                targetP->serverPublicKeyLen = dataArray[i].length;
+                memcpy(targetP->serverPublicKey, (char*)dataArray[i].value.asBuffer.buffer, dataArray[i].value.asBuffer.length);
+                targetP->serverPublicKeyLen = dataArray[i].value.asBuffer.length;
                 result = COAP_204_CHANGED;
             }
             else
@@ -317,12 +290,12 @@ static uint8_t prv_security_write(uint16_t instanceId,
 
         case LWM2M_SECURITY_SECRET_KEY_ID:
             if (targetP->secretKey != NULL) lwm2m_free(targetP->secretKey);
-            targetP->secretKey = (char *)lwm2m_malloc(dataArray[i].length+1);
-            memset(targetP->secretKey, 0, dataArray[i].length + 1);
+            targetP->secretKey = (char *)lwm2m_malloc(dataArray[i].value.asBuffer.length +1);
+            memset(targetP->secretKey, 0, dataArray[i].value.asBuffer.length + 1);
             if (targetP->secretKey != NULL)
             {
-                memcpy(targetP->secretKey, (char*)dataArray[i].value, dataArray[i].length);
-                targetP->secretKeyLen = dataArray[i].length;
+                memcpy(targetP->secretKey, (char*)dataArray[i].value.asBuffer.buffer, dataArray[i].value.asBuffer.length);
+                targetP->secretKeyLen = dataArray[i].value.asBuffer.length;
                 result = COAP_204_CHANGED;
             }
             else

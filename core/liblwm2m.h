@@ -258,55 +258,55 @@ int lwm2m_stringToUri(const char * buffer, size_t buffer_len, lwm2m_uri_t * uriP
 
 /*
  * The lwm2m_data_t is used to store LWM2M resource values in a hierarchical way.
- */
-
-/*
- * Bitmask for the lwm2m_data_t::flag
- * LWM2M_TLV_FLAG_STATIC_DATA specifies that lwm2m_data_t::value
- * points to static memory and must no be freeed by the caller.
- * LWM2M_TLV_FLAG_TEXT_FORMAT specifies that lwm2m_data_t::value
- * is expressed or requested in plain text format.
- */
-#define LWM2M_TLV_FLAG_STATIC_DATA   0x01
-#define LWM2M_TLV_FLAG_TEXT_FORMAT   0x02
-
-/*
- * Bits 7 and 6 of assigned values for LWM2M_TYPE_RESOURCE,
- * LWM2M_TYPE_MULTIPLE_RESOURCE, LWM2M_TYPE_RESOURCE_INSTANCE
- * and LWM2M_TYPE_OBJECT_INSTANCE must match the ones defined
- * in the TLV format from LWM2M TS §6.3.3
+ * Depending on the type the value is different:
+ * - LWM2M_TYPE_OBJECT, LWM2M_TYPE_OBJECT_INSTANCE, LWM2M_TYPE_MULTIPLE_RESOURCE: value.asChildren
+ * - LWM2M_TYPE_STRING, LWM2M_TYPE_OPAQUE: value.asBuffer
+ * - LWM2M_TYPE_INTEGER, LWM2M_TYPE_TIME: value.asInteger
+ * - LWM2M_TYPE_FLOAT: value.asFloat
+ * - LWM2M_TYPE_BOOLEAN: value.asBoolean
  *
+ * LWM2M_TYPE_STRING is also used when the data is in text format.
  */
-typedef enum
-{
-    LWM2M_TYPE_RESOURCE = 0xC0,
-    LWM2M_TYPE_MULTIPLE_RESOURCE = 0x80,
-    LWM2M_TYPE_RESOURCE_INSTANCE = 0x40,
-    LWM2M_TYPE_OBJECT_INSTANCE = 0x00,
-    LWM2M_TYPE_OBJECT = 0x10
-} lwm2m_tlv_type_t;
 
 typedef enum
 {
     LWM2M_TYPE_UNDEFINED = 0,
+    LWM2M_TYPE_OBJECT,
+    LWM2M_TYPE_OBJECT_INSTANCE,
+    LWM2M_TYPE_MULTIPLE_RESOURCE,
+
     LWM2M_TYPE_STRING,
+    LWM2M_TYPE_OPAQUE,
     LWM2M_TYPE_INTEGER,
     LWM2M_TYPE_FLOAT,
     LWM2M_TYPE_BOOLEAN,
-    LWM2M_TYPE_OPAQUE,
-    LWM2M_TYPE_TIME,
+
     LWM2M_TYPE_OBJECT_LINK
 } lwm2m_data_type_t;
 
-typedef struct
+typedef struct _lwm2m_data_t lwm2m_data_t;
+
+struct _lwm2m_data_t
 {
-    uint8_t     flags;
-    lwm2m_tlv_type_t  type;
-    lwm2m_data_type_t dataType;
+    lwm2m_data_type_t type;
     uint16_t    id;
-    size_t      length;
-    uint8_t *   value;
-} lwm2m_data_t;
+    union
+    {
+        bool        asBoolean;
+        int64_t     asInteger;
+        double      asFloat;
+        struct
+        {
+            size_t    length;
+            uint8_t * buffer;
+        } asBuffer;
+        struct
+        {
+            size_t         count;
+            lwm2m_data_t * array;
+        } asChildren;
+    } value;
+};
 
 typedef enum
 {
@@ -319,15 +319,19 @@ typedef enum
 
 lwm2m_data_t * lwm2m_data_new(int size);
 int lwm2m_data_parse(lwm2m_uri_t * uriP, uint8_t * buffer, size_t bufferLen, lwm2m_media_type_t format, lwm2m_data_t ** dataP);
-int lwm2m_data_serialize(lwm2m_uri_t * uriP, int size, lwm2m_data_t * dataP, lwm2m_media_type_t * formatP, uint8_t ** bufferP);
+size_t lwm2m_data_serialize(lwm2m_uri_t * uriP, int size, lwm2m_data_t * dataP, lwm2m_media_type_t * formatP, uint8_t ** bufferP);
 void lwm2m_data_free(int size, lwm2m_data_t * dataP);
 
+void lwm2m_data_encode_string(const char * string, lwm2m_data_t * dataP);
+void lwm2m_data_encode_nstring(const char * string, size_t length, lwm2m_data_t * dataP);
+void lwm2m_data_encode_opaque(uint8_t * buffer, size_t length, lwm2m_data_t * dataP);
 void lwm2m_data_encode_int(int64_t value, lwm2m_data_t * dataP);
 int lwm2m_data_decode_int(const lwm2m_data_t * dataP, int64_t * valueP);
 void lwm2m_data_encode_float(double value, lwm2m_data_t * dataP);
 int lwm2m_data_decode_float(const lwm2m_data_t * dataP, double * valueP);
 void lwm2m_data_encode_bool(bool value, lwm2m_data_t * dataP);
 int lwm2m_data_decode_bool(const lwm2m_data_t * dataP, bool * valueP);
+void lwm2m_data_encode_instances(lwm2m_data_t * subDataP, size_t count, lwm2m_data_t * dataP);
 void lwm2m_data_include(lwm2m_data_t * subDataP, size_t count, lwm2m_data_t * dataP);
 
 
@@ -337,7 +341,11 @@ void lwm2m_data_include(lwm2m_data_t * subDataP, size_t count, lwm2m_data_t * da
  * Returned value: number of bytes parsed
  * buffer: buffer to parse
  * buffer_len: length in bytes of buffer
- * oType: (OUT) type of the parsed TLV record
+ * oType: (OUT) type of the parsed TLV record. can be:
+ *          - LWM2M_TYPE_OBJECT
+ *          - LWM2M_TYPE_OBJECT_INSTANCE
+ *          - LWM2M_TYPE_MULTIPLE_RESOURCE
+ *          - LWM2M_TYPE_OPAQUE
  * oID: (OUT) ID of the parsed TLV record
  * oDataIndex: (OUT) index of the data of the parsed TLV record in the buffer
  * oDataLen: (OUT) length of the data of the parsed TLV record
@@ -345,7 +353,7 @@ void lwm2m_data_include(lwm2m_data_t * subDataP, size_t count, lwm2m_data_t * da
 
 #define LWM2M_TLV_HEADER_MAX_LENGTH 6
 
-int lwm2m_decode_TLV(const uint8_t * buffer, size_t buffer_len, lwm2m_tlv_type_t * oType, uint16_t * oID, size_t * oDataIndex, size_t * oDataLen);
+int lwm2m_decode_TLV(const uint8_t * buffer, size_t buffer_len, lwm2m_data_type_t * oType, uint16_t * oID, size_t * oDataIndex, size_t * oDataLen);
 
 
 /*

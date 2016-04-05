@@ -640,3 +640,217 @@ size_t utils_encodeInt(int64_t data,
 
     return length;
 }
+
+#define PRV_B64_PADDING '='
+
+static char b64Alphabet[64] =
+{
+    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
+    'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f',
+    'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v',
+    'w', 'x', 'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/'
+};
+
+static void prv_encodeBlock(uint8_t input[3],
+                            uint8_t output[4])
+{
+    memset(output, 0, 4);
+
+    output[0] = b64Alphabet[input[0] >> 2];
+    output[1] = b64Alphabet[((input[0] & 0x03) << 4) | (input[1] >> 4)];
+    output[2] = b64Alphabet[((input[1] & 0x0F) << 2) | (input[2] >> 6)];
+    output[3] = b64Alphabet[input[2] & 0x3F];
+}
+
+static uint8_t prv_b64Revert(uint8_t value)
+{
+    if (value >= 'A' && value <= 'Z')
+    {
+        return (value - 'A');
+    }
+    if (value >= 'a' && value <= 'z')
+    {
+        return (26 + value - 'a');
+    }
+    if (value >= '0' && value <= '9')
+    {
+        return (52 + value - '0');
+    }
+    switch (value)
+    {
+    case '+':
+        return 62;
+    case '/':
+        return 63;
+    default:
+        return 0;
+    }
+}
+
+static void prv_decodeBlock(uint8_t input[4],
+                            uint8_t output[3])
+{
+    uint8_t tmp[4];
+    int i;
+
+    memset(output, 0, 3);
+
+    for (i = 0; i < 4; i++)
+    {
+        tmp[i] = prv_b64Revert(input[i]);
+    }
+
+    output[0] = (tmp[0] << 2) | (tmp[1] >> 4);
+    output[1] = (tmp[1] << 4) | (tmp[2] >> 2);
+    output[2] = (tmp[2] << 6) | tmp[3];
+}
+
+static size_t prv_getBase64Size(size_t dataLen)
+{
+    size_t result_len;
+
+    result_len = 4 * (dataLen / 3);
+    if (dataLen % 3) result_len += 4;
+
+    return result_len;
+}
+
+size_t utils_base64Encode(uint8_t * dataP,
+                          size_t dataLen, 
+                          uint8_t * bufferP,
+                          size_t bufferLen)
+{
+    unsigned int data_index;
+    unsigned int result_index;
+    size_t result_len;
+
+    result_len = prv_getBase64Size(dataLen);
+
+    if (result_len > dataLen) return 0;
+
+    data_index = 0;
+    result_index = 0;
+    while (data_index < dataLen)
+    {
+        switch (dataLen - data_index)
+        {
+        case 0:
+            // should never happen
+            break;
+        case 1:
+            bufferP[result_index] = b64Alphabet[dataP[data_index] >> 2];
+            bufferP[result_index + 1] = b64Alphabet[(dataP[data_index] & 0x03) << 4];
+            bufferP[result_index + 2] = PRV_B64_PADDING;
+            bufferP[result_index + 3] = PRV_B64_PADDING;
+            break;
+        case 2:
+            bufferP[result_index] = b64Alphabet[dataP[data_index] >> 2];
+            bufferP[result_index + 1] = b64Alphabet[(dataP[data_index] & 0x03) << 4 | (dataP[data_index + 1] >> 4)];
+            bufferP[result_index + 2] = b64Alphabet[(dataP[data_index + 1] & 0x0F) << 2];
+            bufferP[result_index + 3] = PRV_B64_PADDING;
+            break;
+        default:
+            prv_encodeBlock(dataP + data_index, bufferP + result_index);
+            break;
+        }
+        data_index += 3;
+        result_index += 4;
+    }
+
+    return result_len;
+}
+
+size_t utils_opaqueToBase64(uint8_t * dataP,
+                            size_t dataLen,
+                            uint8_t ** bufferP)
+{
+    size_t buffer_len;
+    size_t result_len;
+
+    buffer_len = prv_getBase64Size(dataLen);
+
+    *bufferP = (char *)lwm2m_malloc(buffer_len);
+    if (!*bufferP) return 0;
+    memset(*bufferP, 0, buffer_len);
+
+    result_len = utils_base64Encode(dataP, dataLen, *bufferP, buffer_len);
+
+    if (result_len == 0)
+    {
+        lwm2m_free(*bufferP);
+        *bufferP = NULL;
+    }
+ 
+    return result_len;
+}
+
+size_t utils_base64ToOpaque(uint8_t * dataP,
+                            size_t dataLen,
+                            uint8_t ** bufferP)
+{
+    unsigned int data_index;
+    unsigned int result_index;
+    size_t result_len;
+
+    if (dataLen % 4) return 0;
+
+    result_len = (dataLen >> 2) * 3;
+    *bufferP = (unsigned char *)lwm2m_malloc(result_len);
+    if (NULL == *bufferP) return 0;
+    memset(*bufferP, 0, result_len);
+
+    // remove padding
+    while (dataP[dataLen - 1] == PRV_B64_PADDING)
+    {
+        dataLen--;
+    }
+
+    data_index = 0;
+    result_index = 0;
+    while (data_index < dataLen)
+    {
+        prv_decodeBlock(dataP + data_index, *bufferP + result_index);
+        data_index += 4;
+        result_index += 3;
+    }
+    switch (data_index - dataLen)
+    {
+    case 0:
+        break;
+    case 2:
+    {
+        uint8_t tmp[2];
+
+        tmp[0] = prv_b64Revert(dataP[dataLen - 2]);
+        tmp[1] = prv_b64Revert(dataP[dataLen - 1]);
+
+        *bufferP[result_index - 3] = (tmp[0] << 2) | (tmp[1] >> 4);
+        *bufferP[result_index - 2] = (tmp[1] << 4);
+        result_len -= 2;
+    }
+    break;
+    case 3:
+    {
+        uint8_t tmp[3];
+
+        tmp[0] = prv_b64Revert(dataP[dataLen - 3]);
+        tmp[1] = prv_b64Revert(dataP[dataLen - 2]);
+        tmp[2] = prv_b64Revert(dataP[dataLen - 1]);
+
+        *bufferP[result_index - 3] = (tmp[0] << 2) | (tmp[1] >> 4);
+        *bufferP[result_index - 2] = (tmp[1] << 4) | (tmp[2] >> 2);
+        *bufferP[result_index - 1] = (tmp[2] << 6);
+        result_len -= 1;
+    }
+    break;
+    default:
+        // error
+        lwm2m_free(*bufferP);
+        *bufferP = NULL;
+        result_len = 0;
+        break;
+    }
+
+    return result_len;
+}
+

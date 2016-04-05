@@ -599,7 +599,6 @@ static void prv_create_client(char * buffer,
             return;
         }
         lwm2m_data_encode_int(value, dataP);
-        dataP->type = LWM2M_TYPE_RESOURCE;
         dataP->id = 1;
 
         format = LWM2M_CONTENT_TLV;

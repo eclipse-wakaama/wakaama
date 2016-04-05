@@ -67,15 +67,11 @@ static uint8_t prv_set_tlv(lwm2m_data_t* dataP, acc_ctrl_oi_t* accCtrlOiP)
     switch (dataP->id) {
     case RES_M_OBJECT_ID:
         lwm2m_data_encode_int(accCtrlOiP->objectId, dataP);
-        dataP->type = LWM2M_TYPE_RESOURCE;
-        return (0 != dataP->length) ? COAP_205_CONTENT
-                                   : COAP_500_INTERNAL_SERVER_ERROR;
+        return COAP_205_CONTENT;
         break;
     case RES_M_OBJECT_INSTANCE_ID:
         lwm2m_data_encode_int(accCtrlOiP->objectInstId, dataP);
-        dataP->type = LWM2M_TYPE_RESOURCE;
-        return (0 != dataP->length) ? COAP_205_CONTENT
-                                   : COAP_500_INTERNAL_SERVER_ERROR;
+        return COAP_205_CONTENT;
         break;
     case RES_O_ACL:
     {
@@ -96,23 +92,16 @@ static uint8_t prv_set_tlv(lwm2m_data_t* dataP, acc_ctrl_oi_t* accCtrlOiP)
                  accCtrlRiP!= NULL;
                  accCtrlRiP = accCtrlRiP->next, ri++)
             {
+                subTlvP[ri].id = (uint16_t)ri;
                 lwm2m_data_encode_int(accCtrlRiP->accCtrlValue, &subTlvP[ri]);
-                subTlvP[ri].type = LWM2M_TYPE_RESOURCE_INSTANCE;
-                if (subTlvP[ri].length == 0)
-                {
-                    lwm2m_free(subTlvP);
-                    return COAP_500_INTERNAL_SERVER_ERROR ;
-                }
             }
-            lwm2m_data_include(subTlvP, 2, dataP);
+            lwm2m_data_encode_instances(subTlvP, 2, dataP);
             return COAP_205_CONTENT;
         }
     }   break;
     case RES_M_ACCESS_CONTROL_OWNER:
         lwm2m_data_encode_int(accCtrlOiP->accCtrlOwner, dataP);
-        dataP->type = LWM2M_TYPE_RESOURCE;
-        return (0 != dataP->length) ? COAP_205_CONTENT
-                                   : COAP_500_INTERNAL_SERVER_ERROR;
+        return COAP_205_CONTENT;
         break;
     default:
         return COAP_404_NOT_FOUND ;
@@ -273,9 +262,9 @@ static uint8_t prv_write_resources(uint16_t instanceId, int numData,
                 accCtrlOiP->accCtrlValList = NULL;
 
                 int ri;
-                lwm2m_data_t* subTlvArray = (lwm2m_data_t*)tlvArray[i].value;
+                lwm2m_data_t* subTlvArray = tlvArray[i].value.asChildren.array;
 
-                if (tlvArray[i].length==0)
+                if (tlvArray[i].value.asChildren.count == 0)
                 {
                     result = COAP_204_CHANGED;
                 }
@@ -285,7 +274,7 @@ static uint8_t prv_write_resources(uint16_t instanceId, int numData,
                 }
                 else
                 {
-                    for (ri=0; tlvArray[i].length; ri++)
+                    for (ri=0; tlvArray[i].value.asChildren.count; ri++)
                     {
                         if (1 != lwm2m_data_decode_int(&subTlvArray[ri], &value))
                         {
