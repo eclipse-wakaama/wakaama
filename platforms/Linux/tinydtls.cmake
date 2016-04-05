@@ -1,3 +1,5 @@
+cmake_minimum_required (VERSION 3.0)
+
 # List source files
 set(TINYDTLS_SOURCES_DIR ${CMAKE_CURRENT_LIST_DIR}/tinydtls)
 set(TINYDTLS_SOURCES
