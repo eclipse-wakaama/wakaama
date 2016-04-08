@@ -249,6 +249,7 @@ coap_status_t object_write(lwm2m_context_t * contextP,
     else
     {
         size = lwm2m_data_parse(uriP, buffer, length, format, &dataP);
+        dataP->id = uriP->resourceId; 
         if (size == 0)
         {
             result = COAP_406_NOT_ACCEPTABLE;
