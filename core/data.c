@@ -373,14 +373,18 @@ int lwm2m_data_parse(lwm2m_uri_t * uriP,
     switch (format)
     {
     case LWM2M_CONTENT_TEXT:
+        if (!LWM2M_URI_IS_SET_RESOURCE(uriP)) return 0;
         *dataP = lwm2m_data_new(1);
         if (*dataP == NULL) return 0;
+        (*dataP)->id = uriP->resourceId;
         (*dataP)->type = LWM2M_TYPE_STRING;
         return prv_setBuffer(*dataP, buffer, bufferLen);
 
     case LWM2M_CONTENT_OPAQUE:
+        if (!LWM2M_URI_IS_SET_RESOURCE(uriP)) return 0;
         *dataP = lwm2m_data_new(1);
         if (*dataP == NULL) return 0;
+        (*dataP)->id = uriP->resourceId;
         (*dataP)->type = LWM2M_TYPE_OPAQUE;
         return prv_setBuffer(*dataP, buffer, bufferLen);
 
