@@ -1134,7 +1134,7 @@ static int prv_serializeValue(lwm2m_data_t * tlvP,
         memcpy(buffer, JSON_ITEM_STRING_BEGIN, JSON_ITEM_STRING_BEGIN_SIZE);
         head = JSON_ITEM_STRING_BEGIN_SIZE;
 
-        res = utils_base64Encode(tlvP->value.asBuffer.buffer, tlvP->value.asBuffer.length, buffer, bufferLen - head);
+        res = utils_base64Encode(tlvP->value.asBuffer.buffer, tlvP->value.asBuffer.length, buffer+head, bufferLen - head);
         if (res == 0) return -1;
         head += res;
 
@@ -1442,3 +1442,4 @@ size_t json_serialize(lwm2m_uri_t * uriP,
 }
 
 #endif
+
