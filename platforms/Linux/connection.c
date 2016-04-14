@@ -21,11 +21,22 @@
 #include <ctype.h>
 #include "connection.h"
 
+#ifdef _WIN32
+#define close(s) closesocket(s)
+#endif
+
 // from commandline.c
 void output_buffer(FILE * stream, uint8_t * buffer, int length, int indent);
 
 int create_socket(const char * portStr, int addressFamily)
 {
+    #ifdef _WIN32
+    struct WSAData d;
+    if (WSAStartup(MAKEWORD(2, 2), &d) != 0) {
+	    return -1;
+    }
+    #endif
+
     int s = -1;
     struct addrinfo hints;
     struct addrinfo *res;
@@ -140,7 +151,7 @@ connection_t * connection_create(connection_t * connList,
         close(s);
     }
     if (NULL != servinfo) {
-        free(servinfo);
+        freeaddrinfo(servinfo);
     }
 
     return connP;

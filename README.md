@@ -1,10 +1,93 @@
-Wakaama (formerly liblwm2m) is an implementation of the Open Mobile Alliance's LightWeight M2M
-protocol (LWM2M).
+Wakaama (formerly liblwm2m) is an implementation of the OMA LightWeight M2M
+protocol (LWM2M) in C suitable for gateway devices as well as embedded devices.
+
+Lightweight M2M is a protocol from the Open Mobile Alliance for M2M or IoT device management
+and communication. It uses CoAP, a light and compact protocol with an efficient resource data model,
+for the application layer communication between LWM2M Servers and LWM2M Clients.
 
 Developers mailing list: https://dev.eclipse.org/mailman/listinfo/wakaama-dev
 
-Source Layout
--------------
+## Compiling
+Wakaama is not a library but files to be built with your application.
+The integration is very easy if you also use the cmake buildsystem. Please
+have a look at one of the CMakeLists.txt files in the __examples__ directory.
+
+Compilation switches for enabling the server/client/bootstrap implementations:
+ - ``LWM2M_CLIENT_MODE`` to enable LWM2M Client interfaces.
+ - ``LWM2M_SERVER_MODE`` to enable LWM2M Server interfaces.
+ - ``LWM2M_BOOTSTRAP_SERVER_MODE`` to enable LWM2M Bootstrap Server interfaces.
+ - ``LWM2M_BOOTSTRAP`` to enable LWM2M Bootstrap support in a LWM2M Client.
+You cannot compile a library with bootstrap client and server support!
+
+Compilation switches for additional features:
+ - ``LWM2M_SUPPORT_JSON`` to enable JSON payload support (implicit when defining LWM2M_SERVER_MODE)
+
+Automatically determined compilation flags:
+ - ``LWM2M_LITTLE_ENDIAN`` if your target platform uses little-endian format. CMake determines this
+   automatically, you may overwrite this in a cross compilation file. If you do not use cmake, you have
+   define this if appropriate.
+
+## Network stack and platform integration
+Wakaama does not assume any specific network stack or platform calls to be present. You have to provide
+some platform abstraction methods and implement the glue code for your network stack yourself instead.
+
+Look at the __platforms__ directory for examples.
+
+## Examples
+There are some example applications provided to test the server, client and bootstrap capabilities of Wakaama.
+The following recipes assume you are on a unix like platform, you have cmake and make installed and your
+current directory is the wakaama repository root. Some of the examples also compile for Windows systems.
+
+### Server example
+Unix with make:
+ * ``mkdir build && cd build``
+ * ``cmake ../examples/server``
+ * ``make``
+ * ``./lwm2mserver [Options]``
+
+The lwm2mserver listens on UDP port 5683. It features a basic command line
+interface. Type 'help' for a list of supported commands.
+
+Options are:
+ - -4		Use IPv4 connection. Default: IPv6 connection
+
+
+### Client example
+Unix with make:
+ * ``mkdir build && cd build``
+ * ``cmake -DDTLS=0|1 ../examples/client`` Set DTLS to 1 if you want this feature.
+ * ``make``
+ * ``./lwm2mclient [Options]``
+
+The DTLS feature requires tinydtls. CMake will try to download and configure tinydtls for you.
+
+The lwm2mclient opens udp port 56830 and tries to register to a LWM2M Server at
+127.0.0.1:5683 (if IPv4 enabled). It features a basic command line interface. Type 'help' for a
+list of supported commands. To launch a bootstrap session: ``./lwm2mclient -b``
+
+Important options are:
+ - -4		Use IPv4 connection. Default: IPv6 connection
+
+Further implementation, command line and tinydtls details are documented in [[examples/client/README.md]]
+
+### Simpler client example
+Unix with make:
+ * ``mkdir build && cd build``
+ * ``cmake ../examples/lightclient``
+ * ``make``
+ * ``./lightclient [Options]``
+
+If you use Visual Studio 2010 or newer on a Windows operating system:
+ - Open CMake and choose [liblwm2m directory]/examples/lightclient as source dir and an arbitrary directory as build dir.
+ - Choose your VS compiler in the popoup dialog,
+ - Click __configure__ and __generate__ and open the ``.sln`` project file in the build directory.
+
+Important options are:
+ - -4		Use IPv4 connection. Default: IPv6 connection
+
+Further implementation details are documented in [[examples/lightclient/README.md]]
+
+## Source Layout
     -+- core                   (the LWM2M engine)
      |    |
      |    +- er-coap-13        (Erbium's CoAP engine from
@@ -29,124 +112,4 @@ Source Layout
           |
           +- utils             (utility functions for connection handling and command-
                                 line interface)
-
-
-Compiling
----------
-
-Despite its name, liblwm2m is not a library but files to be built with an
-application. liblwm2m uses CMake. Look at examples/server/CMakeLists.txt for an
-example of how to include it.
-Several compilation switches are used:
- - LWM2M_BIG_ENDIAN if your target platform uses big-endian format.
- - LWM2M_LITTLE_ENDIAN if your target platform uses little-endian format.
- - LWM2M_CLIENT_MODE to enable LWM2M Client interfaces.
- - LWM2M_SERVER_MODE to enable LWM2M Server interfaces.
- - LWM2M_BOOTSTRAP_SERVER_MODE to enable LWM2M Bootstrap Server interfaces.
- - LWM2M_BOOTSTRAP to enable LWM2M Bootstrap support in a LWM2M Client.
- - LWM2M_SUPPORT_JSON to enable JSON payload support (implicit when defining LWM2M_SERVER_MODE)
-Depending on your platform, you need to define LWM2M_BIG_ENDIAN or LWM2M_LITTLE_ENDIAN.
-LWM2M_CLIENT_MODE and LWM2M_SERVER_MODE can be defined at the same time.
-
-
-Examples
---------
-There are some example applications provided to test the server, client and bootstrap capabilities of Wakaama.
-The following recipes assume you are on a unix like platform and you have cmake and make installed.
-
-### Server example
- * Create a build directory and change to that.
- * ``cmake [liblwm2m directory]/examples/server``
- * ``make``
- * ``./lwm2mserver [Options]``
-
-The lwm2mserver listens on UDP port 5683. It features a basic command line
-interface. Type 'help' for a list of supported commands.
-
-Options are:
- - -4		Use IPv4 connection. Default: IPv6 connection
-
-
-### Test client example
- * Create a build directory and change to that.
- * ``cmake [liblwm2m directory]/examples/client``
- * ``make``
- * ``./lwm2mclient [Options]``
-
-DTLS feature requires tinydtls submodule. Look at examples/client/README.md for an example of how 
-to include tinydtls.
-
-Build with tinydtls:
- * Create a build directory and change to that.
- * ``cmake -DDTLS=1 [liblwm2m directory]/examples/client``
- * ``make``
- * ``./lwm2mclient_dtls [Options]``
-
-The lwm2mclient features nine LWM2M objects:
- - Security Object (id: 0)
- - Server Object (id: 1)
- - Access Control Object (id: 2) as a skeleton
- - Device Object (id: 3) containing hard-coded values from the Example LWM2M
- Client of Appendix E of the LWM2M Technical Specification.
- - Connectivity Monitoring Object (id: 2) as a skeleton
- - Firmware Update Object (id: 5) as a skeleton.
- - Location Object (id: 6) as a skeleton.
- - Connectivity Statistics Object (id: 7) as a skeleton.
- - a test object (id: 1024) with the following description:
-
-                           Multiple
-          Object |  ID  | Instances | Mandatoty |
-           Test  | 1024 |    Yes    |    No     |
-
-           Ressources:
-                       Supported    Multiple
-           Name | ID | Operations | Instances | Mandatory |  Type   | Range |
-           test |  1 |    R/W     |    No     |    Yes    | Integer | 0-255 |
-           exec |  2 |     E      |    No     |    Yes    |         |       |
-           dec  |  3 |    R/W     |    No     |    Yes    |  Float  |       |
-
-The lwm2mclient opens udp port 56830 and tries to register to a LWM2M Server at
-127.0.0.1:5683. It features a basic command line interface. Type 'help' for a
-list of supported commands.
-
-Options are:
-- -n NAME	Set the endpoint name of the Client. Default: testlwm2mclient
-- -l PORT	Set the local UDP port of the Client. Default: 56830
-- -h HOST	Set the hostname of the LWM2M Server to connect to. Default: localhost
-- -p HOST	Set the port of the LWM2M Server to connect to. Default: 5683
-- -4		Use IPv4 connection. Default: IPv6 connection
-- -t TIME	Set the lifetime of the Client. Default: 300
-- -b		Bootstrap requested.
-- -c		Change battery level over time.
-  
-If DTLS feature enable:
-- -i Set the device management or bootstrap server PSK identity. If not set use none secure mode
-- -s Set the device management or bootstrap server Pre-Shared-Key. If not set use none secure mode
-
-To launch a bootstrap session:
-``./lwm2mclient -b``
-
-
-### Simpler test client example
-
-In the any directory, run the following commands:
- * Create a build directory and change to that.
- * ``cmake [liblwm2m directory]/examples/lightclient``
- * ``make``
- * ``./lightclient [Options]``
-
-The lightclient is much simpler that the lwm2mclient and features only four
-LWM2M objects:
- - Security Object (id: 0)
- - Server Object (id: 1)
- - Device Object (id: 3) containing hard-coded values from the Example LWM2M
- Client of Appendix E of the LWM2M Technical Specification.
- - Test object (id: 1024) from the lwm2mclient as described above.
-
-The lightclient does not feature any command-line interface.
-
-Options are:
- -  -n NAME	Set the endpoint name of the Client. Default: testlightclient
- - -l PORT	Set the local UDP port of the Client. Default: 56830
- - -4		Use IPv4 connection. Default: IPv6 connection
 
