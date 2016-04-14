@@ -301,6 +301,7 @@ free_multi_option(multi_option_t *dst)
   if (dst)
   {
     multi_option_t *n = dst->next;
+    dst->next = NULL;
     if (dst->is_static == 0)
     {
         lwm2m_free(dst->data);
@@ -408,6 +409,9 @@ coap_free_header(void *packet)
     free_multi_option(coap_pkt->uri_path);
     free_multi_option(coap_pkt->uri_query);
     free_multi_option(coap_pkt->location_path);
+    coap_pkt->uri_path = NULL;
+    coap_pkt->uri_query = NULL;
+    coap_pkt->location_path = NULL;
 }
 
 /*-----------------------------------------------------------------------------------*/
