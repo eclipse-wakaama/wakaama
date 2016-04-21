@@ -884,13 +884,17 @@ int main(int argc, char *argv[])
     memset(&data, 0, sizeof(client_data_t));
     data.addressFamily = AF_INET6;
 
-#ifdef WITH_TINYDTLS
-    while ((opt = getopt(argc, argv, "bcl:n:p:t:i:s:h:4")) != -1)
-#else
-    while ((opt = getopt(argc, argv, "bcl:n:p:t:h:4")) != -1)
-#endif
+    opt = 1;
+    while (opt < argc)
     {
-        switch (opt)
+        if (argv[opt] == NULL
+            || argv[opt][0] != '-'
+            || argv[opt][2] != 0)
+        {
+            print_usage();
+            return 0;
+        }
+        switch (argv[opt][1])
         {
         case 'b':
             bootstrapRequested = true;
@@ -900,27 +904,73 @@ int main(int argc, char *argv[])
             batterylevelchanging = 1;
             break;
         case 't':
-            sscanf(optarg, "%d", &lifetime);
+            opt++;
+            if (opt >= argc)
+            {
+                print_usage();
+                return 0;
+            }
+            if (1 != sscanf(argv[opt], "%d", &lifetime))
+            {
+                print_usage();
+                return 0;
+            }
             break;
 #ifdef WITH_TINYDTLS
         case 'i':
-            pskId = optarg;
+            opt++;
+            if (opt >= argc)
+            {
+                print_usage();
+                return 0;
+            }
+            pskId = argv[opt];
             break;
         case 's':
-            psk = optarg;
+            opt++;
+            if (opt >= argc)
+            {
+                print_usage();
+                return 0;
+            }
+            psk = argv[opt];
             break;
 #endif						
         case 'n':
-            name = optarg;
+            opt++;
+            if (opt >= argc)
+            {
+                print_usage();
+                return 0;
+            }
+            name = argv[opt];
             break;
         case 'l':
-            localPort = optarg;
+            opt++;
+            if (opt >= argc)
+            {
+                print_usage();
+                return 0;
+            }
+            localPort = argv[opt];
             break;
         case 'h':
-            server = optarg;
+            opt++;
+            if (opt >= argc)
+            {
+                print_usage();
+                return 0;
+            }
+            server = argv[opt];
             break;
         case 'p':
-            serverPort = optarg;
+            opt++;
+            if (opt >= argc)
+            {
+                print_usage();
+                return 0;
+            }
+            serverPort = argv[opt];
             serverPortChanged = true;
             break;
         case '4':
@@ -930,6 +980,7 @@ int main(int argc, char *argv[])
             print_usage();
             return 0;
         }
+        opt += 1;
     }
 
     if (!server)

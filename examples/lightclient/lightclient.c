@@ -301,15 +301,35 @@ int main(int argc, char *argv[])
 
     data.addressFamily = AF_INET6;
 
-    while ((opt = getopt(argc, argv, "l:n:t:4")) != -1)
+    opt = 1;
+    while (opt < argc)
     {
-        switch (opt)
+        if (argv[opt] == NULL
+            || argv[opt][0] != '-'
+            || argv[opt][2] != 0)
+        {
+            print_usage();
+            return 0;
+        }
+        switch (argv[opt][1])
         {
         case 'n':
-            name = optarg;
+            opt++;
+            if (opt >= argc)
+            {
+                print_usage();
+                return 0;
+            }
+            name = argv[opt];
             break;
         case 'l':
-            localPort = optarg;
+            opt++;
+            if (opt >= argc)
+            {
+                print_usage();
+                return 0;
+            }
+            localPort = argv[opt];
             break;
         case '4':
             data.addressFamily = AF_INET;
@@ -318,6 +338,7 @@ int main(int argc, char *argv[])
             print_usage();
             return 0;
         }
+        opt += 1;
     }
 
     /*

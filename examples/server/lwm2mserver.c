@@ -788,9 +788,10 @@ void handle_sigint(int signum)
 void print_usage(void)
 {
     fprintf(stderr, "Usage: lwm2mserver [OPTION]\r\n");
-    fprintf(stderr, "Launch a LWM2M server on localhost port "LWM2M_STANDARD_PORT_STR".\r\n\n");
+    fprintf(stderr, "Launch a LWM2M server on localhost.\r\n\n");
     fprintf(stdout, "Options:\r\n");
     fprintf(stdout, "  -4\t\tUse IPv4 connection. Default: IPv6 connection\r\n");
+    fprintf(stdout, "  -l PORT\tSet the local UDP port of the Server. Default: "LWM2M_STANDARD_PORT_STR"\r\n");
     fprintf(stdout, "\r\n");
 }
 
@@ -806,6 +807,7 @@ int main(int argc, char *argv[])
     connection_t * connList = NULL;
     int addressFamily = AF_INET6;
     int opt;
+    const char * localPort = LWM2M_STANDARD_PORT_STR;
 
     command_desc_t commands[] =
     {
@@ -867,21 +869,38 @@ int main(int argc, char *argv[])
             COMMAND_END_LIST
     };
 
-    while ((opt = getopt(argc, argv, "4")) != -1)
+    opt = 1;
+    while (opt < argc)
     {
-        switch (opt)
+        if (argv[opt] == NULL
+            || argv[opt][0] != '-'
+            || argv[opt][2] != 0)
+        {
+            print_usage();
+            return 0;
+        }
+        switch (argv[opt][1])
         {
         case '4':
             addressFamily = AF_INET;
+            break;
+        case 'l':
+            opt++;
+            if (opt >= argc)
+            {
+                print_usage();
+                return 0;
+            }
+            localPort = argv[opt];
             break;
         default:
             print_usage();
             return 0;
         }
+        opt += 1;
     }
 
-
-    sock = create_socket(LWM2M_STANDARD_PORT_STR, addressFamily);
+    sock = create_socket(localPort, addressFamily);
     if (sock < 0)
     {
         fprintf(stderr, "Error opening socket: %d\r\n", errno);
