@@ -654,8 +654,6 @@ static char b64Alphabet[64] =
 static void prv_encodeBlock(uint8_t input[3],
                             uint8_t output[4])
 {
-    memset(output, 0, 4);
-
     output[0] = b64Alphabet[input[0] >> 2];
     output[1] = b64Alphabet[((input[0] & 0x03) << 4) | (input[1] >> 4)];
     output[2] = b64Alphabet[((input[1] & 0x0F) << 2) | (input[2] >> 6)];
@@ -726,7 +724,7 @@ size_t utils_base64Encode(uint8_t * dataP,
 
     result_len = prv_getBase64Size(dataLen);
 
-    if (result_len > dataLen) return 0;
+    if (result_len > bufferLen) return 0;
 
     data_index = 0;
     result_index = 0;
