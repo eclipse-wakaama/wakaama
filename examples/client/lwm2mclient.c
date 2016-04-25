@@ -80,7 +80,6 @@
 #include <sys/stat.h>
 #include <errno.h>
 #include <signal.h>
-#include <assert.h>
 
 #define MAX_PACKET_SIZE 1024
 #define DEFAULT_SERVER_IPV6 "[::1]"
@@ -865,32 +864,6 @@ uint8_t* hex_str_2_bin_str(const char* hex_str )
    return output;
 }
 
-void unittest_hex_2_bin()
-{
-    uint8_t err;
-    printf("7:%d\n",hex_2_bin('7',&err));
-    printf("A:%d\n",hex_2_bin('A',&err));
-    printf("e:%d\n",hex_2_bin('e',&err));
-
-
-    uint8_t* binStr = hex_str_2_bin_str("DEADBEEF");
-    assert( binStr && (binStr[0] == 0xDE));
-    assert( binStr[1] == 0xAD);
-    assert( binStr[2] == 0xBE);
-    assert( binStr[3] == 0xEF);
-    free( binStr );
-
-    assert( hex_str_2_bin_str("DEADxEEF") == NULL );
-    assert( hex_str_2_bin_str("123") == NULL );
-    uint8_t* binStr2 = hex_str_2_bin_str("12345678");
-
-    assert( binStr2 && (binStr2[0] == 0x12));
-    assert( binStr2 && (binStr2[1] == 0x34));
-    assert( binStr2 && (binStr2[2] == 0x56));
-    assert( binStr2 && (binStr2[3] == 0x78));
-    free(binStr2);
-
-}
 
 
 
@@ -917,7 +890,6 @@ void print_usage(void)
 
 int main(int argc, char *argv[])
 {
-   //unittest_hex_2_bin();
    
 
     client_data_t data;
@@ -939,7 +911,10 @@ int main(int argc, char *argv[])
 #endif
 
 
-#if 0 
+#if 0 //switch to 1 for encryption 
+    char * pskId = "NameOfMyKey";
+    const char * psk = "according to scientific studies, yellow dogs are not necessarily faster than dogs of other colors";
+    char * name = "nameOfEncryptedClient";
 #else
     char * pskId = NULL;
     const char * psk = NULL;
