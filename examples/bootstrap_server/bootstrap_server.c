@@ -89,7 +89,7 @@ void print_usage(char * filename,
     fprintf(stderr, "Launch a LWM2M Bootstrap Server.\r\n\n");
     fprintf(stdout, "Options:\r\n");
     fprintf(stdout, "  -f FILE\tSpecify BootStrap Information file. Default: ./%s\r\n", filename);
-    fprintf(stdout, "  -p PORT\tSet the local UDP port of the Client. Default: %s\r\n", port);
+    fprintf(stdout, "  -l PORT\tSet the local UDP port of the Client. Default: %s\r\n", port);
     fprintf(stdout, "  -4\t\tUse IPv4 connection. Default: IPv6 connection\r\n");
     fprintf(stdout, "\r\n");
 }
@@ -498,15 +498,35 @@ int main(int argc, char *argv[])
 
     data.addressFamily = AF_INET6;
 
-    while ((opt = getopt(argc, argv, "f:p:4")) != -1)
+    opt = 1;
+    while (opt < argc)
     {
-        switch (opt)
+        if (argv[opt] == NULL
+         || argv[opt][0] != '-'
+         || argv[opt][2] != 0)
+        {
+            print_usage(filename, port);
+            return 0;
+        }
+        switch (argv[opt][1])
         {
         case 'f':
-            filename = optarg;
+            opt++;
+            if (opt >= argc)
+            {
+                print_usage(filename, port);
+                return 0;
+            }
+            filename = argv[opt];
             break;
-        case 'p':
-            port = optarg;
+        case 'l':
+            opt++;
+            if (opt >= argc)
+            {
+                print_usage(filename, port);
+                return 0;
+            }
+            port = argv[opt];
             break;
         case '4':
             data.addressFamily = AF_INET;
@@ -515,6 +535,7 @@ int main(int argc, char *argv[])
             print_usage(filename, port);
             return 0;
         }
+        opt += 1;
     }
 
     data.sock = create_socket(port, data.addressFamily);
