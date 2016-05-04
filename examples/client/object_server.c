@@ -299,7 +299,7 @@ static uint8_t prv_server_write(uint16_t instanceId,
         break;
 
         case LWM2M_SERVER_BINDING_ID:
-            if (dataArray[i].type == LWM2M_TYPE_STRING
+            if ((dataArray[i].type == LWM2M_TYPE_STRING || dataArray[i].type == LWM2M_TYPE_OPAQUE)
              && dataArray[i].value.asBuffer.length > 0 && dataArray[i].value.asBuffer.length <= 3
              && (strncmp((char*)dataArray[i].value.asBuffer.buffer, "U", dataArray[i].value.asBuffer.length) == 0
               || strncmp((char*)dataArray[i].value.asBuffer.buffer, "UQ", dataArray[i].value.asBuffer.length) == 0

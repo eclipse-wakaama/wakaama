@@ -521,7 +521,7 @@ size_t tlv_serialize(bool isResourceInstance,
             else
             {
                 index += headerLen;
-                *bufferP[index] = dataP[i].value.asBoolean ? 1 : 0;
+                (*bufferP)[index] = dataP[i].value.asBoolean ? 1 : 0;
                 index += 1;
             }
             break;
