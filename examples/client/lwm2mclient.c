@@ -60,6 +60,7 @@
 #include "liblwm2m.h"
 #include "commandline.h"
 #ifdef WITH_TINYDTLS
+#include "tinydtls/session.h"
 #include "dtlsconnection.h"
 #else
 #include "connection.h"
@@ -803,6 +804,70 @@ static void close_backup_object()
 }
 #endif
 
+/* transform an ascii character into its integer value.
+   The *err output will be 0 in the good case and
+   1 in the case of a bad character found.
+ */
+uint8_t hex_2_bin(const char c,uint8_t* err)
+{
+   *err = 0;
+   if( (c >='0') && (c <='9') )
+   {
+      return c - '0';
+   }
+   if( (c >='a') && (c <='f') )
+   {
+       return c - 'a' + 10;
+   }
+   if( (c >='A') && (c <='F') )
+   {
+        return c - 'A' + 10;
+   }
+   *err = 1;
+   return 0;
+}
+
+/* convert a hexadecimal string, zero terminated, into a
+   binary string.
+   The output will be exactly half the length of the input.
+   Input must be of even size.
+   Output must be free()d by caller.
+
+   returns NULL in case memory cannot be allocated or bad input
+*/
+uint8_t* hex_str_2_bin_str(const char* hex_str )
+{
+   size_t len_input = strlen(hex_str);
+   if( len_input & 1)
+   {
+       return NULL;
+   }
+   size_t len_output = len_input / 2;
+   uint8_t* output = malloc(len_output);
+   if( output )
+   {
+       size_t i=0;
+       size_t input_index = 0;
+       for(i=0; i < len_output; i++ )
+       {
+          uint8_t err0,err1;
+          output[i] =  hex_2_bin(hex_str[input_index],&err0) << 4;
+          output[i] += hex_2_bin(hex_str[input_index+1],&err1);
+          if( err0 || err1 )
+          {
+             free(output);
+             return NULL;
+          }
+          input_index += 2;
+       }
+   }
+   return output;
+}
+
+
+
+
+
 void print_usage(void)
 {
     fprintf(stdout, "Usage: lwm2mclient [OPTION]\r\n");
@@ -825,6 +890,8 @@ void print_usage(void)
 
 int main(int argc, char *argv[])
 {
+   
+
     client_data_t data;
     int result;
     lwm2m_context_t * lwm2mH = NULL;
@@ -832,7 +899,6 @@ int main(int argc, char *argv[])
     const char * localPort = "56830";
     const char * server = NULL;
     const char * serverPort = LWM2M_STANDARD_PORT_STR;
-    char * name = "testlwm2mclient";
     int lifetime = 300;
     int batterylevelchanging = 0;
     time_t reboot_time = 0;
@@ -844,9 +910,17 @@ int main(int argc, char *argv[])
     lwm2m_client_state_t previousState = STATE_INITIAL;
 #endif
 
+
+#if 0 //switch to 1 for encryption 
+    char * pskId = "NameOfMyKey";
+    const char * psk = "according to scientific studies, yellow dogs are not necessarily faster than dogs of other colors";
+    char * name = "nameOfEncryptedClient";
+#else
     char * pskId = NULL;
-    char * psk = NULL;
-    uint16_t pskLen = -1;
+    const char * psk = NULL;
+    char * name = "testlwm2mclient";
+#endif 
+    //uint16_t pskLen = strlen(psk);
     char * pskBuffer = NULL;
 
     /*
@@ -1003,24 +1077,17 @@ int main(int argc, char *argv[])
      * Now the main function fill an array with each object, this list will be later passed to liblwm2m.
      * Those functions are located in their respective object file.
      */
+    uint32_t pskLen = 0;   
 #ifdef WITH_TINYDTLS
     if (psk!= NULL)
     {
-        pskLen = (strlen(psk) / 2);
-        pskBuffer = malloc(pskLen+1);
+        pskLen = strlen(psk) / 2;
+        // Hex string to binary
+        pskBuffer = hex_str_2_bin_str(psk);
         if (NULL == pskBuffer)
         {
             fprintf(stderr, "Failed to create PSK binary buffer\r\n");
             return -1;
-        }
-        // Hex string to binary
-        char *h = psk;
-        char *b = pskBuffer;
-        char xlate[] = "0123456789ABCDEF";
-
-        for ( ; *h; h += 2, ++b)
-        {
-           *b = ((strchr(xlate, toupper(*h)) - xlate) * 16) + ((strchr(xlate, toupper(*(h+1))) - xlate));
         }
     }
 #endif
