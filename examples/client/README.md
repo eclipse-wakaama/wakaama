@@ -17,7 +17,7 @@ git submodule update
 
 You need to install the packages libtool and autoreconf.
 
-In the wakaama/examples/utils/tinydtls run the following commands:
+In the wakaama/examples/shared/tinydtls run the following commands:
 autoreconf -i
 ./configure
 

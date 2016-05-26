@@ -1004,10 +1004,11 @@ int main(int argc, char *argv[])
      * Those functions are located in their respective object file.
      */
 #ifdef WITH_TINYDTLS
-    if (psk!= NULL)
+    if (psk != NULL)
     {
-        pskLen = (strlen(psk) / 2);
-        pskBuffer = malloc(pskLen+1);
+        pskLen = strlen(psk) / 2;
+        pskBuffer = malloc(pskLen);
+
         if (NULL == pskBuffer)
         {
             fprintf(stderr, "Failed to create PSK binary buffer\r\n");
@@ -1020,7 +1021,16 @@ int main(int argc, char *argv[])
 
         for ( ; *h; h += 2, ++b)
         {
-           *b = ((strchr(xlate, toupper(*h)) - xlate) * 16) + ((strchr(xlate, toupper(*(h+1))) - xlate));
+            char *l = strchr(xlate, toupper(*h));
+            char *r = strchr(xlate, toupper(*(h+1)));
+
+            if (!r || !l)
+            {
+                fprintf(stderr, "Failed to parse Pre-Shared-Key HEXSTRING\r\n");
+                return -1;
+            }
+
+            *b = ((l - xlate) << 4) + (r - xlate);
         }
     }
 #endif
