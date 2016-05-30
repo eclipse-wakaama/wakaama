@@ -161,6 +161,37 @@ exit:
     return (void *)newConnP;
 }
 
+void lwm2m_close_connection(void * sessionH,
+                            void * userData)
+{
+    client_data_t * app_data;
+    connection_t * targetP;
+
+    app_data = (client_data_t *)userData;
+    targetP = (connection_t *)sessionH;
+
+    if (targetP == app_data->connList)
+    {
+        app_data->connList = targetP->next;
+        lwm2m_free(targetP);
+    }
+    else
+    {
+        connection_t * parentP;
+
+        parentP = app_data->connList;
+        while (parentP != NULL && parentP->next != targetP)
+        {
+            parentP = parentP->next;
+        }
+        if (parentP != NULL)
+        {
+            parentP->next = targetP->next;
+            lwm2m_free(targetP);
+        }
+    }
+}
+
 void print_usage(void)
 {
     fprintf(stdout, "Usage: lwm2mclient [OPTION]\r\n");
