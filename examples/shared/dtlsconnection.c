@@ -200,7 +200,7 @@ send_to_peer(struct dtls_context_t *ctx,
     if (cnx != NULL)
     {
         // send data to peer
-        int err = send_data(connP,data,len);
+        int err = send_data(cnx,data,len);
         if (COAP_NO_ERROR != err)
         {
             return -1;
@@ -219,7 +219,7 @@ read_from_peer(struct dtls_context_t *ctx,
     dtls_connection_t* cnx = connection_find((dtls_connection_t *) ctx->app, &(session->addr.st),session->size);
     if (cnx != NULL)
     {
-        lwm2m_handle_packet(connP->lwm2mH, (uint8_t*)data, len, (void*)connP);
+        lwm2m_handle_packet(cnx->lwm2mH, (uint8_t*)data, len, (void*)cnx);
         return 0;
     }
     return -1;
@@ -294,7 +294,7 @@ int sockaddr_cmp(struct sockaddr *x, struct sockaddr *y)
         }
     } else if (x->sa_family == AF_INET6 && y->sa_family == AF_INET6) {
         // IPV6 with IPV6 compare
-        return memcmp(((struct sockaddr_in6 *)x)->sin6_addr.s6_addr, ((struct sockaddr_in6 *)x)->sin6_addr.s6_addr, 16) == 0;
+        return memcmp(((struct sockaddr_in6 *)x)->sin6_addr.s6_addr, ((struct sockaddr_in6 *)y)->sin6_addr.s6_addr, 16) == 0;
     } else {
         // unknown address type
         printf("non IPV4 or IPV6 address\n");
