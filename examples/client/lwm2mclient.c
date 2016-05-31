@@ -280,10 +280,18 @@ void lwm2m_close_connection(void * sessionH,
                             void * userData)
 {
     client_data_t * app_data;
+#ifdef WITH_TINYDTLS
+    dtls_connection_t * targetP;
+#else
     connection_t * targetP;
+#endif
 
     app_data = (client_data_t *)userData;
+#ifdef WITH_TINYDTLS
+    targetP = (dtls_connection_t *)sessionH;
+#else
     targetP = (connection_t *)sessionH;
+#endif
 
     if (targetP == app_data->connList)
     {
@@ -292,7 +300,11 @@ void lwm2m_close_connection(void * sessionH,
     }
     else
     {
+#ifdef WITH_TINYDTLS
+        dtls_connection_t * parentP;
+#else
         connection_t * parentP;
+#endif
 
         parentP = app_data->connList;
         while (parentP != NULL && parentP->next != targetP)
