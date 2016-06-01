@@ -265,6 +265,7 @@ int lwm2m_data_decode_float(const lwm2m_data_t * dataP,
         {
             result = 0;
         }
+        break;
 
     default:
         return 0;
