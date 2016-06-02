@@ -379,6 +379,7 @@ typedef uint8_t (*lwm2m_delete_callback_t) (uint16_t instanceId, lwm2m_object_t 
 
 struct _lwm2m_object_t
 {
+    struct _lwm2m_object_t * next;           // for internal use only.
     uint16_t       objID;
     lwm2m_list_t * instanceList;
     lwm2m_read_callback_t     readFunc;
@@ -626,8 +627,7 @@ typedef struct
     char *               altPath;
     lwm2m_server_t *     bootstrapServerList;
     lwm2m_server_t *     serverList;
-    lwm2m_object_t **    objectList;
-    uint16_t             numObject;
+    lwm2m_object_t *     objectList;
     lwm2m_observed_t *   observedList;
 #endif
 #ifdef LWM2M_SERVER_MODE

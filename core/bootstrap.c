@@ -476,7 +476,7 @@ coap_status_t bootstrap_handleDeleteAll(lwm2m_context_t * contextP,
 {
     lwm2m_server_t * serverP;
     coap_status_t result;
-    int i;
+    lwm2m_object_t * objectP;
 
     serverP = utils_findBootstrapServer(contextP, fromSessionH);
     if (serverP == NULL) return COAP_IGNORE;
@@ -484,9 +484,8 @@ coap_status_t bootstrap_handleDeleteAll(lwm2m_context_t * contextP,
     if (result != COAP_NO_ERROR) return result;
 
     result = COAP_202_DELETED;
-    for (i = 0 ; i < contextP->numObject && result == COAP_202_DELETED ; i++)
+    for (objectP = contextP->objectList; objectP != NULL; objectP = objectP->next)
     {
-        lwm2m_object_t * objectP = contextP->objectList[i];
         lwm2m_uri_t uri;
 
         memset(&uri, 0, sizeof(lwm2m_uri_t));
