@@ -1095,7 +1095,9 @@ void registration_step(lwm2m_context_t * contextP,
     targetP = contextP->serverList;
     while (targetP != NULL)
     {
-        if (targetP->status == STATE_REGISTERED)
+        switch (targetP->status)
+        {
+        case STATE_REGISTERED:
         {
             time_t nextUpdate;
             time_t interval;
@@ -1116,6 +1118,19 @@ void registration_step(lwm2m_context_t * contextP,
             {
                 *timeoutP = interval;
             }
+        }
+        break;
+
+        case STATE_REG_FAILED:
+            if (targetP->sessionH != NULL)
+            {
+                lwm2m_close_connection(targetP->sessionH, contextP->userData);
+                targetP->sessionH = NULL;
+            }
+            break;
+
+        default:
+            break;
         }
         targetP = targetP->next;
     }

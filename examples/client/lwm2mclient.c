@@ -276,6 +276,49 @@ exit:
 }
 #endif
 
+void lwm2m_close_connection(void * sessionH,
+                            void * userData)
+{
+    client_data_t * app_data;
+#ifdef WITH_TINYDTLS
+    dtls_connection_t * targetP;
+#else
+    connection_t * targetP;
+#endif
+
+    app_data = (client_data_t *)userData;
+#ifdef WITH_TINYDTLS
+    targetP = (dtls_connection_t *)sessionH;
+#else
+    targetP = (connection_t *)sessionH;
+#endif
+
+    if (targetP == app_data->connList)
+    {
+        app_data->connList = targetP->next;
+        lwm2m_free(targetP);
+    }
+    else
+    {
+#ifdef WITH_TINYDTLS
+        dtls_connection_t * parentP;
+#else
+        connection_t * parentP;
+#endif
+
+        parentP = app_data->connList;
+        while (parentP != NULL && parentP->next != targetP)
+        {
+            parentP = parentP->next;
+        }
+        if (parentP != NULL)
+        {
+            parentP->next = targetP->next;
+            lwm2m_free(targetP);
+        }
+    }
+}
+
 static void prv_output_servers(char * buffer,
                                void * user_data)
 {
@@ -742,18 +785,6 @@ static void prv_restore_objects(lwm2m_context_t * context)
     fprintf(stdout, "[BOOTSTRAP] ObjectList restored\r\n");
 }
 
-static void prv_connections_free(lwm2m_context_t * context)
-{
-    client_data_t * app_data;
-
-    app_data = context->userData;
-    if (NULL != app_data)
-    {
-        connection_free(app_data->connList);
-        app_data->connList = NULL;
-    }
-}
-
 static void update_bootstrap_info(lwm2m_client_state_t * previousBootstrapState,
         lwm2m_context_t * context)
 {
@@ -767,12 +798,6 @@ static void update_bootstrap_info(lwm2m_client_state_t * previousBootstrapState,
                 fprintf(stdout, "[BOOTSTRAP] backup security and server objects\r\n");
 #endif
                 prv_backup_objects(context);
-                break;
-            case STATE_REGISTER_REQUIRED:
-#ifdef WITH_LOGS
-                fprintf(stdout, "[BOOTSTRAP] free connections\r\n");
-#endif
-                prv_connections_free(context);
                 break;
             default:
                 break;
@@ -1225,7 +1250,6 @@ int main(int argc, char *argv[])
 #ifdef WITH_LOGS
                 fprintf(stdout, "[BOOTSTRAP] restore security and server objects\r\n");
 #endif
-                prv_connections_free(lwm2mH);
                 prv_restore_objects(lwm2mH);
                 lwm2mH->state = STATE_INITIAL;
             }

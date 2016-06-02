@@ -165,11 +165,19 @@ void bootstrap_step(lwm2m_context_t * contextP,
             break;
 
         case STATE_BS_FINISHED:
-            // do nothing
+            if (targetP->sessionH != NULL)
+            {
+                lwm2m_close_connection(targetP->sessionH, contextP->userData);
+                targetP->sessionH = NULL;
+            }
             break;
 
         case STATE_BS_FAILED:
-            // do nothing
+            if (targetP->sessionH != NULL)
+            {
+                lwm2m_close_connection(targetP->sessionH, contextP->userData);
+                targetP->sessionH = NULL;
+            }
             break;
 
         default:
