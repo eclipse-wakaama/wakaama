@@ -62,6 +62,10 @@ extern "C" {
 #include <stdbool.h>
 #include <time.h>
 
+#ifdef WITH_CONFIG_HEADER
+#include "liblwm2m_config.h"
+#endif
+
 #ifdef LWM2M_SERVER_MODE
 #ifndef LWM2M_SUPPORT_JSON
 #define LWM2M_SUPPORT_JSON
