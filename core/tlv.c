@@ -180,50 +180,6 @@ static int prv_createHeader(uint8_t * header,
     return header_len;
 }
 
-static int prv_opaqueToTLV(bool isInstance,
-                           uint8_t* dataP,
-                           size_t data_len,
-                           uint16_t id,
-                           uint8_t * buffer,
-                           size_t buffer_len)
-{
-    uint8_t header[_PRV_TLV_HEADER_MAX_LENGTH];
-    size_t header_len;
-
-    header_len = prv_createHeader(header, isInstance, LWM2M_TYPE_OPAQUE, id, data_len);
-
-    if (buffer_len < data_len + header_len) return 0;
-
-    memmove(buffer, header, header_len);
-
-    memmove(buffer + header_len, dataP, data_len);
-
-    return header_len + data_len;
-}
-
-static int prv_intToTLV(bool isInstance,
-                        int64_t data,
-                        uint16_t id,
-                        uint8_t * buffer,
-                        size_t buffer_len)
-{
-    uint8_t data_buffer[_PRV_64BIT_BUFFER_SIZE];
-    size_t length = 0;
-
-    length = utils_encodeInt(data, data_buffer);
-
-    return prv_opaqueToTLV(isInstance, data_buffer, length, id, buffer, buffer_len);
-}
-
-static int prv_boolToTLV(bool isInstance,
-                         bool value,
-                         uint16_t id,
-                         uint8_t * buffer,
-                         size_t buffer_len)
-{
-    return prv_intToTLV(isInstance, value ? 1 : 0, id, buffer, buffer_len);
-}
-
 int lwm2m_decode_TLV(const uint8_t * buffer,
                     size_t buffer_len,
                     lwm2m_data_type_t * oType,

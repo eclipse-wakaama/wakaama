@@ -250,7 +250,6 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
                     LOG("Block1 NOT IMPLEMENTED\n");
 
                     coap_error_code = COAP_501_NOT_IMPLEMENTED;
-                    coap_error_message = "NoBlock1Support";
                 }
                 else if ( IS_OPTION(message, COAP_OPTION_BLOCK2) )
                 {

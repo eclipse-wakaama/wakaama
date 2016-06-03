@@ -526,34 +526,6 @@ static uri_depth_t prv_decreaseLevel(uri_depth_t level)
     }
 }
 
-static uri_depth_t prv_typeToLevel(lwm2m_data_type_t type)
-{
-    switch (type)
-    {
-    case LWM2M_TYPE_OBJECT:
-        return URI_DEPTH_OBJECT;
-
-    case LWM2M_TYPE_OBJECT_INSTANCE:
-        return URI_DEPTH_OBJECT_INSTANCE;
-
-    case LWM2M_TYPE_MULTIPLE_RESOURCE:
-        return URI_DEPTH_RESOURCE;
-
-
-    case LWM2M_TYPE_STRING:
-    case LWM2M_TYPE_INTEGER:
-    case LWM2M_TYPE_FLOAT:
-    case LWM2M_TYPE_BOOLEAN:
-    case LWM2M_TYPE_OPAQUE:
-    case LWM2M_TYPE_OBJECT_LINK:
-        return URI_DEPTH_RESOURCE;
-
-    case LWM2M_TYPE_UNDEFINED:
-    default:
-        return URI_DEPTH_RESOURCE;
-    }
-}
-
 static lwm2m_data_t * prv_extendData(lwm2m_data_t * parentP)
 {
     lwm2m_data_t * newP;
@@ -942,7 +914,7 @@ int json_parse(lwm2m_uri_t * uriP,
             }
             else
             {
-                res = lwm2m_stringToUri(buffer + bnStart, bnLen, &baseURI);
+                res = lwm2m_stringToUri((char *)buffer + bnStart, bnLen, &baseURI);
                 if (res < 0 || res != bnLen) goto error;
                 baseUriP = &baseURI;
             }
@@ -966,7 +938,7 @@ int json_parse(lwm2m_uri_t * uriP,
 
                 resultP = NULL;
                 // be permissive and allow full object JSON when requesting for a single instance
-                for (i = 0 ; i < parsedP->value.asChildren.count && resultP == NULL; i++)
+                for (i = 0 ; i < (int)parsedP->value.asChildren.count && resultP == NULL; i++)
                 {
                     lwm2m_data_t * targetP;
 
@@ -1018,7 +990,6 @@ int json_parse(lwm2m_uri_t * uriP,
         if (parsedP != NULL)
         {
             lwm2m_data_t * tempP;
-            int i;
 
             size = prv_dataStrip(size, resultP, &tempP);
             if (size <= 0) goto error;
@@ -1171,9 +1142,9 @@ int prv_serializeData(lwm2m_data_t * tlvP,
     case LWM2M_TYPE_OBJECT_INSTANCE:
     case LWM2M_TYPE_MULTIPLE_RESOURCE:
     {
-        char uriStr[URI_MAX_STRING_LEN];
+        uint8_t uriStr[URI_MAX_STRING_LEN];
         size_t uriLen;
-        int index;
+        size_t index;
 
         if (parentUriLen > 0)
         {
@@ -1232,7 +1203,7 @@ static size_t prv_findAndCheckData(lwm2m_uri_t * uriP,
                                    lwm2m_data_t * tlvP,
                                    lwm2m_data_t ** targetP)
 {
-    int index;
+    size_t index;
     size_t result;
 
     if (size > 1)
@@ -1371,11 +1342,11 @@ size_t json_serialize(lwm2m_uri_t * uriP,
                       lwm2m_data_t * tlvP,
                       uint8_t ** bufferP)
 {
-    int index;
+    size_t index;
     size_t head;
     uint8_t bufferJSON[PRV_JSON_BUFFER_SIZE];
-    char baseUriStr[URI_MAX_STRING_LEN];
-    size_t baseUriLen;
+    uint8_t baseUriStr[URI_MAX_STRING_LEN];
+    int baseUriLen;
     uri_depth_t rootLevel;
     size_t num;
     lwm2m_data_t * targetP;

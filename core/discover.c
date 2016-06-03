@@ -199,9 +199,9 @@ static int prv_serializeLinkData(lwm2m_context_t * contextP,
 
     case LWM2M_TYPE_OBJECT_INSTANCE:
     {
-        char uriStr[URI_MAX_STRING_LEN];
+        uint8_t uriStr[URI_MAX_STRING_LEN];
         size_t uriLen;
-        int index;
+        size_t index;
 
         if (parentUriLen > 0)
         {
@@ -259,7 +259,7 @@ int discover_serialize(lwm2m_context_t * contextP,
                       uint8_t ** bufferP)
 {
     uint8_t bufferLink[PRV_LINK_BUFFER_SIZE];
-    char baseUriStr[URI_MAX_STRING_LEN];
+    uint8_t baseUriStr[URI_MAX_STRING_LEN];
     int baseUriLen;
     int index;
     size_t head;
@@ -313,8 +313,6 @@ int discover_serialize(lwm2m_context_t * contextP,
 
     for (index = 0; index < size && head < PRV_LINK_BUFFER_SIZE; index++)
     {
-        int res;
-
         res = prv_serializeLinkData(contextP, dataP + index, uriP, baseUriStr, baseUriLen, bufferLink + head, PRV_LINK_BUFFER_SIZE - head);
         if (res < 0) return -1;
         head += res;

@@ -147,7 +147,6 @@ void prv_deleteTransactionList(lwm2m_context_t * context)
 void lwm2m_close(lwm2m_context_t * contextP)
 {
 #ifdef LWM2M_CLIENT_MODE
-    int i;
 
     lwm2m_deregister(contextP);
     prv_deleteServerList(contextP);
