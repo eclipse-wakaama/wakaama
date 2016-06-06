@@ -662,7 +662,6 @@ static int prv_getId(uint8_t * data,
 {
     int value;
     uint16_t limit;
-    uint16_t end;
 
     // Expecting application/link-format (RFC6690)
     // leading space were removed before. Remove trailing spaces.

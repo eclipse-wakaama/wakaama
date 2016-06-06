@@ -314,7 +314,7 @@ typedef struct {
     }
 
 /* To store error code and human-readable payload */
-extern char *coap_error_message;
+extern const char *coap_error_message;
 
 uint16_t coap_get_mid(void);
 

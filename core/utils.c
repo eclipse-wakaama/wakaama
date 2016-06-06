@@ -251,7 +251,7 @@ size_t utils_floatToText(double data,
         if (intLength == 0) return 0;
     }
     decLength = 0;
-    if (decPart != 0)
+    if (decPart >= FLT_EPSILON)
     {
         int i;
         double noiseFloor;
@@ -380,7 +380,7 @@ lwm2m_binding_t utils_stringToBinding(uint8_t * buffer,
 lwm2m_media_type_t utils_convertMediaType(coap_content_type_t type)
 {
     // Here we just check the content type is a valid value for LWM2M
-    switch(type)
+    switch((uint16_t)type)
     {
     case TEXT_PLAIN:
         return LWM2M_CONTENT_TEXT;
@@ -473,7 +473,7 @@ int utils_stringCopy(char * buffer,
                      size_t length,
                      const char * str)
 {
-    int i;
+    size_t i;
 
     for (i = 0 ; i < length && str[i] != 0 ; i++)
     {
@@ -484,7 +484,7 @@ int utils_stringCopy(char * buffer,
 
     buffer[i] = 0;
 
-    return i;
+    return (int)i;
 }
 
 int utils_intCopy(char * buffer,
@@ -513,7 +513,7 @@ void utils_copyValue(void * dst,
     memcpy(dst, src, len);
 #else
 #ifdef LWM2M_LITTLE_ENDIAN
-    int i;
+    size_t i;
 
     for (i = 0; i < len; i++)
     {
@@ -767,7 +767,7 @@ size_t utils_opaqueToBase64(uint8_t * dataP,
 
     buffer_len = prv_getBase64Size(dataLen);
 
-    *bufferP = (char *)lwm2m_malloc(buffer_len);
+    *bufferP = (uint8_t *)lwm2m_malloc(buffer_len);
     if (!*bufferP) return 0;
     memset(*bufferP, 0, buffer_len);
 
@@ -786,14 +786,14 @@ size_t utils_base64ToOpaque(uint8_t * dataP,
                             size_t dataLen,
                             uint8_t ** bufferP)
 {
-    unsigned int data_index;
-    unsigned int result_index;
+    size_t data_index;
+    size_t result_index;
     size_t result_len;
 
     if (dataLen % 4) return 0;
 
     result_len = (dataLen >> 2) * 3;
-    *bufferP = (unsigned char *)lwm2m_malloc(result_len);
+    *bufferP = (uint8_t *)lwm2m_malloc(result_len);
     if (NULL == *bufferP) return 0;
     memset(*bufferP, 0, result_len);
 

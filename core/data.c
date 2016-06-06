@@ -105,6 +105,10 @@ void lwm2m_data_free(int size,
             {
                 lwm2m_free(dataP[i].value.asBuffer.buffer);
             }
+
+        default:
+            // do nothing
+            break;
         }
     }
     lwm2m_free(dataP);
@@ -210,7 +214,7 @@ int lwm2m_data_decode_int(const lwm2m_data_t * dataP,
 
     case LWM2M_TYPE_OPAQUE:
         result = utils_opaqueToInt(dataP->value.asBuffer.buffer, dataP->value.asBuffer.length, valueP);
-        if (result == dataP->value.asBuffer.length)
+        if (result == (int)dataP->value.asBuffer.length)
         {
             result = 1;
         }
@@ -257,7 +261,7 @@ int lwm2m_data_decode_float(const lwm2m_data_t * dataP,
 
     case LWM2M_TYPE_OPAQUE:
         result = utils_opaqueToFloat(dataP->value.asBuffer.buffer, dataP->value.asBuffer.length, valueP);
-        if (result == dataP->value.asBuffer.length)
+        if (result == (int)dataP->value.asBuffer.length)
         {
             result = 1;
         }
@@ -445,7 +449,7 @@ size_t lwm2m_data_serialize(lwm2m_uri_t * uriP,
 
     case LWM2M_CONTENT_TLV:
         {
-            char baseUriStr[URI_MAX_STRING_LEN];
+            uint8_t baseUriStr[URI_MAX_STRING_LEN];
             size_t baseUriLen;
             uri_depth_t rootLevel;
             bool isResourceInstance;

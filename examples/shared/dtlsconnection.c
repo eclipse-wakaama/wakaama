@@ -113,10 +113,21 @@ int send_data(dtls_connection_t *connP,
 #ifdef WITH_LOGS
     char s[INET6_ADDRSTRLEN];
     in_port_t port;
+
     s[0] = 0;
 
-    inet_ntop(connP->addr.sin6_family, &connP->addr.sin6_addr, s, INET6_ADDRSTRLEN);
-    port = connP->addr.sin6_port;
+    if (AF_INET == connP->addr.sin6_family)
+    {
+        struct sockaddr_in *saddr = (struct sockaddr_in *)&connP->addr;
+        inet_ntop(saddr->sin_family, &saddr->sin_addr, s, INET6_ADDRSTRLEN);
+        port = saddr->sin_port;
+}
+    else if (AF_INET6 == connP->addr.sin6_family)
+    {
+        struct sockaddr_in6 *saddr = (struct sockaddr_in6 *)&connP->addr;
+        inet_ntop(saddr->sin6_family, &saddr->sin6_addr, s, INET6_ADDRSTRLEN);
+        port = saddr->sin6_port;
+    }
 
     fprintf(stderr, "Sending %d bytes to [%s]:%hu\r\n", length, s, ntohs(port));
 
