@@ -59,22 +59,6 @@
 #include <stdio.h>
 
 
-static lwm2m_object_t * prv_findObject(lwm2m_context_t * contextP,
-                                       uint16_t Id)
-{
-    int i;
-
-    for (i = 0 ; i < contextP->numObject ; i++)
-    {
-        if (contextP->objectList[i]->objID == Id)
-        {
-            return contextP->objectList[i];
-        }
-    }
-
-    return NULL;
-}
-
 uint8_t object_checkReadable(lwm2m_context_t * contextP,
                              lwm2m_uri_t * uriP)
 {
@@ -83,7 +67,7 @@ uint8_t object_checkReadable(lwm2m_context_t * contextP,
     lwm2m_data_t * dataP = NULL;
     int size;
 
-    targetP = prv_findObject(contextP, uriP->objectId);
+    targetP = (lwm2m_object_t *)LWM2M_LIST_FIND(contextP->objectList, uriP->objectId);
     if (NULL == targetP) return COAP_404_NOT_FOUND;
     if (NULL == targetP->readFunc) return COAP_405_METHOD_NOT_ALLOWED;
 
@@ -115,7 +99,7 @@ uint8_t object_checkNumeric(lwm2m_context_t * contextP,
 
     if (!LWM2M_URI_IS_SET_RESOURCE(uriP)) return COAP_405_METHOD_NOT_ALLOWED;
 
-    targetP = prv_findObject(contextP, uriP->objectId);
+    targetP = (lwm2m_object_t *)LWM2M_LIST_FIND(contextP->objectList, uriP->objectId);
     if (NULL == targetP) return COAP_404_NOT_FOUND;
     if (NULL == targetP->readFunc) return COAP_405_METHOD_NOT_ALLOWED;
 
@@ -151,7 +135,7 @@ coap_status_t object_readData(lwm2m_context_t * contextP,
     coap_status_t result;
     lwm2m_object_t * targetP;
 
-    targetP = prv_findObject(contextP, uriP->objectId);
+    targetP = (lwm2m_object_t *)LWM2M_LIST_FIND(contextP->objectList, uriP->objectId);
     if (NULL == targetP) return COAP_404_NOT_FOUND;
     if (NULL == targetP->readFunc) return COAP_405_METHOD_NOT_ALLOWED;
     if (targetP->instanceList == NULL) return COAP_404_NOT_FOUND;
@@ -236,7 +220,7 @@ coap_status_t object_write(lwm2m_context_t * contextP,
     lwm2m_data_t * dataP = NULL;
     int size = 0;
 
-    targetP = prv_findObject(contextP, uriP->objectId);
+    targetP = (lwm2m_object_t *)LWM2M_LIST_FIND(contextP->objectList, uriP->objectId);
     if (NULL == targetP)
     {
         result = COAP_404_NOT_FOUND;
@@ -268,7 +252,7 @@ coap_status_t object_execute(lwm2m_context_t * contextP,
 {
     lwm2m_object_t * targetP;
 
-    targetP = prv_findObject(contextP, uriP->objectId);
+    targetP = (lwm2m_object_t *)LWM2M_LIST_FIND(contextP->objectList, uriP->objectId);
     if (NULL == targetP) return COAP_404_NOT_FOUND;
     if (NULL == targetP->executeFunc) return COAP_405_METHOD_NOT_ALLOWED;
 
@@ -291,7 +275,7 @@ coap_status_t object_create(lwm2m_context_t * contextP,
         return COAP_400_BAD_REQUEST;
     }
 
-    targetP = prv_findObject(contextP, uriP->objectId);
+    targetP = (lwm2m_object_t *)LWM2M_LIST_FIND(contextP->objectList, uriP->objectId);
     if (NULL == targetP) return COAP_404_NOT_FOUND;
     if (NULL == targetP->createFunc) return COAP_405_METHOD_NOT_ALLOWED;
 
@@ -323,7 +307,7 @@ coap_status_t object_delete(lwm2m_context_t * contextP,
     lwm2m_object_t * objectP;
     coap_status_t result;
 
-    objectP = prv_findObject(contextP, uriP->objectId);
+    objectP = (lwm2m_object_t *)LWM2M_LIST_FIND(contextP->objectList, uriP->objectId);
     if (NULL == objectP) return COAP_404_NOT_FOUND;
     if (NULL == objectP->deleteFunc) return COAP_405_METHOD_NOT_ALLOWED;
 
@@ -360,7 +344,7 @@ coap_status_t object_discover(lwm2m_context_t * contextP,
     lwm2m_data_t * dataP = NULL;
     int size = 0;
 
-    targetP = prv_findObject(contextP, uriP->objectId);
+    targetP = (lwm2m_object_t *)LWM2M_LIST_FIND(contextP->objectList, uriP->objectId);
     if (NULL == targetP) return COAP_404_NOT_FOUND;
     if (NULL == targetP->discoverFunc) return COAP_501_NOT_IMPLEMENTED;
     if (targetP->instanceList == NULL) return COAP_404_NOT_FOUND;
@@ -429,7 +413,7 @@ bool object_isInstanceNew(lwm2m_context_t * contextP,
 {
     lwm2m_object_t * targetP;
 
-    targetP = prv_findObject(contextP, objectId);
+    targetP = (lwm2m_object_t *)LWM2M_LIST_FIND(contextP->objectList, objectId);
     if (targetP != NULL)
     {
         if (NULL != lwm2m_list_find(targetP->instanceList, instanceId))
@@ -471,7 +455,7 @@ int object_getRegisterPayload(lwm2m_context_t * contextP,
 {
     size_t index;
     int result;
-    int i;
+    lwm2m_object_t * objectP;
 
     // index can not be greater than bufferLen
     index = 0;
@@ -496,20 +480,20 @@ int object_getRegisterPayload(lwm2m_context_t * contextP,
     if (result < 0) return 0;
     index += result;
 
-    for (i = 0 ; i < contextP->numObject ; i++)
+    for (objectP = contextP->objectList; objectP != NULL; objectP = objectP->next)
     {
         size_t start;
         size_t length;
 
-        if (contextP->objectList[i]->objID == LWM2M_SECURITY_OBJECT_ID) continue;
+        if (objectP->objID == LWM2M_SECURITY_OBJECT_ID) continue;
 
         start = index;
-        result = prv_getObjectTemplate(buffer + index, bufferLen - index, contextP->objectList[i]->objID);
+        result = prv_getObjectTemplate(buffer + index, bufferLen - index, objectP->objID);
         if (result < 0) return 0;
         length = result;
         index += length;
 
-        if (contextP->objectList[i]->instanceList == NULL)
+        if (objectP->instanceList == NULL)
         {
             index--;
             result = utils_stringCopy((char *)buffer + index, bufferLen - index, REG_PATH_END);
@@ -519,7 +503,7 @@ int object_getRegisterPayload(lwm2m_context_t * contextP,
         else
         {
             lwm2m_list_t * targetP;
-            for (targetP = contextP->objectList[i]->instanceList ; targetP != NULL ; targetP = targetP->next)
+            for (targetP = objectP->instanceList ; targetP != NULL ; targetP = targetP->next)
             {
                 if (bufferLen - index <= length) return 0;
 
@@ -630,20 +614,20 @@ static int prv_getMandatoryInfo(lwm2m_object_t * objectP,
 
 int object_getServers(lwm2m_context_t * contextP)
 {
+    lwm2m_object_t * targetP;
     lwm2m_object_t * securityObjP = NULL;
     lwm2m_object_t * serverObjP = NULL;
     lwm2m_list_t * securityInstP;   // instanceID of the server in the LWM2M Security Object
-    int i;
 
-    for (i = 0 ; i < contextP->numObject ; i++)
+    for (targetP = contextP->objectList; targetP != NULL; targetP = targetP->next)
     {
-        if (contextP->objectList[i]->objID == LWM2M_SECURITY_OBJECT_ID)
+        if (targetP->objID == LWM2M_SECURITY_OBJECT_ID)
         {
-            securityObjP = contextP->objectList[i];
+            securityObjP = targetP;
         }
-        else if (contextP->objectList[i]->objID == LWM2M_SERVER_OBJECT_ID)
+        else if (targetP->objID == LWM2M_SERVER_OBJECT_ID)
         {
-            serverObjP = contextP->objectList[i];
+            serverObjP = targetP;
         }
     }
 
@@ -748,7 +732,7 @@ coap_status_t object_createInstance(lwm2m_context_t * contextP,
 {
     lwm2m_object_t * targetP;
 
-    targetP = prv_findObject(contextP, uriP->objectId);
+    targetP = (lwm2m_object_t *)LWM2M_LIST_FIND(contextP->objectList, uriP->objectId);
     if (NULL == targetP) return COAP_404_NOT_FOUND;
 
     if (NULL == targetP->createFunc) 
@@ -765,7 +749,7 @@ coap_status_t object_writeInstance(lwm2m_context_t * contextP,
 {
     lwm2m_object_t * targetP;
 
-    targetP = prv_findObject(contextP, uriP->objectId);
+    targetP = (lwm2m_object_t *)LWM2M_LIST_FIND(contextP->objectList, uriP->objectId);
     if (NULL == targetP) return COAP_404_NOT_FOUND;
 
     if (NULL == targetP->writeFunc) 

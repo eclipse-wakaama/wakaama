@@ -119,28 +119,12 @@ void handle_sigint(int signum)
     g_quit = 2;
 }
 
-static lwm2m_object_t * prv_find_object(lwm2m_context_t * contextP,
-                                        uint16_t Id)
-{
-    int i;
-
-    for (i = 0 ; i < contextP->numObject ; i++)
-    {
-        if (contextP->objectList[i]->objID == Id)
-        {
-            return contextP->objectList[i];
-        }
-    }
-
-    return NULL;
-}
-
 void handle_value_changed(lwm2m_context_t * lwm2mH,
                           lwm2m_uri_t * uri,
                           const char * value,
                           size_t valueLength)
 {
-    lwm2m_object_t * object = prv_find_object(lwm2mH, uri->objectId);
+    lwm2m_object_t * object = (lwm2m_object_t *)LWM2M_LIST_FIND(lwm2mH->objectList, uri->objectId);
 
     if (NULL != object)
     {
@@ -438,13 +422,10 @@ static void prv_object_list(char * buffer,
                             void * user_data)
 {
     lwm2m_context_t * lwm2mH = (lwm2m_context_t *)user_data;
-    uint16_t i;
+    lwm2m_object_t * objectP;
 
-    for (i = 0 ; i < lwm2mH->numObject ; i++)
+    for (objectP = lwm2mH->objectList; objectP != NULL; objectP = objectP->next)
     {
-        lwm2m_object_t * objectP;
-
-        objectP = lwm2mH->objectList[i];
         if (objectP->instanceList == NULL)
         {
             fprintf(stdout, "/%d ", objectP->objID);
@@ -499,7 +480,7 @@ static void prv_object_dump(char * buffer,
     if (result == 0) goto syntax_error;
     if (uri.flag & LWM2M_URI_FLAG_RESOURCE_ID) goto syntax_error;
 
-    objectP = prv_find_object(lwm2mH, uri.objectId);
+    objectP = (lwm2m_object_t *)LWM2M_LIST_FIND(lwm2mH->objectList, uri.objectId);
     if (objectP == NULL)
     {
         fprintf(stdout, "Object not found.\n");
@@ -645,38 +626,36 @@ static void prv_display_objects(char * buffer,
                                 void * user_data)
 {
     lwm2m_context_t * lwm2mH = (lwm2m_context_t *)user_data;
-    int i;
-    if (NULL != lwm2mH->objectList) {
-        for (i = 0; i < lwm2mH->numObject; i++) {
-            lwm2m_object_t * object = lwm2mH->objectList[i];
-            if (NULL != object) {
-                switch (object->objID)
-                {
-                case LWM2M_SECURITY_OBJECT_ID:
-                    display_security_object(object);
-                    break;
-                case LWM2M_SERVER_OBJECT_ID:
-                    display_server_object(object);
-                    break;
-                case LWM2M_ACL_OBJECT_ID:
-                    break;
-                case LWM2M_DEVICE_OBJECT_ID:
-                    display_device_object(object);
-                    break;
-                case LWM2M_CONN_MONITOR_OBJECT_ID:
-                    break;
-                case LWM2M_FIRMWARE_UPDATE_OBJECT_ID:
-                    display_firmware_object(object);
-                    break;
-                case LWM2M_LOCATION_OBJECT_ID:
-                    display_location_object(object);
-                    break;
-                case LWM2M_CONN_STATS_OBJECT_ID:
-                    break;
-                case TEST_OBJECT_ID:
-                    display_test_object(object);
-                    break;
-                }
+    lwm2m_object_t * object;
+
+    for (object = lwm2mH->objectList; object != NULL; object = object->next){
+        if (NULL != object) {
+            switch (object->objID)
+            {
+            case LWM2M_SECURITY_OBJECT_ID:
+                display_security_object(object);
+                break;
+            case LWM2M_SERVER_OBJECT_ID:
+                display_server_object(object);
+                break;
+            case LWM2M_ACL_OBJECT_ID:
+                break;
+            case LWM2M_DEVICE_OBJECT_ID:
+                display_device_object(object);
+                break;
+            case LWM2M_CONN_MONITOR_OBJECT_ID:
+                break;
+            case LWM2M_FIRMWARE_UPDATE_OBJECT_ID:
+                display_firmware_object(object);
+                break;
+            case LWM2M_LOCATION_OBJECT_ID:
+                display_location_object(object);
+                break;
+            case LWM2M_CONN_STATS_OBJECT_ID:
+                break;
+            case TEST_OBJECT_ID:
+                display_test_object(object);
+                break;
             }
         }
     }
@@ -733,53 +712,28 @@ static void prv_backup_objects(lwm2m_context_t * context)
     /*
      * Backup content of objects 0 (security) and 1 (server)
      */
-    for (i = 0; i < context->numObject; i++) {
-        lwm2m_object_t * object = context->objectList[i];
-        if (NULL != object) {
-            switch (object->objID)
-            {
-            case LWM2M_SECURITY_OBJECT_ID:
-                copy_security_object(backupObjectArray[0], object);
-                break;
-            case LWM2M_SERVER_OBJECT_ID:
-                copy_server_object(backupObjectArray[1], object);
-                break;
-            default:
-                break;
-            }
-        }
-    }
+    copy_security_object(backupObjectArray[0], (lwm2m_object_t *)LWM2M_LIST_FIND(context->objectList, LWM2M_SECURITY_OBJECT_ID));
+    copy_server_object(backupObjectArray[1], (lwm2m_object_t *)LWM2M_LIST_FIND(context->objectList, LWM2M_SERVER_OBJECT_ID));
 }
 
 static void prv_restore_objects(lwm2m_context_t * context)
 {
-    uint16_t i;
+    lwm2m_object_t * targetP;
 
     /*
      * Restore content  of objects 0 (security) and 1 (server)
      */
-    for (i = 0; i < context->numObject; i++) {
-        lwm2m_object_t * object = context->objectList[i];
-        if (NULL != object) {
-            switch (object->objID)
-            {
-            case LWM2M_SECURITY_OBJECT_ID:
-                // first delete internal content
-                clean_security_object(object);
-                // then restore previous object
-                copy_security_object(object, backupObjectArray[0]);
-                break;
-            case LWM2M_SERVER_OBJECT_ID:
-                // first delete internal content
-                clean_server_object(object);
-                // then restore previous object
-                copy_server_object(object, backupObjectArray[1]);
-                break;
-            default:
-                break;
-            }
-        }
-    }
+    targetP = (lwm2m_object_t *)LWM2M_LIST_FIND(context->objectList, LWM2M_SECURITY_OBJECT_ID);
+    // first delete internal content
+    clean_security_object(targetP);
+    // then restore previous object
+    copy_security_object(targetP, backupObjectArray[0]);
+
+    targetP = (lwm2m_object_t *)LWM2M_LIST_FIND(context->objectList, LWM2M_SERVER_OBJECT_ID);
+    // first delete internal content
+    clean_server_object(targetP);
+    // then restore previous object
+    copy_server_object(targetP, backupObjectArray[1]);
 
     // restart the old servers
     fprintf(stdout, "[BOOTSTRAP] ObjectList restored\r\n");

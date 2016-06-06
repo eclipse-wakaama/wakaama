@@ -152,7 +152,6 @@ void lwm2m_close(lwm2m_context_t * contextP)
     prv_deleteServerList(contextP);
     prv_deleteBootstrapServerList(contextP);
     prv_deleteObservedList(contextP);
-    lwm2m_free(contextP->objectList);
     lwm2m_free(contextP->endpointName);
     if (contextP->msisdn != NULL)
     {
@@ -237,7 +236,7 @@ int lwm2m_configure(lwm2m_context_t * contextP,
     uint8_t found;
 
     // This API can be called only once for now
-    if (contextP->endpointName != NULL) return COAP_400_BAD_REQUEST;
+    if (contextP->endpointName != NULL || contextP->objectList != NULL) return COAP_400_BAD_REQUEST;
 
     if (endpointName == NULL) return COAP_400_BAD_REQUEST;
     if (numObject < 3) return COAP_400_BAD_REQUEST;
@@ -285,17 +284,10 @@ int lwm2m_configure(lwm2m_context_t * contextP,
         }
     }
 
-    contextP->objectList = (lwm2m_object_t **)lwm2m_malloc(numObject * sizeof(lwm2m_object_t *));
-    if (NULL != contextP->objectList)
+    for (i = 0; i < numObject; i++)
     {
-        memcpy(contextP->objectList, objectList, numObject * sizeof(lwm2m_object_t *));
-        contextP->numObject = numObject;
-    }
-    else
-    {
-        lwm2m_free(contextP->endpointName);
-        contextP->endpointName = NULL;
-        return COAP_500_INTERNAL_SERVER_ERROR;
+        objectList[i]->next = NULL;
+        contextP->objectList = (lwm2m_object_t *)LWM2M_LIST_ADD(contextP->objectList, objectList[i]);
     }
 
     return COAP_NO_ERROR;
@@ -305,22 +297,13 @@ int lwm2m_add_object(lwm2m_context_t * contextP,
                      lwm2m_object_t * objectP)
 {
     uint16_t i;
-    lwm2m_object_t ** newList;
+    lwm2m_object_t * targetP;
 
-    for (i = 0 ; i < contextP->numObject ; i++)
-    {
-        if (contextP->objectList[i]->objID == objectP->objID) return COAP_406_NOT_ACCEPTABLE;
-    }
+    targetP = (lwm2m_object_t *)LWM2M_LIST_FIND(contextP->objectList, objectP->objID);
+    if (targetP != NULL) return COAP_406_NOT_ACCEPTABLE;
+    objectP->next = NULL;
 
-    newList = (lwm2m_object_t **)lwm2m_malloc((contextP->numObject + 1) * sizeof(lwm2m_object_t *));
-    if (newList == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
-
-    memcpy(newList, contextP->objectList, contextP->numObject * sizeof(lwm2m_object_t *));
-    newList[contextP->numObject] = objectP;
-
-    lwm2m_free(contextP->objectList);
-    contextP->objectList = newList;
-    contextP->numObject += 1;
+    contextP->objectList = (lwm2m_object_t *)LWM2M_LIST_ADD(contextP->objectList, objectP);
 
     if (contextP->state == STATE_READY)
     {
@@ -334,35 +317,11 @@ int lwm2m_remove_object(lwm2m_context_t * contextP,
                         uint16_t id)
 {
     uint16_t i;
-    lwm2m_object_t ** newList;
+    lwm2m_object_t * targetP;
 
-    i = 0;
-    while (i < contextP->numObject
-        && contextP->objectList[i]->objID != id)
-    {
-        i++;
-    }
-    if (i == contextP->numObject) return COAP_404_NOT_FOUND;
+    contextP->objectList = (lwm2m_object_t *)LWM2M_LIST_RM(contextP->objectList, id, &targetP);
 
-    if (contextP->numObject > 1)
-    {
-        newList = (lwm2m_object_t **)lwm2m_malloc((contextP->numObject - 1) * sizeof(lwm2m_object_t *));
-        if (newList == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
-
-        if (i > 0)
-        {
-            memcpy(newList, contextP->objectList, i * sizeof(lwm2m_object_t *));
-        }
-        memcpy(newList + i, contextP->objectList + i + 1, (contextP->numObject - i - 1) * sizeof(lwm2m_object_t *));
-    }
-    else
-    {
-        newList = NULL;
-    }
-
-    lwm2m_free(contextP->objectList);
-    contextP->objectList = newList;
-    contextP->numObject -= 1;
+    if (targetP == NULL) return COAP_404_NOT_FOUND;
 
     if (contextP->state == STATE_READY)
     {
