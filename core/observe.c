@@ -269,7 +269,7 @@ coap_status_t observe_setParameters(lwm2m_context_t * contextP,
     uint8_t result;
     lwm2m_watcher_t * watcherP;
 
-    LOG("observe_setParameters()\r\n");
+    LOG("observe_set_parameters([/%d/%d/%d])\r\n", uriP->objectId, uriP->instanceId, uriP->resourceId);
 
     if (!LWM2M_URI_IS_SET_INSTANCE(uriP) && LWM2M_URI_IS_SET_RESOURCE(uriP)) return COAP_400_BAD_REQUEST;
 
@@ -354,6 +354,7 @@ coap_status_t observe_setParameters(lwm2m_context_t * contextP,
         }
     }
 
+    LOG("PMIN = %d, PMAX = %d)\r\n", attrP->minPeriod, attrP->maxPeriod);
     return COAP_204_CHANGED;
 }
 
@@ -388,6 +389,7 @@ void lwm2m_resource_value_changed(lwm2m_context_t * contextP,
 {
     lwm2m_observed_t * targetP;
 
+    LOG("lwm2m_resource_value_changed(/%d/%d/%d)\n", uriP->objectId, uriP->instanceId, uriP->resourceId);
     targetP = contextP->observedList;
     while (targetP != NULL)
     {
@@ -448,7 +450,7 @@ void observe_step(lwm2m_context_t * contextP,
                 storeValue = true;
                 break;
             default:
-                continue;
+                break;
             }
         }
         for (watcherP = targetP->watcherList ; watcherP != NULL ; watcherP = watcherP->next)
@@ -465,6 +467,7 @@ void observe_step(lwm2m_context_t * contextP,
                     {
                         // no conditions
                         notify = true;
+                        LOG("observation_step(/%d/%d/%d) notify[1] = TRUE\n", targetP->uri.objectId, targetP->uri.instanceId, targetP->uri.resourceId);
                     }
 
                     if (notify == false
@@ -497,6 +500,7 @@ void observe_step(lwm2m_context_t * contextP,
                             default:
                                 break;
                             }
+                            LOG("observation_step(/%d/%d/%d) notify[2] = %s\n", targetP->uri.objectId, targetP->uri.instanceId, targetP->uri.resourceId, notify ? "TRUE" : "FALSE");
                         }
                         if ((watcherP->parameters->toSet & LWM2M_ATTR_FLAG_GREATER_THAN) != 0)
                         {
@@ -524,6 +528,7 @@ void observe_step(lwm2m_context_t * contextP,
                             default:
                                 break;
                             }
+                            LOG("observation_step(/%d/%d/%d) notify[3] = %s\n", targetP->uri.objectId, targetP->uri.instanceId, targetP->uri.resourceId, notify ? "TRUE" : "FALSE");
                         }
                         if ((watcherP->parameters->toSet & LWM2M_ATTR_FLAG_STEP) != 0)
                         {
@@ -556,6 +561,7 @@ void observe_step(lwm2m_context_t * contextP,
                             default:
                                 break;
                             }
+                            LOG("observation_step(/%d/%d/%d) notify[4] = %s\n", targetP->uri.objectId, targetP->uri.instanceId, targetP->uri.resourceId, notify? "TRUE" : "FALSE");
                         }
                     }
 
@@ -573,6 +579,7 @@ void observe_step(lwm2m_context_t * contextP,
                         {
                             notify = true;
                         }
+                        LOG("observation_step(/%d/%d/%d) notify[5] = %s\n", targetP->uri.objectId, targetP->uri.instanceId, targetP->uri.resourceId, notify ? "TRUE" : "FALSE");
                     }
                 }
 
@@ -585,6 +592,7 @@ void observe_step(lwm2m_context_t * contextP,
                     {
                         notify = true;
                     }
+                    LOG("observation_step(/%d/%d/%d) notify[6] = %s\n", targetP->uri.objectId, targetP->uri.instanceId, targetP->uri.resourceId, notify ? "TRUE" : "FALSE");
                 }
 
                 if (notify == true)
@@ -607,6 +615,7 @@ void observe_step(lwm2m_context_t * contextP,
                         coap_init_message(message, COAP_TYPE_NON, COAP_205_CONTENT, 0);
                         coap_set_header_content_type(message, format);
                         coap_set_payload(message, buffer, length);
+                        LOG("Observe Update[/%d/%d/%d]: %.*s\n", targetP->uri.objectId, targetP->uri.instanceId, targetP->uri.resourceId, length, buffer);
                     }
                     watcherP->lastTime = currentTime;
                     watcherP->lastMid = contextP->nextMID++;
