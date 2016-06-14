@@ -417,6 +417,8 @@ coap_free_header(void *packet)
 /*-----------------------------------------------------------------------------------*/
 size_t coap_serialize_get_size(void *packet)
 {
+    if (packet == NULL) return 0;
+
     coap_packet_t *const coap_pkt = (coap_packet_t *) packet;
     size_t length = 0;
 
@@ -529,16 +531,21 @@ coap_serialize_message(void *packet, uint8_t *buffer)
   coap_pkt->buffer = buffer;
   coap_pkt->version = 1;
 
+#if !defined(COAP_TCP)
   PRINTF("-Serializing MID %u to %p, ", coap_pkt->mid, coap_pkt->buffer);
 
+#endif
   /* set header fields */
   coap_pkt->buffer[0]  = 0x00;
   coap_pkt->buffer[0] |= COAP_HEADER_VERSION_MASK & (coap_pkt->version)<<COAP_HEADER_VERSION_POSITION;
   coap_pkt->buffer[0] |= COAP_HEADER_TYPE_MASK & (coap_pkt->type)<<COAP_HEADER_TYPE_POSITION;
   coap_pkt->buffer[0] |= COAP_HEADER_TOKEN_LEN_MASK & (coap_pkt->token_len)<<COAP_HEADER_TOKEN_LEN_POSITION;
   coap_pkt->buffer[1] = coap_pkt->code;
+
+#if !defined(COAP_TCP)
   coap_pkt->buffer[2] = (uint8_t) ((coap_pkt->mid)>>8);
   coap_pkt->buffer[3] = (uint8_t) (coap_pkt->mid);
+#endif
 
   /* set Token */
   PRINTF("Token (len %u)", coap_pkt->token_len);
@@ -622,7 +629,9 @@ coap_parse_message(void *packet, uint8_t *data, uint16_t data_len)
   coap_pkt->type = (COAP_HEADER_TYPE_MASK & coap_pkt->buffer[0])>>COAP_HEADER_TYPE_POSITION;
   coap_pkt->token_len = MIN(COAP_TOKEN_LEN, (COAP_HEADER_TOKEN_LEN_MASK & coap_pkt->buffer[0])>>COAP_HEADER_TOKEN_LEN_POSITION);
   coap_pkt->code = coap_pkt->buffer[1];
+#if !defined(COAP_TCP)
   coap_pkt->mid = coap_pkt->buffer[2]<<8 | coap_pkt->buffer[3];
+#endif
 
   if (coap_pkt->version != 1)
   {
