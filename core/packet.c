@@ -98,7 +98,11 @@ static void handle_reset(lwm2m_context_t * contextP,
                          coap_packet_t * message)
 {
 #ifdef LWM2M_CLIENT_MODE
-    observe_cancel(contextP, message->mid, fromSessionH);
+
+#if !defined(COAP_TCP)
+     observe_cancel(contextP, message->mid, fromSessionH);
+#endif
+
 #endif
 }
 
@@ -216,6 +220,9 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
             int64_t new_offset = 0;
 
             /* prepare response */
+#if defined(COAP_TCP)
+            coap_init_message(response, COAP_TYPE_NON, COAP_205_CONTENT, message->mid);
+#else
             if (message->type == COAP_TYPE_CON)
             {
                 /* Reliable CON requests are answered with an ACK. */
@@ -226,6 +233,7 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
                 /* Unreliable NON requests are answered with a NON as well. */
                 coap_init_message(response, COAP_TYPE_NON, COAP_205_CONTENT, contextP->nextMID++);
             }
+#endif
 
             /* mirror token */
             if (message->token_len)

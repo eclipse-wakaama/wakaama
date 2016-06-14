@@ -89,6 +89,11 @@ static int prv_getRegistrationQuery(lwm2m_context_t * contextP,
 
     switch (server->binding)
     {
+#ifdef COAP_TCP
+    case BINDING_T:
+        res = utils_stringCopy(buffer + index, length - index, "&b=T");
+        break;
+#else
     case BINDING_U:
         res = utils_stringCopy(buffer + index, length - index, "&b=U");
         break;
@@ -107,6 +112,7 @@ static int prv_getRegistrationQuery(lwm2m_context_t * contextP,
     case BINDING_UQS:
         res = utils_stringCopy(buffer + index, length - index, "&b=UQS");
         break;
+#endif
     default:
         res = -1;
     }
@@ -166,6 +172,7 @@ static uint8_t prv_register(lwm2m_context_t * contextP,
 
     if (query_length == 0) return COAP_500_INTERNAL_SERVER_ERROR;
 
+#ifndef COAP_TCP
     if (0 != server->lifetime)
     {
         int res;
@@ -177,6 +184,7 @@ static uint8_t prv_register(lwm2m_context_t * contextP,
         if (res < 0) return COAP_500_INTERNAL_SERVER_ERROR;
         query_length += res;
     }
+#endif
 
     if (server->sessionH == NULL)
     {

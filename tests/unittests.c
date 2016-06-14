@@ -30,6 +30,13 @@ void * lwm2m_connect_server(uint16_t secObjInstID,
     return (void *)secObjInstID;
 }
 
+// stub function
+void lwm2m_close_connection(void * sessionH,
+                            void * userData)
+{
+}
+
+
 CU_ErrorCode add_tests(CU_pSuite pSuite, struct TestTable* testTable)
 {
     int index;
