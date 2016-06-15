@@ -27,7 +27,6 @@ set(WAKAAMA_SOURCES
     ${WAKAAMA_SOURCES_DIR}/observe.c
     ${WAKAAMA_SOURCES_DIR}/json.c
     ${WAKAAMA_SOURCES_DIR}/discover.c
-    ${CORE_HEADERS}
     ${EXT_SOURCES})
 
 # This will not work for multi project cmake generators like the Visual Studio Generator
