@@ -442,6 +442,11 @@ void copy_security_object(lwm2m_object_t * objectDest, lwm2m_object_t * objectSr
         memcpy(instanceDest, instanceSrc, sizeof(security_instance_t));
         instanceDest->uri = (char*)lwm2m_malloc(strlen(instanceSrc->uri) + 1);
         strcpy(instanceDest->uri, instanceSrc->uri);
+        if (instanceSrc->securityMode == LWM2M_SECURITY_MODE_PRE_SHARED_KEY)
+        {
+            instanceDest->publicIdentity = lwm2m_strdup(instanceSrc->publicIdentity);
+            instanceDest->secretKey = lwm2m_strdup(instanceSrc->secretKey);;
+        }
         instanceSrc = (security_instance_t *)instanceSrc->next;
         if (previousInstanceDest == NULL)
         {
