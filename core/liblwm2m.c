@@ -192,11 +192,11 @@ static int prv_refreshServerList(lwm2m_context_t * contextP)
     while (targetP != NULL)
     {
         nextP = targetP->next;
+        targetP->next = NULL;
         if (!targetP->dirty)
         {
             targetP->status = STATE_DEREGISTERED;
-            targetP->next = contextP->bootstrapServerList;
-            contextP->bootstrapServerList = targetP;
+            contextP->bootstrapServerList = (lwm2m_server_t *)LWM2M_LIST_ADD(contextP->bootstrapServerList, targetP);
         }
         else
         {
@@ -209,11 +209,11 @@ static int prv_refreshServerList(lwm2m_context_t * contextP)
     while (targetP != NULL)
     {
         nextP = targetP->next;
+        targetP->next = NULL;
         if (!targetP->dirty)
         {
             // TODO: Should we revert the status to STATE_DEREGISTERED ?
-            targetP->next = contextP->serverList;
-            contextP->serverList = targetP;
+            contextP->serverList = (lwm2m_server_t *)LWM2M_LIST_ADD(contextP->serverList, targetP);;
         }
         else
         {
@@ -426,6 +426,15 @@ next_step:
     break;
 
     case STATE_READY:
+        if (registration_getStatus(contextP) == STATE_REG_FAILED)
+        {
+            // TODO avoid infinite loop by checking the bootstrap info is different
+            contextP->state = STATE_BOOTSTRAP_REQUIRED;
+            goto next_step;
+            break;
+        }
+        break;
+
     default:
         // do nothing
         break;

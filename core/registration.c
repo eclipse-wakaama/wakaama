@@ -292,12 +292,22 @@ int lwm2m_update_registration(lwm2m_context_t * contextP,
             if (targetP->shortID == shortServerID)
             {
                 // found the server, trigger the update transaction
-                return prv_updateRegistration(contextP, targetP, withObjects);
+                if (targetP->status == STATE_REGISTERED)
+                {
+                    return prv_updateRegistration(contextP, targetP, withObjects);
+                }
+                else
+                {
+                    return COAP_400_BAD_REQUEST;
+                }
             }
         }
         else
         {
-            result = prv_updateRegistration(contextP, targetP, withObjects);
+            if (targetP->status == STATE_REGISTERED)
+            {
+                result = prv_updateRegistration(contextP, targetP, withObjects);
+            }
         }
         targetP = targetP->next;
     }
