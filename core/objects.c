@@ -270,7 +270,7 @@ coap_status_t object_create(lwm2m_context_t * contextP,
     int size = 0;
     uint8_t result;
 
-    if (length == 0 || buffer == 0)
+    if (length == 0 || buffer == 0 || LWM2M_URI_IS_SET_INSTANCE(uriP))
     {
         return COAP_400_BAD_REQUEST;
     }
@@ -279,23 +279,40 @@ coap_status_t object_create(lwm2m_context_t * contextP,
     if (NULL == targetP) return COAP_404_NOT_FOUND;
     if (NULL == targetP->createFunc) return COAP_405_METHOD_NOT_ALLOWED;
 
-    if (LWM2M_URI_IS_SET_INSTANCE(uriP))
-    {
-        if (NULL != lwm2m_list_find(targetP->instanceList, uriP->instanceId))
-        {
-            // Instance already exists
-            return COAP_406_NOT_ACCEPTABLE;
-        }
-    }
-    else
-    {
-        uriP->instanceId = lwm2m_list_newId(targetP->instanceList);
-        uriP->flag |= LWM2M_URI_FLAG_INSTANCE_ID;
-    }
-
     size = lwm2m_data_parse(uriP, buffer, length, format, &dataP);
     if (size == 0) return COAP_500_INTERNAL_SERVER_ERROR;
-    result = targetP->createFunc(uriP->instanceId, size, dataP, targetP);
+
+    switch (dataP[0].type)
+    {
+    case LWM2M_TYPE_OBJECT:
+        result = COAP_400_BAD_REQUEST;
+        goto exit;
+
+    case LWM2M_TYPE_OBJECT_INSTANCE:
+        if (size != 1)
+        {
+            result = COAP_400_BAD_REQUEST;
+            goto exit;
+        }
+        if (NULL != lwm2m_list_find(targetP->instanceList, dataP[0].id))
+        {
+            // Instance already exists
+            result = COAP_406_NOT_ACCEPTABLE;
+            goto exit;
+        }
+        result = targetP->createFunc(dataP[0].id, dataP[0].value.asChildren.count, dataP[0].value.asChildren.array, targetP);
+        uriP->instanceId = dataP[0].id;
+        uriP->flag |= LWM2M_URI_FLAG_INSTANCE_ID;
+        break;
+
+    default:
+        uriP->instanceId = lwm2m_list_newId(targetP->instanceList);
+        uriP->flag |= LWM2M_URI_FLAG_INSTANCE_ID;
+        result = targetP->createFunc(uriP->instanceId, size, dataP, targetP);
+        break;
+    }
+
+exit:
     lwm2m_data_free(size, dataP);
 
     return result;
