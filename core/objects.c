@@ -280,7 +280,7 @@ coap_status_t object_create(lwm2m_context_t * contextP,
     if (NULL == targetP->createFunc) return COAP_405_METHOD_NOT_ALLOWED;
 
     size = lwm2m_data_parse(uriP, buffer, length, format, &dataP);
-    if (size == 0) return COAP_500_INTERNAL_SERVER_ERROR;
+    if (size <= 0) return COAP_400_BAD_REQUEST;
 
     switch (dataP[0].type)
     {
