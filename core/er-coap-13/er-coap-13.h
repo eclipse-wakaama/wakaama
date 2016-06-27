@@ -60,9 +60,15 @@
 #define COAP_RESPONSE_TIMEOUT                2
 #define COAP_MAX_RETRANSMIT                  4
 
+#if defined(COAP_TCP)
+#define COAP_HEADER_LEN                      2 /* | version:0x03 type:0x0C tkl:0xF0 | code | */
+#define COAP_ETAG_LEN                        8 /* The maximum number of bytes for the ETag */
+#define COAP_TOKEN_LEN                       6 /* The maximum number of bytes for the Token */
+#else
 #define COAP_HEADER_LEN                      4 /* | version:0x03 type:0x0C tkl:0xF0 | code | mid:0x00FF | mid:0xFF00 | */
 #define COAP_ETAG_LEN                        8 /* The maximum number of bytes for the ETag */
 #define COAP_TOKEN_LEN                       8 /* The maximum number of bytes for the Token */
+#endif
 #define COAP_MAX_ACCEPT_NUM                  2 /* The maximum number of accept preferences to parse/store */
 
 #define COAP_MAX_OPTION_HEADER_LEN           5
@@ -82,7 +88,7 @@
  */
 #ifndef COAP_MAX_HEADER_SIZE
 /*                            Hdr CoT Age  Tag              Obs  Tok               Blo strings */
-#define COAP_MAX_HEADER_SIZE  (4 + 3 + 5 + 1+COAP_ETAG_LEN + 3 + 1+COAP_TOKEN_LEN + 4 + 30) /* 70 */
+#define COAP_MAX_HEADER_SIZE  (COAP_HEADER_LEN + 3 + 5 + 1+COAP_ETAG_LEN + 3 + 1+COAP_TOKEN_LEN + 4 + 30) /* 70 */
 #endif /* COAP_MAX_HEADER_SIZE */
 
 #define COAP_MAX_PACKET_SIZE  (COAP_MAX_HEADER_SIZE + REST_MAX_CHUNK_SIZE)

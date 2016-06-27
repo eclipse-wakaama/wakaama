@@ -215,6 +215,13 @@ void observe_cancel(lwm2m_context_t * contextP,
                     uint16_t mid,
                     void * fromSessionH)
 {
+#if defined(COAP_TCP)
+    // NO OP. The request should have failed up stream.
+    //
+    LOG("cancel_observe()\r\n");
+
+#else
+
     lwm2m_observed_t * observedP;
 
     LOG("observe_cancel()\r\n");
@@ -259,6 +266,7 @@ void observe_cancel(lwm2m_context_t * contextP,
             return;
         }
     }
+#endif
 }
 
 coap_status_t observe_setParameters(lwm2m_context_t * contextP,

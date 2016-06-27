@@ -421,12 +421,16 @@ typedef enum
 typedef enum
 {
     BINDING_UNKNOWN = 0,
+#ifndef COAP_TCP
     BINDING_U,   // UDP
     BINDING_UQ,  // UDP queue mode
     BINDING_S,   // SMS
     BINDING_SQ,  // SMS queue mode
     BINDING_US,  // UDP plus SMS
-    BINDING_UQS  // UDP queue mode plus SMS
+    BINDING_UQS, // UDP queue mode plus SMS
+#else
+    BINDING_T    // TCP with TLS
+#endif
 } lwm2m_binding_t;
 
 typedef struct _lwm2m_server_

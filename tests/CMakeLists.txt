@@ -1,9 +1,14 @@
-cmake_minimum_required (VERSION 3.0)
+cmake_minimum_required (VERSION 2.8)
 
 project (lwm2munittests)
 
 include(${CMAKE_CURRENT_LIST_DIR}/../core/wakaama.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/../examples/shared/shared.cmake)
+
+if (CMAKE_COMPILER_IS_GNUCC)
+    set(CMAKE_C_FLAGS ${CMAKE_C_FLAGS} -std=gnu99)
+endif()
+
 
 add_definitions(-DLWM2M_CLIENT_MODE -DLWM2M_SUPPORT_JSON)
 add_definitions(${SHARED_DEFINITIONS} ${WAKAAMA_DEFINITIONS})

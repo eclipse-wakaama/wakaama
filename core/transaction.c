@@ -226,12 +226,20 @@ lwm2m_transaction_t * transaction_new(coap_message_type_t type,
             time_t tv_sec = lwm2m_gettime();
 
             // initialize first 6 bytes, leave the last 2 random
+#if defined(COAP_TCP)
+            temp_token[0] = (uint8_t)(tv_sec & 0xFF);
+            temp_token[1] = (uint8_t)((tv_sec & 0xFF00) >> 8);
+            temp_token[2] = (uint8_t)((tv_sec & 0xFF0000) >> 16);
+            temp_token[3] = (uint8_t)((tv_sec & 0xFF000000) >> 24);
+#else
             temp_token[0] = mID;
             temp_token[1] = mID >> 8;
             temp_token[2] = tv_sec;
             temp_token[3] = tv_sec >> 8;
             temp_token[4] = tv_sec >> 16;
             temp_token[5] = tv_sec >> 24;
+#endif
+			
             // use just the provided amount of bytes
             coap_set_header_token(transacP->message, temp_token, token_len);
         }
