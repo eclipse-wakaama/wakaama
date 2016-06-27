@@ -268,6 +268,7 @@ size_t json_serialize(lwm2m_uri_t * uriP, int size, lwm2m_data_t * tlvP, uint8_t
 int discover_serialize(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, int size, lwm2m_data_t * dataP, uint8_t ** bufferP);
 
 // defined in utils.c
+lwm2m_data_type_t utils_depthToDatatype(uri_depth_t depth);
 lwm2m_binding_t utils_stringToBinding(uint8_t *buffer, size_t length);
 lwm2m_media_type_t utils_convertMediaType(coap_content_type_t type);
 int utils_isAltPathValid(const char * altPath);

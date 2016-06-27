@@ -296,7 +296,6 @@ int lwm2m_configure(lwm2m_context_t * contextP,
 int lwm2m_add_object(lwm2m_context_t * contextP,
                      lwm2m_object_t * objectP)
 {
-    uint16_t i;
     lwm2m_object_t * targetP;
 
     targetP = (lwm2m_object_t *)LWM2M_LIST_FIND(contextP->objectList, objectP->objID);

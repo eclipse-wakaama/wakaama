@@ -197,7 +197,14 @@ static void test_raw_expected(const char * uriStr,
 {
     lwm2m_data_t * tlvP;
     lwm2m_uri_t uri;
-    int size = lwm2m_data_parse((uriStr != NULL)?&uri:NULL, (uint8_t *)testBuf, testLen, format, &tlvP);
+    int size;
+    
+    if (uriStr != NULL)
+    {
+        lwm2m_stringToUri(uriStr, strlen(uriStr), &uri);
+    }
+
+    size = lwm2m_data_parse((uriStr != NULL) ? &uri : NULL, (uint8_t *)testBuf, testLen, format, &tlvP);
     CU_ASSERT_TRUE_FATAL(size>0);
 
     // Serialize to the same format and compare to the input buffer

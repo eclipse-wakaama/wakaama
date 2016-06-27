@@ -852,3 +852,17 @@ size_t utils_base64ToOpaque(uint8_t * dataP,
     return result_len;
 }
 
+lwm2m_data_type_t utils_depthToDatatype(uri_depth_t depth)
+{
+    switch (depth)
+    {
+    case URI_DEPTH_OBJECT:
+        return LWM2M_TYPE_OBJECT;
+    case URI_DEPTH_OBJECT_INSTANCE:
+        return LWM2M_TYPE_OBJECT_INSTANCE;
+    default:
+        break;
+    }
+
+    return LWM2M_TYPE_UNDEFINED;
+}
