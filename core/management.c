@@ -260,18 +260,13 @@ coap_status_t dm_handleRequest(lwm2m_context_t * contextP,
                         break;
                     }
                     coap_set_header_location_path(response, location_path);
+
+                    lwm2m_update_registration(contextP, 0, true);
                 }
             }
             else if (!LWM2M_URI_IS_SET_RESOURCE(uriP))
             {
-                if (object_isInstanceNew(contextP, uriP->objectId, uriP->instanceId))
-                {
-                    result = object_create(contextP, uriP, format, message->payload, message->payload_len);
-                }
-                else
-                {
-                    result = object_write(contextP, uriP, format, message->payload, message->payload_len);
-                }
+                result = object_write(contextP, uriP, format, message->payload, message->payload_len);
             }
             else
             {
@@ -315,6 +310,10 @@ coap_status_t dm_handleRequest(lwm2m_context_t * contextP,
             else
             {
                 result = object_delete(contextP, uriP);
+                if (result == COAP_202_DELETED)
+                {
+                    lwm2m_update_registration(contextP, 0, true);
+                }
             }
         }
         break;

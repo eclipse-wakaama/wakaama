@@ -592,6 +592,12 @@ static void prv_create_client(char * buffer,
     {
         lwm2m_data_t * dataP;
 
+        if (1 != sscanf(buffer, "%d", &value))
+        {
+            fprintf(stdout, "Invalid value !");
+            return;
+        }
+
         dataP = lwm2m_data_new(1);
         if (dataP == NULL)
         {
