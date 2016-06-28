@@ -202,7 +202,16 @@ coap_status_t object_read(lwm2m_context_t * contextP,
     if (result == COAP_205_CONTENT)
     {
         *lengthP = lwm2m_data_serialize(uriP, size, dataP, formatP, bufferP);
-        if (*lengthP == 0) result = COAP_500_INTERNAL_SERVER_ERROR;
+        if (*lengthP == 0)
+        {
+            if (*formatP != LWM2M_CONTENT_TEXT
+                || size != 1
+                || dataP->type != LWM2M_TYPE_STRING
+                || dataP->value.asBuffer.length != 0)
+            {
+                result = COAP_500_INTERNAL_SERVER_ERROR;
+            }
+        }
     }
     lwm2m_data_free(size, dataP);
 
