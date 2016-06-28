@@ -285,6 +285,7 @@ void utils_copyValue(void * dst, const void * src, size_t len);
 int utils_opaqueToInt(const uint8_t * buffer, size_t buffer_len, int64_t * dataP);
 int utils_opaqueToFloat(const uint8_t * buffer, size_t buffer_len, double * dataP);
 size_t utils_encodeInt(int64_t data, uint8_t data_buffer[_PRV_64BIT_BUFFER_SIZE]);
+size_t utils_encodeFloat(double data, uint8_t data_buffer[_PRV_64BIT_BUFFER_SIZE]);
 size_t utils_base64ToOpaque(uint8_t * dataP, size_t dataLen, uint8_t ** bufferP);
 size_t utils_opaqueToBase64(uint8_t * dataP, size_t dataLen, uint8_t ** bufferP);
 size_t utils_base64Encode(uint8_t * dataP, size_t dataLen, uint8_t * bufferP, size_t bufferLen);
