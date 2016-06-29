@@ -45,9 +45,6 @@
 #include <stdint.h>
 #include <stddef.h> /* for size_t */
 
-#include <signal.h>
-#include <time.h>
-
 /*
  * The maximum buffer size that is provided for resource responses and must be respected due to the limited IP buffer.
  * Larger data must be handled by the resource and will be sent chunk-wise through a TCP stream or CoAP blocks.
