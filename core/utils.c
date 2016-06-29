@@ -641,6 +641,30 @@ size_t utils_encodeInt(int64_t data,
     return length;
 }
 
+size_t utils_encodeFloat(double data,
+                         uint8_t data_buffer[_PRV_64BIT_BUFFER_SIZE])
+{
+    size_t length = 0;
+
+    memset(data_buffer, 0, _PRV_64BIT_BUFFER_SIZE);
+
+    if ((data < 0.0 - (double)FLT_MAX) || (data >(double)FLT_MAX))
+    {
+        length = 8;
+        utils_copyValue(data_buffer, &data, 8);
+    }
+    else
+    {
+        float value;
+
+        length = 4;
+        value = (float)data;
+        utils_copyValue(data_buffer, &value, 4);
+    }
+
+    return length;
+}
+
 #define PRV_B64_PADDING '='
 
 static char b64Alphabet[64] =
@@ -852,3 +876,17 @@ size_t utils_base64ToOpaque(uint8_t * dataP,
     return result_len;
 }
 
+lwm2m_data_type_t utils_depthToDatatype(uri_depth_t depth)
+{
+    switch (depth)
+    {
+    case URI_DEPTH_OBJECT:
+        return LWM2M_TYPE_OBJECT;
+    case URI_DEPTH_OBJECT_INSTANCE:
+        return LWM2M_TYPE_OBJECT_INSTANCE;
+    default:
+        break;
+    }
+
+    return LWM2M_TYPE_UNDEFINED;
+}

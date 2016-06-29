@@ -346,8 +346,21 @@ static size_t prv_getLength(int size,
             break;
 
         case LWM2M_TYPE_FLOAT:
-            // TODO: support floats in TLV.
-            length = -1;
+            {
+                size_t data_len;
+
+                if ((dataP[i].value.asFloat < 0.0 - (double)FLT_MAX)
+                    || (dataP[i].value.asFloat >(double)FLT_MAX))
+                {
+                    data_len = 8;
+                }
+                else
+                {
+                    data_len = 4;
+                }
+
+                length += prv_getHeaderLength(dataP[i].id, data_len) + data_len;
+            }
             break;
 
         case LWM2M_TYPE_BOOLEAN:
@@ -464,8 +477,23 @@ size_t tlv_serialize(bool isResourceInstance,
             break;
 
         case LWM2M_TYPE_FLOAT:
-            // TODO: support floats in TLV.
-            length = 0;
+            {
+                size_t data_len;
+                uint8_t data_buffer[_PRV_64BIT_BUFFER_SIZE];
+
+                data_len = utils_encodeFloat(dataP[i].value.asFloat, data_buffer);
+                headerLen = prv_createHeader(*bufferP + index, isInstance, dataP[i].type, dataP[i].id, data_len);
+                if (headerLen == 0)
+                {
+                    length = 0;
+                }
+                else
+                {
+                    index += headerLen;
+                    memcpy(*bufferP + index, data_buffer, data_len);
+                    index += data_len;
+                }
+            }
             break;
 
         case LWM2M_TYPE_BOOLEAN:

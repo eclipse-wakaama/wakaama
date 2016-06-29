@@ -202,7 +202,16 @@ coap_status_t object_read(lwm2m_context_t * contextP,
     if (result == COAP_205_CONTENT)
     {
         *lengthP = lwm2m_data_serialize(uriP, size, dataP, formatP, bufferP);
-        if (*lengthP == 0) result = COAP_500_INTERNAL_SERVER_ERROR;
+        if (*lengthP == 0)
+        {
+            if (*formatP != LWM2M_CONTENT_TEXT
+                || size != 1
+                || dataP->type != LWM2M_TYPE_STRING
+                || dataP->value.asBuffer.length != 0)
+            {
+                result = COAP_500_INTERNAL_SERVER_ERROR;
+            }
+        }
     }
     lwm2m_data_free(size, dataP);
 
@@ -631,20 +640,20 @@ static int prv_getMandatoryInfo(lwm2m_object_t * objectP,
 
 int object_getServers(lwm2m_context_t * contextP)
 {
-    lwm2m_object_t * targetP;
+    lwm2m_object_t * objectP;
     lwm2m_object_t * securityObjP = NULL;
     lwm2m_object_t * serverObjP = NULL;
     lwm2m_list_t * securityInstP;   // instanceID of the server in the LWM2M Security Object
 
-    for (targetP = contextP->objectList; targetP != NULL; targetP = targetP->next)
+    for (objectP = contextP->objectList; objectP != NULL; objectP = objectP->next)
     {
-        if (targetP->objID == LWM2M_SECURITY_OBJECT_ID)
+        if (objectP->objID == LWM2M_SECURITY_OBJECT_ID)
         {
-            securityObjP = targetP;
+            securityObjP = objectP;
         }
-        else if (targetP->objID == LWM2M_SERVER_OBJECT_ID)
+        else if (objectP->objID == LWM2M_SERVER_OBJECT_ID)
         {
-            serverObjP = targetP;
+            serverObjP = objectP;
         }
     }
 

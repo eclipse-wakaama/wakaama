@@ -327,6 +327,16 @@ static int prv_parseItem(uint8_t * buffer,
                 {
                     return -1;
                 }
+                // Ignore starting /
+                if (buffer[index + valueStart + 1] == '/')
+                {
+                    if (valueLen < 4)
+                    {
+                        return -1;
+                    }
+                    valueStart += 1;
+                    valueLen -= 1;
+                }
                 i = 0;
                 j = 0;
                 do {
@@ -499,7 +509,7 @@ static lwm2m_data_t * prv_findDataItem(lwm2m_data_t * listP,
     i = 0;
     while (i < count)
     {
-        if (listP[i].type == LWM2M_TYPE_UNDEFINED && listP[i].id == id)
+        if (listP[i].type != LWM2M_TYPE_UNDEFINED && listP[i].id == id)
         {
             return listP + i;
         }
@@ -640,7 +650,7 @@ static int prv_convertRecord(lwm2m_uri_t * uriP,
             targetP = rootP + freeIndex;
             freeIndex++;
             targetP->id = recordArray[index].ids[0];
-            targetP->type = rootLevel;
+            targetP->type = utils_depthToDatatype(rootLevel);
         }
         if (recordArray[index].ids[1] != LWM2M_MAX_ID)
         {
@@ -657,7 +667,7 @@ static int prv_convertRecord(lwm2m_uri_t * uriP,
                     targetP = prv_extendData(parentP);
                     if (targetP == NULL) goto error;
                     targetP->id = recordArray[index].ids[i];
-                    targetP->type = level;
+                    targetP->type = utils_depthToDatatype(level);
                 }
                 level = prv_decreaseLevel(level);
                 parentP = targetP;

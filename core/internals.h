@@ -268,6 +268,7 @@ size_t json_serialize(lwm2m_uri_t * uriP, int size, lwm2m_data_t * tlvP, uint8_t
 int discover_serialize(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, int size, lwm2m_data_t * dataP, uint8_t ** bufferP);
 
 // defined in utils.c
+lwm2m_data_type_t utils_depthToDatatype(uri_depth_t depth);
 lwm2m_binding_t utils_stringToBinding(uint8_t *buffer, size_t length);
 lwm2m_media_type_t utils_convertMediaType(coap_content_type_t type);
 int utils_isAltPathValid(const char * altPath);
@@ -284,6 +285,7 @@ void utils_copyValue(void * dst, const void * src, size_t len);
 int utils_opaqueToInt(const uint8_t * buffer, size_t buffer_len, int64_t * dataP);
 int utils_opaqueToFloat(const uint8_t * buffer, size_t buffer_len, double * dataP);
 size_t utils_encodeInt(int64_t data, uint8_t data_buffer[_PRV_64BIT_BUFFER_SIZE]);
+size_t utils_encodeFloat(double data, uint8_t data_buffer[_PRV_64BIT_BUFFER_SIZE]);
 size_t utils_base64ToOpaque(uint8_t * dataP, size_t dataLen, uint8_t ** bufferP);
 size_t utils_opaqueToBase64(uint8_t * dataP, size_t dataLen, uint8_t ** bufferP);
 size_t utils_base64Encode(uint8_t * dataP, size_t dataLen, uint8_t * bufferP, size_t bufferLen);
