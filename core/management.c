@@ -204,7 +204,9 @@ coap_status_t dm_handleRequest(lwm2m_context_t * contextP,
                         length = lwm2m_data_serialize(uriP, size, dataP, &format, &buffer);
                         if (length == 0)
                         {
-                            result = COAP_500_INTERNAL_SERVER_ERROR;
+                            //  For the first GET on the device /3/0/0, It can happen that the length is zero as the device holds no data.
+                            //  So set the message content to COAP_205_CONTENT
+                            result = COAP_205_CONTENT;
                         }
                         else
                         {
