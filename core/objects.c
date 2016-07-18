@@ -339,7 +339,7 @@ coap_status_t object_delete(lwm2m_context_t * contextP,
 
     LOG("    Call to object_delete\r\n");
 
-    if (LWM2M_URI_IS_SET_RESOURCE(uriP))
+    if (LWM2M_URI_IS_SET_INSTANCE(uriP))
     {
         result = objectP->deleteFunc(uriP->instanceId, objectP);
     }
