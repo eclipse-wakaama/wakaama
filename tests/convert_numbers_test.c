@@ -37,7 +37,9 @@ const char* floats_expected[] = {"12","-114","-30", "1.02", "134.000235","0.4324
 
 static void test_lwm2m_PlainTextToInt64(void)
 {
-    for (int i = 0 ; tests[i] != NULL ; i++)
+    int i;
+
+    for (i = 0 ; tests[i] != NULL ; i++)
     {
         int64_t res;
 
@@ -51,7 +53,9 @@ static void test_lwm2m_PlainTextToInt64(void)
 
 static void test_lwm2m_PlainTextToFloat64(void)
 {
-    for (int i = 0 ; tests[i] != NULL ; i++)
+    int i;
+
+    for (i = 0 ; tests[i] != NULL ; i++)
     {
         double res;
 
@@ -65,7 +69,9 @@ static void test_lwm2m_PlainTextToFloat64(void)
 
 static void test_lwm2m_int64ToPlainText(void)
 {
-    for (unsigned i = 0 ; i < sizeof(ints)/sizeof(int64_t); i++)
+    unsigned int i;
+
+    for (i = 0 ; i < sizeof(ints)/sizeof(int64_t); i++)
     {
         char * res = (char*)"";
         int len;
@@ -83,7 +89,9 @@ static void test_lwm2m_int64ToPlainText(void)
 
 static void test_lwm2m_float64ToPlainText(void)
 {
-    for (unsigned i = 0 ; i < sizeof(floats)/sizeof(floats[0]); i++)
+    unsigned int i;
+
+    for (i = 0 ; i < sizeof(floats)/sizeof(floats[0]); i++)
     {
         char * res;
         int len;

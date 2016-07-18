@@ -134,7 +134,9 @@ static void test_data_and_compare(const char * uriStr,
 // data types, therefore hardcode all objects to be strings.
 static void make_all_objects_string_types(lwm2m_data_t * tlvP, int size)
 {
-    for (int i=0 ; i<size ; ++i)
+    int i;
+
+    for (i=0 ; i<size ; ++i)
     {
         if (tlvP[i].type == LWM2M_TYPE_OPAQUE)
         {
@@ -142,7 +144,9 @@ static void make_all_objects_string_types(lwm2m_data_t * tlvP, int size)
         }
         else if (tlvP[i].type == LWM2M_TYPE_MULTIPLE_RESOURCE)
         {
-            for (int j = 0; j < tlvP[i].value.asChildren.count; ++j)
+            unsigned int j;
+
+            for (j = 0; j < tlvP[i].value.asChildren.count; ++j)
             {
                 tlvP[i].value.asChildren.array[j].type = LWM2M_TYPE_STRING;
             }
