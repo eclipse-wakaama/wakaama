@@ -63,15 +63,23 @@
 #include "er-coap-13/er-coap-13.h"
 
 #ifdef LWM2M_WITH_LOGS
-#define LOG(...) lwm2m_printf(__VA_ARGS__)
-#define LOG_ENTER_FUNC lwm2m_printf("Entering %s()\r\n", __FUNCTION__);
-#define LOG_EXIT_FUNC lwm2m_printf("Exiting %s()\r\n", __FUNCTION__);
-#define LOG_ERROR_EXIT_FUNC lwm2m_printf("Exiting %s() on error\r\n", __FUNCTION__);
+#define LOG(STR) lwm2m_printf("[%s():%d] " STR, __func__ , __LINE__)
+#define LOG_ARG(FMT, ...) lwm2m_printf("[%s():%d] " FMT, __func__ , __LINE__ , __VA_ARGS__)
+#define LOG_URI(URI)                                                                \
+{                                                                                   \
+    if ((URI) == NULL) lwm2m_printf("[%s():%d] NULL\r\n", __func__ , __LINE__);     \
+    else                                                                            \
+    {                                                                               \
+        lwm2m_printf("[%s():%d] /%d", __func__ , __LINE__ , (URI)->objectId);       \
+        if (LWM2M_URI_IS_SET_INSTANCE(URI)) lwm2m_printf("/%d", (URI)->instanceId); \
+        if (LWM2M_URI_IS_SET_RESOURCE(URI)) lwm2m_printf("/%d", (URI)->resourceId); \
+        lwm2m_printf("\r\n");                                                       \
+    }                                                                               \
+}
 #else
-#define LOG(...)
-#define LOG_ENTER_FUNC(...)
-#define LOG_EXIT_FUNC(...)
-#define LOG_ERROR_EXIT_FUNC(...)
+#define LOG_ARG(FMT, ...)
+#define LOG(STR)
+#define LOG_URI(URI)
 #endif
 
 #define LWM2M_DEFAULT_LIFETIME  86400

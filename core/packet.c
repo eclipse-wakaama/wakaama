@@ -206,8 +206,8 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
     coap_error_code = coap_parse_message(message, buffer, (uint16_t)length);
     if (coap_error_code == NO_ERROR)
     {
-        LOG("  Parsed: ver %u, type %u, tkl %u, code %u.%.2u, mid %u\r\n", message->version, message->type, message->token_len, message->code >> 5, message->code & 0x1F, message->mid);
-        LOG("  Content type: %d\r\n  Payload: %.*s\r\n\n", message->content_type, message->payload_len, message->payload);
+        LOG_ARG("  Parsed: ver %u, type %u, tkl %u, code %u.%.2u, mid %u\r\n", message->version, message->type, message->token_len, message->code >> 5, message->code & 0x1F, message->mid);
+        LOG_ARG("  Content type: %d\r\n  Payload: %.*s\r\n\n", message->content_type, message->payload_len, message->payload);
         if (message->code >= COAP_GET && message->code <= COAP_DELETE)
         {
             uint32_t block_num = 0;
@@ -236,7 +236,7 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
             /* get offset for blockwise transfers */
             if (coap_get_header_block2(message, &block_num, NULL, &block_size, &block_offset))
             {
-                LOG("Blockwise: block request %u (%u/%u) @ %u bytes\n", block_num, block_size, REST_MAX_CHUNK_SIZE, block_offset);
+                LOG_ARG("Blockwise: block request %u (%u/%u) @ %u bytes\n", block_num, block_size, REST_MAX_CHUNK_SIZE, block_offset);
                 block_size = MIN(block_size, REST_MAX_CHUNK_SIZE);
                 new_offset = block_offset;
             }
@@ -256,7 +256,7 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
                     /* unchanged new_offset indicates that resource is unaware of blockwise transfer */
                     if (new_offset==block_offset)
                     {
-                        LOG("Blockwise: unaware resource with payload length %u/%u\n", response->payload_len, block_size);
+                        LOG_ARG("Blockwise: unaware resource with payload length %u/%u\n", response->payload_len, block_size);
                         if (block_offset >= response->payload_len)
                         {
                             LOG("handle_incoming_data(): block_offset >= response->payload_len\n");
@@ -273,14 +273,14 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
                     else
                     {
                         /* resource provides chunk-wise data */
-                        LOG("Blockwise: blockwise resource, new offset %d\n", (int) new_offset);
+                        LOG_ARG("Blockwise: blockwise resource, new offset %d\n", (int) new_offset);
                         coap_set_header_block2(response, block_num, new_offset!=-1 || response->payload_len > block_size, block_size);
                         if (response->payload_len > block_size) coap_set_payload(response, response->payload, block_size);
                     } /* if (resource aware of blockwise) */
                 }
                 else if (new_offset!=0)
                 {
-                    LOG("Blockwise: no block option for blockwise resource, using block size %u\n", REST_MAX_CHUNK_SIZE);
+                    LOG_ARG("Blockwise: no block option for blockwise resource, using block size %u\n", REST_MAX_CHUNK_SIZE);
 
                     coap_set_header_block2(response, 0, new_offset!=-1, REST_MAX_CHUNK_SIZE);
                     coap_set_payload(response, response->payload, MIN(response->payload_len, REST_MAX_CHUNK_SIZE));
@@ -343,12 +343,12 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
     } /* if (parsed correctly) */
     else
     {
-        LOG("Message parsing failed %d\r\n", coap_error_code);
+        LOG_ARG("Message parsing failed %d\r\n", coap_error_code);
     }
 
     if (coap_error_code != NO_ERROR && coap_error_code != COAP_IGNORE)
     {
-        LOG("ERROR %u: %s\n", coap_error_code, coap_error_message);
+        LOG_ARG("ERROR %u: %s\n", coap_error_code, coap_error_message);
 
         /* Set to sendable error code. */
         if (coap_error_code >= 192)

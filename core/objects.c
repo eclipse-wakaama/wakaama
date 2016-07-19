@@ -337,7 +337,7 @@ coap_status_t object_delete(lwm2m_context_t * contextP,
     if (NULL == objectP) return COAP_404_NOT_FOUND;
     if (NULL == objectP->deleteFunc) return COAP_405_METHOD_NOT_ALLOWED;
 
-    LOG("    Call to object_delete\r\n");
+    LOG("Entering");
 
     if (LWM2M_URI_IS_SET_RESOURCE(uriP))
     {

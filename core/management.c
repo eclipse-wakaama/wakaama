@@ -208,7 +208,7 @@ coap_status_t dm_handleRequest(lwm2m_context_t * contextP,
                         }
                         else
                         {
-                            LOG("Observe Request[/%d/%d/%d]: %.*s\n", uriP->objectId, uriP->instanceId, uriP->resourceId, length, buffer);
+                            LOG_ARG("Observe Request[/%d/%d/%d]: %.*s\n", uriP->objectId, uriP->instanceId, uriP->resourceId, length, buffer);
                         }
                     }
                     lwm2m_data_free(size, dataP);
