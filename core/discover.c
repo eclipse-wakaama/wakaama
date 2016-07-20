@@ -266,6 +266,8 @@ int discover_serialize(lwm2m_context_t * contextP,
     int res;
     lwm2m_uri_t tempUri;
 
+    LOG_ARG("size: %d", size);
+    LOG_URI(uriP);
     baseUriLen = uri_toString(uriP, baseUriStr, URI_MAX_STRING_LEN, NULL);
     if (baseUriLen < 0) return -1;
     baseUriLen -= 1;

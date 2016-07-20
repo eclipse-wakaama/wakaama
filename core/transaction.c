@@ -154,6 +154,10 @@ lwm2m_transaction_t * transaction_new(coap_message_type_t type,
     lwm2m_transaction_t * transacP;
     int result;
 
+    LOG_ARG("type: %d, method: %d, altPath: \"%s\", mID: %d, token_len: %d",
+            type, method, altPath, mID, token_len);
+    LOG_URI(uriP);
+
     // no transactions for ack or rst
     if (COAP_TYPE_ACK == type || COAP_TYPE_RST == type) return NULL;
 
@@ -237,15 +241,18 @@ lwm2m_transaction_t * transaction_new(coap_message_type_t type,
         }
     }
 
+    LOG("Exiting on success");
     return transacP;
 
 error:
+    LOG("Exiting on failure");
     lwm2m_free(transacP);
     return NULL;
 }
 
 void transaction_free(lwm2m_transaction_t * transacP)
 {
+    LOG("Entering");
     if (transacP->message) lwm2m_free(transacP->message);
     if (transacP->buffer) lwm2m_free(transacP->buffer);
     lwm2m_free(transacP);
@@ -254,6 +261,7 @@ void transaction_free(lwm2m_transaction_t * transacP)
 void transaction_remove(lwm2m_context_t * contextP,
                         lwm2m_transaction_t * transacP)
 {
+    LOG("Entering");
     contextP->transactionList = (lwm2m_transaction_t *) LWM2M_LIST_RM(contextP->transactionList, transacP->mID, NULL);
     transaction_free(transacP);
 }
@@ -267,6 +275,7 @@ bool transaction_handleResponse(lwm2m_context_t * contextP,
     bool reset = false;
     lwm2m_transaction_t * transacP;
 
+    LOG("Entering");
     transacP = contextP->transactionList;
 
     while (NULL != transacP)
@@ -372,6 +381,7 @@ int transaction_send(lwm2m_context_t * contextP,
 {
     bool maxRetriesReached = false;
 
+    LOG("Entering");
     if (transacP->buffer == NULL)
     {
         transacP->buffer_len = coap_serialize_get_size(transacP->message);
@@ -471,6 +481,7 @@ void transaction_step(lwm2m_context_t * contextP,
 {
     lwm2m_transaction_t * transacP;
 
+    LOG("Entering");
     transacP = contextP->transactionList;
     while (transacP != NULL)
     {

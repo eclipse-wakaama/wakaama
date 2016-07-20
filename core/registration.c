@@ -137,12 +137,12 @@ static void prv_handleRegistrationReply(lwm2m_transaction_t * transacP,
             }
             targetP->location = coap_get_multi_option_as_string(packet->location_path);
 
-            LOG("    => REGISTERED\r\n");
+            LOG("Registration successful");
         }
         else
         {
             targetP->status = STATE_REG_FAILED;
-            LOG("    => Registration FAILED\r\n");
+            LOG("Registration failed");
         }
     }
 }
@@ -220,12 +220,12 @@ static void prv_handleRegistrationUpdateReply(lwm2m_transaction_t * transacP,
         if (packet != NULL && packet->code == COAP_204_CHANGED)
         {
             targetP->status = STATE_REGISTERED;
-            LOG("    => REGISTERED\r\n");
+            LOG("Registration update successful");
         }
         else
         {
             targetP->status = STATE_REG_FAILED;
-            LOG("    => Registration update FAILED\r\n");
+            LOG("Registration update failed");
         }
     }
 }
@@ -275,6 +275,8 @@ int lwm2m_update_registration(lwm2m_context_t * contextP,
     lwm2m_server_t * targetP;
     uint8_t result;
 
+    LOG_ARG("State: %s, shortServerID: %d", STR_STATE(contextP->state), shortServerID);
+
     result = COAP_NO_ERROR;
 
     targetP = contextP->serverList;
@@ -282,6 +284,7 @@ int lwm2m_update_registration(lwm2m_context_t * contextP,
     {
         if (object_getServers(contextP) == -1)
         {
+            LOG("No server found");
             return COAP_404_NOT_FOUND;
         }
     }
@@ -327,6 +330,8 @@ uint8_t registration_start(lwm2m_context_t * contextP)
     lwm2m_server_t * targetP;
     uint8_t result;
 
+    LOG_ARG("State: %s", STR_STATE(contextP->state));
+	
     result = COAP_NO_ERROR;
 
     targetP = contextP->serverList;
@@ -354,11 +359,14 @@ lwm2m_status_t registration_getStatus(lwm2m_context_t * contextP)
     lwm2m_server_t * targetP;
     lwm2m_status_t reg_status;
 
+    LOG_ARG("State: %s", STR_STATE(contextP->state));
+
     targetP = contextP->serverList;
     reg_status = STATE_REG_FAILED;
 
     while (targetP != NULL)
     {
+        LOG_ARG("targetP->status: %s", STR_STATUS(targetP->status));
         switch (targetP->status)
         {
             case STATE_REGISTERED:
@@ -379,6 +387,8 @@ lwm2m_status_t registration_getStatus(lwm2m_context_t * contextP)
             default:
                 break;
         }
+        LOG_ARG("reg_status: %s", STR_STATUS(reg_status));
+
         targetP = targetP->next;
     }
 
@@ -403,16 +413,19 @@ static void prv_handleDeregistrationReply(lwm2m_transaction_t * transacP,
 void registration_deregister(lwm2m_context_t * contextP,
                              lwm2m_server_t * serverP)
 {
+    lwm2m_transaction_t * transaction;
+
+    LOG_ARG("State: %s, serverP->status: %s", STR_STATE(contextP->state), STR_STATUS(serverP->status));
+
     if (serverP->status == STATE_DEREGISTERED
      || serverP->status == STATE_REG_PENDING
      || serverP->status == STATE_DEREG_PENDING
      || serverP->status == STATE_REG_FAILED
      || serverP->location == NULL)
-        {
-            return;
-        }
+    {
+        return;
+    }
 
-    lwm2m_transaction_t * transaction;
     transaction = transaction_new(COAP_TYPE_CON, COAP_DELETE, NULL, NULL, contextP->nextMID++, 4, NULL, ENDPOINT_SERVER, (void *)serverP);
     if (transaction == NULL) return;
 
@@ -824,6 +837,7 @@ static lwm2m_client_t * prv_getClientByName(lwm2m_context_t * contextP,
 
 void registration_freeClient(lwm2m_client_t * clientP)
 {
+    LOG("Entering");
     if (clientP->name != NULL) lwm2m_free(clientP->name);
     if (clientP->msisdn != NULL) lwm2m_free(clientP->msisdn);
     if (clientP->altPath != NULL) lwm2m_free(clientP->altPath);
@@ -866,6 +880,7 @@ coap_status_t registration_handleRequest(lwm2m_context_t * contextP,
     coap_status_t result;
     time_t tv_sec;
 
+    LOG_URI(uriP);
     tv_sec = lwm2m_gettime();
     if (tv_sec < 0) return COAP_500_INTERNAL_SERVER_ERROR;
 
@@ -1087,6 +1102,7 @@ void lwm2m_set_monitoring_callback(lwm2m_context_t * contextP,
                                    lwm2m_result_callback_t callback,
                                    void * userData)
 {
+    LOG("Entering");
     contextP->monitorCallback = callback;
     contextP->monitorUserData = userData;
 }
@@ -1100,6 +1116,8 @@ void registration_step(lwm2m_context_t * contextP,
 {
 #ifdef LWM2M_CLIENT_MODE
     lwm2m_server_t * targetP = contextP->serverList;
+
+    LOG_ARG("State: %s", STR_STATE(contextP->state));
 
     targetP = contextP->serverList;
     while (targetP != NULL)
@@ -1120,7 +1138,7 @@ void registration_step(lwm2m_context_t * contextP,
             interval = targetP->registration + nextUpdate - currentTime;
             if (0 >= interval)
             {
-                LOG("Updating registration...\r\n");
+                LOG("Updating registration");
                 prv_updateRegistration(contextP, targetP, false);
             }
             else if (interval < *timeoutP)
@@ -1148,6 +1166,7 @@ void registration_step(lwm2m_context_t * contextP,
 #ifdef LWM2M_SERVER_MODE
     lwm2m_client_t * clientP;
 
+    LOG("Entering");
     // monitor clients lifetime
     clientP = contextP->clientList;
     while (clientP != NULL)

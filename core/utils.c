@@ -508,7 +508,7 @@ int utils_intCopy(char * buffer,
 void utils_copyValue(void * dst,
                      const void * src,
                      size_t len)
-{
+{		
 #ifdef LWM2M_BIG_ENDIAN
     memcpy(dst, src, len);
 #else

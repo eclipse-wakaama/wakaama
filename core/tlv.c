@@ -188,6 +188,8 @@ int lwm2m_decode_TLV(const uint8_t * buffer,
                     size_t * oDataLen)
 {
 
+    LOG_ARG("buffer_len: %d", buffer_len);
+        ;
     if (buffer_len < 2) return 0;
 
     *oDataIndex = 2;
@@ -253,6 +255,8 @@ int tlv_parse(uint8_t * buffer,
     int index = 0;
     int result;
     int size = 0;
+
+    LOG_ARG("bufferLen: %d", bufferLen);
 
     *dataP = NULL;
 
@@ -399,6 +403,8 @@ size_t tlv_serialize(bool isResourceInstance,
     int index;
     int i;
 
+    LOG_ARG("isResourceInstance: %s, size: %d", isResourceInstance?"true":"false", size);
+
     *bufferP = NULL;
     length = prv_getLength(size, dataP);
     if (length <= 0) return length;
@@ -520,6 +526,9 @@ size_t tlv_serialize(bool isResourceInstance,
     {
         lwm2m_free(*bufferP);
     }
+
+    LOG_ARG("returning %u", length);
+
     return length;
 }
 
