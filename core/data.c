@@ -450,6 +450,7 @@ size_t lwm2m_data_serialize(lwm2m_uri_t * uriP,
      || *formatP == LWM2M_CONTENT_OPAQUE)
     {
         if (size != 1
+         || !LWM2M_URI_IS_SET_RESOURCE(uriP)
          || dataP->type == LWM2M_TYPE_OBJECT
          || dataP->type == LWM2M_TYPE_OBJECT_INSTANCE
          || dataP->type == LWM2M_TYPE_MULTIPLE_RESOURCE)
