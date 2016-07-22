@@ -75,10 +75,19 @@ char * security_get_public_id(lwm2m_object_t * obj, int instanceId, int * length
 
     obj->readFunc(instanceId, &size, &dataP, obj);
     if (dataP != NULL &&
-            dataP->type == LWM2M_TYPE_OPAQUE)
+        dataP->type == LWM2M_TYPE_OPAQUE)
     {
+        char * buff;
+        
+        buff = (char*)lwm2m_malloc(dataP->value.asBuffer.length);
+        if (buff != 0)
+        {
+            memcpy(buff, dataP->value.asBuffer.buffer, dataP->value.asBuffer.length);
             *length = dataP->value.asBuffer.length;
-            return dataP->value.asBuffer.buffer;
+        }
+        lwm2m_data_free(size, dataP);
+
+        return buff;
     }else{
         return NULL;
     }
@@ -92,10 +101,19 @@ char * security_get_secret_key(lwm2m_object_t * obj, int instanceId, int * lengt
 
     obj->readFunc(instanceId, &size, &dataP, obj);
     if (dataP != NULL &&
-            dataP->type == LWM2M_TYPE_OPAQUE)
+        dataP->type == LWM2M_TYPE_OPAQUE)
     {
-        *length = dataP->value.asBuffer.length;
-        return dataP->value.asBuffer.buffer;
+        char * buff;
+
+        buff = (char*)lwm2m_malloc(dataP->value.asBuffer.length);
+        if (buff != 0)
+        {
+            memcpy(buff, dataP->value.asBuffer.buffer, dataP->value.asBuffer.length);
+            *length = dataP->value.asBuffer.length;
+        }
+        lwm2m_data_free(size, dataP);
+
+        return buff;
     }else{
         return NULL;
     }
@@ -177,6 +195,7 @@ get_psk_info(struct dtls_context_t *ctx,
             }
 
             memcpy(result, id,idLen);
+            lwm2m_free(id);
             return idLen;
         }
         case DTLS_PSK_KEY:
@@ -192,6 +211,7 @@ get_psk_info(struct dtls_context_t *ctx,
             }
 
             memcpy(result, key,keyLen);
+            lwm2m_free(key);
             return keyLen;
         }
         default:
