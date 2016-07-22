@@ -1196,6 +1196,31 @@ int main(int argc, char *argv[])
          *    (eg. retransmission) and the time between the next operation
          */
         result = lwm2m_step(lwm2mH, &(tv.tv_sec));
+        fprintf(stdout, " -> State: ");
+        switch (lwm2mH->state)
+        {
+        case STATE_INITIAL:
+            fprintf(stdout, "STATE_INITIAL\r\n");
+            break;
+        case STATE_BOOTSTRAP_REQUIRED:
+            fprintf(stdout, "STATE_BOOTSTRAP_REQUIRED\r\n");
+            break;
+        case STATE_BOOTSTRAPPING:
+            fprintf(stdout, "STATE_BOOTSTRAPPING\r\n");
+            break;
+        case STATE_REGISTER_REQUIRED:
+            fprintf(stdout, "STATE_REGISTER_REQUIRED\r\n");
+            break;
+        case STATE_REGISTERING:
+            fprintf(stdout, "STATE_REGISTERING\r\n");
+            break;
+        case STATE_READY:
+            fprintf(stdout, "STATE_READY\r\n");
+            break;
+        default:
+            fprintf(stdout, "Unknown...\r\n");
+            break;
+        }
         if (result != 0)
         {
             fprintf(stderr, "lwm2m_step() failed: 0x%X\r\n", result);

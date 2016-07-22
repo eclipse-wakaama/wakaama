@@ -765,6 +765,8 @@ int json_parse(lwm2m_uri_t * uriP,
     _record_t * recordArray;
     lwm2m_data_t * parsedP;
 
+    LOG_ARG("bufferLen: %d, buffer: \"%s\"", bufferLen, (char *)buffer);
+    LOG_URI(uriP);
     *dataP = NULL;
     recordArray = NULL;
     parsedP = NULL;
@@ -1010,9 +1012,11 @@ int json_parse(lwm2m_uri_t * uriP,
         *dataP = resultP;
     }
 
+    LOG_ARG("Parsing successful. count: %d", count);
     return count;
 
 error:
+    LOG("Parsing failed");
     if (parsedP != NULL)
     {
         lwm2m_data_free(count, parsedP);
@@ -1361,6 +1365,8 @@ size_t json_serialize(lwm2m_uri_t * uriP,
     size_t num;
     lwm2m_data_t * targetP;
 
+    LOG_ARG("size: %d", size);
+    LOG_URI(uriP);
     if (size == 0 || tlvP == NULL) return 0;
 
     baseUriLen = uri_toString(uriP, baseUriStr, URI_MAX_STRING_LEN, &rootLevel);
