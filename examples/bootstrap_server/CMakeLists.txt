@@ -2,6 +2,10 @@ cmake_minimum_required (VERSION 3.0)
 
 project (bootstrap_server)
 
+if(DTLS)
+    message(FATAL_ERROR "DTLS option is not supported." )
+endif()
+
 include(${CMAKE_CURRENT_LIST_DIR}/../../core/wakaama.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/../shared/shared.cmake)
 
