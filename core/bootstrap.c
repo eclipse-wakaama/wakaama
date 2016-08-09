@@ -273,7 +273,7 @@ lwm2m_status_t bootstrap_getStatus(lwm2m_context_t * contextP)
         targetP = targetP->next;
     }
 
-    LOG_ARG("Returned status: %s", STR_STATUS(targetP->status));
+    LOG_ARG("Returned status: %s", STR_STATUS(bs_status));
 
     return bs_status;
 }
