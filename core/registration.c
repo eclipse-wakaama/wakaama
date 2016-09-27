@@ -295,9 +295,11 @@ int lwm2m_update_registration(lwm2m_context_t * contextP,
             if (targetP->shortID == shortServerID)
             {
                 // found the server, trigger the update transaction
-                if (targetP->status == STATE_REGISTERED)
+                if (targetP->status == STATE_REGISTERED
+                 || targetP->status == STATE_REG_UPDATE_PENDING)
                 {
-                    return prv_updateRegistration(contextP, targetP, withObjects);
+                    targetP->status = STATE_REG_UPDATE_NEEDED;
+                    return COAP_NO_ERROR;
                 }
                 else
                 {
@@ -307,9 +309,10 @@ int lwm2m_update_registration(lwm2m_context_t * contextP,
         }
         else
         {
-            if (targetP->status == STATE_REGISTERED)
+            if (targetP->status == STATE_REGISTERED
+             || targetP->status == STATE_REG_UPDATE_PENDING)
             {
-                result = prv_updateRegistration(contextP, targetP, withObjects);
+                targetP->status = STATE_REG_UPDATE_NEEDED;
             }
         }
         targetP = targetP->next;
@@ -370,6 +373,7 @@ lwm2m_status_t registration_getStatus(lwm2m_context_t * contextP)
         switch (targetP->status)
         {
             case STATE_REGISTERED:
+            case STATE_REG_UPDATE_NEEDED:
             case STATE_REG_UPDATE_PENDING:
                 if (reg_status == STATE_REG_FAILED)
                 {
@@ -1130,9 +1134,13 @@ void registration_step(lwm2m_context_t * contextP,
             time_t interval;
 
             nextUpdate = targetP->lifetime;
-            if (30 < nextUpdate)
+            if (COAP_MAX_TRANSMIT_WAIT < nextUpdate)
             {
-                nextUpdate -= 15; // update 15s earlier to have a chance to resend
+                nextUpdate -= COAP_MAX_TRANSMIT_WAIT;
+            }
+            else
+            {
+                nextUpdate = nextUpdate >> 1;
             }
 
             interval = targetP->registration + nextUpdate - currentTime;
@@ -1147,6 +1155,10 @@ void registration_step(lwm2m_context_t * contextP,
             }
         }
         break;
+
+        case STATE_REG_UPDATE_NEEDED:
+            prv_updateRegistration(contextP, targetP, true);
+            break;
 
         case STATE_REG_FAILED:
             if (targetP->sessionH != NULL)
