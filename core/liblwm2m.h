@@ -405,6 +405,7 @@ typedef enum
     STATE_REGISTERED,         // successfully registered
     STATE_REG_FAILED,         // last registration failed
     STATE_REG_UPDATE_PENDING, // registration update pending
+    STATE_REG_UPDATE_NEEDED,  // registration update required
     STATE_DEREG_PENDING,      // deregistration pending
     STATE_BS_HOLD_OFF,        // bootstrap hold off time
     STATE_BS_INITIATED,       // bootstrap request sent
