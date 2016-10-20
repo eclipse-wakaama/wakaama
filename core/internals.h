@@ -305,6 +305,10 @@ size_t json_serialize(lwm2m_uri_t * uriP, int size, lwm2m_data_t * tlvP, uint8_t
 // defined in discover.c
 int discover_serialize(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, int size, lwm2m_data_t * dataP, uint8_t ** bufferP);
 
+// defined in block1.c
+coap_status_t coap_block1_handler(lwm2m_block1_data_t ** head, uint16_t mid, uint8_t * buffer, size_t length, lwm2m_server_t * server, uint16_t blockSize, uint32_t blockNum, bool blockMore, uint8_t ** outputBuffer, size_t * outputLength);
+void free_block1_buffer(lwm2m_block1_data_t * head);
+
 // defined in utils.c
 lwm2m_data_type_t utils_depthToDatatype(uri_depth_t depth);
 lwm2m_binding_t utils_stringToBinding(uint8_t *buffer, size_t length);

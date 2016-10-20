@@ -165,6 +165,11 @@ void lwm2m_close(lwm2m_context_t * contextP)
     {
         lwm2m_free(contextP->altPath);
     }
+    if (contextP->block1DataList != NULL)
+    {
+        free_block1_buffer(contextP->block1DataList);
+    }
+
 
 #endif
 
