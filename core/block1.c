@@ -46,25 +46,17 @@
 #include <string.h>
 #include <stdio.h>
 
-coap_status_t coap_block1_handler(lwm2m_block1_data_t ** head,
+coap_status_t coap_block1_handler(lwm2m_block1_data_t ** pBlock1Data,
                                   uint16_t mid,
                                   uint8_t * buffer,
                                   size_t length,
-                                  lwm2m_server_t * server,
                                   uint16_t blockSize,
                                   uint32_t blockNum,
                                   bool blockMore,
                                   uint8_t ** outputBuffer,
                                   size_t * outputLength)
 {
-    if (server == NULL)
-    {
-        return COAP_500_INTERNAL_SERVER_ERROR;
-    }
-
-    // find current block1 data for this server
-    lwm2m_block1_data_t * block1Data = (lwm2m_block1_data_t *) LWM2M_LIST_FIND(*head, server->shortID);
-
+    lwm2m_block1_data_t * block1Data = *pBlock1Data;;
 
     // manage new block1 transfer
     if (blockNum == 0)
@@ -77,9 +69,8 @@ coap_status_t coap_block1_handler(lwm2m_block1_data_t ** head,
        else
        {
            block1Data = lwm2m_malloc(sizeof(lwm2m_block1_data_t));
+           *pBlock1Data = block1Data;
            if (NULL == block1Data) return COAP_500_INTERNAL_SERVER_ERROR;
-           block1Data->serverID = server->shortID;
-           *head = (lwm2m_block1_data_t *) LWM2M_LIST_ADD(*head, block1Data);
        }
 
        block1Data->block1buffer = lwm2m_malloc(length);
@@ -140,20 +131,15 @@ coap_status_t coap_block1_handler(lwm2m_block1_data_t ** head,
     }
 }
 
-void free_block1_buffer(lwm2m_block1_data_t * head)
+void free_block1_buffer(lwm2m_block1_data_t * block1Data)
 {
-    if (head != NULL)
+    if (block1Data != NULL)
     {
         // free block1 buffer
-        lwm2m_free(head->block1buffer);
-        head->block1bufferSize = 0 ;
+        lwm2m_free(block1Data->block1buffer);
+        block1Data->block1bufferSize = 0 ;
 
         // free current element
-        lwm2m_block1_data_t * nextP;
-        nextP = head->next;
-        lwm2m_free(head);
-
-        // free next element
-        free_block1_buffer(nextP);
+        lwm2m_free(block1Data);
     }
 }

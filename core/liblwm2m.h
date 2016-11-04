@@ -427,18 +427,34 @@ typedef enum
     BINDING_UQS  // UDP queue mode plus SMS
 } lwm2m_binding_t;
 
+/*
+ * LWM2M block1 data
+ *
+ * Temporary data needed to handle block1 request.
+ * Currently support only one block1 request by server.
+ */
+typedef struct _lwm2m_block1_data_ lwm2m_block1_data_t;
+
+struct _lwm2m_block1_data_
+{
+    uint8_t *             block1buffer;     // data buffer
+    size_t                block1bufferSize; // buffer size
+    uint16_t              lastmid;          // mid of the last message received
+};
+
 typedef struct _lwm2m_server_
 {
-    struct _lwm2m_server_ * next;   // matches lwm2m_list_t::next
-    uint16_t          secObjInstID; // matches lwm2m_list_t::id
-    uint16_t          shortID;      // servers short ID, may be 0 for bootstrap server
-    time_t            lifetime;     // lifetime of the registration in sec or 0 if default value (86400 sec), also used as hold off time for bootstrap servers
-    time_t            registration; // date of the last registration in sec or end of client hold off time for bootstrap servers
-    lwm2m_binding_t   binding;      // client connection mode with this server
-    void *            sessionH;
-    lwm2m_status_t    status;
-    char *            location;
-    bool              dirty;
+    struct _lwm2m_server_ * next;         // matches lwm2m_list_t::next
+    uint16_t                secObjInstID; // matches lwm2m_list_t::id
+    uint16_t                shortID;      // servers short ID, may be 0 for bootstrap server
+    time_t                  lifetime;     // lifetime of the registration in sec or 0 if default value (86400 sec), also used as hold off time for bootstrap servers
+    time_t                  registration; // date of the last registration in sec or end of client hold off time for bootstrap servers
+    lwm2m_binding_t         binding;      // client connection mode with this server
+    void *                  sessionH;
+    lwm2m_status_t          status;
+    char *                  location;
+    bool                    dirty;
+    lwm2m_block1_data_t *   block1Data;   // buffer to handle block1 data, should be replace by a list to support several block1 transfer by server.
 } lwm2m_server_t;
 
 
@@ -562,24 +578,6 @@ struct _lwm2m_transaction_
     void * userData;
 };
 
-
-/*
- * LWM2M block1 data
- *
- * Temporary data needed to handle block1 request.
- * Currently support only one block1 request by server.
- */
-typedef struct _lwm2m_block1_data_ lwm2m_block1_data_t;
-
-struct _lwm2m_block1_data_
-{
-    lwm2m_block1_data_t * next;             // matches lwm2m_list_t::next
-    uint16_t              serverID;         // matches lwm2m_list_t::id
-    uint8_t *             block1buffer;     // data buffer
-    size_t                block1bufferSize; // buffer size
-    uint16_t              lastmid;          // mid of the last message received
-};
-
 /*
  * LWM2M observed resources
  */
@@ -663,7 +661,6 @@ typedef struct
     uint16_t                nextMID;
     lwm2m_transaction_t *   transactionList;
     void *                  userData;
-    lwm2m_block1_data_t *   block1DataList;
 } lwm2m_context_t;
 
 

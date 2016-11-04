@@ -259,28 +259,35 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
                     serverP = utils_findBootstrapServer(contextP, fromSessionH);
                 }
 #endif
-                // parse block1 header
-                uint32_t block1_num;
-                uint8_t  block1_more;
-                uint16_t block1_size;
-                coap_get_header_block1(message, &block1_num, &block1_more, &block1_size, NULL);
-                LOG_ARG("Blockwise: block1 request NUM %u (SZX %u/ SZX Max%u) MORE %u", block1_num, block1_size, REST_MAX_CHUNK_SIZE, block1_more);
-
-                // handle block 1
-                uint8_t * complete_buffer = NULL;
-                size_t complete_buffer_size;
-                coap_error_code = coap_block1_handler(&contextP->block1DataList, message->mid, message->payload, message->payload_len, serverP, block1_size, block1_num, block1_more, &complete_buffer, &complete_buffer_size);
-
-                // if payload is complete, replace it in the coap message.
-                if (coap_error_code == NO_ERROR)
+                if (serverP == NULL)
                 {
-                    message->payload = complete_buffer;
-                    message->payload_len = complete_buffer_size;
+                    coap_error_code = COAP_500_INTERNAL_SERVER_ERROR;
                 }
-                else if (coap_error_code == COAP_231_CONTINUE)
+                else
                 {
-                    block1_size = MIN(block1_size, REST_MAX_CHUNK_SIZE);
-                    coap_set_header_block1(response,block1_num, block1_more,block1_size);
+                    // parse block1 header
+                    uint32_t block1_num;
+                    uint8_t  block1_more;
+                    uint16_t block1_size;
+                    coap_get_header_block1(message, &block1_num, &block1_more, &block1_size, NULL);
+                    LOG_ARG("Blockwise: block1 request NUM %u (SZX %u/ SZX Max%u) MORE %u", block1_num, block1_size, REST_MAX_CHUNK_SIZE, block1_more);
+
+                    // handle block 1
+                    uint8_t * complete_buffer = NULL;
+                    size_t complete_buffer_size;
+                    coap_error_code = coap_block1_handler(&serverP->block1Data, message->mid, message->payload, message->payload_len, block1_size, block1_num, block1_more, &complete_buffer, &complete_buffer_size);
+
+                    // if payload is complete, replace it in the coap message.
+                    if (coap_error_code == NO_ERROR)
+                    {
+                        message->payload = complete_buffer;
+                        message->payload_len = complete_buffer_size;
+                    }
+                    else if (coap_error_code == COAP_231_CONTINUE)
+                    {
+                        block1_size = MIN(block1_size, REST_MAX_CHUNK_SIZE);
+                        coap_set_header_block1(response,block1_num, block1_more,block1_size);
+                    }
                 }
 #else
                 coap_error_code = COAP_501_NOT_IMPLEMENTED;
