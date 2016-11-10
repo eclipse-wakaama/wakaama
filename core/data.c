@@ -42,7 +42,16 @@ static size_t prv_textSerialize(lwm2m_data_t * dataP,
         return utils_boolToPlainText(dataP->value.asBoolean, bufferP);
 
     case LWM2M_TYPE_OBJECT_LINK:
-        // TODO: implement
+    {
+        char stringBuffer[20];
+        int len = snprintf(stringBuffer, 20, "%d:%d",
+                dataP->value.asObjLink.objectId,
+                dataP->value.asObjLink.objectInstanceId);
+        *bufferP = (uint8_t *)lwm2m_malloc(len);
+        if (*bufferP == NULL) return 0;
+        memcpy(*bufferP, stringBuffer, len);
+        return len;
+    }
     case LWM2M_TYPE_OPAQUE:
     case LWM2M_TYPE_UNDEFINED:
     default:
@@ -357,6 +366,16 @@ int lwm2m_data_decode_bool(const lwm2m_data_t * dataP,
     LOG_ARG("result: %d, value: %s", result, *valueP ? "true" : "false");
 
     return result;
+}
+
+void lwm2m_data_encode_objlink(uint16_t objectId,
+                           uint16_t objectInstanceId,
+                           lwm2m_data_t * dataP)
+{
+    LOG_ARG("value: %d/%d", objectId, objectInstanceId);
+    dataP->type = LWM2M_TYPE_OBJECT_LINK;
+    dataP->value.asObjLink.objectId = objectId;
+    dataP->value.asObjLink.objectInstanceId = objectInstanceId;
 }
 
 void lwm2m_data_include(lwm2m_data_t * subDataP,
