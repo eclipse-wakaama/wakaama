@@ -141,12 +141,15 @@ bool lwm2m_session_is_equal(void * session1, void * session2, void * userData);
 #define COAP_202_DELETED                (uint8_t)0x42
 #define COAP_204_CHANGED                (uint8_t)0x44
 #define COAP_205_CONTENT                (uint8_t)0x45
+#define COAP_231_CONTINUE               (uint8_t)0x5F
 #define COAP_400_BAD_REQUEST            (uint8_t)0x80
 #define COAP_401_UNAUTHORIZED           (uint8_t)0x81
 #define COAP_402_BAD_OPTION             (uint8_t)0x82
 #define COAP_404_NOT_FOUND              (uint8_t)0x84
 #define COAP_405_METHOD_NOT_ALLOWED     (uint8_t)0x85
 #define COAP_406_NOT_ACCEPTABLE         (uint8_t)0x86
+#define COAP_408_REQ_ENTITY_INCOMPLETE  (uint8_t)0x88
+#define COAP_413_ENTITY_TOO_LARGE       (uint8_t)0x8F
 #define COAP_500_INTERNAL_SERVER_ERROR  (uint8_t)0xA0
 #define COAP_501_NOT_IMPLEMENTED        (uint8_t)0xA1
 #define COAP_503_SERVICE_UNAVAILABLE    (uint8_t)0xA3
@@ -425,18 +428,34 @@ typedef enum
     BINDING_UQS  // UDP queue mode plus SMS
 } lwm2m_binding_t;
 
+/*
+ * LWM2M block1 data
+ *
+ * Temporary data needed to handle block1 request.
+ * Currently support only one block1 request by server.
+ */
+typedef struct _lwm2m_block1_data_ lwm2m_block1_data_t;
+
+struct _lwm2m_block1_data_
+{
+    uint8_t *             block1buffer;     // data buffer
+    size_t                block1bufferSize; // buffer size
+    uint16_t              lastmid;          // mid of the last message received
+};
+
 typedef struct _lwm2m_server_
 {
-    struct _lwm2m_server_ * next;   // matches lwm2m_list_t::next
-    uint16_t          secObjInstID; // matches lwm2m_list_t::id
-    uint16_t          shortID;      // servers short ID, may be 0 for bootstrap server
-    time_t            lifetime;     // lifetime of the registration in sec or 0 if default value (86400 sec), also used as hold off time for bootstrap servers
-    time_t            registration; // date of the last registration in sec or end of client hold off time for bootstrap servers
-    lwm2m_binding_t   binding;      // client connection mode with this server
-    void *            sessionH;
-    lwm2m_status_t    status;
-    char *            location;
-    bool              dirty;
+    struct _lwm2m_server_ * next;         // matches lwm2m_list_t::next
+    uint16_t                secObjInstID; // matches lwm2m_list_t::id
+    uint16_t                shortID;      // servers short ID, may be 0 for bootstrap server
+    time_t                  lifetime;     // lifetime of the registration in sec or 0 if default value (86400 sec), also used as hold off time for bootstrap servers
+    time_t                  registration; // date of the last registration in sec or end of client hold off time for bootstrap servers
+    lwm2m_binding_t         binding;      // client connection mode with this server
+    void *                  sessionH;
+    lwm2m_status_t          status;
+    char *                  location;
+    bool                    dirty;
+    lwm2m_block1_data_t *   block1Data;   // buffer to handle block1 data, should be replace by a list to support several block1 transfer by server.
 } lwm2m_server_t;
 
 
