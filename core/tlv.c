@@ -447,11 +447,12 @@ size_t tlv_serialize(bool isResourceInstance,
 
         case LWM2M_TYPE_OBJECT_LINK:
             {
+                int k;
                 uint8_t buf[4];
                 uint32_t v = dataP[i].value.asObjLink.objectId;
                 v <<= 16;
                 v |= dataP[i].value.asObjLink.objectInstanceId;
-                for (int k = 3; k >= 0; --k) {
+                for (k = 3; k >= 0; --k) {
                     buf[k] = (uint8_t)(v & 0xFF);
                     v >>= 8;
                 }
