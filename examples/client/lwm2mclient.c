@@ -664,25 +664,23 @@ static void prv_display_objects(char * buffer,
 static void prv_display_backup(char * buffer,
         void * user_data)
 {
-    if (NULL != backupObjectArray) {
-        int i;
-        for (i = 0 ; i < BACKUP_OBJECT_COUNT ; i++) {
-            lwm2m_object_t * object = backupObjectArray[i];
-            if (NULL != object) {
-                switch (object->objID)
-                {
-                case LWM2M_SECURITY_OBJECT_ID:
-                    display_security_object(object);
-                    break;
-                case LWM2M_SERVER_OBJECT_ID:
-                    display_server_object(object);
-                    break;
-                default:
-                    break;
-                }
-            }
-        }
-    }
+   int i;
+   for (i = 0 ; i < BACKUP_OBJECT_COUNT ; i++) {
+       lwm2m_object_t * object = backupObjectArray[i];
+       if (NULL != object) {
+           switch (object->objID)
+           {
+           case LWM2M_SECURITY_OBJECT_ID:
+               display_security_object(object);
+               break;
+           case LWM2M_SERVER_OBJECT_ID:
+               display_server_object(object);
+               break;
+           default:
+               break;
+           }
+       }
+   }
 }
 
 static void prv_backup_objects(lwm2m_context_t * context)
@@ -690,20 +688,18 @@ static void prv_backup_objects(lwm2m_context_t * context)
     uint16_t i;
 
     for (i = 0; i < BACKUP_OBJECT_COUNT; i++) {
-        if (NULL != backupObjectArray[i]) {
-            switch (backupObjectArray[i]->objID)
-            {
-            case LWM2M_SECURITY_OBJECT_ID:
-                clean_security_object(backupObjectArray[i]);
-                lwm2m_free(backupObjectArray[i]);
-                break;
-            case LWM2M_SERVER_OBJECT_ID:
-                clean_server_object(backupObjectArray[i]);
-                lwm2m_free(backupObjectArray[i]);
-                break;
-            default:
-                break;
-            }
+        switch (backupObjectArray[i]->objID)
+        {
+        case LWM2M_SECURITY_OBJECT_ID:
+            clean_security_object(backupObjectArray[i]);
+            lwm2m_free(backupObjectArray[i]);
+            break;
+        case LWM2M_SERVER_OBJECT_ID:
+            clean_server_object(backupObjectArray[i]);
+            lwm2m_free(backupObjectArray[i]);
+            break;
+        default:
+            break;
         }
         backupObjectArray[i] = (lwm2m_object_t *)lwm2m_malloc(sizeof(lwm2m_object_t));
         memset(backupObjectArray[i], 0, sizeof(lwm2m_object_t));
@@ -763,20 +759,18 @@ static void close_backup_object()
 {
     int i;
     for (i = 0; i < BACKUP_OBJECT_COUNT; i++) {
-        if (NULL != backupObjectArray[i]) {
-            switch (backupObjectArray[i]->objID)
-            {
-            case LWM2M_SECURITY_OBJECT_ID:
-                clean_security_object(backupObjectArray[i]);
-                lwm2m_free(backupObjectArray[i]);
-                break;
-            case LWM2M_SERVER_OBJECT_ID:
-                clean_server_object(backupObjectArray[i]);
-                lwm2m_free(backupObjectArray[i]);
-                break;
-            default:
-                break;
-            }
+        switch (backupObjectArray[i]->objID)
+        {
+        case LWM2M_SECURITY_OBJECT_ID:
+            clean_security_object(backupObjectArray[i]);
+            lwm2m_free(backupObjectArray[i]);
+            break;
+        case LWM2M_SERVER_OBJECT_ID:
+            clean_server_object(backupObjectArray[i]);
+            lwm2m_free(backupObjectArray[i]);
+            break;
+        default:
+            break;
         }
     }
 }
