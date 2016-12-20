@@ -101,7 +101,7 @@ static uint8_t prv_res2tlv(lwm2m_data_t* dataP,
         lwm2m_data_encode_string(locDataP->uncertainty, dataP);
         break;
     case RES_O_VELOCITY:
-        lwm2m_data_encode_string(locDataP->velocity, dataP);
+        lwm2m_data_encode_string((const char*)locDataP->velocity, dataP);
         break;
     case RES_M_TIMESTAMP:
         lwm2m_data_encode_int(locDataP->timestamp, dataP);

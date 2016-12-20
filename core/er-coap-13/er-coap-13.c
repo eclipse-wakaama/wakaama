@@ -1034,7 +1034,7 @@ coap_get_header_proxy_uri(void *packet, const char **uri)
 
   if (!IS_OPTION(coap_pkt, COAP_OPTION_PROXY_URI)) return 0;
 
-  *uri = coap_pkt->proxy_uri;
+  *uri = (const char *)coap_pkt->proxy_uri;
   return coap_pkt->proxy_uri_len;
 }
 
@@ -1043,7 +1043,7 @@ coap_set_header_proxy_uri(void *packet, const char *uri)
 {
   coap_packet_t *const coap_pkt = (coap_packet_t *) packet;
 
-  coap_pkt->proxy_uri = uri;
+  coap_pkt->proxy_uri = (uint8_t *)uri;
   coap_pkt->proxy_uri_len = strlen(uri);
 
   SET_OPTION(coap_pkt, COAP_OPTION_PROXY_URI);
@@ -1215,7 +1215,7 @@ coap_get_header_location_query(void *packet, const char **query)
 
   if (!IS_OPTION(coap_pkt, COAP_OPTION_LOCATION_QUERY)) return 0;
 
-  *query = coap_pkt->location_query;
+  *query = (const char*)coap_pkt->location_query;
   return coap_pkt->location_query_len;
 }
 
@@ -1226,7 +1226,7 @@ coap_set_header_location_query(void *packet, char *query)
 
   while (query[0]=='?') ++query;
 
-  coap_pkt->location_query = query;
+  coap_pkt->location_query = (uint8_t *)query;
   coap_pkt->location_query_len = strlen(query);
 
   SET_OPTION(coap_pkt, COAP_OPTION_LOCATION_QUERY);
