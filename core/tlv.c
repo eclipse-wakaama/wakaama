@@ -445,6 +445,32 @@ size_t tlv_serialize(bool isResourceInstance,
             }
             break;
 
+        case LWM2M_TYPE_OBJECT_LINK:
+            {
+                int k;
+                uint8_t buf[4];
+                uint32_t v = dataP[i].value.asObjLink.objectId;
+                v <<= 16;
+                v |= dataP[i].value.asObjLink.objectInstanceId;
+                for (k = 3; k >= 0; --k) {
+                    buf[k] = (uint8_t)(v & 0xFF);
+                    v >>= 8;
+                }
+                // keep encoding as buffer
+                headerLen = prv_createHeader(*bufferP + index, isInstance, dataP[i].type, dataP[i].id, 4);
+                if (headerLen == 0)
+                {
+                    length = 0;
+                }
+                else
+                {
+                    index += headerLen;
+                    memcpy(*bufferP + index, buf, 4);
+                    index += 4;
+                }
+            }
+            break;
+
         case LWM2M_TYPE_STRING:
         case LWM2M_TYPE_OPAQUE:
             headerLen = prv_createHeader(*bufferP + index, isInstance, dataP[i].type, dataP[i].id, dataP[i].value.asBuffer.length);
@@ -460,8 +486,6 @@ size_t tlv_serialize(bool isResourceInstance,
             }
             break;
 
-        case LWM2M_TYPE_OBJECT_LINK:
-            // Object Link is a four-bytes integer
         case LWM2M_TYPE_INTEGER:
             {
                 size_t data_len;
