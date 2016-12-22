@@ -325,8 +325,8 @@ typedef enum
     LWM2M_CONTENT_TEXT      = 0,        // Also used as undefined
     LWM2M_CONTENT_LINK      = 40,
     LWM2M_CONTENT_OPAQUE    = 42,
-    LWM2M_CONTENT_TLV       = 1542,     // Temporary value
-    LWM2M_CONTENT_JSON      = 1543      // Temporary value
+    LWM2M_CONTENT_TLV       = 11542,
+    LWM2M_CONTENT_JSON      = 11543
 } lwm2m_media_type_t;
 
 lwm2m_data_t * lwm2m_data_new(int size);
