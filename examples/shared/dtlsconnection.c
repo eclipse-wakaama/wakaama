@@ -405,6 +405,7 @@ dtls_connection_t * connection_new_incoming(dtls_connection_t * connList,
         connP->dtlsSession = (session_t *)malloc(sizeof(session_t));
         connP->dtlsSession->addr.sin6 = connP->addr;
         connP->dtlsSession->size = connP->addrLen;
+        connP->lastSend = lwm2m_gettime();
     }
 
     return connP;
@@ -538,6 +539,7 @@ void connection_free(dtls_connection_t * connList)
 }
 
 int connection_send(dtls_connection_t *connP, uint8_t * buffer, size_t length){
+    time_t now = lwm2m_gettime();
 
     if (connP->dtlsSession == NULL) {
         // no security
@@ -545,10 +547,22 @@ int connection_send(dtls_connection_t *connP, uint8_t * buffer, size_t length){
             return -1 ;
         }
     } else {
+        if ( (now - connP->lastSend) < DTLS_NAT_TIMEOUT)
+        {
+            // we need to rehandhake because our source IP/port probably changed for the server
+
+            if ( connection_rehandshake(connP) != 0 ) {
+                printf("can't send due to rehandshake error\n");
+                return -1;
+            }
+        }
+
         if (-1 == dtls_write(connP->dtlsContext, connP->dtlsSession, buffer, length)) {
             return -1;
         }
     }
+    connP->lastSend = now;
+
     return 0;
 }
 
