@@ -51,6 +51,7 @@ typedef struct _dtls_connection_t
     int securityInstId;
     lwm2m_context_t * lwm2mH;
     dtls_context_t * dtlsContext;
+    time_t lastSend; // last time a data was sent to the server (used for NAT timeouts)
 } dtls_connection_t;
 
 int create_socket(const char * portStr, int ai_family);
@@ -63,5 +64,8 @@ void connection_free(dtls_connection_t * connList);
 
 int connection_send(dtls_connection_t *connP, uint8_t * buffer, size_t length);
 int connection_handle_packet(dtls_connection_t *connP, uint8_t * buffer, size_t length);
+
+// rehandshake a connection, usefull when your NAT timeouted and your client have a new IP/PORT
+int connection_rehandshake(dtls_connection_t *connP);
 
 #endif
