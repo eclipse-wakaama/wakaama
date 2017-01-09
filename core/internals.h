@@ -115,7 +115,7 @@
 #define LWM2M_DEFAULT_LIFETIME  86400
 
 #ifdef LWM2M_SUPPORT_JSON
-#define REG_LWM2M_RESOURCE_TYPE     ">;rt=\"oma.lwm2m\";ct=1543,"   // Temporary value
+#define REG_LWM2M_RESOURCE_TYPE     ">;rt=\"oma.lwm2m\";ct=11543,"
 #define REG_LWM2M_RESOURCE_TYPE_LEN 25
 #else
 #define REG_LWM2M_RESOURCE_TYPE     ">;rt=\"oma.lwm2m\","
@@ -162,7 +162,7 @@
 #define REG_ATTR_TYPE_VALUE_LEN     11
 #define REG_ATTR_CONTENT_KEY        "ct"
 #define REG_ATTR_CONTENT_KEY_LEN    2
-#define REG_ATTR_CONTENT_JSON       "1543"   // Temporary value
+#define REG_ATTR_CONTENT_JSON       "11543"   // Temporary value
 #define REG_ATTR_CONTENT_JSON_LEN   4
 
 #define ATTR_SERVER_ID_STR       "ep="
