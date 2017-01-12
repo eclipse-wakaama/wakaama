@@ -547,7 +547,7 @@ int connection_send(dtls_connection_t *connP, uint8_t * buffer, size_t length){
             return -1 ;
         }
     } else {
-        if ( (now - connP->lastSend) < DTLS_NAT_TIMEOUT)
+        if ( (now - connP->lastSend) > DTLS_NAT_TIMEOUT)
         {
             // we need to rehandhake because our source IP/port probably changed for the server
 
