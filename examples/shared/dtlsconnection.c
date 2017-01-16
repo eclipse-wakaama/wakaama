@@ -547,16 +547,15 @@ int connection_send(dtls_connection_t *connP, uint8_t * buffer, size_t length){
             return -1 ;
         }
     } else {
-        if ( (now - connP->lastSend) > DTLS_NAT_TIMEOUT)
+        if ((now - connP->lastSend) > DTLS_NAT_TIMEOUT)
         {
             // we need to rehandhake because our source IP/port probably changed for the server
-
-            if ( connection_rehandshake(connP) != 0 ) {
+            if ( connection_rehandshake(connP, false) != 0 )
+            {
                 printf("can't send due to rehandshake error\n");
                 return -1;
             }
         }
-
         if (-1 == dtls_write(connP->dtlsContext, connP->dtlsSession, buffer, length)) {
             return -1;
         }
@@ -583,13 +582,25 @@ int connection_handle_packet(dtls_connection_t *connP, uint8_t * buffer, size_t 
     }
 }
 
-int connection_rehandshake(dtls_connection_t *connP) {
+int connection_rehandshake(dtls_connection_t *connP, bool sendCloseNotify) {
 
     // if not a dtls connection we do nothing
     if (connP->dtlsSession == NULL) {
         return 0;
     }
 
+    // reset current session
+    dtls_peer_t * peer = dtls_get_peer(connP->dtlsContext, connP->dtlsSession);
+    if (peer != NULL)
+    {
+        if (!sendCloseNotify)
+        {
+            peer->state =  DTLS_STATE_CLOSED;
+        }
+        dtls_reset_peer(connP->dtlsContext, peer);
+    }
+
+    // start a fresh handshake
     int result = dtls_connect(connP->dtlsContext, connP->dtlsSession);
     if (result !=0) {
          printf("error dtls reconnection %d\n",result);
