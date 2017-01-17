@@ -78,7 +78,7 @@ char * security_get_public_id(lwm2m_object_t * obj, int instanceId, int * length
         dataP->type == LWM2M_TYPE_OPAQUE)
     {
         char * buff;
-        
+
         buff = (char*)lwm2m_malloc(dataP->value.asBuffer.length);
         if (buff != 0)
         {
@@ -88,7 +88,7 @@ char * security_get_public_id(lwm2m_object_t * obj, int instanceId, int * length
         lwm2m_data_free(size, dataP);
 
         return buff;
-    }else{
+    } else {
         return NULL;
     }
 }
@@ -114,7 +114,7 @@ char * security_get_secret_key(lwm2m_object_t * obj, int instanceId, int * lengt
         lwm2m_data_free(size, dataP);
 
         return buff;
-    }else{
+    } else {
         return NULL;
     }
 }
@@ -139,7 +139,7 @@ int send_data(dtls_connection_t *connP,
         struct sockaddr_in *saddr = (struct sockaddr_in *)&connP->addr;
         inet_ntop(saddr->sin_family, &saddr->sin_addr, s, INET6_ADDRSTRLEN);
         port = saddr->sin_port;
-}
+    }
     else if (AF_INET6 == connP->addr.sin6_family)
     {
         struct sockaddr_in6 *saddr = (struct sockaddr_in6 *)&connP->addr;
@@ -167,8 +167,7 @@ int send_data(dtls_connection_t *connP,
 /* This function is the "key store" for tinyDTLS. It is called to
  * retrieve a key for the given identity within this particular
  * session. */
-static int
-get_psk_info(struct dtls_context_t *ctx,
+static int get_psk_info(struct dtls_context_t *ctx,
         const session_t *session,
         dtls_credentials_type_t type,
         const unsigned char *id, size_t id_len,
@@ -221,8 +220,7 @@ get_psk_info(struct dtls_context_t *ctx,
     return dtls_alert_fatal_create(DTLS_ALERT_INTERNAL_ERROR);
 }
 
-static int
-send_to_peer(struct dtls_context_t *ctx,
+static int send_to_peer(struct dtls_context_t *ctx,
         session_t *session, uint8 *data, size_t len) {
 
     // find connection
@@ -231,6 +229,8 @@ send_to_peer(struct dtls_context_t *ctx,
     if (cnx != NULL)
     {
         // send data to peer
+
+        // TODO: nat expiration?
         int err = send_data(cnx,data,len);
         if (COAP_NO_ERROR != err)
         {
@@ -241,8 +241,7 @@ send_to_peer(struct dtls_context_t *ctx,
     return -1;
 }
 
-static int
-read_from_peer(struct dtls_context_t *ctx,
+static int read_from_peer(struct dtls_context_t *ctx,
           session_t *session, uint8 *data, size_t len) {
 
     // find connection
@@ -406,6 +405,7 @@ dtls_connection_t * connection_new_incoming(dtls_connection_t * connList,
         connP->dtlsSession = (session_t *)malloc(sizeof(session_t));
         connP->dtlsSession->addr.sin6 = connP->addr;
         connP->dtlsSession->size = connP->addrLen;
+        connP->lastSend = lwm2m_gettime();
     }
 
     return connP;
@@ -539,6 +539,7 @@ void connection_free(dtls_connection_t * connList)
 }
 
 int connection_send(dtls_connection_t *connP, uint8_t * buffer, size_t length){
+    time_t now = lwm2m_gettime();
 
     if (connP->dtlsSession == NULL) {
         // no security
@@ -546,10 +547,21 @@ int connection_send(dtls_connection_t *connP, uint8_t * buffer, size_t length){
             return -1 ;
         }
     } else {
+        if (DTLS_NAT_TIMEOUT > 0 && (now - connP->lastSend) > DTLS_NAT_TIMEOUT)
+        {
+            // we need to rehandhake because our source IP/port probably changed for the server
+            if ( connection_rehandshake(connP, false) != 0 )
+            {
+                printf("can't send due to rehandshake error\n");
+                return -1;
+            }
+        }
         if (-1 == dtls_write(connP->dtlsContext, connP->dtlsSession, buffer, length)) {
             return -1;
         }
     }
+    connP->lastSend = now;
+
     return 0;
 }
 
@@ -568,6 +580,32 @@ int connection_handle_packet(dtls_connection_t *connP, uint8_t * buffer, size_t 
         lwm2m_handle_packet(connP->lwm2mH, buffer, numBytes, (void*)connP);
         return 0;
     }
+}
+
+int connection_rehandshake(dtls_connection_t *connP, bool sendCloseNotify) {
+
+    // if not a dtls connection we do nothing
+    if (connP->dtlsSession == NULL) {
+        return 0;
+    }
+
+    // reset current session
+    dtls_peer_t * peer = dtls_get_peer(connP->dtlsContext, connP->dtlsSession);
+    if (peer != NULL)
+    {
+        if (!sendCloseNotify)
+        {
+            peer->state =  DTLS_STATE_CLOSED;
+        }
+        dtls_reset_peer(connP->dtlsContext, peer);
+    }
+
+    // start a fresh handshake
+    int result = dtls_connect(connP->dtlsContext, connP->dtlsSession);
+    if (result !=0) {
+         printf("error dtls reconnection %d\n",result);
+    }
+    return result;
 }
 
 uint8_t lwm2m_buffer_send(void * sessionH,
