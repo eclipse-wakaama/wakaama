@@ -159,6 +159,7 @@ int send_data(dtls_connection_t *connP,
         if (nbSent == -1) return -1;
         offset += nbSent;
     }
+    connP->lastSend = lwm2m_gettime();
     return 0;
 }
 
@@ -539,15 +540,13 @@ void connection_free(dtls_connection_t * connList)
 }
 
 int connection_send(dtls_connection_t *connP, uint8_t * buffer, size_t length){
-    time_t now = lwm2m_gettime();
-
     if (connP->dtlsSession == NULL) {
         // no security
         if ( 0 != send_data(connP, buffer, length)) {
             return -1 ;
         }
     } else {
-        if (DTLS_NAT_TIMEOUT > 0 && (now - connP->lastSend) > DTLS_NAT_TIMEOUT)
+        if (DTLS_NAT_TIMEOUT > 0 && (lwm2m_gettime() - connP->lastSend) > DTLS_NAT_TIMEOUT)
         {
             // we need to rehandhake because our source IP/port probably changed for the server
             if ( connection_rehandshake(connP, false) != 0 )
@@ -560,7 +559,6 @@ int connection_send(dtls_connection_t *connP, uint8_t * buffer, size_t length){
             return -1;
         }
     }
-    connP->lastSend = now;
 
     return 0;
 }
