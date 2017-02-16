@@ -178,8 +178,9 @@ coap_status_t dm_handleRequest(lwm2m_context_t * contextP,
     }
 
     if (serverP->status != STATE_REGISTERED
-     && serverP->status != STATE_REG_UPDATE_NEEDED
-     && serverP->status != STATE_REG_UPDATE_PENDING)
+        && serverP->status != STATE_REG_UPDATE_NEEDED
+        && serverP->status != STATE_REG_FULL_UPDATE_NEEDED
+        && serverP->status != STATE_REG_UPDATE_PENDING)
     {
         return COAP_IGNORE;
     }
