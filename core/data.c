@@ -502,14 +502,10 @@ size_t lwm2m_data_serialize(lwm2m_uri_t * uriP,
 
     case LWM2M_CONTENT_TLV:
         {
-            uint8_t baseUriStr[URI_MAX_STRING_LEN];
-            size_t baseUriLen;
-            uri_depth_t rootLevel;
             bool isResourceInstance;
 
-            baseUriLen = uri_toString(uriP, baseUriStr, URI_MAX_STRING_LEN, &rootLevel);
-            if (baseUriLen <= 0) return 0;
-            if (rootLevel == URI_DEPTH_RESOURCE_INSTANCE)
+            if (LWM2M_URI_IS_SET_RESOURCE(uriP)
+             && (size != 1 || dataP->id != uriP->resourceId))
             {
                 isResourceInstance = true;
             }

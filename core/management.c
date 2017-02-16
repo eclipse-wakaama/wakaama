@@ -170,7 +170,15 @@ coap_status_t dm_handleRequest(lwm2m_context_t * contextP,
 
     LOG_ARG("Code: %02X, server status: %s", message->code, STR_STATUS(serverP->status));
     LOG_URI(uriP);
-    format = utils_convertMediaType(message->content_type);
+
+    if (IS_OPTION(message, COAP_OPTION_CONTENT_TYPE))
+    {
+        format = utils_convertMediaType(message->content_type);
+    }
+    else
+    {
+        format = LWM2M_CONTENT_TEXT;
+    }
 
     if (uriP->objectId == LWM2M_SECURITY_OBJECT_ID)
     {
@@ -226,6 +234,11 @@ coap_status_t dm_handleRequest(lwm2m_context_t * contextP,
             }
             else
             {
+                if (IS_OPTION(message, COAP_OPTION_ACCEPT))
+                {
+                    format = utils_convertMediaType(message->accept[0]);
+                }
+
                 result = object_read(contextP, uriP, &format, &buffer, &length);
             }
             if (COAP_205_CONTENT == result)
@@ -521,6 +534,7 @@ int lwm2m_dm_create(lwm2m_context_t * contextP,
 {
     LOG_ARG("clientID: %d, format: %s, length: %d", clientID, STR_MEDIA_TYPE(format), length);
     LOG_URI(uriP);
+
     if (LWM2M_URI_IS_SET_INSTANCE(uriP)
      || length == 0)
     {
