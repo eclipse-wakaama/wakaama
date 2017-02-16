@@ -73,14 +73,18 @@ Options are:
  * ``make``
  * ``./lwm2mclient [Options]``
 
-DTLS feature requires tinydtls submodule. Look at examples/client/README.md for an example of how 
-to include tinydtls.
+DTLS feature requires the tinydtls submodule. To include it, on the first run,
+use the following commands to retrieve the sources:
+ * git submodule init
+ * git submodule update
+
+You need to install libtool and autoreconf to build with tinydtls.
 
 Build with tinydtls:
  * Create a build directory and change to that.
  * ``cmake -DDTLS=1 [liblwm2m directory]/examples/client``
  * ``make``
- * ``./lwm2mclient_dtls [Options]``
+ * ``./lwm2mclient [Options]``
 
 The lwm2mclient features nine LWM2M objects:
  - Security Object (id: 0)
