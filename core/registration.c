@@ -472,16 +472,14 @@ static int prv_getParameters(multi_option_t * query,
                              char ** nameP,
                              uint32_t * lifetimeP,
                              char ** msisdnP,
-                             lwm2m_binding_t * bindingP)
+                             lwm2m_binding_t * bindingP,
+                             char ** versionP)
 {
-    bool foundVersion;
-
     *nameP = NULL;
     *lifetimeP = 0;
     *msisdnP = NULL;
     *bindingP = BINDING_UNKNOWN;
-
-    foundVersion = false;
+    *versionP = NULL;
 
     while (query != NULL)
     {
@@ -524,12 +522,15 @@ static int prv_getParameters(multi_option_t * query,
         }
         else if (lwm2m_strncmp((char *)query->data, QUERY_VERSION, QUERY_VERSION_LEN) == 0)
         {
-            if ((query->len != QUERY_VERSION_FULL_LEN)
-             || (lwm2m_strncmp((char *)query->data, QUERY_VERSION_FULL, QUERY_VERSION_FULL_LEN) != 0))
+            if (*versionP != NULL) goto error;
+            if (query->len == QUERY_VERSION_LEN) goto error;
+
+            *versionP = (char *)lwm2m_malloc(query->len - QUERY_VERSION_LEN + 1);
+            if (*versionP != NULL)
             {
-                goto error;
+                memcpy(*versionP, query->data + QUERY_VERSION_LEN, query->len - QUERY_VERSION_LEN);
+                (*versionP)[query->len - QUERY_VERSION_LEN] = 0;
             }
-            foundVersion = true;
         }
         else if (lwm2m_strncmp((char *)query->data, QUERY_BINDING, QUERY_BINDING_LEN) == 0)
         {
@@ -541,16 +542,12 @@ static int prv_getParameters(multi_option_t * query,
         query = query->next;
     }
 
-    if (foundVersion == false)
-    {
-        goto error;
-    }
-
     return 0;
 
 error:
     if (*nameP != NULL) lwm2m_free(*nameP);
     if (*msisdnP != NULL) lwm2m_free(*msisdnP);
+    if (*versionP != NULL) lwm2m_free(*msisdnP);
 
     return -1;
 }
@@ -906,13 +903,14 @@ coap_status_t registration_handleRequest(lwm2m_context_t * contextP,
         uint32_t lifetime;
         char * msisdn;
         char * altPath;
+        char * version;
         lwm2m_binding_t binding;
         lwm2m_client_object_t * objects;
         bool supportJSON;
         lwm2m_client_t * clientP;
         char location[MAX_LOCATION_LENGTH];
 
-        if (0 != prv_getParameters(message->uri_query, &name, &lifetime, &msisdn, &binding))
+        if (0 != prv_getParameters(message->uri_query, &name, &lifetime, &msisdn, &binding, &version))
         {
             return COAP_400_BAD_REQUEST;
         }
@@ -928,19 +926,38 @@ coap_status_t registration_handleRequest(lwm2m_context_t * contextP,
         {
         case 0:
             // Register operation
-
-            if (objects == NULL)
+            // Version is mandatory
+            if (version == NULL)
             {
-                lwm2m_free(name);
+                if (name != NULL) lwm2m_free(name);
                 if (msisdn != NULL) lwm2m_free(msisdn);
                 return COAP_400_BAD_REQUEST;
             }
             // Endpoint client name is mandatory
             if (name == NULL)
             {
+                lwm2m_free(version);
                 if (msisdn != NULL) lwm2m_free(msisdn);
                 return COAP_400_BAD_REQUEST;
             }
+            // Object list is mandatory
+            if (objects == NULL)
+            {
+                lwm2m_free(version);
+                lwm2m_free(name);
+                if (msisdn != NULL) lwm2m_free(msisdn);
+                return COAP_400_BAD_REQUEST;
+            }
+            // version must be 1.0
+            if (strlen(version) != LWM2M_VERSION_LEN
+                || lwm2m_strncmp(version, LWM2M_VERSION, LWM2M_VERSION_LEN))
+            {
+                lwm2m_free(version);
+                lwm2m_free(name);
+                if (msisdn != NULL) lwm2m_free(msisdn);
+                return COAP_412_PRECONDITION_FAILED;
+            }
+
             if (lifetime == 0)
             {
                 lifetime = LWM2M_DEFAULT_LIFETIME;

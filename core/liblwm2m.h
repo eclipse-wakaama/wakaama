@@ -149,7 +149,8 @@ bool lwm2m_session_is_equal(void * session1, void * session2, void * userData);
 #define COAP_405_METHOD_NOT_ALLOWED     (uint8_t)0x85
 #define COAP_406_NOT_ACCEPTABLE         (uint8_t)0x86
 #define COAP_408_REQ_ENTITY_INCOMPLETE  (uint8_t)0x88
-#define COAP_413_ENTITY_TOO_LARGE       (uint8_t)0x8F
+#define COAP_412_PRECONDITION_FAILED    (uint8_t)0x8C
+#define COAP_413_ENTITY_TOO_LARGE       (uint8_t)0x8D
 #define COAP_500_INTERNAL_SERVER_ERROR  (uint8_t)0xA0
 #define COAP_501_NOT_IMPLEMENTED        (uint8_t)0xA1
 #define COAP_503_SERVICE_UNAVAILABLE    (uint8_t)0xA3
