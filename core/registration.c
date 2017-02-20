@@ -474,10 +474,14 @@ static int prv_getParameters(multi_option_t * query,
                              char ** msisdnP,
                              lwm2m_binding_t * bindingP)
 {
+    bool foundVersion;
+
     *nameP = NULL;
     *lifetimeP = 0;
     *msisdnP = NULL;
     *bindingP = BINDING_UNKNOWN;
+
+    foundVersion = false;
 
     while (query != NULL)
     {
@@ -525,6 +529,7 @@ static int prv_getParameters(multi_option_t * query,
             {
                 goto error;
             }
+            foundVersion = true;
         }
         else if (lwm2m_strncmp((char *)query->data, QUERY_BINDING, QUERY_BINDING_LEN) == 0)
         {
@@ -534,6 +539,11 @@ static int prv_getParameters(multi_option_t * query,
             *bindingP = utils_stringToBinding(query->data + QUERY_BINDING_LEN, query->len - QUERY_BINDING_LEN);
         }
         query = query->next;
+    }
+
+    if (foundVersion == false)
+    {
+        goto error;
     }
 
     return 0;
