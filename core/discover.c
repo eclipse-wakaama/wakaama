@@ -119,7 +119,7 @@ static int prv_serializeAttributes(lwm2m_context_t * contextP,
         PRV_CONCAT_STR(buffer, bufferLen, head, LINK_ITEM_ATTR_END, LINK_ITEM_ATTR_END_SIZE);
     }
 
-    if (head > 0) head -= uriLen;
+    if (head > 0) head -= uriLen + 1;
 
     return head;
 }
@@ -193,7 +193,7 @@ static int prv_serializeLinkData(lwm2m_context_t * contextP,
         uri.flag |= LWM2M_URI_FLAG_RESOURCE_ID;
         res = prv_serializeAttributes(contextP, &uri, buffer, head - 1, bufferLen);
         if (res < 0) return -1;    // careful, 0 is valid
-        if (res > 0) head += res - 1;
+        if (res > 0) head += res;
 
         break;
 
@@ -233,7 +233,7 @@ static int prv_serializeLinkData(lwm2m_context_t * contextP,
         res = prv_serializeAttributes(contextP, &uri, buffer, head - 1, bufferLen);
         if (res < 0) return -1;    // careful, 0 is valid
         if (res == 0) head = 0;    // rewind
-        else head += res - 1;
+        else head += res;
 
         for (index = 0; index < tlvP->value.asChildren.count; index++)
         {
@@ -285,8 +285,7 @@ int discover_serialize(lwm2m_context_t * contextP,
     tempUri.objectId = uriP->objectId;
     res = prv_serializeAttributes(contextP, &tempUri, bufferLink, head - 1, PRV_LINK_BUFFER_SIZE);
     if (res < 0) return -1;    // careful, 0 is valid
-    if (res == 0) head = 0;    // rewind
-    else head += res - 1;
+    head += res;
     if (LWM2M_URI_IS_SET_INSTANCE(uriP))
     {
         size_t subHead;
@@ -307,10 +306,8 @@ int discover_serialize(lwm2m_context_t * contextP,
         tempUri.flag = LWM2M_URI_FLAG_INSTANCE_ID;
         res = prv_serializeAttributes(contextP, &tempUri, bufferLink + head, head + subHead - 1, PRV_LINK_BUFFER_SIZE);
         if (res < 0) return -1;    // careful, 0 is valid
-        if (res == 0) subHead = 0;    // rewind
-        else subHead += res - 1;
 
-        head += subHead;
+        head += subHead + res;
     }
 
     for (index = 0; index < size && head < PRV_LINK_BUFFER_SIZE; index++)
