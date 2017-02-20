@@ -71,7 +71,7 @@ static int prv_getRegistrationQuery(lwm2m_context_t * contextP,
     int index;
     int res;
 
-    index = utils_stringCopy(buffer, length, "?ep=");
+    index = utils_stringCopy(buffer, length, QUERY_STARTER QUERY_VERSION_FULL QUERY_DELIMITER QUERY_NAME);
     if (index < 0) return 0;
     res = utils_stringCopy(buffer + index, length - index, contextP->endpointName);
     if (res < 0) return 0;
@@ -481,16 +481,16 @@ static int prv_getParameters(multi_option_t * query,
 
     while (query != NULL)
     {
-        if (lwm2m_strncmp((char *)query->data, QUERY_TEMPLATE, QUERY_LENGTH) == 0)
+        if (lwm2m_strncmp((char *)query->data, QUERY_NAME, QUERY_NAME_LEN) == 0)
         {
             if (*nameP != NULL) goto error;
-            if (query->len == QUERY_LENGTH) goto error;
+            if (query->len == QUERY_NAME_LEN) goto error;
 
-            *nameP = (char *)lwm2m_malloc(query->len - QUERY_LENGTH + 1);
+            *nameP = (char *)lwm2m_malloc(query->len - QUERY_NAME_LEN + 1);
             if (*nameP != NULL)
             {
-                memcpy(*nameP, query->data + QUERY_LENGTH, query->len - QUERY_LENGTH);
-                (*nameP)[query->len - QUERY_LENGTH] = 0;
+                memcpy(*nameP, query->data + QUERY_NAME_LEN, query->len - QUERY_NAME_LEN);
+                (*nameP)[query->len - QUERY_NAME_LEN] = 0;
             }
         }
         else if (lwm2m_strncmp((char *)query->data, QUERY_SMS, QUERY_SMS_LEN) == 0)

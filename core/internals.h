@@ -136,8 +136,9 @@
 #define URI_BOOTSTRAP_SEGMENT           "bs"
 #define URI_BOOTSTRAP_SEGMENT_LEN       2
 
-#define QUERY_TEMPLATE      "ep="
-#define QUERY_LENGTH        3       // strlen("ep=")
+#define QUERY_STARTER       "?"
+#define QUERY_NAME          "ep="
+#define QUERY_NAME_LEN      3       // strlen("ep=")
 #define QUERY_SMS           "sms="
 #define QUERY_SMS_LEN       4
 #define QUERY_LIFETIME      "lt="
