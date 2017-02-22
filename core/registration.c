@@ -298,7 +298,14 @@ int lwm2m_update_registration(lwm2m_context_t * contextP,
                 if (targetP->status == STATE_REGISTERED
                  || targetP->status == STATE_REG_UPDATE_PENDING)
                 {
-                    targetP->status = STATE_REG_UPDATE_NEEDED;
+                    if (withObjects == true)
+                    {
+                        targetP->status = STATE_REG_FULL_UPDATE_NEEDED;
+                    }
+                    else
+                    {
+                        targetP->status = STATE_REG_UPDATE_NEEDED;
+                    }
                     return COAP_NO_ERROR;
                 }
                 else
@@ -312,7 +319,14 @@ int lwm2m_update_registration(lwm2m_context_t * contextP,
             if (targetP->status == STATE_REGISTERED
              || targetP->status == STATE_REG_UPDATE_PENDING)
             {
-                targetP->status = STATE_REG_UPDATE_NEEDED;
+                if (withObjects == true)
+                {
+                    targetP->status = STATE_REG_FULL_UPDATE_NEEDED;
+                }
+                else
+                {
+                    targetP->status = STATE_REG_UPDATE_NEEDED;
+                }
             }
         }
         targetP = targetP->next;
@@ -374,6 +388,7 @@ lwm2m_status_t registration_getStatus(lwm2m_context_t * contextP)
         {
             case STATE_REGISTERED:
             case STATE_REG_UPDATE_NEEDED:
+            case STATE_REG_FULL_UPDATE_NEEDED:
             case STATE_REG_UPDATE_PENDING:
                 if (reg_status == STATE_REG_FAILED)
                 {
@@ -1157,6 +1172,10 @@ void registration_step(lwm2m_context_t * contextP,
         break;
 
         case STATE_REG_UPDATE_NEEDED:
+            prv_updateRegistration(contextP, targetP, false);
+            break;
+
+        case STATE_REG_FULL_UPDATE_NEEDED:
             prv_updateRegistration(contextP, targetP, true);
             break;
 
