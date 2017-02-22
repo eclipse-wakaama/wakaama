@@ -181,6 +181,7 @@ bool lwm2m_session_is_equal(void * session1, void * session2, void * userData);
 #define LWM2M_SECURITY_SMS_SERVER_NUMBER_ID   9
 #define LWM2M_SECURITY_SHORT_SERVER_ID        10
 #define LWM2M_SECURITY_HOLD_OFF_ID            11
+#define LWM2M_SECURITY_BOOTSTRAP_TIMEOUT_ID   12
 
 /*
  * Ressource IDs for the LWM2M Server Object
