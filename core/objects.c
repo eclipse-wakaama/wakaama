@@ -294,7 +294,7 @@ coap_status_t object_create(lwm2m_context_t * contextP,
 
     LOG_URI(uriP);
 
-    if (length == 0 || buffer == 0 || LWM2M_URI_IS_SET_INSTANCE(uriP))
+    if (length == 0 || buffer == 0)
     {
         return COAP_400_BAD_REQUEST;
     }
