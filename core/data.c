@@ -441,10 +441,16 @@ int lwm2m_data_parse(lwm2m_uri_t * uriP,
         (*dataP)->type = LWM2M_TYPE_OPAQUE;
         return prv_setBuffer(*dataP, buffer, bufferLen);
 
+#ifdef LWM2M_OLD_CONTENT_FORMAT_SUPPORT
+    case LWM2M_CONTENT_TLV_OLD:
+#endif
     case LWM2M_CONTENT_TLV:
         return tlv_parse(buffer, bufferLen, dataP);
 
 #ifdef LWM2M_SUPPORT_JSON
+#ifdef LWM2M_OLD_CONTENT_FORMAT_SUPPORT
+    case LWM2M_CONTENT_JSON_OLD:
+#endif
     case LWM2M_CONTENT_JSON:
         return json_parse(uriP, buffer, bufferLen, dataP);
 #endif
