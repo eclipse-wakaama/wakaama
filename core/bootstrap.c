@@ -80,7 +80,7 @@ static void prv_requestBootstrap(lwm2m_context_t * context,
 
     LOG("Entering");
 
-    query_length = utils_stringCopy(query, PRV_QUERY_BUFFER_LENGTH, "?ep=");
+    query_length = utils_stringCopy(query, PRV_QUERY_BUFFER_LENGTH, QUERY_STARTER QUERY_NAME);
     if (query_length < 0)
     {
         bootstrapServer->status = STATE_BS_FAILED;
@@ -571,19 +571,19 @@ uint8_t bootstrap_handleRequest(lwm2m_context_t * contextP,
     if (message->uri_query == NULL) return COAP_400_BAD_REQUEST;
     if (message->payload != NULL) return COAP_400_BAD_REQUEST;
 
-    if (lwm2m_strncmp((char *)message->uri_query->data, QUERY_TEMPLATE, QUERY_LENGTH) != 0)
+    if (lwm2m_strncmp((char *)message->uri_query->data, QUERY_NAME, QUERY_NAME_LEN) != 0)
     {
         return COAP_400_BAD_REQUEST;
     }
 
-    if (message->uri_query->len == QUERY_LENGTH) return COAP_400_BAD_REQUEST;
+    if (message->uri_query->len == QUERY_NAME_LEN) return COAP_400_BAD_REQUEST;
     if (message->uri_query->next != NULL) return COAP_400_BAD_REQUEST;
 
-    name = (char *)lwm2m_malloc(message->uri_query->len - QUERY_LENGTH + 1);
+    name = (char *)lwm2m_malloc(message->uri_query->len - QUERY_NAME_LEN + 1);
     if (name == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
 
-    memcpy(name, message->uri_query->data + QUERY_LENGTH, message->uri_query->len - QUERY_LENGTH);
-    name[message->uri_query->len - QUERY_LENGTH] = 0;
+    memcpy(name, message->uri_query->data + QUERY_NAME_LEN, message->uri_query->len - QUERY_NAME_LEN);
+    name[message->uri_query->len - QUERY_NAME_LEN] = 0;
 
     result = contextP->bootstrapCallback(fromSessionH, COAP_NO_ERROR, NULL, name, contextP->bootstrapUserData);
 

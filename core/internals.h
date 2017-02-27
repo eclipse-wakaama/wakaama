@@ -136,8 +136,9 @@
 #define URI_BOOTSTRAP_SEGMENT           "bs"
 #define URI_BOOTSTRAP_SEGMENT_LEN       2
 
-#define QUERY_TEMPLATE      "ep="
-#define QUERY_LENGTH        3       // strlen("ep=")
+#define QUERY_STARTER       "?"
+#define QUERY_NAME          "ep="
+#define QUERY_NAME_LEN      3       // strlen("ep=")
 #define QUERY_SMS           "sms="
 #define QUERY_SMS_LEN       4
 #define QUERY_LIFETIME      "lt="
@@ -148,8 +149,11 @@
 #define QUERY_BINDING_LEN   2
 #define QUERY_DELIMITER     "&"
 
-#define QUERY_VERSION_FULL      "lwm2m=1.0"
-#define QUERY_VERSION_FULL_LEN  9
+#define LWM2M_VERSION      "1.0"
+#define LWM2M_VERSION_LEN  3
+
+#define QUERY_VERSION_FULL      QUERY_VERSION LWM2M_VERSION
+#define QUERY_VERSION_FULL_LEN  QUERY_VERSION_LEN+LWM2M_VERSION_LEN
 
 #define REG_URI_START       '<'
 #define REG_URI_END         '>'
