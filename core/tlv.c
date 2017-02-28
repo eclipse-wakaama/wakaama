@@ -423,7 +423,7 @@ size_t tlv_serialize(bool isResourceInstance,
         {
         case LWM2M_TYPE_MULTIPLE_RESOURCE:
             isInstance = true;
-            // fall throught
+            // fall through
         case LWM2M_TYPE_OBJECT_INSTANCE:
             {
                 uint8_t * tmpBuffer;
