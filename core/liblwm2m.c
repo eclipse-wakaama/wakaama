@@ -335,7 +335,6 @@ int lwm2m_add_object(lwm2m_context_t * contextP,
 int lwm2m_remove_object(lwm2m_context_t * contextP,
                         uint16_t id)
 {
-    uint16_t i;
     lwm2m_object_t * targetP;
 
     LOG_ARG("ID: %d", id);

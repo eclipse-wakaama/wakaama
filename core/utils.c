@@ -253,18 +253,15 @@ size_t utils_floatToText(double data,
     decLength = 0;
     if (decPart >= FLT_EPSILON)
     {
-        int i;
         double noiseFloor;
 
         if (intLength >= length - 1) return 0;
 
-        i = 0;
         noiseFloor = FLT_EPSILON;
         do
         {
             decPart *= 10;
             noiseFloor *= 10;
-            i++;
         } while (decPart - (int64_t)decPart > noiseFloor);
 
         decLength = utils_intToText(decPart, string + intLength, length - intLength);
