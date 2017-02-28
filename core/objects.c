@@ -141,7 +141,6 @@ coap_status_t object_readData(lwm2m_context_t * contextP,
     targetP = (lwm2m_object_t *)LWM2M_LIST_FIND(contextP->objectList, uriP->objectId);
     if (NULL == targetP) return COAP_404_NOT_FOUND;
     if (NULL == targetP->readFunc) return COAP_405_METHOD_NOT_ALLOWED;
-    if (targetP->instanceList == NULL) return COAP_404_NOT_FOUND;
 
     if (LWM2M_URI_IS_SET_INSTANCE(uriP))
     {
@@ -165,25 +164,33 @@ coap_status_t object_readData(lwm2m_context_t * contextP,
         lwm2m_list_t * instanceP;
         int i;
 
+        result = COAP_205_CONTENT;
+
         *sizeP = 0;
         for (instanceP = targetP->instanceList; instanceP != NULL ; instanceP = instanceP->next)
         {
             (*sizeP)++;
         }
 
-        *dataP = lwm2m_data_new(*sizeP);
-        if (*dataP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
-
-        result = COAP_205_CONTENT;
-        instanceP = targetP->instanceList;
-        i = 0;
-        while (instanceP != NULL && result == COAP_205_CONTENT)
+        if (*sizeP == 0)
         {
-            result = targetP->readFunc(instanceP->id, (int*)&((*dataP)[i].value.asChildren.count), &((*dataP)[i].value.asChildren.array), targetP);
-            (*dataP)[i].type = LWM2M_TYPE_OBJECT_INSTANCE;
-            (*dataP)[i].id = instanceP->id;
-            i++;
-            instanceP = instanceP->next;
+            *dataP = NULL;
+        }
+        else
+        {
+            *dataP = lwm2m_data_new(*sizeP);
+            if (*dataP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
+
+            instanceP = targetP->instanceList;
+            i = 0;
+            while (instanceP != NULL && result == COAP_205_CONTENT)
+            {
+                result = targetP->readFunc(instanceP->id, (int*)&((*dataP)[i].value.asChildren.count), &((*dataP)[i].value.asChildren.array), targetP);
+                (*dataP)[i].type = LWM2M_TYPE_OBJECT_INSTANCE;
+                (*dataP)[i].id = instanceP->id;
+                i++;
+                instanceP = instanceP->next;
+            }
         }
     }
 
@@ -206,15 +213,22 @@ coap_status_t object_read(lwm2m_context_t * contextP,
 
     if (result == COAP_205_CONTENT)
     {
-        *lengthP = lwm2m_data_serialize(uriP, size, dataP, formatP, bufferP);
-        if (*lengthP == 0)
+        if (size == 0)
         {
-            if (*formatP != LWM2M_CONTENT_TEXT
-                || size != 1
-                || dataP->type != LWM2M_TYPE_STRING
-                || dataP->value.asBuffer.length != 0)
+            *lengthP = 0;
+        }
+        else
+        {
+            *lengthP = lwm2m_data_serialize(uriP, size, dataP, formatP, bufferP);
+            if (*lengthP == 0)
             {
-                result = COAP_500_INTERNAL_SERVER_ERROR;
+                if (*formatP != LWM2M_CONTENT_TEXT
+                    || size != 1
+                    || dataP->type != LWM2M_TYPE_STRING
+                    || dataP->value.asBuffer.length != 0)
+                {
+                    result = COAP_500_INTERNAL_SERVER_ERROR;
+                }
             }
         }
     }
@@ -382,6 +396,7 @@ coap_status_t object_delete(lwm2m_context_t * contextP,
 
 coap_status_t object_discover(lwm2m_context_t * contextP,
                               lwm2m_uri_t * uriP,
+                              lwm2m_server_t * serverP,
                               uint8_t ** bufferP,
                               size_t * lengthP)
 {
@@ -394,7 +409,6 @@ coap_status_t object_discover(lwm2m_context_t * contextP,
     targetP = (lwm2m_object_t *)LWM2M_LIST_FIND(contextP->objectList, uriP->objectId);
     if (NULL == targetP) return COAP_404_NOT_FOUND;
     if (NULL == targetP->discoverFunc) return COAP_501_NOT_IMPLEMENTED;
-    if (targetP->instanceList == NULL) return COAP_404_NOT_FOUND;
 
     if (LWM2M_URI_IS_SET_INSTANCE(uriP))
     {
@@ -408,7 +422,6 @@ coap_status_t object_discover(lwm2m_context_t * contextP,
             if (dataP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
 
             dataP->id = uriP->resourceId;
-            uriP->flag &= ~LWM2M_URI_FLAG_RESOURCE_ID;
         }
 
         result = targetP->discoverFunc(uriP->instanceId, &size, &dataP, targetP);
@@ -419,25 +432,29 @@ coap_status_t object_discover(lwm2m_context_t * contextP,
         lwm2m_list_t * instanceP;
         int i;
 
+        result = COAP_205_CONTENT;
+
         size = 0;
         for (instanceP = targetP->instanceList; instanceP != NULL ; instanceP = instanceP->next)
         {
             size++;
         }
 
-        dataP = lwm2m_data_new(size);
-        if (dataP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
-
-        result = COAP_205_CONTENT;
-        instanceP = targetP->instanceList;
-        i = 0;
-        while (instanceP != NULL && result == COAP_205_CONTENT)
+        if (size != 0)
         {
-            result = targetP->discoverFunc(instanceP->id, (int*)&(dataP[i].value.asChildren.count), &(dataP[i].value.asChildren.array), targetP);
-            dataP[i].type = LWM2M_TYPE_OBJECT_INSTANCE;
-            dataP[i].id = instanceP->id;
-            i++;
-            instanceP = instanceP->next;
+            dataP = lwm2m_data_new(size);
+            if (dataP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
+
+            instanceP = targetP->instanceList;
+            i = 0;
+            while (instanceP != NULL && result == COAP_205_CONTENT)
+            {
+                result = targetP->discoverFunc(instanceP->id, (int*)&(dataP[i].value.asChildren.count), &(dataP[i].value.asChildren.array), targetP);
+                dataP[i].type = LWM2M_TYPE_OBJECT_INSTANCE;
+                dataP[i].id = instanceP->id;
+                i++;
+                instanceP = instanceP->next;
+            }
         }
     }
 
@@ -445,7 +462,7 @@ coap_status_t object_discover(lwm2m_context_t * contextP,
     {
         int len;
 
-        len = discover_serialize(contextP, uriP, size, dataP, bufferP);
+        len = discover_serialize(contextP, uriP, serverP, size, dataP, bufferP);
         if (len <= 0) result = COAP_500_INTERNAL_SERVER_ERROR;
         else *lengthP = len;
     }

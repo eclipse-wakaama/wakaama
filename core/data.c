@@ -524,7 +524,7 @@ size_t lwm2m_data_serialize(lwm2m_uri_t * uriP,
 
 #ifdef LWM2M_CLIENT_MODE
     case LWM2M_CONTENT_LINK:
-        return discover_serialize(NULL, uriP, size, dataP, bufferP);
+        return discover_serialize(NULL, uriP, NULL, size, dataP, bufferP);
 #endif
 #ifdef LWM2M_SUPPORT_JSON
     case LWM2M_CONTENT_JSON:
