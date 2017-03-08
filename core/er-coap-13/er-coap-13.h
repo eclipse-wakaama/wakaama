@@ -199,7 +199,8 @@ typedef enum {
   APPLICATION_FASTINFOSET = 48,
   APPLICATION_SOAP_FASTINFOSET = 49,
   APPLICATION_JSON = 50,
-  APPLICATION_X_OBIX_BINARY = 51
+  APPLICATION_X_OBIX_BINARY = 51,
+  CONTENT_MAX_VALUE = 0xFFFF
 } coap_content_type_t;
 
 typedef struct _multi_option_t {
