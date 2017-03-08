@@ -717,11 +717,10 @@ static lwm2m_observation_t * prv_findObservationByURI(lwm2m_client_t * clientP,
     return targetP;
 }
 
-void observe_remove(lwm2m_client_t * clientP,
-                    lwm2m_observation_t * observationP)
+void observe_remove(lwm2m_observation_t * observationP)
 {
     LOG("Entering");
-    clientP->observationList = (lwm2m_observation_t *) LWM2M_LIST_RM(clientP->observationList, observationP->id, NULL);
+    observationP->clientP->observationList = (lwm2m_observation_t *) LWM2M_LIST_RM(observationP->clientP->observationList, observationP->id, NULL);
     lwm2m_free(observationP);
 }
 
@@ -736,7 +735,7 @@ static void prv_obsRequestCallback(lwm2m_transaction_t * transacP,
     {
     case STATE_DEREG_PENDING:
         // Observation was canceled by the user.
-        observe_remove(observationP->clientP, observationP);
+        observe_remove(observationP);
         return;
 
     case STATE_REG_PENDING:
@@ -768,7 +767,7 @@ static void prv_obsRequestCallback(lwm2m_transaction_t * transacP,
                                code,
                                LWM2M_CONTENT_TEXT, NULL, 0,
                                observationP->userData);
-        observe_remove(observationP->clientP, observationP);
+        observe_remove(observationP);
     }
     else
     {
@@ -814,7 +813,7 @@ static void prv_obsCancelRequestCallback(lwm2m_transaction_t * transacP,
                            cancelP->userDataP);
     }
 
-    observe_remove(cancelP->observationP->clientP, cancelP->observationP);
+    observe_remove(cancelP->observationP);
 
     lwm2m_free(cancelP);
 }

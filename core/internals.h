@@ -274,7 +274,7 @@ void observe_cancel(lwm2m_context_t * contextP, uint16_t mid, void * fromSession
 coap_status_t observe_setParameters(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_server_t * serverP, lwm2m_attributes_t * attrP);
 void observe_step(lwm2m_context_t * contextP, time_t currentTime, time_t * timeoutP);
 bool observe_handleNotify(lwm2m_context_t * contextP, void * fromSessionH, coap_packet_t * message, coap_packet_t * response);
-void observe_remove(lwm2m_client_t * clientP, lwm2m_observation_t * observationP);
+void observe_remove(lwm2m_observation_t * observationP);
 lwm2m_observed_t * observe_findByUri(lwm2m_context_t * contextP, lwm2m_uri_t * uriP);
 
 // defined in registration.c

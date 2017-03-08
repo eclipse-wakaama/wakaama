@@ -1080,7 +1080,7 @@ coap_status_t registration_handleRequest(lwm2m_context_t * contextP,
                                                COAP_202_DELETED,
                                                LWM2M_CONTENT_TEXT, NULL, 0,
                                                observationP->userData);
-                        observe_remove(clientP, observationP);
+                        observe_remove(observationP);
                     }
                     else
                     {
@@ -1093,7 +1093,7 @@ coap_status_t registration_handleRequest(lwm2m_context_t * contextP,
                                                        COAP_202_DELETED,
                                                        LWM2M_CONTENT_TEXT, NULL, 0,
                                                        observationP->userData);
-                                observe_remove(clientP, observationP);
+                                observe_remove(observationP);
                             }
                         }
                     }
