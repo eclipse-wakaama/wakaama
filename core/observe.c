@@ -736,7 +736,7 @@ static void prv_obsRequestCallback(lwm2m_transaction_t * transacP,
     {
     case STATE_DEREG_PENDING:
         // Observation was canceled by the user.
-        observe_remove(((lwm2m_client_t*)transacP->peerP), observationP);
+        observe_remove(observationP->clientP, observationP);
         return;
 
     case STATE_REG_PENDING:
@@ -763,16 +763,16 @@ static void prv_obsRequestCallback(lwm2m_transaction_t * transacP,
 
     if (code != COAP_205_CONTENT)
     {
-        observationP->callback(((lwm2m_client_t*)transacP->peerP)->internalID,
+        observationP->callback(observationP->clientP->internalID,
                                &observationP->uri,
                                code,
                                LWM2M_CONTENT_TEXT, NULL, 0,
                                observationP->userData);
-        observe_remove(((lwm2m_client_t*)transacP->peerP), observationP);
+        observe_remove(observationP->clientP, observationP);
     }
     else
     {
-        observationP->callback(((lwm2m_client_t*)transacP->peerP)->internalID,
+        observationP->callback(observationP->clientP->internalID,
                                &observationP->uri,
                                0,
                                packet->content_type, packet->payload, packet->payload_len,
@@ -799,7 +799,7 @@ static void prv_obsCancelRequestCallback(lwm2m_transaction_t * transacP,
 
     if (code != COAP_205_CONTENT)
     {
-        cancelP->callbackP(((lwm2m_client_t*)transacP->peerP)->internalID,
+        cancelP->callbackP(cancelP->observationP->clientP->internalID,
                            &cancelP->observationP->uri,
                            code,
                            LWM2M_CONTENT_TEXT, NULL, 0,
@@ -807,14 +807,14 @@ static void prv_obsCancelRequestCallback(lwm2m_transaction_t * transacP,
     }
     else
     {
-        cancelP->callbackP(((lwm2m_client_t*)transacP->peerP)->internalID,
+        cancelP->callbackP(cancelP->observationP->clientP->internalID,
                            &cancelP->observationP->uri,
                            0,
                            packet->content_type, packet->payload, packet->payload_len,
                            cancelP->userDataP);
     }
 
-    observe_remove(((lwm2m_client_t*)transacP->peerP), cancelP->observationP);
+    observe_remove(cancelP->observationP->clientP, cancelP->observationP);
 
     lwm2m_free(cancelP);
 }
@@ -855,7 +855,7 @@ int lwm2m_observe(lwm2m_context_t * contextP,
     token[2] = observationP->id >> 8;
     token[3] = observationP->id & 0xFF;
 
-    transactionP = transaction_new(COAP_TYPE_CON, COAP_GET, clientP->altPath, uriP, contextP->nextMID++, 4, token, ENDPOINT_CLIENT, (void *)clientP);
+    transactionP = transaction_new(clientP->sessionH, COAP_TYPE_CON, COAP_GET, clientP->altPath, uriP, contextP->nextMID++, 4, token);
     if (transactionP == NULL)
     {
         lwm2m_free(observationP);
@@ -900,7 +900,7 @@ int lwm2m_observe_cancel(lwm2m_context_t * contextP,
         lwm2m_transaction_t * transactionP;
         cancellation_data_t * cancelP;
 
-        transactionP = transaction_new(COAP_TYPE_CON, COAP_GET, clientP->altPath, uriP, contextP->nextMID++, 0, NULL, ENDPOINT_CLIENT, (void *)clientP);
+        transactionP = transaction_new(clientP->sessionH, COAP_TYPE_CON, COAP_GET, clientP->altPath, uriP, contextP->nextMID++, 0, NULL);
         if (transactionP == NULL)
         {
             return COAP_500_INTERNAL_SERVER_ERROR;
