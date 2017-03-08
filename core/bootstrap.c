@@ -105,7 +105,7 @@ static void prv_requestBootstrap(lwm2m_context_t * context,
 
         LOG("Bootstrap server connection opened");
 
-        transaction = transaction_new(bootstrapServer->sessionH, COAP_TYPE_CON, COAP_POST, NULL, NULL, context->nextMID++, 4, NULL);
+        transaction = transaction_new(bootstrapServer->sessionH, COAP_POST, NULL, NULL, context->nextMID++, 4, NULL);
         if (transaction == NULL)
         {
             bootstrapServer->status = STATE_BS_FAILED;
@@ -645,7 +645,7 @@ int lwm2m_bootstrap_delete(lwm2m_context_t * contextP,
     bs_data_t * dataP;
 
     LOG_URI(uriP);
-    transaction = transaction_new(sessionH, COAP_TYPE_CON, COAP_DELETE, NULL, uriP, contextP->nextMID++, 4, NULL);
+    transaction = transaction_new(sessionH, COAP_DELETE, NULL, uriP, contextP->nextMID++, 4, NULL);
     if (transaction == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
 
     dataP = (bs_data_t *)lwm2m_malloc(sizeof(bs_data_t));
@@ -692,7 +692,7 @@ int lwm2m_bootstrap_write(lwm2m_context_t * contextP,
         return COAP_400_BAD_REQUEST;
     }
 
-    transaction = transaction_new(sessionH, COAP_TYPE_CON, COAP_PUT, NULL, uriP, contextP->nextMID++, 4, NULL);
+    transaction = transaction_new(sessionH, COAP_PUT, NULL, uriP, contextP->nextMID++, 4, NULL);
     if (transaction == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
 
     coap_set_header_content_type(transaction->message, format);
@@ -724,7 +724,7 @@ int lwm2m_bootstrap_finish(lwm2m_context_t * contextP,
     bs_data_t * dataP;
 
     LOG("Entering");
-    transaction = transaction_new(sessionH, COAP_TYPE_CON, COAP_POST, NULL, NULL, contextP->nextMID++, 4, NULL);
+    transaction = transaction_new(sessionH, COAP_POST, NULL, NULL, contextP->nextMID++, 4, NULL);
     if (transaction == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
 
     coap_set_header_uri_path(transaction->message, "/"URI_BOOTSTRAP_SEGMENT);

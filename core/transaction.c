@@ -142,7 +142,6 @@ static int prv_checkFinished(lwm2m_transaction_t * transacP,
 }
 
 lwm2m_transaction_t * transaction_new(void * sessionH,
-                                      coap_message_type_t type,
                                       coap_method_t method,
                                       char * altPath,
                                       lwm2m_uri_t * uriP,
@@ -153,23 +152,12 @@ lwm2m_transaction_t * transaction_new(void * sessionH,
     lwm2m_transaction_t * transacP;
     int result;
 
-    LOG_ARG("type: %d, method: %d, altPath: \"%s\", mID: %d, token_len: %d",
-            type, method, altPath, mID, token_len);
+    LOG_ARG("method: %d, altPath: \"%s\", mID: %d, token_len: %d",
+            method, altPath, mID, token_len);
     LOG_URI(uriP);
 
     // no transactions without peer
     if (NULL == sessionH) return NULL;
-
-    // no transactions for ack or rst
-    if (COAP_TYPE_ACK == type || COAP_TYPE_RST == type) return NULL;
-
-    if (COAP_TYPE_NON == type)
-    {
-        // no transactions for NON responses
-        if (COAP_DELETE < method) return NULL;
-        // no transactions for NON request without token
-        if (0 == token_len) return NULL;
-    }
 
     transacP = (lwm2m_transaction_t *)lwm2m_malloc(sizeof(lwm2m_transaction_t));
 
@@ -179,7 +167,7 @@ lwm2m_transaction_t * transaction_new(void * sessionH,
     transacP->message = lwm2m_malloc(sizeof(coap_packet_t));
     if (NULL == transacP->message) goto error;
 
-    coap_init_message(transacP->message, type, method, mID);
+    coap_init_message(transacP->message, COAP_TYPE_CON, method, mID);
 
     transacP->peerH = sessionH;
 
