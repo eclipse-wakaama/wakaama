@@ -174,6 +174,7 @@ typedef enum {
   COAP_OPTION_BLOCK1 = 27,        /* 1-3 B */
   COAP_OPTION_SIZE = 28,          /* 0-4 B */
   COAP_OPTION_PROXY_URI = 35,     /* 1-270 B */
+  OPTION_MAX_VALUE = 0xFFFF
 } coap_option_t;
 
 /* CoAP Content-Types */
@@ -199,7 +200,8 @@ typedef enum {
   APPLICATION_FASTINFOSET = 48,
   APPLICATION_SOAP_FASTINFOSET = 49,
   APPLICATION_JSON = 50,
-  APPLICATION_X_OBIX_BINARY = 51
+  APPLICATION_X_OBIX_BINARY = 51,
+  CONTENT_MAX_VALUE = 0xFFFF
 } coap_content_type_t;
 
 typedef struct _multi_option_t {
