@@ -20,14 +20,14 @@
  * 
  *  Resources:
  *
- *          Name         | ID | Oper. | Inst. | Mand.|  Type   | Range | Units | Descripton |
- *  SMS Tx Counter       |  0 |   R   | Single|  No  | Integer |       |       |            |
- *  SMS Rx Counter       |  1 |   R   | Single|  No  | Integer |       |       |            |
- *  Tx Data              |  2 |   R   | Single|  No  | Integer |       | kByte |            |
- *  Rx Data              |  3 |   R   | Single|  No  | Integer |       | kByte |            |
- *  Max Message Size     |  4 |   R   | Single|  No  | Integer |       | Byte  |            |
- *  Average Message Size |  5 |   R   | Single|  No  | Integer |       | Byte  |            |
- *  StartOrReset         |  6 |   E   | Single|  Yes | Integer |       |       |            |
+ *          Name         | ID | Oper. | Inst. | Mand.|  Type   | Range | Units | Description |
+ *  SMS Tx Counter       |  0 |   R   | Single|  No  | Integer |       |       |             |
+ *  SMS Rx Counter       |  1 |   R   | Single|  No  | Integer |       |       |             |
+ *  Tx Data              |  2 |   R   | Single|  No  | Integer |       | kByte |             |
+ *  Rx Data              |  3 |   R   | Single|  No  | Integer |       | kByte |             |
+ *  Max Message Size     |  4 |   R   | Single|  No  | Integer |       | Byte  |             |
+ *  Average Message Size |  5 |   R   | Single|  No  | Integer |       | Byte  |             |
+ *  StartOrReset         |  6 |   E   | Single|  Yes | Integer |       |       |             |
  */
 
 #include "liblwm2m.h"

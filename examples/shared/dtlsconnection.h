@@ -68,7 +68,7 @@ void connection_free(dtls_connection_t * connList);
 int connection_send(dtls_connection_t *connP, uint8_t * buffer, size_t length);
 int connection_handle_packet(dtls_connection_t *connP, uint8_t * buffer, size_t length);
 
-// rehandshake a connection, usefull when your NAT timeouted and your client have a new IP/PORT
+// rehandshake a connection, useful when your NAT timed out and your client has a new IP/PORT
 int connection_rehandshake(dtls_connection_t *connP, bool sendCloseNotify);
 
 #endif

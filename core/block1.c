@@ -46,7 +46,7 @@
 #include <string.h>
 #include <stdio.h>
 
-// the maximum payload transfered by block1 we accumulate per server
+// the maximum payload transferred by block1 we accumulate per server
 #define MAX_BLOCK1_SIZE 4096
 
 coap_status_t coap_block1_handler(lwm2m_block1_data_t ** pBlock1Data,
