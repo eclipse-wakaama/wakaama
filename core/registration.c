@@ -562,7 +562,7 @@ static int prv_getParameters(multi_option_t * query,
 error:
     if (*nameP != NULL) lwm2m_free(*nameP);
     if (*msisdnP != NULL) lwm2m_free(*msisdnP);
-    if (*versionP != NULL) lwm2m_free(*msisdnP);
+    if (*versionP != NULL) lwm2m_free(*versionP);
 
     return -1;
 }
