@@ -201,6 +201,7 @@ coap_status_t dm_handleRequest(lwm2m_context_t * contextP,
         {
             uint8_t * buffer = NULL;
             size_t length = 0;
+            int res;
 
             if (IS_OPTION(message, COAP_OPTION_OBSERVE))
             {
@@ -213,13 +214,14 @@ coap_status_t dm_handleRequest(lwm2m_context_t * contextP,
                     result = observe_handleRequest(contextP, uriP, serverP, size, dataP, message, response);
                     if (COAP_205_CONTENT == result)
                     {
-                        length = lwm2m_data_serialize(uriP, size, dataP, &format, &buffer);
-                        if (length == 0)
+                        res = lwm2m_data_serialize(uriP, size, dataP, &format, &buffer);
+                        if (res < 0)
                         {
                             result = COAP_500_INTERNAL_SERVER_ERROR;
                         }
                         else
                         {
+                            length = (size_t)res;
                             LOG_ARG("Observe Request[/%d/%d/%d]: %.*s\n", uriP->objectId, uriP->instanceId, uriP->resourceId, length, buffer);
                         }
                     }

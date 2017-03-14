@@ -21,25 +21,33 @@
 #include <float.h>
 
 // dataP array length is assumed to be 1.
-static size_t prv_textSerialize(lwm2m_data_t * dataP,
-                                uint8_t ** bufferP)
+static int prv_textSerialize(lwm2m_data_t * dataP,
+                             uint8_t ** bufferP)
 {
+    size_t res;
+
     switch (dataP->type)
     {
     case LWM2M_TYPE_STRING:
         *bufferP = (uint8_t *)lwm2m_malloc(dataP->value.asBuffer.length);
         if (*bufferP == NULL) return 0;
         memcpy(*bufferP, dataP->value.asBuffer.buffer, dataP->value.asBuffer.length);
-        return dataP->value.asBuffer.length;
+        return (int)dataP->value.asBuffer.length;
 
     case LWM2M_TYPE_INTEGER:
-        return utils_int64ToPlainText(dataP->value.asInteger, bufferP);
+        res = utils_int64ToPlainText(dataP->value.asInteger, bufferP);
+        if (res == 0) return -1;
+        return (int)res;
 
     case LWM2M_TYPE_FLOAT:
-        return utils_float64ToPlainText(dataP->value.asFloat, bufferP);
+        res = utils_float64ToPlainText(dataP->value.asFloat, bufferP);
+        if (res == 0) return -1;
+        return (int)res;
 
     case LWM2M_TYPE_BOOLEAN:
-        return utils_boolToPlainText(dataP->value.asBoolean, bufferP);
+        res = utils_boolToPlainText(dataP->value.asBoolean, bufferP);
+        if (res == 0) return -1;
+        return (int)res;
 
     case LWM2M_TYPE_OBJECT_LINK:
     {
@@ -48,14 +56,14 @@ static size_t prv_textSerialize(lwm2m_data_t * dataP,
                 dataP->value.asObjLink.objectId,
                 dataP->value.asObjLink.objectInstanceId);
         *bufferP = (uint8_t *)lwm2m_malloc(len);
-        if (*bufferP == NULL) return 0;
+        if (*bufferP == NULL) return -1;
         memcpy(*bufferP, stringBuffer, len);
         return len;
     }
     case LWM2M_TYPE_OPAQUE:
     case LWM2M_TYPE_UNDEFINED:
     default:
-        return 0;
+        return -1;
     }
 }
 
@@ -460,13 +468,12 @@ int lwm2m_data_parse(lwm2m_uri_t * uriP,
     }
 }
 
-size_t lwm2m_data_serialize(lwm2m_uri_t * uriP,
-                            int size,
-                            lwm2m_data_t * dataP,
-                            lwm2m_media_type_t * formatP,
-                            uint8_t ** bufferP)
+int lwm2m_data_serialize(lwm2m_uri_t * uriP,
+                         int size,
+                         lwm2m_data_t * dataP,
+                         lwm2m_media_type_t * formatP,
+                         uint8_t ** bufferP)
 {
-
     LOG_URI(uriP);
     LOG_ARG("size: %d, formatP: %s", size, STR_MEDIA_TYPE(*formatP));
 
@@ -502,9 +509,9 @@ size_t lwm2m_data_serialize(lwm2m_uri_t * uriP,
 
     case LWM2M_CONTENT_OPAQUE:
         *bufferP = (uint8_t *)lwm2m_malloc(dataP->value.asBuffer.length);
-        if (*bufferP == NULL) return 0;
+        if (*bufferP == NULL) return -1;
         memcpy(*bufferP, dataP->value.asBuffer.buffer, dataP->value.asBuffer.length);
-        return dataP->value.asBuffer.length;
+        return (int)dataP->value.asBuffer.length;
 
     case LWM2M_CONTENT_TLV:
         {
@@ -532,7 +539,7 @@ size_t lwm2m_data_serialize(lwm2m_uri_t * uriP,
 #endif
 
     default:
-        return 0;
+        return -1;
     }
 }
 

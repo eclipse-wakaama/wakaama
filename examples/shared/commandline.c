@@ -181,6 +181,8 @@ void output_buffer(FILE * stream,
 
     if (length == 0) fprintf(stream, "\n");
 
+    if (buffer == NULL) return;
+
     i = 0;
     while (i < length)
     {
@@ -299,10 +301,9 @@ void output_data(FILE * stream,
 {
     int i;
 
-    if (data == NULL) return;
-
     print_indent(stream, indent);
     fprintf(stream, "%d bytes received of type ", dataLength);
+
     switch (format)
     {
     case LWM2M_CONTENT_TEXT:
