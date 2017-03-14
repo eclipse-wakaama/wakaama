@@ -177,7 +177,7 @@ coap_status_t dm_handleRequest(lwm2m_context_t * contextP,
     }
     else
     {
-        format = LWM2M_CONTENT_TEXT;
+        format = LWM2M_CONTENT_TLV;
     }
 
     if (uriP->objectId == LWM2M_SECURITY_OBJECT_ID)
@@ -426,7 +426,11 @@ static int prv_makeOperation(lwm2m_context_t * contextP,
     transaction = transaction_new(COAP_TYPE_CON, method, clientP->altPath, uriP, contextP->nextMID++, 4, NULL, ENDPOINT_CLIENT, (void *)clientP);
     if (transaction == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
 
-    if (buffer != NULL)
+    if (method == COAP_GET)
+    {
+        coap_set_header_accept(transaction->message, format);
+    }
+    else if (buffer != NULL)
     {
         coap_set_header_content_type(transaction->message, format);
         // TODO: Take care of fragmentation
@@ -460,13 +464,29 @@ int lwm2m_dm_read(lwm2m_context_t * contextP,
                   lwm2m_result_callback_t callback,
                   void * userData)
 {
+    lwm2m_client_t * clientP;
+    lwm2m_media_type_t format;
+
     LOG_ARG("clientID: %d", clientID);
     LOG_URI(uriP);
+
+    clientP = (lwm2m_client_t *)lwm2m_list_find((lwm2m_list_t *)contextP->clientList, clientID);
+    if (clientP == NULL) return COAP_404_NOT_FOUND;
+
+    if (clientP->supportJSON == true)
+    {
+        format = LWM2M_CONTENT_JSON;
+    }
+    else
+    {
+        format = LWM2M_CONTENT_TLV;
+    }
+
     return prv_makeOperation(contextP, clientID, uriP,
-                              COAP_GET,
-                              LWM2M_CONTENT_TEXT,
-                              NULL, 0,
-                              callback, userData);
+                             COAP_GET,
+                             format,
+                             NULL, 0,
+                             callback, userData);
 }
 
 int lwm2m_dm_write(lwm2m_context_t * contextP,
