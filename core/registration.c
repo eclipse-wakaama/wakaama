@@ -581,6 +581,12 @@ static uint16_t prv_splitLinkAttribute(uint8_t * data,
     while (index < length && data[index] == ' ') index++;
     if (index == length) return 0;
 
+    if (data[index] == REG_ATTR_SEPARATOR)
+    {
+        index++;
+    }
+    if (index == length) return 0;
+
     *keyStart = index;
 
     while (index < length && data[index] != REG_ATTR_EQUALS) index++;

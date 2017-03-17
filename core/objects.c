@@ -207,29 +207,21 @@ coap_status_t object_read(lwm2m_context_t * contextP,
     coap_status_t result;
     lwm2m_data_t * dataP = NULL;
     int size = 0;
+    int res;
 
     LOG_URI(uriP);
     result = object_readData(contextP, uriP, &size, &dataP);
 
     if (result == COAP_205_CONTENT)
     {
-        if (size == 0)
+        res = lwm2m_data_serialize(uriP, size, dataP, formatP, bufferP);
+        if (res < 0)
         {
-            *lengthP = 0;
+            result = COAP_500_INTERNAL_SERVER_ERROR;
         }
         else
         {
-            *lengthP = lwm2m_data_serialize(uriP, size, dataP, formatP, bufferP);
-            if (*lengthP == 0)
-            {
-                if (*formatP != LWM2M_CONTENT_TEXT
-                    || size != 1
-                    || dataP->type != LWM2M_TYPE_STRING
-                    || dataP->value.asBuffer.length != 0)
-                {
-                    result = COAP_500_INTERNAL_SERVER_ERROR;
-                }
-            }
+            *lengthP = (size_t)res;
         }
     }
     lwm2m_data_free(size, dataP);

@@ -46,7 +46,7 @@ static void test_data(const char * uriStr,
     }
 
     length = lwm2m_data_serialize((uriStr != NULL) ? &uri : NULL, size, tlvP, &format, &buffer);
-    if (length <= 0)
+    if (length < 0)
     {
         printf("Serialize lwm2m_data_t %s to %s failed.\n", id, format==LWM2M_CONTENT_JSON?"JSON":"TLV");
         //dump_data_t(stdout, size, tlvP, 0);
@@ -54,8 +54,8 @@ static void test_data(const char * uriStr,
     }
     else
     {
-        //printf("\n\nSerialize lwm2m_data_t %s:\n", id);
-        //output_buffer(stdout, buffer, length, 0);
+        printf("\n\nSerialize lwm2m_data_t %s:\n", id);
+        output_buffer(stdout, buffer, length, 0);
         lwm2m_free(buffer);
     }
 }
@@ -406,8 +406,8 @@ static void test_10(void)
     lwm2m_data_encode_bool(true, data1 + 15);
     lwm2m_data_encode_bool(false, data1 + 16);
 
-    test_data(NULL, LWM2M_CONTENT_TLV, data1, sizeof(data1)/sizeof(lwm2m_data_t), "1");
-    test_data(NULL, LWM2M_CONTENT_JSON, data1, sizeof(data1)/sizeof(lwm2m_data_t), "1");
+    test_data(NULL, LWM2M_CONTENT_TLV, data1, 17, "1");
+    test_data(NULL, LWM2M_CONTENT_JSON, data1, 17, "1");
 }
 
 static struct TestTable table[] = {

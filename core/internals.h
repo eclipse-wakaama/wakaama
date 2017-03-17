@@ -167,7 +167,7 @@
 #define REG_ATTR_CONTENT_KEY        "ct"
 #define REG_ATTR_CONTENT_KEY_LEN    2
 #define REG_ATTR_CONTENT_JSON       "11543"   // Temporary value
-#define REG_ATTR_CONTENT_JSON_LEN   4
+#define REG_ATTR_CONTENT_JSON_LEN   5
 
 #define ATTR_SERVER_ID_STR       "ep="
 #define ATTR_SERVER_ID_LEN       3
@@ -299,12 +299,12 @@ lwm2m_status_t bootstrap_getStatus(lwm2m_context_t * contextP);
 
 // defined in tlv.c
 int tlv_parse(uint8_t * buffer, size_t bufferLen, lwm2m_data_t ** dataP);
-size_t tlv_serialize(bool isResourceInstance, int size, lwm2m_data_t * dataP, uint8_t ** bufferP);
+int tlv_serialize(bool isResourceInstance, int size, lwm2m_data_t * dataP, uint8_t ** bufferP);
 
 // defined in json.c
 #ifdef LWM2M_SUPPORT_JSON
 int json_parse(lwm2m_uri_t * uriP, uint8_t * buffer, size_t bufferLen, lwm2m_data_t ** dataP);
-size_t json_serialize(lwm2m_uri_t * uriP, int size, lwm2m_data_t * tlvP, uint8_t ** bufferP);
+int json_serialize(lwm2m_uri_t * uriP, int size, lwm2m_data_t * tlvP, uint8_t ** bufferP);
 #endif
 
 // defined in discover.c
