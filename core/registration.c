@@ -308,6 +308,16 @@ int lwm2m_update_registration(lwm2m_context_t * contextP,
                     }
                     return COAP_NO_ERROR;
                 }
+                else if ((targetP->status == STATE_REG_FULL_UPDATE_NEEDED)
+                      || (targetP->status == STATE_REG_UPDATE_NEEDED))
+                {
+                    // if REG (FULL) UPDATE is already set, returns COAP_NO_ERROR
+                    if (withObjects == true)
+                    {
+                        targetP->status = STATE_REG_FULL_UPDATE_NEEDED;
+                    }
+                    return COAP_NO_ERROR;
+                }
                 else
                 {
                     return COAP_400_BAD_REQUEST;
