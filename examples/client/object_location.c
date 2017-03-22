@@ -69,7 +69,7 @@
 #define HORIZONTAL_VELOCITY_VERTICAL         1  // set vertical direction bit!
 #define HORIZONTAL_VELOCITY_WITH_UNCERTAINTY 2
 
-#define VELOCITY_OCTETS                      5  // for HORITZOL_VELOCITY_WITH_UNCERTAINTY 
+#define VELOCITY_OCTETS                      5  // for HORIZONTAL_VELOCITY_WITH_UNCERTAINTY 
 
 typedef struct
 {
@@ -77,7 +77,7 @@ typedef struct
     float    longitude;
     float    altitude;
     float    radius;
-    uint8_t  velocity   [VELOCITY_OCTETS];        //3GPP notation 1st step: HORITZOL_VELOCITY_WITH_UNCERTAINTY
+    uint8_t  velocity   [VELOCITY_OCTETS];        //3GPP notation 1st step: HORIZONTAL_VELOCITY_WITH_UNCERTAINTY
     unsigned long timestamp;
     float    speed;
 } location_data_t;
