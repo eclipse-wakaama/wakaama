@@ -28,12 +28,6 @@
 
 #define PRV_QUERY_BUFFER_LENGTH 200
 
-static void prv_bootstrapFailed(lwm2m_server_t * bootstrapServer)
-{
-    LOG("Entering");
-
-    bootstrapServer->status = STATE_BS_FAILED;
-}
 
 static void prv_handleResponse(lwm2m_server_t * bootstrapServer,
                                coap_packet_t * message)
@@ -45,7 +39,7 @@ static void prv_handleResponse(lwm2m_server_t * bootstrapServer,
     }
     else
     {
-        prv_bootstrapFailed(bootstrapServer);
+        bootstrapServer->status = STATE_BS_FAILING;
     }
 }
 
@@ -65,7 +59,7 @@ static void prv_handleBootstrapReply(lwm2m_transaction_t * transaction,
         }
         else
         {
-            prv_bootstrapFailed(bootstrapServer);
+            bootstrapServer->status = STATE_BS_FAILING;
         }
     }
 }
@@ -83,13 +77,13 @@ static void prv_requestBootstrap(lwm2m_context_t * context,
     query_length = utils_stringCopy(query, PRV_QUERY_BUFFER_LENGTH, QUERY_STARTER QUERY_NAME);
     if (query_length < 0)
     {
-        bootstrapServer->status = STATE_BS_FAILED;
+        bootstrapServer->status = STATE_BS_FAILING;
         return;
     }
     res = utils_stringCopy(query + query_length, PRV_QUERY_BUFFER_LENGTH - query_length, context->endpointName);
     if (res < 0)
     {
-        bootstrapServer->status = STATE_BS_FAILED;
+        bootstrapServer->status = STATE_BS_FAILING;
         return;
     }
     query_length += res;
@@ -108,7 +102,7 @@ static void prv_requestBootstrap(lwm2m_context_t * context,
         transaction = transaction_new(bootstrapServer->sessionH, COAP_POST, NULL, NULL, context->nextMID++, 4, NULL);
         if (transaction == NULL)
         {
-            bootstrapServer->status = STATE_BS_FAILED;
+            bootstrapServer->status = STATE_BS_FAILING;
             return;
         }
 
@@ -181,12 +175,14 @@ void bootstrap_step(lwm2m_context_t * contextP,
             *timeoutP = 0;
             break;
 
-        case STATE_BS_FAILED:
+        case STATE_BS_FAILING:
             if (targetP->sessionH != NULL)
             {
                 lwm2m_close_connection(targetP->sessionH, contextP->userData);
                 targetP->sessionH = NULL;
             }
+            targetP->status = STATE_BS_FAILED;
+            *timeoutP = 0;
             break;
 
         default:
@@ -306,6 +302,7 @@ static coap_status_t prv_checkServerStatus(lwm2m_server_t * serverP)
 
     case STATE_BS_FINISHED:
     case STATE_BS_FINISHING:
+    case STATE_BS_FAILING:
     case STATE_BS_FAILED:
     default:
         LOG("Returning COAP_IGNORE");

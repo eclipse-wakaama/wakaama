@@ -91,8 +91,9 @@
 ((S) == STATE_BS_PENDING ? "STATE_BS_PENDING" :                 \
 ((S) == STATE_BS_FINISHED ? "STATE_BS_FINISHED" :               \
 ((S) == STATE_BS_FINISHING ? "STATE_BS_FINISHING" :             \
+((S) == STATE_BS_FAILING ? "STATE_BS_FAILING" :                 \
 ((S) == STATE_BS_FAILED ? "STATE_BS_FAILED" :                   \
-"Unknown"))))))))))))))
+"Unknown")))))))))))))))
 #define STR_MEDIA_TYPE(M)                                \
 ((M) == LWM2M_CONTENT_TEXT ? "LWM2M_CONTENT_TEXT" :      \
 ((M) == LWM2M_CONTENT_LINK ? "LWM2M_CONTENT_LINK" :      \

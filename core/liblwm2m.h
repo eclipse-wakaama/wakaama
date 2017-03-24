@@ -426,6 +426,7 @@ typedef enum
     STATE_BS_PENDING,              // boostrap ongoing
     STATE_BS_FINISHING,            // boostrap finish received
     STATE_BS_FINISHED,             // bootstrap done
+    STATE_BS_FAILING,              // bootstrap error occurred
     STATE_BS_FAILED,               // bootstrap failed
 } lwm2m_status_t;
 
