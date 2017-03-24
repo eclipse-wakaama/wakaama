@@ -132,7 +132,7 @@ static void prv_requestBootstrap(lwm2m_context_t * context,
 
 void bootstrap_step(lwm2m_context_t * contextP,
                     uint32_t currentTime,
-                    time_t* timeoutP)
+                    time_t * timeoutP)
 {
     lwm2m_server_t * targetP;
 
@@ -171,12 +171,14 @@ void bootstrap_step(lwm2m_context_t * contextP,
             // waiting
             break;
 
-        case STATE_BS_FINISHED:
+        case STATE_BS_FINISHING:
             if (targetP->sessionH != NULL)
             {
                 lwm2m_close_connection(targetP->sessionH, contextP->userData);
                 targetP->sessionH = NULL;
             }
+            targetP->status = STATE_BS_FINISHED;
+            *timeoutP = 0;
             break;
 
         case STATE_BS_FAILED:
@@ -205,8 +207,8 @@ coap_status_t bootstrap_handleFinish(lwm2m_context_t * context,
     if (bootstrapServer != NULL
      && bootstrapServer->status == STATE_BS_PENDING)
     {
-        LOG("Bootstrap server status changed to STATE_BS_FINISHED");
-        bootstrapServer->status = STATE_BS_FINISHED;
+        LOG("Bootstrap server status changed to STATE_BS_FINISHING");
+        bootstrapServer->status = STATE_BS_FINISHING;
         return COAP_204_CHANGED;
     }
 
@@ -264,6 +266,7 @@ lwm2m_status_t bootstrap_getStatus(lwm2m_context_t * contextP)
             case STATE_BS_HOLD_OFF:
             case STATE_BS_INITIATED:
             case STATE_BS_PENDING:
+            case STATE_BS_FINISHING:
                 bs_status = STATE_BS_PENDING;
                 break;
 
@@ -302,6 +305,7 @@ static coap_status_t prv_checkServerStatus(lwm2m_server_t * serverP)
         break;
 
     case STATE_BS_FINISHED:
+    case STATE_BS_FINISHING:
     case STATE_BS_FAILED:
     default:
         LOG("Returning COAP_IGNORE");
