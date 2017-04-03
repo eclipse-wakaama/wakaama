@@ -423,8 +423,10 @@ typedef enum
     STATE_DEREG_PENDING,           // deregistration pending
     STATE_BS_HOLD_OFF,             // bootstrap hold off time
     STATE_BS_INITIATED,            // bootstrap request sent
-    STATE_BS_PENDING,              // boostrap on going
+    STATE_BS_PENDING,              // boostrap ongoing
+    STATE_BS_FINISHING,            // boostrap finish received
     STATE_BS_FINISHED,             // bootstrap done
+    STATE_BS_FAILING,              // bootstrap error occurred
     STATE_BS_FAILED,               // bootstrap failed
 } lwm2m_status_t;
 
