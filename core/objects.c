@@ -336,8 +336,11 @@ coap_status_t object_create(lwm2m_context_t * contextP,
         break;
 
     default:
-        uriP->instanceId = lwm2m_list_newId(targetP->instanceList);
-        uriP->flag |= LWM2M_URI_FLAG_INSTANCE_ID;
+        if (!LWM2M_URI_IS_SET_INSTANCE(uriP))
+        {
+            uriP->instanceId = lwm2m_list_newId(targetP->instanceList);
+            uriP->flag |= LWM2M_URI_FLAG_INSTANCE_ID;
+        }
         result = targetP->createFunc(uriP->instanceId, size, dataP, targetP);
         break;
     }
