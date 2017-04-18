@@ -214,6 +214,15 @@ coap_status_t dm_handleRequest(lwm2m_context_t * contextP,
                     result = observe_handleRequest(contextP, uriP, serverP, size, dataP, message, response);
                     if (COAP_205_CONTENT == result)
                     {
+                        if (IS_OPTION(message, COAP_OPTION_ACCEPT))
+                        {
+                            format = utils_convertMediaType(message->accept[0]);
+                        }
+                        else
+                        {
+                            format = LWM2M_CONTENT_TLV;
+                        }
+
                         res = lwm2m_data_serialize(uriP, size, dataP, &format, &buffer);
                         if (res < 0)
                         {

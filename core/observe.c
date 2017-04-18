@@ -182,6 +182,14 @@ coap_status_t observe_handleRequest(lwm2m_context_t * contextP,
         memcpy(watcherP->token, message->token, message->token_len);
         watcherP->active = true;
         watcherP->lastTime = lwm2m_gettime();
+        if (IS_OPTION(message, COAP_OPTION_ACCEPT))
+        {
+            watcherP->format = utils_convertMediaType(message->accept[0]);
+        }
+        else
+        {
+            watcherP->format = LWM2M_CONTENT_TLV;
+        }
 
         if (LWM2M_URI_IS_SET_RESOURCE(uriP))
         {
@@ -633,7 +641,7 @@ void observe_step(lwm2m_context_t * contextP,
                         {
                             int res;
 
-                            res = lwm2m_data_serialize(&targetP->uri, size, dataP, &format, &buffer);
+                            res = lwm2m_data_serialize(&targetP->uri, size, dataP, &(watcherP->format), &buffer);
                             if (res < 0)
                             {
                                 break;
@@ -646,7 +654,7 @@ void observe_step(lwm2m_context_t * contextP,
                         }
                         else
                         {
-                            if (COAP_205_CONTENT != object_read(contextP, &targetP->uri, &format, &buffer, &length))
+                            if (COAP_205_CONTENT != object_read(contextP, &targetP->uri, &(watcherP->format), &buffer, &length))
                             {
                                 buffer = NULL;
                                 break;
@@ -875,6 +883,14 @@ int lwm2m_observe(lwm2m_context_t * contextP,
 
     coap_set_header_observe(transactionP->message, 0);
     coap_set_header_token(transactionP->message, token, sizeof(token));
+    if (clientP->supportJSON == true)
+    {
+        coap_set_header_accept(transactionP->message, LWM2M_CONTENT_JSON);
+    }
+    else
+    {
+        coap_set_header_accept(transactionP->message, LWM2M_CONTENT_TLV);
+    }
 
     transactionP->callback = prv_obsRequestCallback;
     transactionP->userData = (void *)observationP;
