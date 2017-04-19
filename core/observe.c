@@ -882,7 +882,6 @@ int lwm2m_observe(lwm2m_context_t * contextP,
     observationP->clientP->observationList = (lwm2m_observation_t *)LWM2M_LIST_ADD(observationP->clientP->observationList, observationP);
 
     coap_set_header_observe(transactionP->message, 0);
-    coap_set_header_token(transactionP->message, token, sizeof(token));
     if (clientP->supportJSON == true)
     {
         coap_set_header_accept(transactionP->message, LWM2M_CONTENT_JSON);
@@ -924,8 +923,14 @@ int lwm2m_observe_cancel(lwm2m_context_t * contextP,
     {
         lwm2m_transaction_t * transactionP;
         cancellation_data_t * cancelP;
+        uint8_t token[4];
 
-        transactionP = transaction_new(clientP->sessionH, COAP_GET, clientP->altPath, uriP, contextP->nextMID++, 0, NULL);
+        token[0] = clientP->internalID >> 8;
+        token[1] = clientP->internalID & 0xFF;
+        token[2] = observationP->id >> 8;
+        token[3] = observationP->id & 0xFF;
+
+        transactionP = transaction_new(clientP->sessionH, COAP_GET, clientP->altPath, uriP, contextP->nextMID++, 4, token);
         if (transactionP == NULL)
         {
             return COAP_500_INTERNAL_SERVER_ERROR;
