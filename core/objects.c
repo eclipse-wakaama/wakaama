@@ -384,6 +384,11 @@ coap_status_t object_delete(lwm2m_context_t * contextP,
         }
     }
 
+    if (result == COAP_202_DELETED)
+    {
+        observe_clear(contextP, uriP);
+    }
+
     LOG_ARG("result: %u.%2u", (result & 0xFF) >> 5, (result & 0x1F));
 
     return result;

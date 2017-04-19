@@ -262,6 +262,43 @@ void observe_cancel(lwm2m_context_t * contextP,
     }
 }
 
+void observe_clear(lwm2m_context_t * contextP,
+                   lwm2m_uri_t * uriP)
+{
+    lwm2m_observed_t * observedP;
+
+    LOG_URI(uriP);
+
+    observedP = contextP->observedList;
+    while(observedP != NULL)
+    {
+        if (observedP->uri.objectId == uriP->objectId
+            && (LWM2M_URI_IS_SET_INSTANCE(uriP) == false
+                || observedP->uri.instanceId == uriP->instanceId))
+        {
+            lwm2m_observed_t * nextP;
+            lwm2m_watcher_t * watcherP;
+
+            nextP = observedP->next;
+
+            for (watcherP = observedP->watcherList; watcherP != NULL; watcherP = watcherP->next)
+            {
+                if (watcherP->parameters != NULL) lwm2m_free(watcherP->parameters);
+            }
+            LWM2M_LIST_FREE(observedP->watcherList);
+
+            prv_unlinkObserved(contextP, observedP);
+            lwm2m_free(observedP);
+
+            observedP = nextP;
+        }
+        else
+        {
+            observedP = observedP->next;
+        }
+    }
+}
+
 coap_status_t observe_setParameters(lwm2m_context_t * contextP,
                                     lwm2m_uri_t * uriP,
                                     lwm2m_server_t * serverP,
