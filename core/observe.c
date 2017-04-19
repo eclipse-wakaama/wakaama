@@ -457,7 +457,6 @@ void observe_step(lwm2m_context_t * contextP,
         double floatValue = 0;
         int64_t integerValue = 0;
         bool storeValue = false;
-        lwm2m_media_type_t format = LWM2M_CONTENT_TEXT;
         coap_packet_t message[1];
         time_t interval;
 
@@ -661,7 +660,7 @@ void observe_step(lwm2m_context_t * contextP,
                             }
                         }
                         coap_init_message(message, COAP_TYPE_NON, COAP_205_CONTENT, 0);
-                        coap_set_header_content_type(message, format);
+                        coap_set_header_content_type(message, watcherP->format);
                         coap_set_payload(message, buffer, length);
                     }
                     watcherP->lastTime = currentTime;
