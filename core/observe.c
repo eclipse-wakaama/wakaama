@@ -885,13 +885,27 @@ int lwm2m_observe(lwm2m_context_t * contextP,
     clientP = (lwm2m_client_t *)lwm2m_list_find((lwm2m_list_t *)contextP->clientList, clientID);
     if (clientP == NULL) return COAP_404_NOT_FOUND;
 
-    observationP = (lwm2m_observation_t *)lwm2m_malloc(sizeof(lwm2m_observation_t));
-    if (observationP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
-    memset(observationP, 0, sizeof(lwm2m_observation_t));
+    for (observationP = clientP->observationList; observationP != NULL; observationP = observationP->next)
+    {
+        if (uriP->objectId == observationP->uri.objectId
+            && (LWM2M_URI_IS_SET_INSTANCE(uriP) == false
+                || observationP->uri.instanceId == uriP->instanceId)
+            && (LWM2M_URI_IS_SET_INSTANCE(uriP) == false
+                || observationP->uri.instanceId == uriP->instanceId))
+        {
+            break;
+        }
+    }
+    if (observationP == NULL)
+    {
+        observationP = (lwm2m_observation_t *)lwm2m_malloc(sizeof(lwm2m_observation_t));
+        if (observationP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
+        memset(observationP, 0, sizeof(lwm2m_observation_t));
 
-    observationP->id = lwm2m_list_newId((lwm2m_list_t *)clientP->observationList);
-    memcpy(&observationP->uri, uriP, sizeof(lwm2m_uri_t));
-    observationP->clientP = clientP;
+        observationP->id = lwm2m_list_newId((lwm2m_list_t *)clientP->observationList);
+        memcpy(&observationP->uri, uriP, sizeof(lwm2m_uri_t));
+        observationP->clientP = clientP;
+    }
     observationP->status = STATE_REG_PENDING;
     observationP->callback = callback;
     observationP->userData = userData;
