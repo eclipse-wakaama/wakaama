@@ -595,6 +595,7 @@ typedef struct _lwm2m_watcher_
     bool update;
     lwm2m_server_t * server;
     lwm2m_attributes_t * parameters;
+    lwm2m_media_type_t format;
     uint8_t token[8];
     size_t tokenLen;
     time_t lastTime;

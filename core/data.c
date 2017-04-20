@@ -514,7 +514,8 @@ int lwm2m_data_serialize(lwm2m_uri_t * uriP,
         return (int)dataP->value.asBuffer.length;
 
     case LWM2M_CONTENT_TLV:
-        {
+    case LWM2M_CONTENT_TLV_OLD:
+    {
             bool isResourceInstance;
 
             if (uriP != NULL && LWM2M_URI_IS_SET_RESOURCE(uriP)
@@ -535,6 +536,7 @@ int lwm2m_data_serialize(lwm2m_uri_t * uriP,
 #endif
 #ifdef LWM2M_SUPPORT_JSON
     case LWM2M_CONTENT_JSON:
+    case LWM2M_CONTENT_JSON_OLD:
         return json_serialize(uriP, size, dataP, bufferP);
 #endif
 
