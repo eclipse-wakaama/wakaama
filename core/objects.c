@@ -500,8 +500,8 @@ static int prv_getObjectTemplate(uint8_t * buffer,
     buffer[1] = '/';
     index = 2;
 
-    result = utils_intCopy((char *)buffer + index, length - index, id);
-    if (result < 0) return -1;
+    result = utils_intToText(id, (char *)buffer + index, length - index);
+    if (result == 0) return -1;
     index += result;
 
     if (length - index < REG_OBJECT_MIN_LEN - 3) return -1;
@@ -576,8 +576,8 @@ int object_getRegisterPayload(lwm2m_context_t * contextP,
                     index += length;
                 }
 
-                result = utils_intCopy((char *)buffer + index, bufferLen - index, targetP->id);
-                if (result < 0) return 0;
+                result = utils_intToText(targetP->id, (char *)buffer + index, bufferLen - index);
+                if (result == 0) return 0;
                 index += result;
 
                 result = utils_stringCopy((char *)buffer + index, bufferLen - index, REG_PATH_END);

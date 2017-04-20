@@ -574,9 +574,6 @@ struct _lwm2m_transaction_
     time_t                response_timeout; // timeout to wait for response, if token is used. When 0, use calculated acknowledge timeout.
     uint8_t  retrans_counter;
     time_t   retrans_time;
-    char objStringID[LWM2M_STRING_ID_MAX_LEN];
-    char instanceStringID[LWM2M_STRING_ID_MAX_LEN];
-    char resourceStringID[LWM2M_STRING_ID_MAX_LEN];
     void * message;
     uint16_t buffer_len;
     uint8_t * buffer;

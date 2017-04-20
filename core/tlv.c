@@ -40,6 +40,63 @@
 #define _PRV_TLV_TYPE_MULTIPLE_RESOURCE (uint8_t)0x80
 #define _PRV_TLV_TYPE_RESOURCE_INSTANCE (uint8_t)0x40
 
+static size_t prv_encodeFloat(double data,
+                              uint8_t * data_buffer)
+{
+    size_t length = 0;
+
+    if ((data < 0.0 - (double)FLT_MAX) || (data >(double)FLT_MAX))
+    {
+        length = 8;
+        utils_copyValue(data_buffer, &data, 8);
+    }
+    else
+    {
+        float value;
+
+        length = 4;
+        value = (float)data;
+        utils_copyValue(data_buffer, &value, 4);
+    }
+
+    return length;
+}
+
+static size_t prv_encodeInt(int64_t data,
+                            uint8_t * data_buffer)
+{
+    size_t length = 0;
+
+    if (data >= INT8_MIN && data <= INT8_MAX)
+    {
+        length = 1;
+        data_buffer[0] = data;
+    }
+    else if (data >= INT16_MIN && data <= INT16_MAX)
+    {
+        int16_t value;
+
+        value = data;
+        length = 2;
+        data_buffer[0] = (value >> 8) & 0xFF;
+        data_buffer[1] = value & 0xFF;
+    }
+    else if (data >= INT32_MIN && data <= INT32_MAX)
+    {
+        int32_t value;
+
+        value = data;
+        length = 4;
+        utils_copyValue(data_buffer, &value, length);
+    }
+    else if (data >= INT64_MIN && data <= INT64_MAX)
+    {
+        length = 8;
+        utils_copyValue(data_buffer, &data, length);
+    }
+
+    return length;
+}
 
 static uint8_t prv_getHeaderType(lwm2m_data_type_t type)
 {
@@ -344,7 +401,7 @@ static int prv_getLength(int size,
                 size_t data_len;
                 uint8_t unused_buffer[_PRV_64BIT_BUFFER_SIZE];
 
-                data_len = utils_encodeInt(dataP[i].value.asInteger, unused_buffer);
+                data_len = prv_encodeInt(dataP[i].value.asInteger, unused_buffer);
                 length += prv_getHeaderLength(dataP[i].id, data_len) + data_len;
             }
             break;
@@ -476,7 +533,7 @@ int tlv_serialize(bool isResourceInstance,
                 size_t data_len;
                 uint8_t data_buffer[_PRV_64BIT_BUFFER_SIZE];
 
-                data_len = utils_encodeInt(dataP[i].value.asInteger, data_buffer);
+                data_len = prv_encodeInt(dataP[i].value.asInteger, data_buffer);
                 headerLen = prv_createHeader(*bufferP + index, isInstance, dataP[i].type, dataP[i].id, data_len);
                 index += headerLen;
                 memcpy(*bufferP + index, data_buffer, data_len);
@@ -489,7 +546,7 @@ int tlv_serialize(bool isResourceInstance,
                 size_t data_len;
                 uint8_t data_buffer[_PRV_64BIT_BUFFER_SIZE];
 
-                data_len = utils_encodeFloat(dataP[i].value.asFloat, data_buffer);
+                data_len = prv_encodeFloat(dataP[i].value.asFloat, data_buffer);
                 headerLen = prv_createHeader(*bufferP + index, isInstance, dataP[i].type, dataP[i].id, data_len);
                 index += headerLen;
                 memcpy(*bufferP + index, data_buffer, data_len);
