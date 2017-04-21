@@ -328,8 +328,6 @@ size_t utils_floatToText(double data, uint8_t * string, size_t length);
 int utils_textToInt(uint8_t * buffer, int length, int64_t * dataP);
 int utils_textToFloat(uint8_t * buffer, int length, double * dataP);
 void utils_copyValue(void * dst, const void * src, size_t len);
-size_t utils_base64ToOpaque(uint8_t * dataP, size_t dataLen, uint8_t ** bufferP);
-size_t utils_opaqueToBase64(uint8_t * dataP, size_t dataLen, uint8_t ** bufferP);
 size_t utils_base64Encode(uint8_t * dataP, size_t dataLen, uint8_t * bufferP, size_t bufferLen);
 #ifdef LWM2M_CLIENT_MODE
 lwm2m_server_t * utils_findServer(lwm2m_context_t * contextP, void * fromSessionH);
