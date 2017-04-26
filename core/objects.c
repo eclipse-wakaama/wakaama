@@ -782,17 +782,18 @@ int object_getServers(lwm2m_context_t * contextP)
                 if (serverInstP == NULL)
                 {
                     lwm2m_free(targetP);
-                    lwm2m_data_free(size, dataP);
-                    return -1;
                 }
-                if (0 != prv_getMandatoryInfo(serverObjP, serverInstP->id, targetP))
+                else
                 {
-                    lwm2m_free(targetP);
-                    lwm2m_data_free(size, dataP);
-                    return -1;
+                    if (0 != prv_getMandatoryInfo(serverObjP, serverInstP->id, targetP))
+                    {
+                        lwm2m_free(targetP);
+                        lwm2m_data_free(size, dataP);
+                        return -1;
+                    }
+                    targetP->status = STATE_DEREGISTERED;
+                    contextP->serverList = (lwm2m_server_t*)LWM2M_LIST_ADD(contextP->serverList, targetP);
                 }
-                targetP->status = STATE_DEREGISTERED;
-                contextP->serverList = (lwm2m_server_t*)LWM2M_LIST_ADD(contextP->serverList, targetP);
             }
             lwm2m_data_free(size, dataP);
         }
