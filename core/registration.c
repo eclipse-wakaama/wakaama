@@ -173,10 +173,12 @@ static uint8_t prv_register(lwm2m_context_t * contextP,
         res = utils_stringCopy(query + query_length, PRV_QUERY_BUFFER_LENGTH - query_length, QUERY_DELIMITER QUERY_LIFETIME);
         if (res < 0) return COAP_500_INTERNAL_SERVER_ERROR;
         query_length += res;
-        res = utils_intCopy(query + query_length, PRV_QUERY_BUFFER_LENGTH - query_length, server->lifetime);
-        if (res < 0) return COAP_500_INTERNAL_SERVER_ERROR;
+        res = utils_intToText(server->lifetime, query + query_length, PRV_QUERY_BUFFER_LENGTH - query_length);
+        if (res == 0) return COAP_500_INTERNAL_SERVER_ERROR;
         query_length += res;
     }
+
+    query[query_length] = 0;
 
     if (server->sessionH == NULL)
     {
@@ -907,8 +909,8 @@ static int prv_getLocationString(uint16_t id,
     if (result < 0) return 0;
     index = result;
 
-    result = utils_intCopy(location + index, MAX_LOCATION_LENGTH - index, id);
-    if (result < 0) return 0;
+    result = utils_intToText(id, location + index, MAX_LOCATION_LENGTH - index);
+    if (result == 0) return 0;
 
     return index + result;
 }

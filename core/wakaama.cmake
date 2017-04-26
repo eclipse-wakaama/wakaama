@@ -6,7 +6,8 @@
 set(WAKAAMA_SOURCES_DIR ${CMAKE_CURRENT_LIST_DIR})
 
 set(EXT_SOURCES 
-    ${WAKAAMA_SOURCES_DIR}/er-coap-13/er-coap-13.c)
+    ${WAKAAMA_SOURCES_DIR}/er-coap-13/er-coap-13.c
+	${WAKAAMA_SOURCES_DIR}/er-coap-13/er-coap-13.h)
 
 set(CORE_HEADERS
     ${WAKAAMA_SOURCES_DIR}/liblwm2m.h)
@@ -28,6 +29,8 @@ set(WAKAAMA_SOURCES
     ${WAKAAMA_SOURCES_DIR}/json.c
     ${WAKAAMA_SOURCES_DIR}/discover.c
     ${WAKAAMA_SOURCES_DIR}/block1.c
+    ${WAKAAMA_SOURCES_DIR}/internals.h
+	${CORE_HEADERS}
     ${EXT_SOURCES})
 
 # This will not work for multi project cmake generators like the Visual Studio Generator

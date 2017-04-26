@@ -53,9 +53,9 @@
 #include <float.h>
 
 
-int utils_plainTextToInt64(uint8_t * buffer,
-                           int length,
-                           int64_t * dataP)
+int utils_textToInt(uint8_t * buffer,
+                    int length,
+                    int64_t * dataP)
 {
     uint64_t result = 0;
     int sign = 1;
@@ -98,9 +98,9 @@ int utils_plainTextToInt64(uint8_t * buffer,
     return 1;
 }
 
-int utils_plainTextToFloat64(uint8_t * buffer,
-                             int length,
-                             double * dataP)
+int utils_textToFloat(uint8_t * buffer,
+                      int length,
+                      double * dataP)
 {
     double result;
     int sign;
@@ -274,49 +274,6 @@ size_t utils_floatToText(double data,
     return intLength + decLength;
 }
 
-size_t utils_int64ToPlainText(int64_t data,
-                              uint8_t ** bufferP)
-{
-#define _PRV_STR_LENGTH 32
-    uint8_t string[_PRV_STR_LENGTH];
-    size_t length;
-
-    length = utils_intToText(data, string, _PRV_STR_LENGTH);
-    if (length == 0) return 0;
-
-    *bufferP = (uint8_t *)lwm2m_malloc(length);
-    if (NULL == *bufferP) return 0;
-
-    memcpy(*bufferP, string, length);
-
-    return length;
-}
-
-
-size_t utils_float64ToPlainText(double data,
-                                uint8_t ** bufferP)
-{
-    uint8_t string[_PRV_STR_LENGTH * 2];
-    size_t length;
-
-    length = utils_floatToText(data, string, _PRV_STR_LENGTH * 2);
-    if (length == 0) return 0;
-
-    *bufferP = (uint8_t *)lwm2m_malloc(length);
-    if (NULL == *bufferP) return 0;
-
-    memcpy(*bufferP, string, length);
-
-    return length;
-}
-
-
-size_t utils_boolToPlainText(bool data,
-                             uint8_t ** bufferP)
-{
-    return utils_int64ToPlainText((int64_t)(data?1:0), bufferP);
-}
-
 lwm2m_binding_t utils_stringToBinding(uint8_t * buffer,
                                       size_t length)
 {
@@ -488,24 +445,6 @@ int utils_stringCopy(char * buffer,
     return (int)i;
 }
 
-int utils_intCopy(char * buffer,
-                  size_t length,
-                  int32_t value)
-{
-#define _PRV_INT32_MAX_STR_LEN 11
-    uint8_t str[_PRV_INT32_MAX_STR_LEN];
-    size_t len;
-
-    len = utils_intToText(value, str, _PRV_INT32_MAX_STR_LEN);
-    if (len == 0) return -1;
-    if (len > length + 1) return -1;
-
-    memcpy(buffer, str, len);
-    buffer[len] = 0;
-
-    return len;
-}
-
 void utils_copyValue(void * dst,
                      const void * src,
                      size_t len)
@@ -524,147 +463,6 @@ void utils_copyValue(void * dst,
 #endif
 }
 
-int utils_opaqueToInt(const uint8_t * buffer,
-                      size_t buffer_len,
-                      int64_t * dataP)
-{
-    *dataP = 0;
-
-    switch (buffer_len)
-    {
-    case 1:
-    {
-        *dataP = (int8_t)buffer[0];
-
-        break;
-    }
-
-    case 2:
-    {
-        int16_t value;
-
-        utils_copyValue(&value, buffer, buffer_len);
-
-        *dataP = value;
-        break;
-    }
-
-    case 4:
-    {
-        int32_t value;
-
-        utils_copyValue(&value, buffer, buffer_len);
-
-        *dataP = value;
-        break;
-    }
-
-    case 8:
-        utils_copyValue(dataP, buffer, buffer_len);
-        return buffer_len;
-
-    default:
-        return 0;
-    }
-
-    return buffer_len;
-}
-
-int utils_opaqueToFloat(const uint8_t * buffer,
-                        size_t buffer_len,
-                        double * dataP)
-{
-    switch (buffer_len)
-    {
-    case 4:
-    {
-        float temp;
-
-        utils_copyValue(&temp, buffer, buffer_len);
-
-        *dataP = temp;
-    }
-    return 4;
-
-    case 8:
-        utils_copyValue(dataP, buffer, buffer_len);
-        return 8;
-
-    default:
-        return 0;
-    }
-}
-
-/**
-* Encode an integer value to a byte representation.
-* Returns the length of the result. For values < 0xff length is 1,
-* for values < 0xffff length is 2 and so on.
-* @param data        Input value
-* @param data_buffer Result in data_buffer is in big endian encoding
-*                    Negative values are represented in two's complement as of
-*                    OMA-TS-LightweightM2M-V1_0-20160308-D, Appendix C
-*/
-size_t utils_encodeInt(int64_t data,
-                       uint8_t data_buffer[_PRV_64BIT_BUFFER_SIZE])
-{
-    size_t length = 0;
-
-    memset(data_buffer, 0, _PRV_64BIT_BUFFER_SIZE);
-
-    if (data >= INT8_MIN && data <= INT8_MAX)
-    {
-        length = 1;
-        data_buffer[0] = data;
-    }
-    else if (data >= INT16_MIN && data <= INT16_MAX)
-    {
-        int16_t value;
-
-        value = data;
-        length = 2;
-        data_buffer[0] = (value >> 8) & 0xFF;
-        data_buffer[1] = value & 0xFF;
-    }
-    else if (data >= INT32_MIN && data <= INT32_MAX)
-    {
-        int32_t value;
-
-        value = data;
-        length = 4;
-        utils_copyValue(data_buffer, &value, length);
-    }
-    else if (data >= INT64_MIN && data <= INT64_MAX)
-    {
-        length = 8;
-        utils_copyValue(data_buffer, &data, length);
-    }
-
-    return length;
-}
-
-size_t utils_encodeFloat(double data,
-                         uint8_t data_buffer[_PRV_64BIT_BUFFER_SIZE])
-{
-    size_t length = 0;
-
-    memset(data_buffer, 0, _PRV_64BIT_BUFFER_SIZE);
-
-    if ((data < 0.0 - (double)FLT_MAX) || (data >(double)FLT_MAX))
-    {
-        length = 8;
-        utils_copyValue(data_buffer, &data, 8);
-    }
-    else
-    {
-        float value;
-
-        length = 4;
-        value = (float)data;
-        utils_copyValue(data_buffer, &value, 4);
-    }
-
-    return length;
-}
 
 #define PRV_B64_PADDING '='
 
@@ -683,49 +481,6 @@ static void prv_encodeBlock(uint8_t input[3],
     output[1] = b64Alphabet[((input[0] & 0x03) << 4) | (input[1] >> 4)];
     output[2] = b64Alphabet[((input[1] & 0x0F) << 2) | (input[2] >> 6)];
     output[3] = b64Alphabet[input[2] & 0x3F];
-}
-
-static uint8_t prv_b64Revert(uint8_t value)
-{
-    if (value >= 'A' && value <= 'Z')
-    {
-        return (value - 'A');
-    }
-    if (value >= 'a' && value <= 'z')
-    {
-        return (26 + value - 'a');
-    }
-    if (value >= '0' && value <= '9')
-    {
-        return (52 + value - '0');
-    }
-    switch (value)
-    {
-    case '+':
-        return 62;
-    case '/':
-        return 63;
-    default:
-        return 0;
-    }
-}
-
-static void prv_decodeBlock(uint8_t input[4],
-                            uint8_t output[3])
-{
-    uint8_t tmp[4];
-    int i;
-
-    memset(output, 0, 3);
-
-    for (i = 0; i < 4; i++)
-    {
-        tmp[i] = prv_b64Revert(input[i]);
-    }
-
-    output[0] = (tmp[0] << 2) | (tmp[1] >> 4);
-    output[1] = (tmp[1] << 4) | (tmp[2] >> 2);
-    output[2] = (tmp[2] << 6) | tmp[3];
 }
 
 static size_t prv_getBase64Size(size_t dataLen)
@@ -778,100 +533,6 @@ size_t utils_base64Encode(uint8_t * dataP,
         }
         data_index += 3;
         result_index += 4;
-    }
-
-    return result_len;
-}
-
-size_t utils_opaqueToBase64(uint8_t * dataP,
-                            size_t dataLen,
-                            uint8_t ** bufferP)
-{
-    size_t buffer_len;
-    size_t result_len;
-
-    buffer_len = prv_getBase64Size(dataLen);
-
-    *bufferP = (uint8_t *)lwm2m_malloc(buffer_len);
-    if (!*bufferP) return 0;
-    memset(*bufferP, 0, buffer_len);
-
-    result_len = utils_base64Encode(dataP, dataLen, *bufferP, buffer_len);
-
-    if (result_len == 0)
-    {
-        lwm2m_free(*bufferP);
-        *bufferP = NULL;
-    }
- 
-    return result_len;
-}
-
-size_t utils_base64ToOpaque(uint8_t * dataP,
-                            size_t dataLen,
-                            uint8_t ** bufferP)
-{
-    size_t data_index;
-    size_t result_index;
-    size_t result_len;
-
-    if (dataLen % 4) return 0;
-
-    result_len = (dataLen >> 2) * 3;
-    *bufferP = (uint8_t *)lwm2m_malloc(result_len);
-    if (NULL == *bufferP) return 0;
-    memset(*bufferP, 0, result_len);
-
-    // remove padding
-    while (dataP[dataLen - 1] == PRV_B64_PADDING)
-    {
-        dataLen--;
-    }
-
-    data_index = 0;
-    result_index = 0;
-    while (data_index < dataLen)
-    {
-        prv_decodeBlock(dataP + data_index, *bufferP + result_index);
-        data_index += 4;
-        result_index += 3;
-    }
-    switch (data_index - dataLen)
-    {
-    case 0:
-        break;
-    case 2:
-    {
-        uint8_t tmp[2];
-
-        tmp[0] = prv_b64Revert(dataP[dataLen - 2]);
-        tmp[1] = prv_b64Revert(dataP[dataLen - 1]);
-
-        *bufferP[result_index - 3] = (tmp[0] << 2) | (tmp[1] >> 4);
-        *bufferP[result_index - 2] = (tmp[1] << 4);
-        result_len -= 2;
-    }
-    break;
-    case 3:
-    {
-        uint8_t tmp[3];
-
-        tmp[0] = prv_b64Revert(dataP[dataLen - 3]);
-        tmp[1] = prv_b64Revert(dataP[dataLen - 2]);
-        tmp[2] = prv_b64Revert(dataP[dataLen - 1]);
-
-        *bufferP[result_index - 3] = (tmp[0] << 2) | (tmp[1] >> 4);
-        *bufferP[result_index - 2] = (tmp[1] << 4) | (tmp[2] >> 2);
-        *bufferP[result_index - 1] = (tmp[2] << 6);
-        result_len -= 1;
-    }
-    break;
-    default:
-        // error
-        lwm2m_free(*bufferP);
-        *bufferP = NULL;
-        result_len = 0;
-        break;
     }
 
     return result_len;
