@@ -694,7 +694,15 @@ coap_parse_message(void *packet, uint8_t *data, uint16_t data_len)
 
     option_number += option_delta;
 
-    PRINTF("OPTION %u (delta %u, len %u): ", option_number, option_delta, option_length);
+    if (current_option + option_length > data + data_len)
+    {
+        PRINTF("OPTION %u (delta %u, len %u) has invalid length.\n", option_number, option_delta, option_length);
+        return BAD_REQUEST_4_00;
+    }
+    else
+    {
+        PRINTF("OPTION %u (delta %u, len %u): ", option_number, option_delta, option_length);
+    }
 
     SET_OPTION(coap_pkt, option_number);
 
