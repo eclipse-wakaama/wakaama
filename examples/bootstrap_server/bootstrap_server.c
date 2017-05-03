@@ -625,7 +625,7 @@ int main(int argc, char *argv[])
                     in_port_t port;
                     connection_t * connP;
 
-					s[0] = 0;
+                    s[0] = 0;
                     if (AF_INET == addr.ss_family)
                     {
                         struct sockaddr_in *saddr = (struct sockaddr_in *)&addr;

@@ -1106,7 +1106,7 @@ int main(int argc, char *argv[])
         fprintf(stderr, "lwm2m_init() failed\r\n");
         return -1;
     }
-	
+    
 #ifdef WITH_TINYDTLS
     data.lwm2mH = lwm2mH;
 #endif
@@ -1307,7 +1307,7 @@ int main(int argc, char *argv[])
                          */
 #ifdef WITH_TINYDTLS
                         int result = connection_handle_packet(connP, buffer, numBytes);
-						if (0 != result)
+                        if (0 != result)
                         {
                              printf("error handling message %d\n",result);
                         }

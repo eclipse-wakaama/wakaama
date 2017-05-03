@@ -1021,7 +1021,7 @@ int lwm2m_observe_cancel(lwm2m_context_t * contextP,
 bool observe_handleNotify(lwm2m_context_t * contextP,
                            void * fromSessionH,
                            coap_packet_t * message,
-        				   coap_packet_t * response)
+                           coap_packet_t * response)
 {
     uint8_t * tokenP;
     int token_len;

@@ -278,11 +278,11 @@ bool transaction_handleResponse(lwm2m_context_t * contextP,
                 if ((COAP_TYPE_ACK == message->type) || (COAP_TYPE_RST == message->type))
                 {
                     if (transacP->mID == message->mid)
-	                {
-    	                found = true;
-        	            transacP->ack_received = true;
-            	        reset = COAP_TYPE_RST == message->type;
-            	    }
+                    {
+                        found = true;
+                        transacP->ack_received = true;
+                        reset = COAP_TYPE_RST == message->type;
+                    }
                 }
             }
 
@@ -299,13 +299,13 @@ bool transaction_handleResponse(lwm2m_context_t * contextP,
                         message_send(contextP, response, fromSessionH);
                     }
                 
-	                if ((COAP_401_UNAUTHORIZED == message->code) && (COAP_MAX_RETRANSMIT > transacP->retrans_counter))
-    	            {
-        	            transacP->ack_received = false;
-            	        transacP->retrans_time += COAP_RESPONSE_TIMEOUT;
-                	    return true;
-                	}
-				}       
+                    if ((COAP_401_UNAUTHORIZED == message->code) && (COAP_MAX_RETRANSMIT > transacP->retrans_counter))
+                    {
+                        transacP->ack_received = false;
+                        transacP->retrans_time += COAP_RESPONSE_TIMEOUT;
+                        return true;
+                    }
+                }       
                 if (transacP->callback != NULL)
                 {
                     transacP->callback(transacP, message);
