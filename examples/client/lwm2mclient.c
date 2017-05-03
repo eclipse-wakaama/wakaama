@@ -188,18 +188,18 @@ void * lwm2m_connect_server(uint16_t secObjInstID,
   dtls_connection_t * newConnP = NULL;
   dataP = (client_data_t *)userData;
   lwm2m_object_t  * securityObj = dataP->securityObjP;
-  
+
   instance = LWM2M_LIST_FIND(dataP->securityObjP->instanceList, secObjInstID);
   if (instance == NULL) return NULL;
-  
-  
+
+
   newConnP = connection_create(dataP->connList, dataP->sock, securityObj, instance->id, dataP->lwm2mH, dataP->addressFamily);
   if (newConnP == NULL)
   {
       fprintf(stderr, "Connection creation failed.\n");
       return NULL;
   }
-  
+
   dataP->connList = newConnP;
   return (void *)newConnP;
 }
@@ -761,18 +761,20 @@ static void close_backup_object()
 {
     int i;
     for (i = 0; i < BACKUP_OBJECT_COUNT; i++) {
-        switch (backupObjectArray[i]->objID)
-        {
-        case LWM2M_SECURITY_OBJECT_ID:
-            clean_security_object(backupObjectArray[i]);
-            lwm2m_free(backupObjectArray[i]);
-            break;
-        case LWM2M_SERVER_OBJECT_ID:
-            clean_server_object(backupObjectArray[i]);
-            lwm2m_free(backupObjectArray[i]);
-            break;
-        default:
-            break;
+        if (NULL != backupObjectArray[i]) {
+            switch (backupObjectArray[i]->objID)
+            {
+            case LWM2M_SECURITY_OBJECT_ID:
+                clean_security_object(backupObjectArray[i]);
+                lwm2m_free(backupObjectArray[i]);
+                break;
+            case LWM2M_SERVER_OBJECT_ID:
+                clean_server_object(backupObjectArray[i]);
+                lwm2m_free(backupObjectArray[i]);
+                break;
+            default:
+                break;
+            }
         }
     }
 }
@@ -791,9 +793,9 @@ void print_usage(void)
     fprintf(stdout, "  -t TIME\tSet the lifetime of the Client. Default: 300\r\n");
     fprintf(stdout, "  -b\t\tBootstrap requested.\r\n");
     fprintf(stdout, "  -c\t\tChange battery level over time.\r\n");
-#ifdef WITH_TINYDTLS    
+#ifdef WITH_TINYDTLS
     fprintf(stdout, "  -i STRING\tSet the device management or bootstrap server PSK identity. If not set use none secure mode\r\n");
-    fprintf(stdout, "  -s HEXSTRING\tSet the device management or bootstrap server Pre-Shared-Key. If not set use none secure mode\r\n");    
+    fprintf(stdout, "  -s HEXSTRING\tSet the device management or bootstrap server Pre-Shared-Key. If not set use none secure mode\r\n");
 #endif
     fprintf(stdout, "\r\n");
 }
@@ -910,7 +912,7 @@ int main(int argc, char *argv[])
             }
             psk = argv[opt];
             break;
-#endif						
+#endif
         case 'n':
             opt++;
             if (opt >= argc)
@@ -1106,7 +1108,7 @@ int main(int argc, char *argv[])
         fprintf(stderr, "lwm2m_init() failed\r\n");
         return -1;
     }
-	
+
 #ifdef WITH_TINYDTLS
     data.lwm2mH = lwm2mH;
 #endif
@@ -1170,12 +1172,12 @@ int main(int argc, char *argv[])
                 tv.tv_sec = reboot_time - tv_sec;
             }
         }
-        else if (batterylevelchanging) 
+        else if (batterylevelchanging)
         {
             update_battery_level(lwm2mH);
             tv.tv_sec = 5;
         }
-        else 
+        else
         {
             tv.tv_sec = 60;
         }
@@ -1307,7 +1309,7 @@ int main(int argc, char *argv[])
                          */
 #ifdef WITH_TINYDTLS
                         int result = connection_handle_packet(connP, buffer, numBytes);
-						if (0 != result)
+                        if (0 != result)
                         {
                              printf("error handling message %d\n",result);
                         }
