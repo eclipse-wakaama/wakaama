@@ -79,7 +79,7 @@ use the following commands to retrieve the sources:
  * git submodule init
  * git submodule update
 
-You need to install libtool and autoreconf to build with tinydtls.
+You need to install autoconf and automake to build with tinydtls.
 
 Build with tinydtls:
  * Create a build directory and change to that.
