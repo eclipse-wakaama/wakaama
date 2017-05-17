@@ -1356,6 +1356,10 @@ int main(int argc, char *argv[])
      */
     if (g_quit == 1)
     {
+#ifdef WITH_TINYDTLS
+        free(pskBuffer);
+#endif
+
 #ifdef LWM2M_BOOTSTRAP
         close_backup_object();
 #endif
