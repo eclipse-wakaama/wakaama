@@ -34,8 +34,8 @@ Source Layout
 Compiling
 ---------
 
-Despite its name, liblwm2m is not a library but files to be built with an
-application. liblwm2m uses CMake. Look at examples/server/CMakeLists.txt for an
+Wakaama is not a library but files to be built with an application.
+Wakaama uses CMake. Look at examples/server/CMakeLists.txt for an
 example of how to include it.
 Several compilation switches are used:
  - LWM2M_BIG_ENDIAN if your target platform uses big-endian format.
@@ -57,7 +57,7 @@ The following recipes assume you are on a unix like platform and you have cmake 
 
 ### Server example
  * Create a build directory and change to that.
- * ``cmake [liblwm2m directory]/examples/server``
+ * ``cmake [wakaama directory]/examples/server``
  * ``make``
  * ``./lwm2mserver [Options]``
 
@@ -70,7 +70,7 @@ Options are:
 
 ### Test client example
  * Create a build directory and change to that.
- * ``cmake [liblwm2m directory]/examples/client``
+ * ``cmake [wakaama directory]/examples/client``
  * ``make``
  * ``./lwm2mclient [Options]``
 
@@ -83,7 +83,7 @@ You need to install autoconf and automake to build with tinydtls.
 
 Build with tinydtls:
  * Create a build directory and change to that.
- * ``cmake -DDTLS=1 [liblwm2m directory]/examples/client``
+ * ``cmake -DDTLS=1 [wakaama directory]/examples/client``
  * ``make``
  * ``./lwm2mclient [Options]``
 
@@ -136,7 +136,7 @@ To launch a bootstrap session:
 
 In the any directory, run the following commands:
  * Create a build directory and change to that.
- * ``cmake [liblwm2m directory]/examples/lightclient``
+ * ``cmake [wakaama directory]/examples/lightclient``
  * ``make``
  * ``./lightclient [Options]``
 
