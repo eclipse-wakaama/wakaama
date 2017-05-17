@@ -35,7 +35,7 @@ Compiling
 ---------
 
 Wakaama is not a library but files to be built with an application.
-Wakaama uses CMake. Look at examples/server/CMakeLists.txt for an
+Wakaama uses CMake >= 3. Look at examples/server/CMakeLists.txt for an
 example of how to include it.
 Several compilation switches are used:
  - LWM2M_BIG_ENDIAN if your target platform uses big-endian format.
