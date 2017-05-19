@@ -14,6 +14,7 @@
  *    David Navarro, Intel Corporation - initial API and implementation
  *    Bosch Software Innovations GmbH - Please refer to git log
  *    Pascal Rieux - Please refer to git log
+ *    Ville Skyttä - Please refer to git log
  *    
  *******************************************************************************/
 
@@ -45,19 +46,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-
-#define LWM2M_SECURITY_URI_ID                 0
-#define LWM2M_SECURITY_BOOTSTRAP_ID           1
-#define LWM2M_SECURITY_MODE_ID            2
-#define LWM2M_SECURITY_PUBLIC_KEY_ID          3
-#define LWM2M_SECURITY_SERVER_PUBLIC_KEY_ID   4
-#define LWM2M_SECURITY_SECRET_KEY_ID          5
-#define LWM2M_SECURITY_SMS_SECURITY_ID        6
-#define LWM2M_SECURITY_SMS_KEY_PARAM_ID       7
-#define LWM2M_SECURITY_SMS_SECRET_KEY_ID      8
-#define LWM2M_SECURITY_SMS_SERVER_NUMBER_ID   9
-#define LWM2M_SECURITY_SHORT_SERVER_ID        10
-#define LWM2M_SECURITY_HOLD_OFF_ID            11
 
 typedef struct _security_instance_
 {
