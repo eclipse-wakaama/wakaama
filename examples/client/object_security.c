@@ -34,6 +34,7 @@
  *  Server SMS Number       |  9 |            |  Single   |    Yes    | Integer |         |       |
  *  Short Server ID         | 10 |            |  Single   |    No     | Integer | 1-65535 |       |
  *  Client Hold Off Time    | 11 |            |  Single   |    Yes    | Integer |         |   s   |
+ *  BS Account Timeout      | 12 |            |  Single   |    No     | Integer |         |   s   |
  *
  */
 
@@ -67,6 +68,7 @@ typedef struct _security_instance_
     uint16_t                     smsSecretLen;
     uint16_t                     shortID;
     uint32_t                     clientHoldOffTime;
+    uint32_t                     bootstrapServerAccountTimeout;
 } security_instance_t;
 
 static uint8_t prv_get_value(lwm2m_data_t * dataP,
@@ -122,6 +124,10 @@ static uint8_t prv_get_value(lwm2m_data_t * dataP,
         lwm2m_data_encode_int(targetP->clientHoldOffTime, dataP);
         return COAP_205_CONTENT;
 
+    case LWM2M_SECURITY_BOOTSTRAP_TIMEOUT_ID:
+        lwm2m_data_encode_int(targetP->bootstrapServerAccountTimeout, dataP);
+        return COAP_205_CONTENT;
+
     default:
         return COAP_404_NOT_FOUND;
     }
@@ -153,7 +159,8 @@ static uint8_t prv_security_read(uint16_t instanceId,
                               LWM2M_SECURITY_SMS_SECRET_KEY_ID,
                               LWM2M_SECURITY_SMS_SERVER_NUMBER_ID,
                               LWM2M_SECURITY_SHORT_SERVER_ID,
-                              LWM2M_SECURITY_HOLD_OFF_ID};
+                              LWM2M_SECURITY_HOLD_OFF_ID,
+                              LWM2M_SECURITY_BOOTSTRAP_TIMEOUT_ID};
         int nbRes = sizeof(resList)/sizeof(uint16_t);
 
         *dataArrayP = lwm2m_data_new(nbRes);
@@ -357,6 +364,30 @@ static uint8_t prv_security_write(uint16_t instanceId,
             }
             break;
         }
+
+        case LWM2M_SECURITY_BOOTSTRAP_TIMEOUT_ID:
+        {
+            int64_t value;
+
+            if (1 == lwm2m_data_decode_int(dataArray + i, &value))
+            {
+                if (value >= 0 && value <= UINT32_MAX)
+                {
+                    targetP->bootstrapServerAccountTimeout = value;
+                    result = COAP_204_CHANGED;
+                }
+                else
+                {
+                    result = COAP_406_NOT_ACCEPTABLE;
+                }
+            }
+            else
+            {
+                result = COAP_400_BAD_REQUEST;
+            }
+            break;
+        }
+
         default:
             return COAP_404_NOT_FOUND;
         }
