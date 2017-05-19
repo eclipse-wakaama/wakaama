@@ -348,7 +348,7 @@ static uint8_t prv_security_write(uint16_t instanceId,
 
             if (1 == lwm2m_data_decode_int(dataArray + i, &value))
             {
-                if (value >= 0 && value <= 0xFFFF)
+                if (value >= 0 && value <= UINT32_MAX)
                 {
                     targetP->clientHoldOffTime = value;
                     result = COAP_204_CHANGED;
