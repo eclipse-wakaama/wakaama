@@ -28,12 +28,12 @@
  *  Public Key or ID        |  3 |            |  Single   |    Yes    | Opaque  |         |       |
  *  Server Public Key or ID |  4 |            |  Single   |    Yes    | Opaque  |         |       |
  *  Secret Key              |  5 |            |  Single   |    Yes    | Opaque  |         |       |
- *  SMS Security Mode       |  6 |            |  Single   |    Yes    | Integer |  0-255  |       |
- *  SMS Binding Key Param.  |  7 |            |  Single   |    Yes    | Opaque  |   6 B   |       |
- *  SMS Binding Secret Keys |  8 |            |  Single   |    Yes    | Opaque  | 32-48 B |       |
- *  Server SMS Number       |  9 |            |  Single   |    Yes    | Integer |         |       |
+ *  SMS Security Mode       |  6 |            |  Single   |    No     | Integer |  0-255  |       |
+ *  SMS Binding Key Param.  |  7 |            |  Single   |    No     | Opaque  |   6 B   |       |
+ *  SMS Binding Secret Keys |  8 |            |  Single   |    No     | Opaque  | 32-48 B |       |
+ *  Server SMS Number       |  9 |            |  Single   |    No     | String  |         |       |
  *  Short Server ID         | 10 |            |  Single   |    No     | Integer | 1-65535 |       |
- *  Client Hold Off Time    | 11 |            |  Single   |    Yes    | Integer |         |   s   |
+ *  Client Hold Off Time    | 11 |            |  Single   |    No     | Integer |         |   s   |
  *  BS Account Timeout      | 12 |            |  Single   |    No     | Integer |         |   s   |
  *
  */
