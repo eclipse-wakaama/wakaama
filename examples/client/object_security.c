@@ -389,7 +389,7 @@ static uint8_t prv_security_write(uint16_t instanceId,
         }
 
         default:
-            return COAP_404_NOT_FOUND;
+            return COAP_400_BAD_REQUEST;
         }
         i++;
     } while (i < numData && result == COAP_204_CHANGED);
