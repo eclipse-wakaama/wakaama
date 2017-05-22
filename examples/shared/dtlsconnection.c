@@ -398,12 +398,14 @@ dtls_connection_t * connection_new_incoming(dtls_connection_t * connList,
     connP = (dtls_connection_t *)malloc(sizeof(dtls_connection_t));
     if (connP != NULL)
     {
+        memset(connP, 0, sizeof(dtls_connection_t));
         connP->sock = sock;
         memcpy(&(connP->addr), addr, addrLen);
         connP->addrLen = addrLen;
         connP->next = connList;
 
         connP->dtlsSession = (session_t *)malloc(sizeof(session_t));
+        memset(connP->dtlsSession, 0, sizeof(session_t));
         connP->dtlsSession->addr.sin6 = connP->addr;
         connP->dtlsSession->size = connP->addrLen;
         connP->lastSend = lwm2m_gettime();
@@ -526,6 +528,8 @@ dtls_connection_t * connection_create(dtls_connection_t * connList,
 
 void connection_free(dtls_connection_t * connList)
 {
+    dtls_free_context(dtlsContext);
+    dtlsContext = NULL;
     while (connList != NULL)
     {
         dtls_connection_t * nextP;
@@ -535,8 +539,6 @@ void connection_free(dtls_connection_t * connList)
 
         connList = nextP;
     }
-    dtls_free_context(dtlsContext);
-    dtlsContext = NULL;
 }
 
 int connection_send(dtls_connection_t *connP, uint8_t * buffer, size_t length){
