@@ -263,6 +263,7 @@ lwm2m_status_t bootstrap_getStatus(lwm2m_context_t * contextP)
             case STATE_BS_INITIATED:
             case STATE_BS_PENDING:
             case STATE_BS_FINISHING:
+            case STATE_BS_FAILING:
                 bs_status = STATE_BS_PENDING;
                 break;
 
