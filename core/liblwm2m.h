@@ -18,6 +18,8 @@
  *    Julien Vermillard - Please refer to git log
  *    Bosch Software Innovations GmbH - Please refer to git log
  *    Pascal Rieux - Please refer to git log
+ *    Ville Skyttä - Please refer to git log
+ *
  *******************************************************************************/
 
 /*
@@ -168,7 +170,7 @@ bool lwm2m_session_is_equal(void * session1, void * session2, void * userData);
 #define LWM2M_CONN_STATS_OBJECT_ID          7
 
 /*
- * Ressource IDs for the LWM2M Security Object
+ * Resource IDs for the LWM2M Security Object
  */
 #define LWM2M_SECURITY_URI_ID                 0
 #define LWM2M_SECURITY_BOOTSTRAP_ID           1
@@ -185,7 +187,7 @@ bool lwm2m_session_is_equal(void * session1, void * session2, void * userData);
 #define LWM2M_SECURITY_BOOTSTRAP_TIMEOUT_ID   12
 
 /*
- * Ressource IDs for the LWM2M Server Object
+ * Resource IDs for the LWM2M Server Object
  */
 #define LWM2M_SERVER_SHORT_ID_ID    0
 #define LWM2M_SERVER_LIFETIME_ID    1

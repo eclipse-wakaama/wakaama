@@ -103,7 +103,7 @@ The lwm2mclient features nine LWM2M objects:
           Object |  ID  | Instances | Mandatoty |
            Test  | 1024 |    Yes    |    No     |
 
-           Ressources:
+           Resources:
                        Supported    Multiple
            Name | ID | Operations | Instances | Mandatory |  Type   | Range |
            test |  1 |    R/W     |    No     |    Yes    | Integer | 0-255 |
