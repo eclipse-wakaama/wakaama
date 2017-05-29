@@ -514,6 +514,12 @@ size_t coap_serialize_get_size(void *packet)
         length += COAP_MAX_OPTION_HEADER_LEN + coap_pkt->proxy_uri_len;
     }
 
+    if (coap_pkt->payload_len)
+    {
+        // Account for the payload marker.
+        length += 1;
+    }
+
     return length;
 }
 
