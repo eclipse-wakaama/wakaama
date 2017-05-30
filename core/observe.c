@@ -14,7 +14,7 @@
  *    David Navarro, Intel Corporation - initial API and implementation
  *    Toby Jaffey - Please refer to git log
  *    Bosch Software Innovations GmbH - Please refer to git log
- *    
+ *
  *******************************************************************************/
 
 /*
@@ -188,7 +188,7 @@ coap_status_t observe_handleRequest(lwm2m_context_t * contextP,
         }
         else
         {
-            watcherP->format = LWM2M_CONTENT_TLV;
+            watcherP->format = utils_getCodeForTlv();
         }
 
         if (LWM2M_URI_IS_SET_RESOURCE(uriP))
@@ -934,11 +934,11 @@ int lwm2m_observe(lwm2m_context_t * contextP,
     coap_set_header_observe(transactionP->message, 0);
     if (clientP->supportJSON == true)
     {
-        coap_set_header_accept(transactionP->message, LWM2M_CONTENT_JSON);
+        coap_set_header_accept(transactionP->message, utils_getCodeForJson());
     }
     else
     {
-        coap_set_header_accept(transactionP->message, LWM2M_CONTENT_TLV);
+        coap_set_header_accept(transactionP->message, utils_getCodeForTlv());
     }
 
     transactionP->callback = prv_obsRequestCallback;
@@ -1021,7 +1021,7 @@ int lwm2m_observe_cancel(lwm2m_context_t * contextP,
 bool observe_handleNotify(lwm2m_context_t * contextP,
                            void * fromSessionH,
                            coap_packet_t * message,
-        				   coap_packet_t * response)
+                           coap_packet_t * response)
 {
     uint8_t * tokenP;
     int token_len;

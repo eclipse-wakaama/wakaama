@@ -78,7 +78,7 @@ static int prv_textSerialize(lwm2m_data_t * dataP,
     {
         char stringBuffer[11];
         size_t length;
-        
+
         length = utils_intToText(dataP->value.asObjLink.objectId, stringBuffer, 5);
         if (length == 0) return -1;
 
@@ -579,9 +579,9 @@ int lwm2m_data_serialize(lwm2m_uri_t * uriP,
          || dataP->type == LWM2M_TYPE_MULTIPLE_RESOURCE)
         {
 #ifdef LWM2M_SUPPORT_JSON
-            *formatP = LWM2M_CONTENT_JSON;
+            *formatP = utils_getCodeForJson();
 #else
-            *formatP = LWM2M_CONTENT_TLV;
+            *formatP = utils_getCodeForTlv();
 #endif
         }
     }
