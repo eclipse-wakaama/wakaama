@@ -259,6 +259,7 @@ void observe_cancel(lwm2m_context_t * contextP,
         }
         if (targetP != NULL)
         {
+            if (targetP->parameters != NULL) lwm2m_free(targetP->parameters);
             lwm2m_free(targetP);
             if (observedP->watcherList == NULL)
             {
@@ -504,11 +505,19 @@ void observe_step(lwm2m_context_t * contextP,
             switch (dataP->type)
             {
             case LWM2M_TYPE_INTEGER:
-                if (1 != lwm2m_data_decode_int(dataP, &integerValue)) continue;
+                if (1 != lwm2m_data_decode_int(dataP, &integerValue))
+                {
+                    lwm2m_data_free(size, dataP);
+                    continue;
+                }
                 storeValue = true;
                 break;
             case LWM2M_TYPE_FLOAT:
-                if (1 != lwm2m_data_decode_float(dataP, &floatValue)) continue;
+                if (1 != lwm2m_data_decode_float(dataP, &floatValue))
+                {
+                    lwm2m_data_free(size, dataP);
+                    continue;
+                }
                 storeValue = true;
                 break;
             default:
