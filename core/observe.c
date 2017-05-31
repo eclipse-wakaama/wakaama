@@ -539,8 +539,8 @@ void observe_step(lwm2m_context_t * contextP,
                     {
                         if ((watcherP->parameters->toSet & LWM2M_ATTR_FLAG_LESS_THAN) != 0)
                         {
-                            LOG("Checking lower treshold");
-                            // Did we cross the lower treshold ?
+                            LOG("Checking lower threshold");
+                            // Did we cross the lower threshold ?
                             switch (dataP->type)
                             {
                             case LWM2M_TYPE_INTEGER:
@@ -549,7 +549,7 @@ void observe_step(lwm2m_context_t * contextP,
                                  || (integerValue >= watcherP->parameters->lessThan
                                   && watcherP->lastValue.asInteger < watcherP->parameters->lessThan))
                                 {
-                                    LOG("Notify on lower treshold crossing");
+                                    LOG("Notify on lower threshold crossing");
                                     notify = true;
                                 }
                                 break;
@@ -559,7 +559,7 @@ void observe_step(lwm2m_context_t * contextP,
                                  || (floatValue >= watcherP->parameters->lessThan
                                   && watcherP->lastValue.asFloat < watcherP->parameters->lessThan))
                                 {
-                                    LOG("Notify on lower treshold crossing");
+                                    LOG("Notify on lower threshold crossing");
                                     notify = true;
                                 }
                                 break;
@@ -569,8 +569,8 @@ void observe_step(lwm2m_context_t * contextP,
                         }
                         if ((watcherP->parameters->toSet & LWM2M_ATTR_FLAG_GREATER_THAN) != 0)
                         {
-                            LOG("Checking upper treshold");
-                            // Did we cross the upper treshold ?
+                            LOG("Checking upper threshold");
+                            // Did we cross the upper threshold ?
                             switch (dataP->type)
                             {
                             case LWM2M_TYPE_INTEGER:
