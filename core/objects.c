@@ -686,7 +686,7 @@ static int prv_getMandatoryInfo(lwm2m_object_t * objectP,
     return 0;
 }
 
-int object_getServers(lwm2m_context_t * contextP)
+int object_getServers(lwm2m_context_t * contextP, bool checkOnly)
 {
     lwm2m_object_t * objectP;
     lwm2m_object_t * securityObjP = NULL;
@@ -772,7 +772,14 @@ int object_getServers(lwm2m_context_t * contextP)
                 // lifetime of a bootstrap server is set to ClientHoldOffTime
                 targetP->lifetime = value;
 
-                contextP->bootstrapServerList = (lwm2m_server_t*)LWM2M_LIST_ADD(contextP->bootstrapServerList, targetP);
+                if (checkOnly)
+                {
+                    lwm2m_free(targetP);
+                }
+                else
+                {
+                    contextP->bootstrapServerList = (lwm2m_server_t*)LWM2M_LIST_ADD(contextP->bootstrapServerList, targetP);
+                }
             }
             else
             {
@@ -792,7 +799,14 @@ int object_getServers(lwm2m_context_t * contextP)
                         return -1;
                     }
                     targetP->status = STATE_DEREGISTERED;
-                    contextP->serverList = (lwm2m_server_t*)LWM2M_LIST_ADD(contextP->serverList, targetP);
+                    if (checkOnly)
+                    {
+                        lwm2m_free(targetP);
+                    }
+                    else
+                    {
+                        contextP->serverList = (lwm2m_server_t*)LWM2M_LIST_ADD(contextP->serverList, targetP);
+                    }
                 }
             }
             lwm2m_data_free(size, dataP);

@@ -284,7 +284,7 @@ int lwm2m_update_registration(lwm2m_context_t * contextP,
     targetP = contextP->serverList;
     if (targetP == NULL)
     {
-        if (object_getServers(contextP) == -1)
+        if (object_getServers(contextP, false) == -1)
         {
             LOG("No server found");
             return COAP_404_NOT_FOUND;

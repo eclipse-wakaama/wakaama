@@ -203,9 +203,16 @@ coap_status_t bootstrap_handleFinish(lwm2m_context_t * context,
     if (bootstrapServer != NULL
      && bootstrapServer->status == STATE_BS_PENDING)
     {
-        LOG("Bootstrap server status changed to STATE_BS_FINISHING");
-        bootstrapServer->status = STATE_BS_FINISHING;
-        return COAP_204_CHANGED;
+        if (object_getServers(context, true) == 0)
+        {
+            LOG("Bootstrap server status changed to STATE_BS_FINISHING");
+            bootstrapServer->status = STATE_BS_FINISHING;
+            return COAP_204_CHANGED;
+        }
+        else
+        {
+           return COAP_406_NOT_ACCEPTABLE;
+        }
     }
 
     return COAP_IGNORE;
