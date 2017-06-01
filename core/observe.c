@@ -912,6 +912,8 @@ int lwm2m_observe(lwm2m_context_t * contextP,
         observationP->id = lwm2m_list_newId((lwm2m_list_t *)clientP->observationList);
         memcpy(&observationP->uri, uriP, sizeof(lwm2m_uri_t));
         observationP->clientP = clientP;
+
+        observationP->clientP->observationList = (lwm2m_observation_t *)LWM2M_LIST_ADD(observationP->clientP->observationList, observationP);
     }
     observationP->status = STATE_REG_PENDING;
     observationP->callback = callback;
@@ -925,11 +927,10 @@ int lwm2m_observe(lwm2m_context_t * contextP,
     transactionP = transaction_new(clientP->sessionH, COAP_GET, clientP->altPath, uriP, contextP->nextMID++, 4, token);
     if (transactionP == NULL)
     {
+        observationP->clientP->observationList = (lwm2m_observation_t *)LWM2M_LIST_RM(observationP->clientP->observationList, observationP->id, NULL);
         lwm2m_free(observationP);
         return COAP_500_INTERNAL_SERVER_ERROR;
     }
-
-    observationP->clientP->observationList = (lwm2m_observation_t *)LWM2M_LIST_ADD(observationP->clientP->observationList, observationP);
 
     coap_set_header_observe(transactionP->message, 0);
     if (clientP->supportJSON == true)
