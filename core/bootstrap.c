@@ -36,6 +36,7 @@ static void prv_handleResponse(lwm2m_server_t * bootstrapServer,
     {
         LOG("Received ACK/2.04, Bootstrap pending, waiting for DEL/PUT from BS server...");
         bootstrapServer->status = STATE_BS_PENDING;
+        bootstrapServer->registration = lwm2m_gettime() + COAP_EXCHANGE_LIFETIME;
     }
     else
     {
@@ -162,7 +163,15 @@ void bootstrap_step(lwm2m_context_t * contextP,
             break;
 
         case STATE_BS_PENDING:
-            // waiting
+            if (targetP->registration <= currentTime)
+            {
+               targetP->status = STATE_BS_FAILING;
+               *timeoutP = 0;
+            }
+            else if (*timeoutP > targetP->registration - currentTime)
+            {
+                *timeoutP = targetP->registration - currentTime;
+            }
             break;
 
         case STATE_BS_FINISHING:
@@ -298,7 +307,7 @@ static coap_status_t prv_checkServerStatus(lwm2m_server_t * serverP)
     case STATE_DEREGISTERED:
         // server initiated bootstrap
     case STATE_BS_PENDING:
-        // do nothing
+        serverP->registration = lwm2m_gettime() + COAP_EXCHANGE_LIFETIME;
         break;
 
     case STATE_BS_FINISHED:
@@ -431,7 +440,7 @@ coap_status_t bootstrap_handleCommand(lwm2m_context_t * contextP,
                                     prv_tagServer(contextP, dataP[i].id);
                                 }
                             }
-                            
+
                             if(result != COAP_204_CHANGED) // Stop object create or write when result is error
                             {
                                 break;
