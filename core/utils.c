@@ -13,7 +13,7 @@
  * Contributors:
  *    David Navarro, Intel Corporation - initial API and implementation
  *    Toby Jaffey - Please refer to git log
- *    
+ *
  *******************************************************************************/
 
 /*
@@ -448,7 +448,7 @@ int utils_stringCopy(char * buffer,
 void utils_copyValue(void * dst,
                      const void * src,
                      size_t len)
-{		
+{
 #ifdef LWM2M_BIG_ENDIAN
     memcpy(dst, src, len);
 #else
@@ -494,7 +494,7 @@ static size_t prv_getBase64Size(size_t dataLen)
 }
 
 size_t utils_base64Encode(uint8_t * dataP,
-                          size_t dataLen, 
+                          size_t dataLen,
                           uint8_t * bufferP,
                           size_t bufferLen)
 {
@@ -551,4 +551,22 @@ lwm2m_data_type_t utils_depthToDatatype(uri_depth_t depth)
     }
 
     return LWM2M_TYPE_UNDEFINED;
+}
+
+lwm2m_media_type_t utils_getCodeForTlv(void)
+{
+#ifdef LWM2M_OLD_CONTENT_FORMAT_SUPPORT
+    return LWM2M_CONTENT_TLV_OLD;
+#else
+    return LWM2M_CONTENT_TLV;
+#endif
+}
+
+lwm2m_media_type_t utils_getCodeForJson(void)
+{
+#ifdef LWM2M_OLD_CONTENT_FORMAT_SUPPORT
+    return LWM2M_CONTENT_JSON_OLD;
+#else
+    return LWM2M_CONTENT_JSON;
+#endif
 }

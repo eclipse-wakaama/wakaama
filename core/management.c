@@ -16,7 +16,7 @@
  *    Toby Jaffey - Please refer to git log
  *    Bosch Software Innovations GmbH - Please refer to git log
  *    Pascal Rieux - Please refer to git log
- *    
+ *
  *******************************************************************************/
 /*
  Copyright (c) 2013, 2014 Intel Corporation
@@ -177,7 +177,7 @@ coap_status_t dm_handleRequest(lwm2m_context_t * contextP,
     }
     else
     {
-        format = LWM2M_CONTENT_TLV;
+        format = utils_getCodeForTlv();
     }
 
     if (uriP->objectId == LWM2M_SECURITY_OBJECT_ID)
@@ -220,7 +220,7 @@ coap_status_t dm_handleRequest(lwm2m_context_t * contextP,
                         }
                         else
                         {
-                            format = LWM2M_CONTENT_TLV;
+                            format = utils_getCodeForTlv();
                         }
 
                         res = lwm2m_data_serialize(uriP, size, dataP, &format, &buffer);
@@ -487,11 +487,11 @@ int lwm2m_dm_read(lwm2m_context_t * contextP,
 
     if (clientP->supportJSON == true)
     {
-        format = LWM2M_CONTENT_JSON;
+        format = utils_getCodeForJson();
     }
     else
     {
-        format = LWM2M_CONTENT_TLV;
+        format = utils_getCodeForTlv();
     }
 
     return prv_makeOperation(contextP, clientID, uriP,
