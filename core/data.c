@@ -288,7 +288,7 @@ int lwm2m_data_decode_int(const lwm2m_data_t * dataP,
             utils_copyValue(&value, dataP->value.asBuffer.buffer, dataP->value.asBuffer.length);
 
             *valueP = value;
-            result = 2;
+            result = 1;
             break;
         }
 
@@ -299,13 +299,13 @@ int lwm2m_data_decode_int(const lwm2m_data_t * dataP,
             utils_copyValue(&value, dataP->value.asBuffer.buffer, dataP->value.asBuffer.length);
 
             *valueP = value;
-            result = 4;
+            result = 1;
             break;
         }
 
         case 8:
             utils_copyValue(valueP, dataP->value.asBuffer.buffer, dataP->value.asBuffer.length);
-            result = 8;
+            result = 1;
             break;
 
         default:
@@ -361,13 +361,13 @@ int lwm2m_data_decode_float(const lwm2m_data_t * dataP,
             utils_copyValue(&temp, dataP->value.asBuffer.buffer, dataP->value.asBuffer.length);
 
             *valueP = temp;
-            result = 4;
+            result = 1;
         }
         break;
 
         case 8:
             utils_copyValue(valueP, dataP->value.asBuffer.buffer, dataP->value.asBuffer.length);
-            result = 8;
+            result = 1;
             break;
 
         default:
