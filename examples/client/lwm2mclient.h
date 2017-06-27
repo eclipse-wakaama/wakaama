@@ -53,7 +53,7 @@ void display_location_object(lwm2m_object_t * objectP);
 /*
  * object_test.c
  */
-#define TEST_OBJECT_ID 1024
+#define TEST_OBJECT_ID 31024
 lwm2m_object_t * get_test_object(void);
 void free_test_object(lwm2m_object_t * object);
 void display_test_object(lwm2m_object_t * objectP);

@@ -54,9 +54,9 @@
 /*
  * Implements an object for testing purpose
  *
- *                 Multiple
- * Object |  ID  | Instances | Mandatoty |
- *  Test  | 1024 |    Yes    |    No     |
+ *                  Multiple
+ * Object |  ID   | Instances | Mandatoty |
+ *  Test  | 31024 |    Yes    |    No     |
  *
  *  Resources:
  *              Supported    Multiple

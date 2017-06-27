@@ -588,7 +588,7 @@ static void prv_create_client(char * buffer,
 
    /* Client dependent part   */
 
-    if (uri.objectId == 1024)
+    if (uri.objectId == 31024)
     {
         lwm2m_data_t * dataP;
 
@@ -859,7 +859,7 @@ int main(int argc, char *argv[])
             {"create", "create an Object instance.", " create CLIENT# URI DATA\r\n"
                                             "   CLIENT#: client number as returned by command 'list'\r\n"
                                             "   URI: uri to which create the Object Instance such as /1024, /1024/45 \r\n"
-                                            "   DATA: data to initialize the new Object Instance (0-255 for object 1024) \r\n"
+                                            "   DATA: data to initialize the new Object Instance (0-255 for object 31024) \r\n"
                                             "Result will be displayed asynchronously.", prv_create_client, NULL},
             {"observe", "Observe from a client.", " observe CLIENT# URI\r\n"
                                             "   CLIENT#: client number as returned by command 'list'\r\n"
