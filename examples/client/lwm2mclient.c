@@ -567,19 +567,19 @@ static void prv_add(char * buffer,
     objectP = get_test_object();
     if (objectP == NULL)
     {
-        fprintf(stdout, "Creating object 1024 failed.\r\n");
+        fprintf(stdout, "Creating object 31024 failed.\r\n");
         return;
     }
     res = lwm2m_add_object(lwm2mH, objectP);
     if (res != 0)
     {
-        fprintf(stdout, "Adding object 1024 failed: ");
+        fprintf(stdout, "Adding object 31024 failed: ");
         print_status(stdout, res);
         fprintf(stdout, "\r\n");
     }
     else
     {
-        fprintf(stdout, "Object 1024 added.\r\n");
+        fprintf(stdout, "Object 31024 added.\r\n");
     }
     return;
 }
@@ -590,16 +590,16 @@ static void prv_remove(char * buffer,
     lwm2m_context_t * lwm2mH = (lwm2m_context_t *)user_data;
     int res;
 
-    res = lwm2m_remove_object(lwm2mH, 1024);
+    res = lwm2m_remove_object(lwm2mH, 31024);
     if (res != 0)
     {
-        fprintf(stdout, "Removing object 1024 failed: ");
+        fprintf(stdout, "Removing object 31024 failed: ");
         print_status(stdout, res);
         fprintf(stdout, "\r\n");
     }
     else
     {
-        fprintf(stdout, "Object 1024 removed.\r\n");
+        fprintf(stdout, "Object 31024 removed.\r\n");
     }
     return;
 }
@@ -850,8 +850,8 @@ int main(int argc, char *argv[])
             {"disp", "Display current objects/instances/resources", NULL, prv_display_objects, NULL},
             {"dump", "Dump an Object", "dump URI"
                                        "URI: uri of the Object or Instance such as /3/0, /1\r\n", prv_object_dump, NULL},
-            {"add", "Add support of object 1024", NULL, prv_add, NULL},
-            {"rm", "Remove support of object 1024", NULL, prv_remove, NULL},
+            {"add", "Add support of object 31024", NULL, prv_add, NULL},
+            {"rm", "Remove support of object 31024", NULL, prv_remove, NULL},
             {"quit", "Quit the client gracefully.", NULL, prv_quit, NULL},
             {"^C", "Quit the client abruptly (without sending a de-register message).", NULL, NULL, NULL},
 
