@@ -173,7 +173,7 @@ static uint8_t prv_register(lwm2m_context_t * contextP,
         res = utils_stringCopy(query + query_length, PRV_QUERY_BUFFER_LENGTH - query_length, QUERY_DELIMITER QUERY_LIFETIME);
         if (res < 0) return COAP_500_INTERNAL_SERVER_ERROR;
         query_length += res;
-        res = utils_intToText(server->lifetime, query + query_length, PRV_QUERY_BUFFER_LENGTH - query_length);
+        res = utils_intToText(server->lifetime, (uint8_t*)query + query_length, PRV_QUERY_BUFFER_LENGTH - query_length);
         if (res == 0) return COAP_500_INTERNAL_SERVER_ERROR;
         query_length += res;
     }
@@ -680,22 +680,22 @@ static int prv_parseLinkAttributes(uint8_t * data,
         if (result == 0) return 0;
 
         if (keyLength == REG_ATTR_TYPE_KEY_LEN
-         && 0 == lwm2m_strncmp(REG_ATTR_TYPE_KEY, data + index + keyStart, keyLength))
+         && 0 == lwm2m_strncmp(REG_ATTR_TYPE_KEY, (char*)data + index + keyStart, keyLength))
         {
             if (isValid == true) return 0; // declared twice
             if (valueLength != REG_ATTR_TYPE_VALUE_LEN
-             || 0 != lwm2m_strncmp(REG_ATTR_TYPE_VALUE, data + index + valueStart, valueLength))
+             || 0 != lwm2m_strncmp(REG_ATTR_TYPE_VALUE, (char*)data + index + valueStart, valueLength))
             {
                 return 0;
             }
             isValid = true;
         }
         else if (keyLength == REG_ATTR_CONTENT_KEY_LEN
-              && 0 == lwm2m_strncmp(REG_ATTR_CONTENT_KEY, data + index + keyStart, keyLength))
+              && 0 == lwm2m_strncmp(REG_ATTR_CONTENT_KEY, (char*)data + index + keyStart, keyLength))
         {
             if (*supportJSON == true) return 0; // declared twice
             if (valueLength == REG_ATTR_CONTENT_JSON_LEN
-             && 0 == lwm2m_strncmp(REG_ATTR_CONTENT_JSON, data + index + valueStart, valueLength))
+             && 0 == lwm2m_strncmp(REG_ATTR_CONTENT_JSON, (char*)data + index + valueStart, valueLength))
             {
                 *supportJSON = true;
             }
@@ -909,7 +909,7 @@ static int prv_getLocationString(uint16_t id,
     if (result < 0) return 0;
     index = result;
 
-    result = utils_intToText(id, location + index, MAX_LOCATION_LENGTH - index);
+    result = utils_intToText(id, (uint8_t*)location + index, MAX_LOCATION_LENGTH - index);
     if (result == 0) return 0;
 
     return index + result;
@@ -947,8 +947,8 @@ coap_status_t registration_handleRequest(lwm2m_context_t * contextP,
         {
             return COAP_400_BAD_REQUEST;
         }
-        if (message->content_type != LWM2M_CONTENT_LINK
-         && message->content_type != LWM2M_CONTENT_TEXT)
+        if (message->content_type != (coap_content_type_t)LWM2M_CONTENT_LINK
+         && message->content_type != (coap_content_type_t)LWM2M_CONTENT_TEXT)
         {
             return COAP_400_BAD_REQUEST;
         }

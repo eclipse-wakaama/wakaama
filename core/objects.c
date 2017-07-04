@@ -511,7 +511,7 @@ static int prv_getObjectTemplate(uint8_t * buffer,
     buffer[1] = '/';
     index = 2;
 
-    result = utils_intToText(id, (char *)buffer + index, length - index);
+    result = utils_intToText(id, buffer + index, length - index);
     if (result == 0) return -1;
     index += result;
 
@@ -587,7 +587,7 @@ int object_getRegisterPayload(lwm2m_context_t * contextP,
                     index += length;
                 }
 
-                result = utils_intToText(targetP->id, (char *)buffer + index, bufferLen - index);
+                result = utils_intToText(targetP->id, buffer + index, bufferLen - index);
                 if (result == 0) return 0;
                 index += result;
 
