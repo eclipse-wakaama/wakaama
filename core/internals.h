@@ -16,6 +16,7 @@
  *    Toby Jaffey - Please refer to git log
  *    Bosch Software Innovations GmbH - Please refer to git log
  *    Pascal Rieux - Please refer to git log
+ *    Scott Bertin - Please refer to git log
  *    
  *******************************************************************************/
 /*
@@ -255,8 +256,9 @@ coap_status_t object_discover(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lw
 uint8_t object_checkReadable(lwm2m_context_t * contextP, lwm2m_uri_t * uriP);
 uint8_t object_checkNumeric(lwm2m_context_t * contextP, lwm2m_uri_t * uriP);
 bool object_isInstanceNew(lwm2m_context_t * contextP, uint16_t objectId, uint16_t instanceId);
+int object_getRegisterPayloadBufferLength(lwm2m_context_t * contextP);
 int object_getRegisterPayload(lwm2m_context_t * contextP, uint8_t * buffer, size_t length);
-int object_getServers(lwm2m_context_t * contextP);
+int object_getServers(lwm2m_context_t * contextP, bool checkOnly);
 coap_status_t object_createInstance(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_data_t * dataP);
 coap_status_t object_writeInstance(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_data_t * dataP);
 

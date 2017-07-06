@@ -240,7 +240,7 @@ static int prv_refreshServerList(lwm2m_context_t * contextP)
         targetP = nextP;
     }
 
-    return object_getServers(contextP);
+    return object_getServers(contextP, false);
 }
 
 int lwm2m_configure(lwm2m_context_t * contextP,
