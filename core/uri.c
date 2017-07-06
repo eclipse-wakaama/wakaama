@@ -54,7 +54,6 @@
 #include <string.h>
 #include <ctype.h>
 
-
 static int prv_parseNumber(uint8_t * uriString,
                             size_t uriLength,
                             size_t * headP)

@@ -182,14 +182,14 @@ lwm2m_transaction_t * transaction_new(void * sessionH,
     {
         char stringID[LWM2M_STRING_ID_MAX_LEN];
 
-        result = utils_intToText(uriP->objectId, stringID, LWM2M_STRING_ID_MAX_LEN);
+        result = utils_intToText(uriP->objectId, (uint8_t*)stringID, LWM2M_STRING_ID_MAX_LEN);
         if (result == 0) goto error;
         stringID[result] = 0;
         coap_set_header_uri_path_segment(transacP->message, stringID);
 
         if (LWM2M_URI_IS_SET_INSTANCE(uriP))
         {
-            result = utils_intToText(uriP->instanceId, stringID, LWM2M_STRING_ID_MAX_LEN);
+            result = utils_intToText(uriP->instanceId, (uint8_t*)stringID, LWM2M_STRING_ID_MAX_LEN);
             if (result == 0) goto error;
             stringID[result] = 0;
             coap_set_header_uri_path_segment(transacP->message, stringID);
@@ -203,7 +203,7 @@ lwm2m_transaction_t * transaction_new(void * sessionH,
         }
         if (LWM2M_URI_IS_SET_RESOURCE(uriP))
         {
-            result = utils_intToText(uriP->resourceId, stringID, LWM2M_STRING_ID_MAX_LEN);
+            result = utils_intToText(uriP->resourceId, (uint8_t*)stringID, LWM2M_STRING_ID_MAX_LEN);
             if (result == 0) goto error;
             stringID[result] = 0;
             coap_set_header_uri_path_segment(transacP->message, stringID);
@@ -249,6 +249,7 @@ void transaction_free(lwm2m_transaction_t * transacP)
        coap_free_header(transacP->message);
        lwm2m_free(transacP->message);
     }
+
     if (transacP->buffer) lwm2m_free(transacP->buffer);
     lwm2m_free(transacP);
 }
