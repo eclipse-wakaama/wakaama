@@ -602,7 +602,7 @@ int lwm2m_data_serialize(lwm2m_uri_t * uriP,
         }
     }
 
-    if (*formatP == LWM2M_TYPE_OPAQUE
+    if (*formatP == LWM2M_CONTENT_OPAQUE
      && dataP->type != LWM2M_TYPE_OPAQUE)
     {
         LOG("Opaque format is reserved to opaque resources.");
