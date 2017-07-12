@@ -202,8 +202,8 @@ void bootstrap_step(lwm2m_context_t * contextP,
     }
 }
 
-coap_status_t bootstrap_handleFinish(lwm2m_context_t * context,
-                                     void * fromSessionH)
+uint8_t bootstrap_handleFinish(lwm2m_context_t * context,
+                               void * fromSessionH)
 {
     lwm2m_server_t * bootstrapServer;
 
@@ -294,7 +294,7 @@ lwm2m_status_t bootstrap_getStatus(lwm2m_context_t * contextP)
     return bs_status;
 }
 
-static coap_status_t prv_checkServerStatus(lwm2m_server_t * serverP)
+static uint8_t prv_checkServerStatus(lwm2m_server_t * serverP)
 {
     LOG_ARG("Initial status: %s", STR_STATUS(serverP->status));
 
@@ -367,13 +367,13 @@ static void prv_tagAllServer(lwm2m_context_t * contextP,
     }
 }
 
-coap_status_t bootstrap_handleCommand(lwm2m_context_t * contextP,
-                                      lwm2m_uri_t * uriP,
-                                      lwm2m_server_t * serverP,
-                                      coap_packet_t * message,
-                                      coap_packet_t * response)
+uint8_t bootstrap_handleCommand(lwm2m_context_t * contextP,
+                                lwm2m_uri_t * uriP,
+                                lwm2m_server_t * serverP,
+                                coap_packet_t * message,
+                                coap_packet_t * response)
 {
-    coap_status_t result;
+    uint8_t result;
     lwm2m_media_type_t format;
 
     LOG_ARG("Code: %02X", message->code);
@@ -510,11 +510,11 @@ coap_status_t bootstrap_handleCommand(lwm2m_context_t * contextP,
     return result;
 }
 
-coap_status_t bootstrap_handleDeleteAll(lwm2m_context_t * contextP,
-                                        void * fromSessionH)
+uint8_t bootstrap_handleDeleteAll(lwm2m_context_t * contextP,
+                                  void * fromSessionH)
 {
     lwm2m_server_t * serverP;
-    coap_status_t result;
+    uint8_t result;
     lwm2m_object_t * objectP;
 
     LOG("Entering");

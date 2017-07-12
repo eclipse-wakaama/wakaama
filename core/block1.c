@@ -49,15 +49,15 @@
 // the maximum payload transferred by block1 we accumulate per server
 #define MAX_BLOCK1_SIZE 4096
 
-coap_status_t coap_block1_handler(lwm2m_block1_data_t ** pBlock1Data,
-                                  uint16_t mid,
-                                  uint8_t * buffer,
-                                  size_t length,
-                                  uint16_t blockSize,
-                                  uint32_t blockNum,
-                                  bool blockMore,
-                                  uint8_t ** outputBuffer,
-                                  size_t * outputLength)
+uint8_t coap_block1_handler(lwm2m_block1_data_t ** pBlock1Data,
+                            uint16_t mid,
+                            uint8_t * buffer,
+                            size_t length,
+                            uint16_t blockSize,
+                            uint32_t blockNum,
+                            bool blockMore,
+                            uint8_t ** outputBuffer,
+                            size_t * outputLength)
 {
     lwm2m_block1_data_t * block1Data = *pBlock1Data;;
 

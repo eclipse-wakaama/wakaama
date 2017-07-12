@@ -103,13 +103,13 @@ static void handle_reset(lwm2m_context_t * contextP,
 #endif
 }
 
-static coap_status_t handle_request(lwm2m_context_t * contextP,
-                                    void * fromSessionH,
-                                    coap_packet_t * message,
-                                    coap_packet_t * response)
+static uint8_t handle_request(lwm2m_context_t * contextP,
+                              void * fromSessionH,
+                              coap_packet_t * message,
+                              coap_packet_t * response)
 {
     lwm2m_uri_t * uriP;
-    coap_status_t result = COAP_IGNORE;
+    uint8_t result = COAP_IGNORE;
 
     LOG("Entering");
 	
@@ -198,11 +198,11 @@ static coap_status_t handle_request(lwm2m_context_t * contextP,
  * All rights reserved.
  */
 void lwm2m_handle_packet(lwm2m_context_t * contextP,
-                        uint8_t * buffer,
-                        int length,
-                        void * fromSessionH)
+                         uint8_t * buffer,
+                         int length,
+                         void * fromSessionH)
 {
-    coap_status_t coap_error_code = NO_ERROR;
+    uint8_t coap_error_code = NO_ERROR;
     static coap_packet_t message[1];
     static coap_packet_t response[1];
 
@@ -412,11 +412,11 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
 }
 
 
-coap_status_t message_send(lwm2m_context_t * contextP,
-                           coap_packet_t * message,
-                           void * sessionH)
+uint8_t message_send(lwm2m_context_t * contextP,
+                     coap_packet_t * message,
+                     void * sessionH)
 {
-    coap_status_t result = COAP_500_INTERNAL_SERVER_ERROR;
+    uint8_t result = COAP_500_INTERNAL_SERVER_ERROR;
     uint8_t * pktBuffer;
     size_t pktBufferLen = 0;
     size_t allocLen;

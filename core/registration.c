@@ -465,7 +465,7 @@ uint8_t registration_start(lwm2m_context_t * contextP)
     uint8_t result;
 
     LOG_ARG("State: %s", STR_STATE(contextP->state));
-	
+
     result = COAP_NO_ERROR;
 
     targetP = contextP->serverList;
@@ -1020,13 +1020,13 @@ static int prv_getLocationString(uint16_t id,
     return index + result;
 }
 
-coap_status_t registration_handleRequest(lwm2m_context_t * contextP,
-                                          lwm2m_uri_t * uriP,
-                                          void * fromSessionH,
-                                          coap_packet_t * message,
-                                          coap_packet_t * response)
+uint8_t registration_handleRequest(lwm2m_context_t * contextP,
+                                   lwm2m_uri_t * uriP,
+                                   void * fromSessionH,
+                                   coap_packet_t * message,
+                                   coap_packet_t * response)
 {
-    coap_status_t result;
+    uint8_t result;
     time_t tv_sec;
 
     LOG_URI(uriP);

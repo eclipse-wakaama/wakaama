@@ -153,13 +153,13 @@ static lwm2m_watcher_t * prv_getWatcher(lwm2m_context_t * contextP,
     return watcherP;
 }
 
-coap_status_t observe_handleRequest(lwm2m_context_t * contextP,
-                                    lwm2m_uri_t * uriP,
-                                    lwm2m_server_t * serverP,
-                                    int size,
-                                    lwm2m_data_t * dataP,
-                                    coap_packet_t * message,
-                                    coap_packet_t * response)
+uint8_t observe_handleRequest(lwm2m_context_t * contextP,
+                              lwm2m_uri_t * uriP,
+                              lwm2m_server_t * serverP,
+                              int size,
+                              lwm2m_data_t * dataP,
+                              coap_packet_t * message,
+                              coap_packet_t * response)
 {
     lwm2m_watcher_t * watcherP;
     uint32_t count;
@@ -308,10 +308,10 @@ void observe_clear(lwm2m_context_t * contextP,
     }
 }
 
-coap_status_t observe_setParameters(lwm2m_context_t * contextP,
-                                    lwm2m_uri_t * uriP,
-                                    lwm2m_server_t * serverP,
-                                    lwm2m_attributes_t * attrP)
+uint8_t observe_setParameters(lwm2m_context_t * contextP,
+                              lwm2m_uri_t * uriP,
+                              lwm2m_server_t * serverP,
+                              lwm2m_attributes_t * attrP)
 {
     uint8_t result;
     lwm2m_watcher_t * watcherP;
