@@ -483,7 +483,7 @@ static void prv_encodeBlock(uint8_t input[3],
     output[3] = b64Alphabet[input[2] & 0x3F];
 }
 
-static size_t prv_getBase64Size(size_t dataLen)
+size_t utils_base64GetSize(size_t dataLen)
 {
     size_t result_len;
 
@@ -502,7 +502,7 @@ size_t utils_base64Encode(uint8_t * dataP,
     unsigned int result_index;
     size_t result_len;
 
-    result_len = prv_getBase64Size(dataLen);
+    result_len = utils_base64GetSize(dataLen);
 
     if (result_len > bufferLen) return 0;
 
