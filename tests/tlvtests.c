@@ -85,38 +85,6 @@ static void test_decodeTLV()
     MEMORY_TRACE_AFTER_EQ;
 }
 
-static void test_opaqueToInt()
-{
-    MEMORY_TRACE_BEFORE;
-    // Data represented in big endian, two'2 complement
-    uint8_t data1[] = {1 };
-    uint8_t data2[] = {1, 2 };
-    uint8_t data3[] = {0xfe, 0xfd, 0xfc, 0xfc};
-    uint8_t data4[] = {0xfe, 0xfd, 0xfc, 0xfb, 0xfa, 0xf9, 0xf8, 0xf8};
-    // Result in platform endianess
-    int64_t value = 0;
-    int length;
-
-
-    length = utils_opaqueToInt(data1, sizeof(data1), &value);
-    CU_ASSERT_EQUAL(length, 1);
-    CU_ASSERT_EQUAL(value, 1);
-
-    length = utils_opaqueToInt(data2, sizeof(data2), &value);
-    CU_ASSERT_EQUAL(length, 2);
-    CU_ASSERT_EQUAL(value, 0x102);
-
-    length = utils_opaqueToInt(data3, sizeof(data3), &value);
-    CU_ASSERT_EQUAL(length, 4);
-    CU_ASSERT_EQUAL(value, -0x1020304);
-
-    length = utils_opaqueToInt(data4, sizeof(data4), &value);
-    CU_ASSERT_EQUAL(length, 8);
-    CU_ASSERT_EQUAL(value, -0x102030405060708);
-
-    MEMORY_TRACE_AFTER_EQ;
-}
-
 static void test_tlv_parse()
 {
     MEMORY_TRACE_BEFORE;
@@ -426,7 +394,6 @@ static struct TestTable table[] = {
         { "test of lwm2m_data_new()", test_tlv_new },
         { "test of lwm2m_data_free()", test_tlv_free },
         { "test of lwm2m_decodeTLV()", test_decodeTLV },
-        { "test of lwm2m_opaqueToInt()", test_opaqueToInt },
         { "test of lwm2m_data_parse()", test_tlv_parse },
         { "test of lwm2m_data_serialize()", test_tlv_serialize },
         { "test of lwm2m_data_encode_int() and lwm2m_data_decode_int()", test_tlv_int },

@@ -35,7 +35,7 @@ const char* ints_expected[] = {"12","-114","1", "134", "43243","0","-215025"};
 double floats[]={12, -114 , -30 , 1.02 , 134.000235 , 0.43243 , 0, -21.5025, -0.0925, 0.98765};
 const char* floats_expected[] = {"12","-114","-30", "1.02", "134.000235","0.43243","0","-21.5025","-0.0925","0.98765"};
 
-static void test_lwm2m_PlainTextToInt64(void)
+static void test_utils_textToInt(void)
 {
     int i;
 
@@ -43,7 +43,7 @@ static void test_lwm2m_PlainTextToInt64(void)
     {
         int64_t res;
 
-        if (utils_plainTextToInt64((unsigned char*)tests[i], strlen(tests[i]), &res) != 1)
+        if (utils_textToInt((unsigned char*)tests[i], strlen(tests[i]), &res) != 1)
             res = -1;
 
         CU_ASSERT_EQUAL(res, tests_expected_int[i]);
@@ -51,7 +51,7 @@ static void test_lwm2m_PlainTextToInt64(void)
     }
 }
 
-static void test_lwm2m_PlainTextToFloat64(void)
+static void test_utils_textToFloat(void)
 {
     int i;
 
@@ -59,7 +59,7 @@ static void test_lwm2m_PlainTextToFloat64(void)
     {
         double res;
 
-        if (utils_plainTextToFloat64((unsigned char*)tests[i], strlen(tests[i]), &res) != 1)
+        if (utils_textToFloat((unsigned char*)tests[i], strlen(tests[i]), &res) != 1)
             res = -1;
 
         CU_ASSERT_DOUBLE_EQUAL(res, tests_expected_float[i], 0.0001);
@@ -67,51 +67,45 @@ static void test_lwm2m_PlainTextToFloat64(void)
     }
 }
 
-static void test_lwm2m_int64ToPlainText(void)
+static void test_utils_intToText(void)
 {
     unsigned int i;
 
     for (i = 0 ; i < sizeof(ints)/sizeof(int64_t); i++)
     {
-        char * res = (char*)"";
+        char res[16];
         int len;
 
-        len = utils_int64ToPlainText(ints[i], (uint8_t**)&res);
+        len = utils_intToText(ints[i], (uint8_t*)res, 16);
 
         CU_ASSERT_FATAL(len);
         CU_ASSERT_NSTRING_EQUAL(res, ints_expected[i],len);
         //printf ("%i \"%i\" -> fail (%s)\n", i , ints[i], res );
-
-        if (len>0)
-            lwm2m_free(res);
     }
 }
 
-static void test_lwm2m_float64ToPlainText(void)
+static void test_utils_floatToText(void)
 {
     unsigned int i;
 
     for (i = 0 ; i < sizeof(floats)/sizeof(floats[0]); i++)
     {
-        char * res;
+        char res[16];
         int len;
 
-        len = utils_float64ToPlainText(floats[i], (uint8_t**)&res);
+        len = utils_floatToText(floats[i], (uint8_t*)res, 16);
 
         CU_ASSERT_FATAL(len);
         CU_ASSERT_NSTRING_EQUAL(res, floats_expected[i],len);
         //printf ("%i \"%.16g\" -> fail (%s)\n", i , floats[i], res );
-
-        if (len>0)
-            lwm2m_free(res);
     }
 }
 
 static struct TestTable table[] = {
-        { "test of utils_plainTextToInt64()", test_lwm2m_PlainTextToInt64 },
-        { "test of utils_plainTextToFloat64()", test_lwm2m_PlainTextToFloat64 },
-        { "test of utils_int64ToPlainText()", test_lwm2m_int64ToPlainText },
-        { "test of utils_float64ToPlainText()", test_lwm2m_float64ToPlainText },
+        { "test of utils_textToInt()", test_utils_textToInt },
+        { "test of utils_textToFloat()", test_utils_textToFloat },
+        { "test of utils_intToText()", test_utils_intToText },
+        { "test of utils_floatToText()", test_utils_floatToText },
         { NULL, NULL },
 };
 
