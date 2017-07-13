@@ -159,13 +159,13 @@ static int prv_readAttributes(multi_option_t * query,
     return 0;
 }
 
-coap_status_t dm_handleRequest(lwm2m_context_t * contextP,
-                                lwm2m_uri_t * uriP,
-                                lwm2m_server_t * serverP,
-                                coap_packet_t * message,
-                                coap_packet_t * response)
+uint8_t dm_handleRequest(lwm2m_context_t * contextP,
+                         lwm2m_uri_t * uriP,
+                         lwm2m_server_t * serverP,
+                         coap_packet_t * message,
+                         coap_packet_t * response)
 {
-    coap_status_t result;
+    uint8_t result;
     lwm2m_media_type_t format;
 
     LOG_ARG("Code: %02X, server status: %s", message->code, STR_STATUS(serverP->status));
