@@ -958,9 +958,16 @@ int lwm2m_observe(lwm2m_context_t * contextP,
     transactionP->callback = prv_obsRequestCallback;
     transactionP->userData = (void *)observationP;
 
-    contextP->transactionList = (lwm2m_transaction_t *)LWM2M_LIST_ADD(contextP->transactionList, transactionP);
-
-    return transaction_send(contextP, transactionP);
+    if (clientP->binding == BINDING_UQ || clientP->binding == BINDING_SQ || clientP->binding == BINDING_UQS)
+    {
+        clientP->queuedTransactionList = (lwm2m_transaction_t *)LWM2M_LIST_ADD(clientP->queuedTransactionList, transactionP);
+        return 0;
+    }
+    else
+    {
+        contextP->transactionList = (lwm2m_transaction_t *)LWM2M_LIST_ADD(contextP->transactionList, transactionP);
+        return transaction_send(contextP, transactionP);
+    }
 }
 
 int lwm2m_observe_cancel(lwm2m_context_t * contextP,

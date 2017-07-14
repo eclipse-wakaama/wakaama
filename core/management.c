@@ -465,9 +465,16 @@ static int prv_makeOperation(lwm2m_context_t * contextP,
         transaction->userData = (void *)dataP;
     }
 
-    contextP->transactionList = (lwm2m_transaction_t *)LWM2M_LIST_ADD(contextP->transactionList, transaction);
-
-    return transaction_send(contextP, transaction);
+    if (clientP->binding == BINDING_UQ || clientP->binding == BINDING_SQ || clientP->binding == BINDING_UQS)
+    {
+        clientP->queuedTransactionList = (lwm2m_transaction_t *)LWM2M_LIST_ADD(clientP->queuedTransactionList, transaction);
+        return 0;
+    }
+    else
+    {
+        contextP->transactionList = (lwm2m_transaction_t *)LWM2M_LIST_ADD(contextP->transactionList, transaction);
+        return transaction_send(contextP, transaction);
+    }
 }
 
 int lwm2m_dm_read(lwm2m_context_t * contextP,

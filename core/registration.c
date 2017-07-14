@@ -1057,6 +1057,7 @@ uint8_t registration_handleRequest(lwm2m_context_t * contextP,
         bool supportJSON;
         lwm2m_client_t * clientP;
         char location[MAX_LOCATION_LENGTH];
+        lwm2m_transaction_t *transaction;
 
         if (0 != prv_getParameters(message->uri_query, &name, &lifetime, &msisdn, &binding, &version))
         {
@@ -1239,6 +1240,14 @@ uint8_t registration_handleRequest(lwm2m_context_t * contextP,
             }
 
             clientP->endOfLife = tv_sec + clientP->lifetime;
+
+            // Send queued transactions
+            while ((transaction = clientP->queuedTransactionList) != NULL)
+            {
+                clientP->queuedTransactionList = (lwm2m_transaction_t *)LWM2M_LIST_RM(clientP->queuedTransactionList, transaction->mID, NULL);
+                contextP->transactionList = (lwm2m_transaction_t *)LWM2M_LIST_ADD(contextP->transactionList, transaction);
+                transaction_send(contextP, transaction);
+            }
 
             if (contextP->monitorCallback != NULL)
             {

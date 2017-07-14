@@ -526,6 +526,32 @@ typedef struct
 } lwm2m_attributes_t;
 
 /*
+ * LWM2M transaction
+ *
+ * Adaptation of Erbium's coap_transaction_t
+ */
+
+typedef struct _lwm2m_transaction_ lwm2m_transaction_t;
+
+typedef void (*lwm2m_transaction_callback_t) (lwm2m_transaction_t * transacP, void * message);
+
+struct _lwm2m_transaction_
+{
+    lwm2m_transaction_t * next;  // matches lwm2m_list_t::next
+    uint16_t              mID;   // matches lwm2m_list_t::id
+    void *                peerH;
+    uint8_t               ack_received; // indicates, that the ACK was received
+    time_t                response_timeout; // timeout to wait for response, if token is used. When 0, use calculated acknowledge timeout.
+    uint8_t  retrans_counter;
+    time_t   retrans_time;
+    void * message;
+    uint16_t buffer_len;
+    uint8_t * buffer;
+    lwm2m_transaction_callback_t callback;
+    void * userData;
+};
+
+/*
  * LWM2M Clients
  *
  * Be careful not to mix lwm2m_client_object_t used to store list of objects of remote clients
@@ -554,34 +580,8 @@ typedef struct _lwm2m_client_
     void *                  sessionH;
     lwm2m_client_object_t * objectList;
     lwm2m_observation_t *   observationList;
+    lwm2m_transaction_t *   queuedTransactionList;
 } lwm2m_client_t;
-
-
-/*
- * LWM2M transaction
- *
- * Adaptation of Erbium's coap_transaction_t
- */
-
-typedef struct _lwm2m_transaction_ lwm2m_transaction_t;
-
-typedef void (*lwm2m_transaction_callback_t) (lwm2m_transaction_t * transacP, void * message);
-
-struct _lwm2m_transaction_
-{
-    lwm2m_transaction_t * next;  // matches lwm2m_list_t::next
-    uint16_t              mID;   // matches lwm2m_list_t::id
-    void *                peerH;
-    uint8_t               ack_received; // indicates, that the ACK was received
-    time_t                response_timeout; // timeout to wait for response, if token is used. When 0, use calculated acknowledge timeout.
-    uint8_t  retrans_counter;
-    time_t   retrans_time;
-    void * message;
-    uint16_t buffer_len;
-    uint8_t * buffer;
-    lwm2m_transaction_callback_t callback;
-    void * userData;
-};
 
 /*
  * LWM2M observed resources
