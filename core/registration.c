@@ -1245,6 +1245,7 @@ uint8_t registration_handleRequest(lwm2m_context_t * contextP,
             while ((transaction = clientP->queuedTransactionList) != NULL)
             {
                 clientP->queuedTransactionList = (lwm2m_transaction_t *)LWM2M_LIST_RM(clientP->queuedTransactionList, transaction->mID, NULL);
+                transaction->next = NULL;
                 contextP->transactionList = (lwm2m_transaction_t *)LWM2M_LIST_ADD(contextP->transactionList, transaction);
                 transaction_send(contextP, transaction);
             }
