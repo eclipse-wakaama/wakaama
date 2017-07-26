@@ -394,7 +394,7 @@ lwm2m_object_t * acc_ctrl_create_object(void)
 {
     /*
      * The acc_ctrl_create_object() function creates an empty object
-     * and returns a pointer to the structure that represent it.
+     * and returns a pointer to the structure that represents it.
      */
     lwm2m_object_t* accCtrlObj = NULL;
 
