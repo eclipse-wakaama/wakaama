@@ -392,7 +392,7 @@ static void prv_change(char * buffer,
 {
     lwm2m_context_t * lwm2mH = (lwm2m_context_t *) user_data;
     lwm2m_uri_t uri;
-    char * end = NULL;
+    char * end;
     int result;
 
     end = get_end_of_arg(buffer);
@@ -469,7 +469,7 @@ static void prv_object_dump(char * buffer,
 {
     lwm2m_context_t * lwm2mH = (lwm2m_context_t *) user_data;
     lwm2m_uri_t uri;
-    char * end = NULL;
+    char * end;
     int result;
     lwm2m_object_t * objectP;
 

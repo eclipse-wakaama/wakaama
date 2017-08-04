@@ -381,7 +381,7 @@ static void prv_resultCallback(lwm2m_transaction_t * transacP,
         if (packet->code == COAP_201_CREATED
          && packet->location_path != NULL)
         {
-            char * locationString = NULL;
+            char * locationString;
             int result = 0;
             lwm2m_uri_t locationUri;
 

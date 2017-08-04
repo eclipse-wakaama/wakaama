@@ -202,7 +202,7 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
                          int length,
                          void * fromSessionH)
 {
-    uint8_t coap_error_code = NO_ERROR;
+    uint8_t coap_error_code;
     static coap_packet_t message[1];
     static coap_packet_t response[1];
 

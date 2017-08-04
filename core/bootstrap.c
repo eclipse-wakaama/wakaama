@@ -96,7 +96,7 @@ static void prv_requestBootstrap(lwm2m_context_t * context,
 
     if (bootstrapServer->sessionH != NULL)
     {
-        lwm2m_transaction_t * transaction = NULL;
+        lwm2m_transaction_t * transaction;
 
         LOG("Bootstrap server connection opened");
 
