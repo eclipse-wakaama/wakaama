@@ -797,6 +797,7 @@ static void prv_obsRequestCallback(lwm2m_transaction_t * transacP,
     lwm2m_observation_t * observationP = (lwm2m_observation_t *)transacP->userData;
     coap_packet_t * packet = (coap_packet_t *)message;
     uint8_t code;
+    uint32_t count;
 
     switch (observationP->status)
     {
@@ -838,9 +839,11 @@ static void prv_obsRequestCallback(lwm2m_transaction_t * transacP,
     }
     else
     {
+        count = 0;
+        coap_get_header_observe(message, &count);
         observationP->callback(observationP->clientP->internalID,
                                &observationP->uri,
-                               0,
+                               count,
                                packet->content_type, packet->payload, packet->payload_len,
                                observationP->userData);
     }
