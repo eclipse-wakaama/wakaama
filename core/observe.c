@@ -906,8 +906,8 @@ int lwm2m_observe(lwm2m_context_t * contextP,
         if (uriP->objectId == observationP->uri.objectId
             && (LWM2M_URI_IS_SET_INSTANCE(uriP) == false
                 || observationP->uri.instanceId == uriP->instanceId)
-            && (LWM2M_URI_IS_SET_INSTANCE(uriP) == false
-                || observationP->uri.instanceId == uriP->instanceId))
+            && (LWM2M_URI_IS_SET_RESOURCE(uriP) == false
+                || observationP->uri.resourceId == uriP->resourceId))
         {
             break;
         }
