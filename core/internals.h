@@ -143,6 +143,8 @@
 #define QUERY_STARTER       "?"
 #define QUERY_NAME          "ep="
 #define QUERY_NAME_LEN      3       // strlen("ep=")
+#define QUERY_TYPE          "et="
+#define QUERY_TYPE_LEN      3
 #define QUERY_SMS           "sms="
 #define QUERY_SMS_LEN       4
 #define QUERY_LIFETIME      "lt="

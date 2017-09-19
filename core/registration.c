@@ -612,12 +612,14 @@ static void prv_freeClientObjectList(lwm2m_client_object_t * objects)
 
 static int prv_getParameters(multi_option_t * query,
                              char ** nameP,
+                             char ** typeP,
                              uint32_t * lifetimeP,
                              char ** msisdnP,
                              lwm2m_binding_t * bindingP,
                              char ** versionP)
 {
     *nameP = NULL;
+    *typeP = NULL;
     *lifetimeP = 0;
     *msisdnP = NULL;
     *bindingP = BINDING_UNKNOWN;
@@ -635,6 +637,18 @@ static int prv_getParameters(multi_option_t * query,
             {
                 memcpy(*nameP, query->data + QUERY_NAME_LEN, query->len - QUERY_NAME_LEN);
                 (*nameP)[query->len - QUERY_NAME_LEN] = 0;
+            }
+        }
+        else if (lwm2m_strncmp((char *)query->data, QUERY_TYPE, QUERY_TYPE_LEN) == 0)
+        {
+            if (*typeP != NULL) goto error;
+            if (query->len == QUERY_TYPE_LEN) goto error;
+
+            *typeP = (char *)lwm2m_malloc(query->len - QUERY_TYPE_LEN + 1);
+            if (*typeP != NULL)
+            {
+                memcpy(*typeP, query->data + QUERY_TYPE_LEN, query->len - QUERY_TYPE_LEN);
+                (*typeP)[query->len - QUERY_TYPE_LEN] = 0;
             }
         }
         else if (lwm2m_strncmp((char *)query->data, QUERY_SMS, QUERY_SMS_LEN) == 0)
@@ -688,6 +702,7 @@ static int prv_getParameters(multi_option_t * query,
 
 error:
     if (*nameP != NULL) lwm2m_free(*nameP);
+    if (*typeP != NULL) lwm2m_free(*typeP);
     if (*msisdnP != NULL) lwm2m_free(*msisdnP);
     if (*versionP != NULL) lwm2m_free(*versionP);
 
@@ -998,6 +1013,7 @@ void registration_freeClient(lwm2m_client_t * clientP)
 {
     LOG("Entering");
     if (clientP->name != NULL) lwm2m_free(clientP->name);
+    if (clientP->type != NULL) lwm2m_free(clientP->type);
     if (clientP->msisdn != NULL) lwm2m_free(clientP->msisdn);
     if (clientP->altPath != NULL) lwm2m_free(clientP->altPath);
     prv_freeClientObjectList(clientP->objectList);
@@ -1048,6 +1064,7 @@ uint8_t registration_handleRequest(lwm2m_context_t * contextP,
     case COAP_POST:
     {
         char * name = NULL;
+        char * type = NULL;
         uint32_t lifetime;
         char * msisdn;
         char * altPath;
@@ -1059,7 +1076,7 @@ uint8_t registration_handleRequest(lwm2m_context_t * contextP,
         char location[MAX_LOCATION_LENGTH];
         lwm2m_transaction_t *transaction;
 
-        if (0 != prv_getParameters(message->uri_query, &name, &lifetime, &msisdn, &binding, &version))
+        if (0 != prv_getParameters(message->uri_query, &name, &type, &lifetime, &msisdn, &binding, &version))
         {
             return COAP_400_BAD_REQUEST;
         }
@@ -1138,6 +1155,7 @@ uint8_t registration_handleRequest(lwm2m_context_t * contextP,
                 contextP->clientList = (lwm2m_client_t *)LWM2M_LIST_ADD(contextP->clientList, clientP);
             }
             clientP->name = name;
+            clientP->type = type;
             clientP->binding = binding;
             clientP->msisdn = msisdn;
             clientP->altPath = altPath;
