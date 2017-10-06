@@ -1287,12 +1287,13 @@ uint8_t registration_handleRequest(lwm2m_context_t * contextP,
 
         if ((uriP->flag & LWM2M_URI_MASK_ID) != LWM2M_URI_FLAG_OBJECT_ID) return COAP_400_BAD_REQUEST;
 
-        contextP->clientList = (lwm2m_client_t *)LWM2M_LIST_RM(contextP->clientList, uriP->objectId, &clientP);
+        clientP = (lwm2m_client_t *)LWM2M_LIST_FIND(contextP->clientList, uriP->objectId);
         if (clientP == NULL) return COAP_400_BAD_REQUEST;
         if (contextP->monitorCallback != NULL)
         {
             contextP->monitorCallback(clientP->internalID, NULL, COAP_202_DELETED, LWM2M_CONTENT_TEXT, NULL, 0, contextP->monitorUserData);
         }
+        contextP->clientList = (lwm2m_client_t *)LWM2M_LIST_RM(contextP->clientList, clientP->internalID, NULL);
         registration_freeClient(clientP);
         result = COAP_202_DELETED;
     }
@@ -1394,11 +1395,11 @@ void registration_step(lwm2m_context_t * contextP,
 
         if (clientP->endOfLife <= currentTime)
         {
-            contextP->clientList = (lwm2m_client_t *)LWM2M_LIST_RM(contextP->clientList, clientP->internalID, NULL);
             if (contextP->monitorCallback != NULL)
             {
                 contextP->monitorCallback(clientP->internalID, NULL, COAP_202_DELETED, LWM2M_CONTENT_TEXT, NULL, 0, contextP->monitorUserData);
             }
+            contextP->clientList = (lwm2m_client_t *)LWM2M_LIST_RM(contextP->clientList, clientP->internalID, NULL);
             registration_freeClient(clientP);
         }
         else
