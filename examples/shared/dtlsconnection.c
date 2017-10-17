@@ -471,7 +471,10 @@ dtls_connection_t * connection_create(dtls_connection_t * connList,
             {
                 *(port - 1) = 0;
             }
-            return NULL;
+            else
+            {
+                return NULL;
+            }
         }
         // split strings
         *port = 0;
