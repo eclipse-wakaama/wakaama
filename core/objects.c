@@ -384,11 +384,11 @@ uint8_t object_delete(lwm2m_context_t * contextP,
         while (NULL != instanceP
             && result == COAP_202_DELETED)
         {
+            uriP->instanceId = instanceP->id;
             result = objectP->deleteFunc(instanceP->id, objectP);
             if (result == COAP_202_DELETED)
             {
                 uriP->flag |= LWM2M_URI_FLAG_INSTANCE_ID;
-                uriP->instanceId = instanceP->id;
                 observe_clear(contextP, uriP);
                 uriP->flag &= ~LWM2M_URI_FLAG_INSTANCE_ID;
             }
