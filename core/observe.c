@@ -14,7 +14,7 @@
  *    David Navarro, Intel Corporation - initial API and implementation
  *    Toby Jaffey - Please refer to git log
  *    Bosch Software Innovations GmbH - Please refer to git log
- *    
+ *
  *******************************************************************************/
 
 /*
@@ -669,7 +669,7 @@ void observe_step(lwm2m_context_t * contextP,
                  && watcherP->parameters != NULL
                  && (watcherP->parameters->toSet & LWM2M_ATTR_FLAG_MAX_PERIOD) != 0)
                 {
-                    LOG_ARG("Checking maximal period (%d s)", watcherP->parameters->minPeriod);
+                    LOG_ARG("Checking maximal period (%d s)", watcherP->parameters->maxPeriod);
 
                     if (watcherP->lastTime + watcherP->parameters->maxPeriod <= currentTime)
                     {
