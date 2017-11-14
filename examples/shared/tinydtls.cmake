@@ -27,6 +27,10 @@ find_package(Git REQUIRED)
 add_custom_command(OUTPUT ${TINYDTLS_SOURCES} COMMAND ${GIT_EXECUTABLE} submodule update)
 add_custom_target(submodule_update SOURCES ${TINYDTLS_SOURCES})
 
+get_filename_component( COMPILER_FILENAME "${CMAKE_C_COMPILER}" NAME )
+string( REGEX REPLACE "-[^-]+$" ""
+        TOOLCHAIN_NAME "${COMPILER_FILENAME}" )
+
 # The tinydtls configure step will create some more source files (tinydtls.h etc).
 # Use cmake "External Project" modul to call autoreconf and configure on tinydtls if necessary.
 if (NOT EXISTS ${TINYDTLS_SOURCES_GENERATED})
@@ -37,7 +41,7 @@ if (NOT EXISTS ${TINYDTLS_SOURCES_GENERATED})
         UPDATE_COMMAND ""
         BUILD_COMMAND ""
         INSTALL_COMMAND ""
-        CONFIGURE_COMMAND "${TINYDTLS_SOURCES_DIR}/configure"
+        CONFIGURE_COMMAND ${TINYDTLS_SOURCES_DIR}/configure --host=${TOOLCHAIN_NAME}
         BUILD_IN_SOURCE 1
         LOG_DOWNLOAD 1
         LOG_CONFIGURE 1
