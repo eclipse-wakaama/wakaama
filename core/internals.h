@@ -183,8 +183,8 @@
 #define ATTR_GREATER_THAN_LEN    3
 #define ATTR_LESS_THAN_STR       "lt="
 #define ATTR_LESS_THAN_LEN       3
-#define ATTR_STEP_STR            "stp="
-#define ATTR_STEP_LEN            4
+#define ATTR_STEP_STR            "st="
+#define ATTR_STEP_LEN            3
 #define ATTR_DIMENSION_STR       "dim="
 #define ATTR_DIMENSION_LEN       4
 
