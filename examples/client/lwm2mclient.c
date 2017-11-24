@@ -1014,7 +1014,11 @@ int main(int argc, char *argv[])
 
     char serverUri[50];
     int serverId = 123;
+#ifdef WITH_TINYDTLS
+    sprintf (serverUri, "coaps://%s:%s", server, serverPort);
+#else
     sprintf (serverUri, "coap://%s:%s", server, serverPort);
+#endif
 #ifdef LWM2M_BOOTSTRAP
     objArray[0] = get_security_object(serverId, serverUri, pskId, pskBuffer, pskLen, bootstrapRequested);
 #else
