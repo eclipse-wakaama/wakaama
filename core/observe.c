@@ -322,14 +322,8 @@ uint8_t observe_setParameters(lwm2m_context_t * contextP,
 
     if (!LWM2M_URI_IS_SET_INSTANCE(uriP) && LWM2M_URI_IS_SET_RESOURCE(uriP)) return COAP_400_BAD_REQUEST;
 
-    result = object_checkReadable(contextP, uriP);
+    result = object_checkReadable(contextP, uriP, attrP);
     if (COAP_205_CONTENT != result) return result;
-
-    if (0 != (attrP->toSet & ATTR_FLAG_NUMERIC))
-    {
-        result = object_checkNumeric(contextP, uriP);
-        if (COAP_205_CONTENT != result) return result;
-    }
 
     watcherP = prv_getWatcher(contextP, uriP, serverP);
     if (watcherP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
