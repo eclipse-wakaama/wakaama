@@ -87,15 +87,15 @@ The lwm2mclient features nine LWM2M objects:
  - Access Control Object (id: 2) as a skeleton
  - Device Object (id: 3) containing hard-coded values from the Example LWM2M
  Client of Appendix E of the LWM2M Technical Specification.
- - Connectivity Monitoring Object (id: 2) as a skeleton
+ - Connectivity Monitoring Object (id: 4) as a skeleton
  - Firmware Update Object (id: 5) as a skeleton.
  - Location Object (id: 6) as a skeleton.
  - Connectivity Statistics Object (id: 7) as a skeleton.
- - a test object (id: 1024) with the following description:
+ - Test Object (id: 31024) with the following description:
 
                            Multiple
-          Object |  ID  | Instances | Mandatoty |
-           Test  | 1024 |    Yes    |    No     |
+          Object |  ID   | Instances | Mandatory |
+           Test  | 31024 |    Yes    |    No     |
 
            Resources:
                        Supported    Multiple
@@ -139,7 +139,7 @@ LWM2M objects:
  - Server Object (id: 1)
  - Device Object (id: 3) containing hard-coded values from the Example LWM2M
  Client of Appendix E of the LWM2M Technical Specification.
- - Test object (id: 1024) from the lwm2mclient as described above.
+ - Test Object (id: 31024) from the lwm2mclient as described above.
 
 The lightclient does not feature any command-line interface.
 
