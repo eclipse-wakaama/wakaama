@@ -55,7 +55,7 @@
  * Implements an object for testing purpose
  *
  *                  Multiple
- * Object |  ID   | Instances | Mandatoty |
+ * Object |  ID   | Instances | Mandatory |
  *  Test  | 31024 |    Yes    |    No     |
  *
  *  Resources:
