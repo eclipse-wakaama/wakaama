@@ -1138,6 +1138,15 @@ uint8_t registration_handleRequest(lwm2m_context_t * contextP,
                 if (clientP->altPath != NULL) lwm2m_free(clientP->altPath);
                 prv_freeClientObjectList(clientP->objectList);
                 clientP->objectList = NULL;
+
+                // observations should be reinitiated instead of removed
+                lwm2m_observation_t *observationP = clientP->observationList;
+                while (observationP != NULL)
+                {
+                    lwm2m_observation_t *nextP = observationP->next;
+                    observe_remove(observationP);
+                    observationP = nextP;
+                }
             }
             else
             {
