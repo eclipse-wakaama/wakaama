@@ -59,6 +59,18 @@ time_t lwm2m_gettime(void)
     return tv.tv_sec;
 }
 
+time_t lwm2m_getmillis(void)
+{
+    struct timespec ts;
+
+    if (0 != clock_gettime(CLOCK_REALTIME, &ts))
+    {
+        return -1;
+    }
+
+    return (ts.tv_sec * 1000) + (ts.tv_nsec / 1000000);
+}
+
 void lwm2m_printf(const char * format, ...)
 {
     va_list ap;
