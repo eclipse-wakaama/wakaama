@@ -839,7 +839,7 @@ int main(int argc, char *argv[])
                                             "Result will be displayed asynchronously.", prv_time_client, NULL},
             {"attr", "Write value-related attributes to a client.", " attr CLIENT# URI LT GT [STEP]\r\n"
                                             "   CLIENT#: client number as returned by command 'list'\r\n"
-                                            "   URI: uri to write attributes to such as /3, /3/0/2, /1024/11, /1024/0/1\r\n"
+                                            "   URI: uri to write attributes to such as /3/0/2, /1024/0/1\r\n"
                                             "   LT: \"Less than\" value\r\n"
                                             "   GT: \"Greater than\" value\r\n"
                                             "   STEP: \"Step\" value\r\n"
