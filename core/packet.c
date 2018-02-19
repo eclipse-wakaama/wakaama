@@ -300,6 +300,8 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
             }
             if (coap_error_code==NO_ERROR)
             {
+                /* Save original payload pointer for later freeing. Payload in response may be updated. */
+                uint8_t *payload = response->payload;
                 if ( IS_OPTION(message, COAP_OPTION_BLOCK2) )
                 {
                     /* unchanged new_offset indicates that resource is unaware of blockwise transfer */
@@ -337,7 +339,7 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
 
                 coap_error_code = message_send(contextP, response, fromSessionH);
 
-                lwm2m_free(response->payload);
+                lwm2m_free(payload);
                 response->payload = NULL;
                 response->payload_len = 0;
             }
