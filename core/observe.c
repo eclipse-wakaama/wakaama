@@ -161,6 +161,7 @@ uint8_t observe_handleRequest(lwm2m_context_t * contextP,
                               coap_packet_t * message,
                               coap_packet_t * response)
 {
+    lwm2m_observed_t * observedP;
     lwm2m_watcher_t * watcherP;
     uint32_t count;
 
@@ -182,6 +183,7 @@ uint8_t observe_handleRequest(lwm2m_context_t * contextP,
         memcpy(watcherP->token, message->token, message->token_len);
         watcherP->active = true;
         watcherP->lastTime = lwm2m_gettime();
+        watcherP->lastMid = response->mid;
         if (IS_OPTION(message, COAP_OPTION_ACCEPT))
         {
             watcherP->format = utils_convertMediaType(message->accept[0]);
@@ -212,7 +214,15 @@ uint8_t observe_handleRequest(lwm2m_context_t * contextP,
 
     case 1:
         // cancellation
-        observe_cancel(contextP, LWM2M_MAX_ID, serverP->sessionH);
+        observedP = prv_findObserved(contextP, uriP);
+        if (observedP)
+        {
+            watcherP = prv_findWatcher(observedP, serverP);
+            if (watcherP)
+            {
+                observe_cancel(contextP, watcherP->lastMid, serverP->sessionH);
+            }
+        }
         return COAP_205_CONTENT;
 
     default:
@@ -234,7 +244,7 @@ void observe_cancel(lwm2m_context_t * contextP,
     {
         lwm2m_watcher_t * targetP = NULL;
 
-        if ((LWM2M_MAX_ID == mid || observedP->watcherList->lastMid == mid)
+        if (observedP->watcherList->lastMid == mid
          && lwm2m_session_is_equal(observedP->watcherList->server->sessionH, fromSessionH, contextP->userData))
         {
             targetP = observedP->watcherList;
