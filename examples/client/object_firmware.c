@@ -16,6 +16,7 @@
  *    David Navarro, Intel Corporation - Please refer to git log
  *    Bosch Software Innovations GmbH - Please refer to git log
  *    Pascal Rieux - Please refer to git log
+ *    Gregory Lemercier - Please refer to git log
  *    
  *******************************************************************************/
 
@@ -30,8 +31,11 @@
  * 1 package url               write
  * 2 update                    exec
  * 3 state                     read
- * 4 update supported objects  read/write
  * 5 update result             read
+ * 6 package name              read
+ * 7 package version           read
+ * 8 update protocol support   read
+ * 9 update delivery method    read
  */
 
 #include "liblwm2m.h"
@@ -47,18 +51,24 @@
 #define RES_M_PACKAGE_URI               1
 #define RES_M_UPDATE                    2
 #define RES_M_STATE                     3
-#define RES_O_UPDATE_SUPPORTED_OBJECTS  4
 #define RES_M_UPDATE_RESULT             5
 #define RES_O_PKG_NAME                  6
 #define RES_O_PKG_VERSION               7
+#define RES_O_UPDATE_PROTOCOL           8
+#define RES_M_UPDATE_METHOD             9
+
+#define LWM2M_FIRMWARE_PROTOCOL_NUM     4
+#define LWM2M_FIRMWARE_PROTOCOL_NULL    ((uint8_t)-1)
 
 typedef struct
 {
     uint8_t state;
-    bool supported;
     uint8_t result;
+    char pkg_name[256];
+    char pkg_version[256];
+    uint8_t protocol_support[LWM2M_FIRMWARE_PROTOCOL_NUM];
+    uint8_t delivery_method;
 } firmware_data_t;
-
 
 static uint8_t prv_firmware_read(uint16_t instanceId,
                                  int * numDataP,
@@ -80,10 +90,13 @@ static uint8_t prv_firmware_read(uint16_t instanceId,
     {
         *dataArrayP = lwm2m_data_new(3);
         if (*dataArrayP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
-        *numDataP = 3;
+        *numDataP = 6;
         (*dataArrayP)[0].id = 3;
-        (*dataArrayP)[1].id = 4;
-        (*dataArrayP)[2].id = 5;
+        (*dataArrayP)[1].id = 5;
+        (*dataArrayP)[2].id = 6;
+        (*dataArrayP)[3].id = 7;
+        (*dataArrayP)[4].id = 8;
+        (*dataArrayP)[5].id = 9;
     }
 
     i = 0;
@@ -103,13 +116,52 @@ static uint8_t prv_firmware_read(uint16_t instanceId,
             result = COAP_205_CONTENT;
             break;
 
-        case RES_O_UPDATE_SUPPORTED_OBJECTS:
-            lwm2m_data_encode_bool(data->supported, *dataArrayP + i);
+        case RES_M_UPDATE_RESULT:
+            lwm2m_data_encode_int(data->result, *dataArrayP + i);
             result = COAP_205_CONTENT;
             break;
 
-        case RES_M_UPDATE_RESULT:
-            lwm2m_data_encode_int(data->result, *dataArrayP + i);
+        case RES_O_PKG_NAME:
+            lwm2m_data_encode_string(data->pkg_name, *dataArrayP + i);
+            result = COAP_205_CONTENT;
+            break;
+
+        case RES_O_PKG_VERSION:
+            lwm2m_data_encode_string(data->pkg_version, *dataArrayP + i);
+            result = COAP_205_CONTENT;
+            break;
+
+        case RES_O_UPDATE_PROTOCOL:
+        {
+            int ri;
+            int num = 0;
+            lwm2m_data_t* subTlvP = NULL;
+
+            while ((num < LWM2M_FIRMWARE_PROTOCOL_NUM) &&
+                    (data->protocol_support[num] != LWM2M_FIRMWARE_PROTOCOL_NULL))
+                num++;
+
+            if (num) {
+                subTlvP = lwm2m_data_new(num);
+                for (ri = 0; ri<num; ri++)
+                {
+                    subTlvP[ri].id = ri;
+                    lwm2m_data_encode_int(data->protocol_support[ri], subTlvP + ri);
+                }
+            } else {
+                /* If no protocol is provided, use CoAP as default (per spec) */
+                num = 1;
+                subTlvP = lwm2m_data_new(num);
+                subTlvP[0].id = 0;
+                lwm2m_data_encode_int(0, subTlvP);
+            }
+            lwm2m_data_encode_instances(subTlvP, num, *dataArrayP + i);
+            result = COAP_205_CONTENT;
+            break;
+        }
+
+        case RES_M_UPDATE_METHOD:
+            lwm2m_data_encode_int(data->delivery_method, *dataArrayP + i);
             result = COAP_205_CONTENT;
             break;
 
@@ -152,17 +204,6 @@ static uint8_t prv_firmware_write(uint16_t instanceId,
         case RES_M_PACKAGE_URI:
             // URL for download the firmware
             result = COAP_204_CHANGED;
-            break;
-
-        case RES_O_UPDATE_SUPPORTED_OBJECTS:
-            if (lwm2m_data_decode_bool(&dataArray[i], &data->supported) == 1)
-            {
-                result = COAP_204_CHANGED;
-            }
-            else
-            {
-                result = COAP_400_BAD_REQUEST;
-            }
             break;
 
         default:
@@ -219,8 +260,8 @@ void display_firmware_object(lwm2m_object_t * object)
     fprintf(stdout, "  /%u: Firmware object:\r\n", object->objID);
     if (NULL != data)
     {
-        fprintf(stdout, "    state: %u, supported: %s, result: %u\r\n",
-                data->state, data->supported?"true":"false", data->result);
+        fprintf(stdout, "    state: %u, result: %u\r\n", data->state,
+                data->result);
     }
 #endif
 }
@@ -274,9 +315,21 @@ lwm2m_object_t * get_object_firmware(void)
          */
         if (NULL != firmwareObj->userData)
         {
-            ((firmware_data_t*)firmwareObj->userData)->state = 1;
-            ((firmware_data_t*)firmwareObj->userData)->supported = false;
-            ((firmware_data_t*)firmwareObj->userData)->result = 0;
+            firmware_data_t *data = (firmware_data_t*)(firmwareObj->userData);
+
+            data->state = 1;
+            data->result = 0;
+            strcpy(data->pkg_name, "lwm2mclient");
+            strcpy(data->pkg_version, "1.0");
+
+            /* Only support CoAP based protocols */
+            data->protocol_support[0] = 0;
+            data->protocol_support[1] = 1;
+            data->protocol_support[2] = LWM2M_FIRMWARE_PROTOCOL_NULL;
+            data->protocol_support[3] = LWM2M_FIRMWARE_PROTOCOL_NULL;
+
+           /* Only support push method */
+           data->delivery_method = 1;
         }
         else
         {
