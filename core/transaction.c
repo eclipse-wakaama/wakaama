@@ -411,7 +411,7 @@ int transaction_send(lwm2m_context_t * contextP,
         }
     }
 
-    if (transacP->ack_received || maxRetriesReached)
+    if (maxRetriesReached)
     {
         if (transacP->callback)
         {
