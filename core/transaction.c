@@ -126,6 +126,12 @@ static int prv_checkFinished(lwm2m_transaction_t * transacP,
         // response
         return transacP->ack_received ? 1 : 0;
     }
+
+    // Received message must be a response
+    if (receivedMessage->code < CREATED_2_01 - 1) {
+        return 0;
+    }
+
     if (!IS_OPTION(transactionMessage, COAP_OPTION_TOKEN))
     {
         // request without token
