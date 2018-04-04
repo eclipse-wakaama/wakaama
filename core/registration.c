@@ -1009,7 +1009,8 @@ static lwm2m_client_t * prv_getClientByName(lwm2m_context_t * contextP,
     return targetP;
 }
 
-void registration_freeClient(lwm2m_client_t * clientP)
+void registration_freeClient(lwm2m_context_t * contextP,
+                             lwm2m_client_t * clientP)
 {
     LOG("Entering");
     if (clientP->name != NULL) lwm2m_free(clientP->name);
@@ -1017,13 +1018,10 @@ void registration_freeClient(lwm2m_client_t * clientP)
     if (clientP->msisdn != NULL) lwm2m_free(clientP->msisdn);
     if (clientP->altPath != NULL) lwm2m_free(clientP->altPath);
     prv_freeClientObjectList(clientP->objectList);
+    transaction_remove_all(contextP, clientP->sessionH);
     while(clientP->observationList != NULL)
     {
-        lwm2m_observation_t * targetP;
-
-        targetP = clientP->observationList;
-        clientP->observationList = clientP->observationList->next;
-        lwm2m_free(targetP);
+        observe_remove(clientP->observationList);
     }
     lwm2m_free(clientP);
 }
@@ -1181,12 +1179,12 @@ uint8_t registration_handleRequest(lwm2m_context_t * contextP,
 
             if (prv_getLocationString(clientP->internalID, location) == 0)
             {
-                registration_freeClient(clientP);
+                registration_freeClient(contextP, clientP);
                 return COAP_500_INTERNAL_SERVER_ERROR;
             }
             if (coap_set_header_location_path(response, location) == 0)
             {
-                registration_freeClient(clientP);
+                registration_freeClient(contextP, clientP);
                 return COAP_500_INTERNAL_SERVER_ERROR;
             }
 
@@ -1308,7 +1306,7 @@ uint8_t registration_handleRequest(lwm2m_context_t * contextP,
             contextP->monitorCallback(clientP->internalID, NULL, COAP_202_DELETED, LWM2M_CONTENT_TEXT, NULL, 0, contextP->monitorUserData);
         }
         contextP->clientList = (lwm2m_client_t *)LWM2M_LIST_RM(contextP->clientList, clientP->internalID, NULL);
-        registration_freeClient(clientP);
+        registration_freeClient(contextP, clientP);
         result = COAP_202_DELETED;
     }
     break;
@@ -1414,7 +1412,7 @@ void registration_step(lwm2m_context_t * contextP,
                 contextP->monitorCallback(clientP->internalID, NULL, COAP_202_DELETED, LWM2M_CONTENT_TEXT, NULL, 0, contextP->monitorUserData);
             }
             contextP->clientList = (lwm2m_client_t *)LWM2M_LIST_RM(contextP->clientList, clientP->internalID, NULL);
-            registration_freeClient(clientP);
+            registration_freeClient(contextP, clientP);
         }
         else
         {

@@ -268,6 +268,27 @@ void transaction_remove(lwm2m_context_t * contextP,
     transaction_free(transacP);
 }
 
+void transaction_remove_all(lwm2m_context_t * contextP,
+                            void * sessionH)
+{
+    lwm2m_transaction_t * transacP;
+    lwm2m_transaction_t * nextP;
+
+    transacP = contextP->transactionList;
+    while (transacP != NULL)
+    {
+        nextP = transacP->next;
+
+        if (lwm2m_session_is_equal(sessionH, transacP->peerH, contextP->userData) == true)
+        {
+            transaction_remove(contextP, transacP);
+
+        }
+
+        transacP = nextP;
+    }
+}
+
 bool transaction_handleResponse(lwm2m_context_t * contextP,
                                  void * fromSessionH,
                                  coap_packet_t * message,

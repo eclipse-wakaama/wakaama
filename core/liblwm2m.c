@@ -198,7 +198,7 @@ void lwm2m_close(lwm2m_context_t * contextP)
         clientP = contextP->clientList;
         contextP->clientList = contextP->clientList->next;
 
-        registration_freeClient(clientP);
+        registration_freeClient(contextP, clientP);
     }
 #endif
 
