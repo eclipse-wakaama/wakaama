@@ -126,7 +126,7 @@ static void prv_requestBootstrap(lwm2m_context_t * context,
 }
 
 void bootstrap_step(lwm2m_context_t * contextP,
-                    uint32_t currentTime,
+                    time_t currentTime,
                     time_t * timeoutP)
 {
     lwm2m_server_t * targetP;
