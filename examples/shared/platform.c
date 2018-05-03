@@ -63,7 +63,7 @@ time_t lwm2m_getmillis(void)
 {
     struct timespec ts;
 
-    if (0 != clock_gettime(CLOCK_REALTIME, &ts))
+    if (0 != clock_gettime(CLOCK_MONOTONIC, &ts))
     {
         return -1;
     }
