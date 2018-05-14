@@ -352,7 +352,7 @@ typedef enum
     /* 10000-64999  First Come First Served */
     LWM2M_CONTENT_VND_OCF_CBOR     = 10000,  //  application/vnd.ocf+cbor                     /* Ref: [Michael_Koster] */
     LWM2M_CONTENT_OMA_TLV          = 11542,  //  application/vnd.oma.lwm2m+tlv                /* Ref: [OMA-TS-LightweightM2M-V1_0] */
-    LWM2M_CONTENT_OMA_JSON         = 11543,  //  application/vnd.oma.lwm2m+json               /* Ref: [OMA-TS-LightweightM2M-V1_0] */
+    LWM2M_CONTENT_OMA_JSON         = 11543   //  application/vnd.oma.lwm2m+json               /* Ref: [OMA-TS-LightweightM2M-V1_0] */
     /* 65000-65535  Experimental use (no operational use) */
 } lwm2m_media_type_t;
 
