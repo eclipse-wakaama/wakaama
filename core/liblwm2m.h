@@ -325,14 +325,35 @@ struct _lwm2m_data_t
 };
 
 typedef enum
-{
-    LWM2M_CONTENT_TEXT      = 0,        // Also used as undefined
-    LWM2M_CONTENT_LINK      = 40,
-    LWM2M_CONTENT_OPAQUE    = 42,
-    LWM2M_CONTENT_TLV_OLD   = 1542,     // Keep old value for backward-compatibility
-    LWM2M_CONTENT_TLV       = 11542,
-    LWM2M_CONTENT_JSON_OLD  = 1543,     // Keep old value for backward-compatibility
-    LWM2M_CONTENT_JSON      = 11543
+{ /* Official ContentFormat/MediaType Registry: https://www.iana.org/assignments/core-parameters/core-parameters.xhtml#content-formats */
+    /* 0-255  Expert Review */
+    LWM2M_CONTENT_TEXT             = 0    ,  //  text/plain; charset=utf-8                    /* Ref: [RFC2046][RFC3676][RFC5147] */
+    LWM2M_CONTENT_COSE_ENCRYPT0    = 16   ,  //  application/cose; cose-type="cose-encrypt0"  /* Ref: [RFC8152] */
+    LWM2M_CONTENT_COSE_MAC0        = 17   ,  //  application/cose; cose-type="cose-mac0"      /* Ref: [RFC8152] */
+    LWM2M_CONTENT_COSE_SIGN1       = 18   ,  //  application/cose; cose-type="cose-sign1"     /* Ref: [RFC8152] */
+    LWM2M_CONTENT_LINK             = 40   ,  //  application/link-format                      /* Ref: [RFC6690] */
+    LWM2M_CONTENT_XML              = 41   ,  //  application/xml                              /* Ref: [RFC3023] */
+    LWM2M_CONTENT_OPAQUE           = 42   ,  //  application/octet-stream                     /* Ref: [RFC2045][RFC2046] */
+    LWM2M_CONTENT_EXI              = 47   ,  //  application/exi                              /* Ref: ["Efficient XML Interchange (EXI) Format 1.0 (Second Edition)" ,February 2014] */
+    LWM2M_CONTENT_JSON             = 50   ,  //  application/json                             /* Ref: [RFC4627] */
+    LWM2M_CONTENT_JSON_PATCH_JSON  = 51   ,  //  application/json-patch+json                  /* Ref: [RFC6902] */
+    LWM2M_CONTENT_MERGE_PATCH_JSON = 52   ,  //  application/merge-patch+json                 /* Ref: [RFC7396] */
+    LWM2M_CONTENT_CBOR             = 60   ,  //  application/cbor                             /* Ref: [RFC7049] */
+    LWM2M_CONTENT_CWT              = 61   ,  //  application/cwt                              /* Ref: [RFC8392] */
+    LWM2M_CONTENT_COSE_ENCRYPT     = 96   ,  //  application/cose; cose-type="cose-encrypt"   /* Ref: [RFC8152] */
+    LWM2M_CONTENT_COSE_MAC         = 97   ,  //  application/cose; cose-type="cose-mac"       /* Ref: [RFC8152] */
+    LWM2M_CONTENT_COSE_SIGN        = 98   ,  //  application/cose; cose-type="cose-sign"      /* Ref: [RFC8152] */
+    LWM2M_CONTENT_COSE_KEY         = 101  ,  //  application/cose-key                         /* Ref: [RFC8152] */
+    LWM2M_CONTENT_COSE_KEY_SET     = 102  ,  //  application/cose-key-set                     /* Ref: [RFC8152] */
+    LWM2M_CONTENT_COAP_GROUP_JSON  = 256  ,  //  application/coap-group+json                  /* Ref: [RFC7390] */
+    /* 256-9999  IETF Review or IESG Approval */
+    LWM2M_CONTENT_OMA_TLV_OLD      = 1542 ,  //  Keep old value for backward-compatibility    /* Ref: [OMA-TS-LightweightM2M-V1_0] */
+    LWM2M_CONTENT_OMA_JSON_OLD     = 1543 ,  //  Keep old value for backward-compatibility    /* Ref: [OMA-TS-LightweightM2M-V1_0] */
+    /* 10000-64999  First Come First Served */
+    LWM2M_CONTENT_VND_OCF_CBOR     = 10000,  //  application/vnd.ocf+cbor                     /* Ref: [Michael_Koster] */
+    LWM2M_CONTENT_OMA_TLV          = 11542,  //  application/vnd.oma.lwm2m+tlv                /* Ref: [OMA-TS-LightweightM2M-V1_0] */
+    LWM2M_CONTENT_OMA_JSON         = 11543   //  application/vnd.oma.lwm2m+json               /* Ref: [OMA-TS-LightweightM2M-V1_0] */
+    /* 65000-65535  Experimental use (no operational use) */
 } lwm2m_media_type_t;
 
 lwm2m_data_t * lwm2m_data_new(int size);
