@@ -1142,12 +1142,16 @@ uint8_t registration_handleRequest(lwm2m_context_t * contextP,
                 prv_freeClientObjectList(clientP->objectList);
                 clientP->objectList = NULL;
 
-                // observations should be reinitiated instead of removed
                 lwm2m_observation_t *observationP = clientP->observationList;
                 while (observationP != NULL)
                 {
                     lwm2m_observation_t *nextP = observationP->next;
-                    observe_remove(observationP);
+                    lwm2m_observe(contextP,
+                                  clientP->internalID,
+                                  &observationP->uri,
+                                  observationP->callback,
+                                  observationP->userData);
+
                     observationP = nextP;
                 }
             }
