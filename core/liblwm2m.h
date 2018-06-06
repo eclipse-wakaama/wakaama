@@ -604,6 +604,7 @@ typedef struct _lwm2m_watcher_
     {
         int64_t asInteger;
         double  asFloat;
+        bool asBoolean;
     } lastValue;
 } lwm2m_watcher_t;
 

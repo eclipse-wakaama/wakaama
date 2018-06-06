@@ -498,6 +498,7 @@ void observe_step(lwm2m_context_t * contextP,
         int size = 0;
         double floatValue = 0;
         int64_t integerValue = 0;
+        bool boolValue = false;
         bool storeValue = false;
         coap_packet_t message[1];
         time_t interval;
@@ -524,6 +525,14 @@ void observe_step(lwm2m_context_t * contextP,
                 }
                 storeValue = true;
                 break;
+            case LWM2M_TYPE_BOOLEAN:
+                if (1 != lwm2m_data_decode_bool(dataP, &boolValue))
+                {
+                    lwm2m_data_free(size, dataP);
+                    continue;
+                }
+                storeValue = true;
+                break;
             default:
                 break;
             }
@@ -536,7 +545,8 @@ void observe_step(lwm2m_context_t * contextP,
 
                 if (watcherP->update == true ||
                     LWM2M_TYPE_INTEGER == dataP->type && watcherP->lastValue.asInteger != integerValue ||
-                    LWM2M_TYPE_FLOAT == dataP->type && watcherP->lastValue.asFloat != floatValue)
+                    LWM2M_TYPE_FLOAT == dataP->type && watcherP->lastValue.asFloat != floatValue ||
+                    LWM2M_TYPE_BOOLEAN == dataP->type && watcherP->lastValue.asBoolean != boolValue)
                 {
                     // value changed, should we notify the server ?
 
@@ -734,6 +744,9 @@ void observe_step(lwm2m_context_t * contextP,
                         break;
                     case LWM2M_TYPE_FLOAT:
                         watcherP->lastValue.asFloat = floatValue;
+                        break;
+                    case LWM2M_TYPE_BOOLEAN:
+                        watcherP->lastValue.asBoolean = boolValue;
                         break;
                     default:
                         break;
