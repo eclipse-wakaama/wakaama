@@ -69,6 +69,8 @@ lwm2m_context_t * lwm2m_init(void * userData)
         contextP->userData = userData;
         srand((int)lwm2m_gettime());
         contextP->nextMID = rand();
+        contextP->remaining_dataLen = 0;
+        contextP->block_no = 0;
     }
 
     return contextP;
@@ -441,11 +443,14 @@ next_step:
             break;
 
         case STATE_REG_FAILED:
+            contextP->remaining_dataLen = 0;
+            contextP->block_no = 0;
+        case STATE_REG_PARTIAL_DONE:
             // TODO avoid infinite loop by checking the bootstrap info is different
             contextP->state = STATE_BOOTSTRAP_REQUIRED;
             goto next_step;
             break;
-
+        case STATE_REG_PARTIAL_PROGRESS:
         case STATE_REG_PENDING:
         default:
             // keep on waiting
