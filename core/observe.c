@@ -557,9 +557,9 @@ void observe_step(lwm2m_context_t * contextP,
                             switch (dataP->type)
                             {
                             case LWM2M_TYPE_INTEGER:
-                                if ((integerValue <= watcherP->parameters->lessThan
+                                if ((integerValue < watcherP->parameters->lessThan
                                   && watcherP->lastValue.asInteger > watcherP->parameters->lessThan)
-                                 || (integerValue >= watcherP->parameters->lessThan
+                                 || (integerValue > watcherP->parameters->lessThan
                                   && watcherP->lastValue.asInteger < watcherP->parameters->lessThan))
                                 {
                                     LOG("Notify on lower threshold crossing");
@@ -567,9 +567,9 @@ void observe_step(lwm2m_context_t * contextP,
                                 }
                                 break;
                             case LWM2M_TYPE_FLOAT:
-                                if ((floatValue <= watcherP->parameters->lessThan
+                                if ((floatValue < watcherP->parameters->lessThan
                                   && watcherP->lastValue.asFloat > watcherP->parameters->lessThan)
-                                 || (floatValue >= watcherP->parameters->lessThan
+                                 || (floatValue > watcherP->parameters->lessThan
                                   && watcherP->lastValue.asFloat < watcherP->parameters->lessThan))
                                 {
                                     LOG("Notify on lower threshold crossing");
@@ -587,9 +587,9 @@ void observe_step(lwm2m_context_t * contextP,
                             switch (dataP->type)
                             {
                             case LWM2M_TYPE_INTEGER:
-                                if ((integerValue <= watcherP->parameters->greaterThan
+                                if ((integerValue < watcherP->parameters->greaterThan
                                   && watcherP->lastValue.asInteger > watcherP->parameters->greaterThan)
-                                 || (integerValue >= watcherP->parameters->greaterThan
+                                 || (integerValue > watcherP->parameters->greaterThan
                                   && watcherP->lastValue.asInteger < watcherP->parameters->greaterThan))
                                 {
                                     LOG("Notify on lower upper crossing");
@@ -597,9 +597,9 @@ void observe_step(lwm2m_context_t * contextP,
                                 }
                                 break;
                             case LWM2M_TYPE_FLOAT:
-                                if ((floatValue <= watcherP->parameters->greaterThan
+                                if ((floatValue < watcherP->parameters->greaterThan
                                   && watcherP->lastValue.asFloat > watcherP->parameters->greaterThan)
-                                 || (floatValue >= watcherP->parameters->greaterThan
+                                 || (floatValue > watcherP->parameters->greaterThan
                                   && watcherP->lastValue.asFloat < watcherP->parameters->greaterThan))
                                 {
                                     LOG("Notify on lower upper crossing");
