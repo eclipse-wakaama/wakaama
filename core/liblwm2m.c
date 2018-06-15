@@ -439,13 +439,10 @@ next_step:
         case STATE_REGISTERED:
             contextP->state = STATE_READY;
             break;
-
         case STATE_REG_FAILED:
-            // TODO avoid infinite loop by checking the bootstrap info is different
             contextP->state = STATE_BOOTSTRAP_REQUIRED;
             goto next_step;
             break;
-
         case STATE_REG_PENDING:
         default:
             // keep on waiting
