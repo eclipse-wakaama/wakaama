@@ -475,6 +475,8 @@ typedef struct _lwm2m_server_
     char *                  location;
     bool                    dirty;
     lwm2m_block1_data_t *   block1Data;   // buffer to handle block1 data, should be replace by a list to support several block1 transfer by server.
+    int block_offset;
+    uint16_t block_no;
 } lwm2m_server_t;
 
 
@@ -671,8 +673,6 @@ typedef struct
     uint16_t                nextMID;
     lwm2m_transaction_t *   transactionList;
     void *                  userData;
-    int remaining_dataLen;
-    uint16_t block_no;
 } lwm2m_context_t;
 
 

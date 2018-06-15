@@ -196,6 +196,19 @@ static void prv_handleRegistrationReply(lwm2m_transaction_t * transacP,
 
     if (targetP->status == STATE_REG_PENDING || targetP->status == STATE_REG_PARTIAL_PROGRESS)
     {
+        if (IS_OPTION(packet, COAP_OPTION_BLOCK1))
+        {
+            uint32_t block1_num;
+            uint8_t  block1_more;
+            uint16_t block1_size;
+            uint32_t block1_offset;
+            coap_get_header_block1(packet, &block1_num, &block1_more, &block1_size, &block1_offset);
+            if (block1_more)
+            {
+                targetP->block_offset = block1_offset + block1_size;
+                targetP->block_no = block1_num  + 1;
+            }
+        }
         time_t tv_sec = lwm2m_gettime();
         if (tv_sec >= 0)
         {
@@ -245,8 +258,6 @@ static uint8_t prv_register(lwm2m_context_t * contextP,
         lwm2m_free(payload);
         return COAP_500_INTERNAL_SERVER_ERROR;
     }
-    if (contextP->remaining_dataLen == 0)
-        contextP->remaining_dataLen = payload_length;
 
     query_length = prv_getRegistrationQueryLength(contextP, server);
     if(query_length == 0)
@@ -286,21 +297,19 @@ static uint8_t prv_register(lwm2m_context_t * contextP,
         lwm2m_free(query);
         return COAP_503_SERVICE_UNAVAILABLE;
     }
-    if (contextP->remaining_dataLen > MAX_BLOCK1_SIZE)
+    if (payload_length - server->block_offset > MAX_BLOCK1_SIZE)
     {
-        coap_set_header_block1(transaction->message, contextP->block_no , 1, MAX_BLOCK1_SIZE);
-        coap_set_payload(transaction->message, (payload + contextP->block_no * MAX_BLOCK1_SIZE), MAX_BLOCK1_SIZE);
-        contextP->block_no++;
-        contextP->remaining_dataLen -= MAX_BLOCK1_SIZE;
+        coap_set_header_block1(transaction->message, server->block_no , 1, MAX_BLOCK1_SIZE);
+        coap_set_payload(transaction->message, (payload + server->block_offset), MAX_BLOCK1_SIZE);
         server_status = STATE_REG_PARTIAL_PROGRESS;
     }
     else
     {
-        if (contextP->block_no > 0)
-            coap_set_header_block1(transaction->message, contextP->block_no, 0, MAX_BLOCK1_SIZE);
-        coap_set_payload(transaction->message, (payload + contextP->block_no * MAX_BLOCK1_SIZE), contextP->remaining_dataLen);
-        contextP->block_no = 0;
-        contextP->remaining_dataLen = 0;
+        if (server->block_no > 0)
+            coap_set_header_block1(transaction->message, server->block_no, 0, MAX_BLOCK1_SIZE);
+        coap_set_payload(transaction->message, (payload + server->block_offset), payload_length - server->block_offset);
+        server->block_no = 0;
+        server->block_offset = 0;
         server_status = STATE_REG_PENDING;
     }
     coap_set_header_uri_path(transaction->message, "/"URI_REGISTRATION_SEGMENT);
@@ -332,6 +341,19 @@ static void prv_handleRegistrationUpdateReply(lwm2m_transaction_t * transacP,
 
     if (targetP->status == STATE_REG_UPDATE_PENDING || targetP->status == STATE_REG_UPDATE_PARTIAL_PROGRESS)
     {
+        if (IS_OPTION(packet, COAP_OPTION_BLOCK1))
+        {
+            uint32_t block1_num;
+            uint8_t  block1_more;
+            uint16_t block1_size;
+            uint32_t block1_offset;
+            coap_get_header_block1(packet, &block1_num, &block1_more, &block1_size, &block1_offset);
+            if (block1_more)
+            {
+                targetP->block_offset = block1_offset + block1_size;
+                targetP->block_no = block1_num  + 1;
+            }
+        }
         time_t tv_sec = lwm2m_gettime();
         if (tv_sec >= 0)
         {
@@ -391,23 +413,20 @@ static int prv_updateRegistration(lwm2m_context_t * contextP,
             lwm2m_free(payload);
             return COAP_500_INTERNAL_SERVER_ERROR;
         }
-        if (contextP->remaining_dataLen == 0) contextP->remaining_dataLen = payload_length;
 
-        if (contextP->remaining_dataLen > MAX_BLOCK1_SIZE)
+        if (payload_length - server->block_offset > MAX_BLOCK1_SIZE)
         {
-            coap_set_header_block1(transaction->message, contextP->block_no , 1, MAX_BLOCK1_SIZE);
-            coap_set_payload(transaction->message, (payload + contextP->block_no * MAX_BLOCK1_SIZE), MAX_BLOCK1_SIZE);
-            contextP->block_no++;
-            contextP->remaining_dataLen -= MAX_BLOCK1_SIZE;
+            coap_set_header_block1(transaction->message, server->block_no , 1, MAX_BLOCK1_SIZE);
+            coap_set_payload(transaction->message, (payload + server->block_offset), MAX_BLOCK1_SIZE);
             server_status = STATE_REG_UPDATE_PARTIAL_PROGRESS;
         }
         else
         {
-            if (contextP->block_no > 0)
-                coap_set_header_block1(transaction->message, contextP->block_no , 0, contextP->remaining_dataLen);
-            coap_set_payload(transaction->message, (payload + contextP->block_no * MAX_BLOCK1_SIZE), contextP->remaining_dataLen);
-            contextP->block_no = 0;
-            contextP->remaining_dataLen = 0;
+            if (server->block_no > 0)
+                coap_set_header_block1(transaction->message, server->block_no , 0, MAX_BLOCK1_SIZE);
+            coap_set_payload(transaction->message, (payload + server->block_offset), payload_length - server->block_offset);
+            server->block_no = 0;
+            server->block_offset = 0;
         }
     }
 
@@ -570,13 +589,10 @@ lwm2m_status_t registration_getStatus(lwm2m_context_t * contextP)
                 break;
 
             case STATE_REG_PENDING:
+            case STATE_REG_PARTIAL_PROGRESS:
+            case STATE_REG_PARTIAL_DONE:
                 reg_status = STATE_REG_PENDING;
                 break;
-            case STATE_REG_PARTIAL_PROGRESS:
-                reg_status = STATE_REG_PARTIAL_PROGRESS;
-                break;
-            case STATE_REG_PARTIAL_DONE:
-                reg_status = STATE_REG_PARTIAL_DONE;
             case STATE_REG_FAILED:
             case STATE_DEREG_PENDING:
             case STATE_DEREGISTERED:
@@ -1380,7 +1396,9 @@ void registration_step(lwm2m_context_t * contextP,
             }
         }
         break;
-
+        case STATE_REG_PARTIAL_DONE:
+            prv_register(contextP, targetP);
+            break;
         case STATE_REG_UPDATE_NEEDED:
             prv_updateRegistration(contextP, targetP, false);
             break;
@@ -1391,6 +1409,8 @@ void registration_step(lwm2m_context_t * contextP,
             break;
 
         case STATE_REG_FAILED:
+            targetP->block_offset = 0;
+            targetP->block_no = 0;
             if (targetP->sessionH != NULL)
             {
                 lwm2m_close_connection(targetP->sessionH, contextP->userData);
