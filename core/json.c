@@ -1120,7 +1120,6 @@ static int prv_serializeValue(lwm2m_data_t * tlvP,
         head = JSON_ITEM_STRING_BEGIN_SIZE;
 
         res = utils_base64Encode(tlvP->value.asBuffer.buffer, tlvP->value.asBuffer.length, buffer+head, bufferLen - head);
-        if (res == 0) return -1;
         head += res;
 
         if (bufferLen - head < JSON_ITEM_STRING_END_SIZE) return -1;
