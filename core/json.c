@@ -1414,7 +1414,7 @@ int json_serialize(lwm2m_uri_t * uriP,
         int res;
 
         res = prv_serializeData(targetP + index, NULL, 0, bufferJSON + head, PRV_JSON_BUFFER_SIZE - head);
-        if (res < 0) return 0;
+        if (res < 0) return -1;
         head += res;
     }
 
