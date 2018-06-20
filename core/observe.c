@@ -543,10 +543,10 @@ void observe_step(lwm2m_context_t * contextP,
             {
                 bool notify = false;
 
-                if (watcherP->update == true ||
-                    LWM2M_TYPE_INTEGER == dataP->type && watcherP->lastValue.asInteger != integerValue ||
-                    LWM2M_TYPE_FLOAT == dataP->type && watcherP->lastValue.asFloat != floatValue ||
-                    LWM2M_TYPE_BOOLEAN == dataP->type && watcherP->lastValue.asBoolean != boolValue)
+                if (watcherP->update == true || (NULL != dataP &&
+                    (LWM2M_TYPE_INTEGER == dataP->type && watcherP->lastValue.asInteger != integerValue ||
+                     LWM2M_TYPE_FLOAT == dataP->type && watcherP->lastValue.asFloat != floatValue ||
+                     LWM2M_TYPE_BOOLEAN == dataP->type && watcherP->lastValue.asBoolean != boolValue)))
                 {
                     // value changed, should we notify the server ?
 
