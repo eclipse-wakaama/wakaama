@@ -430,10 +430,6 @@ typedef enum
     STATE_BS_FINISHED,             // bootstrap done
     STATE_BS_FAILING,              // bootstrap error occurred
     STATE_BS_FAILED,               // bootstrap failed
-    STATE_REG_PARTIAL_PROGRESS,
-    STATE_REG_PARTIAL_DONE,
-    STATE_REG_UPDATE_PARTIAL_PROGRESS,
-    STATE_REG_UPDATE_PARTIAL_DONE
 } lwm2m_status_t;
 
 typedef enum
@@ -475,8 +471,10 @@ typedef struct _lwm2m_server_
     char *                  location;
     bool                    dirty;
     lwm2m_block1_data_t *   block1Data;   // buffer to handle block1 data, should be replace by a list to support several block1 transfer by server.
-    int block_offset;
-    uint16_t block_no;
+    uint16_t                block_no;
+    uint16_t                block_size;
+    bool                    final_block_response;
+    int16_t                 rem_payload_length;
 } lwm2m_server_t;
 
 
