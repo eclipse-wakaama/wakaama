@@ -222,47 +222,48 @@ static void prv_handleRegistrationReply(lwm2m_transaction_t * transacP,
                 uint16_t block1_size;
                 uint32_t block1_offset;
                 coap_get_header_block1(packet, &block1_num, &block1_more, &block1_size, &block1_offset);
-                targetP->rem_payload_length -= block1_size;
-                if (block1_more == 0) targetP->final_block_response = true;
+                targetP->rem_payload_length -= targetP->block_size;
 
-                if (packet != NULL && (packet->code == COAP_201_CREATED || packet->code == COAP_231_CONTINUE))
+                if (packet->code == COAP_201_CREATED && block1_more == 0)
                 {
-                    if (packet->code == COAP_201_CREATED)
+                    if (NULL != targetP->location)
                     {
-                        if (NULL != targetP->location)
-                        {
-                            lwm2m_free(targetP->location);
-                        }
-                        targetP->location = coap_get_multi_option_as_string(packet->location_path);
+                        lwm2m_free(targetP->location);
                     }
-                    /* All blocks have been sent */
-                    if (targetP->rem_payload_length <= 0)
+                    targetP->location = coap_get_multi_option_as_string(packet->location_path);
+                    targetP->final_block_response = true;
+                }
+                /* All blocks have been sent */
+                if (targetP->rem_payload_length <= 0)
+                {
+                    /* registration is successful only if we had got a final response in
+                     * any of the block transfer requests */
+                    if (targetP->final_block_response)
                     {
-                        /* registration is successful only if we had got a final response in
-                         * any of the block transfer requests */
-                        if (targetP->final_block_response)
-                        {
-                            targetP->status = STATE_REGISTERED;
-                            LOG("Registration successful");
-                        }
-                        else
-                        {
-                            targetP->status = STATE_REG_FAILED;
-                            LOG("Registration failed");
-                        }
-                        targetP->block_no = 0;
-                        targetP->block_size = 0;
-                        targetP->rem_payload_length = 0;
-                        targetP->final_block_response = false;
+                        targetP->status = STATE_REGISTERED;
+                        LOG("Registration successful");
                     }
+                    else
+                    {
+                        targetP->status = STATE_REG_FAILED;
+                        LOG("Registration failed");
+                    }
+                    targetP->block_no = 0;
+                    targetP->block_size = 0;
+                    targetP->rem_payload_length = 0;
+                    targetP->final_block_response = false;
                 }
                 if (targetP->rem_payload_length > 0)
                 {
                     if (block1_size <= targetP->block_size)
                     {
                         targetP->block_no += targetP->block_size/block1_size;
+                        targetP->block_size = block1_size;
                     }
-                    targetP->block_size = block1_size;
+                    else
+                    {
+                        targetP->block_no++;
+                    }
                     prv_register(contextP, targetP);
                 }
             }
@@ -413,7 +414,7 @@ static void prv_handleRegistrationUpdateReply(lwm2m_transaction_t * transacP,
         {
             targetP->registration = tv_sec;
         }
-        if (packet != NULL && IS_OPTION(packet, COAP_OPTION_BLOCK1) && (packet->code & 0xE0) == 2 << 5)
+        if (packet != NULL && IS_OPTION(packet, COAP_OPTION_BLOCK1))
         {
             if ((packet->code & 0xE0) == 2 << 5)
             {
@@ -422,38 +423,42 @@ static void prv_handleRegistrationUpdateReply(lwm2m_transaction_t * transacP,
                 uint16_t block1_size;
                 uint32_t block1_offset;
                 coap_get_header_block1(packet, &block1_num, &block1_more, &block1_size, &block1_offset);
-                targetP->rem_payload_length -= block1_size;
-                if (block1_more == 0) targetP->final_block_response = true;
+                targetP->rem_payload_length -= targetP->block_size;
 
-                if (packet != NULL && (packet->code == COAP_204_CHANGED || packet->code == COAP_231_CONTINUE))
+                if (block1_more == 0 && packet->code == COAP_204_CHANGED)
                 {
-                    if (targetP->rem_payload_length <= 0)
+                    targetP->final_block_response = true;
+                }
+                if (targetP->rem_payload_length <= 0)
+                {
+                    /* registration update is successful only if we had got a final response in
+                     * any of the block transfer requests */
+                    if (targetP->final_block_response)
                     {
-                        /* registration update is successful only if we had got a final response in
-                         * any of the block transfer requests */
-                        if (targetP->final_block_response)
-                        {
-                            targetP->status = STATE_REGISTERED;
-                            LOG("Registration update successful");
-                        }
-                        else
-                        {
-                            targetP->status = STATE_REG_FAILED;
-                            LOG("Registration update failed");
-                        }
-                        targetP->block_no = 0;
-                        targetP->block_size = 0;
-                        targetP->rem_payload_length = 0;
-                        targetP->final_block_response = false;
+                        targetP->status = STATE_REGISTERED;
+                        LOG("Registration update successful");
                     }
+                    else
+                    {
+                        targetP->status = STATE_REG_FAILED;
+                        LOG("Registration update failed");
+                    }
+                    targetP->block_no = 0;
+                    targetP->block_size = 0;
+                    targetP->rem_payload_length = 0;
+                    targetP->final_block_response = false;
                 }
                 if (targetP->rem_payload_length > 0)
                 {
                     if (block1_size <= targetP->block_size)
                     {
                         targetP->block_no += targetP->block_size/block1_size;
+                        targetP->block_size = block1_size;
                     }
-                    targetP->block_size = block1_size;
+                    else
+                    {
+                        targetP->block_no++;
+                    }
                     prv_updateRegistration(contextP, targetP, true);
                 }
             }
