@@ -309,7 +309,6 @@ static uint8_t prv_register(lwm2m_context_t * contextP,
     uint8_t * payload;
     int payload_length;
     lwm2m_transaction_t * transaction;
-    lwm2m_status_t server_status;
 
     payload_length = object_getRegisterPayloadBufferLength(contextP);
     if(payload_length == 0) return COAP_500_INTERNAL_SERVER_ERROR;
@@ -658,7 +657,8 @@ uint8_t registration_start(lwm2m_context_t * contextP)
     targetP = contextP->serverList;
     while (targetP != NULL && result == COAP_NO_ERROR)
     {
-        if (targetP->status == STATE_DEREGISTERED || targetP->status == STATE_REG_FAILED)
+        if (targetP->status == STATE_DEREGISTERED
+         || targetP->status == STATE_REG_FAILED)
         {
             result = prv_register(contextP, targetP);
         }
@@ -702,6 +702,7 @@ lwm2m_status_t registration_getStatus(lwm2m_context_t * contextP)
             case STATE_REG_PENDING:
                 reg_status = STATE_REG_PENDING;
                 break;
+
             case STATE_REG_FAILED:
             case STATE_DEREG_PENDING:
             case STATE_DEREGISTERED:
@@ -1505,6 +1506,7 @@ void registration_step(lwm2m_context_t * contextP,
             }
         }
         break;
+
         case STATE_REG_UPDATE_NEEDED:
             prv_updateRegistration(contextP, targetP, false);
             break;
