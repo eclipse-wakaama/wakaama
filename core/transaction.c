@@ -232,7 +232,7 @@ lwm2m_transaction_t * transaction_new(void * sessionH,
         }
     }
 
-    LOG("Exiting on success");
+    LOG_ARG("Exiting on success. new transac=%p", transacP);
     return transacP;
 
 error:
@@ -243,7 +243,7 @@ error:
 
 void transaction_free(lwm2m_transaction_t * transacP)
 {
-    LOG("Entering");
+    LOG_ARG("Entering. transaction=%p", transacP);
     if (transacP->message)
     {
        coap_free_header(transacP->message);
@@ -257,7 +257,7 @@ void transaction_free(lwm2m_transaction_t * transacP)
 void transaction_remove(lwm2m_context_t * contextP,
                         lwm2m_transaction_t * transacP)
 {
-    LOG("Entering");
+    LOG_ARG("Entering. transaction=%p", transacP);
     contextP->transactionList = (lwm2m_transaction_t *) LWM2M_LIST_RM(contextP->transactionList, transacP->mID, NULL);
     transaction_free(transacP);
 }
@@ -348,7 +348,7 @@ int transaction_send(lwm2m_context_t * contextP,
 {
     bool maxRetriesReached = false;
 
-    LOG("Entering");
+    LOG_ARG("Entering: transaction=%p", transacP);
     if (transacP->buffer == NULL)
     {
         transacP->buffer_len = coap_serialize_get_size(transacP->message);
@@ -415,6 +415,7 @@ int transaction_send(lwm2m_context_t * contextP,
     {
         if (transacP->callback)
         {
+            LOG_ARG("transaction %p expired..calling callback", transacP);
             transacP->callback(transacP, NULL);
         }
         transaction_remove(contextP, transacP);
