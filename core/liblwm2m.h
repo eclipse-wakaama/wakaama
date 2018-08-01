@@ -503,6 +503,7 @@ typedef struct _lwm2m_observation_
     lwm2m_status_t          status;
     lwm2m_result_callback_t callback;
     void *                  userData;
+    uint32_t                pendingTransactions;
 } lwm2m_observation_t;
 
 /*

@@ -755,13 +755,6 @@ void observe_step(lwm2m_context_t * contextP,
 
 #ifdef LWM2M_SERVER_MODE
 
-typedef struct
-{
-    lwm2m_observation_t * observationP;
-    lwm2m_result_callback_t callbackP;
-    void * userDataP;
-} cancellation_data_t;
-
 static lwm2m_observation_t * prv_findObservationByURI(lwm2m_client_t * clientP,
                                                       lwm2m_uri_t * uriP)
 {
@@ -787,8 +780,11 @@ static lwm2m_observation_t * prv_findObservationByURI(lwm2m_client_t * clientP,
 void observe_remove(lwm2m_observation_t * observationP)
 {
     LOG("Entering");
-    observationP->clientP->observationList = (lwm2m_observation_t *) LWM2M_LIST_RM(observationP->clientP->observationList, observationP->id, NULL);
-    lwm2m_free(observationP);
+    if (observationP->pendingTransactions == 0)
+    {
+        observationP->clientP->observationList = (lwm2m_observation_t *) LWM2M_LIST_RM(observationP->clientP->observationList, observationP->id, NULL);
+        lwm2m_free(observationP);
+    }
 }
 
 static void prv_obsRequestCallback(lwm2m_transaction_t * transacP,
@@ -798,6 +794,8 @@ static void prv_obsRequestCallback(lwm2m_transaction_t * transacP,
     coap_packet_t * packet = (coap_packet_t *)message;
     uint8_t code;
     uint32_t count;
+
+    observationP->pendingTransactions--;
 
     switch (observationP->status)
     {
@@ -848,46 +846,6 @@ static void prv_obsRequestCallback(lwm2m_transaction_t * transacP,
                                observationP->userData);
     }
 }
-
-
-static void prv_obsCancelRequestCallback(lwm2m_transaction_t * transacP,
-                                         void * message)
-{
-    cancellation_data_t * cancelP = (cancellation_data_t *)transacP->userData;
-    coap_packet_t * packet = (coap_packet_t *)message;
-    uint8_t code;
-
-    if (message == NULL)
-    {
-        code = COAP_503_SERVICE_UNAVAILABLE;
-    }
-    else
-    {
-        code = packet->code;
-    }
-
-    if (code != COAP_205_CONTENT)
-    {
-        cancelP->callbackP(cancelP->observationP->clientP->internalID,
-                           &cancelP->observationP->uri,
-                           code,
-                           LWM2M_CONTENT_TEXT, NULL, 0,
-                           cancelP->userDataP);
-    }
-    else
-    {
-        cancelP->callbackP(cancelP->observationP->clientP->internalID,
-                           &cancelP->observationP->uri,
-                           0,
-                           packet->content_type, packet->payload, packet->payload_len,
-                           cancelP->userDataP);
-    }
-
-    observe_remove(cancelP->observationP);
-
-    lwm2m_free(cancelP);
-}
-
 
 int lwm2m_observe(lwm2m_context_t * contextP,
                   uint16_t clientID,
@@ -961,6 +919,8 @@ int lwm2m_observe(lwm2m_context_t * contextP,
     transactionP->callback = prv_obsRequestCallback;
     transactionP->userData = (void *)observationP;
 
+    observationP->pendingTransactions++;
+
     if (clientP->binding == BINDING_UQ || clientP->binding == BINDING_SQ || clientP->binding == BINDING_UQS)
     {
         clientP->queuedTransactionList = (lwm2m_transaction_t *)LWM2M_LIST_ADD(clientP->queuedTransactionList, transactionP);
@@ -991,60 +951,19 @@ int lwm2m_observe_cancel(lwm2m_context_t * contextP,
     observationP = prv_findObservationByURI(clientP, uriP);
     if (observationP == NULL) return COAP_404_NOT_FOUND;
 
-    switch (observationP->status)
-    {
-    case STATE_REGISTERED:
-    {
-        lwm2m_transaction_t * transactionP;
-        cancellation_data_t * cancelP;
-        uint8_t token[4];
+    callback(
+            observationP->clientP->internalID,
+            &observationP->uri,
+            COAP_503_SERVICE_UNAVAILABLE,
+            LWM2M_CONTENT_TEXT, NULL, 0,
+            userData
+    );
 
-        token[0] = clientP->internalID >> 8;
-        token[1] = clientP->internalID & 0xFF;
-        token[2] = observationP->id >> 8;
-        token[3] = observationP->id & 0xFF;
+    observationP->status = STATE_DEREG_PENDING;
+    observationP->callback = NULL;
+    observationP->userData = NULL;
 
-        transactionP = transaction_new(clientP->sessionH, COAP_GET, clientP->altPath, uriP, contextP->nextMID++, 4, token);
-        if (transactionP == NULL)
-        {
-            return COAP_500_INTERNAL_SERVER_ERROR;
-        }
-        cancelP = (cancellation_data_t *)lwm2m_malloc(sizeof(cancellation_data_t));
-        if (cancelP == NULL)
-        {
-            lwm2m_free(transactionP);
-            return COAP_500_INTERNAL_SERVER_ERROR;
-        }
-
-        coap_set_header_observe(transactionP->message, 1);
-
-        cancelP->observationP = observationP;
-        cancelP->callbackP = callback;
-        cancelP->userDataP = userData;
-
-        transactionP->callback = prv_obsCancelRequestCallback;
-        transactionP->userData = (void *)cancelP;
-
-        if (clientP->binding == BINDING_UQ || clientP->binding == BINDING_SQ || clientP->binding == BINDING_UQS)
-        {
-            clientP->queuedTransactionList = (lwm2m_transaction_t *)LWM2M_LIST_ADD(clientP->queuedTransactionList, transactionP);
-            return 0;
-        }
-        else
-        {
-            contextP->transactionList = (lwm2m_transaction_t *)LWM2M_LIST_ADD(contextP->transactionList, transactionP);
-            return transaction_send(contextP, transactionP);
-        }
-    }
-
-    case STATE_REG_PENDING:
-        observationP->status = STATE_DEREG_PENDING;
-        break;
-
-    default:
-        // Should not happen
-        break;
-    }
+    observe_remove(observationP);
 
     return COAP_NO_ERROR;
 }
@@ -1075,10 +994,15 @@ bool observe_handleNotify(lwm2m_context_t * contextP,
     if (clientP == NULL) return false;
 
     observationP = (lwm2m_observation_t *)lwm2m_list_find((lwm2m_list_t *)clientP->observationList, obsID);
-    if (observationP == NULL)
+    if (observationP == NULL || observationP->status == STATE_DEREG_PENDING)
     {
         coap_init_message(response, COAP_TYPE_RST, 0, message->mid);
         message_send(contextP, response, fromSessionH);
+
+        if (observationP != NULL)
+        {
+            observe_remove(observationP);
+        }
     }
     else
     {
