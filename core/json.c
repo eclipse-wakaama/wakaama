@@ -1120,7 +1120,7 @@ static int prv_serializeValue(lwm2m_data_t * tlvP,
         head = JSON_ITEM_STRING_BEGIN_SIZE;
 
         res = utils_base64Encode(tlvP->value.asBuffer.buffer, tlvP->value.asBuffer.length, buffer+head, bufferLen - head);
-        if (res == 0) return -1;
+        if (tlvP->value.asBuffer.length != 0 && res == 0) return -1;
         head += res;
 
         if (bufferLen - head < JSON_ITEM_STRING_END_SIZE) return -1;
@@ -1414,7 +1414,7 @@ int json_serialize(lwm2m_uri_t * uriP,
         int res;
 
         res = prv_serializeData(targetP + index, NULL, 0, bufferJSON + head, PRV_JSON_BUFFER_SIZE - head);
-        if (res < 0) return 0;
+        if (res < 0) return res;
         head += res;
     }
 
@@ -1426,7 +1426,7 @@ int json_serialize(lwm2m_uri_t * uriP,
     head = head + JSON_FOOTER_SIZE;
 
     *bufferP = (uint8_t *)lwm2m_malloc(head);
-    if (*bufferP == NULL) return 0;
+    if (*bufferP == NULL) return -1;
     memcpy(*bufferP, bufferJSON, head);
 
     return head;
