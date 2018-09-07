@@ -484,7 +484,8 @@ typedef void (*lwm2m_result_callback_t) (uint16_t clientID, lwm2m_uri_t * uriP, 
 /*
  * LWM2M Observations
  *
- * Used to store observation of remote clients resources.
+ * Used to store latest user operation on the observation of remote clients resources.
+ * Any node in the observation list means observation was established with client already.
  * status STATE_REG_PENDING means the observe request was sent to the client but not yet answered.
  * status STATE_REGISTERED means the client acknowledged the observe request.
  * status STATE_DEREG_PENDING means the user canceled the request before the client answered it.
@@ -496,7 +497,7 @@ typedef struct _lwm2m_observation_
     uint16_t                     id;    // matches lwm2m_list_t::id
     struct _lwm2m_client_ * clientP;
     lwm2m_uri_t             uri;
-    lwm2m_status_t          status;
+    lwm2m_status_t          status;     // latest user operation
     lwm2m_result_callback_t callback;
     void *                  userData;
 } lwm2m_observation_t;
@@ -554,6 +555,7 @@ typedef struct _lwm2m_client_
     void *                  sessionH;
     lwm2m_client_object_t * objectList;
     lwm2m_observation_t *   observationList;
+    uint16_t                observationId;
 } lwm2m_client_t;
 
 
