@@ -405,6 +405,16 @@ static void test_12(void)
     test_raw(NULL, (uint8_t *)buffer, strlen(buffer), LWM2M_CONTENT_JSON, "12");
 }
 
+static void test_13(void)
+{
+    const char * buffer = "{\"bn\":\"/5/0/1\",                \
+                         \"e\":[                            \
+                           {\"n\":\"\",\"sv\":\"http\"}]  \
+                      }";
+
+    test_raw(NULL, (uint8_t *)buffer, strlen(buffer), LWM2M_CONTENT_JSON, "13");
+}
+
 static struct TestTable table[] = {
         { "test of test_1()", test_1 },
         { "test of test_2()", test_2 },
@@ -418,6 +428,7 @@ static struct TestTable table[] = {
         { "test of test_10()", test_10 },
         { "test of test_11()", test_11 },
         { "test of test_12()", test_12 },
+        { "test of test_13()", test_13 },
         { NULL, NULL },
 };
 

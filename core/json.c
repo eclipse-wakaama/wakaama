@@ -321,7 +321,7 @@ static int prv_parseItem(uint8_t * buffer,
                 if (recordP->ids[0] != LWM2M_MAX_ID) return -1;
 
                 // Check for " around URI
-                if (valueLen < 3
+                if (valueLen < 2
                  || buffer[index+valueStart] != '"'
                  || buffer[index+valueStart+valueLen-1] != '"')
                 {
@@ -339,27 +339,30 @@ static int prv_parseItem(uint8_t * buffer,
                 }
                 i = 0;
                 j = 0;
-                do {
-                    uint32_t readId;
+                if (valueLen > 1)
+                {
+                    do {
+                        uint32_t readId;
 
-                    readId = 0;
-                    i++;
-                    while (i < valueLen-1 && buffer[index+valueStart+i] != '/')
-                    {
-                        if (buffer[index+valueStart+i] < '0'
-                         || buffer[index+valueStart+i] > '9')
-                        {
-                            return -1;
-                        }
-                        readId *= 10;
-                        readId += buffer[index+valueStart+i] - '0';
-                        if (readId > LWM2M_MAX_ID) return -1;
+                        readId = 0;
                         i++;
-                    }
-                    recordP->ids[j] = readId;
-                    j++;
-                } while (i < valueLen-1 && j < 4 && buffer[index+valueStart+i] == '/');
-                if (i < valueLen-1 ) return -1;
+                        while (i < valueLen-1 && buffer[index+valueStart+i] != '/')
+                        {
+                            if (buffer[index+valueStart+i] < '0'
+                             || buffer[index+valueStart+i] > '9')
+                            {
+                                return -1;
+                            }
+                            readId *= 10;
+                            readId += buffer[index+valueStart+i] - '0';
+                            if (readId > LWM2M_MAX_ID) return -1;
+                            i++;
+                        }
+                        recordP->ids[j] = readId;
+                        j++;
+                    } while (i < valueLen-1 && j < 4 && buffer[index+valueStart+i] == '/');
+                    if (i < valueLen-1 ) return -1;
+                }
             }
             break;
 
