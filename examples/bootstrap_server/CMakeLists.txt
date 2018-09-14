@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 3.0)
 
-project (bootstrap_server)
+project (bootstrap_server C)
 
 if(DTLS)
     message(FATAL_ERROR "DTLS option is not supported." )

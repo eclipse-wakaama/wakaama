@@ -598,7 +598,7 @@ static int prv_convertRecord(lwm2m_uri_t * uriP,
                 parentP->value.asChildren.array = lwm2m_data_new(1);
                 if (NULL == parentP->value.asChildren.array) goto error;
                 parentP = parentP->value.asChildren.array;
-                parentP->type = LWM2M_TYPE_UNDEFINED;
+                parentP->type = LWM2M_TYPE_MULTIPLE_RESOURCE;
                 parentP->id = uriP->resourceId;
                 rootLevel = URI_DEPTH_RESOURCE_INSTANCE;
             }

@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 3.0)
 
-project (lightclient)
+project (lightclient C)
 
 if(DTLS)
     message(FATAL_ERROR "DTLS option is not supported." )

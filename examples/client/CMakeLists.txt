@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 3.0)
 
-project (lwm2mclient)
+project (lwm2mclient C)
 
 option(DTLS "Enable DTLS" OFF)
 

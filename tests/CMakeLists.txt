@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 3.0)
 
-project (lwm2munittests)
+project (lwm2munittests C)
 
 include(${CMAKE_CURRENT_LIST_DIR}/../core/wakaama.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/../examples/shared/shared.cmake)

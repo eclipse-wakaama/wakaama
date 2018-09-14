@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 2.8)
 
-project (lwm2mserver)
+project (lwm2mserver C)
 
 if(DTLS)
     message(FATAL_ERROR "DTLS option is not supported." )
