@@ -88,16 +88,18 @@ static int prv_serializeAttributes(lwm2m_context_t * contextP,
             if (res <= 0) return -1;
             head += res;
         }
-        else if (objectParamP->toSet & LWM2M_ATTR_FLAG_MIN_PERIOD)
+        else if (objectParamP != NULL)
         {
-            PRV_CONCAT_STR(buffer, bufferLen, head, LINK_ATTR_SEPARATOR, LINK_ATTR_SEPARATOR_SIZE);
-            PRV_CONCAT_STR(buffer, bufferLen, head, ATTR_MIN_PERIOD_STR, ATTR_MIN_PERIOD_LEN);
+            if (objectParamP->toSet & LWM2M_ATTR_FLAG_MIN_PERIOD)
+            {
+                PRV_CONCAT_STR(buffer, bufferLen, head, LINK_ATTR_SEPARATOR, LINK_ATTR_SEPARATOR_SIZE);
+                PRV_CONCAT_STR(buffer, bufferLen, head, ATTR_MIN_PERIOD_STR, ATTR_MIN_PERIOD_LEN);
 
-            res = utils_intToText(objectParamP->minPeriod, buffer + head, bufferLen - head);
-            if (res <= 0) return -1;
-            head += res;
+                res = utils_intToText(objectParamP->minPeriod, buffer + head, bufferLen - head);
+                if (res <= 0) return -1;
+                head += res;
+            }
         }
-
         if (paramP->toSet & LWM2M_ATTR_FLAG_MAX_PERIOD)
         {
             PRV_CONCAT_STR(buffer, bufferLen, head, LINK_ATTR_SEPARATOR, LINK_ATTR_SEPARATOR_SIZE);
@@ -107,16 +109,18 @@ static int prv_serializeAttributes(lwm2m_context_t * contextP,
             if (res <= 0) return -1;
             head += res;
         }
-        else if (objectParamP->toSet & LWM2M_ATTR_FLAG_MAX_PERIOD)
+        else if (objectParamP != NULL)
         {
-            PRV_CONCAT_STR(buffer, bufferLen, head, LINK_ATTR_SEPARATOR, LINK_ATTR_SEPARATOR_SIZE);
-            PRV_CONCAT_STR(buffer, bufferLen, head, ATTR_MAX_PERIOD_STR, ATTR_MAX_PERIOD_LEN);
+            if (objectParamP->toSet & LWM2M_ATTR_FLAG_MAX_PERIOD)
+            {
+                PRV_CONCAT_STR(buffer, bufferLen, head, LINK_ATTR_SEPARATOR, LINK_ATTR_SEPARATOR_SIZE);
+                PRV_CONCAT_STR(buffer, bufferLen, head, ATTR_MAX_PERIOD_STR, ATTR_MAX_PERIOD_LEN);
 
-            res = utils_intToText(objectParamP->maxPeriod, buffer + head, bufferLen - head);
-            if (res <= 0) return -1;
-            head += res;
+                res = utils_intToText(objectParamP->maxPeriod, buffer + head, bufferLen - head);
+                if (res <= 0) return -1;
+                head += res;
+            }
         }
-
         if (paramP->toSet & LWM2M_ATTR_FLAG_GREATER_THAN)
         {
             PRV_CONCAT_STR(buffer, bufferLen, head, LINK_ATTR_SEPARATOR, LINK_ATTR_SEPARATOR_SIZE);
