@@ -121,6 +121,7 @@ char * security_get_secret_key(lwm2m_object_t * obj, int instanceId, int * lengt
 
 /********************* Security Obj Helpers Ends **********************/
 
+/* Returns the number sent, or -1 for errors */
 int send_data(dtls_connection_t *connP,
                     uint8_t * buffer,
                     size_t length)
@@ -160,7 +161,7 @@ int send_data(dtls_connection_t *connP,
         offset += nbSent;
     }
     connP->lastSend = lwm2m_gettime();
-    return 0;
+    return offset;
 }
 
 /**************************  TinyDTLS Callbacks  ************************/
@@ -226,6 +227,9 @@ static int get_psk_info(struct dtls_context_t *ctx,
     return dtls_alert_fatal_create(DTLS_ALERT_INTERNAL_ERROR);
 }
 
+/* The callback function must return the number of bytes
+ * that were sent, or a value less than zero to indicate an
+ * error. */
 static int send_to_peer(struct dtls_context_t *ctx,
         session_t *session, uint8 *data, size_t len) {
 
@@ -237,12 +241,12 @@ static int send_to_peer(struct dtls_context_t *ctx,
         // send data to peer
 
         // TODO: nat expiration?
-        int err = send_data(cnx,data,len);
-        if (COAP_NO_ERROR != err)
+        int res = send_data(cnx,data,len);
+        if (res < 0)
         {
             return -1;
         }
-        return 0;
+        return res;
     }
     return -1;
 }
