@@ -234,8 +234,8 @@ uint8_t dm_handleRequest(lwm2m_context_t * contextP,
                             LOG_ARG("Observe Request[/%d/%d/%d]: %.*s\n", uriP->objectId, uriP->instanceId, uriP->resourceId, length, buffer);
                         }
                     }
-                    lwm2m_data_free(size, dataP);
                 }
+                lwm2m_data_free(size, dataP);
             }
             else if (IS_OPTION(message, COAP_OPTION_ACCEPT)
                   && message->accept_num == 1
