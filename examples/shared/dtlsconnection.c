@@ -214,6 +214,11 @@ static int get_psk_info(struct dtls_context_t *ctx,
             lwm2m_free(key);
             return keyLen;
         }
+        case DTLS_PSK_HINT:
+        {
+            // PSK_HINT is optional and can be empty.
+            return 0;
+        }
         default:
             printf("unsupported request type: %d\n", type);
     }
