@@ -205,6 +205,7 @@ size_t utils_intToText(int64_t data,
     if (result < length)
     {
         memmove(string, string + index, result);
+        string[result] = 0;
     }
 
     return result;

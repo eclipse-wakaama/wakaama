@@ -1027,7 +1027,41 @@ static int prv_getLocationString(uint16_t id,
     result = utils_intToText(id, (uint8_t*)location + index, MAX_LOCATION_LENGTH - index);
     if (result == 0) return 0;
 
+    if ((index + result ) < MAX_LOCATION_LENGTH)
+        location[index + result] = 0;
+
     return index + result;
+}
+
+
+static bool prv_allocClientId(lwm2m_context_t * contextP, uint16_t * new_id)
+{
+    static uint8_t  init = 0;
+    static uint16_t id_mark ;
+
+    // set initial client internal ID to a random number
+    if(init == 0)
+    {
+        srand(time(NULL));
+        id_mark = (uint16_t)rand();
+        init  = 1;
+    }
+
+    uint16_t new_mark = id_mark + 1;
+
+    // ensure the new ID was not allocated already for some very long run client
+    while(NULL != lwm2m_list_find((lwm2m_list_t *)contextP->clientList, new_mark))
+    {
+        new_mark++;
+
+        // can't find any available ID in the range
+        if( new_mark == id_mark)
+            return false;
+    }
+
+    *new_id = new_mark;
+
+    return true;
 }
 
 uint8_t registration_handleRequest(lwm2m_context_t * contextP,
@@ -1123,7 +1157,12 @@ uint8_t registration_handleRequest(lwm2m_context_t * contextP,
             }
             else
             {
-                clientP = (lwm2m_client_t *)lwm2m_malloc(sizeof(lwm2m_client_t));
+                uint16_t internal_id;
+                if (prv_allocClientId(contextP, & internal_id))
+                {
+                    clientP = (lwm2m_client_t *)lwm2m_malloc(sizeof(lwm2m_client_t));
+                }
+
                 if (clientP == NULL)
                 {
                     lwm2m_free(name);
@@ -1133,7 +1172,7 @@ uint8_t registration_handleRequest(lwm2m_context_t * contextP,
                     return COAP_500_INTERNAL_SERVER_ERROR;
                 }
                 memset(clientP, 0, sizeof(lwm2m_client_t));
-                clientP->internalID = lwm2m_list_newId((lwm2m_list_t *)contextP->clientList);
+                clientP->internalID = internal_id;
                 contextP->clientList = (lwm2m_client_t *)LWM2M_LIST_ADD(contextP->clientList, clientP);
             }
             clientP->name = name;
