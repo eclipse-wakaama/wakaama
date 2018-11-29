@@ -757,24 +757,10 @@ void observe_step(lwm2m_context_t * contextP,
 
 typedef struct
 {
-    uint16_t                client;
-    lwm2m_uri_t             uri;
+    lwm2m_observation_t * observationP;
     lwm2m_result_callback_t callbackP;
-    void *                  userDataP;
-    lwm2m_context_t *       contextP;
+    void * userDataP;
 } cancellation_data_t;
-
-typedef struct
-{
-    uint16_t                id;
-    uint16_t                client;
-    lwm2m_uri_t             uri;
-    lwm2m_result_callback_t callback;
-    void *                  userData;
-    lwm2m_context_t *       contextP;
-} observation_data_t;
-
-
 
 static lwm2m_observation_t * prv_findObservationByURI(lwm2m_client_t * clientP,
                                                       lwm2m_uri_t * uriP)
@@ -806,39 +792,33 @@ void observe_remove(lwm2m_observation_t * observationP)
 }
 
 static void prv_obsRequestCallback(lwm2m_transaction_t * transacP,
-        void * message)
+                                   void * message)
 {
-    lwm2m_observation_t * observationP = NULL;
-    observation_data_t * observationData = (observation_data_t *)transacP->userData;
+    lwm2m_observation_t * observationP = (lwm2m_observation_t *)transacP->userData;
     coap_packet_t * packet = (coap_packet_t *)message;
     uint8_t code;
-    lwm2m_client_t * clientP;
-    lwm2m_uri_t * uriP = & observationData->uri;
 
-    clientP = (lwm2m_client_t *)lwm2m_list_find((lwm2m_list_t *)observationData->contextP->clientList, observationData->client);
-    if (clientP == NULL)
+    switch (observationP->status)
     {
-        observationData->callback(observationData->client,
-                &observationData->uri,
-                COAP_500_INTERNAL_SERVER_ERROR,  //?
-                0, NULL, 0,
-                observationData->userData);
-        goto end;
+    case STATE_DEREG_PENDING:
+        // Observation was canceled by the user.
+        observe_remove(observationP);
+        return;
+
+    case STATE_REG_PENDING:
+        observationP->status = STATE_REGISTERED;
+        break;
+
+    default:
+        break;
     }
 
-    observationP = prv_findObservationByURI(clientP, uriP);
-
-    // Fail it if the latest user intention is cancellation
-    if(observationP && observationP->status == STATE_DEREG_PENDING)
-    {
-        code = COAP_400_BAD_REQUEST;
-    }
-    else if (message == NULL)
+    if (message == NULL)
     {
         code = COAP_503_SERVICE_UNAVAILABLE;
     }
     else if (packet->code == COAP_205_CONTENT
-            && !IS_OPTION(packet, COAP_OPTION_OBSERVE))
+         && !IS_OPTION(packet, COAP_OPTION_OBSERVE))
     {
         code = COAP_405_METHOD_NOT_ALLOWED;
     }
@@ -849,74 +829,30 @@ static void prv_obsRequestCallback(lwm2m_transaction_t * transacP,
 
     if (code != COAP_205_CONTENT)
     {
-        observationData->callback(clientP->internalID,
-                &observationData->uri,
-                code,
-                LWM2M_CONTENT_TEXT, NULL, 0,
-                observationData->userData);
+        observationP->callback(observationP->clientP->internalID,
+                               &observationP->uri,
+                               code,
+                               LWM2M_CONTENT_TEXT, NULL, 0,
+                               observationP->userData);
+        observe_remove(observationP);
     }
     else
     {
-        if(observationP == NULL)
-        {
-            observationP = (lwm2m_observation_t *)lwm2m_malloc(sizeof(*observationP));
-            if (observationP == NULL) goto end;
-            memset(observationP, 0, sizeof(*observationP));
-        }
-        else
-        {
-            observationP->clientP->observationList = (lwm2m_observation_t *) LWM2M_LIST_RM(observationP->clientP->observationList, observationP->id, NULL);
-
-            // give the user chance to free previous observation userData
-            // indicator: COAP_202_DELETED and (Length ==0)
-            observationP->callback(observationP->clientP->internalID,
-                    &observationP->uri,
-                    COAP_202_DELETED,
-                    0, NULL, 0,
-                    observationP->userData);
-        }
-
-        observationP->id = observationData->id;
-        observationP->clientP = clientP;
-
-        observationP->callback = observationData->callback;
-        observationP->userData = observationData->userData;
-        observationP->status = STATE_REGISTERED;
-        memcpy(&observationP->uri, uriP, sizeof(lwm2m_uri_t));
-
-        observationP->clientP->observationList = (lwm2m_observation_t *)LWM2M_LIST_ADD(observationP->clientP->observationList, observationP);
-
-        observationData->callback(observationData->client,
-                &observationData->uri,
-                0,
-                packet->content_type, packet->payload, packet->payload_len,
-                observationData->userData);
+        observationP->callback(observationP->clientP->internalID,
+                               &observationP->uri,
+                               0,
+                               packet->content_type, packet->payload, packet->payload_len,
+                               observationP->userData);
     }
-
-end:
-    lwm2m_free(observationData);
 }
 
 
 static void prv_obsCancelRequestCallback(lwm2m_transaction_t * transacP,
-        void * message)
+                                         void * message)
 {
     cancellation_data_t * cancelP = (cancellation_data_t *)transacP->userData;
     coap_packet_t * packet = (coap_packet_t *)message;
     uint8_t code;
-    lwm2m_client_t * clientP = (lwm2m_client_t *)lwm2m_list_find((lwm2m_list_t *)cancelP->contextP->clientList, cancelP->client);
-
-    if (clientP == NULL)
-    {
-        cancelP->callbackP(cancelP->client,
-                &cancelP->uri,
-                COAP_500_INTERNAL_SERVER_ERROR,
-                packet->content_type, NULL, 0,
-                cancelP->userDataP);
-        goto end;
-    }
-
-    lwm2m_observation_t * observationP = prv_findObservationByURI(clientP, &cancelP->uri);
 
     if (message == NULL)
     {
@@ -929,36 +865,35 @@ static void prv_obsCancelRequestCallback(lwm2m_transaction_t * transacP,
 
     if (code != COAP_205_CONTENT)
     {
-        cancelP->callbackP(cancelP->client,
-                &cancelP->uri,
-                code,
-                LWM2M_CONTENT_TEXT, NULL, 0,
-                cancelP->userDataP);
+        cancelP->callbackP(cancelP->observationP->clientP->internalID,
+                           &cancelP->observationP->uri,
+                           code,
+                           LWM2M_CONTENT_TEXT, NULL, 0,
+                           cancelP->userDataP);
     }
     else
     {
-        cancelP->callbackP(cancelP->client,
-                &cancelP->uri,
-                0,
-                packet->content_type, packet->payload, packet->payload_len,
-                cancelP->userDataP);
+        cancelP->callbackP(cancelP->observationP->clientP->internalID,
+                           &cancelP->observationP->uri,
+                           0,
+                           packet->content_type, packet->payload, packet->payload_len,
+                           cancelP->userDataP);
     }
 
-    observe_remove(observationP);
-end:
+    observe_remove(cancelP->observationP);
+
     lwm2m_free(cancelP);
 }
 
 
 int lwm2m_observe(lwm2m_context_t * contextP,
-        uint16_t clientID,
-        lwm2m_uri_t * uriP,
-        lwm2m_result_callback_t callback,
-        void * userData)
+                  uint16_t clientID,
+                  lwm2m_uri_t * uriP,
+                  lwm2m_result_callback_t callback,
+                  void * userData)
 {
     lwm2m_client_t * clientP;
     lwm2m_transaction_t * transactionP;
-    observation_data_t * observationData;
     lwm2m_observation_t * observationP;
     uint8_t token[4];
 
@@ -970,39 +905,43 @@ int lwm2m_observe(lwm2m_context_t * contextP,
     clientP = (lwm2m_client_t *)lwm2m_list_find((lwm2m_list_t *)contextP->clientList, clientID);
     if (clientP == NULL) return COAP_404_NOT_FOUND;
 
-    observationP = prv_findObservationByURI(clientP, uriP);
-
-    observationData = (observation_data_t *)lwm2m_malloc(sizeof(observation_data_t));
-    if (observationData == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
-    memset(observationData, 0, sizeof(observation_data_t));
-
-    observationData->id = ++clientP->observationId;
-
-    // observationId can overflow. ensure new ID is not already present
-    if(lwm2m_list_find((lwm2m_list_t *)clientP->observationList, observationData->id))
+    for (observationP = clientP->observationList; observationP != NULL; observationP = observationP->next)
     {
-        LOG("Can't get available observation ID. Request failed.\n");
-        lwm2m_free(observationData);
-        return COAP_500_INTERNAL_SERVER_ERROR;
+        if (uriP->objectId == observationP->uri.objectId
+            && (LWM2M_URI_IS_SET_INSTANCE(uriP) == false
+                || observationP->uri.instanceId == uriP->instanceId)
+            && (LWM2M_URI_IS_SET_RESOURCE(uriP) == false
+                || observationP->uri.resourceId == uriP->resourceId))
+        {
+            break;
+        }
     }
+    if (observationP == NULL)
+    {
+        observationP = (lwm2m_observation_t *)lwm2m_malloc(sizeof(lwm2m_observation_t));
+        if (observationP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
+        memset(observationP, 0, sizeof(lwm2m_observation_t));
 
-    memcpy(&observationData->uri, uriP, sizeof(lwm2m_uri_t));
+        observationP->id = lwm2m_list_newId((lwm2m_list_t *)clientP->observationList);
+        memcpy(&observationP->uri, uriP, sizeof(lwm2m_uri_t));
+        observationP->clientP = clientP;
 
-    // don't hold refer to the clientP
-    observationData->client = clientP->internalID;
-    observationData->callback = callback;
-    observationData->userData = userData;
-    observationData->contextP = contextP;
+        observationP->clientP->observationList = (lwm2m_observation_t *)LWM2M_LIST_ADD(observationP->clientP->observationList, observationP);
+    }
+    observationP->status = STATE_REG_PENDING;
+    observationP->callback = callback;
+    observationP->userData = userData;
 
     token[0] = clientP->internalID >> 8;
     token[1] = clientP->internalID & 0xFF;
-    token[2] = observationData->id >> 8;
-    token[3] = observationData->id & 0xFF;
+    token[2] = observationP->id >> 8;
+    token[3] = observationP->id & 0xFF;
 
     transactionP = transaction_new(clientP->sessionH, COAP_GET, clientP->altPath, uriP, contextP->nextMID++, 4, token);
     if (transactionP == NULL)
     {
-        lwm2m_free(observationData);
+        observationP->clientP->observationList = (lwm2m_observation_t *)LWM2M_LIST_RM(observationP->clientP->observationList, observationP->id, NULL);
+        lwm2m_free(observationP);
         return COAP_500_INTERNAL_SERVER_ERROR;
     }
 
@@ -1017,31 +956,21 @@ int lwm2m_observe(lwm2m_context_t * contextP,
     }
 
     transactionP->callback = prv_obsRequestCallback;
-    transactionP->userData = (void *)observationData;
+    transactionP->userData = (void *)observationP;
 
     contextP->transactionList = (lwm2m_transaction_t *)LWM2M_LIST_ADD(contextP->transactionList, transactionP);
 
-    // update the user latest intention
-    if(observationP) observationP->status = STATE_REG_PENDING;
-
-    int ret = transaction_send(contextP, transactionP);
-    if (ret != 0)
-    {
-        LOG("transaction_send failed!");
-        lwm2m_free(observationData);
-    }
-    return ret;
+    return transaction_send(contextP, transactionP);
 }
 
 int lwm2m_observe_cancel(lwm2m_context_t * contextP,
-        uint16_t clientID,
-        lwm2m_uri_t * uriP,
-        lwm2m_result_callback_t callback,
-        void * userData)
+                         uint16_t clientID,
+                         lwm2m_uri_t * uriP,
+                         lwm2m_result_callback_t callback,
+                         void * userData)
 {
     lwm2m_client_t * clientP;
     lwm2m_observation_t * observationP;
-    int ret;
 
     LOG_ARG("clientID: %d", clientID);
     LOG_URI(uriP);
@@ -1079,41 +1008,28 @@ int lwm2m_observe_cancel(lwm2m_context_t * contextP,
 
         coap_set_header_observe(transactionP->message, 1);
 
-        // don't hold refer to the clientP
-        cancelP->client = clientP->internalID;
-        memcpy(&cancelP->uri, uriP, sizeof(lwm2m_uri_t));
+        cancelP->observationP = observationP;
         cancelP->callbackP = callback;
         cancelP->userDataP = userData;
-        cancelP->contextP = contextP;
 
         transactionP->callback = prv_obsCancelRequestCallback;
         transactionP->userData = (void *)cancelP;
 
         contextP->transactionList = (lwm2m_transaction_t *)LWM2M_LIST_ADD(contextP->transactionList, transactionP);
 
-        observationP->status = STATE_DEREG_PENDING;
-
-        int ret = transaction_send(contextP, transactionP);
-        if (ret != 0) lwm2m_free(cancelP);
-        return ret;
+        return transaction_send(contextP, transactionP);
     }
 
     case STATE_REG_PENDING:
         observationP->status = STATE_DEREG_PENDING;
-        ret = COAP_204_CHANGED;
         break;
 
     default:
         // Should not happen
-        ret = COAP_IGNORE;
         break;
     }
 
-    // no other chance to remove the observationP since not sending a transaction
-    observe_remove(observationP);
-
-    // need to give a indicator (non-zero) to user for properly freeing the userData
-    return ret;
+    return COAP_NO_ERROR;
 }
 
 bool observe_handleNotify(lwm2m_context_t * contextP,
