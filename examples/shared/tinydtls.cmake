@@ -3,8 +3,9 @@ cmake_minimum_required (VERSION 3.0)
 # List source files
 set(TINYDTLS_SOURCES_DIR ${CMAKE_CURRENT_LIST_DIR}/tinydtls)
 set(TINYDTLS_SOURCES
-	${TINYDTLS_SOURCES_DIR}/dtls.h
-	${TINYDTLS_SOURCES_DIR}/dtls.c
+    ${TINYDTLS_SOURCES_DIR}/tinydtls.h
+    ${TINYDTLS_SOURCES_DIR}/dtls.h
+    ${TINYDTLS_SOURCES_DIR}/dtls.c
     ${TINYDTLS_SOURCES_DIR}/crypto.c
     ${TINYDTLS_SOURCES_DIR}/ccm.c
     ${TINYDTLS_SOURCES_DIR}/hmac.c
@@ -19,7 +20,7 @@ set(TINYDTLS_SOURCES
     ${TINYDTLS_SOURCES_DIR}/ecc/ecc.c)
 
 set(TINYDTLS_SOURCES_GENERATED
-	${TINYDTLS_SOURCES_DIR}/tinydtls.h)
+    ${TINYDTLS_SOURCES_DIR}/dtls_config.h)
 
 # source files are only available after tinydtls submodule have been checked out.
 # Create a target "submodule_update" for that purpose.
@@ -49,11 +50,19 @@ if (NOT EXISTS ${TINYDTLS_SOURCES_GENERATED})
         DEPENDS submodule_update
         )
 
-    ExternalProject_Add_Step(external_tinydtls configure2
-       COMMAND "autoreconf" "-i"
+    ExternalProject_Add_Step(external_tinydtls autoheader
+       COMMAND "autoheader" 
        ALWAYS 1
        WORKING_DIRECTORY "${TINYDTLS_SOURCES_DIR}"
        DEPENDERS configure
+       DEPENDEES autoconf
+    )
+
+    ExternalProject_Add_Step(external_tinydtls autoconf
+       COMMAND "autoconf" 
+       ALWAYS 1
+       WORKING_DIRECTORY "${TINYDTLS_SOURCES_DIR}"
+       DEPENDERS autoheader
        DEPENDEES download
     )
 
