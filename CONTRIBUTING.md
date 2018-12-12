@@ -1,35 +1,32 @@
-# Guide to contributing
+# Contributing to Eclipse Wakaama
 
-Please read this if you intend to contribute to the project.
+Thanks for your interest in this project.
 
-## Legal stuff
+## Project description
 
-Apologies in advance for the extra work required here - this is necessary to comply with the Eclipse Foundation's
-strict IP policy.
+Wakaama provides APIs for a server application to send commands to registered
+LWM2M Clients. On client applications, Wakaama checks received commands for
+syntax and access rights and then dispatches them to the relevant objects.
 
-Please also read [this](http://wiki.eclipse.org/Development_Resources/Contributing_via_Git)
+* https://projects.eclipse.org/projects/iot.wakaama
 
-In order for any contributions to be accepted you MUST do the following things.
+## Developer resources
 
-* Sign the [Eclipse Foundation Contributor License Agreement](http://www.eclipse.org/legal/CLA.php).
-To sign the Eclipse CLA you need to:
+The project maintains the following source code repositories
 
-  * Obtain an Eclipse Foundation userid. Anyone who currently uses Eclipse Bugzilla or Gerrit systems already has one of those.
-If you don’t, you need to [register](https://dev.eclipse.org/site_login/createaccount.php).
+* https://github.com/eclipse/wakaama
 
-  * Login into the [projects portal](https://projects.eclipse.org/), select “My Account”, and then the “Contributor License Agreement” tab.
+This project uses GitHub issues to track ongoing development and issues.
 
-* Add your github username in your Eclipse Foundation account settings. Log in it to Eclipse and go to account settings.
+Be sure to search for existing bugs before you create another one. Remember that
+contributions are always welcome!
 
-* "Sign-off" your commits
+### Making your changes
 
 Every commit you make in your patch or pull request MUST be "signed off".
-
 You do this by adding the `-s` flag when you make the commit(s), e.g.
 
-    git commit -s -m "Shave the yak some more"
-
-## Making your changes
+`git commit -s -m "Shave the yak some more"`
 
 * Fork the repository on GitHub
 * Create a new branch for your changes
@@ -38,16 +35,36 @@ You do this by adding the `-s` flag when you make the commit(s), e.g.
 * Make sure the test suite passes after your changes
 * Commit your changes into that branch
 * Use descriptive and meaningful commit messages
-* If you have a lot of commits squash them into a single commit
 * Make sure you use the `-s` flag when committing as explained above.
 * Push your changes to your branch in your forked repository
 
-## Submitting the changes
+### Submitting the changes
 
 Submit a pull request via the normal GitHub UI.
 
-## After submitting
+### After submitting
 
-* Do not use your branch for any other development, otherwise further changes that you make will be visible in the PR.
+Do not use your branch for any other development, otherwise further changes that you make will be visible in the PR.
 
+## Eclipse Contributor Agreement
+
+Before your contribution can be accepted by the project team contributors must
+electronically sign the Eclipse Contributor Agreement (ECA).
+
+* http://www.eclipse.org/legal/ECA.php
+
+Commits that are provided by non-committers must have a Signed-off-by field in
+the footer indicating that the author is aware of the terms by which the
+contribution has been provided to the project. The non-committer must
+additionally have an Eclipse Foundation account and must have a signed Eclipse
+Contributor Agreement (ECA) on file.
+
+For more information, please see the Eclipse Committer Handbook:
+https://www.eclipse.org/projects/handbook/#resources-commit
+
+## Contact
+
+Contact the project developers via the project's "dev" list.
+
+* https://dev.eclipse.org/mailman/listinfo/wakaama-dev
 
