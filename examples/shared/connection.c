@@ -140,7 +140,7 @@ connection_t * connection_create(connection_t * connList,
         close(s);
     }
     if (NULL != servinfo) {
-        free(servinfo);
+        freeaddrinfo(servinfo);
     }
 
     return connP;
