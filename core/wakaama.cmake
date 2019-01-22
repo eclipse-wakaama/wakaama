@@ -2,6 +2,7 @@
 # Add LWM2M_WITH_LOGS to compile definitions to enable logging.
 # Set LWM2M_LITTLE_ENDIAN to FALSE or TRUE according to your destination platform or leave
 # it unset to determine endianess automatically.
+# Set LWM2M_VERSION to use a particular LWM2M version or leave it unset to use the latest.
 
 set(WAKAAMA_SOURCES_DIR ${CMAKE_CURRENT_LIST_DIR})
 
@@ -53,3 +54,8 @@ if (LWM2M_LITTLE_ENDIAN)
     set(WAKAAMA_DEFINITIONS ${WAKAAMA_DEFINITIONS} -DLWM2M_LITTLE_ENDIAN)
 endif()
 
+# Set the LWM2M version
+set(LWM2M_VERSION "1.1" CACHE STRING "LWM2M version for client and max LWM2M version for server.")
+if(LWM2M_VERSION MATCHES "1.0")
+    set(WAKAAMA_DEFINITIONS ${WAKAAMA_DEFINITIONS} -DLWM2M_VERSION_1_0)
+endif()
