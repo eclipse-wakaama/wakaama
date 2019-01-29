@@ -18,6 +18,7 @@
  *    Julien Vermillard - Please refer to git log
  *    Bosch Software Innovations GmbH - Please refer to git log
  *    Christian Renz - Please refer to git log
+ *    Scott Bertin, AMETEK, Inc. - Please refer to git log
  *
  *******************************************************************************/
 
@@ -84,6 +85,23 @@ static void prv_print_error(uint8_t status)
     fprintf(stdout, "\r\n");
 }
 
+static const char * prv_dump_version(lwm2m_version_t version)
+{
+    switch(version)
+    {
+    case VERSION_MISSING:
+        return "Missing";
+    case VERSION_UNRECOGNIZED:
+        return "Unrecognized";
+    case VERSION_1_0:
+        return "1.0";
+    case VERSION_1_1:
+        return "1.1";
+    default:
+        return "";
+    }
+}
+
 static char * prv_dump_binding(lwm2m_binding_t binding)
 {
     switch (binding)
@@ -113,6 +131,7 @@ static void prv_dump_client(lwm2m_client_t * targetP)
 
     fprintf(stdout, "Client #%d:\r\n", targetP->internalID);
     fprintf(stdout, "\tname: \"%s\"\r\n", targetP->name);
+    fprintf(stdout, "\tversion: \"%s\"\r\n", prv_dump_version(targetP->version));
     fprintf(stdout, "\tbinding: \"%s\"\r\n", prv_dump_binding(targetP->binding));
     if (targetP->msisdn) fprintf(stdout, "\tmsisdn: \"%s\"\r\n", targetP->msisdn);
     if (targetP->altPath) fprintf(stdout, "\talternative path: \"%s\"\r\n", targetP->altPath);

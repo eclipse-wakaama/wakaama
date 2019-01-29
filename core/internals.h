@@ -16,7 +16,7 @@
  *    Toby Jaffey - Please refer to git log
  *    Bosch Software Innovations GmbH - Please refer to git log
  *    Pascal Rieux - Please refer to git log
- *    Scott Bertin - Please refer to git log
+ *    Scott Bertin, AMETEK, Inc. - Please refer to git log
  *    
  *******************************************************************************/
 /*
@@ -153,8 +153,13 @@
 #define QUERY_BINDING_LEN   2
 #define QUERY_DELIMITER     "&"
 
+#ifdef LWM2M_VERSION_1_0
 #define LWM2M_VERSION      "1.0"
 #define LWM2M_VERSION_LEN  3
+#else
+#define LWM2M_VERSION      "1.1"
+#define LWM2M_VERSION_LEN  3
+#endif
 
 #define QUERY_VERSION_FULL      QUERY_VERSION LWM2M_VERSION
 #define QUERY_VERSION_FULL_LEN  QUERY_VERSION_LEN+LWM2M_VERSION_LEN
@@ -321,6 +326,7 @@ void free_block1_buffer(lwm2m_block1_data_t * block1Data);
 
 // defined in utils.c
 lwm2m_data_type_t utils_depthToDatatype(uri_depth_t depth);
+lwm2m_version_t utils_stringToVersion(uint8_t *buffer, size_t length);
 lwm2m_binding_t utils_stringToBinding(uint8_t *buffer, size_t length);
 lwm2m_media_type_t utils_convertMediaType(coap_content_type_t type);
 int utils_isAltPathValid(const char * altPath);

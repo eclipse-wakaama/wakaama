@@ -13,6 +13,7 @@
  * Contributors:
  *    David Navarro, Intel Corporation - initial API and implementation
  *    Toby Jaffey - Please refer to git log
+ *    Scott Bertin, AMETEK, Inc. - Please refer to git log
  *    
  *******************************************************************************/
 
@@ -272,6 +273,33 @@ size_t utils_floatToText(double data,
     }
 
     return intLength + decLength;
+}
+
+lwm2m_version_t utils_stringToVersion(uint8_t * buffer,
+                                      size_t length)
+{
+    if (length == 0) return VERSION_MISSING;
+    if (length != 3) return VERSION_UNRECOGNIZED;
+    if (buffer[1] != '.') return VERSION_UNRECOGNIZED;
+
+    switch (buffer[0])
+    {
+    case '1':
+        switch (buffer[2])
+        {
+        case '0':
+            return VERSION_1_0;
+        case '1':
+            return VERSION_1_1;
+        default:
+            break;
+        }
+        break;
+    default:
+        break;
+    }
+
+    return VERSION_UNRECOGNIZED;
 }
 
 lwm2m_binding_t utils_stringToBinding(uint8_t * buffer,

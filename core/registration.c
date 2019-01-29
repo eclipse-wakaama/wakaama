@@ -20,7 +20,7 @@
  *    Julien Vermillard - Please refer to git log
  *    Bosch Software Innovations GmbH - Please refer to git log
  *    Pascal Rieux - Please refer to git log
- *    Scott Bertin - Please refer to git log
+ *    Scott Bertin, AMETEK, Inc. - Please refer to git log
  *
  *******************************************************************************/
 
@@ -615,13 +615,13 @@ static int prv_getParameters(multi_option_t * query,
                              uint32_t * lifetimeP,
                              char ** msisdnP,
                              lwm2m_binding_t * bindingP,
-                             char ** versionP)
+                             lwm2m_version_t * versionP)
 {
     *nameP = NULL;
     *lifetimeP = 0;
     *msisdnP = NULL;
     *bindingP = BINDING_UNKNOWN;
-    *versionP = NULL;
+    *versionP = VERSION_MISSING;
 
     while (query != NULL)
     {
@@ -664,15 +664,10 @@ static int prv_getParameters(multi_option_t * query,
         }
         else if (lwm2m_strncmp((char *)query->data, QUERY_VERSION, QUERY_VERSION_LEN) == 0)
         {
-            if (*versionP != NULL) goto error;
+            if (*versionP != VERSION_MISSING) goto error;
             if (query->len == QUERY_VERSION_LEN) goto error;
 
-            *versionP = (char *)lwm2m_malloc(query->len - QUERY_VERSION_LEN + 1);
-            if (*versionP != NULL)
-            {
-                memcpy(*versionP, query->data + QUERY_VERSION_LEN, query->len - QUERY_VERSION_LEN);
-                (*versionP)[query->len - QUERY_VERSION_LEN] = 0;
-            }
+            *versionP = utils_stringToVersion(query->data + QUERY_VERSION_LEN, query->len - QUERY_VERSION_LEN);
         }
         else if (lwm2m_strncmp((char *)query->data, QUERY_BINDING, QUERY_BINDING_LEN) == 0)
         {
@@ -689,7 +684,6 @@ static int prv_getParameters(multi_option_t * query,
 error:
     if (*nameP != NULL) lwm2m_free(*nameP);
     if (*msisdnP != NULL) lwm2m_free(*msisdnP);
-    if (*versionP != NULL) lwm2m_free(*versionP);
 
     return -1;
 }
@@ -1051,7 +1045,7 @@ uint8_t registration_handleRequest(lwm2m_context_t * contextP,
         uint32_t lifetime;
         char * msisdn;
         char * altPath;
-        char * version;
+        lwm2m_version_t version;
         lwm2m_binding_t binding;
         lwm2m_client_object_t * objects;
         bool supportJSON;
@@ -1075,7 +1069,7 @@ uint8_t registration_handleRequest(lwm2m_context_t * contextP,
         case 0:
             // Register operation
             // Version is mandatory
-            if (version == NULL)
+            if (version == VERSION_MISSING)
             {
                 if (name != NULL) lwm2m_free(name);
                 if (msisdn != NULL) lwm2m_free(msisdn);
@@ -1084,23 +1078,26 @@ uint8_t registration_handleRequest(lwm2m_context_t * contextP,
             // Endpoint client name is mandatory
             if (name == NULL)
             {
-                lwm2m_free(version);
                 if (msisdn != NULL) lwm2m_free(msisdn);
                 return COAP_400_BAD_REQUEST;
             }
             // Object list is mandatory
             if (objects == NULL)
             {
-                lwm2m_free(version);
                 lwm2m_free(name);
                 if (msisdn != NULL) lwm2m_free(msisdn);
                 return COAP_400_BAD_REQUEST;
             }
-            // version must be 1.0
-            if (strlen(version) != LWM2M_VERSION_LEN
-                || lwm2m_strncmp(version, LWM2M_VERSION, LWM2M_VERSION_LEN))
+            // Check for a supported version
+            switch (version)
             {
-                lwm2m_free(version);
+            case VERSION_1_0:
+#ifndef LWM2M_VERSION_1_0
+            case VERSION_1_1:
+#endif
+                /* Supported version */
+                break;
+            default:
                 lwm2m_free(name);
                 if (msisdn != NULL) lwm2m_free(msisdn);
                 return COAP_412_PRECONDITION_FAILED;
@@ -1137,6 +1134,7 @@ uint8_t registration_handleRequest(lwm2m_context_t * contextP,
                 contextP->clientList = (lwm2m_client_t *)LWM2M_LIST_ADD(contextP->clientList, clientP);
             }
             clientP->name = name;
+            clientP->version = version;
             clientP->binding = binding;
             clientP->msisdn = msisdn;
             clientP->altPath = altPath;
