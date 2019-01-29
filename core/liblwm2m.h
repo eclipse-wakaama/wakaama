@@ -169,6 +169,7 @@ bool lwm2m_session_is_equal(void * session1, void * session2, void * userData);
 #define LWM2M_FIRMWARE_UPDATE_OBJECT_ID     5
 #define LWM2M_LOCATION_OBJECT_ID            6
 #define LWM2M_CONN_STATS_OBJECT_ID          7
+#define LWM2M_OSCORE_OBJECT_ID             21
 
 /*
  * Resource IDs for the LWM2M Security Object

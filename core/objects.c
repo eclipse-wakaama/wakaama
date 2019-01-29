@@ -526,6 +526,9 @@ int object_getRegisterPayloadBufferLength(lwm2m_context_t * contextP)
         size_t length;
 
         if (objectP->objID == LWM2M_SECURITY_OBJECT_ID) continue;
+#ifndef LWM2M_VERSION_1_0
+        if (objectP->objID == LWM2M_OSCORE_OBJECT_ID) continue;
+#endif
 
         start = index;
         result = prv_getObjectTemplate(buffer, sizeof(buffer), objectP->objID);
