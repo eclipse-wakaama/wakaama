@@ -441,16 +441,18 @@ typedef enum
     VERSION_1_1,          // LWM2M version 1.1
 } lwm2m_version_t;
 
-typedef enum
-{
-    BINDING_UNKNOWN = 0,
-    BINDING_U,   // UDP
-    BINDING_UQ,  // UDP queue mode
-    BINDING_S,   // SMS
-    BINDING_SQ,  // SMS queue mode
-    BINDING_US,  // UDP plus SMS
-    BINDING_UQS  // UDP queue mode plus SMS
-} lwm2m_binding_t;
+#define BINDING_UNKNOWN 0x01
+#define BINDING_U       0x02 // UDP
+#define BINDING_T       0x04 // TCP
+#define BINDING_S       0x08 // SMS
+#define BINDING_N       0x10 // Non-IP
+#define BINDING_Q       0x20 // queue mode
+/* Legacy bindings */
+#define BINDING_UQ (BINDING_U|BINDING_Q) // UDP queue mode
+#define BINDING_SQ (BINDING_S|BINDING_Q) // SMS queue mode
+#define BINDING_US (BINDING_U|BINDING_S) // UDP plus SMS
+#define BINDING_UQS (BINDING_U|BINDING_Q|BINDING_S) // UDP queue mode plus SMS
+typedef uint8_t lwm2m_binding_t;
 
 /*
  * LWM2M block1 data

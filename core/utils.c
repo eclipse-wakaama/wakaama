@@ -305,6 +305,7 @@ lwm2m_version_t utils_stringToVersion(uint8_t * buffer,
 lwm2m_binding_t utils_stringToBinding(uint8_t * buffer,
                                       size_t length)
 {
+#ifdef LWM2M_VERSION_1_0
     if (length == 0) return BINDING_UNKNOWN;
 
     switch (buffer[0])
@@ -357,6 +358,34 @@ lwm2m_binding_t utils_stringToBinding(uint8_t * buffer,
     }
 
     return BINDING_UNKNOWN;
+#else
+    size_t i;
+    lwm2m_binding_t binding = BINDING_UNKNOWN;
+    for (i = 0; i < length; i++)
+    {
+        switch (buffer[i])
+        {
+        case 'N':
+            binding |= BINDING_N;
+            break;
+        case 'Q':
+            binding |= BINDING_Q;
+            break;
+        case 'S':
+            binding |= BINDING_S;
+            break;
+        case 'T':
+            binding |= BINDING_T;
+            break;
+        case 'U':
+            binding |= BINDING_U;
+            break;
+        default:
+            return BINDING_UNKNOWN;
+        }
+    }
+    return binding;
+#endif
 }
 
 lwm2m_media_type_t utils_convertMediaType(coap_content_type_t type)

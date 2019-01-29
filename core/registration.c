@@ -80,6 +80,7 @@ static int prv_getRegistrationQueryLength(lwm2m_context_t * contextP,
         index += strlen(contextP->msisdn);
     }
 
+#ifdef LWM2M_VERSION_1_0
     switch (server->binding)
     {
     case BINDING_U:
@@ -103,6 +104,32 @@ static int prv_getRegistrationQueryLength(lwm2m_context_t * contextP,
     default:
         return 0;
     }
+#else
+    if ((server->binding & ~(BINDING_UNKNOWN|BINDING_Q)) != 0)
+    {
+        index += QUERY_DELIMITER_LEN + QUERY_BINDING_LEN;
+        if ((server->binding & BINDING_U) != 0)
+        {
+            index += 1;
+        }
+        if ((server->binding & BINDING_T) != 0)
+        {
+            index += 1;
+        }
+        if ((server->binding & BINDING_S) != 0)
+        {
+            index += 1;
+        }
+        if ((server->binding & BINDING_N) != 0)
+        {
+            index += 1;
+        }
+    }
+    if ((server->binding & BINDING_Q) != 0)
+    {
+        index += QUERY_DELIMITER_LEN + QUERY_QUEUE_MODE_LEN;
+    }
+#endif
 
     if (0 != server->lifetime)
     {
@@ -120,11 +147,12 @@ static int prv_getRegistrationQuery(lwm2m_context_t * contextP,
                                     char * buffer,
                                     size_t length)
 {
-    int index;
+    size_t index;
     int res;
 
-    index = utils_stringCopy(buffer, length, QUERY_STARTER QUERY_VERSION_FULL QUERY_DELIMITER QUERY_NAME);
-    if (index < 0) return 0;
+    res = utils_stringCopy(buffer, length, QUERY_STARTER QUERY_VERSION_FULL QUERY_DELIMITER QUERY_NAME);
+    if (res < 0) return 0;
+    index = res;
     res = utils_stringCopy(buffer + index, length - index, contextP->endpointName);
     if (res < 0) return 0;
     index += res;
@@ -139,6 +167,7 @@ static int prv_getRegistrationQuery(lwm2m_context_t * contextP,
         index += res;
     }
 
+#ifdef LWM2M_VERSION_1_0
     switch (server->binding)
     {
     case BINDING_U:
@@ -164,6 +193,40 @@ static int prv_getRegistrationQuery(lwm2m_context_t * contextP,
     }
     if (res < 0) return 0;
     index += res;
+#else
+    if ((server->binding & ~(BINDING_UNKNOWN|BINDING_Q)) != 0)
+    {
+        res = utils_stringCopy(buffer + index, length - index, QUERY_DELIMITER QUERY_BINDING);
+        if (res < 0) return 0;
+        index += res;
+        if ((server->binding & BINDING_U) != 0)
+        {
+            if (index >= length) return 0;
+            buffer[index++] = 'U';
+        }
+        if ((server->binding & BINDING_T) != 0)
+        {
+            if (index >= length) return 0;
+            buffer[index++] = 'T';
+        }
+        if ((server->binding & BINDING_S) != 0)
+        {
+            if (index >= length) return 0;
+            buffer[index++] = 'S';
+        }
+        if ((server->binding & BINDING_N) != 0)
+        {
+            if (index >= length) return 0;
+            buffer[index++] = 'N';
+        }
+    }
+    if ((server->binding & BINDING_Q) != 0)
+    {
+        res = utils_stringCopy(buffer + index, length - index, QUERY_DELIMITER QUERY_QUEUE_MODE);
+        if (res < 0) return 0;
+        index += res;
+    }
+#endif
 
     if (0 != server->lifetime)
     {
@@ -175,7 +238,7 @@ static int prv_getRegistrationQuery(lwm2m_context_t * contextP,
         index += res;
     }
 
-    if(index < (int)length)
+    if(index < length)
     {
         buffer[index++] = '\0';
     }
@@ -620,7 +683,7 @@ static int prv_getParameters(multi_option_t * query,
     *nameP = NULL;
     *lifetimeP = 0;
     *msisdnP = NULL;
-    *bindingP = BINDING_UNKNOWN;
+    *bindingP = 0;
     *versionP = VERSION_MISSING;
 
     while (query != NULL)
@@ -671,12 +734,32 @@ static int prv_getParameters(multi_option_t * query,
         }
         else if (lwm2m_strncmp((char *)query->data, QUERY_BINDING, QUERY_BINDING_LEN) == 0)
         {
-            if (*bindingP != BINDING_UNKNOWN) goto error;
+#ifdef LWM2M_VERSION_1_0
+            if (*bindingP != 0) goto error;
+#else
+            if ((*bindingP & ~BINDING_Q) != 0) goto error;
+#endif
             if (query->len == QUERY_BINDING_LEN) goto error;
 
-            *bindingP = utils_stringToBinding(query->data + QUERY_BINDING_LEN, query->len - QUERY_BINDING_LEN);
+            *bindingP |= utils_stringToBinding(query->data + QUERY_BINDING_LEN, query->len - QUERY_BINDING_LEN);
         }
+#ifndef LWM2M_VERSION_1_0
+        else if (lwm2m_strncmp((char *)query->data, QUERY_QUEUE_MODE, QUERY_QUEUE_MODE_LEN) == 0)
+        {
+            if ((*bindingP & BINDING_Q) != 0) goto error;
+            if (query->len != QUERY_BINDING_LEN) goto error;
+
+            *bindingP |= BINDING_Q;
+        }
+#endif
         query = query->next;
+    }
+
+    if (*versionP == VERSION_1_0 &&
+        (*bindingP & (BINDING_T|BINDING_N)) != 0)
+    {
+        /* These bindings aren't valid in LWM2M 1.0 */
+        goto error;
     }
 
     return 0;

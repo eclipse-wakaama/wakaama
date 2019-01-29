@@ -102,26 +102,45 @@ static const char * prv_dump_version(lwm2m_version_t version)
     }
 }
 
-static char * prv_dump_binding(lwm2m_binding_t binding)
+static void prv_dump_binding(lwm2m_binding_t binding)
 {
-    switch (binding)
+    if(BINDING_UNKNOWN == binding)
     {
-    case BINDING_UNKNOWN:
-        return "Not specified";
-    case BINDING_U:
-        return "UDP";
-    case BINDING_UQ:
-        return "UDP queue mode";
-    case BINDING_S:
-        return "SMS";
-    case BINDING_SQ:
-        return "SMS queue mode";
-    case BINDING_US:
-        return "UDP plus SMS";
-    case BINDING_UQS:
-        return "UDP queue mode plus SMS";
-    default:
-        return "";
+        fprintf(stdout, "\tbinding: \"Not specified\"\r\n");
+    }
+    else
+    {
+        const struct bindingTable
+        {
+            lwm2m_binding_t binding;
+            const char *text;
+        } bindingTable[] =
+        {
+            { BINDING_U, "UDP" },
+            { BINDING_T, "TCP" },
+            { BINDING_S, "SMS" },
+            { BINDING_N, "Non-IP" },
+            { BINDING_Q, "queue mode" },
+        };
+        size_t i;
+        bool oneSeen = false;
+        fprintf(stdout, "\tbinding: \"");
+        for (i = 0; i < sizeof(bindingTable) / sizeof(bindingTable[0]); i++)
+        {
+            if ((binding & bindingTable[i].binding) != 0)
+            {
+                if (oneSeen)
+                {
+                    fprintf(stdout, ", %s", bindingTable[i].text);
+                }
+                else
+                {
+                    fprintf(stdout, "%s", bindingTable[i].text);
+                    oneSeen = true;
+                }
+            }
+        }
+        fprintf(stdout, "\"\r\n");
     }
 }
 
@@ -132,7 +151,7 @@ static void prv_dump_client(lwm2m_client_t * targetP)
     fprintf(stdout, "Client #%d:\r\n", targetP->internalID);
     fprintf(stdout, "\tname: \"%s\"\r\n", targetP->name);
     fprintf(stdout, "\tversion: \"%s\"\r\n", prv_dump_version(targetP->version));
-    fprintf(stdout, "\tbinding: \"%s\"\r\n", prv_dump_binding(targetP->binding));
+    prv_dump_binding(targetP->binding);
     if (targetP->msisdn) fprintf(stdout, "\tmsisdn: \"%s\"\r\n", targetP->msisdn);
     if (targetP->altPath) fprintf(stdout, "\talternative path: \"%s\"\r\n", targetP->altPath);
     fprintf(stdout, "\tlifetime: %d sec\r\n", targetP->lifetime);
