@@ -214,64 +214,77 @@ size_t utils_floatToText(double data,
                          uint8_t * string,
                          size_t length)
 {
-    size_t intLength;
-    size_t decLength;
-    int64_t intPart;
-    double decPart;
-
-    if (data <= (double)INT64_MIN || data >= (double)INT64_MAX) return 0;
-
-    intPart = (int64_t)data;
-    decPart = data - intPart;
-    if (decPart < 0)
+    size_t result = 0;
+    int res;
+    size_t width;
+    size_t precision;
+    double absData = data;
+    if(absData < 0)
     {
-        decPart = 1 - decPart;
-    }
-    else
-    {
-        decPart = 1 + decPart;
+        absData = -absData;
     }
 
-    if (decPart <= 1 + FLT_EPSILON)
+    if (data == 0.0)
     {
-        decPart = 0;
-    }
-
-    if (intPart == 0 && data < 0)
-    {
-        // deal with numbers between -1 and 0
-        if (length < 4) return 0;   // "-0.n"
-        string[0] = '-';
-        string[1] = '0';
-        intLength = 2;
-    }
-    else
-    {
-        intLength = utils_intToText(intPart, string, length);
-        if (intLength == 0) return 0;
-    }
-    decLength = 0;
-    if (decPart >= FLT_EPSILON)
-    {
-        double noiseFloor;
-
-        if (intLength >= length - 1) return 0;
-
-        noiseFloor = FLT_EPSILON;
-        do
+        if (length > 0)
         {
-            decPart *= 10;
-            noiseFloor *= 10;
-        } while (decPart - (int64_t)decPart > noiseFloor);
-
-        decLength = utils_intToText(decPart, string + intLength, length - intLength);
-        if (decLength <= 1) return 0;
-
-        // replace the leading 1 with a dot
-        string[intLength] = '.';
+            string[0] = '0';
+            string[1] = '.';
+            string[2] = '0';
+            result = 1;
+        }
     }
+    else if (data >= 1.0 || data <= -1.0 || data != data)
+    {
+        precision = DBL_DIG - 1;
+        while(precision > 1 && absData > 10.0)
+        {
+            precision--;
+            absData /= 10;
+        }
 
-    return intLength + decLength;
+        res = snprintf((char *)string, length, "%.*f", (int)precision, data);
+        if(res >= 0 && (size_t)res < length)
+            result = (size_t)res;
+    }
+    else
+    {
+        /* Purely fractional numbers. */
+        precision = DBL_DIG;
+        width = 2;
+        if(data < 0.0)
+        {
+            width += 1;
+        }
+        /* Determine the precision needed for all significant digits */
+        absData *= 10;
+        while(precision < length - width + DBL_DIG && absData < 1.0)
+        {
+            precision++;
+            absData *= 10;
+        }
+        width += precision;
+        if(width >= length + DBL_DIG)
+        {
+            /* No significant digits will fit in available length, truncate to 0 */
+            string[0] = '0';
+            string[1] = '.';
+            string[2] = '0';
+            result = 1;
+        }
+        else
+        {
+            if(width >= length)
+            {
+                /* Truncate to fit available length */
+                precision -= width - length + 1;
+            }
+            res = snprintf((char *)string, length, "%.*f", (int)precision, data);
+            if(res >= 0 && (size_t)res < length)
+                result = (size_t)res;
+        }
+    }
+    return result;
 }
 
 lwm2m_binding_t utils_stringToBinding(uint8_t * buffer,
