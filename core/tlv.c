@@ -156,6 +156,7 @@ static uint8_t prv_getHeaderType(lwm2m_data_type_t type)
     case LWM2M_TYPE_BOOLEAN:
     case LWM2M_TYPE_OPAQUE:
     case LWM2M_TYPE_OBJECT_LINK:
+    case LWM2M_TYPE_CORE_LINK:
         return _PRV_TLV_TYPE_RESOURCE;
 
     case LWM2M_TYPE_UNDEFINED:
@@ -431,6 +432,7 @@ static int prv_getLength(int size,
 
         case LWM2M_TYPE_STRING:
         case LWM2M_TYPE_OPAQUE:
+        case LWM2M_TYPE_CORE_LINK:
             length += prv_getHeaderLength(dataP[i].id, dataP[i].value.asBuffer.length) + dataP[i].value.asBuffer.length;
             break;
 
@@ -570,6 +572,7 @@ int tlv_serialize(bool isResourceInstance,
 
         case LWM2M_TYPE_STRING:
         case LWM2M_TYPE_OPAQUE:
+        case LWM2M_TYPE_CORE_LINK:
             headerLen = prv_createHeader(*bufferP + index, isInstance, dataP[i].type, dataP[i].id, dataP[i].value.asBuffer.length);
             index += headerLen;
             memcpy(*bufferP + index, dataP[i].value.asBuffer.buffer, dataP[i].value.asBuffer.length);

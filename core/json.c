@@ -1043,6 +1043,7 @@ static int prv_serializeValue(lwm2m_data_t * tlvP,
     switch (tlvP->type)
     {
     case LWM2M_TYPE_STRING:
+    case LWM2M_TYPE_CORE_LINK:
         if (bufferLen < JSON_ITEM_STRING_BEGIN_SIZE) return -1;
         memcpy(buffer, JSON_ITEM_STRING_BEGIN, JSON_ITEM_STRING_BEGIN_SIZE);
         head = JSON_ITEM_STRING_BEGIN_SIZE;

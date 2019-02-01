@@ -32,6 +32,7 @@ static int prv_textSerialize(lwm2m_data_t * dataP,
     switch (dataP->type)
     {
     case LWM2M_TYPE_STRING:
+    case LWM2M_TYPE_CORE_LINK:
         *bufferP = (uint8_t *)lwm2m_malloc(dataP->value.asBuffer.length);
         if (*bufferP == NULL) return 0;
         memcpy(*bufferP, dataP->value.asBuffer.buffer, dataP->value.asBuffer.length);
@@ -189,10 +190,12 @@ void lwm2m_data_free(int size,
 
         case LWM2M_TYPE_STRING:
         case LWM2M_TYPE_OPAQUE:
+        case LWM2M_TYPE_CORE_LINK:
             if (dataP[i].value.asBuffer.buffer != NULL)
             {
                 lwm2m_free(dataP[i].value.asBuffer.buffer);
             }
+            break;
 
         default:
             // do nothing
@@ -579,6 +582,16 @@ int lwm2m_data_decode_bool(const lwm2m_data_t * dataP,
     return result;
 }
 
+void lwm2m_data_encode_corelink(const char * corelink, lwm2m_data_t * dataP)
+{
+    LOG_ARG("\"%s\"", corelink);
+    lwm2m_data_encode_string(corelink, dataP);
+    if (dataP->type == LWM2M_TYPE_STRING)
+    {
+        dataP->type = LWM2M_TYPE_CORE_LINK;
+    }
+}
+
 void lwm2m_data_encode_objlink(uint16_t objectId,
                            uint16_t objectInstanceId,
                            lwm2m_data_t * dataP)
@@ -605,6 +618,7 @@ void lwm2m_data_include(lwm2m_data_t * subDataP,
     case LWM2M_TYPE_FLOAT:
     case LWM2M_TYPE_BOOLEAN:
     case LWM2M_TYPE_OBJECT_LINK:
+    case LWM2M_TYPE_CORE_LINK:
     case LWM2M_TYPE_MULTIPLE_RESOURCE:
         dataP->type = LWM2M_TYPE_OBJECT_INSTANCE;
         break;

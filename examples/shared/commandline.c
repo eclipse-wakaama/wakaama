@@ -387,6 +387,11 @@ void dump_tlv(FILE * stream,
             print_indent(stream, indent + 1);
             fprintf(stream, "\"%.*s\"\r\n", (int)dataP[i].value.asBuffer.length, dataP[i].value.asBuffer.buffer);
             break;
+        case LWM2M_TYPE_CORE_LINK:
+            fprintf(stream, "LWM2M_TYPE_CORE_LINK\r\n");
+            print_indent(stream, indent + 1);
+            fprintf(stream, "\"%.*s\"\r\n", (int)dataP[i].value.asBuffer.length, dataP[i].value.asBuffer.buffer);
+            break;
         case LWM2M_TYPE_OPAQUE:
             fprintf(stream, "LWM2M_TYPE_OPAQUE\r\n");
             output_buffer(stream, dataP[i].value.asBuffer.buffer, dataP[i].value.asBuffer.length, indent + 1);

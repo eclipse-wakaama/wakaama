@@ -273,7 +273,7 @@ int lwm2m_stringToUri(const char * buffer, size_t buffer_len, lwm2m_uri_t * uriP
  * The lwm2m_data_t is used to store LWM2M resource values in a hierarchical way.
  * Depending on the type the value is different:
  * - LWM2M_TYPE_OBJECT, LWM2M_TYPE_OBJECT_INSTANCE, LWM2M_TYPE_MULTIPLE_RESOURCE: value.asChildren
- * - LWM2M_TYPE_STRING, LWM2M_TYPE_OPAQUE: value.asBuffer
+ * - LWM2M_TYPE_STRING, LWM2M_TYPE_OPAQUE, LWM2M_TYPE_CORE_LINK: value.asBuffer
  * - LWM2M_TYPE_INTEGER, LWM2M_TYPE_TIME: value.asInteger
  * - LWM2M_TYPE_UNSIGNED_INTEGER: value.asUnsigned
  * - LWM2M_TYPE_FLOAT: value.asFloat
@@ -296,7 +296,8 @@ typedef enum
     LWM2M_TYPE_FLOAT,
     LWM2M_TYPE_BOOLEAN,
 
-    LWM2M_TYPE_OBJECT_LINK
+    LWM2M_TYPE_OBJECT_LINK,
+    LWM2M_TYPE_CORE_LINK
 } lwm2m_data_type_t;
 
 typedef struct _lwm2m_data_t lwm2m_data_t;
@@ -357,6 +358,7 @@ int lwm2m_data_decode_float(const lwm2m_data_t * dataP, double * valueP);
 void lwm2m_data_encode_bool(bool value, lwm2m_data_t * dataP);
 int lwm2m_data_decode_bool(const lwm2m_data_t * dataP, bool * valueP);
 void lwm2m_data_encode_objlink(uint16_t objectId, uint16_t objectInstanceId, lwm2m_data_t * dataP);
+void lwm2m_data_encode_corelink(const char * corelink, lwm2m_data_t * dataP);
 void lwm2m_data_encode_instances(lwm2m_data_t * subDataP, size_t count, lwm2m_data_t * dataP);
 void lwm2m_data_include(lwm2m_data_t * subDataP, size_t count, lwm2m_data_t * dataP);
 
