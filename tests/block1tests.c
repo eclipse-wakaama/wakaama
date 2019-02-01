@@ -23,7 +23,7 @@
 
 static void handle_12345(lwm2m_block1_data_t ** blk1,
                                   uint16_t mid) {
-    uint8_t *buffer = "12345";
+    uint8_t *buffer = (uint8_t *)"12345";
     size_t bsize;
     uint8_t *resultBuffer = NULL;
 
@@ -34,7 +34,7 @@ static void handle_12345(lwm2m_block1_data_t ** blk1,
 
 static void handle_67(lwm2m_block1_data_t ** blk1,
                                   uint16_t mid) {
-    uint8_t *buffer = "67";
+    uint8_t *buffer = (uint8_t *)"67";
     size_t bsize;
     uint8_t *resultBuffer = NULL;
 

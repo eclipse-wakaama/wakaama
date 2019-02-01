@@ -27,12 +27,15 @@
 void * lwm2m_connect_server(uint16_t secObjInstID,
                             void * userData)
 {
-    return (void *)secObjInstID;
+    (void)userData;
+    return (void *)(uintptr_t)secObjInstID;
 }
 
 void lwm2m_close_connection(void * sessionH,
                             void * userData)
 {
+    (void)sessionH;
+    (void)userData;
     return;
 }
 
@@ -54,9 +57,20 @@ int main()
    if (CUE_SUCCESS != CU_initialize_registry())
       return CU_get_error();
 
-    if (CUE_SUCCESS != create_tlv_json_suit()) {
-       goto exit;
-   }
+   if (CUE_SUCCESS != create_block1_suit())
+      goto exit;
+
+   if (CUE_SUCCESS != create_convert_numbers_suit())
+      goto exit;
+
+   if (CUE_SUCCESS != create_tlv_json_suit())
+      goto exit;
+
+   if (CUE_SUCCESS != create_tlv_suit())
+      goto exit;
+
+   if (CUE_SUCCESS != create_uri_suit())
+      goto exit;
 
    CU_basic_set_mode(CU_BRM_VERBOSE);
    CU_basic_run_tests();

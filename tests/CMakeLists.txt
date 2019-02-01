@@ -17,9 +17,3 @@ file(GLOB SOURCES "*.c")
 
 add_executable(${PROJECT_NAME} ${SOURCES} ${WAKAAMA_SOURCES} ${SHARED_SOURCES})
 target_link_libraries(lwm2munittests cunit)
-
-# Enable CMake Test Framework (CTest) which make testing available by
-# a "test" target. For "make" this is "make test"
-enable_testing()
-
-add_test (test_all ${PROJECT_NAME})
