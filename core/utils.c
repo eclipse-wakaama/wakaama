@@ -427,31 +427,39 @@ lwm2m_binding_t utils_stringToBinding(uint8_t * buffer,
 
 lwm2m_media_type_t utils_convertMediaType(coap_content_type_t type)
 {
+    lwm2m_media_type_t result = LWM2M_CONTENT_TEXT;
     // Here we just check the content type is a valid value for LWM2M
     switch((uint16_t)type)
     {
     case TEXT_PLAIN:
-        return LWM2M_CONTENT_TEXT;
+        break;
     case APPLICATION_OCTET_STREAM:
-        return LWM2M_CONTENT_OPAQUE;
+        result = LWM2M_CONTENT_OPAQUE;
+        break;
 #ifdef LWM2M_OLD_CONTENT_FORMAT_SUPPORT
     case LWM2M_CONTENT_TLV_OLD:
-        return LWM2M_CONTENT_TLV_OLD;
+        result = LWM2M_CONTENT_TLV_OLD;
+        break;
 #endif
     case LWM2M_CONTENT_TLV:
-        return LWM2M_CONTENT_TLV;
+        result = LWM2M_CONTENT_TLV;
+        break;
 #ifdef LWM2M_OLD_CONTENT_FORMAT_SUPPORT
     case LWM2M_CONTENT_JSON_OLD:
-        return LWM2M_CONTENT_JSON_OLD;
+        result = LWM2M_CONTENT_JSON_OLD;
+        break;
 #endif
     case LWM2M_CONTENT_JSON:
-        return LWM2M_CONTENT_JSON;
+        result = LWM2M_CONTENT_JSON;
+        break;
     case APPLICATION_LINK_FORMAT:
-        return LWM2M_CONTENT_LINK;
+        result = LWM2M_CONTENT_LINK;
+        break;
 
     default:
-        return LWM2M_CONTENT_TEXT;
+        break;
     }
+    return result;
 }
 
 #ifdef LWM2M_CLIENT_MODE

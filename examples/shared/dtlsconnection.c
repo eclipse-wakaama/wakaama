@@ -148,7 +148,7 @@ int send_data(dtls_connection_t *connP,
         port = saddr->sin6_port;
     }
 
-    fprintf(stderr, "Sending %d bytes to [%s]:%hu\r\n", length, s, ntohs(port));
+    fprintf(stderr, "Sending %d bytes to [%s]:%hu\r\n", (int)length, s, ntohs(port));
 
     output_buffer(stderr, buffer, length, 0);
 #endif

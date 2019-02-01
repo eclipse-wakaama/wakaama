@@ -377,7 +377,7 @@ int transaction_send(lwm2m_context_t * contextP,
 
     if (!transacP->ack_received)
     {
-        long unsigned timeout;
+        long unsigned timeout = 0;
 
         if (0 == transacP->retrans_counter)
         {
@@ -386,7 +386,6 @@ int transaction_send(lwm2m_context_t * contextP,
             {
                 transacP->retrans_time = tv_sec + COAP_RESPONSE_TIMEOUT;
                 transacP->retrans_counter = 1;
-                timeout = 0;
             }
             else
             {

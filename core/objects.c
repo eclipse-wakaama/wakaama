@@ -504,7 +504,7 @@ int object_getRegisterPayloadBufferLength(lwm2m_context_t * contextP)
     size_t index;
     int result;
     lwm2m_object_t * objectP;
-    char buffer[REG_OBJECT_MIN_LEN + 5];
+    uint8_t buffer[REG_OBJECT_MIN_LEN + 5];
 
     LOG("Entering");
     index = strlen(REG_START);
