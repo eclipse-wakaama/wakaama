@@ -723,7 +723,14 @@ static int prv_getMandatoryInfo(lwm2m_object_t * objectP,
     }
     targetP->lifetime = value;
 
-    targetP->binding = utils_stringToBinding(dataP[1].value.asBuffer.buffer, dataP[1].value.asBuffer.length);
+    if (dataP[1].type == LWM2M_TYPE_STRING)
+    {
+        targetP->binding = utils_stringToBinding(dataP[1].value.asBuffer.buffer, dataP[1].value.asBuffer.length);
+    }
+    else
+    {
+        targetP->binding = BINDING_UNKNOWN;
+    }
 
     lwm2m_data_free(size, dataP);
 
@@ -772,12 +779,10 @@ int object_getServers(lwm2m_context_t * contextP, bool checkOnly)
             bool isBootstrap;
             int64_t value = 0;
 
-            size = 3;
+            size = 1;
             dataP = lwm2m_data_new(size);
             if (dataP == NULL) return -1;
             dataP[0].id = LWM2M_SECURITY_BOOTSTRAP_ID;
-            dataP[1].id = LWM2M_SECURITY_SHORT_SERVER_ID;
-            dataP[2].id = LWM2M_SECURITY_HOLD_OFF_ID;
 
             if (securityObjP->readFunc(securityInstP->id, &size, &dataP, securityObjP) != COAP_205_CONTENT)
             {
@@ -793,25 +798,33 @@ int object_getServers(lwm2m_context_t * contextP, bool checkOnly)
             memset(targetP, 0, sizeof(lwm2m_server_t));
             targetP->secObjInstID = securityInstP->id;
 
-            if (0 == lwm2m_data_decode_bool(dataP + 0, &isBootstrap))
+            if (0 == lwm2m_data_decode_bool(dataP, &isBootstrap))
             {
                 lwm2m_free(targetP);
                 lwm2m_data_free(size, dataP);
                 return -1;
             }
 
-            if (0 == lwm2m_data_decode_int(dataP + 1, &value)
-             || value < (isBootstrap ? 0 : 1) || value > 0xFFFF)                // 0 is forbidden as a Short Server ID
+            if (isBootstrap)
             {
-                lwm2m_free(targetP);
-                lwm2m_data_free(size, dataP);
-                return -1;
-            }
-            targetP->shortID = value;
+                targetP->shortID = 0;
 
-            if (isBootstrap == true)
-            {
-                if (0 == lwm2m_data_decode_int(dataP + 2, &value)
+                lwm2m_data_free(size, dataP);
+                size = 1;
+                dataP = lwm2m_data_new(size);
+                if (dataP == NULL)
+                {
+                    lwm2m_free(targetP);
+                    return -1;
+                }
+                dataP[0].id = LWM2M_SECURITY_HOLD_OFF_ID;
+                if (securityObjP->readFunc(securityInstP->id, &size, &dataP, securityObjP) != COAP_205_CONTENT)
+                {
+                    lwm2m_free(targetP);
+                    lwm2m_data_free(size, dataP);
+                    return -1;
+                }
+                if (0 == lwm2m_data_decode_int(dataP, &value)
                  || value < 0 || value > 0xFFFFFFFF)             // This is an implementation limit
                 {
                     lwm2m_free(targetP);
@@ -833,6 +846,30 @@ int object_getServers(lwm2m_context_t * contextP, bool checkOnly)
             else
             {
                 lwm2m_list_t * serverInstP;     // instanceID of the server in the LWM2M Server Object
+
+                lwm2m_data_free(size, dataP);
+                size = 1;
+                dataP = lwm2m_data_new(size);
+                if (dataP == NULL)
+                {
+                    lwm2m_free(targetP);
+                    return -1;
+                }
+                dataP[0].id = LWM2M_SECURITY_SHORT_SERVER_ID;
+                if (securityObjP->readFunc(securityInstP->id, &size, &dataP, securityObjP) != COAP_205_CONTENT)
+                {
+                    lwm2m_free(targetP);
+                    lwm2m_data_free(size, dataP);
+                    return -1;
+                }
+                if (0 == lwm2m_data_decode_int(dataP, &value)
+                 || value < 1 || value > 0xFFFF)                // 0 is forbidden as a Short Server ID
+                {
+                    lwm2m_free(targetP);
+                    lwm2m_data_free(size, dataP);
+                    return -1;
+                }
+                targetP->shortID = value;
 
                 serverInstP = prv_findServerInstance(serverObjP, targetP->shortID);
                 if (serverInstP == NULL)
