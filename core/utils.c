@@ -85,7 +85,7 @@ int utils_textToInt(uint8_t * buffer,
         i++;
     }
 
-    if (result > INT64_MAX) return 0;
+    if (result > INT64_MAX + (uint64_t)(sign == -1 ? 1 : 0)) return 0;
 
     if (sign == -1)
     {
