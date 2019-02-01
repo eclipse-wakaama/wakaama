@@ -853,6 +853,10 @@ coap_parse_message(void *packet, uint8_t *data, uint16_t data_len)
 int
 coap_get_query_variable(void *packet, const char *name, const char **output)
 {
+    /* unused parameters */
+    (void)packet;
+    (void)name;
+    (void)output;
 /*
   coap_packet_t *const coap_pkt = (coap_packet_t *) packet;
 

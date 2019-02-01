@@ -609,6 +609,8 @@ static void prv_handleDeregistrationReply(lwm2m_transaction_t * transacP,
 {
     lwm2m_server_t * targetP;
 
+    (void)message; /* unused */
+
     targetP = (lwm2m_server_t *)(transacP->userData);
     if (NULL != targetP)
     {
