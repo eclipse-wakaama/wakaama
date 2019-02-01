@@ -1024,7 +1024,7 @@ coap_set_header_if_none_match(void *packet)
 }
 /*-----------------------------------------------------------------------------------*/
 int
-coap_get_header_token(void *packet, const uint8_t **token)
+coap_get_header_token(void *packet, uint8_t **token)
 {
   coap_packet_t *const coap_pkt = (coap_packet_t *) packet;
 

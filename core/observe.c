@@ -1187,7 +1187,7 @@ bool observe_handleNotify(lwm2m_context_t * contextP,
     uint32_t count;
 
     LOG("Entering");
-    token_len = coap_get_header_token(message, (const uint8_t **)&tokenP);
+    token_len = coap_get_header_token(message, &tokenP);
     if (token_len != sizeof(uint32_t)) return false;
 
     if (1 != coap_get_header_observe(message, &count)) return false;
