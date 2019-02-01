@@ -275,6 +275,7 @@ int lwm2m_stringToUri(const char * buffer, size_t buffer_len, lwm2m_uri_t * uriP
  * - LWM2M_TYPE_OBJECT, LWM2M_TYPE_OBJECT_INSTANCE, LWM2M_TYPE_MULTIPLE_RESOURCE: value.asChildren
  * - LWM2M_TYPE_STRING, LWM2M_TYPE_OPAQUE: value.asBuffer
  * - LWM2M_TYPE_INTEGER, LWM2M_TYPE_TIME: value.asInteger
+ * - LWM2M_TYPE_UNSIGNED_INTEGER: value.asUnsigned
  * - LWM2M_TYPE_FLOAT: value.asFloat
  * - LWM2M_TYPE_BOOLEAN: value.asBoolean
  *
@@ -291,6 +292,7 @@ typedef enum
     LWM2M_TYPE_STRING,
     LWM2M_TYPE_OPAQUE,
     LWM2M_TYPE_INTEGER,
+    LWM2M_TYPE_UNSIGNED_INTEGER,
     LWM2M_TYPE_FLOAT,
     LWM2M_TYPE_BOOLEAN,
 
@@ -307,6 +309,7 @@ struct _lwm2m_data_t
     {
         bool        asBoolean;
         int64_t     asInteger;
+        uint64_t    asUnsigned;
         double      asFloat;
         struct
         {
@@ -347,6 +350,8 @@ void lwm2m_data_encode_nstring(const char * string, size_t length, lwm2m_data_t 
 void lwm2m_data_encode_opaque(uint8_t * buffer, size_t length, lwm2m_data_t * dataP);
 void lwm2m_data_encode_int(int64_t value, lwm2m_data_t * dataP);
 int lwm2m_data_decode_int(const lwm2m_data_t * dataP, int64_t * valueP);
+void lwm2m_data_encode_uint(uint64_t value, lwm2m_data_t * dataP);
+int lwm2m_data_decode_uint(const lwm2m_data_t * dataP, uint64_t * valueP);
 void lwm2m_data_encode_float(double value, lwm2m_data_t * dataP);
 int lwm2m_data_decode_float(const lwm2m_data_t * dataP, double * valueP);
 void lwm2m_data_encode_bool(bool value, lwm2m_data_t * dataP);
@@ -618,6 +623,7 @@ typedef struct _lwm2m_watcher_
     union
     {
         int64_t asInteger;
+        uint64_t asUnsigned;
         double  asFloat;
     } lastValue;
 } lwm2m_watcher_t;

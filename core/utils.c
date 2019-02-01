@@ -99,6 +99,35 @@ int utils_textToInt(uint8_t * buffer,
     return 1;
 }
 
+int utils_textToUInt(const uint8_t * buffer,
+                     int length,
+                     uint64_t * dataP)
+{
+    uint64_t result = 0;
+    int i = 0;
+
+    if (0 == length) return 0;
+
+    while (i < length)
+    {
+        if ('0' <= buffer[i] && buffer[i] <= '9')
+        {
+            if (result > (UINT64_MAX / 10)) return 0;
+            result *= 10;
+            result += buffer[i] - '0';
+        }
+        else
+        {
+            return 0;
+        }
+        i++;
+    }
+
+    *dataP = result;
+
+    return 1;
+}
+
 int utils_textToFloat(uint8_t * buffer,
                       int length,
                       double * dataP)
@@ -167,19 +196,34 @@ size_t utils_intToText(int64_t data,
                        uint8_t * string,
                        size_t length)
 {
-    int index;
-    bool minus;
     size_t result;
 
     if (data < 0)
     {
-        minus = true;
-        data = 0 - data;
+        if (length == 0) return 0;
+        string[0] = '-';
+        result = utils_uintToText((uint64_t)(0-data), string + 1, length - 1);
+        if(result != 0)
+        {
+            result += 1;
+        }
     }
     else
     {
-        minus = false;
+        result = utils_uintToText((uint64_t)data, string, length);
     }
+
+    return result;
+}
+
+size_t utils_uintToText(uint64_t data,
+                        uint8_t * string,
+                        size_t length)
+{
+    int index;
+    size_t result;
+
+    if (length == 0) return 0;
 
     index = length - 1;
     do
@@ -191,21 +235,14 @@ size_t utils_intToText(int64_t data,
 
     if (data > 0) return 0;
 
-    if (minus == true)
-    {
-        if (index == 0) return 0;
-        string[index] = '-';
-    }
-    else
-    {
-        index++;
-    }
+    index++;
 
     result = length - index;
 
     if (result < length)
     {
         memmove(string, string + index, result);
+        string[index] = '\0';
     }
 
     return result;

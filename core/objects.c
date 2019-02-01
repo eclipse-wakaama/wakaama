@@ -17,7 +17,7 @@
  *    Benjamin Cabé - Please refer to git log
  *    Bosch Software Innovations GmbH - Please refer to git log
  *    Pascal Rieux - Please refer to git log
- *    Scott Bertin - Please refer to git log
+ *    Scott Bertin, AMETEK, Inc. - Please refer to git log
  *
  *******************************************************************************/
 
@@ -94,6 +94,7 @@ uint8_t object_checkReadable(lwm2m_context_t * contextP,
             switch (dataP->type)
             {
                 case LWM2M_TYPE_INTEGER:
+                case LWM2M_TYPE_UNSIGNED_INTEGER:
                 case LWM2M_TYPE_FLOAT:
                     break;
                 default:

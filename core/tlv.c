@@ -14,6 +14,7 @@
  *    David Navarro, Intel Corporation - initial API and implementation
  *    Fabien Fleutot - Please refer to git log
  *    Bosch Software Innovations GmbH - Please refer to git log
+ *    Scott Bertin, AMETEK, Inc. - Please refer to git log
  *    
  *******************************************************************************/
 
@@ -98,6 +99,42 @@ static size_t prv_encodeInt(int64_t data,
     return length;
 }
 
+static size_t prv_encodeUInt(uint64_t data,
+                             uint8_t * data_buffer)
+{
+    size_t length = 0;
+
+    if (data <= UINT8_MAX)
+    {
+        length = 1;
+        data_buffer[0] = data;
+    }
+    else if (data <= UINT16_MAX)
+    {
+        uint16_t value;
+
+        value = data;
+        length = 2;
+        data_buffer[0] = (value >> 8) & 0xFF;
+        data_buffer[1] = value & 0xFF;
+    }
+    else if (data <= UINT32_MAX)
+    {
+        uint32_t value;
+
+        value = data;
+        length = 4;
+        utils_copyValue(data_buffer, &value, length);
+    }
+    else if (data <= UINT64_MAX)
+    {
+        length = 8;
+        utils_copyValue(data_buffer, &data, length);
+    }
+
+    return length;
+}
+
 static uint8_t prv_getHeaderType(lwm2m_data_type_t type)
 {
     switch (type)
@@ -114,6 +151,7 @@ static uint8_t prv_getHeaderType(lwm2m_data_type_t type)
 
     case LWM2M_TYPE_STRING:
     case LWM2M_TYPE_INTEGER:
+    case LWM2M_TYPE_UNSIGNED_INTEGER:
     case LWM2M_TYPE_FLOAT:
     case LWM2M_TYPE_BOOLEAN:
     case LWM2M_TYPE_OPAQUE:
@@ -406,6 +444,16 @@ static int prv_getLength(int size,
             }
             break;
 
+        case LWM2M_TYPE_UNSIGNED_INTEGER:
+            {
+                size_t data_len;
+                uint8_t unused_buffer[_PRV_64BIT_BUFFER_SIZE];
+
+                data_len = prv_encodeUInt(dataP[i].value.asUnsigned, unused_buffer);
+                length += prv_getHeaderLength(dataP[i].id, data_len) + data_len;
+            }
+            break;
+
         case LWM2M_TYPE_FLOAT:
             {
                 size_t data_len;
@@ -534,6 +582,19 @@ int tlv_serialize(bool isResourceInstance,
                 uint8_t data_buffer[_PRV_64BIT_BUFFER_SIZE];
 
                 data_len = prv_encodeInt(dataP[i].value.asInteger, data_buffer);
+                headerLen = prv_createHeader(*bufferP + index, isInstance, dataP[i].type, dataP[i].id, data_len);
+                index += headerLen;
+                memcpy(*bufferP + index, data_buffer, data_len);
+                index += data_len;
+            }
+            break;
+
+        case LWM2M_TYPE_UNSIGNED_INTEGER:
+            {
+                size_t data_len;
+                uint8_t data_buffer[_PRV_64BIT_BUFFER_SIZE];
+
+                data_len = prv_encodeUInt(dataP[i].value.asUnsigned, data_buffer);
                 headerLen = prv_createHeader(*bufferP + index, isInstance, dataP[i].type, dataP[i].id, data_len);
                 index += headerLen;
                 memcpy(*bufferP + index, data_buffer, data_len);

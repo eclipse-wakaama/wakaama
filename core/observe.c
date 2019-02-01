@@ -14,6 +14,7 @@
  *    David Navarro, Intel Corporation - initial API and implementation
  *    Toby Jaffey - Please refer to git log
  *    Bosch Software Innovations GmbH - Please refer to git log
+ *    Scott Bertin, AMETEK, Inc. - Please refer to git log
  *
  *******************************************************************************/
 
@@ -201,6 +202,9 @@ uint8_t observe_handleRequest(lwm2m_context_t * contextP,
             {
             case LWM2M_TYPE_INTEGER:
                 if (1 != lwm2m_data_decode_int(dataP, &(watcherP->lastValue.asInteger))) return COAP_500_INTERNAL_SERVER_ERROR;
+                break;
+            case LWM2M_TYPE_UNSIGNED_INTEGER:
+                if (1 != lwm2m_data_decode_uint(dataP, &(watcherP->lastValue.asUnsigned))) return COAP_500_INTERNAL_SERVER_ERROR;
                 break;
             case LWM2M_TYPE_FLOAT:
                 if (1 != lwm2m_data_decode_float(dataP, &(watcherP->lastValue.asFloat))) return COAP_500_INTERNAL_SERVER_ERROR;
@@ -500,6 +504,7 @@ void observe_step(lwm2m_context_t * contextP,
         int size = 0;
         double floatValue = 0;
         int64_t integerValue = 0;
+        uint64_t unsignedValue = 0;
         bool storeValue = false;
         coap_packet_t message[1];
         time_t interval;
@@ -512,6 +517,14 @@ void observe_step(lwm2m_context_t * contextP,
             {
             case LWM2M_TYPE_INTEGER:
                 if (1 != lwm2m_data_decode_int(dataP, &integerValue))
+                {
+                    lwm2m_data_free(size, dataP);
+                    continue;
+                }
+                storeValue = true;
+                break;
+            case LWM2M_TYPE_UNSIGNED_INTEGER:
+                if (1 != lwm2m_data_decode_uint(dataP, &unsignedValue))
                 {
                     lwm2m_data_free(size, dataP);
                     continue;
@@ -568,6 +581,16 @@ void observe_step(lwm2m_context_t * contextP,
                                     notify = true;
                                 }
                                 break;
+                            case LWM2M_TYPE_UNSIGNED_INTEGER:
+                                if ((unsignedValue < watcherP->parameters->lessThan
+                                  && watcherP->lastValue.asUnsigned > watcherP->parameters->lessThan)
+                                 || (unsignedValue > watcherP->parameters->lessThan
+                                  && watcherP->lastValue.asUnsigned < watcherP->parameters->lessThan))
+                                {
+                                    LOG("Notify on lower threshold crossing");
+                                    notify = true;
+                                }
+                                break;
                             case LWM2M_TYPE_FLOAT:
                                 if ((floatValue < watcherP->parameters->lessThan
                                   && watcherP->lastValue.asFloat > watcherP->parameters->lessThan)
@@ -593,6 +616,16 @@ void observe_step(lwm2m_context_t * contextP,
                                   && watcherP->lastValue.asInteger > watcherP->parameters->greaterThan)
                                  || (integerValue > watcherP->parameters->greaterThan
                                   && watcherP->lastValue.asInteger < watcherP->parameters->greaterThan))
+                                {
+                                    LOG("Notify on lower upper crossing");
+                                    notify = true;
+                                }
+                                break;
+                            case LWM2M_TYPE_UNSIGNED_INTEGER:
+                                if ((unsignedValue < watcherP->parameters->greaterThan
+                                  && watcherP->lastValue.asUnsigned > watcherP->parameters->greaterThan)
+                                 || (unsignedValue > watcherP->parameters->greaterThan
+                                  && watcherP->lastValue.asUnsigned < watcherP->parameters->greaterThan))
                                 {
                                     LOG("Notify on lower upper crossing");
                                     notify = true;
@@ -625,6 +658,25 @@ void observe_step(lwm2m_context_t * contextP,
                                 diff = integerValue - watcherP->lastValue.asInteger;
                                 if ((diff < 0 && (0 - diff) >= watcherP->parameters->step)
                                  || (diff >= 0 && diff >= watcherP->parameters->step))
+                                {
+                                    LOG("Notify on step condition");
+                                    notify = true;
+                                }
+                            }
+                                break;
+                            case LWM2M_TYPE_UNSIGNED_INTEGER:
+                            {
+                                uint64_t diff;
+
+                                if (unsignedValue >= watcherP->lastValue.asUnsigned)
+                                {
+                                    diff = unsignedValue - watcherP->lastValue.asUnsigned;
+                                }
+                                else
+                                {
+                                    diff = watcherP->lastValue.asUnsigned - unsignedValue;
+                                }
+                                if (diff >= watcherP->parameters->step)
                                 {
                                     LOG("Notify on step condition");
                                     notify = true;
@@ -731,6 +783,9 @@ void observe_step(lwm2m_context_t * contextP,
                     {
                     case LWM2M_TYPE_INTEGER:
                         watcherP->lastValue.asInteger = integerValue;
+                        break;
+                    case LWM2M_TYPE_UNSIGNED_INTEGER:
+                        watcherP->lastValue.asUnsigned = unsignedValue;
                         break;
                     case LWM2M_TYPE_FLOAT:
                         watcherP->lastValue.asFloat = floatValue;
