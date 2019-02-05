@@ -171,7 +171,7 @@ uint8_t object_readData(lwm2m_context_t * contextP,
         }
     }
 
-    LOG_ARG("result: %u.%2u, size: %d", (result & 0xFF) >> 5, (result & 0x1F), *sizeP);
+    LOG_ARG("result: %u.%02u, size: %d", (result & 0xFF) >> 5, (result & 0x1F), *sizeP);
     return result;
 }
 
@@ -203,7 +203,7 @@ uint8_t object_read(lwm2m_context_t * contextP,
     }
     lwm2m_data_free(size, dataP);
 
-    LOG_ARG("result: %u.%2u, length: %d", (result & 0xFF) >> 5, (result & 0x1F), *lengthP);
+    LOG_ARG("result: %u.%02u, length: %d", (result & 0xFF) >> 5, (result & 0x1F), *lengthP);
 
     return result;
 }
@@ -243,7 +243,7 @@ uint8_t object_write(lwm2m_context_t * contextP,
         lwm2m_data_free(size, dataP);
     }
 
-    LOG_ARG("result: %u.%2u", (result & 0xFF) >> 5, (result & 0x1F));
+    LOG_ARG("result: %u.%02u", (result & 0xFF) >> 5, (result & 0x1F));
 
     return result;
 }
@@ -325,7 +325,7 @@ uint8_t object_create(lwm2m_context_t * contextP,
 exit:
     lwm2m_data_free(size, dataP);
 
-    LOG_ARG("result: %u.%2u", (result & 0xFF) >> 5, (result & 0x1F));
+    LOG_ARG("result: %u.%02u", (result & 0xFF) >> 5, (result & 0x1F));
 
     return result;
 }
@@ -372,7 +372,7 @@ uint8_t object_delete(lwm2m_context_t * contextP,
         }
     }
 
-    LOG_ARG("result: %u.%2u", (result & 0xFF) >> 5, (result & 0x1F));
+    LOG_ARG("result: %u.%02u", (result & 0xFF) >> 5, (result & 0x1F));
 
     return result;
 }
@@ -451,7 +451,7 @@ uint8_t object_discover(lwm2m_context_t * contextP,
     }
     lwm2m_data_free(size, dataP);
 
-    LOG_ARG("result: %u.%2u", (result & 0xFF) >> 5, (result & 0x1F));
+    LOG_ARG("result: %u.%02u", (result & 0xFF) >> 5, (result & 0x1F));
 
     return result;
 }
