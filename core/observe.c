@@ -862,8 +862,9 @@ void observe_remove(lwm2m_observation_t * observationP)
     lwm2m_free(observationP);
 }
 
-static void prv_obsRequestCallback(lwm2m_transaction_t * transacP,
-        void * message)
+static void prv_obsRequestCallback(lwm2m_context_t * contextP,
+                                   lwm2m_transaction_t * transacP,
+                                   void * message)
 {
     lwm2m_observation_t * observationP = NULL;
     observation_data_t * observationData = (observation_data_t *)transacP->userData;
@@ -871,6 +872,8 @@ static void prv_obsRequestCallback(lwm2m_transaction_t * transacP,
     uint8_t code;
     lwm2m_client_t * clientP;
     lwm2m_uri_t * uriP = & observationData->uri;
+
+    (void)contextP; /* unused */
 
     clientP = (lwm2m_client_t *)lwm2m_list_find((lwm2m_list_t *)observationData->contextP->clientList, observationData->client);
     if (clientP == NULL)
@@ -955,13 +958,16 @@ end:
 }
 
 
-static void prv_obsCancelRequestCallback(lwm2m_transaction_t * transacP,
-        void * message)
+static void prv_obsCancelRequestCallback(lwm2m_context_t * contextP,
+                                         lwm2m_transaction_t * transacP,
+                                         void * message)
 {
     cancellation_data_t * cancelP = (cancellation_data_t *)transacP->userData;
     coap_packet_t * packet = (coap_packet_t *)message;
     uint8_t code;
     lwm2m_client_t * clientP = (lwm2m_client_t *)lwm2m_list_find((lwm2m_list_t *)cancelP->contextP->clientList, cancelP->client);
+
+    (void)contextP; /* unused */
 
     if (clientP == NULL)
     {

@@ -492,6 +492,7 @@ typedef struct _lwm2m_server_
     lwm2m_block1_data_t *   block1Data;   // buffer to handle block1 data, should be replace by a list to support several block1 transfer by server.
 } lwm2m_server_t;
 
+typedef struct _lwm2m_context_ lwm2m_context_t;
 
 /*
  * LWM2M result callback
@@ -587,7 +588,7 @@ typedef struct _lwm2m_client_
 
 typedef struct _lwm2m_transaction_ lwm2m_transaction_t;
 
-typedef void (*lwm2m_transaction_callback_t) (lwm2m_transaction_t * transacP, void * message);
+typedef void (*lwm2m_transaction_callback_t) (lwm2m_context_t * contextP, lwm2m_transaction_t * transacP, void * message);
 
 struct _lwm2m_transaction_
 {
@@ -666,7 +667,7 @@ typedef enum
 typedef int (*lwm2m_bootstrap_callback_t) (void * sessionH, uint8_t status, lwm2m_uri_t * uriP, char * name, void * userData);
 #endif
 
-typedef struct
+struct _lwm2m_context_
 {
 #ifdef LWM2M_CLIENT_MODE
     lwm2m_client_state_t state;
@@ -690,7 +691,7 @@ typedef struct
     uint16_t                nextMID;
     lwm2m_transaction_t *   transactionList;
     void *                  userData;
-} lwm2m_context_t;
+};
 
 
 // initialize a liblwm2m context.

@@ -250,11 +250,14 @@ static int prv_getRegistrationQuery(lwm2m_context_t * contextP,
     return index;
 }
 
-static void prv_handleRegistrationReply(lwm2m_transaction_t * transacP,
+static void prv_handleRegistrationReply(lwm2m_context_t * contextP,
+                                        lwm2m_transaction_t * transacP,
                                         void * message)
 {
     coap_packet_t * packet = (coap_packet_t *)message;
     lwm2m_server_t * targetP = (lwm2m_server_t *)(transacP->userData);
+
+    (void)contextP; /* unused */
 
     if (targetP->status == STATE_REG_PENDING)
     {
@@ -365,11 +368,14 @@ static uint8_t prv_register(lwm2m_context_t * contextP,
     return COAP_NO_ERROR;
 }
 
-static void prv_handleRegistrationUpdateReply(lwm2m_transaction_t * transacP,
+static void prv_handleRegistrationUpdateReply(lwm2m_context_t * contextP,
+                                              lwm2m_transaction_t * transacP,
                                               void * message)
 {
     coap_packet_t * packet = (coap_packet_t *)message;
     lwm2m_server_t * targetP = (lwm2m_server_t *)(transacP->userData);
+
+    (void)contextP; /* unused */
 
     if (targetP->status == STATE_REG_UPDATE_PENDING)
     {
@@ -604,11 +610,13 @@ lwm2m_status_t registration_getStatus(lwm2m_context_t * contextP)
     return reg_status;
 }
 
-static void prv_handleDeregistrationReply(lwm2m_transaction_t * transacP,
+static void prv_handleDeregistrationReply(lwm2m_context_t * contextP,
+                                          lwm2m_transaction_t * transacP,
                                           void * message)
 {
     lwm2m_server_t * targetP;
 
+    (void)contextP; /* unused */
     (void)message; /* unused */
 
     targetP = (lwm2m_server_t *)(transacP->userData);

@@ -313,7 +313,7 @@ bool transaction_handleResponse(lwm2m_context_t * contextP,
 				}       
                 if (transacP->callback != NULL)
                 {
-                    transacP->callback(transacP, message);
+                    transacP->callback(contextP, transacP, message);
                 }
                 transaction_remove(contextP, transacP);
                 return true;
@@ -415,7 +415,7 @@ int transaction_send(lwm2m_context_t * contextP,
         if (transacP->callback)
         {
             LOG_ARG("transaction %p expired..calling callback", transacP);
-            transacP->callback(transacP, NULL);
+            transacP->callback(contextP, transacP, NULL);
         }
         transaction_remove(contextP, transacP);
         return -1;
