@@ -12,6 +12,7 @@
  *
  * Contributors:
  *    David Navarro, Intel Corporation - initial implementation
+ *    Scott Bertin, AMETEK, Inc. - Please refer to git log
  *
  *******************************************************************************/
 
@@ -34,6 +35,16 @@ typedef struct
     size_t      secretKeyLen;
     uint8_t *   serverKey;
     size_t      serverKeyLen;
+#ifndef LWM2M_VERSION_1_0
+    int         registrationPriorityOrder; // <0 when it doesn't exist
+    int         initialRegistrationDelayTimer; // <0 when it doesn't exist
+    int8_t      registrationFailureBlock; // <0 when it doesn't exist, 0 for false, > 0 for true
+    int8_t      bootstrapOnRegistrationFailure; // <0 when it doesn't exist, 0 for false, > 0 for true
+    int         communicationRetryCount; // <0 when it doesn't exist
+    int         communicationRetryTimer; // <0 when it doesn't exist
+    int         communicationSequenceDelayTimer; // <0 when it doesn't exist
+    int         communicationSequenceRetryCount; // <0 when it doesn't exist
+#endif
 } read_server_t;
 
 static int prv_find_next_section(FILE * fd,
@@ -239,6 +250,16 @@ static read_server_t * prv_read_next_server(FILE * fd)
     readSrvP = (read_server_t *)lwm2m_malloc(sizeof(read_server_t));
     if (readSrvP == NULL) return NULL;
     memset(readSrvP, 0, sizeof(read_server_t));
+#ifndef LWM2M_VERSION_1_0
+    readSrvP->registrationPriorityOrder = -1;
+    readSrvP->initialRegistrationDelayTimer = -1;
+    readSrvP->registrationFailureBlock = -1;
+    readSrvP->bootstrapOnRegistrationFailure = -1;
+    readSrvP->communicationRetryCount = -1;
+    readSrvP->communicationRetryTimer = -1;
+    readSrvP->communicationSequenceDelayTimer = -1;
+    readSrvP->communicationSequenceRetryCount = -1;
+#endif
 
     while((res = prv_read_key_value(fd, &key, &value)) == 1)
     {
@@ -316,6 +337,88 @@ static read_server_t * prv_read_next_server(FILE * fd)
             if (readSrvP->secretKeyLen == 0) goto error;
             lwm2m_free(value);
         }
+#ifndef LWM2M_VERSION_1_0
+        else if (strcasecmp(key, "registrationPriorityOrder") == 0)
+        {
+            int num;
+
+            if (sscanf(value, "%d", &num) != 1) goto error;
+            if (num < 0) goto error;
+            readSrvP->registrationPriorityOrder = num;
+            lwm2m_free(value);
+        }
+        else if (strcasecmp(key, "initialRegistrationDelay") == 0)
+        {
+            int num;
+
+            if (sscanf(value, "%d", &num) != 1) goto error;
+            if (num < 0) goto error;
+            readSrvP->initialRegistrationDelayTimer = num;
+            lwm2m_free(value);
+        }
+        else if (strcasecmp(key, "registrationFailureBlock") == 0)
+        {
+            if (strcasecmp(value, "yes") == 0)
+            {
+                readSrvP->registrationFailureBlock = true;
+            }
+            else if (strcasecmp(value, "no") == 0)
+            {
+                readSrvP->registrationFailureBlock = false;
+            }
+            else goto error;
+            lwm2m_free(value);
+        }
+        else if (strcasecmp(key, "bootstrapOnRegistrationFailure") == 0)
+        {
+            if (strcasecmp(value, "yes") == 0)
+            {
+                readSrvP->bootstrapOnRegistrationFailure = true;
+            }
+            else if (strcasecmp(value, "no") == 0)
+            {
+                readSrvP->bootstrapOnRegistrationFailure = false;
+            }
+            else goto error;
+            lwm2m_free(value);
+        }
+        else if (strcasecmp(key, "communicationRetryCount") == 0)
+        {
+            int num;
+
+            if (sscanf(value, "%d", &num) != 1) goto error;
+            if (num < 0) goto error;
+            readSrvP->communicationRetryCount = num;
+            lwm2m_free(value);
+        }
+        else if (strcasecmp(key, "communicationRetryTimer") == 0)
+        {
+            int num;
+
+            if (sscanf(value, "%d", &num) != 1) goto error;
+            if (num < 0) goto error;
+            readSrvP->communicationRetryTimer = num;
+            lwm2m_free(value);
+        }
+        else if (strcasecmp(key, "communicationSequenceDelayTimer") == 0)
+        {
+            int num;
+
+            if (sscanf(value, "%d", &num) != 1) goto error;
+            if (num < 0) goto error;
+            readSrvP->communicationSequenceDelayTimer = num;
+            lwm2m_free(value);
+        }
+        else if (strcasecmp(key, "communicationSequenceRetryCount") == 0)
+        {
+            int num;
+
+            if (sscanf(value, "%d", &num) != 1) goto error;
+            if (num < 0) goto error;
+            readSrvP->communicationSequenceRetryCount = num;
+            lwm2m_free(value);
+        }
+#endif
         else
         {
             // ignore key for now
@@ -426,7 +529,21 @@ static int prv_add_server(bs_info_t * infoP,
 
     if (dataP->isBootstrap == false)
     {
+#ifndef LWM2M_VERSION_1_0
+        int i;
+#endif
         size = 4;
+#ifndef LWM2M_VERSION_1_0
+        if (dataP->registrationPriorityOrder >= 0) size++;
+        if (dataP->initialRegistrationDelayTimer >= 0) size++;
+        if (dataP->registrationFailureBlock >= 0) size++;
+        if (dataP->bootstrapOnRegistrationFailure >= 0) size++;
+        if (dataP->communicationRetryCount >= 0) size++;
+        if (dataP->communicationRetryTimer >= 0) size++;
+        if (dataP->communicationSequenceDelayTimer >= 0) size++;
+        if (dataP->communicationSequenceRetryCount >= 0) size++;
+#endif
+
         tlvP = lwm2m_data_new(size);
         if (tlvP == NULL) goto error;
 
@@ -446,6 +563,49 @@ static int prv_add_server(bs_info_t * infoP,
         tlvP[3].id = LWM2M_SERVER_BINDING_ID;
         lwm2m_data_encode_string("U", tlvP + 3);
 
+#ifndef LWM2M_VERSION_1_0
+        i = 3;
+        if (dataP->registrationPriorityOrder >= 0)
+        {
+            tlvP[++i].id = LWM2M_SERVER_REG_ORDER_ID;
+            lwm2m_data_encode_uint(dataP->registrationPriorityOrder, tlvP + i);
+        }
+        if (dataP->initialRegistrationDelayTimer >= 0)
+        {
+            tlvP[++i].id = LWM2M_SERVER_INITIAL_REG_DELAY_ID;
+            lwm2m_data_encode_uint(dataP->initialRegistrationDelayTimer, tlvP + i);
+        }
+        if (dataP->registrationFailureBlock >= 0)
+        {
+            tlvP[++i].id = LWM2M_SERVER_REG_FAIL_BLOCK_ID;
+            lwm2m_data_encode_bool(dataP->registrationFailureBlock > 0, tlvP + i);
+        }
+        if (dataP->bootstrapOnRegistrationFailure >= 0)
+        {
+            tlvP[++i].id = LWM2M_SERVER_REG_FAIL_BOOTSTRAP_ID;
+            lwm2m_data_encode_bool(dataP->bootstrapOnRegistrationFailure > 0, tlvP + i);
+        }
+        if (dataP->communicationRetryCount >= 0)
+        {
+            tlvP[++i].id = LWM2M_SERVER_COMM_RETRY_COUNT_ID;
+            lwm2m_data_encode_uint(dataP->communicationRetryCount, tlvP + i);
+        }
+        if (dataP->communicationRetryTimer >= 0)
+        {
+            tlvP[++i].id = LWM2M_SERVER_COMM_RETRY_TIMER_ID;
+            lwm2m_data_encode_uint(dataP->communicationRetryTimer, tlvP + i);
+        }
+        if (dataP->communicationSequenceDelayTimer >= 0)
+        {
+            tlvP[++i].id = LWM2M_SERVER_SEQ_DELAY_TIMER_ID;
+            lwm2m_data_encode_uint(dataP->communicationSequenceDelayTimer, tlvP + i);
+        }
+        if (dataP->communicationSequenceRetryCount >= 0)
+        {
+            tlvP[++i].id = LWM2M_SERVER_SEQ_RETRY_COUNT_ID;
+            lwm2m_data_encode_uint(dataP->communicationSequenceRetryCount, tlvP + i);
+        }
+#endif
         res = lwm2m_data_serialize(NULL, size, tlvP, &format, &(serverP->serverData));
         if (res <= 0) goto error;
         serverP->serverLen = res;
