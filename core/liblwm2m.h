@@ -191,15 +191,30 @@ bool lwm2m_session_is_equal(void * session1, void * session2, void * userData);
 /*
  * Resource IDs for the LWM2M Server Object
  */
-#define LWM2M_SERVER_SHORT_ID_ID    0
-#define LWM2M_SERVER_LIFETIME_ID    1
-#define LWM2M_SERVER_MIN_PERIOD_ID  2
-#define LWM2M_SERVER_MAX_PERIOD_ID  3
-#define LWM2M_SERVER_DISABLE_ID     4
-#define LWM2M_SERVER_TIMEOUT_ID     5
-#define LWM2M_SERVER_STORING_ID     6
-#define LWM2M_SERVER_BINDING_ID     7
-#define LWM2M_SERVER_UPDATE_ID      8
+#define LWM2M_SERVER_SHORT_ID_ID              0
+#define LWM2M_SERVER_LIFETIME_ID              1
+#define LWM2M_SERVER_MIN_PERIOD_ID            2
+#define LWM2M_SERVER_MAX_PERIOD_ID            3
+#define LWM2M_SERVER_DISABLE_ID               4
+#define LWM2M_SERVER_TIMEOUT_ID               5
+#define LWM2M_SERVER_STORING_ID               6
+#define LWM2M_SERVER_BINDING_ID               7
+#define LWM2M_SERVER_UPDATE_ID                8
+#define LWM2M_SERVER_BOOTSTRAP_ID             9
+#define LWM2M_SERVER_APN_ID                  10
+#define LWM2M_SERVER_TLS_ALERT_CODE_ID       11
+#define LWM2M_SERVER_LAST_BOOTSTRAP_ID       12
+#define LWM2M_SERVER_REG_ORDER_ID            13
+#define LWM2M_SERVER_INITIAL_REG_DELAY_ID    14
+#define LWM2M_SERVER_REG_FAIL_BLOCK_ID       15
+#define LWM2M_SERVER_REG_FAIL_BOOTSTRAP_ID   16
+#define LWM2M_SERVER_COMM_RETRY_COUNT_ID     17
+#define LWM2M_SERVER_COMM_RETRY_TIMER_ID     18
+#define LWM2M_SERVER_SEQ_DELAY_TIMER_ID      19
+#define LWM2M_SERVER_SEQ_RETRY_COUNT_ID      20
+#define LWM2M_SERVER_TRIGGER_ID              21
+#define LWM2M_SERVER_PREFERRED_TRANSPORT_ID  22
+#define LWM2M_SERVER_MUTE_SEND_ID            23
 
 #define LWM2M_SECURITY_MODE_PRE_SHARED_KEY  0
 #define LWM2M_SECURITY_MODE_RAW_PUBLIC_KEY  1
@@ -425,6 +440,7 @@ struct _lwm2m_object_t
 typedef enum
 {
     STATE_DEREGISTERED = 0,        // not registered or boostrap not started
+    STATE_REG_HOLD_OFF,            // initial registration delay or delay between retries
     STATE_REG_PENDING,             // registration pending
     STATE_REGISTERED,              // successfully registered
     STATE_REG_FAILED,              // last registration failed
@@ -483,13 +499,18 @@ typedef struct _lwm2m_server_
     uint16_t                secObjInstID; // matches lwm2m_list_t::id
     uint16_t                shortID;      // servers short ID, may be 0 for bootstrap server
     time_t                  lifetime;     // lifetime of the registration in sec or 0 if default value (86400 sec), also used as hold off time for bootstrap servers
-    time_t                  registration; // date of the last registration in sec or end of client hold off time for bootstrap servers
+    time_t                  registration; // date of the last registration in sec or end of client hold off time for bootstrap servers or end of hold off time for registration holds.
     lwm2m_binding_t         binding;      // client connection mode with this server
     void *                  sessionH;
     lwm2m_status_t          status;
     char *                  location;
     bool                    dirty;
     lwm2m_block1_data_t *   block1Data;   // buffer to handle block1 data, should be replace by a list to support several block1 transfer by server.
+#ifndef LWM2M_VERSION_1_0
+    uint16_t                servObjInstID;// Server object instance ID if not a bootstrap server.
+    uint8_t                 attempt;      // Current registration attempt
+    uint8_t                 sequence;     // Current registration sequence
+#endif
 } lwm2m_server_t;
 
 typedef struct _lwm2m_context_ lwm2m_context_t;
