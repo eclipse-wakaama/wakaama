@@ -15,22 +15,33 @@
  *    Julien Vermillard, Sierra Wireless
  *    Bosch Software Innovations GmbH - Please refer to git log
  *    Pascal Rieux - Please refer to git log
+ *    Scott Bertin, AMETEK, Inc. - Please refer to git log
  *    
  *******************************************************************************/
 
 /*
  *  Resources:
  *
- *          Name         | ID | Operations | Instances | Mandatory |  Type   |  Range  | Units |
- *  Short ID             |  0 |     R      |  Single   |    Yes    | Integer | 1-65535 |       |
- *  Lifetime             |  1 |    R/W     |  Single   |    Yes    | Integer |         |   s   |
- *  Default Min Period   |  2 |    R/W     |  Single   |    No     | Integer |         |   s   |
- *  Default Max Period   |  3 |    R/W     |  Single   |    No     | Integer |         |   s   |
- *  Disable              |  4 |     E      |  Single   |    No     |         |         |       |
- *  Disable Timeout      |  5 |    R/W     |  Single   |    No     | Integer |         |   s   |
- *  Notification Storing |  6 |    R/W     |  Single   |    Yes    | Boolean |         |       |
- *  Binding              |  7 |    R/W     |  Single   |    Yes    | String  |         |       |
- *  Registration Update  |  8 |     E      |  Single   |    Yes    |         |         |       |
+ *          Name                       | ID | Operations | Instances | Mandatory |  Type    |  Range  | Units |
+ *  Short ID                           |  0 |     R      |  Single   |    Yes    | Integer  | 1-65535 |       |
+ *  Lifetime                           |  1 |    R/W     |  Single   |    Yes    | Integer  |         |   s   |
+ *  Default Min Period                 |  2 |    R/W     |  Single   |    No     | Integer  |         |   s   |
+ *  Default Max Period                 |  3 |    R/W     |  Single   |    No     | Integer  |         |   s   |
+ *  Disable                            |  4 |     E      |  Single   |    No     |          |         |       |
+ *  Disable Timeout                    |  5 |    R/W     |  Single   |    No     | Integer  |         |   s   |
+ *  Notification Storing               |  6 |    R/W     |  Single   |    Yes    | Boolean  |         |       |
+ *  Binding                            |  7 |    R/W     |  Single   |    Yes    | String   |         |       |
+ *  Registration Update                |  8 |     E      |  Single   |    Yes    |          |         |       |
+#ifndef LWM2M_VERSION_1_0
+ *  Registration Priority Order        | 13 |    R/W     |  Single   |    No     | Unsigned |         |       |
+ *  Initial Registration Delay Timer   | 14 |    R/W     |  Single   |    No     | Unsigned |         |   s   |
+ *  Registration Failure Block         | 15 |    R/W     |  Single   |    No     | Boolean  |         |       |
+ *  Bootstrap on Registration Failure  | 16 |    R/W     |  Single   |    No     | Boolean  |         |       |
+ *  Communication Retry Count          | 17 |    R/W     |  Single   |    No     | Unsigned |         |       |
+ *  Communication Retry Timer          | 18 |    R/W     |  Single   |    No     | Unsigned |         |   s   |
+ *  Communication Sequence Delay Timer | 19 |    R/W     |  Single   |    No     | Unsigned |         |   s   |
+ *  Communication Sequence Retry Count | 20 |    R/W     |  Single   |    No     | Unsigned |         |       |
+#endif
  *
  */
 
@@ -39,6 +50,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 
 typedef struct _server_instance_
 {
@@ -51,6 +63,16 @@ typedef struct _server_instance_
     uint32_t    disableTimeout;
     bool        storing;
     char        binding[4];
+#ifndef LWM2M_VERSION_1_0
+    int         registrationPriorityOrder; // <0 when it doesn't exist
+    int         initialRegistrationDelayTimer; // <0 when it doesn't exist
+    int8_t      registrationFailureBlock; // <0 when it doesn't exist, 0 for false, > 0 for true
+    int8_t      bootstrapOnRegistrationFailure; // <0 when it doesn't exist, 0 for false, > 0 for true
+    int         communicationRetryCount; // <0 when it doesn't exist
+    int         communicationRetryTimer; // <0 when it doesn't exist
+    int         communicationSequenceDelayTimer; // <0 when it doesn't exist
+    int         communicationSequenceRetryCount; // <0 when it doesn't exist
+#endif
 } server_instance_t;
 
 static uint8_t prv_get_value(lwm2m_data_t * dataP,
@@ -92,6 +114,97 @@ static uint8_t prv_get_value(lwm2m_data_t * dataP,
     case LWM2M_SERVER_UPDATE_ID:
         return COAP_405_METHOD_NOT_ALLOWED;
 
+#ifndef LWM2M_VERSION_1_0
+    case LWM2M_SERVER_REG_ORDER_ID:
+        if (targetP->registrationPriorityOrder >= 0)
+        {
+            lwm2m_data_encode_uint(targetP->registrationPriorityOrder, dataP);
+            return COAP_205_CONTENT;
+        }
+        else
+        {
+            return COAP_404_NOT_FOUND;
+        }
+
+    case LWM2M_SERVER_INITIAL_REG_DELAY_ID:
+        if (targetP->initialRegistrationDelayTimer >= 0)
+        {
+            lwm2m_data_encode_uint(targetP->initialRegistrationDelayTimer, dataP);
+            return COAP_205_CONTENT;
+        }
+        else
+        {
+            return COAP_404_NOT_FOUND;
+        }
+
+    case LWM2M_SERVER_REG_FAIL_BLOCK_ID:
+        if (targetP->registrationFailureBlock >= 0)
+        {
+            lwm2m_data_encode_bool(targetP->registrationFailureBlock > 0, dataP);
+            return COAP_205_CONTENT;
+        }
+        else
+        {
+            return COAP_404_NOT_FOUND;
+        }
+
+    case LWM2M_SERVER_REG_FAIL_BOOTSTRAP_ID:
+        if (targetP->bootstrapOnRegistrationFailure >= 0)
+        {
+            lwm2m_data_encode_bool(targetP->bootstrapOnRegistrationFailure > 0, dataP);
+            return COAP_205_CONTENT;
+        }
+        else
+        {
+            return COAP_404_NOT_FOUND;
+        }
+
+    case LWM2M_SERVER_COMM_RETRY_COUNT_ID:
+        if (targetP->communicationRetryCount >= 0)
+        {
+            lwm2m_data_encode_uint(targetP->communicationRetryCount, dataP);
+            return COAP_205_CONTENT;
+        }
+        else
+        {
+            return COAP_404_NOT_FOUND;
+        }
+
+    case LWM2M_SERVER_COMM_RETRY_TIMER_ID:
+        if (targetP->communicationRetryTimer >= 0)
+        {
+            lwm2m_data_encode_uint(targetP->communicationRetryTimer, dataP);
+            return COAP_205_CONTENT;
+        }
+        else
+        {
+            return COAP_404_NOT_FOUND;
+        }
+
+    case LWM2M_SERVER_SEQ_DELAY_TIMER_ID:
+        if (targetP->communicationSequenceDelayTimer >= 0)
+        {
+            lwm2m_data_encode_uint(targetP->communicationSequenceDelayTimer, dataP);
+            return COAP_205_CONTENT;
+        }
+        else
+        {
+            return COAP_404_NOT_FOUND;
+        }
+
+    case LWM2M_SERVER_SEQ_RETRY_COUNT_ID:
+        if (targetP->communicationSequenceRetryCount >= 0)
+        {
+            lwm2m_data_encode_uint(targetP->communicationSequenceRetryCount, dataP);
+            return COAP_205_CONTENT;
+        }
+        else
+        {
+            return COAP_404_NOT_FOUND;
+        }
+
+#endif
+
     default:
         return COAP_404_NOT_FOUND;
     }
@@ -119,9 +232,119 @@ static uint8_t prv_server_read(uint16_t instanceId,
             LWM2M_SERVER_MAX_PERIOD_ID,
             LWM2M_SERVER_TIMEOUT_ID,
             LWM2M_SERVER_STORING_ID,
-            LWM2M_SERVER_BINDING_ID
+            LWM2M_SERVER_BINDING_ID,
+#ifndef LWM2M_VERSION_1_0
+            LWM2M_SERVER_REG_ORDER_ID,
+            LWM2M_SERVER_INITIAL_REG_DELAY_ID,
+            LWM2M_SERVER_REG_FAIL_BLOCK_ID,
+            LWM2M_SERVER_REG_FAIL_BOOTSTRAP_ID,
+            LWM2M_SERVER_COMM_RETRY_COUNT_ID,
+            LWM2M_SERVER_COMM_RETRY_TIMER_ID,
+            LWM2M_SERVER_SEQ_DELAY_TIMER_ID,
+            LWM2M_SERVER_SEQ_RETRY_COUNT_ID,
+#endif
         };
         int nbRes = sizeof(resList)/sizeof(uint16_t);
+
+#ifndef LWM2M_VERSION_1_0
+        /* Remove optional resources that don't exist */
+        if(targetP->registrationPriorityOrder < 0)
+        {
+            for (i=0; i < nbRes; i++)
+            {
+                if (resList[i] == LWM2M_SERVER_REG_ORDER_ID)
+                {
+                    nbRes -= 1;
+                    memmove(&resList[i], &resList[i+1], (nbRes-i)*sizeof(resList[i]));
+                    break;
+                }
+            }
+        }
+        if(targetP->initialRegistrationDelayTimer < 0)
+        {
+            for (i=0; i < nbRes; i++)
+            {
+                if (resList[i] == LWM2M_SERVER_INITIAL_REG_DELAY_ID)
+                {
+                    nbRes -= 1;
+                    memmove(&resList[i], &resList[i+1], (nbRes-i)*sizeof(resList[i]));
+                    break;
+                }
+            }
+        }
+        if(targetP->registrationFailureBlock < 0)
+        {
+            for (i=0; i < nbRes; i++)
+            {
+                if (resList[i] == LWM2M_SERVER_REG_FAIL_BLOCK_ID)
+                {
+                    nbRes -= 1;
+                    memmove(&resList[i], &resList[i+1], (nbRes-i)*sizeof(resList[i]));
+                    break;
+                }
+            }
+        }
+        if(targetP->bootstrapOnRegistrationFailure < 0)
+        {
+            for (i=0; i < nbRes; i++)
+            {
+                if (resList[i] == LWM2M_SERVER_REG_FAIL_BOOTSTRAP_ID)
+                {
+                    nbRes -= 1;
+                    memmove(&resList[i], &resList[i+1], (nbRes-i)*sizeof(resList[i]));
+                    break;
+                }
+            }
+        }
+        if(targetP->communicationRetryCount < 0)
+        {
+            for (i=0; i < nbRes; i++)
+            {
+                if (resList[i] == LWM2M_SERVER_COMM_RETRY_COUNT_ID)
+                {
+                    nbRes -= 1;
+                    memmove(&resList[i], &resList[i+1], (nbRes-i)*sizeof(resList[i]));
+                    break;
+                }
+            }
+        }
+        if(targetP->communicationRetryTimer < 0)
+        {
+            for (i=0; i < nbRes; i++)
+            {
+                if (resList[i] == LWM2M_SERVER_COMM_RETRY_TIMER_ID)
+                {
+                    nbRes -= 1;
+                    memmove(&resList[i], &resList[i+1], (nbRes-i)*sizeof(resList[i]));
+                    break;
+                }
+            }
+        }
+        if(targetP->communicationSequenceDelayTimer < 0)
+        {
+            for (i=0; i < nbRes; i++)
+            {
+                if (resList[i] == LWM2M_SERVER_SEQ_DELAY_TIMER_ID)
+                {
+                    nbRes -= 1;
+                    memmove(&resList[i], &resList[i+1], (nbRes-i)*sizeof(resList[i]));
+                    break;
+                }
+            }
+        }
+        if(targetP->communicationSequenceRetryCount < 0)
+        {
+            for (i=0; i < nbRes; i++)
+            {
+                if (resList[i] == LWM2M_SERVER_SEQ_RETRY_COUNT_ID)
+                {
+                    nbRes -= 1;
+                    memmove(&resList[i], &resList[i+1], (nbRes-i)*sizeof(resList[i]));
+                    break;
+                }
+            }
+        }
+#endif
 
         *dataArrayP = lwm2m_data_new(nbRes);
         if (*dataArrayP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
@@ -147,10 +370,14 @@ static uint8_t prv_server_discover(uint16_t instanceId,
                                    lwm2m_data_t ** dataArrayP,
                                    lwm2m_object_t * objectP)
 {
+    server_instance_t * targetP;
     uint8_t result;
     int i;
 
     result = COAP_205_CONTENT;
+
+    targetP = (server_instance_t *)lwm2m_list_find(objectP->instanceList, instanceId);
+    if (NULL == targetP) return COAP_404_NOT_FOUND;
 
     // is the server asking for the full object ?
     if (*numDataP == 0)
@@ -164,9 +391,119 @@ static uint8_t prv_server_discover(uint16_t instanceId,
             LWM2M_SERVER_TIMEOUT_ID,
             LWM2M_SERVER_STORING_ID,
             LWM2M_SERVER_BINDING_ID,
-            LWM2M_SERVER_UPDATE_ID
+            LWM2M_SERVER_UPDATE_ID,
+#ifndef LWM2M_VERSION_1_0
+            LWM2M_SERVER_REG_ORDER_ID,
+            LWM2M_SERVER_INITIAL_REG_DELAY_ID,
+            LWM2M_SERVER_REG_FAIL_BLOCK_ID,
+            LWM2M_SERVER_REG_FAIL_BOOTSTRAP_ID,
+            LWM2M_SERVER_COMM_RETRY_COUNT_ID,
+            LWM2M_SERVER_COMM_RETRY_TIMER_ID,
+            LWM2M_SERVER_SEQ_DELAY_TIMER_ID,
+            LWM2M_SERVER_SEQ_RETRY_COUNT_ID,
+#endif
         };
         int nbRes = sizeof(resList) / sizeof(uint16_t);
+
+#ifndef LWM2M_VERSION_1_0
+        /* Remove optional resources that don't exist */
+        if(targetP->registrationPriorityOrder < 0)
+        {
+            for (i=0; i < nbRes; i++)
+            {
+                if (resList[i] == LWM2M_SERVER_REG_ORDER_ID)
+                {
+                    nbRes -= 1;
+                    memmove(&resList[i], &resList[i+1], (nbRes-i)*sizeof(resList[i]));
+                    break;
+                }
+            }
+        }
+        if(targetP->initialRegistrationDelayTimer < 0)
+        {
+            for (i=0; i < nbRes; i++)
+            {
+                if (resList[i] == LWM2M_SERVER_INITIAL_REG_DELAY_ID)
+                {
+                    nbRes -= 1;
+                    memmove(&resList[i], &resList[i+1], (nbRes-i)*sizeof(resList[i]));
+                    break;
+                }
+            }
+        }
+        if(targetP->registrationFailureBlock < 0)
+        {
+            for (i=0; i < nbRes; i++)
+            {
+                if (resList[i] == LWM2M_SERVER_REG_FAIL_BLOCK_ID)
+                {
+                    nbRes -= 1;
+                    memmove(&resList[i], &resList[i+1], (nbRes-i)*sizeof(resList[i]));
+                    break;
+                }
+            }
+        }
+        if(targetP->bootstrapOnRegistrationFailure < 0)
+        {
+            for (i=0; i < nbRes; i++)
+            {
+                if (resList[i] == LWM2M_SERVER_REG_FAIL_BOOTSTRAP_ID)
+                {
+                    nbRes -= 1;
+                    memmove(&resList[i], &resList[i+1], (nbRes-i)*sizeof(resList[i]));
+                    break;
+                }
+            }
+        }
+        if(targetP->communicationRetryCount < 0)
+        {
+            for (i=0; i < nbRes; i++)
+            {
+                if (resList[i] == LWM2M_SERVER_COMM_RETRY_COUNT_ID)
+                {
+                    nbRes -= 1;
+                    memmove(&resList[i], &resList[i+1], (nbRes-i)*sizeof(resList[i]));
+                    break;
+                }
+            }
+        }
+        if(targetP->communicationRetryTimer < 0)
+        {
+            for (i=0; i < nbRes; i++)
+            {
+                if (resList[i] == LWM2M_SERVER_COMM_RETRY_TIMER_ID)
+                {
+                    nbRes -= 1;
+                    memmove(&resList[i], &resList[i+1], (nbRes-i)*sizeof(resList[i]));
+                    break;
+                }
+            }
+        }
+        if(targetP->communicationSequenceDelayTimer < 0)
+        {
+            for (i=0; i < nbRes; i++)
+            {
+                if (resList[i] == LWM2M_SERVER_SEQ_DELAY_TIMER_ID)
+                {
+                    nbRes -= 1;
+                    memmove(&resList[i], &resList[i+1], (nbRes-i)*sizeof(resList[i]));
+                    break;
+                }
+            }
+        }
+        if(targetP->communicationSequenceRetryCount < 0)
+        {
+            for (i=0; i < nbRes; i++)
+            {
+                if (resList[i] == LWM2M_SERVER_SEQ_RETRY_COUNT_ID)
+                {
+                    nbRes -= 1;
+                    memmove(&resList[i], &resList[i+1], (nbRes-i)*sizeof(resList[i]));
+                    break;
+                }
+            }
+        }
+#endif
 
         *dataArrayP = lwm2m_data_new(nbRes);
         if (*dataArrayP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
@@ -192,8 +529,67 @@ static uint8_t prv_server_discover(uint16_t instanceId,
             case LWM2M_SERVER_BINDING_ID:
             case LWM2M_SERVER_UPDATE_ID:
                 break;
+#ifndef LWM2M_VERSION_1_0
+            case LWM2M_SERVER_REG_ORDER_ID:
+                if(targetP->registrationPriorityOrder < 0)
+                {
+                    result = COAP_404_NOT_FOUND;
+                }
+                break;
+
+            case LWM2M_SERVER_INITIAL_REG_DELAY_ID:
+                if(targetP->initialRegistrationDelayTimer < 0)
+                {
+                    result = COAP_404_NOT_FOUND;
+                }
+                break;
+
+            case LWM2M_SERVER_REG_FAIL_BLOCK_ID:
+                if(targetP->registrationFailureBlock < 0)
+                {
+                    result = COAP_404_NOT_FOUND;
+                }
+                break;
+
+            case LWM2M_SERVER_REG_FAIL_BOOTSTRAP_ID:
+                if(targetP->bootstrapOnRegistrationFailure < 0)
+                {
+                    result = COAP_404_NOT_FOUND;
+                }
+                break;
+
+            case LWM2M_SERVER_COMM_RETRY_COUNT_ID:
+                if(targetP->communicationRetryCount < 0)
+                {
+                    result = COAP_404_NOT_FOUND;
+                }
+                break;
+
+            case LWM2M_SERVER_COMM_RETRY_TIMER_ID:
+                if(targetP->communicationRetryTimer < 0)
+                {
+                    result = COAP_404_NOT_FOUND;
+                }
+                break;
+
+            case LWM2M_SERVER_SEQ_DELAY_TIMER_ID:
+                if(targetP->communicationSequenceDelayTimer < 0)
+                {
+                    result = COAP_404_NOT_FOUND;
+                }
+                break;
+
+            case LWM2M_SERVER_SEQ_RETRY_COUNT_ID:
+                if(targetP->communicationSequenceRetryCount < 0)
+                {
+                    result = COAP_404_NOT_FOUND;
+                }
+                break;
+#endif
+
             default:
                 result = COAP_404_NOT_FOUND;
+                break;
             }
         }
     }
@@ -321,6 +717,184 @@ static uint8_t prv_server_write(uint16_t instanceId,
             result = COAP_405_METHOD_NOT_ALLOWED;
             break;
 
+#ifndef LWM2M_VERSION_1_0
+        case LWM2M_SERVER_REG_ORDER_ID:
+        {
+            uint64_t value;
+            if (1 == lwm2m_data_decode_uint(dataArray + i, &value))
+            {
+                if (value <= INT_MAX)
+                {
+                    targetP->registrationPriorityOrder = value;
+                    result = COAP_204_CHANGED;
+                }
+                else
+                {
+                    result = COAP_406_NOT_ACCEPTABLE;
+                }
+            }
+            else
+            {
+                result = COAP_400_BAD_REQUEST;
+            }
+            break;
+        }
+
+        case LWM2M_SERVER_INITIAL_REG_DELAY_ID:
+        {
+            uint64_t value;
+            if (1 == lwm2m_data_decode_uint(dataArray + i, &value))
+            {
+                if (value <= INT_MAX)
+                {
+                    targetP->initialRegistrationDelayTimer = value;
+                    result = COAP_204_CHANGED;
+                }
+                else
+                {
+                    result = COAP_406_NOT_ACCEPTABLE;
+                }
+            }
+            else
+            {
+                result = COAP_400_BAD_REQUEST;
+            }
+            break;
+        }
+
+        case LWM2M_SERVER_REG_FAIL_BLOCK_ID:
+        {
+            bool value;
+            if (1 == lwm2m_data_decode_bool(dataArray + i, &value))
+            {
+                if (value <= INT_MAX)
+                {
+                    targetP->registrationFailureBlock = value;
+                    result = COAP_204_CHANGED;
+                }
+                else
+                {
+                    result = COAP_406_NOT_ACCEPTABLE;
+                }
+            }
+            else
+            {
+                result = COAP_400_BAD_REQUEST;
+            }
+            break;
+        }
+
+        case LWM2M_SERVER_REG_FAIL_BOOTSTRAP_ID:
+        {
+            bool value;
+            if (1 == lwm2m_data_decode_bool(dataArray + i, &value))
+            {
+                if (value <= INT_MAX)
+                {
+                    targetP->bootstrapOnRegistrationFailure = value;
+                    result = COAP_204_CHANGED;
+                }
+                else
+                {
+                    result = COAP_406_NOT_ACCEPTABLE;
+                }
+            }
+            else
+            {
+                result = COAP_400_BAD_REQUEST;
+            }
+            break;
+        }
+
+        case LWM2M_SERVER_COMM_RETRY_COUNT_ID:
+        {
+            uint64_t value;
+            if (1 == lwm2m_data_decode_uint(dataArray + i, &value))
+            {
+                if (value <= INT_MAX)
+                {
+                    targetP->communicationRetryCount = value;
+                    result = COAP_204_CHANGED;
+                }
+                else
+                {
+                    result = COAP_406_NOT_ACCEPTABLE;
+                }
+            }
+            else
+            {
+                result = COAP_400_BAD_REQUEST;
+            }
+            break;
+        }
+
+        case LWM2M_SERVER_COMM_RETRY_TIMER_ID:
+        {
+            uint64_t value;
+            if (1 == lwm2m_data_decode_uint(dataArray + i, &value))
+            {
+                if (value <= INT_MAX)
+                {
+                    targetP->communicationRetryTimer = value;
+                    result = COAP_204_CHANGED;
+                }
+                else
+                {
+                    result = COAP_406_NOT_ACCEPTABLE;
+                }
+            }
+            else
+            {
+                result = COAP_400_BAD_REQUEST;
+            }
+            break;
+        }
+
+        case LWM2M_SERVER_SEQ_DELAY_TIMER_ID:
+        {
+            uint64_t value;
+            if (1 == lwm2m_data_decode_uint(dataArray + i, &value))
+            {
+                if (value <= INT_MAX)
+                {
+                    targetP->communicationSequenceDelayTimer = value;
+                    result = COAP_204_CHANGED;
+                }
+                else
+                {
+                    result = COAP_406_NOT_ACCEPTABLE;
+                }
+            }
+            else
+            {
+                result = COAP_400_BAD_REQUEST;
+            }
+            break;
+        }
+
+        case LWM2M_SERVER_SEQ_RETRY_COUNT_ID:
+        {
+            uint64_t value;
+            if (1 == lwm2m_data_decode_uint(dataArray + i, &value))
+            {
+                if (value <= INT_MAX)
+                {
+                    targetP->communicationSequenceRetryCount = value;
+                    result = COAP_204_CHANGED;
+                }
+                else
+                {
+                    result = COAP_406_NOT_ACCEPTABLE;
+                }
+            }
+            else
+            {
+                result = COAP_400_BAD_REQUEST;
+            }
+            break;
+        }
+#endif
+
         default:
             return COAP_404_NOT_FOUND;
         }
@@ -382,6 +956,16 @@ static uint8_t prv_server_create(uint16_t instanceId,
     memset(serverInstance, 0, sizeof(server_instance_t));
 
     serverInstance->instanceId = instanceId;
+#ifndef LWM2M_VERSION_1_0
+    serverInstance->registrationPriorityOrder = -1;
+    serverInstance->initialRegistrationDelayTimer = -1;
+    serverInstance->registrationFailureBlock = -1;
+    serverInstance->bootstrapOnRegistrationFailure = -1;
+    serverInstance->communicationRetryCount = -1;
+    serverInstance->communicationRetryTimer = -1;
+    serverInstance->communicationSequenceDelayTimer = -1;
+    serverInstance->communicationSequenceRetryCount = -1;
+#endif
     objectP->instanceList = LWM2M_LIST_ADD(objectP->instanceList, serverInstance);
 
     result = prv_server_write(instanceId, numData, dataArray, objectP);
@@ -435,10 +1019,31 @@ void display_server_object(lwm2m_object_t * object)
     server_instance_t * serverInstance = (server_instance_t *)object->instanceList;
     while (serverInstance != NULL)
     {
-        fprintf(stdout, "    /%u/%u: instanceId: %u, shortServerId: %u, lifetime: %u, storing: %s, binding: %s\r\n",
+        fprintf(stdout, "    /%u/%u: instanceId: %u, shortServerId: %u, lifetime: %u, storing: %s, binding: %s",
                 object->objID, serverInstance->instanceId,
                 serverInstance->instanceId, serverInstance->shortServerId, serverInstance->lifetime,
                 serverInstance->storing ? "true" : "false", serverInstance->binding);
+#ifndef LWM2M_VERSION_1_0
+        if(serverInstance->registrationPriorityOrder >= 0)
+            fprintf(stdout, ", registrationPriorityOrder: %d", serverInstance->registrationPriorityOrder);
+        if(serverInstance->initialRegistrationDelayTimer >= 0)
+            fprintf(stdout, ", initialRegistrationDelayTimer: %d", serverInstance->initialRegistrationDelayTimer);
+        if(serverInstance->registrationFailureBlock >= 0)
+            fprintf(stdout, ", registrationFailureBlock: %s",
+                    serverInstance->registrationFailureBlock > 0 ? "true" : "false");
+        if(serverInstance->bootstrapOnRegistrationFailure >= 0)
+            fprintf(stdout, ", bootstrapOnRegistrationFaulure: %s",
+                    serverInstance->bootstrapOnRegistrationFailure > 0 ? "true" : "false");
+        if(serverInstance->communicationRetryCount >= 0)
+            fprintf(stdout, ", communicationRetryCount: %d", serverInstance->communicationRetryCount);
+        if(serverInstance->communicationRetryTimer >= 0)
+            fprintf(stdout, ", communicationRetryTimer: %d", serverInstance->communicationRetryTimer);
+        if(serverInstance->communicationSequenceDelayTimer >= 0)
+            fprintf(stdout, ", communicationSequenceDelayTimer: %d", serverInstance->communicationSequenceDelayTimer);
+        if(serverInstance->communicationSequenceRetryCount >= 0)
+            fprintf(stdout, ", communicationSequenceRetryCount: %d", serverInstance->communicationSequenceRetryCount);
+#endif
+        fprintf(stdout, "\r\n");
         serverInstance = (server_instance_t *)serverInstance->next;
     }
 #endif
@@ -475,6 +1080,16 @@ lwm2m_object_t * get_server_object(int serverId,
         serverInstance->lifetime = lifetime;
         serverInstance->storing = storing;
         memcpy (serverInstance->binding, binding, strlen(binding)+1);
+#ifndef LWM2M_VERSION_1_0
+        serverInstance->registrationPriorityOrder = -1;
+        serverInstance->initialRegistrationDelayTimer = -1;
+        serverInstance->registrationFailureBlock = -1;
+        serverInstance->bootstrapOnRegistrationFailure = -1;
+        serverInstance->communicationRetryCount = -1;
+        serverInstance->communicationRetryTimer = -1;
+        serverInstance->communicationSequenceDelayTimer = -1;
+        serverInstance->communicationSequenceRetryCount = -1;
+#endif
         serverObj->instanceList = LWM2M_LIST_ADD(serverObj->instanceList, serverInstance);
 
         serverObj->readFunc = prv_server_read;
