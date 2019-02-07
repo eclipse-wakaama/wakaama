@@ -512,7 +512,7 @@ static uint8_t prv_startRegistration(lwm2m_server_t* targetP,
 
 static void prv_handleRegistrationSequenceFailure(lwm2m_context_t *contextP, lwm2m_object_t *serverObjP, lwm2m_server_t *targetP)
 {
-    bool ordered;
+    bool ordered = false;
     bool blocking = false;
     uint8_t sequenceLimit;
     uint64_t sequenceDelay;
@@ -952,7 +952,7 @@ uint8_t registration_start(lwm2m_context_t * contextP, bool restartFailed)
 #ifndef LWM2M_VERSION_1_0
     lwm2m_object_t * serverObjP;
     lwm2m_server_t * firstOrdered = NULL;
-    uint64_t firstOrder;
+    uint64_t firstOrder = 0;
 #endif
 
     LOG_ARG("State: %s", STR_STATE(contextP->state));
