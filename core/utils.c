@@ -242,7 +242,7 @@ size_t utils_uintToText(uint64_t data,
     if (result < length)
     {
         memmove(string, string + index, result);
-        string[index] = '\0';
+        string[result] = '\0';
     }
 
     return result;
