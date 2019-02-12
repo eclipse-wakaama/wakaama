@@ -207,6 +207,8 @@ uint8_t lwm2m_buffer_send(void * sessionH,
 {
     connection_t * connP = (connection_t*) sessionH;
 
+    (void)userdata; /* unused */
+
     if (connP == NULL)
     {
         fprintf(stderr, "#> failed sending %lu bytes, missing connection\r\n", length);
@@ -226,5 +228,7 @@ bool lwm2m_session_is_equal(void * session1,
                             void * session2,
                             void * userData)
 {
+    (void)userData; /* unused */
+
     return (session1 == session2);
 }

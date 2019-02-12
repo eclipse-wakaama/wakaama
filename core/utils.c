@@ -13,6 +13,7 @@
  * Contributors:
  *    David Navarro, Intel Corporation - initial API and implementation
  *    Toby Jaffey - Please refer to git log
+ *    Scott Bertin, AMETEK, Inc. - Please refer to git log
  *    
  *******************************************************************************/
 
@@ -84,7 +85,7 @@ int utils_textToInt(uint8_t * buffer,
         i++;
     }
 
-    if (result > INT64_MAX) return 0;
+    if (result > INT64_MAX + (uint64_t)(sign == -1 ? 1 : 0)) return 0;
 
     if (sign == -1)
     {
@@ -94,6 +95,35 @@ int utils_textToInt(uint8_t * buffer,
     {
         *dataP = result;
     }
+
+    return 1;
+}
+
+int utils_textToUInt(const uint8_t * buffer,
+                     int length,
+                     uint64_t * dataP)
+{
+    uint64_t result = 0;
+    int i = 0;
+
+    if (0 == length) return 0;
+
+    while (i < length)
+    {
+        if ('0' <= buffer[i] && buffer[i] <= '9')
+        {
+            if (result > (UINT64_MAX / 10)) return 0;
+            result *= 10;
+            result += buffer[i] - '0';
+        }
+        else
+        {
+            return 0;
+        }
+        i++;
+    }
+
+    *dataP = result;
 
     return 1;
 }
@@ -166,19 +196,34 @@ size_t utils_intToText(int64_t data,
                        uint8_t * string,
                        size_t length)
 {
-    int index;
-    bool minus;
     size_t result;
 
     if (data < 0)
     {
-        minus = true;
-        data = 0 - data;
+        if (length == 0) return 0;
+        string[0] = '-';
+        result = utils_uintToText((uint64_t)(0-data), string + 1, length - 1);
+        if(result != 0)
+        {
+            result += 1;
+        }
     }
     else
     {
-        minus = false;
+        result = utils_uintToText((uint64_t)data, string, length);
     }
+
+    return result;
+}
+
+size_t utils_uintToText(uint64_t data,
+                        uint8_t * string,
+                        size_t length)
+{
+    int index;
+    size_t result;
+
+    if (length == 0) return 0;
 
     index = length - 1;
     do
@@ -190,21 +235,14 @@ size_t utils_intToText(int64_t data,
 
     if (data > 0) return 0;
 
-    if (minus == true)
-    {
-        if (index == 0) return 0;
-        string[index] = '-';
-    }
-    else
-    {
-        index++;
-    }
+    index++;
 
     result = length - index;
 
     if (result < length)
     {
         memmove(string, string + index, result);
+        string[result] = '\0';
     }
 
     return result;
@@ -274,9 +312,37 @@ size_t utils_floatToText(double data,
     return intLength + decLength;
 }
 
+lwm2m_version_t utils_stringToVersion(uint8_t * buffer,
+                                      size_t length)
+{
+    if (length == 0) return VERSION_MISSING;
+    if (length != 3) return VERSION_UNRECOGNIZED;
+    if (buffer[1] != '.') return VERSION_UNRECOGNIZED;
+
+    switch (buffer[0])
+    {
+    case '1':
+        switch (buffer[2])
+        {
+        case '0':
+            return VERSION_1_0;
+        case '1':
+            return VERSION_1_1;
+        default:
+            break;
+        }
+        break;
+    default:
+        break;
+    }
+
+    return VERSION_UNRECOGNIZED;
+}
+
 lwm2m_binding_t utils_stringToBinding(uint8_t * buffer,
                                       size_t length)
 {
+#ifdef LWM2M_VERSION_1_0
     if (length == 0) return BINDING_UNKNOWN;
 
     switch (buffer[0])
@@ -329,31 +395,71 @@ lwm2m_binding_t utils_stringToBinding(uint8_t * buffer,
     }
 
     return BINDING_UNKNOWN;
+#else
+    size_t i;
+    lwm2m_binding_t binding = BINDING_UNKNOWN;
+    for (i = 0; i < length; i++)
+    {
+        switch (buffer[i])
+        {
+        case 'N':
+            binding |= BINDING_N;
+            break;
+        case 'Q':
+            binding |= BINDING_Q;
+            break;
+        case 'S':
+            binding |= BINDING_S;
+            break;
+        case 'T':
+            binding |= BINDING_T;
+            break;
+        case 'U':
+            binding |= BINDING_U;
+            break;
+        default:
+            return BINDING_UNKNOWN;
+        }
+    }
+    return binding;
+#endif
 }
 
 lwm2m_media_type_t utils_convertMediaType(coap_content_type_t type)
 {
+    lwm2m_media_type_t result = LWM2M_CONTENT_TEXT;
     // Here we just check the content type is a valid value for LWM2M
     switch((uint16_t)type)
     {
     case TEXT_PLAIN:
-        return LWM2M_CONTENT_TEXT;
+        break;
     case APPLICATION_OCTET_STREAM:
-        return LWM2M_CONTENT_OPAQUE;
+        result = LWM2M_CONTENT_OPAQUE;
+        break;
+#ifdef LWM2M_OLD_CONTENT_FORMAT_SUPPORT
     case LWM2M_CONTENT_TLV_OLD:
-        return LWM2M_CONTENT_TLV_OLD;
+        result = LWM2M_CONTENT_TLV_OLD;
+        break;
+#endif
     case LWM2M_CONTENT_TLV:
-        return LWM2M_CONTENT_TLV;
+        result = LWM2M_CONTENT_TLV;
+        break;
+#ifdef LWM2M_OLD_CONTENT_FORMAT_SUPPORT
     case LWM2M_CONTENT_JSON_OLD:
-        return LWM2M_CONTENT_JSON_OLD;
+        result = LWM2M_CONTENT_JSON_OLD;
+        break;
+#endif
     case LWM2M_CONTENT_JSON:
-        return LWM2M_CONTENT_JSON;
+        result = LWM2M_CONTENT_JSON;
+        break;
     case APPLICATION_LINK_FORMAT:
-        return LWM2M_CONTENT_LINK;
+        result = LWM2M_CONTENT_LINK;
+        break;
 
     default:
-        return LWM2M_CONTENT_TEXT;
+        break;
     }
+    return result;
 }
 
 #ifdef LWM2M_CLIENT_MODE

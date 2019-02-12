@@ -30,7 +30,7 @@ void * lwm2m_malloc(size_t s)
 
 void lwm2m_free(void * p)
 {
-    return free(p);
+    free(p);
 }
 
 char * lwm2m_strdup(const char * str)

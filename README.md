@@ -40,6 +40,10 @@ Several compilation switches are used:
  - LWM2M_BOOTSTRAP to enable LWM2M Bootstrap support in a LWM2M Client.
  - LWM2M_SUPPORT_JSON to enable JSON payload support (implicit when defining LWM2M_SERVER_MODE)
  - LWM2M_OLD_CONTENT_FORMAT_SUPPORT to support the deprecated content format values for TLV and JSON.
+ - LWM2M_VERSION to specify which version of the LWM2M spec to support.
+   Clients will support only that version. Servers will support that version and below.
+   By default the latest version is supported. To specify version 1.0, for example, pass
+   -DLWM2M_VERSION="1.0" to cmake.
 
 Depending on your platform, you need to define LWM2M_BIG_ENDIAN or LWM2M_LITTLE_ENDIAN.
 LWM2M_CLIENT_MODE and LWM2M_SERVER_MODE can be defined at the same time.

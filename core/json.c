@@ -12,6 +12,7 @@
  *
  * Contributors:
  *    David Navarro, Intel Corporation - initial API and implementation
+ *    Scott Bertin, AMETEK, Inc. - Please refer to git log
  *
  *******************************************************************************/
 
@@ -1042,6 +1043,7 @@ static int prv_serializeValue(lwm2m_data_t * tlvP,
     switch (tlvP->type)
     {
     case LWM2M_TYPE_STRING:
+    case LWM2M_TYPE_CORE_LINK:
         if (bufferLen < JSON_ITEM_STRING_BEGIN_SIZE) return -1;
         memcpy(buffer, JSON_ITEM_STRING_BEGIN, JSON_ITEM_STRING_BEGIN_SIZE);
         head = JSON_ITEM_STRING_BEGIN_SIZE;
@@ -1067,6 +1069,26 @@ static int prv_serializeValue(lwm2m_data_t * tlvP,
         head = JSON_ITEM_NUM_SIZE;
 
         res = utils_intToText(value, buffer + head, bufferLen - head);
+        if (res <= 0) return -1;
+        head += res;
+
+        if (bufferLen - head < JSON_ITEM_NUM_END_SIZE) return -1;
+        memcpy(buffer + head, JSON_ITEM_NUM_END, JSON_ITEM_NUM_END_SIZE);
+        head += JSON_ITEM_NUM_END_SIZE;
+    }
+    break;
+
+    case LWM2M_TYPE_UNSIGNED_INTEGER:
+    {
+        uint64_t value;
+
+        if (0 == lwm2m_data_decode_uint(tlvP, &value)) return -1;
+
+        if (bufferLen < JSON_ITEM_NUM_SIZE) return -1;
+        memcpy(buffer, JSON_ITEM_NUM, JSON_ITEM_NUM_SIZE);
+        head = JSON_ITEM_NUM_SIZE;
+
+        res = utils_uintToText(value, buffer + head, bufferLen - head);
         if (res <= 0) return -1;
         head += res;
 

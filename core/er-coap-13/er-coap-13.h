@@ -359,7 +359,7 @@ int coap_set_header_if_match(void *packet, const uint8_t *etag, size_t etag_len)
 int coap_get_header_if_none_match(void *packet);
 int coap_set_header_if_none_match(void *packet);
 
-int coap_get_header_token(void *packet, const uint8_t **token);
+int coap_get_header_token(void *packet, uint8_t **token);
 int coap_set_header_token(void *packet, const uint8_t *token, size_t token_len);
 
 int coap_get_header_proxy_uri(void *packet, const char **uri); /* In-place string might not be 0-terminated. */

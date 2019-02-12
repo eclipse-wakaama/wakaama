@@ -16,7 +16,7 @@
  *    Toby Jaffey - Please refer to git log
  *    Bosch Software Innovations GmbH - Please refer to git log
  *    Pascal Rieux - Please refer to git log
- *    Scott Bertin - Please refer to git log
+ *    Scott Bertin, AMETEK, Inc. - Please refer to git log
  *    
  *******************************************************************************/
 /*
@@ -80,6 +80,7 @@
 }
 #define STR_STATUS(S)                                           \
 ((S) == STATE_DEREGISTERED ? "STATE_DEREGISTERED" :             \
+((S) == STATE_REG_HOLD_OFF ? "STATE_REG_HOLD_OFF" :             \
 ((S) == STATE_REG_PENDING ? "STATE_REG_PENDING" :               \
 ((S) == STATE_REGISTERED ? "STATE_REGISTERED" :                 \
 ((S) == STATE_REG_FAILED ? "STATE_REG_FAILED" :                 \
@@ -94,7 +95,7 @@
 ((S) == STATE_BS_FINISHING ? "STATE_BS_FINISHING" :             \
 ((S) == STATE_BS_FAILING ? "STATE_BS_FAILING" :                 \
 ((S) == STATE_BS_FAILED ? "STATE_BS_FAILED" :                   \
-"Unknown")))))))))))))))
+"Unknown"))))))))))))))))
 #define STR_MEDIA_TYPE(M)                                \
 ((M) == LWM2M_CONTENT_TEXT ? "LWM2M_CONTENT_TEXT" :      \
 ((M) == LWM2M_CONTENT_LINK ? "LWM2M_CONTENT_LINK" :      \
@@ -140,21 +141,29 @@
 #define URI_BOOTSTRAP_SEGMENT           "bs"
 #define URI_BOOTSTRAP_SEGMENT_LEN       2
 
-#define QUERY_STARTER       "?"
-#define QUERY_NAME          "ep="
-#define QUERY_NAME_LEN      3       // strlen("ep=")
-#define QUERY_SMS           "sms="
-#define QUERY_SMS_LEN       4
-#define QUERY_LIFETIME      "lt="
-#define QUERY_LIFETIME_LEN  3
-#define QUERY_VERSION       "lwm2m="
-#define QUERY_VERSION_LEN   6
-#define QUERY_BINDING       "b="
-#define QUERY_BINDING_LEN   2
-#define QUERY_DELIMITER     "&"
+#define QUERY_STARTER        "?"
+#define QUERY_NAME           "ep="
+#define QUERY_NAME_LEN       3       // strlen("ep=")
+#define QUERY_SMS            "sms="
+#define QUERY_SMS_LEN        4
+#define QUERY_LIFETIME       "lt="
+#define QUERY_LIFETIME_LEN   3
+#define QUERY_VERSION        "lwm2m="
+#define QUERY_VERSION_LEN    6
+#define QUERY_BINDING        "b="
+#define QUERY_BINDING_LEN    2
+#define QUERY_QUEUE_MODE     "Q"
+#define QUERY_QUEUE_MODE_LEN 1
+#define QUERY_DELIMITER      "&"
+#define QUERY_DELIMITER_LEN  1
 
+#ifdef LWM2M_VERSION_1_0
 #define LWM2M_VERSION      "1.0"
 #define LWM2M_VERSION_LEN  3
+#else
+#define LWM2M_VERSION      "1.1"
+#define LWM2M_VERSION_LEN  3
+#endif
 
 #define QUERY_VERSION_FULL      QUERY_VERSION LWM2M_VERSION
 #define QUERY_VERSION_FULL_LEN  QUERY_VERSION_LEN+LWM2M_VERSION_LEN
@@ -286,7 +295,7 @@ lwm2m_observed_t * observe_findByUri(lwm2m_context_t * contextP, lwm2m_uri_t * u
 uint8_t registration_handleRequest(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, void * fromSessionH, coap_packet_t * message, coap_packet_t * response);
 void registration_deregister(lwm2m_context_t * contextP, lwm2m_server_t * serverP);
 void registration_freeClient(lwm2m_client_t * clientP);
-uint8_t registration_start(lwm2m_context_t * contextP);
+uint8_t registration_start(lwm2m_context_t * contextP, bool restartFailed);
 void registration_step(lwm2m_context_t * contextP, time_t currentTime, time_t * timeoutP);
 lwm2m_status_t registration_getStatus(lwm2m_context_t * contextP);
 
@@ -321,13 +330,16 @@ void free_block1_buffer(lwm2m_block1_data_t * block1Data);
 
 // defined in utils.c
 lwm2m_data_type_t utils_depthToDatatype(uri_depth_t depth);
+lwm2m_version_t utils_stringToVersion(uint8_t *buffer, size_t length);
 lwm2m_binding_t utils_stringToBinding(uint8_t *buffer, size_t length);
 lwm2m_media_type_t utils_convertMediaType(coap_content_type_t type);
 int utils_isAltPathValid(const char * altPath);
 int utils_stringCopy(char * buffer, size_t length, const char * str);
 size_t utils_intToText(int64_t data, uint8_t * string, size_t length);
+size_t utils_uintToText(uint64_t data, uint8_t * string, size_t length);
 size_t utils_floatToText(double data, uint8_t * string, size_t length);
 int utils_textToInt(uint8_t * buffer, int length, int64_t * dataP);
+int utils_textToUInt(const uint8_t * buffer, int length, uint64_t * dataP);
 int utils_textToFloat(uint8_t * buffer, int length, double * dataP);
 void utils_copyValue(void * dst, const void * src, size_t len);
 size_t utils_base64GetSize(size_t dataLen);

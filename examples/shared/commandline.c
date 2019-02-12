@@ -13,6 +13,7 @@
  * Contributors:
  *    David Navarro, Intel Corporation - initial API and implementation
  *    Fabien Fleutot - Please refer to git log
+ *    Scott Bertin, AMETEK, Inc. - Please refer to git log
  *    
  *******************************************************************************/
 
@@ -386,6 +387,11 @@ void dump_tlv(FILE * stream,
             print_indent(stream, indent + 1);
             fprintf(stream, "\"%.*s\"\r\n", (int)dataP[i].value.asBuffer.length, dataP[i].value.asBuffer.buffer);
             break;
+        case LWM2M_TYPE_CORE_LINK:
+            fprintf(stream, "LWM2M_TYPE_CORE_LINK\r\n");
+            print_indent(stream, indent + 1);
+            fprintf(stream, "\"%.*s\"\r\n", (int)dataP[i].value.asBuffer.length, dataP[i].value.asBuffer.buffer);
+            break;
         case LWM2M_TYPE_OPAQUE:
             fprintf(stream, "LWM2M_TYPE_OPAQUE\r\n");
             output_buffer(stream, dataP[i].value.asBuffer.buffer, dataP[i].value.asBuffer.length, indent + 1);
@@ -394,6 +400,12 @@ void dump_tlv(FILE * stream,
             fprintf(stream, "LWM2M_TYPE_INTEGER: ");
             print_indent(stream, indent + 1);
             fprintf(stream, "%" PRId64, dataP[i].value.asInteger);
+            fprintf(stream, "\r\n");
+            break;
+        case LWM2M_TYPE_UNSIGNED_INTEGER:
+            fprintf(stream, "LWM2M_TYPE_UNSIGNED_INTEGER: ");
+            print_indent(stream, indent + 1);
+            fprintf(stream, "%" PRIu64, dataP[i].value.asUnsigned);
             fprintf(stream, "\r\n");
             break;
         case LWM2M_TYPE_FLOAT:

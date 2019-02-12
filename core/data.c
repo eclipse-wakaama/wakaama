@@ -14,6 +14,7 @@
 *    David Navarro, Intel Corporation - initial API and implementation
 *    Fabien Fleutot - Please refer to git log
 *    Bosch Software Innovations GmbH - Please refer to git log
+*    Scott Bertin, AMETEK, Inc. - Please refer to git log
 *
 *******************************************************************************/
 
@@ -31,6 +32,7 @@ static int prv_textSerialize(lwm2m_data_t * dataP,
     switch (dataP->type)
     {
     case LWM2M_TYPE_STRING:
+    case LWM2M_TYPE_CORE_LINK:
         *bufferP = (uint8_t *)lwm2m_malloc(dataP->value.asBuffer.length);
         if (*bufferP == NULL) return 0;
         memcpy(*bufferP, dataP->value.asBuffer.buffer, dataP->value.asBuffer.length);
@@ -41,6 +43,21 @@ static int prv_textSerialize(lwm2m_data_t * dataP,
         uint8_t intString[_PRV_STR_LENGTH];
 
         res = utils_intToText(dataP->value.asInteger, intString, _PRV_STR_LENGTH);
+        if (res == 0) return -1;
+
+        *bufferP = (uint8_t *)lwm2m_malloc(res);
+        if (NULL == *bufferP) return -1;
+
+        memcpy(*bufferP, intString, res);
+
+        return (int)res;
+    }
+
+    case LWM2M_TYPE_UNSIGNED_INTEGER:
+    {
+        uint8_t intString[_PRV_STR_LENGTH];
+
+        res = utils_uintToText(dataP->value.asUnsigned, intString, _PRV_STR_LENGTH);
         if (res == 0) return -1;
 
         *bufferP = (uint8_t *)lwm2m_malloc(res);
@@ -173,10 +190,12 @@ void lwm2m_data_free(int size,
 
         case LWM2M_TYPE_STRING:
         case LWM2M_TYPE_OPAQUE:
+        case LWM2M_TYPE_CORE_LINK:
             if (dataP[i].value.asBuffer.buffer != NULL)
             {
                 lwm2m_free(dataP[i].value.asBuffer.buffer);
             }
+            break;
 
         default:
             // do nothing
@@ -275,7 +294,7 @@ void lwm2m_data_encode_int(int64_t value,
 int lwm2m_data_decode_int(const lwm2m_data_t * dataP,
                           int64_t * valueP)
 {
-    int result;
+    int result = 0;
 
     LOG("Entering");
     switch (dataP->type)
@@ -283,6 +302,14 @@ int lwm2m_data_decode_int(const lwm2m_data_t * dataP,
     case LWM2M_TYPE_INTEGER:
         *valueP = dataP->value.asInteger;
         result = 1;
+        break;
+
+    case LWM2M_TYPE_UNSIGNED_INTEGER:
+        if (dataP->value.asUnsigned <= INT64_MAX)
+        {
+            *valueP = dataP->value.asUnsigned;
+            result = 1;
+        }
         break;
 
     case LWM2M_TYPE_STRING:
@@ -325,14 +352,95 @@ int lwm2m_data_decode_int(const lwm2m_data_t * dataP,
             break;
 
         default:
-            result = 0;
+            break;
         }
         break;
 
     default:
-        return 0;
+        break;
     }
     LOG_ARG("result: %d, value: %" PRId64, result, *valueP);
+
+    return result;
+}
+
+void lwm2m_data_encode_uint(uint64_t value,
+                            lwm2m_data_t * dataP)
+{
+    LOG_ARG("value: %" PRIu64 "", value);
+    dataP->type = LWM2M_TYPE_UNSIGNED_INTEGER;
+    dataP->value.asUnsigned = value;
+}
+
+int lwm2m_data_decode_uint(const lwm2m_data_t * dataP,
+                           uint64_t * valueP)
+{
+    int result = 0;
+
+    LOG("Entering");
+    switch (dataP->type)
+    {
+    case LWM2M_TYPE_INTEGER:
+        if (dataP->value.asInteger >= 0)
+        {
+            *valueP = dataP->value.asInteger;
+            result = 1;
+        }
+        break;
+
+    case LWM2M_TYPE_UNSIGNED_INTEGER:
+        *valueP = dataP->value.asUnsigned;
+        result = 1;
+        break;
+
+    case LWM2M_TYPE_STRING:
+        result = utils_textToUInt(dataP->value.asBuffer.buffer, dataP->value.asBuffer.length, valueP);
+        break;
+
+    case LWM2M_TYPE_OPAQUE:
+        switch (dataP->value.asBuffer.length)
+        {
+        case 1:
+            *valueP = (uint8_t)dataP->value.asBuffer.buffer[0];
+            result = 1;
+            break;
+
+        case 2:
+        {
+            uint16_t value;
+
+            utils_copyValue(&value, dataP->value.asBuffer.buffer, dataP->value.asBuffer.length);
+
+            *valueP = value;
+            result = 1;
+            break;
+        }
+
+        case 4:
+        {
+            uint32_t value;
+
+            utils_copyValue(&value, dataP->value.asBuffer.buffer, dataP->value.asBuffer.length);
+
+            *valueP = value;
+            result = 1;
+            break;
+        }
+
+        case 8:
+            utils_copyValue(valueP, dataP->value.asBuffer.buffer, dataP->value.asBuffer.length);
+            result = 1;
+            break;
+
+        default:
+            break;
+        }
+        break;
+
+    default:
+        break;
+    }
+    LOG_ARG("result: %d, value: %" PRIu64, result, *valueP);
 
     return result;
 }
@@ -348,7 +456,7 @@ void lwm2m_data_encode_float(double value,
 int lwm2m_data_decode_float(const lwm2m_data_t * dataP,
                             double * valueP)
 {
-    int result;
+    int result = 0;
 
     LOG("Entering");
     switch (dataP->type)
@@ -360,6 +468,11 @@ int lwm2m_data_decode_float(const lwm2m_data_t * dataP,
 
     case LWM2M_TYPE_INTEGER:
         *valueP = (double)dataP->value.asInteger;
+        result = 1;
+        break;
+
+    case LWM2M_TYPE_UNSIGNED_INTEGER:
+        *valueP = (double)dataP->value.asUnsigned;
         result = 1;
         break;
 
@@ -387,12 +500,12 @@ int lwm2m_data_decode_float(const lwm2m_data_t * dataP,
             break;
 
         default:
-            result = 0;
+            break;
         }
         break;
 
     default:
-        result = 0;
+        break;
     }
 
     LOG_ARG("result: %d, value: %f", result, *valueP);
@@ -469,6 +582,16 @@ int lwm2m_data_decode_bool(const lwm2m_data_t * dataP,
     return result;
 }
 
+void lwm2m_data_encode_corelink(const char * corelink, lwm2m_data_t * dataP)
+{
+    LOG_ARG("\"%s\"", corelink);
+    lwm2m_data_encode_string(corelink, dataP);
+    if (dataP->type == LWM2M_TYPE_STRING)
+    {
+        dataP->type = LWM2M_TYPE_CORE_LINK;
+    }
+}
+
 void lwm2m_data_encode_objlink(uint16_t objectId,
                            uint16_t objectInstanceId,
                            lwm2m_data_t * dataP)
@@ -491,9 +614,11 @@ void lwm2m_data_include(lwm2m_data_t * subDataP,
     case LWM2M_TYPE_STRING:
     case LWM2M_TYPE_OPAQUE:
     case LWM2M_TYPE_INTEGER:
+    case LWM2M_TYPE_UNSIGNED_INTEGER:
     case LWM2M_TYPE_FLOAT:
     case LWM2M_TYPE_BOOLEAN:
     case LWM2M_TYPE_OBJECT_LINK:
+    case LWM2M_TYPE_CORE_LINK:
     case LWM2M_TYPE_MULTIPLE_RESOURCE:
         dataP->type = LWM2M_TYPE_OBJECT_INSTANCE;
         break;
@@ -623,7 +748,9 @@ int lwm2m_data_serialize(lwm2m_uri_t * uriP,
         return (int)dataP->value.asBuffer.length;
 
     case LWM2M_CONTENT_TLV:
+#ifdef LWM2M_OLD_CONTENT_FORMAT_SUPPORT
     case LWM2M_CONTENT_TLV_OLD:
+#endif
     {
             bool isResourceInstance;
 
@@ -645,7 +772,9 @@ int lwm2m_data_serialize(lwm2m_uri_t * uriP,
 #endif
 #ifdef LWM2M_SUPPORT_JSON
     case LWM2M_CONTENT_JSON:
+#ifdef LWM2M_OLD_CONTENT_FORMAT_SUPPORT
     case LWM2M_CONTENT_JSON_OLD:
+#endif
         return json_serialize(uriP, size, dataP, bufferP);
 #endif
 

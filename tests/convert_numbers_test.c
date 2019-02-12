@@ -13,6 +13,7 @@
  * Contributors:
  *    David Navarro, Intel Corporation - initial API and implementation
  *    David Graeff - Make this a test suite
+ *    Scott Bertin, AMETEK, Inc. - Please refer to git log
  *    
  *******************************************************************************/
 
@@ -25,86 +26,200 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <inttypes.h>
+#include <float.h>
 
-const char * tests[]={"1", "-114" , "2", "0", "-2", "919293949596979899", "-98979969594939291", "999999999999999999999999999999", "1.2" , "0.134" , "432f.43" , "0.01", "1.00000000000002", NULL};
-int64_t tests_expected_int[]={1,-114,2,0,-2,919293949596979899,-98979969594939291,-1,-1,-1,-1,-1,-1};
-double tests_expected_float[]={1,-114,2,0,-2,9.1929394959698e+17,-9.897996959493928e+16,1e+30,1.2,0.134,-1,0.01,1.00000000000002};
-
-int64_t ints[]={12, -114 , 1 , 134 , 43243 , 0, -215025};
-const char* ints_expected[] = {"12","-114","1", "134", "43243","0","-215025"};
-double floats[]={12, -114 , -30 , 1.02 , 134.000235 , 0.43243 , 0, -21.5025, -0.0925, 0.98765};
-const char* floats_expected[] = {"12","-114","-30", "1.02", "134.000235","0.43243","0","-21.5025","-0.0925","0.98765"};
+int64_t ints[]={12, -114 , 1 , 134 , 43243 , 0, -215025, INT64_MIN, INT64_MAX};
+const char* ints_text[] = {"12","-114","1", "134", "43243","0","-215025", "-9223372036854775808", "9223372036854775807"};
+uint64_t uints[]={12, 1 , 134 , 43243 , 0, UINT64_MAX};
+const char* uints_text[] = {"12","1", "134", "43243","0","18446744073709551615"};
+double floats[]={12, -114 , -30 , 1.02 , 134.000235 , 0.43243 , 0, -21.5025, -0.0925, 0.98765, 6.667e-11, FLT_MIN, FLT_MAX, DBL_MIN, DBL_MAX};
+const char* floats_text[] = {"12.0","-114.0","-30.0", "1.02", "134.000235","0.43243","0.0","-21.5025","-0.0925","0.98765", "0.00000000006667", "0.00000000000000000000000000000000000001175494", "340282346638528859811704183484516925440.0", "0.00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002225073858", "179769313486231570814527423731704356798070567525844996598917476803157260780028538760589558632766878171540458953514382464234321326889464182768467546703537516986049910576551282076245490090389328944075868508455133942304583236903222948165808559332123348274797826204144723168738177180919299881250404026184124858368.0"};
 
 static void test_utils_textToInt(void)
 {
-    int i;
+    size_t i;
 
-    for (i = 0 ; tests[i] != NULL ; i++)
+    for (i = 0 ; i < sizeof(ints)/sizeof(ints[0]) ; i++)
     {
         int64_t res;
+        int converted;
 
-        if (utils_textToInt((unsigned char*)tests[i], strlen(tests[i]), &res) != 1)
-            res = -1;
+        converted = utils_textToInt((uint8_t*)ints_text[i], strlen(ints_text[i]), &res);
 
-        CU_ASSERT_EQUAL(res, tests_expected_int[i]);
-        //printf ("%i \"%s\" -> fail (%li)\n", i , tests[i], res );
+        CU_ASSERT(converted);
+        if (converted)
+        {
+            CU_ASSERT_EQUAL(res, ints[i]);
+            if (res != ints[i])
+                printf("%zu \"%s\" -> fail (%" PRId64 ")\n", i, ints_text[i], res);
+        }
+        else
+        {
+            printf("%zu \"%s\" -> fail\n", i, ints_text[i]);
+        }
+    }
+}
+
+static void test_utils_textToUInt(void)
+{
+    size_t i;
+
+    for (i = 0 ; i < sizeof(uints)/sizeof(uints[0]) ; i++)
+    {
+        uint64_t res;
+        int converted;
+
+        converted = utils_textToUInt((uint8_t*)uints_text[i], strlen(uints_text[i]), &res);
+
+        CU_ASSERT(converted);
+        if (converted)
+        {
+            CU_ASSERT_EQUAL(res, uints[i]);
+            if (res != uints[i])
+                printf("%zu \"%s\" -> fail (%" PRIu64 ")\n", i, uints_text[i], res);
+        }
+        else
+        {
+            printf("%zu \"%s\" -> fail\n", i, uints_text[i]);
+        }
     }
 }
 
 static void test_utils_textToFloat(void)
 {
-    int i;
+    size_t i;
 
-    for (i = 0 ; tests[i] != NULL ; i++)
+    for (i = 0 ; i < sizeof(floats)/sizeof(floats[0]) ; i++)
     {
         double res;
+        int converted;
 
-        if (utils_textToFloat((unsigned char*)tests[i], strlen(tests[i]), &res) != 1)
-            res = -1;
+        converted = utils_textToFloat((uint8_t*)floats_text[i], strlen(floats_text[i]), &res);
 
-        CU_ASSERT_DOUBLE_EQUAL(res, tests_expected_float[i], 0.0001);
-        //printf ("%i \"%s\" -> fail (%f)\n", i , tests[i], res );
+        CU_ASSERT(converted);
+        if (converted)
+        {
+            CU_ASSERT_DOUBLE_EQUAL(res, floats[i], floats[i]/1000000.0);
+            if(fabs(res - floats[i]) > fabs(floats[i]/1000000.0))
+                printf("%zu \"%s\" -> fail (%f)\n", i, floats_text[i], res);
+        }
+        else
+        {
+            printf("%zu \"%s\" -> fail\n", i, floats_text[i]);
+        }
     }
 }
 
 static void test_utils_intToText(void)
 {
-    unsigned int i;
+    size_t i;
 
-    for (i = 0 ; i < sizeof(ints)/sizeof(int64_t); i++)
+    for (i = 0 ; i < sizeof(ints)/sizeof(ints[0]); i++)
     {
-        char res[16];
+        char res[24];
         int len;
 
-        len = utils_intToText(ints[i], (uint8_t*)res, 16);
+        len = utils_intToText(ints[i], (uint8_t*)res, sizeof(res));
 
-        CU_ASSERT_FATAL(len);
-        CU_ASSERT_NSTRING_EQUAL(res, ints_expected[i],len);
-        //printf ("%i \"%i\" -> fail (%s)\n", i , ints[i], res );
+        CU_ASSERT(len);
+        CU_ASSERT_NSTRING_EQUAL(res, ints_text[i], strlen(ints_text[i]));
+        if (!len)
+            printf("%zu \"%" PRId64 "\" -> fail\n", i, ints[i]);
+        else if (strncmp(res, ints_text[i], strlen(ints_text[i])))
+            printf("%zu \"%" PRId64 "\" -> fail (%s)\n", i, ints[i], res);
+    }
+}
+
+static void test_utils_uintToText(void)
+{
+    size_t i;
+
+    for (i = 0 ; i < sizeof(uints)/sizeof(uints[0]); i++)
+    {
+        char res[24];
+        int len;
+
+        len = utils_uintToText(uints[i], (uint8_t*)res, sizeof(res));
+
+        CU_ASSERT(len);
+        CU_ASSERT_NSTRING_EQUAL(res, uints_text[i], strlen(uints_text[i]));
+        if (!len)
+            printf("%zu \"%" PRIu64 "\" -> fail\n", i, uints[i]);
+        else if (strncmp(res, uints_text[i], strlen(uints_text[i])))
+            printf("%zu \"%" PRIu64 "\" -> fail (%s)\n", i, uints[i], res);
     }
 }
 
 static void test_utils_floatToText(void)
 {
-    unsigned int i;
+    size_t i;
+    char res[330];
+    int len;
+    int compareLen;
 
     for (i = 0 ; i < sizeof(floats)/sizeof(floats[0]); i++)
     {
-        char res[16];
-        int len;
+        len = utils_floatToText(floats[i], (uint8_t*)res, sizeof(res));
 
-        len = utils_floatToText(floats[i], (uint8_t*)res, 16);
+        CU_ASSERT(len);
+        if (len)
+        {
+            compareLen = (int)strlen(floats_text[i]);
+            if (compareLen > DBL_DIG
+                && floats_text[i][compareLen-2] == '.'
+                && len > compareLen - 2
+                && res[compareLen-2] == '.')
+            {
+                compareLen = DBL_DIG;
+            }
+            CU_ASSERT_NSTRING_EQUAL(res, floats_text[i], compareLen);
+            if (strncmp(res, floats_text[i], compareLen))
+                printf("%zu \"%g\" -> fail (%*s)\n", i, floats[i], len, res);
+        }
+        else
+        {
+            printf("%zu \"%g\" -> fail\n", i, floats[i]);
+        }
+    }
 
-        CU_ASSERT_FATAL(len);
-        CU_ASSERT_NSTRING_EQUAL(res, floats_expected[i],len);
-        //printf ("%i \"%.16g\" -> fail (%s)\n", i , floats[i], res );
+    /* Test when no significant digits fit */
+    double val = 1e-9;
+    len = utils_floatToText(val, (uint8_t*)res, 6);
+    CU_ASSERT(len);
+    if(len)
+    {
+        CU_ASSERT_NSTRING_EQUAL(res, "0.0000", len);
+        if (strncmp(res, "0.0000", len))
+            printf("%zu \"%g\" -> fail (%*s)\n", i, val, len, res);
+    }
+    else
+    {
+        printf("%zu \"%g\" -> fail\n", i, val);
+    }
+    i++;
+
+    /* Test when only some significant digits fit */
+    val = 0.11111111111111111;
+    len = utils_floatToText(val, (uint8_t*)res, 6);
+    CU_ASSERT(len);
+    if(len)
+    {
+        CU_ASSERT_NSTRING_EQUAL(res, "0.1111", len);
+        if (strncmp(res, "0.1111", len))
+            printf("%zu \"%g\" -> fail (%*s)\n", i, val, len, res);
+    }
+    else
+    {
+        printf("%zu \"%g\" -> fail\n", i, val);
     }
 }
 
 static struct TestTable table[] = {
         { "test of utils_textToInt()", test_utils_textToInt },
+        { "test of utils_textToUInt()", test_utils_textToUInt },
         { "test of utils_textToFloat()", test_utils_textToFloat },
         { "test of utils_intToText()", test_utils_intToText },
+        { "test of utils_uintToText()", test_utils_uintToText },
         { "test of utils_floatToText()", test_utils_floatToText },
         { NULL, NULL },
 };

@@ -360,10 +360,13 @@ uint8_t dm_handleRequest(lwm2m_context_t * contextP,
 
 #define ID_AS_STRING_MAX_LEN 8
 
-static void prv_resultCallback(lwm2m_transaction_t * transacP,
+static void prv_resultCallback(lwm2m_context_t * contextP,
+                               lwm2m_transaction_t * transacP,
                                void * message)
 {
     dm_data_t * dataP = (dm_data_t *)transacP->userData;
+
+    (void)contextP; /* unused */
 
     if (message == NULL)
     {

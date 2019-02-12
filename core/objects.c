@@ -17,7 +17,7 @@
  *    Benjamin Cabé - Please refer to git log
  *    Bosch Software Innovations GmbH - Please refer to git log
  *    Pascal Rieux - Please refer to git log
- *    Scott Bertin - Please refer to git log
+ *    Scott Bertin, AMETEK, Inc. - Please refer to git log
  *
  *******************************************************************************/
 
@@ -94,6 +94,7 @@ uint8_t object_checkReadable(lwm2m_context_t * contextP,
             switch (dataP->type)
             {
                 case LWM2M_TYPE_INTEGER:
+                case LWM2M_TYPE_UNSIGNED_INTEGER:
                 case LWM2M_TYPE_FLOAT:
                     break;
                 default:
@@ -170,7 +171,7 @@ uint8_t object_readData(lwm2m_context_t * contextP,
         }
     }
 
-    LOG_ARG("result: %u.%2u, size: %d", (result & 0xFF) >> 5, (result & 0x1F), *sizeP);
+    LOG_ARG("result: %u.%02u, size: %d", (result & 0xFF) >> 5, (result & 0x1F), *sizeP);
     return result;
 }
 
@@ -202,7 +203,7 @@ uint8_t object_read(lwm2m_context_t * contextP,
     }
     lwm2m_data_free(size, dataP);
 
-    LOG_ARG("result: %u.%2u, length: %d", (result & 0xFF) >> 5, (result & 0x1F), *lengthP);
+    LOG_ARG("result: %u.%02u, length: %d", (result & 0xFF) >> 5, (result & 0x1F), *lengthP);
 
     return result;
 }
@@ -242,7 +243,7 @@ uint8_t object_write(lwm2m_context_t * contextP,
         lwm2m_data_free(size, dataP);
     }
 
-    LOG_ARG("result: %u.%2u", (result & 0xFF) >> 5, (result & 0x1F));
+    LOG_ARG("result: %u.%02u", (result & 0xFF) >> 5, (result & 0x1F));
 
     return result;
 }
@@ -324,7 +325,7 @@ uint8_t object_create(lwm2m_context_t * contextP,
 exit:
     lwm2m_data_free(size, dataP);
 
-    LOG_ARG("result: %u.%2u", (result & 0xFF) >> 5, (result & 0x1F));
+    LOG_ARG("result: %u.%02u", (result & 0xFF) >> 5, (result & 0x1F));
 
     return result;
 }
@@ -371,7 +372,7 @@ uint8_t object_delete(lwm2m_context_t * contextP,
         }
     }
 
-    LOG_ARG("result: %u.%2u", (result & 0xFF) >> 5, (result & 0x1F));
+    LOG_ARG("result: %u.%02u", (result & 0xFF) >> 5, (result & 0x1F));
 
     return result;
 }
@@ -450,7 +451,7 @@ uint8_t object_discover(lwm2m_context_t * contextP,
     }
     lwm2m_data_free(size, dataP);
 
-    LOG_ARG("result: %u.%2u", (result & 0xFF) >> 5, (result & 0x1F));
+    LOG_ARG("result: %u.%02u", (result & 0xFF) >> 5, (result & 0x1F));
 
     return result;
 }
@@ -503,7 +504,7 @@ int object_getRegisterPayloadBufferLength(lwm2m_context_t * contextP)
     size_t index;
     int result;
     lwm2m_object_t * objectP;
-    char buffer[REG_OBJECT_MIN_LEN + 5];
+    uint8_t buffer[REG_OBJECT_MIN_LEN + 5];
 
     LOG("Entering");
     index = strlen(REG_START);
@@ -526,6 +527,9 @@ int object_getRegisterPayloadBufferLength(lwm2m_context_t * contextP)
         size_t length;
 
         if (objectP->objID == LWM2M_SECURITY_OBJECT_ID) continue;
+#ifndef LWM2M_VERSION_1_0
+        if (objectP->objID == LWM2M_OSCORE_OBJECT_ID) continue;
+#endif
 
         start = index;
         result = prv_getObjectTemplate(buffer, sizeof(buffer), objectP->objID);
@@ -719,7 +723,14 @@ static int prv_getMandatoryInfo(lwm2m_object_t * objectP,
     }
     targetP->lifetime = value;
 
-    targetP->binding = utils_stringToBinding(dataP[1].value.asBuffer.buffer, dataP[1].value.asBuffer.length);
+    if (dataP[1].type == LWM2M_TYPE_STRING)
+    {
+        targetP->binding = utils_stringToBinding(dataP[1].value.asBuffer.buffer, dataP[1].value.asBuffer.length);
+    }
+    else
+    {
+        targetP->binding = BINDING_UNKNOWN;
+    }
 
     lwm2m_data_free(size, dataP);
 
@@ -768,12 +779,10 @@ int object_getServers(lwm2m_context_t * contextP, bool checkOnly)
             bool isBootstrap;
             int64_t value = 0;
 
-            size = 3;
+            size = 1;
             dataP = lwm2m_data_new(size);
             if (dataP == NULL) return -1;
             dataP[0].id = LWM2M_SECURITY_BOOTSTRAP_ID;
-            dataP[1].id = LWM2M_SECURITY_SHORT_SERVER_ID;
-            dataP[2].id = LWM2M_SECURITY_HOLD_OFF_ID;
 
             if (securityObjP->readFunc(securityInstP->id, &size, &dataP, securityObjP) != COAP_205_CONTENT)
             {
@@ -789,25 +798,36 @@ int object_getServers(lwm2m_context_t * contextP, bool checkOnly)
             memset(targetP, 0, sizeof(lwm2m_server_t));
             targetP->secObjInstID = securityInstP->id;
 
-            if (0 == lwm2m_data_decode_bool(dataP + 0, &isBootstrap))
+            if (0 == lwm2m_data_decode_bool(dataP, &isBootstrap))
             {
                 lwm2m_free(targetP);
                 lwm2m_data_free(size, dataP);
                 return -1;
             }
 
-            if (0 == lwm2m_data_decode_int(dataP + 1, &value)
-             || value < (isBootstrap ? 0 : 1) || value > 0xFFFF)                // 0 is forbidden as a Short Server ID
+            if (isBootstrap)
             {
-                lwm2m_free(targetP);
-                lwm2m_data_free(size, dataP);
-                return -1;
-            }
-            targetP->shortID = value;
+                targetP->shortID = 0;
+#ifndef LWM2M_VERSION_1_0
+                targetP->servObjInstID = LWM2M_MAX_ID;
+#endif
 
-            if (isBootstrap == true)
-            {
-                if (0 == lwm2m_data_decode_int(dataP + 2, &value)
+                lwm2m_data_free(size, dataP);
+                size = 1;
+                dataP = lwm2m_data_new(size);
+                if (dataP == NULL)
+                {
+                    lwm2m_free(targetP);
+                    return -1;
+                }
+                dataP[0].id = LWM2M_SECURITY_HOLD_OFF_ID;
+                if (securityObjP->readFunc(securityInstP->id, &size, &dataP, securityObjP) != COAP_205_CONTENT)
+                {
+                    lwm2m_free(targetP);
+                    lwm2m_data_free(size, dataP);
+                    return -1;
+                }
+                if (0 == lwm2m_data_decode_int(dataP, &value)
                  || value < 0 || value > 0xFFFFFFFF)             // This is an implementation limit
                 {
                     lwm2m_free(targetP);
@@ -830,6 +850,30 @@ int object_getServers(lwm2m_context_t * contextP, bool checkOnly)
             {
                 lwm2m_list_t * serverInstP;     // instanceID of the server in the LWM2M Server Object
 
+                lwm2m_data_free(size, dataP);
+                size = 1;
+                dataP = lwm2m_data_new(size);
+                if (dataP == NULL)
+                {
+                    lwm2m_free(targetP);
+                    return -1;
+                }
+                dataP[0].id = LWM2M_SECURITY_SHORT_SERVER_ID;
+                if (securityObjP->readFunc(securityInstP->id, &size, &dataP, securityObjP) != COAP_205_CONTENT)
+                {
+                    lwm2m_free(targetP);
+                    lwm2m_data_free(size, dataP);
+                    return -1;
+                }
+                if (0 == lwm2m_data_decode_int(dataP, &value)
+                 || value < 1 || value > 0xFFFF)                // 0 is forbidden as a Short Server ID
+                {
+                    lwm2m_free(targetP);
+                    lwm2m_data_free(size, dataP);
+                    return -1;
+                }
+                targetP->shortID = value;
+
                 serverInstP = prv_findServerInstance(serverObjP, targetP->shortID);
                 if (serverInstP == NULL)
                 {
@@ -837,6 +881,9 @@ int object_getServers(lwm2m_context_t * contextP, bool checkOnly)
                 }
                 else
                 {
+#ifndef LWM2M_VERSION_1_0
+                    targetP->servObjInstID = serverInstP->id;
+#endif
                     if (0 != prv_getMandatoryInfo(serverObjP, serverInstP->id, targetP))
                     {
                         lwm2m_free(targetP);

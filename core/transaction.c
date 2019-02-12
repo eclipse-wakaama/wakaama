@@ -118,7 +118,7 @@ static int prv_checkFinished(lwm2m_transaction_t * transacP,
                              coap_packet_t * receivedMessage)
 {
     int len;
-    const uint8_t* token;
+    uint8_t* token;
     coap_packet_t * transactionMessage = transacP->message;
 
     if (COAP_DELETE < transactionMessage->code)
@@ -313,7 +313,7 @@ bool transaction_handleResponse(lwm2m_context_t * contextP,
 				}       
                 if (transacP->callback != NULL)
                 {
-                    transacP->callback(transacP, message);
+                    transacP->callback(contextP, transacP, message);
                 }
                 transaction_remove(contextP, transacP);
                 return true;
@@ -377,7 +377,7 @@ int transaction_send(lwm2m_context_t * contextP,
 
     if (!transacP->ack_received)
     {
-        long unsigned timeout;
+        long unsigned timeout = 0;
 
         if (0 == transacP->retrans_counter)
         {
@@ -386,7 +386,6 @@ int transaction_send(lwm2m_context_t * contextP,
             {
                 transacP->retrans_time = tv_sec + COAP_RESPONSE_TIMEOUT;
                 transacP->retrans_counter = 1;
-                timeout = 0;
             }
             else
             {
@@ -416,7 +415,7 @@ int transaction_send(lwm2m_context_t * contextP,
         if (transacP->callback)
         {
             LOG_ARG("transaction %p expired..calling callback", transacP);
-            transacP->callback(transacP, NULL);
+            transacP->callback(contextP, transacP, NULL);
         }
         transaction_remove(contextP, transacP);
         return -1;

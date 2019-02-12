@@ -66,12 +66,12 @@ static void test_data_and_compare(const char * uriStr,
                         lwm2m_data_t * tlvP,
                         int size,
                         const char * id,
-                        const uint8_t* original_buffer,
+                        uint8_t* original_buffer,
                         size_t original_length)
 {
     lwm2m_uri_t uri;
     uint8_t * buffer;
-    size_t length;
+    int length;
     
     if (uriStr != NULL)
     {
@@ -91,7 +91,7 @@ static void test_data_and_compare(const char * uriStr,
     {
         CU_ASSERT_EQUAL(original_length, length);
 
-        if ((original_length != length) ||
+        if ((original_length != (size_t)length) ||
             (memcmp(original_buffer, buffer, length) != 0))
         {
             printf("Comparing buffer after parse/serialize failed for %s:\n", id);
@@ -105,31 +105,6 @@ static void test_data_and_compare(const char * uriStr,
     lwm2m_free(buffer);
 }
 
-// Hack: Due to the TLV format does not store data type information,
-// all dataTypes are undefined after parsing. The json serializer does not work with undefined
-// data types, therefore hardcode all objects to be strings.
-static void make_all_objects_string_types(lwm2m_data_t * tlvP, int size)
-{
-    int i;
-
-    for (i=0 ; i<size ; ++i)
-    {
-        if (tlvP[i].type == LWM2M_TYPE_OPAQUE)
-        {
-            tlvP[i].type = LWM2M_TYPE_STRING;
-        }
-        else if (tlvP[i].type == LWM2M_TYPE_MULTIPLE_RESOURCE)
-        {
-            unsigned int j;
-
-            for (j = 0; j < tlvP[i].value.asChildren.count; ++j)
-            {
-                tlvP[i].value.asChildren.array[j].type = LWM2M_TYPE_STRING;
-            }
-        }
-    }
-}
-
 /**
  * @brief Parses the testBuf to an array of lwm2m_data_t objects and serializes the result
  *        to TLV and JSON and if applicable compares it to the original testBuf.
@@ -139,7 +114,7 @@ static void make_all_objects_string_types(lwm2m_data_t * tlvP, int size)
  * @param id The test object id for debug out.
  */
 static void test_raw(const char * uriStr,
-                     const uint8_t * testBuf,
+                     uint8_t * testBuf,
                      size_t testLen,
                      lwm2m_media_type_t format,
                      const char * id)
@@ -172,7 +147,7 @@ static void test_raw(const char * uriStr,
 }
 
 static void test_raw_expected(const char * uriStr,
-                              const uint8_t * testBuf,
+                              uint8_t * testBuf,
                               size_t testLen,
                               const char * expectBuf,
                               size_t expectLen,
@@ -203,7 +178,7 @@ static void test_raw_expected(const char * uriStr,
 
 static void test_1(void)
 {
-    const uint8_t buffer[] = {0x03, 0x0A, 0xC1, 0x01, 0x14, 0x03, 0x0B, 0xC1, 0x01, 0x15, 0x03, 0x0C, 0xC1, 0x01, 0x16};
+    uint8_t buffer[] = {0x03, 0x0A, 0xC1, 0x01, 0x14, 0x03, 0x0B, 0xC1, 0x01, 0x15, 0x03, 0x0C, 0xC1, 0x01, 0x16};
     int testLen = sizeof(buffer);
     lwm2m_media_type_t format = LWM2M_CONTENT_TLV;
     lwm2m_data_t * tlvP;
@@ -216,7 +191,7 @@ static void test_1(void)
 
 static void test_2(void)
 {
-    const uint8_t buffer[] = {
+    uint8_t buffer[] = {
         0xC8, 0x00, 0x14, 0x4F, 0x70, 0x65, 0x6E, 0x20, 0x4D, 0x6F, 0x62, 0x69, 0x6C, 0x65, 0x20,
         0x41, 0x6C, 0x6C, 0x69, 0x61, 0x6E, 0x63, 0x65, 0xC8, 0x01, 0x16, 0x4C, 0x69, 0x67, 0x68,
         0x74, 0x77, 0x65, 0x69, 0x67, 0x68, 0x74, 0x20, 0x4D, 0x32, 0x4D, 0x20, 0x43, 0x6C, 0x69,

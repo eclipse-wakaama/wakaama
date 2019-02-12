@@ -12,6 +12,7 @@
 *
 * Contributors:
 *    David Navarro, Intel Corporation - initial API and implementation
+*    Scott Bertin, AMETEK, Inc. - Please refer to git log
 *
 *******************************************************************************/
 
@@ -174,9 +175,11 @@ static int prv_serializeLinkData(lwm2m_context_t * contextP,
     case LWM2M_TYPE_STRING:
     case LWM2M_TYPE_OPAQUE:
     case LWM2M_TYPE_INTEGER:
+    case LWM2M_TYPE_UNSIGNED_INTEGER:
     case LWM2M_TYPE_FLOAT:
     case LWM2M_TYPE_BOOLEAN:
     case LWM2M_TYPE_OBJECT_LINK:
+    case LWM2M_TYPE_CORE_LINK:
     case LWM2M_TYPE_MULTIPLE_RESOURCE:
         if (bufferLen < LINK_ITEM_START_SIZE) return -1;
         memcpy(buffer + head, LINK_ITEM_START, LINK_ITEM_START_SIZE);

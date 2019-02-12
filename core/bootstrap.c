@@ -44,11 +44,14 @@ static void prv_handleResponse(lwm2m_server_t * bootstrapServer,
     }
 }
 
-static void prv_handleBootstrapReply(lwm2m_transaction_t * transaction,
+static void prv_handleBootstrapReply(lwm2m_context_t * contextP,
+                                     lwm2m_transaction_t * transaction,
                                      void * message)
 {
     lwm2m_server_t * bootstrapServer = (lwm2m_server_t *)transaction->userData;
     coap_packet_t * coapMessage = (coap_packet_t *)message;
+
+    (void)contextP; /* unused */
 
     LOG("Entering");
 
@@ -197,7 +200,7 @@ void bootstrap_step(lwm2m_context_t * contextP,
         default:
             break;
         }
-        LOG_ARG("Finalal status: %s", STR_STATUS(targetP->status));
+        LOG_ARG("Final status: %s", STR_STATUS(targetP->status));
         targetP = targetP->next;
     }
 }
@@ -619,11 +622,14 @@ void lwm2m_set_bootstrap_callback(lwm2m_context_t * contextP,
     contextP->bootstrapUserData = userData;
 }
 
-static void prv_resultCallback(lwm2m_transaction_t * transacP,
+static void prv_resultCallback(lwm2m_context_t * contextP,
+                               lwm2m_transaction_t * transacP,
                                void * message)
 {
     bs_data_t * dataP = (bs_data_t *)transacP->userData;
     lwm2m_uri_t * uriP;
+
+    (void)contextP; /* unused */
 
     if (dataP->isUri == true)
     {
