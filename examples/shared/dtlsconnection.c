@@ -234,7 +234,6 @@ static int send_to_peer(struct dtls_context_t *ctx,
         session_t *session, uint8 *data, size_t len) {
 
     // find connection
-    dtls_connection_t * connP = (dtls_connection_t *) ctx->app;
     dtls_connection_t* cnx = connection_find((dtls_connection_t *) ctx->app, &(session->addr.st),session->size);
     if (cnx != NULL)
     {
@@ -255,7 +254,6 @@ static int read_from_peer(struct dtls_context_t *ctx,
           session_t *session, uint8 *data, size_t len) {
 
     // find connection
-    dtls_connection_t * connP = (dtls_connection_t *) ctx->app;
     dtls_connection_t* cnx = connection_find((dtls_connection_t *) ctx->app, &(session->addr.st),session->size);
     if (cnx != NULL)
     {
