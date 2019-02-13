@@ -422,7 +422,6 @@ int discover_serialize(lwm2m_context_t * contextP,
 
     baseUriLen = uri_toString(uriP, baseUriStr, URI_MAX_STRING_LEN, NULL);
     if (baseUriLen < 0) return -1;
-    baseUriLen -= 1;
 
     for (index = 0; index < size && head < PRV_LINK_BUFFER_SIZE; index++)
     {

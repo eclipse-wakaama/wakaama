@@ -251,6 +251,7 @@ typedef struct
 
 typedef enum
 {
+    URI_DEPTH_NONE,
     URI_DEPTH_OBJECT,
     URI_DEPTH_OBJECT_INSTANCE,
     URI_DEPTH_RESOURCE,
@@ -270,7 +271,7 @@ typedef struct
 // defined in uri.c
 lwm2m_uri_t * uri_decode(char * altPath, multi_option_t *uriPath);
 int uri_getNumber(uint8_t * uriString, size_t uriLength);
-int uri_toString(lwm2m_uri_t * uriP, uint8_t * buffer, size_t bufferLen, uri_depth_t * depthP);
+int uri_toString(const lwm2m_uri_t * uriP, uint8_t * buffer, size_t bufferLen, uri_depth_t * depthP);
 
 // defined in objects.c
 uint8_t object_readData(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, int * sizeP, lwm2m_data_t ** dataP);
