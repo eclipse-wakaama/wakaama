@@ -14,7 +14,6 @@ set(TINYDTLS_SOURCES
     ${TINYDTLS_SOURCES_DIR}/peer.c
     ${TINYDTLS_SOURCES_DIR}/dtls_time.c
     ${TINYDTLS_SOURCES_DIR}/session.c
-    ${TINYDTLS_SOURCES_DIR}/sha2/sha2.c
     ${TINYDTLS_SOURCES_DIR}/aes/rijndael.c
     ${TINYDTLS_SOURCES_DIR}/sha2/sha2.c
     ${TINYDTLS_SOURCES_DIR}/ecc/ecc.c)
