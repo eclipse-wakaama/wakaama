@@ -1391,10 +1391,24 @@ int json_serialize(lwm2m_uri_t * uriP,
     uri_depth_t rootLevel;
     int num;
     lwm2m_data_t * targetP;
+#ifndef LWM2M_VERSION_1_0
+    lwm2m_uri_t uri;
+#endif
 
     LOG_ARG("size: %d", size);
     LOG_URI(uriP);
     if (size != 0 && tlvP == NULL) return -1;
+
+#ifndef LWM2M_VERSION_1_0
+    if (uriP && LWM2M_URI_IS_SET_RESOURCE_INSTANCE(uriP))
+    {
+        /* The resource instance doesn't get serialized as part of the base URI.
+         * Strip it out. */
+        memcpy(&uri, uriP, sizeof(lwm2m_uri_t));
+        uri.flag &= ~LWM2M_URI_FLAG_RESOURCE_INSTANCE_ID;
+        uriP = &uri;
+    }
+#endif
 
     baseUriLen = uri_toString(uriP, baseUriStr, URI_MAX_STRING_LEN, &rootLevel);
     if (baseUriLen < 0) return -1;

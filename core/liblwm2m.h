@@ -263,9 +263,12 @@ void lwm2m_list_free(lwm2m_list_t * head);
 #define LWM2M_URI_FLAG_OBJECT_ID    (uint8_t)0x04
 #define LWM2M_URI_FLAG_INSTANCE_ID  (uint8_t)0x02
 #define LWM2M_URI_FLAG_RESOURCE_ID  (uint8_t)0x01
+#define LWM2M_URI_FLAG_RESOURCE_INSTANCE_ID  (uint8_t)0x08
 
+#define LWM2M_URI_IS_SET_OBJECT(uri) (((uri)->flag & LWM2M_URI_FLAG_OBJECT_ID) != 0)
 #define LWM2M_URI_IS_SET_INSTANCE(uri) (((uri)->flag & LWM2M_URI_FLAG_INSTANCE_ID) != 0)
 #define LWM2M_URI_IS_SET_RESOURCE(uri) (((uri)->flag & LWM2M_URI_FLAG_RESOURCE_ID) != 0)
+#define LWM2M_URI_IS_SET_RESOURCE_INSTANCE(uri) (((uri)->flag & LWM2M_URI_FLAG_RESOURCE_INSTANCE_ID) != 0)
 
 typedef struct
 {
@@ -273,6 +276,9 @@ typedef struct
     uint16_t    objectId;
     uint16_t    instanceId;
     uint16_t    resourceId;
+#ifndef LWM2M_VERSION_1_0
+    uint16_t    resourceInstanceId;
+#endif
 } lwm2m_uri_t;
 
 

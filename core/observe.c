@@ -63,7 +63,11 @@ static lwm2m_observed_t * prv_findObserved(lwm2m_context_t * contextP,
         && (targetP->uri.objectId != uriP->objectId
          || targetP->uri.flag != uriP->flag
          || (LWM2M_URI_IS_SET_INSTANCE(uriP) && targetP->uri.instanceId != uriP->instanceId)
-         || (LWM2M_URI_IS_SET_RESOURCE(uriP) && targetP->uri.resourceId != uriP->resourceId)))
+         || (LWM2M_URI_IS_SET_RESOURCE(uriP) && targetP->uri.resourceId != uriP->resourceId)
+#ifndef LWM2M_VERSION_1_0
+         || (LWM2M_URI_IS_SET_RESOURCE_INSTANCE(uriP) && targetP->uri.resourceInstanceId != uriP->resourceInstanceId)
+#endif
+           ))
     {
         targetP = targetP->next;
     }
@@ -436,9 +440,15 @@ lwm2m_observed_t * observe_findByUri(lwm2m_context_t * contextP,
                  if ((!LWM2M_URI_IS_SET_RESOURCE(uriP) && !LWM2M_URI_IS_SET_RESOURCE(&(targetP->uri)))
                      || (LWM2M_URI_IS_SET_RESOURCE(uriP) && LWM2M_URI_IS_SET_RESOURCE(&(targetP->uri)) && (uriP->resourceId == targetP->uri.resourceId)))
                  {
-                     LOG_ARG("Found one with%s observers.", targetP->watcherList ? "" : " no");
-                     LOG_URI(&(targetP->uri));
-                     return targetP;
+#ifndef LWM2M_VERSION_1_0
+                     if ((!LWM2M_URI_IS_SET_RESOURCE_INSTANCE(uriP) && !LWM2M_URI_IS_SET_RESOURCE_INSTANCE(&(targetP->uri)))
+                      || (LWM2M_URI_IS_SET_RESOURCE_INSTANCE(uriP) && LWM2M_URI_IS_SET_RESOURCE_INSTANCE(&(targetP->uri)) && (uriP->resourceInstanceId == targetP->uri.resourceInstanceId)))
+#endif
+                     {
+                         LOG_ARG("Found one with%s observers.", targetP->watcherList ? "" : " no");
+                         LOG_URI(&(targetP->uri));
+                         return targetP;
+                     }
                  }
              }
         }
@@ -468,17 +478,24 @@ void lwm2m_resource_value_changed(lwm2m_context_t * contextP,
                  || (targetP->uri.flag & LWM2M_URI_FLAG_RESOURCE_ID) == 0
                  || uriP->resourceId == targetP->uri.resourceId)
                 {
-                    lwm2m_watcher_t * watcherP;
-
-                    LOG("Found an observation");
-                    LOG_URI(&(targetP->uri));
-
-                    for (watcherP = targetP->watcherList ; watcherP != NULL ; watcherP = watcherP->next)
+#ifndef LWM2M_VERSION_1_0
+                    if (!LWM2M_URI_IS_SET_RESOURCE_INSTANCE(uriP)
+                     || (targetP->uri.flag & LWM2M_URI_FLAG_RESOURCE_INSTANCE_ID) == 0
+                     || uriP->resourceInstanceId == targetP->uri.resourceInstanceId)
+#endif
                     {
-                        if (watcherP->active == true)
+                        lwm2m_watcher_t * watcherP;
+
+                        LOG("Found an observation");
+                        LOG_URI(&(targetP->uri));
+
+                        for (watcherP = targetP->watcherList ; watcherP != NULL ; watcherP = watcherP->next)
                         {
-                            LOG("Tagging a watcher");
-                            watcherP->update = true;
+                            if (watcherP->active == true)
+                            {
+                                LOG("Tagging a watcher");
+                                watcherP->update = true;
+                            }
                         }
                     }
                 }
@@ -508,6 +525,8 @@ void observe_step(lwm2m_context_t * contextP,
         bool storeValue = false;
         coap_packet_t message[1];
         time_t interval;
+
+        // TODO: handle resource instances
 
         LOG_URI(&(targetP->uri));
         if (LWM2M_URI_IS_SET_RESOURCE(&targetP->uri))
@@ -844,7 +863,11 @@ static lwm2m_observation_t * prv_findObservationByURI(lwm2m_client_t * clientP,
         if (targetP->uri.objectId == uriP->objectId
          && targetP->uri.flag == uriP->flag
          && targetP->uri.instanceId == uriP->instanceId
-         && targetP->uri.resourceId == uriP->resourceId)
+         && targetP->uri.resourceId == uriP->resourceId
+#ifndef LWM2M_VERSION_1_0
+         && targetP->uri.resourceInstanceId == uriP->resourceInstanceId
+#endif
+           )
         {
             return targetP;
         }

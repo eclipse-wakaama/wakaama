@@ -105,7 +105,13 @@ static void prv_print_uri(FILE * fd,
         {
             fprintf(fd, "/%d", uriP->instanceId);
             if (LWM2M_URI_IS_SET_RESOURCE(uriP))
+            {
                 fprintf(fd, "/%d", uriP->resourceId);
+#ifndef LWM2M_VERSION_1_0
+                if (LWM2M_URI_IS_SET_RESOURCE_INSTANCE(uriP))
+                    fprintf(fd, "/%d", uriP->resourceInstanceId);
+#endif
+            }
         }
     }
 }

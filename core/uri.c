@@ -192,6 +192,22 @@ lwm2m_uri_t * uri_decode(char * altPath,
         uriP->flag |= LWM2M_URI_FLAG_RESOURCE_ID;
     }
 
+#ifndef LWM2M_VERSION_1_0
+    uriPath = uriPath->next;
+    if (uriPath == NULL) return uriP;
+    // Read resource instance ID
+    if (uriPath->len != 0)
+    {
+        // resource instance ID without a resource ID is not allowed
+        if ((uriP->flag & LWM2M_URI_FLAG_RESOURCE_ID) == 0) goto error;
+
+        readNum = uri_getNumber(uriPath->data, uriPath->len);
+        if (readNum < 0 || readNum >= LWM2M_MAX_ID) goto error;
+        uriP->resourceInstanceId = (uint16_t)readNum;
+        uriP->flag |= LWM2M_URI_FLAG_RESOURCE_INSTANCE_ID;
+    }
+#endif
+
     // must be the last segment
     if (NULL == uriPath->next)
     {
@@ -229,41 +245,46 @@ int lwm2m_stringToUri(const char * buffer,
     // Check the URI start with a '/'
     if (buffer[head] != '/') return 0;
     head++;
-    if (head == buffer_len) return 0;
-
-    // Read object ID
-    readNum = prv_parseNumber((uint8_t *)buffer, buffer_len, &head);
-    if (readNum < 0 || readNum > LWM2M_MAX_ID) return 0;
-    uriP->objectId = (uint16_t)readNum;
-    uriP->flag |= LWM2M_URI_FLAG_OBJECT_ID;
-
-    if (buffer[head] == '/') head += 1;
-    if (head >= buffer_len)
+    if (head < buffer_len)
     {
-        LOG_ARG("Parsed characters: %u", head);
-        LOG_URI(uriP);
-        return head;
+        // Read object ID
+        readNum = prv_parseNumber((uint8_t *)buffer, buffer_len, &head);
+        if (readNum < 0 || readNum >= LWM2M_MAX_ID) return 0;
+        uriP->objectId = (uint16_t)readNum;
+        uriP->flag |= LWM2M_URI_FLAG_OBJECT_ID;
+
+        if (head < buffer_len && buffer[head] == '/') head += 1;
+        if (head < buffer_len)
+        {
+            readNum = prv_parseNumber((uint8_t *)buffer, buffer_len, &head);
+            if (readNum < 0 || readNum >= LWM2M_MAX_ID) return 0;
+            uriP->instanceId = (uint16_t)readNum;
+            uriP->flag |= LWM2M_URI_FLAG_INSTANCE_ID;
+
+            if (head < buffer_len && buffer[head] == '/') head += 1;
+            if (head < buffer_len)
+            {
+
+                readNum = prv_parseNumber((uint8_t *)buffer, buffer_len, &head);
+                if (readNum < 0 || readNum >= LWM2M_MAX_ID) return 0;
+                uriP->resourceId = (uint16_t)readNum;
+                uriP->flag |= LWM2M_URI_FLAG_RESOURCE_ID;
+
+#ifndef LWM2M_VERSION_1_0
+                if (head < buffer_len && buffer[head] == '/') head += 1;
+                if (head < buffer_len)
+                {
+                    readNum = prv_parseNumber((uint8_t *)buffer, buffer_len, &head);
+                    if (readNum < 0 || readNum >= LWM2M_MAX_ID) return 0;
+                    uriP->resourceInstanceId = (uint16_t)readNum;
+                    uriP->flag |= LWM2M_URI_FLAG_RESOURCE_INSTANCE_ID;
+                }
+#endif
+
+                if (head != buffer_len) return 0;
+            }
+        }
     }
-
-    readNum = prv_parseNumber((uint8_t *)buffer, buffer_len, &head);
-    if (readNum < 0 || readNum >= LWM2M_MAX_ID) return 0;
-    uriP->instanceId = (uint16_t)readNum;
-    uriP->flag |= LWM2M_URI_FLAG_INSTANCE_ID;
-
-    if (buffer[head] == '/') head += 1;
-    if (head >= buffer_len)
-    {
-        LOG_ARG("Parsed characters: %u", head);
-        LOG_URI(uriP);
-        return head;
-    }
-
-    readNum = prv_parseNumber((uint8_t *)buffer, buffer_len, &head);
-    if (readNum < 0 || readNum >= LWM2M_MAX_ID) return 0;
-    uriP->resourceId = (uint16_t)readNum;
-    uriP->flag |= LWM2M_URI_FLAG_RESOURCE_ID;
-
-    if (head != buffer_len) return 0;
 
     LOG_ARG("Parsed characters: %u", head);
     LOG_URI(uriP);
@@ -291,7 +312,7 @@ int uri_toString(lwm2m_uri_t * uriP,
     }
 
     head = 1;
-
+    
     res = utils_intToText(uriP->objectId, buffer + head, bufferLen - head);
     if (res <= 0) return -1;
     head += res;
@@ -316,6 +337,19 @@ int uri_toString(lwm2m_uri_t * uriP,
             head += res;
             if (head >= bufferLen - 1) return -1;
             if (depthP) *depthP = URI_DEPTH_RESOURCE_INSTANCE;
+#ifndef LWM2M_VERSION_1_0
+            if (LWM2M_URI_IS_SET_RESOURCE_INSTANCE(uriP))
+            {
+                if (head >= bufferLen - 1) return -1;
+                buffer[head++] = '/';
+                res = utils_intToText(uriP->resourceInstanceId,
+                                      buffer + head,
+                                      bufferLen - head);
+                if (res <= 0) return -1;
+                head += res;
+                if (head >= bufferLen - 1) return -1;
+            }
+#endif
         }
     }
 

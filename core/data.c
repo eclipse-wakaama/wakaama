@@ -655,6 +655,10 @@ int lwm2m_data_parse(lwm2m_uri_t * uriP,
     {
     case LWM2M_CONTENT_TEXT:
         if (!LWM2M_URI_IS_SET_RESOURCE(uriP)) return 0;
+#ifndef LWM2M_VERSION_1_0
+		// TODO: Support resource instance
+        if (LWM2M_URI_IS_SET_RESOURCE_INSTANCE(uriP)) return 0;
+#endif
         *dataP = lwm2m_data_new(1);
         if (*dataP == NULL) return 0;
         (*dataP)->id = uriP->resourceId;
@@ -669,6 +673,10 @@ int lwm2m_data_parse(lwm2m_uri_t * uriP,
 
     case LWM2M_CONTENT_OPAQUE:
         if (!LWM2M_URI_IS_SET_RESOURCE(uriP)) return 0;
+#ifndef LWM2M_VERSION_1_0
+		// TODO: Support resource instance
+        if (LWM2M_URI_IS_SET_RESOURCE_INSTANCE(uriP)) return 0;
+#endif
         *dataP = lwm2m_data_new(1);
         if (*dataP == NULL) return 0;
         (*dataP)->id = uriP->resourceId;
@@ -678,7 +686,7 @@ int lwm2m_data_parse(lwm2m_uri_t * uriP,
         {
             lwm2m_data_free(1, *dataP);
             *dataP = NULL;
-    }
+        }
         return res;
 
 #ifdef LWM2M_OLD_CONTENT_FORMAT_SUPPORT
@@ -754,6 +762,14 @@ int lwm2m_data_serialize(lwm2m_uri_t * uriP,
     {
             bool isResourceInstance;
 
+#ifndef LWM2M_VERSION_1_0
+            if (uriP != NULL && LWM2M_URI_IS_SET_RESOURCE_INSTANCE(uriP))
+            {
+                if(size != 1 || dataP->id != uriP->resourceInstanceId) return -1;
+                isResourceInstance = true;
+            }
+            else
+#endif
             if (uriP != NULL && LWM2M_URI_IS_SET_RESOURCE(uriP)
              && (size != 1 || dataP->id != uriP->resourceId))
             {

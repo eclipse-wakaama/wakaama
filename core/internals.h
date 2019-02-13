@@ -67,17 +67,27 @@
 #include <inttypes.h>
 #define LOG(STR) lwm2m_printf("[%s:%d] " STR "\r\n", __func__ , __LINE__)
 #define LOG_ARG(FMT, ...) lwm2m_printf("[%s:%d] " FMT "\r\n", __func__ , __LINE__ , __VA_ARGS__)
+#ifdef LWM2M_VERSION_1_0
 #define LOG_URI(URI)                                                                \
 {                                                                                   \
-    if ((URI) == NULL) lwm2m_printf("[%s:%d] NULL\r\n", __func__ , __LINE__);     \
+    if ((URI) == NULL) lwm2m_printf("[%s:%d] NULL\r\n", __func__ , __LINE__);       \
     else                                                                            \
     {                                                                               \
-        lwm2m_printf("[%s:%d] /%d", __func__ , __LINE__ , (URI)->objectId);       \
+        lwm2m_printf("[%s:%d] /%d", __func__ , __LINE__ , (URI)->objectId);         \
         if (LWM2M_URI_IS_SET_INSTANCE(URI)) lwm2m_printf("/%d", (URI)->instanceId); \
         if (LWM2M_URI_IS_SET_RESOURCE(URI)) lwm2m_printf("/%d", (URI)->resourceId); \
         lwm2m_printf("\r\n");                                                       \
     }                                                                               \
 }
+#else
+#define LOG_URI(URI)                                                                \
+    if ((URI) == NULL) lwm2m_printf("[%s:%d] NULL\r\n", __func__ , __LINE__);       \
+    else if (!LWM2M_URI_IS_SET_OBJECT(URI)) lwm2m_printf("[%s:%d] /\r\n", __func__ , __LINE__); \
+    else if (!LWM2M_URI_IS_SET_INSTANCE(URI)) lwm2m_printf("[%s:%d] /%d\r\n", __func__ , __LINE__, (URI)->objectId); \
+    else if (!LWM2M_URI_IS_SET_RESOURCE(URI)) lwm2m_printf("[%s:%d] /%d/%d\r\n", __func__ , __LINE__, (URI)->objectId, (URI)->instanceId); \
+    else if (!LWM2M_URI_IS_SET_RESOURCE_INSTANCE(URI)) lwm2m_printf("[%s:%d] /%d/%d/%d\r\n", __func__ , __LINE__, (URI)->objectId, (URI)->instanceId, (URI)->resourceId); \
+    else lwm2m_printf("[%s:%d] /%d/%d/%d/%d\r\n", __func__ , __LINE__, (URI)->objectId, (URI)->instanceId, (URI)->resourceId, (URI)->resourceInstanceId)
+#endif
 #define STR_STATUS(S)                                           \
 ((S) == STATE_DEREGISTERED ? "STATE_DEREGISTERED" :             \
 ((S) == STATE_REG_HOLD_OFF ? "STATE_REG_HOLD_OFF" :             \
@@ -197,7 +207,11 @@
 #define ATTR_DIMENSION_STR       "dim="
 #define ATTR_DIMENSION_LEN       4
 
+#ifdef LWM2M_VERSION_1_0
 #define URI_MAX_STRING_LEN    18      // /65535/65535/65535
+#else
+#define URI_MAX_STRING_LEN    24      // /65535/65535/65535/65535
+#endif
 #define _PRV_64BIT_BUFFER_SIZE 8
 
 #define LINK_ITEM_START             "<"
@@ -221,7 +235,11 @@
 #define LWM2M_URI_FLAG_BOOTSTRAP    (uint8_t)0x40
 
 #define LWM2M_URI_MASK_TYPE (uint8_t)0x70
+#ifdef LWM2M_VERSION_1_0
 #define LWM2M_URI_MASK_ID   (uint8_t)0x07
+#else
+#define LWM2M_URI_MASK_ID   (uint8_t)0x0F
+#endif
 
 typedef struct
 {
