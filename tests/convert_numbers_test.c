@@ -33,7 +33,7 @@ const char* ints_text[] = {"12","-114","1", "134", "43243","0","-215025", "-9223
 uint64_t uints[]={12, 1 , 134 , 43243 , 0, UINT64_MAX};
 const char* uints_text[] = {"12","1", "134", "43243","0","18446744073709551615"};
 double floats[]={12, -114 , -30 , 1.02 , 134.000235 , 0.43243 , 0, -21.5025, -0.0925, 0.98765, 6.667e-11, FLT_MIN, FLT_MAX, DBL_MIN, DBL_MAX};
-const char* floats_text[] = {"12.0","-114.0","-30.0", "1.02", "134.000235","0.43243","0.0","-21.5025","-0.0925","0.98765", "0.00000000006667", "0.00000000000000000000000000000000000001175494", "340282346638528859811704183484516925440.0", "0.00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002225073858", "179769313486231570814527423731704356798070567525844996598917476803157260780028538760589558632766878171540458953514382464234321326889464182768467546703537516986049910576551282076245490090389328944075868508455133942304583236903222948165808559332123348274797826204144723168738177180919299881250404026184124858368.0"};
+const char* floats_text[] = {"12.0","-114.0","-30.0", "1.02", "134.000235","0.43243","0.0","-21.5025","-0.0925","0.98765", "6.667e-11", "1.17549435082229e-38", "3.40282346638529e38", "2.2250738585072e-308", "1.79769313486232e308"};
 
 static void test_utils_textToInt(void)
 {
@@ -126,7 +126,7 @@ static void test_utils_intToText(void)
         if (!len)
             printf("%zu \"%" PRId64 "\" -> fail\n", i, ints[i]);
         else if (strncmp(res, ints_text[i], strlen(ints_text[i])))
-            printf("%zu \"%" PRId64 "\" -> fail (%s)\n", i, ints[i], res);
+            printf("%zu \"%" PRId64 "\" -> fail (%.*s)\n", i, ints[i], len, res);
     }
 }
 
@@ -146,35 +146,28 @@ static void test_utils_uintToText(void)
         if (!len)
             printf("%zu \"%" PRIu64 "\" -> fail\n", i, uints[i]);
         else if (strncmp(res, uints_text[i], strlen(uints_text[i])))
-            printf("%zu \"%" PRIu64 "\" -> fail (%s)\n", i, uints[i], res);
+            printf("%zu \"%" PRIu64 "\" -> fail (%.*s)\n", i, uints[i], len, res);
     }
 }
 
 static void test_utils_floatToText(void)
 {
     size_t i;
-    char res[330];
+    char res[24];
     int len;
     int compareLen;
 
     for (i = 0 ; i < sizeof(floats)/sizeof(floats[0]); i++)
     {
+        compareLen = (int)strlen(floats_text[i]);
         len = utils_floatToText(floats[i], (uint8_t*)res, sizeof(res));
 
-        CU_ASSERT(len);
+        CU_ASSERT(len >= compareLen);
         if (len)
         {
-            compareLen = (int)strlen(floats_text[i]);
-            if (compareLen > DBL_DIG
-                && floats_text[i][compareLen-2] == '.'
-                && len > compareLen - 2
-                && res[compareLen-2] == '.')
-            {
-                compareLen = DBL_DIG;
-            }
             CU_ASSERT_NSTRING_EQUAL(res, floats_text[i], compareLen);
             if (strncmp(res, floats_text[i], compareLen))
-                printf("%zu \"%g\" -> fail (%*s)\n", i, floats[i], len, res);
+                printf("%zu \"%g\" -> fail (%.*s)\n", i, floats[i], len, res);
         }
         else
         {
@@ -182,15 +175,16 @@ static void test_utils_floatToText(void)
         }
     }
 
-    /* Test when no significant digits fit */
-    double val = 1e-9;
+    /* Test when no significant digits */
+    double val = DBL_MIN/FLT_RADIX;
+    CU_ASSERT_NOT_EQUAL(val, 0);
     len = utils_floatToText(val, (uint8_t*)res, 6);
-    CU_ASSERT(len);
+    CU_ASSERT(len == 3);
     if(len)
     {
-        CU_ASSERT_NSTRING_EQUAL(res, "0.0000", len);
-        if (strncmp(res, "0.0000", len))
-            printf("%zu \"%g\" -> fail (%*s)\n", i, val, len, res);
+        CU_ASSERT_NSTRING_EQUAL(res, "0.0", 3);
+        if (strncmp(res, "0.0", 3))
+            printf("%zu \"%g\" -> fail (%.*s)\n", i, val, len, res);
     }
     else
     {
@@ -198,15 +192,45 @@ static void test_utils_floatToText(void)
     }
     i++;
 
-    /* Test when only some significant digits fit */
+    /* Tests when only some significant digits fit */
     val = 0.11111111111111111;
     len = utils_floatToText(val, (uint8_t*)res, 6);
-    CU_ASSERT(len);
+    CU_ASSERT(len == 6);
     if(len)
     {
-        CU_ASSERT_NSTRING_EQUAL(res, "0.1111", len);
-        if (strncmp(res, "0.1111", len))
-            printf("%zu \"%g\" -> fail (%*s)\n", i, val, len, res);
+        CU_ASSERT_NSTRING_EQUAL(res, "0.1111", 6);
+        if (strncmp(res, "0.1111", 6))
+            printf("%zu \"%g\" -> fail (%.*s)\n", i, val, len, res);
+    }
+    else
+    {
+        printf("%zu \"%g\" -> fail\n", i, val);
+    }
+    i++;
+
+    val = 1.1111111111111111e-6;
+    len = utils_floatToText(val, (uint8_t*)res, 6);
+    CU_ASSERT(len == 6);
+    if(len)
+    {
+        CU_ASSERT_NSTRING_EQUAL(res, "1.1e-6", 6);
+        if (strncmp(res, "1.1e-6", 6))
+            printf("%zu \"%g\" -> fail (%.*s)\n", i, val, len, res);
+    }
+    else
+    {
+        printf("%zu \"%g\" -> fail\n", i, val);
+    }
+    i++;
+
+    val = 1.99e-6;
+    len = utils_floatToText(val, (uint8_t*)res, 6);
+    CU_ASSERT(len == 6);
+    if(len)
+    {
+        CU_ASSERT_NSTRING_EQUAL(res, "2.0e-6", 6);
+        if (strncmp(res, "2.0e-6", 6))
+            printf("%zu \"%g\" -> fail (%.*s)\n", i, val, len, res);
     }
     else
     {

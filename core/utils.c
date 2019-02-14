@@ -149,8 +149,11 @@ int utils_textToFloat(uint8_t * buffer,
         i = 0;
     }
 
+    /* Must have a decimal digit first after optional sign */
+    if (i >= length || buffer[i] < '0' || buffer[i] > '9') return 0;
+
     result = 0;
-    while (i < length && buffer[i] != '.')
+    while (i < length && buffer[i] != '.' && buffer[i] != 'e' && buffer[i] != 'E')
     {
         if ('0' <= buffer[i] && buffer[i] <= '9')
         {
@@ -164,15 +167,14 @@ int utils_textToFloat(uint8_t * buffer,
         }
         i++;
     }
-    if (buffer[i] == '.')
+    if (i < length && buffer[i] == '.')
     {
         double dec;
 
         i++;
-        if (i == length) return 0;
 
         dec = 0.1;
-        while (i < length)
+        while (i < length && buffer[i] != 'e' && buffer[i] != 'E')
         {
             if ('0' <= buffer[i] && buffer[i] <= '9')
             {
@@ -182,11 +184,57 @@ int utils_textToFloat(uint8_t * buffer,
             }
             else
             {
-                return 0;
+                break;
             }
             i++;
         }
     }
+    if (i < length && (buffer[i] == 'e' || buffer[i] == 'E'))
+    {
+        int64_t exp;
+        int res;
+        i++;
+        if (i < length && buffer[i] == '+') i++;
+        res = utils_textToInt(buffer + i, length - i, &exp);
+        if (res == 0) return 0;
+        if (exp > 0)
+        {
+            while (exp > 100)
+            {
+                result *= 1e100;
+                exp -= 100;
+            }
+            while (exp > 10)
+            {
+                result *= 1e10;
+                exp -= 10;
+            }
+            while (exp != 0)
+            {
+                result *= 10;
+                exp -= 1;
+            }
+        }
+        else if (exp < 0)
+        {
+            while (exp < -100)
+            {
+                result *= 1e-100;
+                exp += 100;
+            }
+            while (exp < -10)
+            {
+                result *= 1e-10;
+                exp += 10;
+            }
+            while (exp != 0)
+            {
+                result *= 0.1;
+                exp += 1;
+            }
+        }
+    }
+    if (result > DBL_MAX) result = DBL_MAX; /* Keep the result finite */
 
     *dataP = result * sign;
     return 1;
@@ -252,64 +300,182 @@ size_t utils_floatToText(double data,
                          uint8_t * string,
                          size_t length)
 {
-    size_t intLength;
-    size_t decLength;
-    int64_t intPart;
+    uint64_t intPart;
     double decPart;
+    size_t res;
+    size_t head = 0;
+    int exp = 0;
+    uint8_t expLen = 0;
+    int precisionFactor = 1;
 
-    if (data <= (double)INT64_MIN || data >= (double)INT64_MAX) return 0;
+    if (!length || !string) return 0;
 
-    intPart = (int64_t)data;
-    decPart = data - intPart;
-    if (decPart < 0)
+    if (data < 0)
     {
-        decPart = 1 - decPart;
-    }
-    else
-    {
-        decPart = 1 + decPart;
-    }
-
-    if (decPart <= 1 + FLT_EPSILON)
-    {
-        decPart = 0;
+        string[head++] = '-';
+        data = -data;
     }
 
-    if (intPart == 0 && data < 0)
+    /* Handle special cases */
+    if (data < DBL_MIN)
     {
-        // deal with numbers between -1 and 0
-        if (length < 4) return 0;   // "-0.n"
-        string[0] = '-';
-        string[1] = '0';
-        intLength = 2;
+        /* Intentionally not distinguishing between +0.0 and -0.0. */
+        if (length < 3) return 0;
+        string[0] = '0';
+        string[1] = '.';
+        string[2] = '0';
+        if (length > 3) string[3] = '\0';
+        return 3;
     }
-    else
+    else if (data > DBL_MAX )
     {
-        intLength = utils_intToText(intPart, string, length);
-        if (intLength == 0) return 0;
+        /* Note that this is not valid for JSON. */
+        if (length < 3 + head) return 0;
+        string[head++] = 'i';
+        string[head++] = 'n';
+        string[head++] = 'f';
+        if (length > head) string[head] = '\0';
+        return head;
     }
-    decLength = 0;
-    if (decPart >= FLT_EPSILON)
+    else if (data != data)
     {
-        double noiseFloor;
+        /* NaN */
+        /* Note that this is not valid for JSON. */
+        if (length < 3 + head) return 0;
+        string[head++] = 'n';
+        string[head++] = 'a';
+        string[head++] = 'n';
+        if (length > head) string[head] = '\0';
+        return head;
+    }
 
-        if (intLength >= length - 1) return 0;
+    /* Scale to usable range. Assumes DBL_DIG is 15 (IEEE 754 double) */
+    if (data > 1e15)
+    {
+        while (data > 1e100)
+        {
+            data *= 1e-100;
+            exp += 100;
+            precisionFactor++;
+        }
+        while (data > 1e10)
+        {
+            data *= 1e-10;
+            exp += 10;
+            precisionFactor++;
+        }
+        while (data > 10)
+        {
+            data *= 0.1;
+            exp += 1;
+            precisionFactor++;
+        }
+        if (exp >= 100)
+        {
+            expLen = 4;
+        }
+        else if(exp >= 10)
+        {
+            expLen = 3;
+        }
+        else
+        {
+            expLen = 2;
+        }
+    }
+    else if (data < 1e-3) /* Exponential notation will add at least 3 characters.
+                           * Make sure we save at least that many 0s. */
+    {
+        while (data < 1e-100)
+        {
+            data *= 1e100;
+            exp -= 100;
+            precisionFactor++;
+        }
+        while (data < 1e-10)
+        {
+            data *= 1e10;
+            exp -= 10;
+            precisionFactor++;
+        }
+        while (data < 1.0)
+        {
+            data *= 10;
+            exp -= 1;
+            precisionFactor++;
+        }
+        if (exp <= -100)
+        {
+            expLen = 5;
+        }
+        else if(exp <= -10)
+        {
+            expLen = 4;
+        }
+        else
+        {
+            expLen = 3;
+        }
+    }
 
-        noiseFloor = FLT_EPSILON;
+    intPart = (uint64_t)data;
+    decPart = data - intPart + 1;
+    if (decPart > 1 + DBL_EPSILON)
+    {
+        double noiseFloor = DBL_EPSILON * precisionFactor;
+        double roundCheck = 2;
+        size_t digits = 2;
+
+        if (head + 2 + expLen > length) return 0;
+
         do
         {
             decPart *= 10;
-            noiseFloor *= 10;
-        } while (decPart - (int64_t)decPart > noiseFloor);
-
-        decLength = utils_intToText(decPart, string + intLength, length - intLength);
-        if (decLength <= 1) return 0;
-
-        // replace the leading 1 with a dot
-        string[intLength] = '.';
+            roundCheck *= 10;
+            noiseFloor *= 11;
+            digits += 1;
+        } while (decPart - (uint64_t)decPart > noiseFloor && digits < length - head - expLen);
+        if (decPart - (uint64_t)decPart >= 0.5)
+        {
+            decPart += 0.5;
+            if (decPart >= roundCheck)
+            {
+                intPart += 1;
+            }
+        }
     }
 
-    return intLength + decLength;
+    res = utils_uintToText(intPart, string + head, length - head);
+    if (res == 0) return 0;
+    head += res;
+
+
+    if (decPart <= 1 + DBL_EPSILON)
+    {
+        if (head + 1 > length) return 0;
+        string[head++] = '.';
+        if (head + 1 <= length) string[head++] = '0';
+    }
+    else
+    {
+        res = utils_uintToText((uint64_t)decPart, string + head, length - head);
+        if (res <= 1) return 0;
+
+        // replace the leading 1 with a decimal point
+        string[head] = '.';
+        head += res;
+    }
+
+    if (exp != 0)
+    {
+        if (head + expLen > length) return 0;
+        string[head++] = 'e';
+        res = utils_intToText(exp, string + head, length - head);
+        if (res == 0) return 0;
+        head += res;
+    }
+
+    return head;
 }
 
 lwm2m_version_t utils_stringToVersion(uint8_t * buffer,
