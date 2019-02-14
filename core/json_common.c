@@ -18,6 +18,7 @@
 
 
 #include "internals.h"
+#include <float.h>
 
 #if defined(LWM2M_SUPPORT_JSON) || defined(LWM2M_SUPPORT_SENML_JSON)
 
@@ -320,7 +321,7 @@ int json_convertNumeric(const uint8_t *value,
     {
         double val;
 
-        result = utils_textToFloat(value, valueLen, &val);
+        result = utils_textToFloat(value, valueLen, &val, true);
         if (result)
         {
             lwm2m_data_encode_float(val, targetP);
