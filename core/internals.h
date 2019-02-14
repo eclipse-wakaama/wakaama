@@ -383,14 +383,14 @@ int utils_isAltPathValid(const char * altPath);
 int utils_stringCopy(char * buffer, size_t length, const char * str);
 size_t utils_intToText(int64_t data, uint8_t * string, size_t length);
 size_t utils_uintToText(uint64_t data, uint8_t * string, size_t length);
-size_t utils_floatToText(double data, uint8_t * string, size_t length);
+size_t utils_floatToText(double data, uint8_t * string, size_t length, bool allowExponential);
 size_t utils_objLinkToText(uint16_t objectId,
                            uint16_t objectInstanceId,
                            uint8_t * string,
                            size_t length);
 int utils_textToInt(const uint8_t * buffer, int length, int64_t * dataP);
 int utils_textToUInt(const uint8_t * buffer, int length, uint64_t * dataP);
-int utils_textToFloat(const uint8_t * buffer, int length, double * dataP);
+int utils_textToFloat(const uint8_t * buffer, int length, double * dataP, bool allowExponential);
 int utils_textToObjLink(const uint8_t * buffer,
                         int length,
                         uint16_t * objectId,

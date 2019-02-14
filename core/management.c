@@ -104,7 +104,7 @@ static int prv_readAttributes(multi_option_t * query,
             if (0 != ((attrP->toSet | attrP->toClear) & LWM2M_ATTR_FLAG_GREATER_THAN)) return -1;
             if (query->len == ATTR_GREATER_THAN_LEN) return -1;
 
-            if (1 != utils_textToFloat(query->data + ATTR_GREATER_THAN_LEN, query->len - ATTR_GREATER_THAN_LEN, &floatValue)) return -1;
+            if (1 != utils_textToFloat(query->data + ATTR_GREATER_THAN_LEN, query->len - ATTR_GREATER_THAN_LEN, &floatValue, false)) return -1;
 
             attrP->toSet |= LWM2M_ATTR_FLAG_GREATER_THAN;
             attrP->greaterThan = floatValue;
@@ -121,7 +121,7 @@ static int prv_readAttributes(multi_option_t * query,
             if (0 != ((attrP->toSet | attrP->toClear) & LWM2M_ATTR_FLAG_LESS_THAN)) return -1;
             if (query->len == ATTR_LESS_THAN_LEN) return -1;
 
-            if (1 != utils_textToFloat(query->data + ATTR_LESS_THAN_LEN, query->len - ATTR_LESS_THAN_LEN, &floatValue)) return -1;
+            if (1 != utils_textToFloat(query->data + ATTR_LESS_THAN_LEN, query->len - ATTR_LESS_THAN_LEN, &floatValue, false)) return -1;
 
             attrP->toSet |= LWM2M_ATTR_FLAG_LESS_THAN;
             attrP->lessThan = floatValue;
@@ -138,7 +138,7 @@ static int prv_readAttributes(multi_option_t * query,
             if (0 != ((attrP->toSet | attrP->toClear) & LWM2M_ATTR_FLAG_STEP)) return -1;
             if (query->len == ATTR_STEP_LEN) return -1;
 
-            if (1 != utils_textToFloat(query->data + ATTR_STEP_LEN, query->len - ATTR_STEP_LEN, &floatValue)) return -1;
+            if (1 != utils_textToFloat(query->data + ATTR_STEP_LEN, query->len - ATTR_STEP_LEN, &floatValue, false)) return -1;
             if (floatValue < 0) return -1;
 
             attrP->toSet |= LWM2M_ATTR_FLAG_STEP;
@@ -678,7 +678,7 @@ int lwm2m_dm_write_attributes(lwm2m_context_t * contextP,
     if (attrP->toSet & LWM2M_ATTR_FLAG_GREATER_THAN)
     {
         memcpy(buffer, ATTR_GREATER_THAN_STR, ATTR_GREATER_THAN_LEN);
-        length = utils_floatToText(attrP->greaterThan, buffer + ATTR_GREATER_THAN_LEN, _PRV_BUFFER_SIZE - ATTR_GREATER_THAN_LEN);
+        length = utils_floatToText(attrP->greaterThan, buffer + ATTR_GREATER_THAN_LEN, _PRV_BUFFER_SIZE - ATTR_GREATER_THAN_LEN, false);
         if (length == 0)
         {
             transaction_free(transaction);
@@ -690,7 +690,7 @@ int lwm2m_dm_write_attributes(lwm2m_context_t * contextP,
     if (attrP->toSet & LWM2M_ATTR_FLAG_LESS_THAN)
     {
         memcpy(buffer, ATTR_LESS_THAN_STR, ATTR_LESS_THAN_LEN);
-        length = utils_floatToText(attrP->lessThan, buffer + ATTR_LESS_THAN_LEN, _PRV_BUFFER_SIZE - ATTR_LESS_THAN_LEN);
+        length = utils_floatToText(attrP->lessThan, buffer + ATTR_LESS_THAN_LEN, _PRV_BUFFER_SIZE - ATTR_LESS_THAN_LEN, false);
         if (length == 0)
         {
             transaction_free(transaction);
@@ -702,7 +702,7 @@ int lwm2m_dm_write_attributes(lwm2m_context_t * contextP,
     if (attrP->toSet & LWM2M_ATTR_FLAG_STEP)
     {
         memcpy(buffer, ATTR_STEP_STR, ATTR_STEP_LEN);
-        length = utils_floatToText(attrP->step, buffer + ATTR_STEP_LEN, _PRV_BUFFER_SIZE - ATTR_STEP_LEN);
+        length = utils_floatToText(attrP->step, buffer + ATTR_STEP_LEN, _PRV_BUFFER_SIZE - ATTR_STEP_LEN, false);
         if (length == 0)
         {
             transaction_free(transaction);
