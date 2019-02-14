@@ -778,7 +778,6 @@ bs_info_t *  bs_get_info(FILE * fd)
     bs_info_t * infoP;
     read_server_t * readSrvP;
     bs_endpoint_info_t * cltInfoP;
-    bs_command_t * cmdP;
 
     infoP = (bs_info_t *)lwm2m_malloc(sizeof(bs_info_t));
     if (infoP == NULL) return NULL;

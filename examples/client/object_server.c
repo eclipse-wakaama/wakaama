@@ -767,15 +767,8 @@ static uint8_t prv_server_write(uint16_t instanceId,
             bool value;
             if (1 == lwm2m_data_decode_bool(dataArray + i, &value))
             {
-                if (value <= INT_MAX)
-                {
-                    targetP->registrationFailureBlock = value;
-                    result = COAP_204_CHANGED;
-                }
-                else
-                {
-                    result = COAP_406_NOT_ACCEPTABLE;
-                }
+                targetP->registrationFailureBlock = value;
+                result = COAP_204_CHANGED;
             }
             else
             {
@@ -789,15 +782,8 @@ static uint8_t prv_server_write(uint16_t instanceId,
             bool value;
             if (1 == lwm2m_data_decode_bool(dataArray + i, &value))
             {
-                if (value <= INT_MAX)
-                {
-                    targetP->bootstrapOnRegistrationFailure = value;
-                    result = COAP_204_CHANGED;
-                }
-                else
-                {
-                    result = COAP_406_NOT_ACCEPTABLE;
-                }
+                targetP->bootstrapOnRegistrationFailure = value;
+                result = COAP_204_CHANGED;
             }
             else
             {

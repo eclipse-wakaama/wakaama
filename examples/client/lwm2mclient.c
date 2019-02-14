@@ -822,7 +822,9 @@ int main(int argc, char *argv[])
 #endif
 
     char * pskId = NULL;
+#ifdef WITH_TINYDTLS
     char * psk = NULL;
+#endif
     uint16_t pskLen = -1;
     char * pskBuffer = NULL;
 

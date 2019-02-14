@@ -365,7 +365,6 @@ int lwm2m_step(lwm2m_context_t * contextP,
                time_t * timeoutP)
 {
     time_t tv_sec;
-    int result;
 
     LOG_ARG("timeoutP: %" PRId64, *timeoutP);
     tv_sec = lwm2m_gettime();
@@ -427,10 +426,12 @@ next_step:
         break;
 #endif
     case STATE_REGISTER_REQUIRED:
-        result = registration_start(contextP, true);
+    {
+        int result = registration_start(contextP, true);
         if (COAP_NO_ERROR != result) return result;
         contextP->state = STATE_REGISTERING;
-        break;
+    }
+    break;
 
     case STATE_REGISTERING:
     {

@@ -274,7 +274,7 @@ void lwm2m_data_encode_nstring(const char * string,
                                size_t length,
                                lwm2m_data_t * dataP)
 {
-    LOG_ARG("length: %d, string: \"%s\"", length, string);
+    LOG_ARG("length: %d, string: \"%.*s\"", length, length, string);
     lwm2m_data_encode_opaque((uint8_t *)string, length, dataP);
 
     if (dataP->type == LWM2M_TYPE_OPAQUE)

@@ -182,7 +182,6 @@ static uint8_t prv_firmware_write(uint16_t instanceId,
 {
     int i;
     uint8_t result;
-    firmware_data_t * data = (firmware_data_t*)(objectP->userData);
 
     // this is a single instance object
     if (instanceId != 0)

@@ -302,7 +302,6 @@ static int prv_bootstrap_callback(void * sessionH,
                                   void * userData)
 {
     internal_data_t * dataP = (internal_data_t *)userData;
-    uint8_t result;
     endpoint_t * endP;
 
     switch (status)
@@ -407,8 +406,8 @@ static void prv_bootstrap_client(char * buffer,
 {
     internal_data_t * dataP = (internal_data_t *)user_data;
     char * uri;
-    char * name;
-    char* end = NULL;
+    char * name = "";
+    char * end = NULL;
     char * host;
     char * port;
     connection_t * newConnP = NULL;
