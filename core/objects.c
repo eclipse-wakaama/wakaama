@@ -323,14 +323,12 @@ uint8_t object_create(lwm2m_context_t * contextP,
         }
         result = targetP->createFunc(dataP[0].id, dataP[0].value.asChildren.count, dataP[0].value.asChildren.array, targetP);
         uriP->instanceId = dataP[0].id;
-        uriP->flag |= LWM2M_URI_FLAG_INSTANCE_ID;
         break;
 
     default:
         if (!LWM2M_URI_IS_SET_INSTANCE(uriP))
         {
             uriP->instanceId = lwm2m_list_newId(targetP->instanceList);
-            uriP->flag |= LWM2M_URI_FLAG_INSTANCE_ID;
         }
         result = targetP->createFunc(uriP->instanceId, size, dataP, targetP);
         break;
@@ -368,19 +366,20 @@ uint8_t object_delete(lwm2m_context_t * contextP,
     else
     {
         lwm2m_list_t * instanceP;
+        lwm2m_uri_t tempUri;
 
+
+        memcpy(&tempUri, uriP, sizeof(tempUri));
         result = COAP_202_DELETED;
         instanceP = objectP->instanceList;
         while (NULL != instanceP
             && result == COAP_202_DELETED)
         {
-            uriP->instanceId = instanceP->id;
             result = objectP->deleteFunc(instanceP->id, objectP);
             if (result == COAP_202_DELETED)
             {
-                uriP->flag |= LWM2M_URI_FLAG_INSTANCE_ID;
-                observe_clear(contextP, uriP);
-                uriP->flag &= ~LWM2M_URI_FLAG_INSTANCE_ID;
+                tempUri.instanceId = instanceP->id;
+                observe_clear(contextP, &tempUri);
             }
             instanceP = objectP->instanceList;
         }

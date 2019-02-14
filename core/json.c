@@ -904,7 +904,7 @@ int json_parse(lwm2m_uri_t * uriP,
         lwm2m_data_t * resultP;
         int size;
 
-        memset(&baseURI, 0, sizeof(lwm2m_uri_t));
+        LWM2M_URI_RESET(&baseURI);
         if (bnFound == false)
         {
             baseUriP = uriP;
@@ -1409,7 +1409,7 @@ int json_serialize(lwm2m_uri_t * uriP,
         /* The resource instance doesn't get serialized as part of the base URI.
          * Strip it out. */
         memcpy(&uri, uriP, sizeof(lwm2m_uri_t));
-        uri.flag &= ~LWM2M_URI_FLAG_RESOURCE_INSTANCE_ID;
+        uri.resourceInstanceId = LWM2M_MAX_ID;
         uriP = &uri;
     }
 #endif

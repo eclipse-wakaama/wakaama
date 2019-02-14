@@ -229,18 +229,6 @@
 
 #define ATTR_FLAG_NUMERIC (uint8_t)(LWM2M_ATTR_FLAG_LESS_THAN | LWM2M_ATTR_FLAG_GREATER_THAN | LWM2M_ATTR_FLAG_STEP)
 
-#define LWM2M_URI_FLAG_DM           (uint8_t)0x00
-#define LWM2M_URI_FLAG_DELETE_ALL   (uint8_t)0x10
-#define LWM2M_URI_FLAG_REGISTRATION (uint8_t)0x20
-#define LWM2M_URI_FLAG_BOOTSTRAP    (uint8_t)0x40
-
-#define LWM2M_URI_MASK_TYPE (uint8_t)0x70
-#ifdef LWM2M_VERSION_1_0
-#define LWM2M_URI_MASK_ID   (uint8_t)0x07
-#else
-#define LWM2M_URI_MASK_ID   (uint8_t)0x0F
-#endif
-
 typedef struct
 {
     uint16_t clientID;
@@ -261,15 +249,23 @@ typedef enum
 #ifdef LWM2M_BOOTSTRAP_SERVER_MODE
 typedef struct
 {
-    bool        isUri;
     lwm2m_uri_t uri;
     lwm2m_bootstrap_callback_t callback;
     void *      userData;
 } bs_data_t;
 #endif
 
+typedef enum
+{
+    LWM2M_REQUEST_TYPE_UNKNOWN,
+    LWM2M_REQUEST_TYPE_DM,
+    LWM2M_REQUEST_TYPE_REGISTRATION,
+    LWM2M_REQUEST_TYPE_BOOTSTRAP,
+    LWM2M_REQUEST_TYPE_DELETE_ALL
+} lwm2m_request_type_t;
+
 // defined in uri.c
-lwm2m_uri_t * uri_decode(char * altPath, multi_option_t *uriPath);
+lwm2m_request_type_t uri_decode(char * altPath, multi_option_t *uriPath, lwm2m_uri_t *uriP);
 int uri_getNumber(uint8_t * uriString, size_t uriLength);
 int uri_toString(const lwm2m_uri_t * uriP, uint8_t * buffer, size_t bufferLen, uri_depth_t * depthP);
 

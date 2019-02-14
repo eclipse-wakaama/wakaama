@@ -652,22 +652,14 @@ static bs_endpoint_info_t * prv_read_next_endpoint(FILE * fd)
             lwm2m_uri_t uri;
 
 
-            if (lwm2m_stringToUri(value, strlen(value), &uri) == 0)
-            {
-                if (value[0] == '/'
-                 && value[1] == 0)
-                {
-                    uri.flag = 0;
-                }
-                else goto error;
-            }
+            if (lwm2m_stringToUri(value, strlen(value), &uri) == 0) goto error;
 
             cmdP = (bs_command_t *)lwm2m_malloc(sizeof(bs_command_t));
             if (cmdP == NULL) goto error;
             memset(cmdP, 0, sizeof(bs_command_t));
 
             cmdP->operation = BS_DELETE;
-            if (uri.flag != 0)
+            if (LWM2M_URI_IS_SET_OBJECT(&uri))
             {
                 cmdP->uri = (lwm2m_uri_t *)lwm2m_malloc(sizeof(lwm2m_uri_t));
                 if (cmdP->uri == NULL) goto error;

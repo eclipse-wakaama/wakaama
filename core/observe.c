@@ -60,8 +60,7 @@ static lwm2m_observed_t * prv_findObserved(lwm2m_context_t * contextP,
 
     targetP = contextP->observedList;
     while (targetP != NULL
-        && (targetP->uri.objectId != uriP->objectId
-         || targetP->uri.flag != uriP->flag
+        && ((LWM2M_URI_IS_SET_OBJECT(uriP) && targetP->uri.objectId != uriP->objectId)
          || (LWM2M_URI_IS_SET_INSTANCE(uriP) && targetP->uri.instanceId != uriP->instanceId)
          || (LWM2M_URI_IS_SET_RESOURCE(uriP) && targetP->uri.resourceId != uriP->resourceId)
 #ifndef LWM2M_VERSION_1_0
@@ -471,16 +470,16 @@ void lwm2m_resource_value_changed(lwm2m_context_t * contextP,
         if (targetP->uri.objectId == uriP->objectId)
         {
             if (!LWM2M_URI_IS_SET_INSTANCE(uriP)
-             || (targetP->uri.flag & LWM2M_URI_FLAG_INSTANCE_ID) == 0
+             || !LWM2M_URI_IS_SET_INSTANCE(&targetP->uri)
              || uriP->instanceId == targetP->uri.instanceId)
             {
                 if (!LWM2M_URI_IS_SET_RESOURCE(uriP)
-                 || (targetP->uri.flag & LWM2M_URI_FLAG_RESOURCE_ID) == 0
+                 || !LWM2M_URI_IS_SET_RESOURCE(&targetP->uri)
                  || uriP->resourceId == targetP->uri.resourceId)
                 {
 #ifndef LWM2M_VERSION_1_0
                     if (!LWM2M_URI_IS_SET_RESOURCE_INSTANCE(uriP)
-                     || (targetP->uri.flag & LWM2M_URI_FLAG_RESOURCE_INSTANCE_ID) == 0
+                     || !LWM2M_URI_IS_SET_RESOURCE_INSTANCE(&targetP->uri)
                      || uriP->resourceInstanceId == targetP->uri.resourceInstanceId)
 #endif
                     {
@@ -861,7 +860,6 @@ static lwm2m_observation_t * prv_findObservationByURI(lwm2m_client_t * clientP,
     while (targetP != NULL)
     {
         if (targetP->uri.objectId == uriP->objectId
-         && targetP->uri.flag == uriP->flag
          && targetP->uri.instanceId == uriP->instanceId
          && targetP->uri.resourceId == uriP->resourceId
 #ifndef LWM2M_VERSION_1_0
