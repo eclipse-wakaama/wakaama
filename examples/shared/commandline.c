@@ -174,7 +174,7 @@ static void print_indent(FILE * stream,
 }
 
 void output_buffer(FILE * stream,
-                   uint8_t * buffer,
+                   const uint8_t * buffer,
                    int length,
                    int indent)
 {
@@ -332,6 +332,16 @@ void output_data(FILE * stream,
         fprintf(stream, "\n");
         break;
 
+    case LWM2M_CONTENT_SENML_JSON:
+        fprintf(stream, "application/senml+json:\r\n");
+        print_indent(stream, indent);
+        for (i = 0 ; i < dataLength ; i++)
+        {
+            fprintf(stream, "%c", data[i]);
+        }
+        fprintf(stream, "\n");
+        break;
+
     case LWM2M_CONTENT_LINK:
         fprintf(stream, "application/link-format:\r\n");
         print_indent(stream, indent);
@@ -459,126 +469,4 @@ void print_status(FILE * stream,
                   uint8_t status)
 {
     fprintf(stream, "%d.%02d (%s)", (status&0xE0)>>5, status&0x1F, prv_status_to_string(status));
-}
-
-/**********************************************************
-* Base64 decoding function
-*
-* WARNING: Bugged for input strings with length < 4
-*
-*/
-
-#define PRV_B64_PADDING '='
-
-static uint8_t prv_b64Revert(uint8_t value)
-{
-    if (value >= 'A' && value <= 'Z')
-    {
-        return (value - 'A');
-    }
-    if (value >= 'a' && value <= 'z')
-    {
-        return (26 + value - 'a');
-    }
-    if (value >= '0' && value <= '9')
-    {
-        return (52 + value - '0');
-    }
-    switch (value)
-    {
-    case '+':
-        return 62;
-    case '/':
-        return 63;
-    default:
-        return 0;
-    }
-}
-
-static void prv_decodeBlock(uint8_t input[4],
-                            uint8_t output[3])
-{
-    uint8_t tmp[4];
-    int i;
-
-    memset(output, 0, 3);
-
-    for (i = 0; i < 4; i++)
-    {
-        tmp[i] = prv_b64Revert(input[i]);
-    }
-
-    output[0] = (tmp[0] << 2) | (tmp[1] >> 4);
-    output[1] = (tmp[1] << 4) | (tmp[2] >> 2);
-    output[2] = (tmp[2] << 6) | tmp[3];
-}
-
-size_t base64_decode(uint8_t * dataP,
-                     size_t dataLen,
-                     uint8_t ** bufferP)
-{
-    size_t data_index;
-    size_t result_index;
-    size_t result_len;
-    
-    if (dataLen % 4) return 0;
-    
-    result_len = (dataLen >> 2) * 3;
-    *bufferP = (uint8_t *)lwm2m_malloc(result_len);
-    if (NULL == *bufferP) return 0;
-    memset(*bufferP, 0, result_len);
-    
-    // remove padding
-    while (dataP[dataLen - 1] == PRV_B64_PADDING)
-    {
-        dataLen--;
-    }
-    
-    data_index = 0;
-    result_index = 0;
-    while (data_index < dataLen)
-    {
-        prv_decodeBlock(dataP + data_index, *bufferP + result_index);
-        data_index += 4;
-        result_index += 3;
-    }
-    switch (data_index - dataLen)
-    {
-    case 0:
-        break;
-    case 2:
-    {
-        uint8_t tmp[2];
-
-        tmp[0] = prv_b64Revert(dataP[dataLen - 2]);
-        tmp[1] = prv_b64Revert(dataP[dataLen - 1]);
-
-        *bufferP[result_index - 3] = (tmp[0] << 2) | (tmp[1] >> 4);
-        *bufferP[result_index - 2] = (tmp[1] << 4);
-        result_len -= 2;
-    }
-    break;
-    case 3:
-    {
-        uint8_t tmp[3];
-
-        tmp[0] = prv_b64Revert(dataP[dataLen - 3]);
-        tmp[1] = prv_b64Revert(dataP[dataLen - 2]);
-        tmp[2] = prv_b64Revert(dataP[dataLen - 1]);
-
-        *bufferP[result_index - 3] = (tmp[0] << 2) | (tmp[1] >> 4);
-        *bufferP[result_index - 2] = (tmp[1] << 4) | (tmp[2] >> 2);
-        *bufferP[result_index - 1] = (tmp[2] << 6);
-        result_len -= 1;
-    }
-    break;
-    default:
-        // error
-        lwm2m_free(*bufferP);
-        *bufferP = NULL;
-        result_len = 0;
-        break;
-    }
-
-    return result_len;
 }

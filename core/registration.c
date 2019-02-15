@@ -1278,7 +1278,7 @@ static uint16_t prv_splitLinkAttribute(uint8_t * data,
 
 static int prv_parseLinkAttributes(uint8_t * data,
                                    uint16_t length,
-                                   bool * supportJSON,
+                                   lwm2m_media_type_t * format,
                                    char ** altPath)
 {
     uint16_t index;
@@ -1345,11 +1345,23 @@ static int prv_parseLinkAttributes(uint8_t * data,
         else if (keyLength == REG_ATTR_CONTENT_KEY_LEN
               && 0 == lwm2m_strncmp(REG_ATTR_CONTENT_KEY, (char*)data + index + keyStart, keyLength))
         {
-            if (*supportJSON == true) return 0; // declared twice
+            if (*format != LWM2M_CONTENT_TLV) return 0; // declared twice
             if (valueLength == REG_ATTR_CONTENT_JSON_LEN
              && 0 == lwm2m_strncmp(REG_ATTR_CONTENT_JSON, (char*)data + index + valueStart, valueLength))
             {
-                *supportJSON = true;
+                *format = LWM2M_CONTENT_JSON;
+            }
+#ifdef LWM2M_OLD_CONTENT_FORMAT_SUPPORT
+            else if (valueLength == REG_ATTR_CONTENT_JSON_OLD_LEN
+             && 0 == lwm2m_strncmp(REG_ATTR_CONTENT_JSON_OLD, (char*)data + index + valueStart, valueLength))
+            {
+                *format = LWM2M_CONTENT_JSON_OLD;
+            }
+#endif
+            else if (valueLength == REG_ATTR_CONTENT_SENML_JSON_LEN
+             && 0 == lwm2m_strncmp(REG_ATTR_CONTENT_SENML_JSON, (char*)data + index + valueStart, valueLength))
+            {
+                *format = LWM2M_CONTENT_SENML_JSON;
             }
             else
             {
@@ -1436,7 +1448,7 @@ static int prv_getId(uint8_t * data,
 
 static lwm2m_client_object_t * prv_decodeRegisterPayload(uint8_t * payload,
                                                          uint16_t payloadLength,
-                                                         bool * supportJSON,
+                                                         lwm2m_media_type_t * format,
                                                          char ** altPath)
 {
     uint16_t index;
@@ -1444,7 +1456,7 @@ static lwm2m_client_object_t * prv_decodeRegisterPayload(uint8_t * payload,
     bool linkAttrFound;
 
     *altPath = NULL;
-    *supportJSON = false;
+    *format = LWM2M_CONTENT_TLV;
     objList = NULL;
     linkAttrFound = false;
     index = 0;
@@ -1494,7 +1506,7 @@ static lwm2m_client_object_t * prv_decodeRegisterPayload(uint8_t * payload,
         }
         else if (linkAttrFound == false)
         {
-            result = prv_parseLinkAttributes(payload + start, length, supportJSON, altPath);
+            result = prv_parseLinkAttributes(payload + start, length, format, altPath);
             if (result == 0) goto error;
 
             linkAttrFound = true;
@@ -1591,7 +1603,7 @@ uint8_t registration_handleRequest(lwm2m_context_t * contextP,
         lwm2m_version_t version;
         lwm2m_binding_t binding;
         lwm2m_client_object_t * objects;
-        bool supportJSON;
+        lwm2m_media_type_t format;
         lwm2m_client_t * clientP;
         char location[MAX_LOCATION_LENGTH];
 
@@ -1605,7 +1617,7 @@ uint8_t registration_handleRequest(lwm2m_context_t * contextP,
             return COAP_400_BAD_REQUEST;
         }
 
-        objects = prv_decodeRegisterPayload(message->payload, message->payload_len, &supportJSON, &altPath);
+        objects = prv_decodeRegisterPayload(message->payload, message->payload_len, &format, &altPath);
 
         if (!LWM2M_URI_IS_SET_OBJECT(uriP))
         {
@@ -1680,7 +1692,7 @@ uint8_t registration_handleRequest(lwm2m_context_t * contextP,
             clientP->binding = binding;
             clientP->msisdn = msisdn;
             clientP->altPath = altPath;
-            clientP->supportJSON = supportJSON;
+            clientP->format = format;
             clientP->lifetime = lifetime;
             clientP->endOfLife = tv_sec + lifetime;
             clientP->objectList = objects;

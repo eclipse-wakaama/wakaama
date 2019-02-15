@@ -90,10 +90,10 @@ typedef enum
 
 typedef struct
 {
-    uint16_t    ids[4];
-    _type       type;
-    uint8_t *   value;
-    size_t      valueLen;
+    uint16_t        ids[4];
+    _type           type;
+    const uint8_t * value;
+    size_t          valueLen;
 } _record_t;
 
 static int prv_isReserved(char sign)
@@ -125,7 +125,7 @@ static int prv_isWhiteSpace(uint8_t sign)
     return 0;
 }
 
-static size_t prv_skipSpace(uint8_t * buffer,
+static size_t prv_skipSpace(const uint8_t * buffer,
                             size_t bufferLen)
 {
     size_t i;
@@ -140,7 +140,7 @@ static size_t prv_skipSpace(uint8_t * buffer,
     return i;
 }
 
-static int prv_split(uint8_t * buffer,
+static int prv_split(const uint8_t * buffer,
                      size_t bufferLen,
                      int * tokenStartP,
                      int * tokenLenP,
@@ -237,7 +237,7 @@ static int prv_split(uint8_t * buffer,
     return (int)index;
 }
 
-static int prv_countItems(uint8_t * buffer,
+static int prv_countItems(const uint8_t * buffer,
                           size_t bufferLen)
 {
     int count;
@@ -285,7 +285,7 @@ error:
     return -1;
 }
 
-static int prv_parseItem(uint8_t * buffer,
+static int prv_parseItem(const uint8_t * buffer,
                          size_t bufferLen,
                          _record_t * recordP)
 {
@@ -757,7 +757,7 @@ static int prv_dataStrip(int size,
 }
 
 int json_parse(lwm2m_uri_t * uriP,
-               uint8_t * buffer,
+               const uint8_t * buffer,
                size_t bufferLen,
                lwm2m_data_t ** dataP)
 {
@@ -1166,11 +1166,11 @@ static int prv_serializeValue(lwm2m_data_t * tlvP,
     return head;
 }
 
-int prv_serializeData(lwm2m_data_t * tlvP,
-                      uint8_t * parentUriStr,
-                      size_t parentUriLen,
-                      uint8_t * buffer,
-                      size_t bufferLen)
+static int prv_serializeData(lwm2m_data_t * tlvP,
+                             const uint8_t * parentUriStr,
+                             size_t parentUriLen,
+                             uint8_t * buffer,
+                             size_t bufferLen)
 {
     int head;
     int res;

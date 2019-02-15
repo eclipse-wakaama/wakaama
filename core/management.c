@@ -488,7 +488,6 @@ int lwm2m_dm_read(lwm2m_context_t * contextP,
                   void * userData)
 {
     lwm2m_client_t * clientP;
-    lwm2m_media_type_t format;
 
     LOG_ARG("clientID: %d", clientID);
     LOG_URI(uriP);
@@ -496,18 +495,9 @@ int lwm2m_dm_read(lwm2m_context_t * contextP,
     clientP = (lwm2m_client_t *)lwm2m_list_find((lwm2m_list_t *)contextP->clientList, clientID);
     if (clientP == NULL) return COAP_404_NOT_FOUND;
 
-    if (clientP->supportJSON == true)
-    {
-        format = LWM2M_CONTENT_JSON;
-    }
-    else
-    {
-        format = LWM2M_CONTENT_TLV;
-    }
-
     return prv_makeOperation(contextP, clientID, uriP,
                              COAP_GET,
-                             format,
+                             clientP->format,
                              NULL, 0,
                              callback, userData);
 }

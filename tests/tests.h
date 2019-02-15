@@ -32,5 +32,8 @@ CU_ErrorCode create_object_read_suit();
 CU_ErrorCode create_convert_numbers_suit();
 CU_ErrorCode create_tlv_json_suit();
 CU_ErrorCode create_block1_suit();
+#ifdef LWM2M_SUPPORT_SENML_JSON
+CU_ErrorCode create_senml_json_suit();
+#endif
 
 #endif /* TESTS_H_ */
