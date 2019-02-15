@@ -302,11 +302,12 @@ size_t utils_floatToText(double data,
 {
     uint64_t intPart;
     double decPart;
+    double noiseFloor;
     size_t res;
     size_t head = 0;
     int exp = 0;
     uint8_t expLen = 0;
-    int precisionFactor = 1;
+    int precisionFactor = 1; /* Adjusts for inaccuracies caused by power of 10 operations. */
 
     if (!length || !string) return 0;
 
@@ -420,9 +421,15 @@ size_t utils_floatToText(double data,
 
     intPart = (uint64_t)data;
     decPart = data - intPart + 1;
-    if (decPart > 1 + DBL_EPSILON)
+    noiseFloor = DBL_EPSILON * precisionFactor;
+    while (intPart >= 1)
     {
-        double noiseFloor = DBL_EPSILON * precisionFactor;
+        noiseFloor *= 10;
+        intPart /= 10;
+    }
+    intPart = (uint64_t)data;
+    if (decPart > 1 + noiseFloor)
+    {
         double roundCheck = 2;
         size_t digits = 2;
 
@@ -432,7 +439,7 @@ size_t utils_floatToText(double data,
         {
             decPart *= 10;
             roundCheck *= 10;
-            noiseFloor *= 11;
+            noiseFloor *= 10;
             digits += 1;
         } while (decPart - (uint64_t)decPart > noiseFloor && digits < length - head - expLen);
         if (decPart - (uint64_t)decPart >= 0.5)
