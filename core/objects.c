@@ -86,6 +86,11 @@ uint8_t object_checkReadable(lwm2m_context_t * contextP,
 
     dataP->id = uriP->resourceId;
 
+#ifndef LWM2M_VERSION_1_0
+    // TODO: support resource instance
+    if (LWM2M_URI_IS_SET_RESOURCE_INSTANCE(uriP)) return COAP_400_BAD_REQUEST;
+#endif
+
     result = targetP->readFunc(uriP->instanceId, &size, &dataP, targetP);
     if (result == COAP_205_CONTENT)
     {
@@ -131,6 +136,11 @@ uint8_t object_readData(lwm2m_context_t * contextP,
             if (*dataP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
 
             (*dataP)->id = uriP->resourceId;
+
+#ifndef LWM2M_VERSION_1_0
+            // TODO: support resource instance
+            if (LWM2M_URI_IS_SET_RESOURCE_INSTANCE(uriP)) return COAP_400_BAD_REQUEST;
+#endif
         }
 
         result = targetP->readFunc(uriP->instanceId, sizeP, dataP, targetP);
@@ -237,6 +247,10 @@ uint8_t object_write(lwm2m_context_t * contextP,
             result = COAP_406_NOT_ACCEPTABLE;
         }
     }
+#ifndef LWM2M_VERSION_1_0
+    // TODO: support resource instance
+    if (LWM2M_URI_IS_SET_RESOURCE_INSTANCE(uriP)) result = COAP_400_BAD_REQUEST;
+#endif
     if (result == NO_ERROR)
     {
         result = targetP->writeFunc(uriP->instanceId, size, dataP, targetP);
@@ -309,14 +323,12 @@ uint8_t object_create(lwm2m_context_t * contextP,
         }
         result = targetP->createFunc(dataP[0].id, dataP[0].value.asChildren.count, dataP[0].value.asChildren.array, targetP);
         uriP->instanceId = dataP[0].id;
-        uriP->flag |= LWM2M_URI_FLAG_INSTANCE_ID;
         break;
 
     default:
         if (!LWM2M_URI_IS_SET_INSTANCE(uriP))
         {
             uriP->instanceId = lwm2m_list_newId(targetP->instanceList);
-            uriP->flag |= LWM2M_URI_FLAG_INSTANCE_ID;
         }
         result = targetP->createFunc(uriP->instanceId, size, dataP, targetP);
         break;
@@ -354,19 +366,20 @@ uint8_t object_delete(lwm2m_context_t * contextP,
     else
     {
         lwm2m_list_t * instanceP;
+        lwm2m_uri_t tempUri;
 
+
+        memcpy(&tempUri, uriP, sizeof(tempUri));
         result = COAP_202_DELETED;
         instanceP = objectP->instanceList;
         while (NULL != instanceP
             && result == COAP_202_DELETED)
         {
-            uriP->instanceId = instanceP->id;
             result = objectP->deleteFunc(instanceP->id, objectP);
             if (result == COAP_202_DELETED)
             {
-                uriP->flag |= LWM2M_URI_FLAG_INSTANCE_ID;
-                observe_clear(contextP, uriP);
-                uriP->flag &= ~LWM2M_URI_FLAG_INSTANCE_ID;
+                tempUri.instanceId = instanceP->id;
+                observe_clear(contextP, &tempUri);
             }
             instanceP = objectP->instanceList;
         }

@@ -260,21 +260,24 @@ void lwm2m_list_free(lwm2m_list_t * head);
 
 #define LWM2M_MAX_ID   ((uint16_t)0xFFFF)
 
-#define LWM2M_URI_FLAG_OBJECT_ID    (uint8_t)0x04
-#define LWM2M_URI_FLAG_INSTANCE_ID  (uint8_t)0x02
-#define LWM2M_URI_FLAG_RESOURCE_ID  (uint8_t)0x01
-
-#define LWM2M_URI_IS_SET_INSTANCE(uri) (((uri)->flag & LWM2M_URI_FLAG_INSTANCE_ID) != 0)
-#define LWM2M_URI_IS_SET_RESOURCE(uri) (((uri)->flag & LWM2M_URI_FLAG_RESOURCE_ID) != 0)
+#define LWM2M_URI_IS_SET_OBJECT(uri) ((uri)->objectId != LWM2M_MAX_ID)
+#define LWM2M_URI_IS_SET_INSTANCE(uri) ((uri)->instanceId != LWM2M_MAX_ID)
+#define LWM2M_URI_IS_SET_RESOURCE(uri) ((uri)->resourceId != LWM2M_MAX_ID)
+#ifndef LWM2M_VERSION_1_0
+#define LWM2M_URI_IS_SET_RESOURCE_INSTANCE(uri) ((uri)->resourceInstanceId != LWM2M_MAX_ID)
+#endif
 
 typedef struct
 {
-    uint8_t     flag;           // indicates which segments are set
     uint16_t    objectId;
     uint16_t    instanceId;
     uint16_t    resourceId;
+#ifndef LWM2M_VERSION_1_0
+    uint16_t    resourceInstanceId;
+#endif
 } lwm2m_uri_t;
 
+#define LWM2M_URI_RESET(uri) memset((uri), 0xFF, sizeof(lwm2m_uri_t))
 
 #define LWM2M_STRING_ID_MAX_LEN 6
 

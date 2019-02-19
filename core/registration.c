@@ -1607,9 +1607,8 @@ uint8_t registration_handleRequest(lwm2m_context_t * contextP,
 
         objects = prv_decodeRegisterPayload(message->payload, message->payload_len, &supportJSON, &altPath);
 
-        switch (uriP->flag & LWM2M_URI_MASK_ID)
+        if (!LWM2M_URI_IS_SET_OBJECT(uriP))
         {
-        case 0:
             // Register operation
             // Version is mandatory
             if (version == VERSION_MISSING)
@@ -1703,9 +1702,12 @@ uint8_t registration_handleRequest(lwm2m_context_t * contextP,
                 contextP->monitorCallback(clientP->internalID, NULL, COAP_201_CREATED, LWM2M_CONTENT_TEXT, NULL, 0, contextP->monitorUserData);
             }
             result = COAP_201_CREATED;
-            break;
+        }
+        else
+        {
+            // Registration update
+            if (LWM2M_URI_IS_SET_INSTANCE(uriP)) return COAP_400_BAD_REQUEST;
 
-        case LWM2M_URI_FLAG_OBJECT_ID:
             clientP = (lwm2m_client_t *)lwm2m_list_find((lwm2m_list_t *)contextP->clientList, uriP->objectId);
             if (clientP == NULL) return COAP_404_NOT_FOUND;
 
@@ -1758,7 +1760,7 @@ uint8_t registration_handleRequest(lwm2m_context_t * contextP,
                     }
                     else
                     {
-                        if ((observationP->uri.flag & LWM2M_URI_FLAG_INSTANCE_ID) != 0)
+                        if (LWM2M_URI_IS_SET_INSTANCE(&observationP->uri))
                         {
                             if (lwm2m_list_find((lwm2m_list_t *)objP->instanceList, observationP->uri.instanceId) == NULL)
                             {
@@ -1786,10 +1788,6 @@ uint8_t registration_handleRequest(lwm2m_context_t * contextP,
                 contextP->monitorCallback(clientP->internalID, NULL, COAP_204_CHANGED, LWM2M_CONTENT_TEXT, NULL, 0, contextP->monitorUserData);
             }
             result = COAP_204_CHANGED;
-            break;
-
-            default:
-                return COAP_400_BAD_REQUEST;
         }
     }
     break;
@@ -1798,7 +1796,8 @@ uint8_t registration_handleRequest(lwm2m_context_t * contextP,
     {
         lwm2m_client_t * clientP;
 
-        if ((uriP->flag & LWM2M_URI_MASK_ID) != LWM2M_URI_FLAG_OBJECT_ID) return COAP_400_BAD_REQUEST;
+        if (!LWM2M_URI_IS_SET_OBJECT(uriP)) return COAP_400_BAD_REQUEST;
+        if (LWM2M_URI_IS_SET_INSTANCE(uriP)) return COAP_400_BAD_REQUEST;
 
         contextP->clientList = (lwm2m_client_t *)LWM2M_LIST_RM(contextP->clientList, uriP->objectId, &clientP);
         if (clientP == NULL) return COAP_400_BAD_REQUEST;

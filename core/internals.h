@@ -67,17 +67,27 @@
 #include <inttypes.h>
 #define LOG(STR) lwm2m_printf("[%s:%d] " STR "\r\n", __func__ , __LINE__)
 #define LOG_ARG(FMT, ...) lwm2m_printf("[%s:%d] " FMT "\r\n", __func__ , __LINE__ , __VA_ARGS__)
+#ifdef LWM2M_VERSION_1_0
 #define LOG_URI(URI)                                                                \
 {                                                                                   \
-    if ((URI) == NULL) lwm2m_printf("[%s:%d] NULL\r\n", __func__ , __LINE__);     \
+    if ((URI) == NULL) lwm2m_printf("[%s:%d] NULL\r\n", __func__ , __LINE__);       \
     else                                                                            \
     {                                                                               \
-        lwm2m_printf("[%s:%d] /%d", __func__ , __LINE__ , (URI)->objectId);       \
+        lwm2m_printf("[%s:%d] /%d", __func__ , __LINE__ , (URI)->objectId);         \
         if (LWM2M_URI_IS_SET_INSTANCE(URI)) lwm2m_printf("/%d", (URI)->instanceId); \
         if (LWM2M_URI_IS_SET_RESOURCE(URI)) lwm2m_printf("/%d", (URI)->resourceId); \
         lwm2m_printf("\r\n");                                                       \
     }                                                                               \
 }
+#else
+#define LOG_URI(URI)                                                                \
+    if ((URI) == NULL) lwm2m_printf("[%s:%d] NULL\r\n", __func__ , __LINE__);       \
+    else if (!LWM2M_URI_IS_SET_OBJECT(URI)) lwm2m_printf("[%s:%d] /\r\n", __func__ , __LINE__); \
+    else if (!LWM2M_URI_IS_SET_INSTANCE(URI)) lwm2m_printf("[%s:%d] /%d\r\n", __func__ , __LINE__, (URI)->objectId); \
+    else if (!LWM2M_URI_IS_SET_RESOURCE(URI)) lwm2m_printf("[%s:%d] /%d/%d\r\n", __func__ , __LINE__, (URI)->objectId, (URI)->instanceId); \
+    else if (!LWM2M_URI_IS_SET_RESOURCE_INSTANCE(URI)) lwm2m_printf("[%s:%d] /%d/%d/%d\r\n", __func__ , __LINE__, (URI)->objectId, (URI)->instanceId, (URI)->resourceId); \
+    else lwm2m_printf("[%s:%d] /%d/%d/%d/%d\r\n", __func__ , __LINE__, (URI)->objectId, (URI)->instanceId, (URI)->resourceId, (URI)->resourceInstanceId)
+#endif
 #define STR_STATUS(S)                                           \
 ((S) == STATE_DEREGISTERED ? "STATE_DEREGISTERED" :             \
 ((S) == STATE_REG_HOLD_OFF ? "STATE_REG_HOLD_OFF" :             \
@@ -197,7 +207,11 @@
 #define ATTR_DIMENSION_STR       "dim="
 #define ATTR_DIMENSION_LEN       4
 
+#ifdef LWM2M_VERSION_1_0
 #define URI_MAX_STRING_LEN    18      // /65535/65535/65535
+#else
+#define URI_MAX_STRING_LEN    24      // /65535/65535/65535/65535
+#endif
 #define _PRV_64BIT_BUFFER_SIZE 8
 
 #define LINK_ITEM_START             "<"
@@ -215,14 +229,6 @@
 
 #define ATTR_FLAG_NUMERIC (uint8_t)(LWM2M_ATTR_FLAG_LESS_THAN | LWM2M_ATTR_FLAG_GREATER_THAN | LWM2M_ATTR_FLAG_STEP)
 
-#define LWM2M_URI_FLAG_DM           (uint8_t)0x00
-#define LWM2M_URI_FLAG_DELETE_ALL   (uint8_t)0x10
-#define LWM2M_URI_FLAG_REGISTRATION (uint8_t)0x20
-#define LWM2M_URI_FLAG_BOOTSTRAP    (uint8_t)0x40
-
-#define LWM2M_URI_MASK_TYPE (uint8_t)0x70
-#define LWM2M_URI_MASK_ID   (uint8_t)0x07
-
 typedef struct
 {
     uint16_t clientID;
@@ -233,6 +239,7 @@ typedef struct
 
 typedef enum
 {
+    URI_DEPTH_NONE,
     URI_DEPTH_OBJECT,
     URI_DEPTH_OBJECT_INSTANCE,
     URI_DEPTH_RESOURCE,
@@ -242,17 +249,25 @@ typedef enum
 #ifdef LWM2M_BOOTSTRAP_SERVER_MODE
 typedef struct
 {
-    bool        isUri;
     lwm2m_uri_t uri;
     lwm2m_bootstrap_callback_t callback;
     void *      userData;
 } bs_data_t;
 #endif
 
+typedef enum
+{
+    LWM2M_REQUEST_TYPE_UNKNOWN,
+    LWM2M_REQUEST_TYPE_DM,
+    LWM2M_REQUEST_TYPE_REGISTRATION,
+    LWM2M_REQUEST_TYPE_BOOTSTRAP,
+    LWM2M_REQUEST_TYPE_DELETE_ALL
+} lwm2m_request_type_t;
+
 // defined in uri.c
-lwm2m_uri_t * uri_decode(char * altPath, multi_option_t *uriPath);
+lwm2m_request_type_t uri_decode(char * altPath, multi_option_t *uriPath, lwm2m_uri_t *uriP);
 int uri_getNumber(uint8_t * uriString, size_t uriLength);
-int uri_toString(lwm2m_uri_t * uriP, uint8_t * buffer, size_t bufferLen, uri_depth_t * depthP);
+int uri_toString(const lwm2m_uri_t * uriP, uint8_t * buffer, size_t bufferLen, uri_depth_t * depthP);
 
 // defined in objects.c
 uint8_t object_readData(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, int * sizeP, lwm2m_data_t ** dataP);

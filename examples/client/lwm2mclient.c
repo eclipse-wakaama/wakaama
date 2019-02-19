@@ -478,7 +478,7 @@ static void prv_object_dump(char * buffer,
 
     result = lwm2m_stringToUri(buffer, end - buffer, &uri);
     if (result == 0) goto syntax_error;
-    if (uri.flag & LWM2M_URI_FLAG_RESOURCE_ID) goto syntax_error;
+    if (LWM2M_URI_IS_SET_RESOURCE(&uri)) goto syntax_error;
 
     objectP = (lwm2m_object_t *)LWM2M_LIST_FIND(lwm2mH->objectList, uri.objectId);
     if (objectP == NULL)
@@ -487,7 +487,7 @@ static void prv_object_dump(char * buffer,
         return;
     }
 
-    if (uri.flag & LWM2M_URI_FLAG_INSTANCE_ID)
+    if (LWM2M_URI_IS_SET_INSTANCE(&uri))
     {
         prv_instance_dump(objectP, uri.instanceId);
     }

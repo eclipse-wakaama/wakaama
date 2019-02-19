@@ -105,7 +105,13 @@ static void prv_print_uri(FILE * fd,
         {
             fprintf(fd, "/%d", uriP->instanceId);
             if (LWM2M_URI_IS_SET_RESOURCE(uriP))
+            {
                 fprintf(fd, "/%d", uriP->resourceId);
+#ifndef LWM2M_VERSION_1_0
+                if (LWM2M_URI_IS_SET_RESOURCE_INSTANCE(uriP))
+                    fprintf(fd, "/%d", uriP->resourceInstanceId);
+#endif
+            }
         }
     }
 }
@@ -233,7 +239,7 @@ static void prv_send_command(internal_data_t * dataP,
             return;
         }
 
-        uri.flag = LWM2M_URI_FLAG_OBJECT_ID | LWM2M_URI_FLAG_INSTANCE_ID;
+        LWM2M_URI_RESET(&uri);
         uri.objectId = LWM2M_SECURITY_OBJECT_ID;
         uri.instanceId = endP->cmdList->serverId;
 
@@ -258,7 +264,7 @@ static void prv_send_command(internal_data_t * dataP,
             return;
         }
 
-        uri.flag = LWM2M_URI_FLAG_OBJECT_ID | LWM2M_URI_FLAG_INSTANCE_ID;
+        LWM2M_URI_RESET(&uri);
         uri.objectId = LWM2M_SERVER_OBJECT_ID;
         uri.instanceId = endP->cmdList->serverId;
 

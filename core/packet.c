@@ -108,30 +108,32 @@ static uint8_t handle_request(lwm2m_context_t * contextP,
                               coap_packet_t * message,
                               coap_packet_t * response)
 {
-    lwm2m_uri_t * uriP;
+    lwm2m_uri_t uri;
+    lwm2m_request_type_t requestType;
     uint8_t result = COAP_IGNORE;
 
     LOG("Entering");
 	
 #ifdef LWM2M_CLIENT_MODE
-    uriP = uri_decode(contextP->altPath, message->uri_path);
+    requestType = uri_decode(contextP->altPath, message->uri_path, &uri);
 #else
-    uriP = uri_decode(NULL, message->uri_path);
+    requestType = uri_decode(NULL, message->uri_path, &uri);
 #endif
 
-    if (uriP == NULL) return COAP_400_BAD_REQUEST;
-
-    switch(uriP->flag & LWM2M_URI_MASK_TYPE)
+    switch(requestType)
     {
+    case LWM2M_REQUEST_TYPE_UNKNOWN:
+        return COAP_400_BAD_REQUEST;
+
 #ifdef LWM2M_CLIENT_MODE
-    case LWM2M_URI_FLAG_DM:
+    case LWM2M_REQUEST_TYPE_DM:
     {
         lwm2m_server_t * serverP;
 
         serverP = utils_findServer(contextP, fromSessionH);
         if (serverP != NULL)
         {
-            result = dm_handleRequest(contextP, uriP, serverP, message, response);
+            result = dm_handleRequest(contextP, &uri, serverP, message, response);
         }
 #ifdef LWM2M_BOOTSTRAP
         else
@@ -139,7 +141,7 @@ static uint8_t handle_request(lwm2m_context_t * contextP,
             serverP = utils_findBootstrapServer(contextP, fromSessionH);
             if (serverP != NULL)
             {
-                result = bootstrap_handleCommand(contextP, uriP, serverP, message, response);
+                result = bootstrap_handleCommand(contextP, &uri, serverP, message, response);
             }
         }
 #endif
@@ -147,7 +149,7 @@ static uint8_t handle_request(lwm2m_context_t * contextP,
     break;
 
 #ifdef LWM2M_BOOTSTRAP
-    case LWM2M_URI_FLAG_DELETE_ALL:
+    case LWM2M_REQUEST_TYPE_DELETE_ALL:
         if (COAP_DELETE != message->code)
         {
             result = COAP_400_BAD_REQUEST;
@@ -158,7 +160,7 @@ static uint8_t handle_request(lwm2m_context_t * contextP,
         }
         break;
 
-    case LWM2M_URI_FLAG_BOOTSTRAP:
+    case LWM2M_REQUEST_TYPE_BOOTSTRAP:
         if (message->code == COAP_POST)
         {
             result = bootstrap_handleFinish(contextP, fromSessionH);
@@ -168,13 +170,13 @@ static uint8_t handle_request(lwm2m_context_t * contextP,
 #endif
 
 #ifdef LWM2M_SERVER_MODE
-    case LWM2M_URI_FLAG_REGISTRATION:
-        result = registration_handleRequest(contextP, uriP, fromSessionH, message, response);
+    case LWM2M_REQUEST_TYPE_REGISTRATION:
+        result = registration_handleRequest(contextP, &uri, fromSessionH, message, response);
         break;
 #endif
 #ifdef LWM2M_BOOTSTRAP_SERVER_MODE
-    case LWM2M_URI_FLAG_BOOTSTRAP:
-        result = bootstrap_handleRequest(contextP, uriP, fromSessionH, message, response);
+    case LWM2M_REQUEST_TYPE_BOOTSTRAP:
+        result = bootstrap_handleRequest(contextP, &uri, fromSessionH, message, response);
         break;
 #endif
     default:
@@ -189,7 +191,6 @@ static uint8_t handle_request(lwm2m_context_t * contextP,
         result = NO_ERROR;
     }
 
-    lwm2m_free(uriP);
     return result;
 }
 

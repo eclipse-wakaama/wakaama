@@ -217,6 +217,22 @@ static int prv_read_id(char * buffer,
     return nb;
 }
 
+static void prv_printUri(const lwm2m_uri_t * uriP)
+{
+    fprintf(stdout, "/%d", uriP->objectId);
+    if (LWM2M_URI_IS_SET_INSTANCE(uriP))
+        fprintf(stdout, "/%d", uriP->instanceId);
+    else if (LWM2M_URI_IS_SET_RESOURCE(uriP))
+        fprintf(stdout, "/");
+    if (LWM2M_URI_IS_SET_RESOURCE(uriP))
+            fprintf(stdout, "/%d", uriP->resourceId);
+#ifndef LWM2M_VERSION_1_0
+    else if (LWM2M_URI_IS_SET_RESOURCE_INSTANCE(uriP))
+        fprintf(stdout, "/");
+    if (LWM2M_URI_IS_SET_RESOURCE_INSTANCE(uriP))
+            fprintf(stdout, "/%d", uriP->resourceInstanceId);
+#endif
+}
 
 static void prv_result_callback(uint16_t clientID,
                                 lwm2m_uri_t * uriP,
@@ -226,13 +242,8 @@ static void prv_result_callback(uint16_t clientID,
                                 int dataLength,
                                 void * userData)
 {
-    fprintf(stdout, "\r\nClient #%d /%d", clientID, uriP->objectId);
-    if (LWM2M_URI_IS_SET_INSTANCE(uriP))
-        fprintf(stdout, "/%d", uriP->instanceId);
-    else if (LWM2M_URI_IS_SET_RESOURCE(uriP))
-        fprintf(stdout, "/");
-    if (LWM2M_URI_IS_SET_RESOURCE(uriP))
-            fprintf(stdout, "/%d", uriP->resourceId);
+    fprintf(stdout, "\r\nClient #%d ", clientID);
+    prv_printUri(uriP);
     fprintf(stdout, " : ");
     print_status(stdout, status);
     fprintf(stdout, "\r\n");
@@ -251,13 +262,8 @@ static void prv_notify_callback(uint16_t clientID,
                                 int dataLength,
                                 void * userData)
 {
-    fprintf(stdout, "\r\nNotify from client #%d /%d", clientID, uriP->objectId);
-    if (LWM2M_URI_IS_SET_INSTANCE(uriP))
-        fprintf(stdout, "/%d", uriP->instanceId);
-    else if (LWM2M_URI_IS_SET_RESOURCE(uriP))
-        fprintf(stdout, "/");
-    if (LWM2M_URI_IS_SET_RESOURCE(uriP))
-            fprintf(stdout, "/%d", uriP->resourceId);
+    fprintf(stdout, "\r\nNotify from client #%d ", clientID);
+    prv_printUri(uriP);
     fprintf(stdout, " number %d\r\n", count);
 
     output_data(stdout, format, data, dataLength, 1);

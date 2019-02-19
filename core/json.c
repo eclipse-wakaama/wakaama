@@ -527,6 +527,8 @@ static uri_depth_t prv_decreaseLevel(uri_depth_t level)
 {
     switch(level)
     {
+    case URI_DEPTH_NONE:
+        return URI_DEPTH_OBJECT;
     case URI_DEPTH_OBJECT:
         return URI_DEPTH_OBJECT_INSTANCE;
     case URI_DEPTH_OBJECT_INSTANCE:
@@ -902,7 +904,7 @@ int json_parse(lwm2m_uri_t * uriP,
         lwm2m_data_t * resultP;
         int size;
 
-        memset(&baseURI, 0, sizeof(lwm2m_uri_t));
+        LWM2M_URI_RESET(&baseURI);
         if (bnFound == false)
         {
             baseUriP = uriP;
@@ -1391,13 +1393,30 @@ int json_serialize(lwm2m_uri_t * uriP,
     uri_depth_t rootLevel;
     int num;
     lwm2m_data_t * targetP;
+    const uint8_t *parentUriStr = NULL;
+    size_t parentUriLen = 0;
+#ifndef LWM2M_VERSION_1_0
+    lwm2m_uri_t uri;
+#endif
 
     LOG_ARG("size: %d", size);
     LOG_URI(uriP);
     if (size != 0 && tlvP == NULL) return -1;
 
+#ifndef LWM2M_VERSION_1_0
+    if (uriP && LWM2M_URI_IS_SET_RESOURCE_INSTANCE(uriP))
+    {
+        /* The resource instance doesn't get serialized as part of the base URI.
+         * Strip it out. */
+        memcpy(&uri, uriP, sizeof(lwm2m_uri_t));
+        uri.resourceInstanceId = LWM2M_MAX_ID;
+        uriP = &uri;
+    }
+#endif
+
     baseUriLen = uri_toString(uriP, baseUriStr, URI_MAX_STRING_LEN, &rootLevel);
     if (baseUriLen < 0) return -1;
+    rootLevel = prv_decreaseLevel(rootLevel);
 
     num = prv_findAndCheckData(uriP, rootLevel, size, tlvP, &targetP);
     if (num < 0) return -1;
@@ -1409,18 +1428,19 @@ int json_serialize(lwm2m_uri_t * uriP,
     {
         int res;
 
+        if (baseUriLen >= URI_MAX_STRING_LEN -1) return 0;
+        baseUriStr[baseUriLen++] = '/';
         res = utils_intToText(targetP->id, baseUriStr + baseUriLen, URI_MAX_STRING_LEN - baseUriLen);
         if (res <= 0) return 0;
         baseUriLen += res;
-        if (baseUriLen >= URI_MAX_STRING_LEN -1) return 0;
         num = targetP->value.asChildren.count;
         targetP = targetP->value.asChildren.array;
-        baseUriStr[baseUriLen] = '/';
-        baseUriLen++;
     }
 
     if (baseUriLen > 0)
     {
+        if (baseUriLen >= URI_MAX_STRING_LEN -1) return 0;
+        baseUriStr[baseUriLen++] = '/';
         memcpy(bufferJSON, JSON_BN_HEADER_1, JSON_BN_HEADER_1_SIZE);
         head = JSON_BN_HEADER_1_SIZE;
         memcpy(bufferJSON + head, baseUriStr, baseUriLen);
@@ -1432,13 +1452,19 @@ int json_serialize(lwm2m_uri_t * uriP,
     {
         memcpy(bufferJSON, JSON_HEADER, JSON_HEADER_SIZE);
         head = JSON_HEADER_SIZE;
+        parentUriStr = (const uint8_t *)"/";
+        parentUriLen = 1;
     }
 
     for (index = 0 ; index < num && head < PRV_JSON_BUFFER_SIZE ; index++)
     {
         int res;
 
-        res = prv_serializeData(targetP + index, NULL, 0, bufferJSON + head, PRV_JSON_BUFFER_SIZE - head);
+        res = prv_serializeData(targetP + index,
+                                parentUriStr,
+                                parentUriLen,
+                                bufferJSON + head,
+                                PRV_JSON_BUFFER_SIZE - head);
         if (res < 0) return res;
         head += res;
     }
