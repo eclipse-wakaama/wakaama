@@ -95,7 +95,7 @@ static uint8_t prv_set_tlv(lwm2m_data_t* dataP, acc_ctrl_oi_t* accCtrlOiP)
                 subTlvP[ri].id = accCtrlRiP->resInstId;
                 lwm2m_data_encode_int(accCtrlRiP->accCtrlValue, &subTlvP[ri]);
             }
-            lwm2m_data_encode_instances(subTlvP, 2, dataP);
+            lwm2m_data_encode_instances(subTlvP, ri, dataP);
             return COAP_205_CONTENT;
         }
     }   break;
