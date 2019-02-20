@@ -607,9 +607,8 @@ static void prv_create_client(char * buffer,
     char * end = NULL;
     int result;
     int64_t value;
-    uint8_t * temp_buffer = NULL;
-    int temp_length = 0;
-    lwm2m_media_type_t format = LWM2M_CONTENT_TEXT;
+    lwm2m_data_t * dataP = NULL;
+    int size = 0;
 
     //Get Client ID
     result = prv_read_id(buffer, &clientId);
@@ -621,6 +620,7 @@ static void prv_create_client(char * buffer,
 
     result = lwm2m_stringToUri(buffer, end - buffer, &uri);
     if (result == 0) goto syntax_error;
+    if (LWM2M_URI_IS_SET_RESOURCE(&uri)) goto syntax_error;
 
     //Get Data to Post
     buffer = get_next_arg(end, &end);
@@ -630,19 +630,38 @@ static void prv_create_client(char * buffer,
 
    // TLV
 
+#ifdef LWM2M_SUPPORT_SENML_JSON
+    if (size <= 0)
+    {
+        size = lwm2m_data_parse(&uri,
+                                (uint8_t *)buffer,
+                                end - buffer,
+                                LWM2M_CONTENT_SENML_JSON,
+                                &dataP);
+    }
+#endif
+#ifdef LWM2M_SUPPORT_JSON
+    if (size <= 0)
+    {
+        size = lwm2m_data_parse(&uri,
+                                (uint8_t *)buffer,
+                                end - buffer,
+                                LWM2M_CONTENT_JSON,
+                                &dataP);
+    }
+#endif
    /* Client dependent part   */
 
-    if (uri.objectId == 31024)
+    if (size <= 0 && uri.objectId == 31024)
     {
-        lwm2m_data_t * dataP;
-
         if (1 != sscanf(buffer, "%"PRId64, &value))
         {
             fprintf(stdout, "Invalid value !");
             return;
         }
 
-        dataP = lwm2m_data_new(1);
+        size = 1;
+        dataP = lwm2m_data_new(size);
         if (dataP == NULL)
         {
             fprintf(stdout, "Allocation error !");
@@ -650,14 +669,32 @@ static void prv_create_client(char * buffer,
         }
         lwm2m_data_encode_int(value, dataP);
         dataP->id = 1;
-
-        format = LWM2M_CONTENT_TLV;
-        temp_length = lwm2m_data_serialize(NULL, 1, dataP, &format, &temp_buffer);
     }
    /* End Client dependent part*/
 
+    if (LWM2M_URI_IS_SET_INSTANCE(&uri))
+    {
+        /* URI is only allowed to have the object ID. Wrap the instance in an
+         * object instance to get it to the client. */
+        int count = size;
+        lwm2m_data_t * subDataP = dataP;
+        size = 1;
+        dataP = lwm2m_data_new(size);
+        if (dataP == NULL)
+        {
+            fprintf(stdout, "Allocation error !");
+            lwm2m_data_free(count, subDataP);
+            return;
+        }
+        lwm2m_data_include(subDataP, count, dataP);
+        dataP->type = LWM2M_TYPE_OBJECT_INSTANCE;
+        dataP->id = uri.instanceId;
+        uri.instanceId = LWM2M_MAX_ID;
+    }
+
     //Create
-    result = lwm2m_dm_create(lwm2mH, clientId, &uri, format, temp_buffer, temp_length, prv_result_callback, NULL);
+    result = lwm2m_dm_create(lwm2mH, clientId, &uri, size, dataP, prv_result_callback, NULL);
+    lwm2m_data_free(size, dataP);
 
     if (result == 0)
     {
@@ -903,7 +940,7 @@ int main(int argc, char *argv[])
             {"create", "Create an Object instance.", " create CLIENT# URI DATA\r\n"
                                             "   CLIENT#: client number as returned by command 'list'\r\n"
                                             "   URI: uri to which create the Object Instance such as /1024, /1024/45 \r\n"
-                                            "   DATA: data to initialize the new Object Instance (0-255 for object 31024) \r\n"
+                                            "   DATA: data to initialize the new Object Instance (0-255 for object 31024 or any supported JSON format) \r\n"
                                             "Result will be displayed asynchronously.", prv_create_client, NULL},
             {"observe", "Observe from a client.", " observe CLIENT# URI\r\n"
                                             "   CLIENT#: client number as returned by command 'list'\r\n"

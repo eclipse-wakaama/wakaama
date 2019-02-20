@@ -5,7 +5,7 @@ project (lwm2munittests C)
 include(${CMAKE_CURRENT_LIST_DIR}/../core/wakaama.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/../examples/shared/shared.cmake)
 
-add_definitions(-DLWM2M_CLIENT_MODE -DLWM2M_SUPPORT_JSON)
+add_definitions(-DLWM2M_CLIENT_MODE -DLWM2M_SUPPORT_TLV -DLWM2M_SUPPORT_JSON)
 if(LWM2M_VERSION VERSION_GREATER "1.0")
     add_definitions(-DLWM2M_SUPPORT_SENML_JSON)
 endif()

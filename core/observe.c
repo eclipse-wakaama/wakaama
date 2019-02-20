@@ -190,14 +190,7 @@ uint8_t observe_handleRequest(lwm2m_context_t * contextP,
         watcherP->active = true;
         watcherP->lastTime = lwm2m_gettime();
         watcherP->lastMid = response->mid;
-        if (IS_OPTION(message, COAP_OPTION_ACCEPT))
-        {
-            watcherP->format = utils_convertMediaType(message->accept[0]);
-        }
-        else
-        {
-            watcherP->format = LWM2M_CONTENT_TLV;
-        }
+        watcherP->format = (lwm2m_media_type_t)response->content_type;
 
         if (LWM2M_URI_IS_SET_RESOURCE(uriP))
         {
@@ -775,7 +768,7 @@ void observe_step(lwm2m_context_t * contextP,
                         }
                         else
                         {
-                            if (COAP_205_CONTENT != object_read(contextP, &targetP->uri, &(watcherP->format), &buffer, &length))
+                            if (COAP_205_CONTENT != object_read(contextP, &targetP->uri, NULL, 0, &(watcherP->format), &buffer, &length))
                             {
                                 buffer = NULL;
                                 break;

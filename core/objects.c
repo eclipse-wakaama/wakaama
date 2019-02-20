@@ -187,6 +187,8 @@ uint8_t object_readData(lwm2m_context_t * contextP,
 
 uint8_t object_read(lwm2m_context_t * contextP,
                     lwm2m_uri_t * uriP,
+                    const uint16_t * accept,
+                    uint8_t acceptNum,
                     lwm2m_media_type_t * formatP,
                     uint8_t ** bufferP,
                     size_t * lengthP)
@@ -201,14 +203,26 @@ uint8_t object_read(lwm2m_context_t * contextP,
 
     if (result == COAP_205_CONTENT)
     {
-        res = lwm2m_data_serialize(uriP, size, dataP, formatP, bufferP);
-        if (res < 0)
+        if (acceptNum > 0)
         {
-            result = COAP_500_INTERNAL_SERVER_ERROR;
+            result = utils_getResponseFormat(acceptNum,
+                                             accept,
+                                             size,
+                                             dataP,
+                                             LWM2M_URI_IS_SET_RESOURCE(uriP),
+                                             formatP);
         }
-        else
+        if (result == COAP_205_CONTENT)
         {
-            *lengthP = (size_t)res;
+            res = lwm2m_data_serialize(uriP, size, dataP, formatP, bufferP);
+            if (res < 0)
+            {
+                result = COAP_500_INTERNAL_SERVER_ERROR;
+            }
+            else
+            {
+                *lengthP = (size_t)res;
+            }
         }
     }
     lwm2m_data_free(size, dataP);
