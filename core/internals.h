@@ -334,9 +334,11 @@ uint8_t bootstrap_handleRequest(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, 
 void bootstrap_start(lwm2m_context_t * contextP);
 lwm2m_status_t bootstrap_getStatus(lwm2m_context_t * contextP);
 
+#ifdef LWM2M_SUPPORT_TLV
 // defined in tlv.c
 int tlv_parse(const uint8_t * buffer, size_t bufferLen, lwm2m_data_t ** dataP);
 int tlv_serialize(bool isResourceInstance, int size, lwm2m_data_t * dataP, uint8_t ** bufferP);
+#endif
 
 // defined in json.c
 #ifdef LWM2M_SUPPORT_JSON

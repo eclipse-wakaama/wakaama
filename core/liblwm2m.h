@@ -84,6 +84,14 @@ extern "C" {
 #endif
 #endif
 
+#ifndef LWM2M_SUPPORT_TLV
+#if defined(LWM2M_VERSION_1_0) || defined(LWM2M_SERVER_MODE) || defined(LWM2M_BOOTSTRAP_SERVER_MODE)
+/* TLV is mandatory for LWM2M 1.0 client and server. */
+/* TLV is mandatory for LWM2M 1.1 server. */
+#define LWM2M_SUPPORT_TLV
+#endif
+#endif
+
 #if defined(LWM2M_BOOTSTRAP) && defined(LWM2M_BOOTSTRAP_SERVER_MODE)
 #error "LWM2M_BOOTSTRAP and LWM2M_BOOTSTRAP_SERVER_MODE cannot be defined at the same time!"
 #endif

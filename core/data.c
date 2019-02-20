@@ -689,11 +689,13 @@ int lwm2m_data_parse(lwm2m_uri_t * uriP,
         }
         return res;
 
+#ifdef LWM2M_SUPPORT_TLV
 #ifdef LWM2M_OLD_CONTENT_FORMAT_SUPPORT
     case LWM2M_CONTENT_TLV_OLD:
 #endif
     case LWM2M_CONTENT_TLV:
         return tlv_parse(buffer, bufferLen, dataP);
+#endif
 
 #ifdef LWM2M_SUPPORT_JSON
 #ifdef LWM2M_OLD_CONTENT_FORMAT_SUPPORT
@@ -736,8 +738,10 @@ int lwm2m_data_serialize(lwm2m_uri_t * uriP,
             *formatP = LWM2M_CONTENT_SENML_JSON;
 #elif defined(LWM2M_SUPPORT_JSON)
             *formatP = LWM2M_CONTENT_JSON;
-#else
+#elif defined(LWM2M_SUPPORT_TLV)
             *formatP = LWM2M_CONTENT_TLV;
+#else
+            return -1;
 #endif
         }
     }
@@ -762,32 +766,34 @@ int lwm2m_data_serialize(lwm2m_uri_t * uriP,
         memcpy(*bufferP, dataP->value.asBuffer.buffer, dataP->value.asBuffer.length);
         return (int)dataP->value.asBuffer.length;
 
+#ifdef LWM2M_SUPPORT_TLV
     case LWM2M_CONTENT_TLV:
 #ifdef LWM2M_OLD_CONTENT_FORMAT_SUPPORT
     case LWM2M_CONTENT_TLV_OLD:
 #endif
     {
-            bool isResourceInstance;
+        bool isResourceInstance;
 
 #ifndef LWM2M_VERSION_1_0
-            if (uriP != NULL && LWM2M_URI_IS_SET_RESOURCE_INSTANCE(uriP))
-            {
-                if(size != 1 || dataP->id != uriP->resourceInstanceId) return -1;
-                isResourceInstance = true;
-            }
-            else
-#endif
-            if (uriP != NULL && LWM2M_URI_IS_SET_RESOURCE(uriP)
-             && (size != 1 || dataP->id != uriP->resourceId))
-            {
-                isResourceInstance = true;
-            }
-            else
-            {
-                isResourceInstance = false;
-            }
-            return tlv_serialize(isResourceInstance, size, dataP, bufferP);
+        if (uriP != NULL && LWM2M_URI_IS_SET_RESOURCE_INSTANCE(uriP))
+        {
+            if(size != 1 || dataP->id != uriP->resourceInstanceId) return -1;
+            isResourceInstance = true;
         }
+        else
+#endif
+        if (uriP != NULL && LWM2M_URI_IS_SET_RESOURCE(uriP)
+         && (size != 1 || dataP->id != uriP->resourceId))
+        {
+            isResourceInstance = true;
+        }
+        else
+        {
+            isResourceInstance = false;
+        }
+        return tlv_serialize(isResourceInstance, size, dataP, bufferP);
+    }
+#endif
 
 #ifdef LWM2M_CLIENT_MODE
     case LWM2M_CONTENT_LINK:
