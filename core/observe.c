@@ -1091,14 +1091,7 @@ int lwm2m_observe(lwm2m_context_t * contextP,
     }
 
     coap_set_header_observe(transactionP->message, 0);
-    if (clientP->supportJSON == true)
-    {
-        coap_set_header_accept(transactionP->message, LWM2M_CONTENT_JSON);
-    }
-    else
-    {
-        coap_set_header_accept(transactionP->message, LWM2M_CONTENT_TLV);
-    }
+    coap_set_header_accept(transactionP->message, clientP->format);
 
     transactionP->callback = prv_obsRequestCallback;
     transactionP->userData = (void *)observationData;

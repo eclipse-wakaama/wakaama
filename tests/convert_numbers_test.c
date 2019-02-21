@@ -110,6 +110,28 @@ static void test_utils_textToFloat(void)
     }
 }
 
+static void test_utils_textToObjLink(void)
+{
+    uint16_t objectId;
+    uint16_t objectInstanceId;
+    CU_ASSERT_EQUAL(utils_textToObjLink(NULL, 0, &objectId, &objectInstanceId), 0);
+    CU_ASSERT_EQUAL(utils_textToObjLink((uint8_t*)"", 0, &objectId, &objectInstanceId), 0);
+    CU_ASSERT_EQUAL(utils_textToObjLink((uint8_t*)":", 1, &objectId, &objectInstanceId), 0);
+    CU_ASSERT_EQUAL(utils_textToObjLink((uint8_t*)"0:", 2, &objectId, &objectInstanceId), 0);
+    CU_ASSERT_EQUAL(utils_textToObjLink((uint8_t*)":0", 2, &objectId, &objectInstanceId), 0);
+    CU_ASSERT_EQUAL(utils_textToObjLink((uint8_t*)"0:0", 3, &objectId, &objectInstanceId), 1);
+    CU_ASSERT_EQUAL(objectId, 0);
+    CU_ASSERT_EQUAL(objectInstanceId, 0);
+    CU_ASSERT_EQUAL(utils_textToObjLink((uint8_t*)"1:2", 3, &objectId, &objectInstanceId), 1);
+    CU_ASSERT_EQUAL(objectId, 1);
+    CU_ASSERT_EQUAL(objectInstanceId, 2);
+    CU_ASSERT_EQUAL(utils_textToObjLink((uint8_t*)"65535:65535", 11, &objectId, &objectInstanceId), 1);
+    CU_ASSERT_EQUAL(objectId, 65535);
+    CU_ASSERT_EQUAL(objectInstanceId, 65535);
+    CU_ASSERT_EQUAL(utils_textToObjLink((uint8_t*)"65536:65535", 11, &objectId, &objectInstanceId), 0);
+    CU_ASSERT_EQUAL(utils_textToObjLink((uint8_t*)"65535:65536", 11, &objectId, &objectInstanceId), 0);
+}
+
 static void test_utils_intToText(void)
 {
     size_t i;
@@ -214,13 +236,60 @@ static void test_utils_floatToText(void)
     }
 }
 
+static void test_utils_objLinkToText(void)
+{
+    uint8_t text[12];
+    CU_ASSERT_EQUAL(utils_objLinkToText(0, 0, text, sizeof(text)), 3);
+    CU_ASSERT_NSTRING_EQUAL(text, "0:0", 3);
+    CU_ASSERT_EQUAL(utils_objLinkToText(0, 0, text, 3), 3);
+    CU_ASSERT_NSTRING_EQUAL(text, "0:0", 3);
+    CU_ASSERT_EQUAL(utils_objLinkToText(10, 20, text, sizeof(text)), 5);
+    CU_ASSERT_NSTRING_EQUAL(text, "10:20", 5);
+    CU_ASSERT_EQUAL(utils_objLinkToText(65535, 65535, text, sizeof(text)), 11);
+    CU_ASSERT_NSTRING_EQUAL(text, "65535:65535", 11);
+    CU_ASSERT_EQUAL(utils_objLinkToText(0, 0, NULL, 0), 0);
+    CU_ASSERT_EQUAL(utils_objLinkToText(0, 0, text, 0), 0);
+    CU_ASSERT_EQUAL(utils_objLinkToText(0, 0, text, 1), 0);
+    CU_ASSERT_EQUAL(utils_objLinkToText(0, 0, text, 2), 0);
+    CU_ASSERT_EQUAL(utils_objLinkToText(0, 0, text, 3), 3);
+}
+
+static void test_utils_base64_1(const uint8_t *binary, size_t binaryLength, const char *base64)
+{
+    uint8_t encodeBuffer[8];
+    uint8_t decodeBuffer[6];
+    size_t base64Length = strlen(base64);
+    memset(encodeBuffer, 0, sizeof(encodeBuffer));
+    memset(decodeBuffer, 0xFF, sizeof(decodeBuffer));
+    CU_ASSERT_EQUAL(utils_base64GetSize(binaryLength), base64Length);
+    CU_ASSERT_EQUAL(utils_base64GetDecodedSize(base64, base64Length), binaryLength);
+    CU_ASSERT_EQUAL(utils_base64Encode(binary, binaryLength, encodeBuffer, sizeof(encodeBuffer)), base64Length);
+    CU_ASSERT_NSTRING_EQUAL(encodeBuffer, base64, base64Length);
+    CU_ASSERT_EQUAL(utils_base64Decode(base64, base64Length, decodeBuffer, sizeof(decodeBuffer)), binaryLength);
+    CU_ASSERT_EQUAL(memcmp(decodeBuffer, binary, binaryLength), 0);
+}
+
+static void test_utils_base64(void)
+{
+    uint8_t binary[] = { 0, 1, 2, 3, 4, 5 };
+    const char * base64[] = { "AA==", "AAE=", "AAEC", "AAECAw==", "AAECAwQ=", "AAECAwQF" };
+    size_t i;
+    for (i = 0; i < sizeof(binary); i++)
+    {
+        test_utils_base64_1(binary, i+1, base64[i]);
+    }
+}
+
 static struct TestTable table[] = {
         { "test of utils_textToInt()", test_utils_textToInt },
         { "test of utils_textToUInt()", test_utils_textToUInt },
         { "test of utils_textToFloat()", test_utils_textToFloat },
+        { "test of utils_textToObjLink()", test_utils_textToObjLink },
         { "test of utils_intToText()", test_utils_intToText },
         { "test of utils_uintToText()", test_utils_uintToText },
         { "test of utils_floatToText()", test_utils_floatToText },
+        { "test of utils_objLinkToText()", test_utils_objLinkToText },
+        { "test of base64 functions", test_utils_base64 },
         { NULL, NULL },
 };
 

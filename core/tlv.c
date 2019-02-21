@@ -340,7 +340,7 @@ int lwm2m_decode_TLV(const uint8_t * buffer,
 }
 
 
-int tlv_parse(uint8_t * buffer,
+int tlv_parse(const uint8_t * buffer,
               size_t bufferLen,
               lwm2m_data_t ** dataP)
 {

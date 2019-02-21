@@ -139,7 +139,7 @@ static int prv_textSerialize(lwm2m_data_t * dataP,
 }
 
 static int prv_setBuffer(lwm2m_data_t * dataP,
-                         uint8_t * buffer,
+                         const uint8_t * buffer,
                          size_t bufferLen)
 {
     dataP->value.asBuffer.buffer = (uint8_t *)lwm2m_malloc(bufferLen);
@@ -242,7 +242,7 @@ void lwm2m_data_encode_string(const char * string,
     }
 }
 
-void lwm2m_data_encode_opaque(uint8_t * buffer,
+void lwm2m_data_encode_opaque(const uint8_t * buffer,
                               size_t length,
                               lwm2m_data_t * dataP)
 {
@@ -642,7 +642,7 @@ void lwm2m_data_encode_instances(lwm2m_data_t * subDataP,
 }
 
 int lwm2m_data_parse(lwm2m_uri_t * uriP,
-                     uint8_t * buffer,
+                     const uint8_t * buffer,
                      size_t bufferLen,
                      lwm2m_media_type_t format,
                      lwm2m_data_t ** dataP)
@@ -703,6 +703,11 @@ int lwm2m_data_parse(lwm2m_uri_t * uriP,
         return json_parse(uriP, buffer, bufferLen, dataP);
 #endif
 
+#ifdef LWM2M_SUPPORT_SENML_JSON
+    case LWM2M_CONTENT_SENML_JSON:
+        return senml_json_parse(uriP, buffer, bufferLen, dataP);
+#endif
+
     default:
         return 0;
     }
@@ -727,7 +732,9 @@ int lwm2m_data_serialize(lwm2m_uri_t * uriP,
          || dataP->type == LWM2M_TYPE_OBJECT_INSTANCE
          || dataP->type == LWM2M_TYPE_MULTIPLE_RESOURCE)
         {
-#ifdef LWM2M_SUPPORT_JSON
+#ifdef LWM2M_SUPPORT_SENML_JSON
+            *formatP = LWM2M_CONTENT_SENML_JSON;
+#elif defined(LWM2M_SUPPORT_JSON)
             *formatP = LWM2M_CONTENT_JSON;
 #else
             *formatP = LWM2M_CONTENT_TLV;
@@ -792,6 +799,11 @@ int lwm2m_data_serialize(lwm2m_uri_t * uriP,
     case LWM2M_CONTENT_JSON_OLD:
 #endif
         return json_serialize(uriP, size, dataP, bufferP);
+#endif
+
+#ifdef LWM2M_SUPPORT_SENML_JSON
+    case LWM2M_CONTENT_SENML_JSON:
+        return senml_json_serialize(uriP, size, dataP, bufferP);
 #endif
 
     default:

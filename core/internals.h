@@ -106,13 +106,14 @@
 ((S) == STATE_BS_FAILING ? "STATE_BS_FAILING" :                 \
 ((S) == STATE_BS_FAILED ? "STATE_BS_FAILED" :                   \
 "Unknown"))))))))))))))))
-#define STR_MEDIA_TYPE(M)                                \
-((M) == LWM2M_CONTENT_TEXT ? "LWM2M_CONTENT_TEXT" :      \
-((M) == LWM2M_CONTENT_LINK ? "LWM2M_CONTENT_LINK" :      \
-((M) == LWM2M_CONTENT_OPAQUE ? "LWM2M_CONTENT_OPAQUE" :  \
-((M) == LWM2M_CONTENT_TLV ? "LWM2M_CONTENT_TLV" :        \
-((M) == LWM2M_CONTENT_JSON ? "LWM2M_CONTENT_JSON" :      \
-"Unknown")))))
+#define STR_MEDIA_TYPE(M)                                        \
+((M) == LWM2M_CONTENT_TEXT ? "LWM2M_CONTENT_TEXT" :              \
+((M) == LWM2M_CONTENT_LINK ? "LWM2M_CONTENT_LINK" :              \
+((M) == LWM2M_CONTENT_OPAQUE ? "LWM2M_CONTENT_OPAQUE" :          \
+((M) == LWM2M_CONTENT_TLV ? "LWM2M_CONTENT_TLV" :                \
+((M) == LWM2M_CONTENT_JSON ? "LWM2M_CONTENT_JSON" :              \
+((M) == LWM2M_CONTENT_SENML_JSON ? "LWM2M_CONTENT_SENML_JSON" :  \
+"Unknown"))))))
 #define STR_STATE(S)                                \
 ((S) == STATE_INITIAL ? "STATE_INITIAL" :      \
 ((S) == STATE_BOOTSTRAP_REQUIRED ? "STATE_BOOTSTRAP_REQUIRED" :      \
@@ -129,7 +130,10 @@
 
 #define LWM2M_DEFAULT_LIFETIME  86400
 
-#ifdef LWM2M_SUPPORT_JSON
+#ifdef LWM2M_SUPPORT_SENML_JSON
+#define REG_LWM2M_RESOURCE_TYPE     ">;rt=\"oma.lwm2m\";ct=110,"
+#define REG_LWM2M_RESOURCE_TYPE_LEN 23
+#elif defined(LWM2M_SUPPORT_JSON)
 #define REG_LWM2M_RESOURCE_TYPE     ">;rt=\"oma.lwm2m\";ct=11543,"
 #define REG_LWM2M_RESOURCE_TYPE_LEN 25
 #else
@@ -178,19 +182,23 @@
 #define QUERY_VERSION_FULL      QUERY_VERSION LWM2M_VERSION
 #define QUERY_VERSION_FULL_LEN  QUERY_VERSION_LEN+LWM2M_VERSION_LEN
 
-#define REG_URI_START       '<'
-#define REG_URI_END         '>'
-#define REG_DELIMITER       ','
-#define REG_ATTR_SEPARATOR  ';'
-#define REG_ATTR_EQUALS     '='
-#define REG_ATTR_TYPE_KEY           "rt"
-#define REG_ATTR_TYPE_KEY_LEN       2
-#define REG_ATTR_TYPE_VALUE         "\"oma.lwm2m\""
-#define REG_ATTR_TYPE_VALUE_LEN     11
-#define REG_ATTR_CONTENT_KEY        "ct"
-#define REG_ATTR_CONTENT_KEY_LEN    2
-#define REG_ATTR_CONTENT_JSON       "11543"   // Temporary value
-#define REG_ATTR_CONTENT_JSON_LEN   5
+#define REG_URI_START                    '<'
+#define REG_URI_END                      '>'
+#define REG_DELIMITER                    ','
+#define REG_ATTR_SEPARATOR               ';'
+#define REG_ATTR_EQUALS                  '='
+#define REG_ATTR_TYPE_KEY                "rt"
+#define REG_ATTR_TYPE_KEY_LEN            2
+#define REG_ATTR_TYPE_VALUE              "\"oma.lwm2m\""
+#define REG_ATTR_TYPE_VALUE_LEN          11
+#define REG_ATTR_CONTENT_KEY             "ct"
+#define REG_ATTR_CONTENT_KEY_LEN         2
+#define REG_ATTR_CONTENT_JSON            "11543"
+#define REG_ATTR_CONTENT_JSON_LEN        5
+#define REG_ATTR_CONTENT_JSON_OLD        "1543"
+#define REG_ATTR_CONTENT_JSON_OLD_LEN    4
+#define REG_ATTR_CONTENT_SENML_JSON      "110"
+#define REG_ATTR_CONTENT_SENML_JSON_LEN  3
 
 #define ATTR_SERVER_ID_STR       "ep="
 #define ATTR_SERVER_ID_LEN       3
@@ -327,13 +335,36 @@ void bootstrap_start(lwm2m_context_t * contextP);
 lwm2m_status_t bootstrap_getStatus(lwm2m_context_t * contextP);
 
 // defined in tlv.c
-int tlv_parse(uint8_t * buffer, size_t bufferLen, lwm2m_data_t ** dataP);
+int tlv_parse(const uint8_t * buffer, size_t bufferLen, lwm2m_data_t ** dataP);
 int tlv_serialize(bool isResourceInstance, int size, lwm2m_data_t * dataP, uint8_t ** bufferP);
 
 // defined in json.c
 #ifdef LWM2M_SUPPORT_JSON
-int json_parse(lwm2m_uri_t * uriP, uint8_t * buffer, size_t bufferLen, lwm2m_data_t ** dataP);
+int json_parse(lwm2m_uri_t * uriP, const uint8_t * buffer, size_t bufferLen, lwm2m_data_t ** dataP);
 int json_serialize(lwm2m_uri_t * uriP, int size, lwm2m_data_t * tlvP, uint8_t ** bufferP);
+#endif
+
+// defined in senml_json.c
+#ifdef LWM2M_SUPPORT_SENML_JSON
+int senml_json_parse(const lwm2m_uri_t * uriP, const uint8_t * buffer, size_t bufferLen, lwm2m_data_t ** dataP);
+int senml_json_serialize(const lwm2m_uri_t * uriP, int size, const lwm2m_data_t * tlvP, uint8_t ** bufferP);
+#endif
+
+// defined in json_common.c
+#if defined(LWM2M_SUPPORT_JSON) || defined(LWM2M_SUPPORT_SENML_JSON)
+size_t json_skipSpace(const uint8_t * buffer,size_t bufferLen);
+int json_split(const uint8_t * buffer, size_t bufferLen, size_t * tokenStartP, size_t * tokenLenP, size_t * valueStartP, size_t * valueLenP);
+int json_itemLength(const uint8_t * buffer, size_t bufferLen);
+int json_countItems(const uint8_t * buffer, size_t bufferLen);
+int json_convertNumeric(const uint8_t *value, size_t valueLen, lwm2m_data_t *targetP);
+int json_convertTime(const uint8_t *valueStart, size_t valueLen, time_t *t);
+size_t json_unescapeString(uint8_t *dst, const uint8_t *src, size_t len);
+size_t json_escapeString(uint8_t *dst, size_t dstLen, const uint8_t *src, size_t srcLen);
+lwm2m_data_t * json_extendData(lwm2m_data_t * parentP);
+int json_dataStrip(int size, lwm2m_data_t * dataP, lwm2m_data_t ** resultP);
+lwm2m_data_t * json_findDataItem(lwm2m_data_t * listP, size_t count, uint16_t id);
+uri_depth_t json_decreaseLevel(uri_depth_t level);
+int json_findAndCheckData(const lwm2m_uri_t * uriP, uri_depth_t level, size_t size, const lwm2m_data_t * tlvP, lwm2m_data_t ** targetP);
 #endif
 
 // defined in discover.c
@@ -353,12 +384,22 @@ int utils_stringCopy(char * buffer, size_t length, const char * str);
 size_t utils_intToText(int64_t data, uint8_t * string, size_t length);
 size_t utils_uintToText(uint64_t data, uint8_t * string, size_t length);
 size_t utils_floatToText(double data, uint8_t * string, size_t length);
-int utils_textToInt(uint8_t * buffer, int length, int64_t * dataP);
+size_t utils_objLinkToText(uint16_t objectId,
+                           uint16_t objectInstanceId,
+                           uint8_t * string,
+                           size_t length);
+int utils_textToInt(const uint8_t * buffer, int length, int64_t * dataP);
 int utils_textToUInt(const uint8_t * buffer, int length, uint64_t * dataP);
-int utils_textToFloat(uint8_t * buffer, int length, double * dataP);
+int utils_textToFloat(const uint8_t * buffer, int length, double * dataP);
+int utils_textToObjLink(const uint8_t * buffer,
+                        int length,
+                        uint16_t * objectId,
+                        uint16_t * objectInstanceId);
 void utils_copyValue(void * dst, const void * src, size_t len);
 size_t utils_base64GetSize(size_t dataLen);
-size_t utils_base64Encode(uint8_t * dataP, size_t dataLen, uint8_t * bufferP, size_t bufferLen);
+size_t utils_base64Encode(const uint8_t * dataP, size_t dataLen, uint8_t * bufferP, size_t bufferLen);
+size_t utils_base64GetDecodedSize(const char * dataP, size_t dataLen);
+size_t utils_base64Decode(const char * dataP, size_t dataLen, uint8_t * bufferP, size_t bufferLen);
 #ifdef LWM2M_CLIENT_MODE
 lwm2m_server_t * utils_findServer(lwm2m_context_t * contextP, void * fromSessionH);
 lwm2m_server_t * utils_findBootstrapServer(lwm2m_context_t * contextP, void * fromSessionH);
