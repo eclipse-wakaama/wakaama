@@ -5,36 +5,21 @@
 # Set LWM2M_VERSION to use a particular LWM2M version or leave it unset to use the latest.
 
 set(WAKAAMA_SOURCES_DIR ${CMAKE_CURRENT_LIST_DIR})
-
-set(EXT_SOURCES 
-    ${WAKAAMA_SOURCES_DIR}/er-coap-13/er-coap-13.c
-	${WAKAAMA_SOURCES_DIR}/er-coap-13/er-coap-13.h)
-
-set(CORE_HEADERS
-    ${WAKAAMA_SOURCES_DIR}/liblwm2m.h)
+set(WAKAAMA_HEADERS_DIR ${CMAKE_CURRENT_LIST_DIR}/../include)
 
 set(WAKAAMA_SOURCES
     ${WAKAAMA_SOURCES_DIR}/liblwm2m.c
     ${WAKAAMA_SOURCES_DIR}/uri.c
     ${WAKAAMA_SOURCES_DIR}/utils.c
     ${WAKAAMA_SOURCES_DIR}/objects.c
-    ${WAKAAMA_SOURCES_DIR}/tlv.c
-    ${WAKAAMA_SOURCES_DIR}/data.c
     ${WAKAAMA_SOURCES_DIR}/list.c
     ${WAKAAMA_SOURCES_DIR}/packet.c
-    ${WAKAAMA_SOURCES_DIR}/transaction.c
     ${WAKAAMA_SOURCES_DIR}/registration.c
     ${WAKAAMA_SOURCES_DIR}/bootstrap.c
     ${WAKAAMA_SOURCES_DIR}/management.c
     ${WAKAAMA_SOURCES_DIR}/observe.c
-    ${WAKAAMA_SOURCES_DIR}/json.c
-    ${WAKAAMA_SOURCES_DIR}/senml_json.c
-    ${WAKAAMA_SOURCES_DIR}/json_common.c
     ${WAKAAMA_SOURCES_DIR}/discover.c
-    ${WAKAAMA_SOURCES_DIR}/block1.c
-    ${WAKAAMA_SOURCES_DIR}/internals.h
-	${CORE_HEADERS}
-    ${EXT_SOURCES})
+    ${WAKAAMA_SOURCES_DIR}/internals.h)
 
 # This will not work for multi project cmake generators like the Visual Studio Generator
 if(CMAKE_BUILD_TYPE MATCHES Debug)

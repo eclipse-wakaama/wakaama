@@ -5,10 +5,15 @@ Developers mailing list: https://dev.eclipse.org/mailman/listinfo/wakaama-dev
 
 ## Source Layout
 
+```
     -+- core                   (the LWM2M engine)
+     |
+     +- coap                   (CoAP stack adaptation)
      |    |
      |    +- er-coap-13        (Slightly modified Erbium's CoAP engine from
      |                          http://people.inf.ethz.ch/mkovatsc/erbium.php
+     |
+     +- data                   (data formats serialization/deserialization)
      |
      +- tests                  (test cases)
      |
@@ -24,7 +29,7 @@ Developers mailing list: https://dev.eclipse.org/mailman/listinfo/wakaama-dev
           |
           +- shared            (utility functions for connection handling and command-
                                 line interface)
-
+```
 
 ## Compiling
 

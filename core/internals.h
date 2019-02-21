@@ -61,7 +61,7 @@
 #include <stddef.h>
 #include <stdbool.h>
 
-#include "er-coap-13/er-coap-13.h"
+#include "../coap/er-coap-13/er-coap-13.h"
 
 #ifdef LWM2M_WITH_LOGS
 #include <inttypes.h>
