@@ -72,7 +72,7 @@ static int prv_textSerialize(lwm2m_data_t * dataP,
     {
         uint8_t floatString[_PRV_STR_LENGTH * 2];
 
-        res = utils_floatToText(dataP->value.asFloat, floatString, _PRV_STR_LENGTH * 2);
+        res = utils_floatToText(dataP->value.asFloat, floatString, _PRV_STR_LENGTH * 2, false);
         if (res == 0) return -1;
 
         *bufferP = (uint8_t *)lwm2m_malloc(res);
@@ -477,7 +477,7 @@ int lwm2m_data_decode_float(const lwm2m_data_t * dataP,
         break;
 
     case LWM2M_TYPE_STRING:
-        result = utils_textToFloat(dataP->value.asBuffer.buffer, dataP->value.asBuffer.length, valueP);
+        result = utils_textToFloat(dataP->value.asBuffer.buffer, dataP->value.asBuffer.length, valueP, false);
         break;
 
     case LWM2M_TYPE_OPAQUE:

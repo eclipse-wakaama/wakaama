@@ -130,7 +130,8 @@ int utils_textToUInt(const uint8_t * buffer,
 
 int utils_textToFloat(const uint8_t * buffer,
                       int length,
-                      double * dataP)
+                      double * dataP,
+                      bool allowExponential)
 {
     double result;
     int sign;
@@ -178,13 +179,12 @@ int utils_textToFloat(const uint8_t * buffer,
         {
             if ('0' <= buffer[i] && buffer[i] <= '9')
             {
-                if (result > (DBL_MAX - 1)) return 0;
                 result += (buffer[i] - '0') * dec;
                 dec /= 10;
             }
             else
             {
-                break;
+                return 0;
             }
             i++;
         }
@@ -193,6 +193,9 @@ int utils_textToFloat(const uint8_t * buffer,
     {
         int64_t exp;
         int res;
+
+        if (!allowExponential) return 0;
+
         i++;
         if (i < length && buffer[i] == '+') i++;
         res = utils_textToInt(buffer + i, length - i, &exp);
@@ -323,16 +326,19 @@ size_t utils_uintToText(uint64_t data,
 
 size_t utils_floatToText(double data,
                          uint8_t * string,
-                         size_t length)
+                         size_t length,
+                         bool allowExponential)
 {
     uint64_t intPart;
     double decPart;
     double noiseFloor;
+    double roundCheck;
     size_t res;
     size_t head = 0;
-    int exp = 0;
+    int zeros = 0; /* positive for trailing, negative for leading */
     uint8_t expLen = 0;
     int precisionFactor = 1; /* Adjusts for inaccuracies caused by power of 10 operations. */
+    unsigned digits;
 
     if (!length || !string) return 0;
 
@@ -381,128 +387,218 @@ size_t utils_floatToText(double data,
         while (data > 1e100)
         {
             data *= 1e-100;
-            exp += 100;
+            zeros += 100;
             precisionFactor++;
         }
-        while (data > 1e10)
+        if (allowExponential)
         {
-            data *= 1e-10;
-            exp += 10;
-            precisionFactor++;
-        }
-        while (data > 10)
-        {
-            data *= 0.1;
-            exp += 1;
-            precisionFactor++;
-        }
-        if (exp >= 100)
-        {
-            expLen = 4;
-        }
-        else if(exp >= 10)
-        {
-            expLen = 3;
+            /* Take data down below 10 so only 1 digit before the decimal point */
+            while (data > 1e10)
+            {
+                data *= 1e-10;
+                zeros += 10;
+                precisionFactor++;
+            }
+            while (data > 10)
+            {
+                data *= 0.1;
+                zeros += 1;
+                precisionFactor++;
+            }
+            if (zeros >= 100)
+            {
+                expLen = 4;
+            }
+            else if(zeros >= 10)
+            {
+                expLen = 3;
+            }
+            else
+            {
+                expLen = 2;
+            }
         }
         else
         {
-            expLen = 2;
+            /* Take data down to 15 significant digits before 0s. */
+            while (data >= 1e25)
+            {
+                data *= 1e-10;
+                zeros += 10;
+                precisionFactor++;
+            }
+            while (data > 1e15)
+            {
+                data *= 0.1;
+                zeros += 1;
+                precisionFactor++;
+            }
+            /* Account for lost digits of precision */
+            if (precisionFactor >= 19)
+            {
+                data *= 0.01;
+                zeros += 2;
+                precisionFactor++;
+            }
+            else if (precisionFactor >= 10)
+            {
+                data *= 0.1;
+                zeros += 1;
+                precisionFactor++;
+            }
         }
     }
-    else if (data < 1e-3) /* Exponential notation will add at least 3 characters.
-                           * Make sure we save at least that many 0s. */
+    /* Exponential notation will add at least 3 characters. Make sure we save
+     * at least that many 0s. */
+    else if (data < (allowExponential ? 1e-3 : 0.1))
     {
+        /* For exponential notation take data to between 1 and 10, excluding 10.
+         * Otherwise take data to between 0.1 and 1, excluding 1. */
         while (data < 1e-100)
         {
             data *= 1e100;
-            exp -= 100;
+            zeros -= 100;
             precisionFactor++;
         }
         while (data < 1e-10)
         {
             data *= 1e10;
-            exp -= 10;
+            zeros -= 10;
             precisionFactor++;
         }
-        while (data < 1.0)
+        while (data < (allowExponential ? 1 : 0.1))
         {
             data *= 10;
-            exp -= 1;
+            zeros -= 1;
             precisionFactor++;
         }
-        if (exp <= -100)
+        if (allowExponential)
         {
-            expLen = 5;
-        }
-        else if(exp <= -10)
-        {
-            expLen = 4;
-        }
-        else
-        {
-            expLen = 3;
-        }
-    }
-
-    intPart = (uint64_t)data;
-    decPart = data - intPart + 1;
-    noiseFloor = DBL_EPSILON * precisionFactor;
-    while (intPart >= 1)
-    {
-        noiseFloor *= 10;
-        intPart /= 10;
-    }
-    intPart = (uint64_t)data;
-    if (decPart > 1 + noiseFloor)
-    {
-        double roundCheck = 2;
-        size_t digits = 2;
-
-        if (head + 2 + expLen > length) return 0;
-
-        do
-        {
-            decPart *= 10;
-            roundCheck *= 10;
-            noiseFloor *= 10;
-            digits += 1;
-        } while (decPart - (uint64_t)decPart > noiseFloor && digits < length - head - expLen);
-        if (decPart - (uint64_t)decPart >= 0.5)
-        {
-            decPart += 0.5;
-            if (decPart >= roundCheck)
+            if (zeros <= -100)
             {
-                intPart += 1;
+                expLen = 5;
+            }
+            else if(zeros <= -10)
+            {
+                expLen = 4;
+            }
+            else
+            {
+                expLen = 3;
             }
         }
     }
 
+    noiseFloor = DBL_EPSILON * precisionFactor;
+    /* Adjust the noise floor to account for digits left of the decimal point. */
+    intPart = (uint64_t)data;
+    if (!intPart)
+    {
+        /* Leading 0 and decimal point */
+        digits = 2;
+    }
+    else
+    {
+        /* Decimal point */
+        digits = 1;
+    }
+    while (intPart > 0)
+    {
+        noiseFloor *= 10;
+        intPart /= 10;
+        digits++;
+    }
+
+    intPart = (uint64_t)data;
+    decPart = data - intPart;
+    if (!allowExponential && zeros > 0)
+    {
+        /* Ensure all significant digits are left of the zeros */
+        while (zeros > 0 && noiseFloor < 1)
+        {
+            decPart *= 10;
+            intPart = intPart * 10 + (unsigned)decPart;
+            decPart -= (unsigned)decPart;
+            zeros--;
+            noiseFloor *= 10;
+            digits++;
+        }
+        decPart = 0;
+    }
+
+    if (decPart > noiseFloor)
+    {
+        /* Add 1 to the decimal part so we don't lose leading 0s. */
+        decPart += 1;
+
+        /* Limit the number of digits to space in the buffer and round. */
+        roundCheck = 2;
+        do
+        {
+            digits++;
+            if (head + expLen + digits > length) break;
+            decPart *= 10;
+            roundCheck *= 10;
+            noiseFloor *= 10;
+        } while (decPart - (uint64_t)decPart > noiseFloor);
+        decPart += 0.5;
+        if (decPart >= roundCheck)
+        {
+            intPart += 1;
+        }
+    }
+
+    /* Put out the significant digits left of the decimal point or zeros. */
     res = utils_uintToText(intPart, string + head, length - head);
     if (res == 0) return 0;
     head += res;
 
-
-    if (decPart <= 1 + DBL_EPSILON)
+    if (decPart <= noiseFloor
+     || (!allowExponential && -zeros >= (int)(length - head)))
     {
-        if (head + 1 > length) return 0;
-        string[head++] = '.';
-        if (head + 1 <= length) string[head++] = '0';
+        /* Only 0s right of the significant digits */
+        if (!allowExponential && zeros > 0)
+        {
+            if (head + zeros > length) return 0;
+            memset(string + head, '0', zeros);
+            head += zeros;
+        }
+        /* Add as much of ".0" as space permits */
+        if (head < length) string[head++] = '.';
+        if (head < length) string[head++] = '0';
+        if (head < length) string[head] = '\0';
+        return head;
+    }
+
+    if (!allowExponential && zeros < 0)
+    {
+        /* Add "." plus leading 0s. Leaving one off to be added back later. */
+        if (head - zeros > length) return 0;
+        string[head] = '.';
+        if (zeros < -1) memset(string + head + 1, '0', -(zeros) - 1);
+        head -= zeros;
+    }
+
+    /* Digits for the fractional part. */
+    res = utils_uintToText((uint64_t)decPart, string + head, length - head);
+    if (!res) return 0;
+
+    // replace the leading 1 with a decimal point or 0
+    if (!allowExponential && zeros < 0)
+    {
+        string[head] = '0';
     }
     else
     {
-        res = utils_uintToText((uint64_t)decPart, string + head, length - head);
-        if (res <= 1) return 0;
-
-        // replace the leading 1 with a decimal point
         string[head] = '.';
-        head += res;
     }
+    head += res;
 
-    if (exp != 0)
+    if (allowExponential && zeros)
     {
         if (head + expLen > length) return 0;
         string[head++] = 'e';
-        res = utils_intToText(exp, string + head, length - head);
+        res = utils_intToText(zeros, string + head, length - head);
         if (res == 0) return 0;
         head += res;
     }

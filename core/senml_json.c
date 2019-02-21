@@ -855,8 +855,11 @@ static int prv_serializeValue(const lwm2m_data_t * tlvP,
         memcpy(buffer, JSON_ITEM_NUM, JSON_ITEM_NUM_SIZE);
         head = JSON_ITEM_NUM_SIZE;
 
-        res = utils_floatToText(value, buffer + head, bufferLen - head);
+        res = utils_floatToText(value, buffer + head, bufferLen - head, true);
         if (!res) return -1;
+        /* Error if inf or nan */
+        if (buffer[head] != '-' && (buffer[head] < '0' || buffer[head] > '9')) return -1;
+        if (res > 1 && buffer[head] == '-' && (buffer[head+1] < '0' || buffer[head+1] > '9')) return -1;
         head += res;
     }
     break;

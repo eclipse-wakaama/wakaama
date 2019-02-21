@@ -123,7 +123,7 @@ static int prv_serializeAttributes(lwm2m_context_t * contextP,
             PRV_CONCAT_STR(buffer, bufferLen, head, LINK_ATTR_SEPARATOR, LINK_ATTR_SEPARATOR_SIZE);
             PRV_CONCAT_STR(buffer, bufferLen, head, ATTR_GREATER_THAN_STR, ATTR_GREATER_THAN_LEN);
 
-            res = utils_floatToText(paramP->greaterThan, buffer + head, bufferLen - head);
+            res = utils_floatToText(paramP->greaterThan, buffer + head, bufferLen - head, false);
             if (res <= 0) return -1;
             head += res;
         }
@@ -132,7 +132,7 @@ static int prv_serializeAttributes(lwm2m_context_t * contextP,
             PRV_CONCAT_STR(buffer, bufferLen, head, LINK_ATTR_SEPARATOR, LINK_ATTR_SEPARATOR_SIZE);
             PRV_CONCAT_STR(buffer, bufferLen, head, ATTR_LESS_THAN_STR, ATTR_LESS_THAN_LEN);
 
-            res = utils_floatToText(paramP->lessThan, buffer + head, bufferLen - head);
+            res = utils_floatToText(paramP->lessThan, buffer + head, bufferLen - head, false);
             if (res <= 0) return -1;
             head += res;
         }
@@ -141,7 +141,7 @@ static int prv_serializeAttributes(lwm2m_context_t * contextP,
             PRV_CONCAT_STR(buffer, bufferLen, head, LINK_ATTR_SEPARATOR, LINK_ATTR_SEPARATOR_SIZE);
             PRV_CONCAT_STR(buffer, bufferLen, head, ATTR_STEP_STR, ATTR_STEP_LEN);
 
-            res = utils_floatToText(paramP->step, buffer + head, bufferLen - head);
+            res = utils_floatToText(paramP->step, buffer + head, bufferLen - head, false);
             if (res <= 0) return -1;
             head += res;
         }

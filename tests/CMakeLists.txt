@@ -11,7 +11,7 @@ if(LWM2M_VERSION VERSION_GREATER "1.0")
 endif()
 add_definitions(${SHARED_DEFINITIONS} ${WAKAAMA_DEFINITIONS})
 # Enable all warnings for this test build  
-add_compile_options(-pedantic -Wall -Wextra -Wfloat-equal -Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings -Waggregate-return -Wswitch-default)
+add_definitions(-pedantic -Wall -Wextra -Wfloat-equal -Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings -Waggregate-return -Wswitch-default)
 
 include_directories (${WAKAAMA_SOURCES_DIR} ${SHARED_INCLUDE_DIRS})
 set_source_files_properties(${WAKAAMA_SOURCES_DIR}/senml_json.c PROPERTIES COMPILE_FLAGS -Wno-float-equal)

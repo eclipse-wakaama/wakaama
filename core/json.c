@@ -758,8 +758,8 @@ static int prv_serializeValue(lwm2m_data_t * tlvP,
                               uint8_t * buffer,
                               size_t bufferLen)
 {
-    int res;
-    int head;
+    size_t res;
+    size_t head;
 
     switch (tlvP->type)
     {
@@ -793,7 +793,7 @@ static int prv_serializeValue(lwm2m_data_t * tlvP,
         head = JSON_ITEM_NUM_SIZE;
 
         res = utils_intToText(value, buffer + head, bufferLen - head);
-        if (res <= 0) return -1;
+        if (!res) return -1;
         head += res;
 
         if (bufferLen - head < JSON_ITEM_NUM_END_SIZE) return -1;
@@ -813,7 +813,7 @@ static int prv_serializeValue(lwm2m_data_t * tlvP,
         head = JSON_ITEM_NUM_SIZE;
 
         res = utils_uintToText(value, buffer + head, bufferLen - head);
-        if (res <= 0) return -1;
+        if (!res) return -1;
         head += res;
 
         if (bufferLen - head < JSON_ITEM_NUM_END_SIZE) return -1;
@@ -832,8 +832,11 @@ static int prv_serializeValue(lwm2m_data_t * tlvP,
         memcpy(buffer, JSON_ITEM_NUM, JSON_ITEM_NUM_SIZE);
         head = JSON_ITEM_NUM_SIZE;
 
-        res = utils_floatToText(value, buffer + head, bufferLen - head);
-        if (res <= 0) return -1;
+        res = utils_floatToText(value, buffer + head, bufferLen - head, true);
+        if (!res) return -1;
+        /* Error if inf or nan */
+        if (buffer[head] != '-' && (buffer[head] < '0' || buffer[head] > '9')) return -1;
+        if (res > 1 && buffer[head] == '-' && (buffer[head+1] < '0' || buffer[head+1] > '9')) return -1;
         head += res;
 
         if (bufferLen - head < JSON_ITEM_NUM_END_SIZE) return -1;
@@ -886,7 +889,7 @@ static int prv_serializeValue(lwm2m_data_t * tlvP,
                                   tlvP->value.asObjLink.objectInstanceId,
                                   buffer + head,
                                   bufferLen - head);
-        if (res <= 0) return -1;
+        if (!res) return -1;
         head += res;
 
         if (bufferLen - head < JSON_ITEM_OBJECT_LINK_END_SIZE) return -1;
@@ -898,7 +901,7 @@ static int prv_serializeValue(lwm2m_data_t * tlvP,
         return -1;
     }
 
-    return head;
+    return (int)head;
 }
 
 static int prv_serializeData(lwm2m_data_t * tlvP,
