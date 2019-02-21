@@ -72,6 +72,11 @@ int main()
    if (CUE_SUCCESS != create_uri_suit())
       goto exit;
 
+#ifdef LWM2M_SUPPORT_SENML_JSON
+   if (CUE_SUCCESS != create_senml_json_suit())
+       goto exit;
+#endif
+
    CU_basic_set_mode(CU_BRM_VERBOSE);
    CU_basic_run_tests();
 exit:

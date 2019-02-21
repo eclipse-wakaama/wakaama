@@ -69,6 +69,19 @@ extern "C" {
 #ifndef LWM2M_SUPPORT_JSON
 #define LWM2M_SUPPORT_JSON
 #endif
+#ifndef LWM2M_VERSION_1_0
+#ifndef LWM2M_SUPPORT_SENML_JSON
+#define LWM2M_SUPPORT_SENML_JSON
+#endif
+#endif
+#endif
+
+#ifdef LWM2M_BOOTSTRAP_SERVER_MODE
+#ifndef LWM2M_VERSION_1_0
+#ifndef LWM2M_SUPPORT_SENML_JSON
+#define LWM2M_SUPPORT_SENML_JSON
+#endif
+#endif
 #endif
 
 #if defined(LWM2M_BOOTSTRAP) && defined(LWM2M_BOOTSTRAP_SERVER_MODE)
@@ -260,21 +273,24 @@ void lwm2m_list_free(lwm2m_list_t * head);
 
 #define LWM2M_MAX_ID   ((uint16_t)0xFFFF)
 
-#define LWM2M_URI_FLAG_OBJECT_ID    (uint8_t)0x04
-#define LWM2M_URI_FLAG_INSTANCE_ID  (uint8_t)0x02
-#define LWM2M_URI_FLAG_RESOURCE_ID  (uint8_t)0x01
-
-#define LWM2M_URI_IS_SET_INSTANCE(uri) (((uri)->flag & LWM2M_URI_FLAG_INSTANCE_ID) != 0)
-#define LWM2M_URI_IS_SET_RESOURCE(uri) (((uri)->flag & LWM2M_URI_FLAG_RESOURCE_ID) != 0)
+#define LWM2M_URI_IS_SET_OBJECT(uri) ((uri)->objectId != LWM2M_MAX_ID)
+#define LWM2M_URI_IS_SET_INSTANCE(uri) ((uri)->instanceId != LWM2M_MAX_ID)
+#define LWM2M_URI_IS_SET_RESOURCE(uri) ((uri)->resourceId != LWM2M_MAX_ID)
+#ifndef LWM2M_VERSION_1_0
+#define LWM2M_URI_IS_SET_RESOURCE_INSTANCE(uri) ((uri)->resourceInstanceId != LWM2M_MAX_ID)
+#endif
 
 typedef struct
 {
-    uint8_t     flag;           // indicates which segments are set
     uint16_t    objectId;
     uint16_t    instanceId;
     uint16_t    resourceId;
+#ifndef LWM2M_VERSION_1_0
+    uint16_t    resourceInstanceId;
+#endif
 } lwm2m_uri_t;
 
+#define LWM2M_URI_RESET(uri) memset((uri), 0xFF, sizeof(lwm2m_uri_t))
 
 #define LWM2M_STRING_ID_MAX_LEN 6
 
@@ -347,23 +363,24 @@ struct _lwm2m_data_t
 
 typedef enum
 {
-    LWM2M_CONTENT_TEXT      = 0,        // Also used as undefined
-    LWM2M_CONTENT_LINK      = 40,
-    LWM2M_CONTENT_OPAQUE    = 42,
-    LWM2M_CONTENT_TLV_OLD   = 1542,     // Keep old value for backward-compatibility
-    LWM2M_CONTENT_TLV       = 11542,
-    LWM2M_CONTENT_JSON_OLD  = 1543,     // Keep old value for backward-compatibility
-    LWM2M_CONTENT_JSON      = 11543
+    LWM2M_CONTENT_TEXT       = 0,        // Also used as undefined
+    LWM2M_CONTENT_LINK       = 40,
+    LWM2M_CONTENT_OPAQUE     = 42,
+    LWM2M_CONTENT_TLV_OLD    = 1542,     // Keep old value for backward-compatibility
+    LWM2M_CONTENT_TLV        = 11542,
+    LWM2M_CONTENT_JSON_OLD   = 1543,     // Keep old value for backward-compatibility
+    LWM2M_CONTENT_JSON       = 11543,
+    LWM2M_CONTENT_SENML_JSON = 110
 } lwm2m_media_type_t;
 
 lwm2m_data_t * lwm2m_data_new(int size);
-int lwm2m_data_parse(lwm2m_uri_t * uriP, uint8_t * buffer, size_t bufferLen, lwm2m_media_type_t format, lwm2m_data_t ** dataP);
+int lwm2m_data_parse(lwm2m_uri_t * uriP, const uint8_t * buffer, size_t bufferLen, lwm2m_media_type_t format, lwm2m_data_t ** dataP);
 int lwm2m_data_serialize(lwm2m_uri_t * uriP, int size, lwm2m_data_t * dataP, lwm2m_media_type_t * formatP, uint8_t ** bufferP);
 void lwm2m_data_free(int size, lwm2m_data_t * dataP);
 
 void lwm2m_data_encode_string(const char * string, lwm2m_data_t * dataP);
 void lwm2m_data_encode_nstring(const char * string, size_t length, lwm2m_data_t * dataP);
-void lwm2m_data_encode_opaque(uint8_t * buffer, size_t length, lwm2m_data_t * dataP);
+void lwm2m_data_encode_opaque(const uint8_t * buffer, size_t length, lwm2m_data_t * dataP);
 void lwm2m_data_encode_int(int64_t value, lwm2m_data_t * dataP);
 int lwm2m_data_decode_int(const lwm2m_data_t * dataP, int64_t * valueP);
 void lwm2m_data_encode_uint(uint64_t value, lwm2m_data_t * dataP);
@@ -591,7 +608,7 @@ typedef struct _lwm2m_client_
     lwm2m_binding_t         binding;
     char *                  msisdn;
     char *                  altPath;
-    bool                    supportJSON;
+    lwm2m_media_type_t      format;
     uint32_t                lifetime;
     time_t                  endOfLife;
     void *                  sessionH;

@@ -276,7 +276,7 @@ uint8_t dm_handleRequest(lwm2m_context_t * contextP,
                     //longest uri is /65535/65535 = 12 + 1 (null) chars
                     char location_path[13] = "";
                     //instanceId expected
-                    if ((uriP->flag & LWM2M_URI_FLAG_INSTANCE_ID) == 0)
+                    if (!LWM2M_URI_IS_SET_INSTANCE(uriP))
                     {
                         result = COAP_500_INTERNAL_SERVER_ERROR;
                         break;
@@ -402,9 +402,17 @@ static void prv_resultCallback(lwm2m_context_t * contextP,
                 lwm2m_free(locationString);
                 return;
             }
+            if (!LWM2M_URI_IS_SET_OBJECT(&locationUri) ||
+                !LWM2M_URI_IS_SET_INSTANCE(&locationUri) ||
+                LWM2M_URI_IS_SET_RESOURCE(&locationUri) ||
+                locationUri.objectId != ((dm_data_t*)transacP->userData)->uri.objectId)
+            {
+                LOG("Error: invalid Location_path option in prv_resultCallback()");
+                lwm2m_free(locationString);
+                return;
+            }
 
-            ((dm_data_t*)transacP->userData)->uri.instanceId = locationUri.instanceId;
-            ((dm_data_t*)transacP->userData)->uri.flag = locationUri.flag;
+            memcpy(&((dm_data_t*)transacP->userData)->uri, &locationUri, sizeof(locationUri));
 
             lwm2m_free(locationString);
         }
@@ -480,7 +488,6 @@ int lwm2m_dm_read(lwm2m_context_t * contextP,
                   void * userData)
 {
     lwm2m_client_t * clientP;
-    lwm2m_media_type_t format;
 
     LOG_ARG("clientID: %d", clientID);
     LOG_URI(uriP);
@@ -488,18 +495,9 @@ int lwm2m_dm_read(lwm2m_context_t * contextP,
     clientP = (lwm2m_client_t *)lwm2m_list_find((lwm2m_list_t *)contextP->clientList, clientID);
     if (clientP == NULL) return COAP_404_NOT_FOUND;
 
-    if (clientP->supportJSON == true)
-    {
-        format = LWM2M_CONTENT_JSON;
-    }
-    else
-    {
-        format = LWM2M_CONTENT_TLV;
-    }
-
     return prv_makeOperation(contextP, clientID, uriP,
                              COAP_GET,
-                             format,
+                             clientP->format,
                              NULL, 0,
                              callback, userData);
 }

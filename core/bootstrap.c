@@ -531,8 +531,7 @@ uint8_t bootstrap_handleDeleteAll(lwm2m_context_t * contextP,
     {
         lwm2m_uri_t uri;
 
-        memset(&uri, 0, sizeof(lwm2m_uri_t));
-        uri.flag = LWM2M_URI_FLAG_OBJECT_ID;
+        LWM2M_URI_RESET(&uri);
         uri.objectId = objectP->objID;
 
         if (objectP->objID == LWM2M_SECURITY_OBJECT_ID)
@@ -549,7 +548,6 @@ uint8_t bootstrap_handleDeleteAll(lwm2m_context_t * contextP,
                 }
                 else
                 {
-                    uri.flag = LWM2M_URI_FLAG_OBJECT_ID | LWM2M_URI_FLAG_INSTANCE_ID;
                     uri.instanceId = instanceP->id;
                     result = object_delete(contextP, &uri);
                     instanceP = objectP->instanceList;
@@ -631,7 +629,7 @@ static void prv_resultCallback(lwm2m_context_t * contextP,
 
     (void)contextP; /* unused */
 
-    if (dataP->isUri == true)
+    if (LWM2M_URI_IS_SET_OBJECT(&dataP->uri))
     {
         uriP = &dataP->uri;
     }
@@ -680,11 +678,10 @@ int lwm2m_bootstrap_delete(lwm2m_context_t * contextP,
     }
     if (uriP == NULL)
     {
-        dataP->isUri = false;
+        LWM2M_URI_RESET(&dataP->uri);
     }
     else
     {
-        dataP->isUri = true;
         memcpy(&dataP->uri, uriP, sizeof(lwm2m_uri_t));
     }
     dataP->callback = contextP->bootstrapCallback;
@@ -728,7 +725,6 @@ int lwm2m_bootstrap_write(lwm2m_context_t * contextP,
         transaction_free(transaction);
         return COAP_500_INTERNAL_SERVER_ERROR;
     }
-    dataP->isUri = true;
     memcpy(&dataP->uri, uriP, sizeof(lwm2m_uri_t));
     dataP->callback = contextP->bootstrapCallback;
     dataP->userData = contextP->bootstrapUserData;
@@ -759,7 +755,7 @@ int lwm2m_bootstrap_finish(lwm2m_context_t * contextP,
         transaction_free(transaction);
         return COAP_500_INTERNAL_SERVER_ERROR;
     }
-    dataP->isUri = false;
+    LWM2M_URI_RESET(&dataP->uri);
     dataP->callback = contextP->bootstrapCallback;
     dataP->userData = contextP->bootstrapUserData;
 

@@ -20,9 +20,7 @@
 #include <string.h>
 #include <ctype.h>
 #include "connection.h"
-
-// from commandline.c
-void output_buffer(FILE * stream, uint8_t * buffer, int length, int indent);
+#include "commandline.h"
 
 int create_socket(const char * portStr, int addressFamily)
 {
