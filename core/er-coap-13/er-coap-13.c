@@ -617,10 +617,10 @@ coap_parse_message(void *packet, uint8_t *data, uint16_t data_len)
 {
   coap_packet_t *const coap_pkt = (coap_packet_t *) packet;
   uint8_t *current_option;
-  unsigned int option_number = 0;
-  unsigned int option_delta = 0;
-  size_t option_length = 0;
-  unsigned int *x;
+  uint32_t option_number = 0;
+  uint32_t option_delta = 0;
+  uint32_t option_length = 0;
+  uint32_t *x;
 
   /* Initialize packet */
   memset(coap_pkt, 0, sizeof(coap_packet_t));
@@ -696,7 +696,7 @@ coap_parse_message(void *packet, uint8_t *data, uint16_t data_len)
         ++current_option;
       }
     }
-    while (x!=(unsigned int *)&option_length && (x=(unsigned int *)&option_length));
+    while (x!=&option_length && (x=&option_length));
 
     option_number += option_delta;
 
