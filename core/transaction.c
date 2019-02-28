@@ -142,7 +142,7 @@ static int prv_checkFinished(lwm2m_transaction_t * transacP,
 }
 
 lwm2m_transaction_t * transaction_new(void * sessionH,
-                                      coap_method_t method,
+                                      uint8_t method,
                                       char * altPath,
                                       lwm2m_uri_t * uriP,
                                       uint16_t mID,
