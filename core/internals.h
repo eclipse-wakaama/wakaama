@@ -366,7 +366,7 @@ lwm2m_data_t * json_extendData(lwm2m_data_t * parentP);
 int json_dataStrip(int size, lwm2m_data_t * dataP, lwm2m_data_t ** resultP);
 lwm2m_data_t * json_findDataItem(lwm2m_data_t * listP, size_t count, uint16_t id);
 uri_depth_t json_decreaseLevel(uri_depth_t level);
-int json_findAndCheckData(const lwm2m_uri_t * uriP, uri_depth_t level, size_t size, const lwm2m_data_t * tlvP, lwm2m_data_t ** targetP);
+int json_findAndCheckData(const lwm2m_uri_t * uriP, uri_depth_t baseLevel, size_t size, const lwm2m_data_t * tlvP, lwm2m_data_t ** targetP, uri_depth_t *targetLevelP);
 #endif
 
 // defined in discover.c
