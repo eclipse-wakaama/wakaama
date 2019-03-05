@@ -67,6 +67,7 @@ uint8_t object_checkReadable(lwm2m_context_t * contextP,
     uint8_t result;
     lwm2m_object_t * targetP;
     lwm2m_data_t * dataP = NULL;
+    lwm2m_data_t * valueP = NULL;
     int size;
 
     LOG_URI(uriP);
@@ -85,10 +86,21 @@ uint8_t object_checkReadable(lwm2m_context_t * contextP,
     if (dataP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
 
     dataP->id = uriP->resourceId;
+    valueP = dataP;
 
 #ifndef LWM2M_VERSION_1_0
-    // TODO: support resource instance
-    if (LWM2M_URI_IS_SET_RESOURCE_INSTANCE(uriP)) return COAP_400_BAD_REQUEST;
+    if (LWM2M_URI_IS_SET_RESOURCE_INSTANCE(uriP))
+    {
+        lwm2m_data_t *subDataP = lwm2m_data_new(1);
+        if (subDataP == NULL)
+        {
+            lwm2m_data_free(1, dataP);
+            return COAP_500_INTERNAL_SERVER_ERROR;
+        }
+        subDataP->id = uriP->resourceInstanceId;
+        lwm2m_data_encode_instances(subDataP, 1, dataP);
+        valueP = subDataP;
+    }
 #endif
 
     result = targetP->readFunc(uriP->instanceId, &size, &dataP, targetP);
@@ -96,7 +108,7 @@ uint8_t object_checkReadable(lwm2m_context_t * contextP,
     {
         if (attrP->toSet & ATTR_FLAG_NUMERIC)
         {
-            switch (dataP->type)
+            switch (valueP->type)
             {
                 case LWM2M_TYPE_INTEGER:
                 case LWM2M_TYPE_UNSIGNED_INTEGER:
@@ -138,8 +150,19 @@ uint8_t object_readData(lwm2m_context_t * contextP,
             (*dataP)->id = uriP->resourceId;
 
 #ifndef LWM2M_VERSION_1_0
-            // TODO: support resource instance
-            if (LWM2M_URI_IS_SET_RESOURCE_INSTANCE(uriP)) return COAP_400_BAD_REQUEST;
+            if (LWM2M_URI_IS_SET_RESOURCE_INSTANCE(uriP))
+            {
+                lwm2m_data_t *subDataP = lwm2m_data_new(1);
+                if (subDataP == NULL)
+                {
+                    lwm2m_data_free(*sizeP, *dataP);
+                    *sizeP = 0;
+                    *dataP = NULL;
+                    return COAP_500_INTERNAL_SERVER_ERROR;
+                }
+                subDataP->id = uriP->resourceInstanceId;
+                lwm2m_data_encode_instances(subDataP, 1, *dataP);
+            }
 #endif
         }
 
@@ -179,6 +202,13 @@ uint8_t object_readData(lwm2m_context_t * contextP,
                 instanceP = instanceP->next;
             }
         }
+    }
+
+    if (result != COAP_205_CONTENT)
+    {
+        lwm2m_data_free(*sizeP, *dataP);
+        *sizeP = 0;
+        *dataP = NULL;
     }
 
     LOG_ARG("result: %u.%02u, size: %d", (result & 0xFF) >> 5, (result & 0x1F), *sizeP);
