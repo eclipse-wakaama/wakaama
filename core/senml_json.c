@@ -805,7 +805,7 @@ static int prv_serializeValue(const lwm2m_data_t * tlvP,
                                 bufferLen - head,
                                 tlvP->value.asBuffer.buffer,
                                 tlvP->value.asBuffer.length);
-        if (!res) return -1;
+        if (res < tlvP->value.asBuffer.length) return -1;
         head += res;
 
         if (bufferLen - head < 1) return -1;
@@ -897,7 +897,7 @@ static int prv_serializeValue(const lwm2m_data_t * tlvP,
                                      tlvP->value.asBuffer.length,
                                      buffer+head,
                                      bufferLen - head);
-            if (!res) return -1;
+            if (res < tlvP->value.asBuffer.length) return -1;
             head += res;
         }
 
@@ -945,22 +945,6 @@ static int prv_serializeData(const lwm2m_data_t * tlvP,
     int res;
 
     head = 0;
-
-    /* Check to override passed in level */
-    switch (tlvP->type)
-    {
-    case LWM2M_TYPE_MULTIPLE_RESOURCE:
-        level = URI_DEPTH_RESOURCE;
-        break;
-    case LWM2M_TYPE_OBJECT:
-        level = URI_DEPTH_OBJECT;
-        break;
-    case LWM2M_TYPE_OBJECT_INSTANCE:
-        level = URI_DEPTH_OBJECT_INSTANCE;
-        break;
-    default:
-        break;
-    }
 
     switch (tlvP->type)
     {
@@ -1108,35 +1092,15 @@ int senml_json_serialize(const lwm2m_uri_t * uriP,
         baseUriStr[baseUriLen++] = '/';
     }
 
-    num = json_findAndCheckData(uriP, json_decreaseLevel(baseLevel), size, tlvP, &targetP);
+    num = json_findAndCheckData(uriP, baseLevel, size, tlvP, &targetP, &rootLevel);
     if (num < 0) return -1;
 
-    switch (tlvP->type)
+    if (baseLevel < rootLevel
+     && baseUriLen > 1
+     && baseUriStr[baseUriLen - 1] != '/')
     {
-    case LWM2M_TYPE_OBJECT:
-        rootLevel = URI_DEPTH_OBJECT;
-        break;
-    case LWM2M_TYPE_OBJECT_INSTANCE:
-        rootLevel = URI_DEPTH_OBJECT_INSTANCE;
-        break;
-    case LWM2M_TYPE_MULTIPLE_RESOURCE:
-        if (baseUriLen > 1 && baseUriStr[baseUriLen - 1] != '/')
-        {
-            if (baseUriLen >= URI_MAX_STRING_LEN -1) return 0;
-            baseUriStr[baseUriLen++] = '/';
-        }
-        rootLevel = URI_DEPTH_RESOURCE_INSTANCE;
-        break;
-    default:
-        if (baseLevel == URI_DEPTH_RESOURCE_INSTANCE)
-        {
-            rootLevel = URI_DEPTH_RESOURCE_INSTANCE;
-        }
-        else
-        {
-            rootLevel = URI_DEPTH_RESOURCE;
-        }
-        break;
+        if (baseUriLen >= URI_MAX_STRING_LEN -1) return 0;
+        baseUriStr[baseUriLen++] = '/';
     }
 
     if (!baseUriLen || baseUriStr[baseUriLen - 1] != '/')
