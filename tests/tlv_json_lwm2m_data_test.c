@@ -144,6 +144,7 @@ static void test_raw(const char * uriStr,
     {
         test_data(uriStr, LWM2M_CONTENT_TLV, tlvP, size, id);
     }
+    lwm2m_data_free(size, tlvP);
 }
 
 static void test_raw_expected(const char * uriStr,
@@ -174,6 +175,8 @@ static void test_raw_expected(const char * uriStr,
         test_data(uriStr, LWM2M_CONTENT_JSON, tlvP, size, id);
     else if (format == LWM2M_CONTENT_JSON)
         test_data(uriStr, LWM2M_CONTENT_TLV, tlvP, size, id);
+
+    lwm2m_data_free(size, tlvP);
 }
 
 static void test_1(void)
@@ -186,7 +189,7 @@ static void test_1(void)
     CU_ASSERT_TRUE_FATAL(size>0);
     // Serialize to the same format and compare to the input buffer
     test_data_and_compare(NULL, format, tlvP, size, "1", (uint8_t*)buffer, testLen);
-
+    lwm2m_data_free(size, tlvP);
 }
 
 static void test_2(void)
@@ -358,6 +361,8 @@ static void test_10(void)
 
     test_data(NULL, LWM2M_CONTENT_TLV, data1, 17, "10a");
     test_data("/12/0", LWM2M_CONTENT_JSON, data1, 17, "10b");
+
+    lwm2m_data_free(17, data1);
 }
 
 static void test_11(void)

@@ -195,6 +195,7 @@ static void senml_json_test_raw(const char * uriStr,
     {
         senml_json_test_data(uriStr, LWM2M_CONTENT_TLV, tlvP, size, id);
     }
+    lwm2m_data_free(size, tlvP);
 }
 
 static void senml_json_test_raw_expected(const char * uriStr,
@@ -227,6 +228,7 @@ static void senml_json_test_raw_expected(const char * uriStr,
         senml_json_test_data(uriStr, LWM2M_CONTENT_TLV, tlvP, size, id);
     else if (format == LWM2M_CONTENT_SENML_JSON)
         senml_json_test_data(uriStr, LWM2M_CONTENT_TLV, tlvP, size, id);
+    lwm2m_data_free(size, tlvP);
 }
 
 static void senml_json_test_raw_error(const char * uriStr,
@@ -454,6 +456,8 @@ static void senml_json_test_13(void)
     lwm2m_data_encode_bool(false, data1 + 16);
 
     senml_json_test_data("/12/0", LWM2M_CONTENT_SENML_JSON, data1, 17, "13");
+
+    lwm2m_data_free(1, data1);
 }
 
 static void senml_json_test_14(void)

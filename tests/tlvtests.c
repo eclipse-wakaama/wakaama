@@ -29,6 +29,7 @@ static void test_tlv_new(void)
    lwm2m_data_t *dataP =  lwm2m_data_new(10);
    CU_ASSERT_PTR_NOT_NULL(dataP);
    MEMORY_TRACE_AFTER(<);
+   lwm2m_data_free(10, dataP);
 }
 
 static void test_tlv_free(void)
@@ -266,6 +267,7 @@ static void test_tlv_int(void)
    result = lwm2m_data_decode_int(dataP, &value);
    CU_ASSERT_EQUAL(result, 1);
    CU_ASSERT_EQUAL(value, 18);
+   lwm2m_free(dataP->value.asBuffer.buffer);
 
    lwm2m_data_encode_string("-14678", dataP);
    CU_ASSERT_EQUAL(dataP->type, LWM2M_TYPE_STRING);
@@ -274,6 +276,7 @@ static void test_tlv_int(void)
    result = lwm2m_data_decode_int(dataP, &value);
    CU_ASSERT_EQUAL(result, 1);
    CU_ASSERT_EQUAL(value, -14678);
+   lwm2m_free(dataP->value.asBuffer.buffer);
 
    uint8_t data1[] = { 0xed, 0xcc };
    lwm2m_data_encode_opaque(data1, sizeof(data1), dataP);
@@ -338,6 +341,7 @@ static void test_tlv_uint(void)
    result = lwm2m_data_decode_uint(dataP, &value);
    CU_ASSERT_EQUAL(result, 1);
    CU_ASSERT_EQUAL(value, 18);
+   lwm2m_free(dataP->value.asBuffer.buffer);
 
    lwm2m_data_encode_string("-14678", dataP);
    CU_ASSERT_EQUAL(dataP->type, LWM2M_TYPE_STRING);
@@ -345,6 +349,7 @@ static void test_tlv_uint(void)
    CU_ASSERT(0 == memcmp(dataP->value.asBuffer.buffer, "-14678", 6));
    result = lwm2m_data_decode_uint(dataP, &value);
    CU_ASSERT_EQUAL(result, 0);
+   lwm2m_free(dataP->value.asBuffer.buffer);
 
    uint8_t data1[] = { 0xed, 0xcc };
    lwm2m_data_encode_opaque(data1, sizeof(data1), dataP);
@@ -366,6 +371,7 @@ static void test_tlv_uint(void)
    result = lwm2m_data_decode_uint(dataP, &value);
    CU_ASSERT_EQUAL(result, 1);
    CU_ASSERT_EQUAL(value, 0x7f34567891223344);
+   lwm2m_free(dataP->value.asBuffer.buffer);
 
    uint8_t data3[] = { 0x8f, 0x34, 0x56, 0x78, 0x91, 0x22, 0x33, 0x44 };
    lwm2m_data_encode_opaque(data3, sizeof(data3), dataP);
@@ -413,6 +419,7 @@ static void test_tlv_bool(void)
    result = lwm2m_data_decode_bool(dataP, &value);
    CU_ASSERT_EQUAL(result, 1);
    CU_ASSERT_EQUAL(value, true);
+   lwm2m_free(dataP->value.asBuffer.buffer);
 
    lwm2m_data_encode_string("0", dataP);
    CU_ASSERT_EQUAL(dataP->type, LWM2M_TYPE_STRING);
@@ -421,6 +428,7 @@ static void test_tlv_bool(void)
    result = lwm2m_data_decode_bool(dataP, &value);
    CU_ASSERT_EQUAL(result, 1);
    CU_ASSERT_EQUAL(value, false);
+   lwm2m_free(dataP->value.asBuffer.buffer);
 
    uint8_t data1[] = { 0x00 };
    lwm2m_data_encode_opaque(data1, sizeof(data1), dataP);
@@ -472,6 +480,7 @@ static void test_tlv_float(void)
     result = lwm2m_data_decode_float(dataP, &value);
     CU_ASSERT_EQUAL(result, 1);
     CU_ASSERT_EQUAL(value, 1234.56);
+    lwm2m_free(dataP->value.asBuffer.buffer);
 
     lwm2m_data_encode_string("-123456789.987", dataP);
     CU_ASSERT_EQUAL(dataP->type, LWM2M_TYPE_STRING);
