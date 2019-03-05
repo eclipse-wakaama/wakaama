@@ -15,6 +15,7 @@
  *    Julien Vermillard, Sierra Wireless
  *    Bosch Software Innovations GmbH - Please refer to git log
  *    Pascal Rieux - Please refer to git log
+ *    Scott Bertin, AMETEK, Inc. - Please refer to git log
  *    
  *******************************************************************************/
 
@@ -117,7 +118,14 @@ static uint8_t prv_server_read(uint16_t instanceId,
     i = 0;
     do
     {
-        result = prv_get_value((*dataArrayP) + i, targetP);
+        if ((*dataArrayP)[i].type == LWM2M_TYPE_MULTIPLE_RESOURCE)
+        {
+            result = COAP_404_NOT_FOUND;
+        }
+        else
+        {
+            result = prv_get_value((*dataArrayP) + i, targetP);
+        }
         i++;
     } while (i < *numDataP && result == COAP_205_CONTENT);
 

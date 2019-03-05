@@ -18,6 +18,7 @@
  *    Achim Kraus, Bosch Software Innovations GmbH - Please refer to git log
  *    Pascal Rieux - Please refer to git log
  *    Ville Skyttä - Please refer to git log
+ *    Scott Bertin, AMETEK, Inc. - Please refer to git log
  *    
  *******************************************************************************/
 
@@ -153,6 +154,11 @@ static uint8_t prv_read(uint16_t instanceId,
 
     for (i = 0 ; i < *numDataP ; i++)
     {
+        if ((*dataArrayP)[i].type == LWM2M_TYPE_MULTIPLE_RESOURCE)
+        {
+            return COAP_404_NOT_FOUND;
+        }
+
         switch ((*dataArrayP)[i].id)
         {
         case 1:

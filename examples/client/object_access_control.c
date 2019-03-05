@@ -13,6 +13,7 @@
  * Contributors:
  *    Bosch Software Innovations GmbH - Please refer to git log
  *    Pascal Rieux - please refer to git log
+ *    Scott Bertin, AMETEK, Inc. - Please refer to git log
  *    
  ******************************************************************************/
 
@@ -66,40 +67,67 @@ static uint8_t prv_set_tlv(lwm2m_data_t* dataP, acc_ctrl_oi_t* accCtrlOiP)
 {
     switch (dataP->id) {
     case RES_M_OBJECT_ID:
+        if (dataP->type == LWM2M_TYPE_MULTIPLE_RESOURCE) return COAP_404_NOT_FOUND;
         lwm2m_data_encode_int(accCtrlOiP->objectId, dataP);
         return COAP_205_CONTENT;
         break;
     case RES_M_OBJECT_INSTANCE_ID:
+        if (dataP->type == LWM2M_TYPE_MULTIPLE_RESOURCE) return COAP_404_NOT_FOUND;
         lwm2m_data_encode_int(accCtrlOiP->objectInstId, dataP);
         return COAP_205_CONTENT;
         break;
     case RES_O_ACL:
     {
-        int ri;
+        size_t count;
         acc_ctrl_ri_t* accCtrlRiP;
-        for (accCtrlRiP =accCtrlOiP->accCtrlValList, ri=0;
-             accCtrlRiP!=NULL;
-             accCtrlRiP = accCtrlRiP->next, ri++);
+        for (accCtrlRiP = accCtrlOiP->accCtrlValList, count=0;
+             accCtrlRiP != NULL;
+             accCtrlRiP = accCtrlRiP->next, count++);
 
-        if (ri==0)  // no values!
+        if (count == 0)  // no values!
         {
             return COAP_404_NOT_FOUND;
         }
         else
         {
-            lwm2m_data_t* subTlvP = lwm2m_data_new(ri);
-            for (accCtrlRiP = accCtrlOiP->accCtrlValList, ri = 0;
-                 accCtrlRiP!= NULL;
-                 accCtrlRiP = accCtrlRiP->next, ri++)
+            lwm2m_data_t * subTlvP;
+            size_t i;
+            if (dataP->type == LWM2M_TYPE_MULTIPLE_RESOURCE)
             {
-                subTlvP[ri].id = accCtrlRiP->resInstId;
-                lwm2m_data_encode_int(accCtrlRiP->accCtrlValue, &subTlvP[ri]);
+                count = dataP->value.asChildren.count;
+                subTlvP = dataP->value.asChildren.array;
             }
-            lwm2m_data_encode_instances(subTlvP, 2, dataP);
+            else
+            {
+                subTlvP = lwm2m_data_new(count);
+                for (accCtrlRiP = accCtrlOiP->accCtrlValList, i=0;
+                     accCtrlRiP != NULL;
+                     accCtrlRiP = accCtrlRiP->next, i++)
+                {
+                    subTlvP[i].id = accCtrlRiP->resInstId;
+                }
+                lwm2m_data_encode_instances(subTlvP, count, dataP);
+            }
+
+            for (i = 0; i < count; i++)
+            {
+                for (accCtrlRiP = accCtrlOiP->accCtrlValList;
+                     accCtrlRiP != NULL;
+                     accCtrlRiP = accCtrlRiP->next)
+                {
+                    if (subTlvP[i].id == accCtrlRiP->resInstId)
+                    {
+                        lwm2m_data_encode_int(accCtrlRiP->accCtrlValue, subTlvP + i);
+                        break;
+                    }
+                }
+                if (accCtrlRiP == NULL) return COAP_404_NOT_FOUND;
+            }
             return COAP_205_CONTENT;
         }
     }   break;
     case RES_M_ACCESS_CONTROL_OWNER:
+        if (dataP->type == LWM2M_TYPE_MULTIPLE_RESOURCE) return COAP_404_NOT_FOUND;
         lwm2m_data_encode_int(accCtrlOiP->accCtrlOwner, dataP);
         return COAP_205_CONTENT;
         break;

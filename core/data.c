@@ -626,7 +626,8 @@ void lwm2m_data_include(lwm2m_data_t * subDataP,
         dataP->type = LWM2M_TYPE_OBJECT;
         break;
     default:
-        return;
+        dataP->type = LWM2M_TYPE_MULTIPLE_RESOURCE;
+        break;
     }
     dataP->value.asChildren.count = count;
     dataP->value.asChildren.array = subDataP;
