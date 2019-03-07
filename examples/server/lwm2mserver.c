@@ -350,6 +350,8 @@ static void prv_write_client(char * buffer,
     lwm2m_context_t * lwm2mH = (lwm2m_context_t *) user_data;
     uint16_t clientId;
     lwm2m_uri_t uri;
+    lwm2m_data_t * dataP = NULL;
+    int count = 0;
     char * end = NULL;
     int result;
 
@@ -367,7 +369,47 @@ static void prv_write_client(char * buffer,
 
     if (!check_end_of_args(end)) goto syntax_error;
 
-    result = lwm2m_dm_write(lwm2mH, clientId, &uri, LWM2M_CONTENT_TEXT, (uint8_t *)buffer, end - buffer, prv_result_callback, NULL);
+#ifdef LWM2M_SUPPORT_SENML_JSON
+    if (count <= 0)
+    {
+        count = lwm2m_data_parse(&uri, (uint8_t *)buffer, end - buffer, LWM2M_CONTENT_SENML_JSON, &dataP);
+    }
+#endif
+#ifdef LWM2M_SUPPORT_JSON
+    if (count <= 0)
+    {
+        count = lwm2m_data_parse(&uri, (uint8_t *)buffer, end - buffer, LWM2M_CONTENT_JSON, &dataP);
+    }
+#endif
+    if (count > 0)
+    {
+        lwm2m_client_t * clientP = NULL;
+        clientP = (lwm2m_client_t *)lwm2m_list_find((lwm2m_list_t *)lwm2mH->clientList, clientId);
+        if (clientP != NULL)
+        {
+            lwm2m_media_type_t format = clientP->format;
+            uint8_t *buffer;
+            int length = lwm2m_data_serialize(&uri, count, dataP, &format, &buffer);
+            if (length > 0)
+            {
+                result = lwm2m_dm_write(lwm2mH, clientId, &uri, format, buffer, length, prv_result_callback, NULL);
+                lwm2m_free(buffer);
+            }
+            else
+            {
+                result = COAP_500_INTERNAL_SERVER_ERROR;
+            }
+        }
+        else
+        {
+            result = COAP_404_NOT_FOUND;
+        }
+        lwm2m_data_free(count, dataP);
+    }
+    else
+    {
+        result = lwm2m_dm_write(lwm2mH, clientId, &uri, LWM2M_CONTENT_TEXT, (uint8_t *)buffer, end - buffer, prv_result_callback, NULL);
+    }
 
     if (result == 0)
     {
@@ -910,7 +952,7 @@ int main(int argc, char *argv[])
             {"write", "Write to a client.", " write CLIENT# URI DATA\r\n"
                                             "   CLIENT#: client number as returned by command 'list'\r\n"
                                             "   URI: uri to write to such as /3, /3/0/2, /1024/11, /1024/0/1\r\n"
-                                            "   DATA: data to write\r\n"
+                                            "   DATA: data to write. Text or a supported JSON format.\r\n"
                                             "Result will be displayed asynchronously.", prv_write_client, NULL},
             {"time", "Write time-related attributes to a client.", " time CLIENT# URI PMIN PMAX\r\n"
                                             "   CLIENT#: client number as returned by command 'list'\r\n"
