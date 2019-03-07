@@ -256,6 +256,13 @@ static uint8_t prv_server_write(uint16_t instanceId,
     i = 0;
     do
     {
+        /* No multiple instance resources */
+        if (dataArray[i].type == LWM2M_TYPE_MULTIPLE_RESOURCE)
+        {
+            result = COAP_404_NOT_FOUND;
+            continue;
+        }
+
         switch (dataArray[i].id)
         {
         case LWM2M_SERVER_SHORT_ID_ID:
@@ -304,12 +311,15 @@ static uint8_t prv_server_write(uint16_t instanceId,
         case LWM2M_SERVER_BINDING_ID:
             if ((dataArray[i].type == LWM2M_TYPE_STRING || dataArray[i].type == LWM2M_TYPE_OPAQUE)
              && dataArray[i].value.asBuffer.length > 0 && dataArray[i].value.asBuffer.length <= 3
+#ifdef LWM2M_VERSION_1_0
              && (strncmp((char*)dataArray[i].value.asBuffer.buffer, "U",   dataArray[i].value.asBuffer.length) == 0
               || strncmp((char*)dataArray[i].value.asBuffer.buffer, "UQ",  dataArray[i].value.asBuffer.length) == 0
               || strncmp((char*)dataArray[i].value.asBuffer.buffer, "S",   dataArray[i].value.asBuffer.length) == 0
               || strncmp((char*)dataArray[i].value.asBuffer.buffer, "SQ",  dataArray[i].value.asBuffer.length) == 0
               || strncmp((char*)dataArray[i].value.asBuffer.buffer, "US",  dataArray[i].value.asBuffer.length) == 0
-              || strncmp((char*)dataArray[i].value.asBuffer.buffer, "UQS", dataArray[i].value.asBuffer.length) == 0))
+              || strncmp((char*)dataArray[i].value.asBuffer.buffer, "UQS", dataArray[i].value.asBuffer.length) == 0)
+#endif
+                )
             {
                 strncpy(targetP->binding, (char*)dataArray[i].value.asBuffer.buffer, dataArray[i].value.asBuffer.length);
                 result = COAP_204_CHANGED;

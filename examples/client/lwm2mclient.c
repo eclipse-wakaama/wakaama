@@ -140,7 +140,26 @@ void handle_value_changed(lwm2m_context_t * lwm2mH,
                 return;
             }
             dataP->id = uri->resourceId;
-            lwm2m_data_encode_nstring(value, valueLength, dataP);
+
+#ifndef LWM2M_VERSION_1_0
+            if (LWM2M_URI_IS_SET_RESOURCE_INSTANCE(uri))
+            {
+                lwm2m_data_t *subDataP = lwm2m_data_new(1);
+                if (subDataP == NULL)
+                {
+                    fprintf(stderr, "Internal allocation failure !\n");
+                    lwm2m_data_free(1, dataP);
+                    return;
+                }
+                subDataP->id = uri->resourceInstanceId;
+                lwm2m_data_encode_nstring(value, valueLength, subDataP);
+                lwm2m_data_encode_instances(subDataP, 1, dataP);
+            }
+            else
+#endif
+            {
+                lwm2m_data_encode_nstring(value, valueLength, dataP);
+            }
 
             result = object->writeFunc(uri->instanceId, 1, dataP, object, LWM2M_WRITE_PARTIAL_UPDATE);
             if (COAP_405_METHOD_NOT_ALLOWED == result)

@@ -221,6 +221,13 @@ static uint8_t prv_firmware_write(uint16_t instanceId,
 
     do
     {
+        /* No multiple instance resources */
+        if (dataArray[i].type == LWM2M_TYPE_MULTIPLE_RESOURCE)
+        {
+            result = COAP_404_NOT_FOUND;
+            continue;
+        }
+
         switch (dataArray[i].id)
         {
         case RES_M_PACKAGE:

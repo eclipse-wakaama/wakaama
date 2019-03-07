@@ -290,14 +290,23 @@ uint8_t object_write(lwm2m_context_t * contextP,
     else
     {
         size = lwm2m_data_parse(uriP, buffer, length, format, &dataP);
-        if (size == 0)
+        if (size <= 0)
         {
             result = COAP_406_NOT_ACCEPTABLE;
         }
     }
 #ifndef LWM2M_VERSION_1_0
-    // TODO: support resource instance
-    if (LWM2M_URI_IS_SET_RESOURCE_INSTANCE(uriP)) result = COAP_400_BAD_REQUEST;
+    if (result == NO_ERROR
+     && LWM2M_URI_IS_SET_RESOURCE_INSTANCE(uriP))
+    {
+        lwm2m_data_t *subDataP = dataP;
+        dataP = lwm2m_data_new(1);
+        if (dataP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
+        dataP->id = uriP->resourceId;
+        lwm2m_data_encode_instances(subDataP, size, dataP);
+        size = 1;
+        partial = true;
+    }
 #endif
     if (result == NO_ERROR)
     {

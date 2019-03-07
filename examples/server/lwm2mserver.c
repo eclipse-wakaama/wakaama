@@ -344,8 +344,9 @@ syntax_error:
     fprintf(stdout, "Syntax error !");
 }
 
-static void prv_write_client(char * buffer,
-                             void * user_data)
+static void prv_do_write_client(char * buffer,
+                                void * user_data,
+                                bool partialUpdate)
 {
     lwm2m_context_t * lwm2mH = (lwm2m_context_t *) user_data;
     uint16_t clientId;
@@ -388,12 +389,24 @@ static void prv_write_client(char * buffer,
         if (clientP != NULL)
         {
             lwm2m_media_type_t format = clientP->format;
-            uint8_t *buffer;
-            int length = lwm2m_data_serialize(&uri, count, dataP, &format, &buffer);
+            uint8_t *serialized;
+            int length = lwm2m_data_serialize(&uri,
+                                              count,
+                                              dataP,
+                                              &format,
+                                              &serialized);
             if (length > 0)
             {
-                result = lwm2m_dm_write(lwm2mH, clientId, &uri, format, buffer, length, prv_result_callback, NULL);
-                lwm2m_free(buffer);
+                result = lwm2m_dm_write(lwm2mH,
+                                        clientId,
+                                        &uri,
+                                        format,
+                                        serialized,
+                                        length,
+                                        partialUpdate,
+                                        prv_result_callback,
+                                        NULL);
+                lwm2m_free(serialized);
             }
             else
             {
@@ -406,9 +419,21 @@ static void prv_write_client(char * buffer,
         }
         lwm2m_data_free(count, dataP);
     }
+    else if(!partialUpdate)
+    {
+        result = lwm2m_dm_write(lwm2mH,
+                                clientId,
+                                &uri,
+                                LWM2M_CONTENT_TEXT,
+                                (uint8_t *)buffer,
+                                end - buffer,
+                                partialUpdate,
+                                prv_result_callback,
+                                NULL);
+    }
     else
     {
-        result = lwm2m_dm_write(lwm2mH, clientId, &uri, LWM2M_CONTENT_TEXT, (uint8_t *)buffer, end - buffer, prv_result_callback, NULL);
+        goto syntax_error;
     }
 
     if (result == 0)
@@ -425,6 +450,17 @@ syntax_error:
     fprintf(stdout, "Syntax error !");
 }
 
+static void prv_write_client(char * buffer,
+                             void * user_data)
+{
+    prv_do_write_client(buffer, user_data, false);
+}
+
+static void prv_update_client(char * buffer,
+                              void * user_data)
+{
+    prv_do_write_client(buffer, user_data, true);
+}
 
 static void prv_time_client(char * buffer,
                             void * user_data)
@@ -954,6 +990,11 @@ int main(int argc, char *argv[])
                                             "   URI: uri to write to such as /3, /3/0/2, /1024/11, /1024/0/1\r\n"
                                             "   DATA: data to write. Text or a supported JSON format.\r\n"
                                             "Result will be displayed asynchronously.", prv_write_client, NULL},
+            {"update", "Write to a client with partial update.", " update CLIENT# URI DATA\r\n"
+                                            "   CLIENT#: client number as returned by command 'list'\r\n"
+                                            "   URI: uri to write to such as /3, /3/0/2, /1024/11, /1024/0/1\r\n"
+                                            "   DATA: data to write. Must be a supported JSON format.\r\n"
+                                            "Result will be displayed asynchronously.", prv_update_client, NULL},
             {"time", "Write time-related attributes to a client.", " time CLIENT# URI PMIN PMAX\r\n"
                                             "   CLIENT#: client number as returned by command 'list'\r\n"
                                             "   URI: uri to write attributes to such as /3, /3/0/2, /1024/11, /1024/0/1\r\n"
