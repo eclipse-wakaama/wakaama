@@ -253,6 +253,10 @@ static uint8_t prv_write_resources(uint16_t instanceId, int numData,
             {
                 result = COAP_405_METHOD_NOT_ALLOWED;
             }
+            else if (tlvArray[i].type == LWM2M_TYPE_MULTIPLE_RESOURCE)
+            {
+                result = COAP_404_NOT_FOUND;
+            }
             else
             {
                 if (1 != lwm2m_data_decode_int(&tlvArray[i], &value))
@@ -274,6 +278,10 @@ static uint8_t prv_write_resources(uint16_t instanceId, int numData,
             if (doCreate==false)
             {
                 result = COAP_405_METHOD_NOT_ALLOWED;
+            }
+            else if (tlvArray[i].type == LWM2M_TYPE_MULTIPLE_RESOURCE)
+            {
+                result = COAP_404_NOT_FOUND;
             }
             else
             {
@@ -431,21 +439,28 @@ static uint8_t prv_write_resources(uint16_t instanceId, int numData,
             }
         }   break;
         case RES_M_ACCESS_CONTROL_OWNER: {
-            if (1 == lwm2m_data_decode_int(tlvArray + i, &value))
+            if (tlvArray[i].type == LWM2M_TYPE_MULTIPLE_RESOURCE)
             {
-                if (value >= 0 && value <= 0xFFFF)
-                {
-                    accCtrlOiP->accCtrlOwner = value;
-                    result = COAP_204_CHANGED;
-                }
-                else
-                {
-                    result = COAP_406_NOT_ACCEPTABLE;
-                }
+                result = COAP_404_NOT_FOUND;
             }
             else
             {
-                result = COAP_400_BAD_REQUEST;
+                if (1 == lwm2m_data_decode_int(tlvArray + i, &value))
+                {
+                    if (value >= 0 && value <= 0xFFFF)
+                    {
+                        accCtrlOiP->accCtrlOwner = value;
+                        result = COAP_204_CHANGED;
+                    }
+                    else
+                    {
+                        result = COAP_406_NOT_ACCEPTABLE;
+                    }
+                }
+                else
+                {
+                    result = COAP_400_BAD_REQUEST;
+                }
             }
         }
             break;

@@ -253,6 +253,9 @@ static uint8_t prv_write(uint16_t instanceId,
 
     for (i = 0 ; i < numData ; i++)
     {
+        /* No multiple instance resources */
+        if (dataArray[i].type == LWM2M_TYPE_MULTIPLE_RESOURCE) return  COAP_404_NOT_FOUND;
+
         switch (dataArray[i].id)
         {
         case 1:

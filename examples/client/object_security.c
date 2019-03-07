@@ -213,6 +213,13 @@ static uint8_t prv_security_write(uint16_t instanceId,
 
     i = 0;
     do {
+        /* No multiple instance resources */
+        if (dataArray[i].type == LWM2M_TYPE_MULTIPLE_RESOURCE)
+        {
+            result = COAP_404_NOT_FOUND;
+            continue;
+        }
+
         switch (dataArray[i].id)
         {
         case LWM2M_SECURITY_URI_ID:
