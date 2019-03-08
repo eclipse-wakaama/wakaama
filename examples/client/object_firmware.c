@@ -202,10 +202,14 @@ static uint8_t prv_firmware_read(uint16_t instanceId,
 static uint8_t prv_firmware_write(uint16_t instanceId,
                                   int numData,
                                   lwm2m_data_t * dataArray,
-                                  lwm2m_object_t * objectP)
+                                  lwm2m_object_t * objectP,
+                                  lwm2m_write_type_t writeType)
 {
     int i;
     uint8_t result;
+
+    // All write types are treated the same here
+    (void)writeType;
 
     // this is a single instance object
     if (instanceId != 0)

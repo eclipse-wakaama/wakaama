@@ -252,7 +252,8 @@ uint8_t object_write(lwm2m_context_t * contextP,
                      lwm2m_uri_t * uriP,
                      lwm2m_media_type_t format,
                      uint8_t * buffer,
-                     size_t length)
+                     size_t length,
+                     bool partial)
 {
     uint8_t result = NO_ERROR;
     lwm2m_object_t * targetP;
@@ -260,6 +261,9 @@ uint8_t object_write(lwm2m_context_t * contextP,
     int size = 0;
 
     LOG_URI(uriP);
+    if (!LWM2M_URI_IS_SET_OBJECT(uriP)) return COAP_400_BAD_REQUEST;
+    if (!LWM2M_URI_IS_SET_INSTANCE(uriP)) return COAP_400_BAD_REQUEST;
+
     targetP = (lwm2m_object_t *)LWM2M_LIST_FIND(contextP->objectList, uriP->objectId);
     if (NULL == targetP)
     {
@@ -283,7 +287,19 @@ uint8_t object_write(lwm2m_context_t * contextP,
 #endif
     if (result == NO_ERROR)
     {
-        result = targetP->writeFunc(uriP->instanceId, size, dataP, targetP);
+        lwm2m_write_type_t writeType = LWM2M_WRITE_PARTIAL_UPDATE;
+        if (!partial)
+        {
+            if (LWM2M_URI_IS_SET_RESOURCE(uriP))
+            {
+                writeType = LWM2M_WRITE_REPLACE_RESOURCES;
+            }
+            else
+            {
+                writeType = LWM2M_WRITE_REPLACE_INSTANCE;
+            }
+        }
+        result = targetP->writeFunc(uriP->instanceId, size, dataP, targetP, writeType);
         lwm2m_data_free(size, dataP);
     }
 
@@ -985,7 +1001,7 @@ uint8_t object_writeInstance(lwm2m_context_t * contextP,
         return COAP_405_METHOD_NOT_ALLOWED;
     }
 
-    return targetP->writeFunc(dataP->id, dataP->value.asChildren.count, dataP->value.asChildren.array, targetP);
+    return targetP->writeFunc(dataP->id, dataP->value.asChildren.count, dataP->value.asChildren.array, targetP, LWM2M_WRITE_REPLACE_INSTANCE);
 }
 
 #endif

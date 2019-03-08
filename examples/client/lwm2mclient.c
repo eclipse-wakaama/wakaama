@@ -142,7 +142,7 @@ void handle_value_changed(lwm2m_context_t * lwm2mH,
             dataP->id = uri->resourceId;
             lwm2m_data_encode_nstring(value, valueLength, dataP);
 
-            result = object->writeFunc(uri->instanceId, 1, dataP, object);
+            result = object->writeFunc(uri->instanceId, 1, dataP, object, LWM2M_WRITE_PARTIAL_UPDATE);
             if (COAP_405_METHOD_NOT_ALLOWED == result)
             {
                 switch (uri->objectId)

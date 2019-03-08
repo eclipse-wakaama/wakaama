@@ -62,6 +62,9 @@ typedef struct acc_ctrl_oi_s
     acc_ctrl_ri_t*          accCtrlValList;
 } acc_ctrl_oi_t;
 
+static uint8_t prv_delete(uint16_t id, lwm2m_object_t * objectP);
+static uint8_t prv_create(uint16_t objInstId, int numData,
+                          lwm2m_data_t * tlvArray, lwm2m_object_t * objectP);
 
 static uint8_t prv_set_tlv(lwm2m_data_t* dataP, acc_ctrl_oi_t* accCtrlOiP)
 {
@@ -214,7 +217,8 @@ static bool prv_add_ac_val(acc_ctrl_oi_t* accCtrlOiP,
 }
 
 static uint8_t prv_write_resources(uint16_t instanceId, int numData,
-               lwm2m_data_t* tlvArray, lwm2m_object_t* objectP, bool doCreate)
+               lwm2m_data_t* tlvArray, lwm2m_object_t* objectP, bool doCreate,
+               lwm2m_write_type_t writeType)
 {
     int i;
     uint8_t result = COAP_500_INTERNAL_SERVER_ERROR;
@@ -224,6 +228,20 @@ static uint8_t prv_write_resources(uint16_t instanceId, int numData,
             lwm2m_list_find(objectP->instanceList, instanceId);
     if (NULL == accCtrlOiP)
         return COAP_404_NOT_FOUND ;
+
+    if (writeType == LWM2M_WRITE_REPLACE_INSTANCE)
+    {
+        result = prv_delete(instanceId, objectP);
+        if (result == COAP_202_DELETED)
+        {
+            result = prv_create(instanceId, numData, tlvArray, objectP);
+            if (result == COAP_201_CREATED)
+            {
+                result = COAP_204_CHANGED;
+            }
+        }
+        return result;
+    }
 
     i = 0;
     do
@@ -282,9 +300,6 @@ static uint8_t prv_write_resources(uint16_t instanceId, int numData,
             }
             else
             {
-                // MR-Write: Replace-implementation variant only
-                // see LWM2M-TS:5.4.3 (wakaama has no part-update switch)
-
                 // 1st: save accValueList!
                 acc_ctrl_ri_t* acValListSave = accCtrlOiP->accCtrlValList;
                 accCtrlOiP->accCtrlValList = NULL;
@@ -292,37 +307,111 @@ static uint8_t prv_write_resources(uint16_t instanceId, int numData,
                 int ri;
                 lwm2m_data_t* subTlvArray = tlvArray[i].value.asChildren.array;
 
-                if (tlvArray[i].value.asChildren.count == 0)
+                if (writeType == LWM2M_WRITE_PARTIAL_UPDATE)
                 {
                     result = COAP_204_CHANGED;
-                }
-                else if (subTlvArray==NULL)
-                {
-                    result = COAP_400_BAD_REQUEST;
+
+                    if (tlvArray[i].value.asChildren.count == 0)
+                    {
+                        acValListSave = NULL;
+                        accCtrlOiP->accCtrlValList = acValListSave;
+                    }
+                    else if (subTlvArray==NULL)
+                    {
+                        result = COAP_400_BAD_REQUEST;
+                    }
+                    else
+                    {
+                        // Duplicate original list
+                        acc_ctrl_ri_t* acValListElement;
+                        for (acValListElement = acValListSave;
+                             acValListElement != NULL;
+                             acValListElement = acValListElement->next)
+                        {
+                            if (!prv_add_ac_val(accCtrlOiP,
+                                                acValListElement->resInstId,
+                                                acValListElement->accCtrlValue))
+                            {
+                                result = COAP_500_INTERNAL_SERVER_ERROR;
+                                break;
+                            }
+                        }
+
+                        if (result == COAP_204_CHANGED)
+                        {
+                            // Add or replace based on new values
+                            for (ri=0; ri < tlvArray[i].value.asChildren.count; ri++)
+                            {
+                                if (1 != lwm2m_data_decode_int(&subTlvArray[ri], &value))
+                                {
+                                    result = COAP_400_BAD_REQUEST;
+                                    break;
+                                }
+                                else if (value < 0 || value > 0xFFFF)
+                                {
+                                    result = COAP_406_NOT_ACCEPTABLE;
+                                    break;
+                                }
+                                else
+                                {
+                                    for (acValListElement = accCtrlOiP->accCtrlValList;
+                                         acValListElement != NULL;
+                                         acValListElement = acValListElement->next)
+                                    {
+                                        if (subTlvArray[ri].id == acValListElement->resInstId)
+                                        {
+                                            acValListElement->accCtrlValue = (uint16_t)value;
+                                            break;
+                                        }
+                                    }
+
+                                    if (acValListElement == NULL &&
+                                        !prv_add_ac_val(accCtrlOiP,
+                                                        subTlvArray[ri].id,
+                                                        (uint16_t)value))
+                                    {
+                                        result = COAP_500_INTERNAL_SERVER_ERROR;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
                 else
                 {
-                    for (ri=0; ri < tlvArray[i].value.asChildren.count; ri++)
+                    if (tlvArray[i].value.asChildren.count == 0)
                     {
-                        if (1 != lwm2m_data_decode_int(&subTlvArray[ri], &value))
+                        result = COAP_204_CHANGED;
+                    }
+                    else if (subTlvArray==NULL)
+                    {
+                        result = COAP_400_BAD_REQUEST;
+                    }
+                    else
+                    {
+                        for (ri=0; ri < tlvArray[i].value.asChildren.count; ri++)
                         {
-                            result = COAP_400_BAD_REQUEST;
-                            break;
-                        }
-                        else if (value < 0 || value > 0xFFFF)
-                        {
-                            result = COAP_406_NOT_ACCEPTABLE;
-                            break;
-                        }
-                        else if (!prv_add_ac_val(accCtrlOiP, subTlvArray[ri].id,
-                                                             (uint16_t)value))
-                        {
-                            result = COAP_500_INTERNAL_SERVER_ERROR;
-                            break;
-                        }
-                        else
-                        {
-                            result = COAP_204_CHANGED;
+                            if (1 != lwm2m_data_decode_int(&subTlvArray[ri], &value))
+                            {
+                                result = COAP_400_BAD_REQUEST;
+                                break;
+                            }
+                            else if (value < 0 || value > 0xFFFF)
+                            {
+                                result = COAP_406_NOT_ACCEPTABLE;
+                                break;
+                            }
+                            else if (!prv_add_ac_val(accCtrlOiP, subTlvArray[ri].id,
+                                                                 (uint16_t)value))
+                            {
+                                result = COAP_500_INTERNAL_SERVER_ERROR;
+                                break;
+                            }
+                            else
+                            {
+                                result = COAP_204_CHANGED;
+                            }
                         }
                     }
                 }
@@ -370,9 +459,10 @@ static uint8_t prv_write_resources(uint16_t instanceId, int numData,
 }
 
 static uint8_t prv_write(uint16_t instanceId, int numData,
-                         lwm2m_data_t* tlvArray, lwm2m_object_t* objectP)
+                         lwm2m_data_t* tlvArray, lwm2m_object_t* objectP,
+                         lwm2m_write_type_t writeType)
 {
-    return prv_write_resources(instanceId, numData, tlvArray, objectP, false);
+    return prv_write_resources(instanceId, numData, tlvArray, objectP, false, writeType);
 }
 
 static uint8_t prv_delete(uint16_t id, lwm2m_object_t * objectP)
@@ -402,7 +492,7 @@ static uint8_t prv_create(uint16_t objInstId, int numData,
     targetP->objInstId    = objInstId;
     objectP->instanceList = LWM2M_LIST_ADD(objectP->instanceList, targetP);
 
-    result = prv_write_resources(objInstId, numData, tlvArray, objectP, true);
+    result = prv_write_resources(objInstId, numData, tlvArray, objectP, true, LWM2M_WRITE_REPLACE_RESOURCES);
 
     if (result != COAP_204_CHANGED)
     {

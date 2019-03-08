@@ -294,7 +294,7 @@ uint8_t dm_handleRequest(lwm2m_context_t * contextP,
             }
             else if (!LWM2M_URI_IS_SET_RESOURCE(uriP))
             {
-                result = object_write(contextP, uriP, format, message->payload, message->payload_len);
+                result = object_write(contextP, uriP, format, message->payload, message->payload_len, true);
             }
             else
             {
@@ -320,7 +320,7 @@ uint8_t dm_handleRequest(lwm2m_context_t * contextP,
             }
             else if (LWM2M_URI_IS_SET_INSTANCE(uriP))
             {
-                result = object_write(contextP, uriP, format, message->payload, message->payload_len);
+                result = object_write(contextP, uriP, format, message->payload, message->payload_len, false);
             }
             else
             {

@@ -402,7 +402,7 @@ uint8_t bootstrap_handleCommand(lwm2m_context_t * contextP,
                 }
                 else
                 {
-                    result = object_write(contextP, uriP, format, message->payload, message->payload_len);
+                    result = object_write(contextP, uriP, format, message->payload, message->payload_len, false);
                     if (uriP->objectId == LWM2M_SECURITY_OBJECT_ID
                      && result == COAP_204_CHANGED)
                     {
