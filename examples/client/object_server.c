@@ -75,6 +75,13 @@ typedef struct _server_instance_
 #endif
 } server_instance_t;
 
+static uint8_t prv_server_delete(uint16_t id,
+                                 lwm2m_object_t * objectP);
+static uint8_t prv_server_create(uint16_t instanceId,
+                                 int numData,
+                                 lwm2m_data_t * dataArray,
+                                 lwm2m_object_t * objectP);
+
 static uint8_t prv_get_value(lwm2m_data_t * dataP,
                              server_instance_t * targetP)
 {
@@ -630,7 +637,8 @@ static uint8_t prv_set_int_value(lwm2m_data_t * dataArray, uint32_t * data) {
 static uint8_t prv_server_write(uint16_t instanceId,
                                 int numData,
                                 lwm2m_data_t * dataArray,
-                                lwm2m_object_t * objectP)
+                                lwm2m_object_t * objectP,
+                                lwm2m_write_type_t writeType)
 {
     server_instance_t * targetP;
     int i;
@@ -640,6 +648,20 @@ static uint8_t prv_server_write(uint16_t instanceId,
     if (NULL == targetP)
     {
         return COAP_404_NOT_FOUND;
+    }
+
+    if (writeType == LWM2M_WRITE_REPLACE_INSTANCE)
+    {
+        result = prv_server_delete(instanceId, objectP);
+        if (result == COAP_202_DELETED)
+        {
+            result = prv_server_create(instanceId, numData, dataArray, objectP);
+            if (result == COAP_201_CREATED)
+            {
+                result = COAP_204_CHANGED;
+            }
+        }
+        return result;
     }
 
     i = 0;
@@ -961,7 +983,7 @@ static uint8_t prv_server_create(uint16_t instanceId,
 #endif
     objectP->instanceList = LWM2M_LIST_ADD(objectP->instanceList, serverInstance);
 
-    result = prv_server_write(instanceId, numData, dataArray, objectP);
+    result = prv_server_write(instanceId, numData, dataArray, objectP, LWM2M_WRITE_REPLACE_RESOURCES);
 
     if (result != COAP_204_CHANGED)
     {
