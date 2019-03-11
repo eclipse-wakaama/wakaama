@@ -651,6 +651,26 @@ static void prv_create_client(char * buffer,
     }
    /* End Client dependent part*/
 
+    if (LWM2M_URI_IS_SET_INSTANCE(&uri))
+    {
+        /* URI is only allowed to have the object ID. Wrap the instance in an
+         * object instance to get it to the client. */
+        int count = size;
+        lwm2m_data_t * subDataP = dataP;
+        size = 1;
+        dataP = lwm2m_data_new(size);
+        if (dataP == NULL)
+        {
+            fprintf(stdout, "Allocation error !");
+            lwm2m_data_free(count, subDataP);
+            return;
+        }
+        lwm2m_data_include(subDataP, count, dataP);
+        dataP->type = LWM2M_TYPE_OBJECT_INSTANCE;
+        dataP->id = uri.instanceId;
+        uri.instanceId = LWM2M_MAX_ID;
+    }
+
     //Create
     result = lwm2m_dm_create(lwm2mH, clientId, &uri, size, dataP, prv_result_callback, NULL);
     lwm2m_data_free(size, dataP);
