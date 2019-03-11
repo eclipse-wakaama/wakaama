@@ -620,6 +620,7 @@ static void prv_create_client(char * buffer,
 
     result = lwm2m_stringToUri(buffer, end - buffer, &uri);
     if (result == 0) goto syntax_error;
+    if (LWM2M_URI_IS_SET_RESOURCE(&uri)) goto syntax_error;
 
     //Get Data to Post
     buffer = get_next_arg(end, &end);
@@ -629,9 +630,29 @@ static void prv_create_client(char * buffer,
 
    // TLV
 
+#ifdef LWM2M_SUPPORT_SENML_JSON
+    if (size <= 0)
+    {
+        size = lwm2m_data_parse(&uri,
+                                (uint8_t *)buffer,
+                                end - buffer,
+                                LWM2M_CONTENT_SENML_JSON,
+                                &dataP);
+    }
+#endif
+#ifdef LWM2M_SUPPORT_JSON
+    if (size <= 0)
+    {
+        size = lwm2m_data_parse(&uri,
+                                (uint8_t *)buffer,
+                                end - buffer,
+                                LWM2M_CONTENT_JSON,
+                                &dataP);
+    }
+#endif
    /* Client dependent part   */
 
-    if (uri.objectId == 31024)
+    if (size <= 0 && uri.objectId == 31024)
     {
         if (1 != sscanf(buffer, "%"PRId64, &value))
         {
@@ -919,7 +940,7 @@ int main(int argc, char *argv[])
             {"create", "Create an Object instance.", " create CLIENT# URI DATA\r\n"
                                             "   CLIENT#: client number as returned by command 'list'\r\n"
                                             "   URI: uri to which create the Object Instance such as /1024, /1024/45 \r\n"
-                                            "   DATA: data to initialize the new Object Instance (0-255 for object 31024) \r\n"
+                                            "   DATA: data to initialize the new Object Instance (0-255 for object 31024 or any supported JSON format) \r\n"
                                             "Result will be displayed asynchronously.", prv_create_client, NULL},
             {"observe", "Observe from a client.", " observe CLIENT# URI\r\n"
                                             "   CLIENT#: client number as returned by command 'list'\r\n"
