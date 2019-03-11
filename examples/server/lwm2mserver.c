@@ -607,9 +607,8 @@ static void prv_create_client(char * buffer,
     char * end = NULL;
     int result;
     int64_t value;
-    uint8_t * temp_buffer = NULL;
-    int temp_length = 0;
-    lwm2m_media_type_t format = LWM2M_CONTENT_TEXT;
+    lwm2m_data_t * dataP = NULL;
+    int size = 0;
 
     //Get Client ID
     result = prv_read_id(buffer, &clientId);
@@ -634,15 +633,14 @@ static void prv_create_client(char * buffer,
 
     if (uri.objectId == 31024)
     {
-        lwm2m_data_t * dataP;
-
         if (1 != sscanf(buffer, "%"PRId64, &value))
         {
             fprintf(stdout, "Invalid value !");
             return;
         }
 
-        dataP = lwm2m_data_new(1);
+        size = 1;
+        dataP = lwm2m_data_new(size);
         if (dataP == NULL)
         {
             fprintf(stdout, "Allocation error !");
@@ -650,14 +648,12 @@ static void prv_create_client(char * buffer,
         }
         lwm2m_data_encode_int(value, dataP);
         dataP->id = 1;
-
-        format = LWM2M_CONTENT_TLV;
-        temp_length = lwm2m_data_serialize(NULL, 1, dataP, &format, &temp_buffer);
     }
    /* End Client dependent part*/
 
     //Create
-    result = lwm2m_dm_create(lwm2mH, clientId, &uri, format, temp_buffer, temp_length, prv_result_callback, NULL);
+    result = lwm2m_dm_create(lwm2mH, clientId, &uri, size, dataP, prv_result_callback, NULL);
+    lwm2m_data_free(size, dataP);
 
     if (result == 0)
     {

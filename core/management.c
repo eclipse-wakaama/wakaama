@@ -211,27 +211,33 @@ uint8_t dm_handleRequest(lwm2m_context_t * contextP,
                 result = object_readData(contextP, uriP, &size, &dataP);
                 if (COAP_205_CONTENT == result)
                 {
-                    result = observe_handleRequest(contextP, uriP, serverP, size, dataP, message, response);
+                    result = utils_getResponseFormat(message->accept_num,
+                                                     message->accept,
+                                                     size,
+                                                     dataP,
+                                                     &format);
                     if (COAP_205_CONTENT == result)
                     {
-                        if (IS_OPTION(message, COAP_OPTION_ACCEPT))
+                        coap_set_header_content_type(response, format);
+                        result = observe_handleRequest(contextP,
+                                                       uriP,
+                                                       serverP,
+                                                       size,
+                                                       dataP,
+                                                       message,
+                                                       response);
+                        if (COAP_205_CONTENT == result)
                         {
-                            format = utils_convertMediaType(message->accept[0]);
-                        }
-                        else
-                        {
-                            format = LWM2M_CONTENT_TLV;
-                        }
-
-                        res = lwm2m_data_serialize(uriP, size, dataP, &format, &buffer);
-                        if (res < 0)
-                        {
-                            result = COAP_500_INTERNAL_SERVER_ERROR;
-                        }
-                        else
-                        {
-                            length = (size_t)res;
-                            LOG_ARG("Observe Request[/%d/%d/%d]: %.*s\n", uriP->objectId, uriP->instanceId, uriP->resourceId, length, buffer);
+                            res = lwm2m_data_serialize(uriP, size, dataP, &format, &buffer);
+                            if (res < 0)
+                            {
+                                result = COAP_500_INTERNAL_SERVER_ERROR;
+                            }
+                            else
+                            {
+                                length = (size_t)res;
+                                LOG_ARG("Observe Request[/%d/%d/%d]: %.*s\n", uriP->objectId, uriP->instanceId, uriP->resourceId, length, buffer);
+                            }
                         }
                     }
                     lwm2m_data_free(size, dataP);
@@ -246,12 +252,13 @@ uint8_t dm_handleRequest(lwm2m_context_t * contextP,
             }
             else
             {
-                if (IS_OPTION(message, COAP_OPTION_ACCEPT))
-                {
-                    format = utils_convertMediaType(message->accept[0]);
-                }
-
-                result = object_read(contextP, uriP, &format, &buffer, &length);
+                result = object_read(contextP,
+                                     uriP,
+                                     message->accept_num,
+                                     message->accept,
+                                     &format,
+                                     &buffer,
+                                     &length);
             }
             if (COAP_205_CONTENT == result)
             {
@@ -560,20 +567,41 @@ int lwm2m_dm_execute(lwm2m_context_t * contextP,
 int lwm2m_dm_create(lwm2m_context_t * contextP,
                     uint16_t clientID,
                     lwm2m_uri_t * uriP,
-                    lwm2m_media_type_t format,
-                    uint8_t * buffer,
-                    int length,
+                    int size,
+                    lwm2m_data_t * dataP,
                     lwm2m_result_callback_t callback,
                     void * userData)
 {
-    LOG_ARG("clientID: %d, format: %s, length: %d", clientID, STR_MEDIA_TYPE(format), length);
+    uint8_t * buffer;
+    int length;
+    lwm2m_client_t * clientP;
+    lwm2m_media_type_t format;
+
+    LOG_ARG("clientID: %d, size: %d", clientID, size);
     LOG_URI(uriP);
 
     if (LWM2M_URI_IS_SET_INSTANCE(uriP)
-     || length == 0)
+     || size == 0)
     {
         return COAP_400_BAD_REQUEST;
     }
+
+    clientP = (lwm2m_client_t *)LWM2M_LIST_FIND(contextP->clientList, clientID);
+    if (clientP == NULL) return COAP_404_NOT_FOUND;
+
+    format = clientP->format;
+#ifdef LWM2M_SUPPORT_TLV
+    /* TODO: JSON formats currently require the object instance to be specified.
+     * Use TLV instead until that is fixed. */
+    if (format != LWM2M_CONTENT_TLV
+     && (size > 1 || dataP[0].type != LWM2M_TYPE_OBJECT_INSTANCE))
+    {
+        format = LWM2M_CONTENT_TLV;
+    }
+#endif
+    length = lwm2m_data_serialize(uriP, size, dataP, &format, &buffer);
+
+    if (length <= 0) return COAP_400_BAD_REQUEST;
 
     return prv_makeOperation(contextP, clientID, uriP,
                               COAP_POST,
