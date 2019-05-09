@@ -161,6 +161,7 @@ bool lwm2m_session_is_equal(void * session1, void * session2, void * userData);
 #define COAP_400_BAD_REQUEST            (uint8_t)0x80
 #define COAP_401_UNAUTHORIZED           (uint8_t)0x81
 #define COAP_402_BAD_OPTION             (uint8_t)0x82
+#define COAP_403_FORBIDDEN              (uint8_t)0x83
 #define COAP_404_NOT_FOUND              (uint8_t)0x84
 #define COAP_405_METHOD_NOT_ALLOWED     (uint8_t)0x85
 #define COAP_406_NOT_ACCEPTABLE         (uint8_t)0x86
