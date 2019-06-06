@@ -19,7 +19,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdarg.h>
-#include <sys/time.h>
+#include <time.h>
 
 #ifndef LWM2M_MEMORY_TRACE
 
@@ -49,14 +49,7 @@ int lwm2m_strncmp(const char * s1,
 
 time_t lwm2m_gettime(void)
 {
-    struct timeval tv;
-
-    if (0 != gettimeofday(&tv, NULL))
-    {
-        return -1;
-    }
-
-    return tv.tv_sec;
+    return time(NULL);
 }
 
 void lwm2m_printf(const char * format, ...)
