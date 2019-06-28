@@ -13,6 +13,7 @@
  * Contributors:
  *    Bosch Software Innovations GmbH - Please refer to git log
  *    Pascal Rieux - Please refer to git log
+ *    Scott Bertin, AMETEK, Inc. - Please refer to git log
  *    
  *******************************************************************************/
 
@@ -88,84 +89,163 @@ typedef struct
 static uint8_t prv_set_value(lwm2m_data_t * dataP,
                              conn_m_data_t * connDataP)
 {
+    lwm2m_data_t * subTlvP;
+    size_t count;
+    size_t i;
+
     switch (dataP->id)
     {
     case RES_M_NETWORK_BEARER:
+        if (dataP->type == LWM2M_TYPE_MULTIPLE_RESOURCE) return COAP_404_NOT_FOUND;
         lwm2m_data_encode_int(VALUE_NETWORK_BEARER_GSM, dataP);
         return COAP_205_CONTENT;
 
     case RES_M_AVL_NETWORK_BEARER:
     {
-        int riCnt = 1;   // reduced to 1 instance to fit in one block size
-        lwm2m_data_t * subTlvP;
-        subTlvP = lwm2m_data_new(riCnt);
-        subTlvP[0].id    = 0;
-        lwm2m_data_encode_int(VALUE_AVL_NETWORK_BEARER_1, subTlvP);
-        lwm2m_data_encode_instances(subTlvP, riCnt, dataP);
+        if (dataP->type == LWM2M_TYPE_MULTIPLE_RESOURCE)
+        {
+            count = dataP->value.asChildren.count;
+            subTlvP = dataP->value.asChildren.array;
+        }
+        else
+        {
+            count = 1; // reduced to 1 instance to fit in one block size
+            subTlvP = lwm2m_data_new(count);
+            for (i = 0; i < count; i++) subTlvP[i].id = i;
+            lwm2m_data_encode_instances(subTlvP, count, dataP);
+        }
+
+        for (i = 0; i < count; i++)
+        {
+            switch (subTlvP[i].id)
+            {
+            case 0:
+                lwm2m_data_encode_int(VALUE_AVL_NETWORK_BEARER_1, subTlvP + i);
+                break;
+            default:
+                return COAP_404_NOT_FOUND;
+            }
+        }
         return COAP_205_CONTENT ;
     }
 
     case RES_M_RADIO_SIGNAL_STRENGTH: //s-int
+        if (dataP->type == LWM2M_TYPE_MULTIPLE_RESOURCE) return COAP_404_NOT_FOUND;
         lwm2m_data_encode_int(connDataP->signalStrength, dataP);
         return COAP_205_CONTENT;
 
     case RES_O_LINK_QUALITY: //s-int
+        if (dataP->type == LWM2M_TYPE_MULTIPLE_RESOURCE) return COAP_404_NOT_FOUND;
         lwm2m_data_encode_int(connDataP->linkQuality, dataP);
         return COAP_205_CONTENT ;
 
     case RES_M_IP_ADDRESSES:
     {
-        int ri, riCnt = 1;   // reduced to 1 instance to fit in one block size
-        lwm2m_data_t* subTlvP = lwm2m_data_new(riCnt);
-        for (ri = 0; ri < riCnt; ri++)
+        if (dataP->type == LWM2M_TYPE_MULTIPLE_RESOURCE)
         {
-            subTlvP[ri].id = ri;
-            lwm2m_data_encode_string(connDataP->ipAddresses[ri], subTlvP + ri);
+            count = dataP->value.asChildren.count;
+            subTlvP = dataP->value.asChildren.array;
         }
-        lwm2m_data_encode_instances(subTlvP, riCnt, dataP);
+        else
+        {
+            count = 1; // reduced to 1 instance to fit in one block size
+            subTlvP = lwm2m_data_new(count);
+            for (i = 0; i < count; i++) subTlvP[i].id = i;
+            lwm2m_data_encode_instances(subTlvP, count, dataP);
+        }
+
+        for (i = 0; i < count; i++)
+        {
+            switch (subTlvP[i].id)
+            {
+            case 0:
+                lwm2m_data_encode_string(connDataP->ipAddresses[i], subTlvP + i);
+                break;
+            default:
+                return COAP_404_NOT_FOUND;
+            }
+        }
         return COAP_205_CONTENT ;
     }
         break;
 
     case RES_O_ROUTER_IP_ADDRESS:
     {
-        int ri, riCnt = 1;   // reduced to 1 instance to fit in one block size
-        lwm2m_data_t* subTlvP = lwm2m_data_new(riCnt);
-        for (ri=0; ri<riCnt; ri++)
+        if (dataP->type == LWM2M_TYPE_MULTIPLE_RESOURCE)
         {
-            subTlvP[ri].id = ri;
-            lwm2m_data_encode_string(connDataP->routerIpAddresses[ri], subTlvP + ri);
+            count = dataP->value.asChildren.count;
+            subTlvP = dataP->value.asChildren.array;
         }
-        lwm2m_data_encode_instances(subTlvP, riCnt, dataP);
+        else
+        {
+            count = 1; // reduced to 1 instance to fit in one block size
+            subTlvP = lwm2m_data_new(count);
+            for (i = 0; i < count; i++) subTlvP[i].id = i;
+            lwm2m_data_encode_instances(subTlvP, count, dataP);
+        }
+
+        for (i = 0; i < count; i++)
+        {
+            switch (subTlvP[i].id)
+            {
+            case 0:
+                lwm2m_data_encode_string(connDataP->routerIpAddresses[i], subTlvP + i);
+                break;
+            default:
+                return COAP_404_NOT_FOUND;
+            }
+        }
         return COAP_205_CONTENT ;
     }
         break;
 
     case RES_O_LINK_UTILIZATION:
+        if (dataP->type == LWM2M_TYPE_MULTIPLE_RESOURCE) return COAP_404_NOT_FOUND;
         lwm2m_data_encode_int(connDataP->linkUtilization, dataP);
         return COAP_205_CONTENT;
 
     case RES_O_APN:
     {
-        int riCnt = 1;   // reduced to 1 instance to fit in one block size
-        lwm2m_data_t * subTlvP;
-        subTlvP = lwm2m_data_new(riCnt);
-        subTlvP[0].id     = 0;
-        lwm2m_data_encode_string(VALUE_APN_1, subTlvP);
-        lwm2m_data_encode_instances(subTlvP, riCnt, dataP);
+        if (dataP->type == LWM2M_TYPE_MULTIPLE_RESOURCE)
+        {
+            count = dataP->value.asChildren.count;
+            subTlvP = dataP->value.asChildren.array;
+        }
+        else
+        {
+            count = 1; // reduced to 1 instance to fit in one block size
+            subTlvP = lwm2m_data_new(count);
+            for (i = 0; i < count; i++) subTlvP[i].id = i;
+            lwm2m_data_encode_instances(subTlvP, count, dataP);
+        }
+
+        for (i = 0; i < count; i++)
+        {
+            switch (subTlvP[i].id)
+            {
+            case 0:
+                lwm2m_data_encode_string(VALUE_APN_1, subTlvP + i);
+                break;
+            default:
+                return COAP_404_NOT_FOUND;
+            }
+        }
         return COAP_205_CONTENT;
     }
         break;
 
     case RES_O_CELL_ID:
+        if (dataP->type == LWM2M_TYPE_MULTIPLE_RESOURCE) return COAP_404_NOT_FOUND;
         lwm2m_data_encode_int(connDataP->cellId, dataP);
         return COAP_205_CONTENT ;
 
     case RES_O_SMNC:
+        if (dataP->type == LWM2M_TYPE_MULTIPLE_RESOURCE) return COAP_404_NOT_FOUND;
         lwm2m_data_encode_int(VALUE_SMNC, dataP);
         return COAP_205_CONTENT ;
 
     case RES_O_SMCC:
+        if (dataP->type == LWM2M_TYPE_MULTIPLE_RESOURCE) return COAP_404_NOT_FOUND;
         lwm2m_data_encode_int(VALUE_SMCC, dataP);
         return COAP_205_CONTENT ;
 

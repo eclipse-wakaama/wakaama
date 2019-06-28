@@ -14,6 +14,7 @@
  * Contributors:
  *    Bosch Software Innovations GmbH - Please refer to git log
  *    Pascal Rieux - Please refer to git log
+ *    Scott Bertin, AMETEK, Inc. - Please refer to git log
  *    
  ******************************************************************************/
 /*! \file
@@ -65,11 +66,12 @@
 #define RES_O_SPEED        6
 
 //-----  3GPP TS 23.032 V11.0.0(2012-09) ---------
-#define HORIZONTAL_VELOCITY                  0  // for Octet-1 upper half(..<<4)
-#define HORIZONTAL_VELOCITY_VERTICAL         1  // set vertical direction bit!
-#define HORIZONTAL_VELOCITY_WITH_UNCERTAINTY 2
+#define HORIZONTAL_VELOCITY                           0  // for Octet-1 upper half(..<<4)
+#define HORIZONTAL_VELOCITY_VERTICAL                  1  // set vertical direction bit!
+#define HORIZONTAL_VELOCITY_WITH_UNCERTAINTY          2
+#define HORIZONTAL_VELOCITY_VERTICAL_WITH_UNCERTAINTY 3
 
-#define VELOCITY_OCTETS                      5  // for HORIZONTAL_VELOCITY_WITH_UNCERTAINTY 
+#define VELOCITY_OCTETS                               7  // for HORIZONTAL_VELOCITY_VERTICAL_WITH_UNCERTAINTY
 
 typedef struct
 {
@@ -105,8 +107,39 @@ static uint8_t prv_res2tlv(lwm2m_data_t* dataP,
         lwm2m_data_encode_float(locDataP->radius, dataP);
         break;
     case RES_O_VELOCITY:
-        lwm2m_data_encode_string((const char*)locDataP->velocity, dataP);
+    {
+        size_t length;
+        switch( locDataP->velocity[0] >> 4 )
+        {
+           case HORIZONTAL_VELOCITY:
+           {
+               length = 4;
+              break;
+           }
+           case HORIZONTAL_VELOCITY_VERTICAL:
+           {
+               length = 5;
+              break;
+           }
+           case HORIZONTAL_VELOCITY_WITH_UNCERTAINTY:
+           {
+               length = 5;
+              break;
+           }
+           case HORIZONTAL_VELOCITY_VERTICAL_WITH_UNCERTAINTY:
+           {
+               length = 7;
+              break;
+           }
+           default:
+           {
+               length = 0;
+               break;
+           }
+        }
+        lwm2m_data_encode_opaque(locDataP->velocity, length, dataP);
         break;
+    }
     case RES_M_TIMESTAMP:
         lwm2m_data_encode_int(locDataP->timestamp, dataP);
         break;
@@ -171,7 +204,14 @@ static uint8_t prv_location_read(uint16_t objInstId,
     
     for (i = 0 ; i < *numDataP ; i++)
     {
-        result = prv_res2tlv ((*tlvArrayP)+i, locDataP);
+        if ((*tlvArrayP)[i].type == LWM2M_TYPE_MULTIPLE_RESOURCE)
+        {
+            result = COAP_404_NOT_FOUND;
+        }
+        else
+        {
+            result = prv_res2tlv ((*tlvArrayP)+i, locDataP);
+        }
         if (result!=COAP_205_CONTENT) break;
     }
     
@@ -208,7 +248,7 @@ void location_setVelocity(lwm2m_object_t* locationObj,
     //-------------------------------------------------------------------- JH --
     location_data_t* pData = locationObj->userData;
     pData->velocity[0] = HORIZONTAL_VELOCITY_WITH_UNCERTAINTY << 4;
-    pData->velocity[0] = (bearing & 0x100) >> 8;
+    pData->velocity[0] |= (bearing & 0x100) >> 8;
     pData->velocity[1] = (bearing & 0x0FF);
     pData->velocity[2] = horizontalSpeed >> 8;
     pData->velocity[3] = horizontalSpeed & 0xff;

@@ -299,13 +299,25 @@ uint8_t dm_handleRequest(lwm2m_context_t * contextP,
                     lwm2m_update_registration(contextP, 0, true);
                 }
             }
-            else if (!LWM2M_URI_IS_SET_RESOURCE(uriP))
+            else if (!IS_OPTION(message, COAP_OPTION_CONTENT_TYPE)
+                  || format == LWM2M_CONTENT_TEXT)
             {
-                result = object_write(contextP, uriP, format, message->payload, message->payload_len);
+                if (!LWM2M_URI_IS_SET_RESOURCE(uriP)
+#ifndef LWM2M_VERSION_1_0
+                 || LWM2M_URI_IS_SET_RESOURCE_INSTANCE(uriP)
+#endif
+                   )
+                {
+                    result = COAP_400_BAD_REQUEST;
+                }
+                else
+                {
+                    result = object_execute(contextP, uriP, message->payload, message->payload_len);
+                }
             }
             else
             {
-                result = object_execute(contextP, uriP, message->payload, message->payload_len);
+                result = object_write(contextP, uriP, format, message->payload, message->payload_len, true);
             }
         }
         break;
@@ -327,7 +339,7 @@ uint8_t dm_handleRequest(lwm2m_context_t * contextP,
             }
             else if (LWM2M_URI_IS_SET_INSTANCE(uriP))
             {
-                result = object_write(contextP, uriP, format, message->payload, message->payload_len);
+                result = object_write(contextP, uriP, format, message->payload, message->payload_len, false);
             }
             else
             {
@@ -515,9 +527,12 @@ int lwm2m_dm_write(lwm2m_context_t * contextP,
                    lwm2m_media_type_t format,
                    uint8_t * buffer,
                    int length,
+                   bool partialUpdate,
                    lwm2m_result_callback_t callback,
                    void * userData)
 {
+    coap_method_t method = partialUpdate ? COAP_POST : COAP_PUT;
+
     LOG_ARG("clientID: %d, format: %s, length: %d", clientID, STR_MEDIA_TYPE(format), length);
     LOG_URI(uriP);
     if (!LWM2M_URI_IS_SET_INSTANCE(uriP)
@@ -526,20 +541,10 @@ int lwm2m_dm_write(lwm2m_context_t * contextP,
         return COAP_400_BAD_REQUEST;
     }
 
-    if (LWM2M_URI_IS_SET_RESOURCE(uriP))
-    {
-        return prv_makeOperation(contextP, clientID, uriP,
-                                  COAP_PUT,
-                                  format, buffer, length,
-                                  callback, userData);
-    }
-    else
-    {
-        return prv_makeOperation(contextP, clientID, uriP,
-                                  COAP_POST,
-                                  format, buffer, length,
-                                  callback, userData);
-    }
+    return prv_makeOperation(contextP, clientID, uriP,
+                             method,
+                             format, buffer, length,
+                             callback, userData);
 }
 
 int lwm2m_dm_execute(lwm2m_context_t * contextP,

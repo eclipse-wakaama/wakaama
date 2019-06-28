@@ -626,7 +626,8 @@ void lwm2m_data_include(lwm2m_data_t * subDataP,
         dataP->type = LWM2M_TYPE_OBJECT;
         break;
     default:
-        return;
+        dataP->type = LWM2M_TYPE_MULTIPLE_RESOURCE;
+        break;
     }
     dataP->value.asChildren.count = count;
     dataP->value.asChildren.array = subDataP;
@@ -655,13 +656,13 @@ int lwm2m_data_parse(lwm2m_uri_t * uriP,
     {
     case LWM2M_CONTENT_TEXT:
         if (!LWM2M_URI_IS_SET_RESOURCE(uriP)) return 0;
-#ifndef LWM2M_VERSION_1_0
-		// TODO: Support resource instance
-        if (LWM2M_URI_IS_SET_RESOURCE_INSTANCE(uriP)) return 0;
-#endif
         *dataP = lwm2m_data_new(1);
         if (*dataP == NULL) return 0;
         (*dataP)->id = uriP->resourceId;
+#ifndef LWM2M_VERSION_1_0
+        if (LWM2M_URI_IS_SET_RESOURCE_INSTANCE(uriP))
+            (*dataP)->id = uriP->resourceInstanceId;
+#endif
         (*dataP)->type = LWM2M_TYPE_STRING;
         res = prv_setBuffer(*dataP, buffer, bufferLen);
         if (res == 0)
@@ -673,13 +674,13 @@ int lwm2m_data_parse(lwm2m_uri_t * uriP,
 
     case LWM2M_CONTENT_OPAQUE:
         if (!LWM2M_URI_IS_SET_RESOURCE(uriP)) return 0;
-#ifndef LWM2M_VERSION_1_0
-		// TODO: Support resource instance
-        if (LWM2M_URI_IS_SET_RESOURCE_INSTANCE(uriP)) return 0;
-#endif
         *dataP = lwm2m_data_new(1);
         if (*dataP == NULL) return 0;
         (*dataP)->id = uriP->resourceId;
+#ifndef LWM2M_VERSION_1_0
+        if (LWM2M_URI_IS_SET_RESOURCE_INSTANCE(uriP))
+            (*dataP)->id = uriP->resourceInstanceId;
+#endif
         (*dataP)->type = LWM2M_TYPE_OPAQUE;
         res = prv_setBuffer(*dataP, buffer, bufferLen);
         if (res == 0)

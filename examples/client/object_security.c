@@ -15,6 +15,7 @@
  *    Bosch Software Innovations GmbH - Please refer to git log
  *    Pascal Rieux - Please refer to git log
  *    Ville Skyttä - Please refer to git log
+ *    Scott Bertin, AMETEK, Inc. - Please refer to git log
  *    
  *******************************************************************************/
 
@@ -175,7 +176,14 @@ static uint8_t prv_security_read(uint16_t instanceId,
     i = 0;
     do
     {
-        result = prv_get_value((*dataArrayP) + i, targetP);
+        if ((*dataArrayP)[i].type == LWM2M_TYPE_MULTIPLE_RESOURCE)
+        {
+            result = COAP_404_NOT_FOUND;
+        }
+        else
+        {
+            result = prv_get_value((*dataArrayP) + i, targetP);
+        }
         i++;
     } while (i < *numDataP && result == COAP_205_CONTENT);
 
@@ -187,11 +195,15 @@ static uint8_t prv_security_read(uint16_t instanceId,
 static uint8_t prv_security_write(uint16_t instanceId,
                                   int numData,
                                   lwm2m_data_t * dataArray,
-                                  lwm2m_object_t * objectP)
+                                  lwm2m_object_t * objectP,
+                                  lwm2m_write_type_t writeType)
 {
     security_instance_t * targetP;
     int i;
     uint8_t result = COAP_204_CHANGED;
+
+    /* All write types are ignored. They don't apply during bootstrap. */
+    (void)writeType;
 
     targetP = (security_instance_t *)lwm2m_list_find(objectP->instanceList, instanceId);
     if (NULL == targetP)
@@ -201,6 +213,13 @@ static uint8_t prv_security_write(uint16_t instanceId,
 
     i = 0;
     do {
+        /* No multiple instance resources */
+        if (dataArray[i].type == LWM2M_TYPE_MULTIPLE_RESOURCE)
+        {
+            result = COAP_404_NOT_FOUND;
+            continue;
+        }
+
         switch (dataArray[i].id)
         {
         case LWM2M_SECURITY_URI_ID:
@@ -429,7 +448,7 @@ static uint8_t prv_security_create(uint16_t instanceId,
     targetP->instanceId = instanceId;
     objectP->instanceList = LWM2M_LIST_ADD(objectP->instanceList, targetP);
 
-    result = prv_security_write(instanceId, numData, dataArray, objectP);
+    result = prv_security_write(instanceId, numData, dataArray, objectP, LWM2M_WRITE_REPLACE_RESOURCES);
 
     if (result != COAP_204_CHANGED)
     {

@@ -195,6 +195,7 @@ static void senml_json_test_raw(const char * uriStr,
     {
         senml_json_test_data(uriStr, LWM2M_CONTENT_TLV, tlvP, size, id);
     }
+    lwm2m_data_free(size, tlvP);
 }
 
 static void senml_json_test_raw_expected(const char * uriStr,
@@ -227,6 +228,7 @@ static void senml_json_test_raw_expected(const char * uriStr,
         senml_json_test_data(uriStr, LWM2M_CONTENT_TLV, tlvP, size, id);
     else if (format == LWM2M_CONTENT_SENML_JSON)
         senml_json_test_data(uriStr, LWM2M_CONTENT_TLV, tlvP, size, id);
+    lwm2m_data_free(size, tlvP);
 }
 
 static void senml_json_test_raw_error(const char * uriStr,
@@ -454,21 +456,20 @@ static void senml_json_test_13(void)
     lwm2m_data_encode_bool(false, data1 + 16);
 
     senml_json_test_data("/12/0", LWM2M_CONTENT_SENML_JSON, data1, 17, "13");
+
+    lwm2m_data_free(1, data1);
 }
 
 static void senml_json_test_14(void)
 {
     const char * buffer = "[{\"bn\":\"/5/0/1\",              \
                            \"n\":\"/1\",\"vs\":\"http\"}]";
-#if 1
     const char * expect = "[{\"bn\":\"/5/0/1/\",\"n\":\"1\",\"vs\":\"http\"}]";
+    const char * expect2 = "[{\"bn\":\"/5/0/1/1\",\"vs\":\"http\"}]";
 
-    senml_json_test_raw_expected("/5/0/1", (uint8_t *)buffer, strlen(buffer), expect, strlen(expect), LWM2M_CONTENT_SENML_JSON, "14");
-#else
-    const char * expect = "[{\"bn\":\"/5/0/1/1\",\"vs\":\"http\"}]";
+    senml_json_test_raw_expected("/5/0/1", (uint8_t *)buffer, strlen(buffer), expect, strlen(expect), LWM2M_CONTENT_SENML_JSON, "14a");
 
-    senml_json_test_raw_expected("/5/0/1/1", (uint8_t *)buffer, strlen(buffer), expect, strlen(expect), LWM2M_CONTENT_SENML_JSON, "14");
-#endif
+    senml_json_test_raw_expected("/5/0/1/1", (uint8_t *)buffer, strlen(buffer), expect2, strlen(expect2), LWM2M_CONTENT_SENML_JSON, "14b");
 }
 
 static void senml_json_test_15(void)
@@ -611,6 +612,49 @@ static void senml_json_test_24(void)
     lwm2m_data_free(1, dataP);
 }
 
+static void senml_json_test_25(void)
+{
+    /* Test encoding from different depths */
+    lwm2m_data_t * data1 = lwm2m_data_new(1);
+    lwm2m_data_t * data2 = lwm2m_data_new(1);
+    lwm2m_data_t * data3 = lwm2m_data_new(1);
+    lwm2m_data_t * data4 = lwm2m_data_new(1);
+    data4->id = 0;
+    lwm2m_data_encode_int(0, data4);
+    data3->id = 1;
+    lwm2m_data_encode_instances(data4, 1, data3);
+    data2->id = 0;
+    lwm2m_data_include(data3, 1, data2);
+    data1->id = 4;
+    lwm2m_data_include(data2, 1, data1);
+    const char *expect1 = "[{\"bn\":\"/4/\",\"n\":\"0/1/0\",\"v\":0}]";
+    const char *expect2 = "[{\"bn\":\"/4/0/\",\"n\":\"1/0\",\"v\":0}]";
+    const char *expect3 = "[{\"bn\":\"/4/0/1/\",\"n\":\"0\",\"v\":0}]";
+    const char *expect4 = "[{\"bn\":\"/4/0/1/0\",\"v\":0}]";
+
+    senml_json_test_data_and_compare("/4", LWM2M_CONTENT_SENML_JSON, data1, 1, "25a", (const uint8_t *)expect1, strlen(expect1));
+    senml_json_test_data_and_compare("/4/0", LWM2M_CONTENT_SENML_JSON, data1, 1, "25b", (const uint8_t *)expect2, strlen(expect2));
+    senml_json_test_data_and_compare("/4/0", LWM2M_CONTENT_SENML_JSON, data2, 1, "25c", (const uint8_t *)expect2, strlen(expect2));
+    senml_json_test_data_and_compare("/4/0/1", LWM2M_CONTENT_SENML_JSON, data1, 1, "25d", (const uint8_t *)expect3, strlen(expect3));
+    senml_json_test_data_and_compare("/4/0/1", LWM2M_CONTENT_SENML_JSON, data2, 1, "25e", (const uint8_t *)expect3, strlen(expect3));
+    senml_json_test_data_and_compare("/4/0/1", LWM2M_CONTENT_SENML_JSON, data3, 1, "25f", (const uint8_t *)expect3, strlen(expect3));
+    senml_json_test_data_and_compare("/4/0/1/0", LWM2M_CONTENT_SENML_JSON, data1, 1, "25g", (const uint8_t *)expect4, strlen(expect4));
+    senml_json_test_data_and_compare("/4/0/1/0", LWM2M_CONTENT_SENML_JSON, data2, 1, "25h", (const uint8_t *)expect4, strlen(expect4));
+    senml_json_test_data_and_compare("/4/0/1/0", LWM2M_CONTENT_SENML_JSON, data3, 1, "25i", (const uint8_t *)expect4, strlen(expect4));
+    senml_json_test_data_and_compare("/4/0/1/0", LWM2M_CONTENT_SENML_JSON, data4, 1, "25j", (const uint8_t *)expect4, strlen(expect4));
+
+    lwm2m_data_free(1, data1);
+}
+
+static void senml_json_test_26(void)
+{
+    /* Test empty strings and opaques */
+    const char * buffer = "[{\"bn\":\"/34/0/2\",\"vs\":\"\"}]";
+    const char * buffer2 = "[{\"bn\":\"/34/0/2\",\"vd\":\"\"}]";
+    senml_json_test_raw("/34/0/2", (uint8_t *)buffer, strlen(buffer), LWM2M_CONTENT_SENML_JSON, "26a");
+    senml_json_test_raw("/34/0/2", (uint8_t *)buffer2, strlen(buffer2), LWM2M_CONTENT_SENML_JSON, "26b");
+}
+
 static struct TestTable table[] = {
         { "test of senml_json_test_1()", senml_json_test_1 },
         { "test of senml_json_test_2()", senml_json_test_2 },
@@ -636,6 +680,8 @@ static struct TestTable table[] = {
         { "test of senml_json_test_22()", senml_json_test_22 },
         { "test of senml_json_test_23()", senml_json_test_23 },
         { "test of senml_json_test_24()", senml_json_test_24 },
+        { "test of senml_json_test_25()", senml_json_test_25 },
+        { "test of senml_json_test_26()", senml_json_test_26 },
         { NULL, NULL },
 };
 

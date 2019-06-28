@@ -599,11 +599,12 @@ uri_depth_t json_decreaseLevel(uri_depth_t level)
     }
 }
 
-int json_findAndCheckData(const lwm2m_uri_t * uriP,
-                          uri_depth_t level,
-                          size_t size,
-                          const lwm2m_data_t * tlvP,
-                          lwm2m_data_t ** targetP)
+static int prv_findAndCheckData(const lwm2m_uri_t * uriP,
+                                uri_depth_t desiredLevel,
+                                size_t size,
+                                const lwm2m_data_t * tlvP,
+                                lwm2m_data_t ** targetP,
+                                uri_depth_t *targetLevelP)
 {
     size_t index;
     int result;
@@ -640,12 +641,13 @@ int json_findAndCheckData(const lwm2m_uri_t * uriP,
 
     *targetP = NULL;
     result = -1;
-    switch (level)
+    switch (desiredLevel)
     {
     case URI_DEPTH_OBJECT:
         if (tlvP[0].type == LWM2M_TYPE_OBJECT)
         {
             *targetP = (lwm2m_data_t*)tlvP;
+            *targetLevelP = URI_DEPTH_OBJECT;
             result = (int)size;
         }
         break;
@@ -658,11 +660,13 @@ int json_findAndCheckData(const lwm2m_uri_t * uriP,
             {
                 if (tlvP[index].id == uriP->objectId)
                 {
-                    return json_findAndCheckData(uriP,
-                                                 level,
-                                                 tlvP[index].value.asChildren.count,
-                                                 tlvP[index].value.asChildren.array,
-                                                 targetP);
+                    *targetLevelP = URI_DEPTH_OBJECT_INSTANCE;
+                    return prv_findAndCheckData(uriP,
+                                                desiredLevel,
+                                                tlvP[index].value.asChildren.count,
+                                                tlvP[index].value.asChildren.array,
+                                                targetP,
+                                                targetLevelP);
                 }
             }
             break;
@@ -683,11 +687,13 @@ int json_findAndCheckData(const lwm2m_uri_t * uriP,
             {
                 if (tlvP[index].id == uriP->objectId)
                 {
-                    return json_findAndCheckData(uriP,
-                                                 level,
-                                                 tlvP[index].value.asChildren.count,
-                                                 tlvP[index].value.asChildren.array,
-                                                 targetP);
+                    *targetLevelP = URI_DEPTH_OBJECT_INSTANCE;
+                    return prv_findAndCheckData(uriP,
+                                                desiredLevel,
+                                                tlvP[index].value.asChildren.count,
+                                                tlvP[index].value.asChildren.array,
+                                                targetP,
+                                                targetLevelP);
                 }
             }
             break;
@@ -696,11 +702,12 @@ int json_findAndCheckData(const lwm2m_uri_t * uriP,
             {
                 if (tlvP[index].id == uriP->instanceId)
                 {
-                    return json_findAndCheckData(uriP,
-                                                 level,
-                                                 tlvP[index].value.asChildren.count,
-                                                 tlvP[index].value.asChildren.array,
-                                                 targetP);
+                    *targetLevelP = URI_DEPTH_RESOURCE;
+                    return prv_findAndCheckData(uriP,
+                                                desiredLevel,
+                                                tlvP[index].value.asChildren.count,
+                                                tlvP[index].value.asChildren.array,
+                                                targetP, targetLevelP);
                 }
             }
             break;
@@ -719,11 +726,13 @@ int json_findAndCheckData(const lwm2m_uri_t * uriP,
             {
                 if (tlvP[index].id == uriP->objectId)
                 {
-                    return json_findAndCheckData(uriP,
-                                                 level,
-                                                 tlvP[index].value.asChildren.count,
-                                                 tlvP[index].value.asChildren.array,
-                                                 targetP);
+                    *targetLevelP = URI_DEPTH_OBJECT_INSTANCE;
+                    return prv_findAndCheckData(uriP,
+                                                desiredLevel,
+                                                tlvP[index].value.asChildren.count,
+                                                tlvP[index].value.asChildren.array,
+                                                targetP,
+                                                targetLevelP);
                 }
             }
             break;
@@ -732,11 +741,13 @@ int json_findAndCheckData(const lwm2m_uri_t * uriP,
             {
                 if (tlvP[index].id == uriP->instanceId)
                 {
-                    return json_findAndCheckData(uriP,
-                                                 level,
-                                                 tlvP[index].value.asChildren.count,
-                                                 tlvP[index].value.asChildren.array,
-                                                 targetP);
+                    *targetLevelP = URI_DEPTH_RESOURCE;
+                    return prv_findAndCheckData(uriP,
+                                                desiredLevel,
+                                                tlvP[index].value.asChildren.count,
+                                                tlvP[index].value.asChildren.array,
+                                                targetP,
+                                                targetLevelP);
                 }
             }
             break;
@@ -745,11 +756,13 @@ int json_findAndCheckData(const lwm2m_uri_t * uriP,
             {
                 if (tlvP[index].id == uriP->resourceId)
                 {
-                    return json_findAndCheckData(uriP,
-                                                 level,
-                                                 tlvP[index].value.asChildren.count,
-                                                 tlvP[index].value.asChildren.array,
-                                                 targetP);
+                    *targetLevelP = URI_DEPTH_RESOURCE_INSTANCE;
+                    return prv_findAndCheckData(uriP,
+                                                desiredLevel,
+                                                tlvP[index].value.asChildren.count,
+                                                tlvP[index].value.asChildren.array,
+                                                targetP,
+                                                targetLevelP);
                 }
             }
             break;
@@ -765,6 +778,30 @@ int json_findAndCheckData(const lwm2m_uri_t * uriP,
     }
 
     return result;
+}
+
+int json_findAndCheckData(const lwm2m_uri_t * uriP,
+                          uri_depth_t baseLevel,
+                          size_t size,
+                          const lwm2m_data_t * tlvP,
+                          lwm2m_data_t ** targetP,
+                          uri_depth_t *targetLevelP)
+{
+    uri_depth_t desiredLevel = json_decreaseLevel(baseLevel);
+    if (baseLevel < URI_DEPTH_RESOURCE)
+    {
+        *targetLevelP = desiredLevel;
+    }
+    else
+    {
+        *targetLevelP = baseLevel;
+    }
+    return prv_findAndCheckData(uriP,
+                                desiredLevel,
+                                size,
+                                tlvP,
+                                targetP,
+                                targetLevelP);
 }
 
 #endif

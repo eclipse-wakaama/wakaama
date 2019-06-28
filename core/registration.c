@@ -1215,6 +1215,9 @@ static int prv_getParameters(multi_option_t * query,
         query = query->next;
     }
 
+    /* Binding not specified. */
+    if (*bindingP == 0) *bindingP = BINDING_UNKNOWN;
+
     if (*versionP == VERSION_1_0 &&
         (*bindingP & (BINDING_T|BINDING_N)) != 0)
     {

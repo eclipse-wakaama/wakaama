@@ -144,6 +144,7 @@ static void test_raw(const char * uriStr,
     {
         test_data(uriStr, LWM2M_CONTENT_TLV, tlvP, size, id);
     }
+    lwm2m_data_free(size, tlvP);
 }
 
 static void test_raw_expected(const char * uriStr,
@@ -174,6 +175,8 @@ static void test_raw_expected(const char * uriStr,
         test_data(uriStr, LWM2M_CONTENT_JSON, tlvP, size, id);
     else if (format == LWM2M_CONTENT_JSON)
         test_data(uriStr, LWM2M_CONTENT_TLV, tlvP, size, id);
+
+    lwm2m_data_free(size, tlvP);
 }
 
 static void test_1(void)
@@ -186,7 +189,7 @@ static void test_1(void)
     CU_ASSERT_TRUE_FATAL(size>0);
     // Serialize to the same format and compare to the input buffer
     test_data_and_compare(NULL, format, tlvP, size, "1", (uint8_t*)buffer, testLen);
-
+    lwm2m_data_free(size, tlvP);
 }
 
 static void test_2(void)
@@ -358,6 +361,8 @@ static void test_10(void)
 
     test_data(NULL, LWM2M_CONTENT_TLV, data1, 17, "10a");
     test_data("/12/0", LWM2M_CONTENT_JSON, data1, 17, "10b");
+
+    lwm2m_data_free(17, data1);
 }
 
 static void test_11(void)
@@ -390,6 +395,41 @@ static void test_13(void)
     test_raw(NULL, (uint8_t *)buffer, strlen(buffer), LWM2M_CONTENT_JSON, "13");
 }
 
+static void test_14(void)
+{
+    /* Test empty strings */
+    const char * buffer = "{\"bn\":\"/34/0/\",                \
+                         \"e\":[                            \
+                           {\"n\":\"2\",\"sv\":\"\"}]  \
+                      }";
+    test_raw(NULL, (uint8_t *)buffer, strlen(buffer), LWM2M_CONTENT_JSON, "14");
+}
+
+static void test_15(void)
+{
+    /* Test multiple instance resources */
+    lwm2m_data_t *tlvP;
+    lwm2m_uri_t uri;
+    int size;
+    const char *buffer = "{\"bn\":\"/2/0/2/\",\"e\":[{\"n\":\"0\",\"v\":15},{\"n\":\"999\",\"v\":1}]}";
+
+    LWM2M_URI_RESET(&uri);
+    uri.objectId = 2;
+    uri.instanceId = 0;
+    uri.resourceId = 2;
+    size = lwm2m_data_parse(&uri, (const uint8_t *)buffer, strlen(buffer), LWM2M_CONTENT_JSON, &tlvP);
+    if (size < 0)
+    {
+        printf("(Parsing 15a from JSON failed.)\t");
+    }
+    CU_ASSERT_EQUAL_FATAL(size, 1);
+    CU_ASSERT_EQUAL(tlvP->id, 2);
+    CU_ASSERT_EQUAL(tlvP->type, LWM2M_TYPE_MULTIPLE_RESOURCE);
+
+
+    test_raw(NULL, (uint8_t *)buffer, strlen(buffer), LWM2M_CONTENT_JSON, "15b");
+}
+
 static struct TestTable table[] = {
         { "test of test_1()", test_1 },
         { "test of test_2()", test_2 },
@@ -404,6 +444,8 @@ static struct TestTable table[] = {
         { "test of test_11()", test_11 },
         { "test of test_12()", test_12 },
         { "test of test_13()", test_13 },
+        { "test of test_14()", test_14 },
+        { "test of test_15()", test_15 },
         { NULL, NULL },
 };
 

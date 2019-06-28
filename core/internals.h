@@ -280,7 +280,7 @@ int uri_toString(const lwm2m_uri_t * uriP, uint8_t * buffer, size_t bufferLen, u
 // defined in objects.c
 uint8_t object_readData(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, int * sizeP, lwm2m_data_t ** dataP);
 uint8_t object_read(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, uint8_t acceptNum, const uint16_t * accept, lwm2m_media_type_t * formatP, uint8_t ** bufferP, size_t * lengthP);
-uint8_t object_write(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_media_type_t format, uint8_t * buffer, size_t length);
+uint8_t object_write(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_media_type_t format, uint8_t * buffer, size_t length, bool partial);
 uint8_t object_create(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_media_type_t format, uint8_t * buffer, size_t length);
 uint8_t object_execute(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, uint8_t * buffer, size_t length);
 uint8_t object_delete(lwm2m_context_t * contextP, lwm2m_uri_t * uriP);
@@ -366,7 +366,7 @@ lwm2m_data_t * json_extendData(lwm2m_data_t * parentP);
 int json_dataStrip(int size, lwm2m_data_t * dataP, lwm2m_data_t ** resultP);
 lwm2m_data_t * json_findDataItem(lwm2m_data_t * listP, size_t count, uint16_t id);
 uri_depth_t json_decreaseLevel(uri_depth_t level);
-int json_findAndCheckData(const lwm2m_uri_t * uriP, uri_depth_t level, size_t size, const lwm2m_data_t * tlvP, lwm2m_data_t ** targetP);
+int json_findAndCheckData(const lwm2m_uri_t * uriP, uri_depth_t baseLevel, size_t size, const lwm2m_data_t * tlvP, lwm2m_data_t ** targetP, uri_depth_t *targetLevelP);
 #endif
 
 // defined in discover.c

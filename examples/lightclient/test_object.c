@@ -18,6 +18,7 @@
  *    Achim Kraus, Bosch Software Innovations GmbH - Please refer to git log
  *    Pascal Rieux - Please refer to git log
  *    Ville Skyttä - Please refer to git log
+ *    Scott Bertin, AMETEK, Inc. - Please refer to git log
  *    
  *******************************************************************************/
 
@@ -75,6 +76,13 @@
 #include <string.h>
 #include <ctype.h>
 #include <limits.h>
+
+static uint8_t prv_delete(uint16_t id,
+                          lwm2m_object_t * objectP);
+static uint8_t prv_create(uint16_t instanceId,
+                          int numData,
+                          lwm2m_data_t * dataArray,
+                          lwm2m_object_t * objectP);
 
 static void prv_output_buffer(uint8_t * buffer,
                               int length)
@@ -154,6 +162,11 @@ static uint8_t prv_read(uint16_t instanceId,
 
     for (i = 0 ; i < *numDataP ; i++)
     {
+        if ((*dataArrayP)[i].type == LWM2M_TYPE_MULTIPLE_RESOURCE)
+        {
+            return COAP_404_NOT_FOUND;
+        }
+
         switch ((*dataArrayP)[i].id)
         {
         case 1:
@@ -215,7 +228,8 @@ static uint8_t prv_discover(uint16_t instanceId,
 static uint8_t prv_write(uint16_t instanceId,
                          int numData,
                          lwm2m_data_t * dataArray,
-                         lwm2m_object_t * objectP)
+                         lwm2m_object_t * objectP,
+                         lwm2m_write_type_t writeType)
 {
     prv_instance_t * targetP;
     int i;
@@ -223,8 +237,25 @@ static uint8_t prv_write(uint16_t instanceId,
     targetP = (prv_instance_t *)lwm2m_list_find(objectP->instanceList, instanceId);
     if (NULL == targetP) return COAP_404_NOT_FOUND;
 
+    if (writeType == LWM2M_WRITE_REPLACE_INSTANCE)
+    {
+        uint8_t result = prv_delete(instanceId, objectP);
+        if (result == COAP_202_DELETED)
+        {
+            result = prv_create(instanceId, numData, dataArray, objectP);
+            if (result == COAP_201_CREATED)
+            {
+                result = COAP_204_CHANGED;
+            }
+        }
+        return result;
+    }
+
     for (i = 0 ; i < numData ; i++)
     {
+        /* No multiple instance resources */
+        if (dataArray[i].type == LWM2M_TYPE_MULTIPLE_RESOURCE) return  COAP_404_NOT_FOUND;
+
         switch (dataArray[i].id)
         {
         case 1:
@@ -294,7 +325,7 @@ static uint8_t prv_create(uint16_t instanceId,
     targetP->shortID = instanceId;
     objectP->instanceList = LWM2M_LIST_ADD(objectP->instanceList, targetP);
 
-    result = prv_write(instanceId, numData, dataArray, objectP);
+    result = prv_write(instanceId, numData, dataArray, objectP, LWM2M_WRITE_REPLACE_RESOURCES);
 
     if (result != COAP_204_CHANGED)
     {

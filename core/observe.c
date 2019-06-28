@@ -167,6 +167,7 @@ uint8_t observe_handleRequest(lwm2m_context_t * contextP,
 {
     lwm2m_observed_t * observedP;
     lwm2m_watcher_t * watcherP;
+    lwm2m_data_t * valueP;
     uint32_t count;
 
     (void) size; /* unused */
@@ -192,18 +193,27 @@ uint8_t observe_handleRequest(lwm2m_context_t * contextP,
         watcherP->lastMid = response->mid;
         watcherP->format = (lwm2m_media_type_t)response->content_type;
 
+        valueP = dataP;
+#ifndef LWM2M_VERSION_1_0
+        if (LWM2M_URI_IS_SET_RESOURCE_INSTANCE(uriP)
+         && dataP->type == LWM2M_TYPE_MULTIPLE_RESOURCE
+         && dataP->value.asChildren.count == 1)
+        {
+            valueP = dataP->value.asChildren.array;
+        }
+#endif
         if (LWM2M_URI_IS_SET_RESOURCE(uriP))
         {
-            switch (dataP->type)
+            switch (valueP->type)
             {
             case LWM2M_TYPE_INTEGER:
-                if (1 != lwm2m_data_decode_int(dataP, &(watcherP->lastValue.asInteger))) return COAP_500_INTERNAL_SERVER_ERROR;
+                if (1 != lwm2m_data_decode_int(valueP, &(watcherP->lastValue.asInteger))) return COAP_500_INTERNAL_SERVER_ERROR;
                 break;
             case LWM2M_TYPE_UNSIGNED_INTEGER:
-                if (1 != lwm2m_data_decode_uint(dataP, &(watcherP->lastValue.asUnsigned))) return COAP_500_INTERNAL_SERVER_ERROR;
+                if (1 != lwm2m_data_decode_uint(valueP, &(watcherP->lastValue.asUnsigned))) return COAP_500_INTERNAL_SERVER_ERROR;
                 break;
             case LWM2M_TYPE_FLOAT:
-                if (1 != lwm2m_data_decode_float(dataP, &(watcherP->lastValue.asFloat))) return COAP_500_INTERNAL_SERVER_ERROR;
+                if (1 != lwm2m_data_decode_float(valueP, &(watcherP->lastValue.asFloat))) return COAP_500_INTERNAL_SERVER_ERROR;
                 break;
             default:
                 break;
@@ -510,6 +520,7 @@ void observe_step(lwm2m_context_t * contextP,
         uint8_t * buffer = NULL;
         size_t length = 0;
         lwm2m_data_t * dataP = NULL;
+        lwm2m_data_type_t dataType = LWM2M_TYPE_UNDEFINED;
         int size = 0;
         double floatValue = 0;
         int64_t integerValue = 0;
@@ -523,11 +534,23 @@ void observe_step(lwm2m_context_t * contextP,
         LOG_URI(&(targetP->uri));
         if (LWM2M_URI_IS_SET_RESOURCE(&targetP->uri))
         {
+            lwm2m_data_t *valueP;
+
             if (COAP_205_CONTENT != object_readData(contextP, &targetP->uri, &size, &dataP)) continue;
-            switch (dataP->type)
+            valueP = dataP;
+#ifndef LWM2M_VERSION_1_0
+            if (LWM2M_URI_IS_SET_RESOURCE_INSTANCE(&targetP->uri)
+             && dataP->type == LWM2M_TYPE_MULTIPLE_RESOURCE
+             && dataP->value.asChildren.count == 1)
+            {
+                valueP = dataP->value.asChildren.array;
+            }
+#endif
+            dataType = valueP->type;
+            switch (dataType)
             {
             case LWM2M_TYPE_INTEGER:
-                if (1 != lwm2m_data_decode_int(dataP, &integerValue))
+                if (1 != lwm2m_data_decode_int(valueP, &integerValue))
                 {
                     lwm2m_data_free(size, dataP);
                     continue;
@@ -535,7 +558,7 @@ void observe_step(lwm2m_context_t * contextP,
                 storeValue = true;
                 break;
             case LWM2M_TYPE_UNSIGNED_INTEGER:
-                if (1 != lwm2m_data_decode_uint(dataP, &unsignedValue))
+                if (1 != lwm2m_data_decode_uint(valueP, &unsignedValue))
                 {
                     lwm2m_data_free(size, dataP);
                     continue;
@@ -543,7 +566,7 @@ void observe_step(lwm2m_context_t * contextP,
                 storeValue = true;
                 break;
             case LWM2M_TYPE_FLOAT:
-                if (1 != lwm2m_data_decode_float(dataP, &floatValue))
+                if (1 != lwm2m_data_decode_float(valueP, &floatValue))
                 {
                     lwm2m_data_free(size, dataP);
                     continue;
@@ -580,7 +603,7 @@ void observe_step(lwm2m_context_t * contextP,
                         {
                             LOG("Checking lower threshold");
                             // Did we cross the lower threshold ?
-                            switch (dataP->type)
+                            switch (dataType)
                             {
                             case LWM2M_TYPE_INTEGER:
                                 if ((integerValue < watcherP->parameters->lessThan
@@ -620,7 +643,7 @@ void observe_step(lwm2m_context_t * contextP,
                         {
                             LOG("Checking upper threshold");
                             // Did we cross the upper threshold ?
-                            switch (dataP->type)
+                            switch (dataType)
                             {
                             case LWM2M_TYPE_INTEGER:
                                 if ((integerValue < watcherP->parameters->greaterThan
@@ -660,7 +683,7 @@ void observe_step(lwm2m_context_t * contextP,
                         {
                             LOG("Checking step");
 
-                            switch (dataP->type)
+                            switch (dataType)
                             {
                             case LWM2M_TYPE_INTEGER:
                             {
@@ -790,7 +813,7 @@ void observe_step(lwm2m_context_t * contextP,
                 // Store this value
                 if (notify == true && storeValue == true)
                 {
-                    switch (dataP->type)
+                    switch (dataType)
                     {
                     case LWM2M_TYPE_INTEGER:
                         watcherP->lastValue.asInteger = integerValue;
