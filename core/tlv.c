@@ -25,6 +25,8 @@
 #include <inttypes.h>
 #include <float.h>
 
+#ifdef LWM2M_SUPPORT_TLV
+
 #ifndef LWM2M_BIG_ENDIAN
 #ifndef LWM2M_LITTLE_ENDIAN
 #error Please define LWM2M_BIG_ENDIAN or LWM2M_LITTLE_ENDIAN
@@ -642,3 +644,4 @@ int tlv_serialize(bool isResourceInstance,
     return length;
 }
 
+#endif

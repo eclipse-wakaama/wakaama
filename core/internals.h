@@ -279,7 +279,7 @@ int uri_toString(const lwm2m_uri_t * uriP, uint8_t * buffer, size_t bufferLen, u
 
 // defined in objects.c
 uint8_t object_readData(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, int * sizeP, lwm2m_data_t ** dataP);
-uint8_t object_read(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_media_type_t * formatP, uint8_t ** bufferP, size_t * lengthP);
+uint8_t object_read(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, uint8_t acceptNum, const uint16_t * accept, lwm2m_media_type_t * formatP, uint8_t ** bufferP, size_t * lengthP);
 uint8_t object_write(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_media_type_t format, uint8_t * buffer, size_t length);
 uint8_t object_create(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_media_type_t format, uint8_t * buffer, size_t length);
 uint8_t object_execute(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, uint8_t * buffer, size_t length);
@@ -334,9 +334,11 @@ uint8_t bootstrap_handleRequest(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, 
 void bootstrap_start(lwm2m_context_t * contextP);
 lwm2m_status_t bootstrap_getStatus(lwm2m_context_t * contextP);
 
+#ifdef LWM2M_SUPPORT_TLV
 // defined in tlv.c
 int tlv_parse(const uint8_t * buffer, size_t bufferLen, lwm2m_data_t ** dataP);
 int tlv_serialize(bool isResourceInstance, int size, lwm2m_data_t * dataP, uint8_t ** bufferP);
+#endif
 
 // defined in json.c
 #ifdef LWM2M_SUPPORT_JSON
@@ -379,6 +381,11 @@ lwm2m_data_type_t utils_depthToDatatype(uri_depth_t depth);
 lwm2m_version_t utils_stringToVersion(uint8_t *buffer, size_t length);
 lwm2m_binding_t utils_stringToBinding(uint8_t *buffer, size_t length);
 lwm2m_media_type_t utils_convertMediaType(coap_content_type_t type);
+uint8_t utils_getResponseFormat(uint8_t accept_num,
+                                const uint16_t *accept,
+                                int numData,
+                                const lwm2m_data_t *dataP,
+                                lwm2m_media_type_t *format);
 int utils_isAltPathValid(const char * altPath);
 int utils_stringCopy(char * buffer, size_t length, const char * str);
 size_t utils_intToText(int64_t data, uint8_t * string, size_t length);

@@ -224,6 +224,7 @@ void output_tlv(FILE * stream,
                 size_t buffer_len,
                 int indent)
 {
+#ifdef LWM2M_SUPPORT_TLV
     lwm2m_data_type_t type;
     uint16_t id;
     size_t dataIndex;
@@ -292,6 +293,14 @@ void output_tlv(FILE * stream,
         print_indent(stream, indent);
         fprintf(stream, "}\r\n");
     }
+#else
+    /* Unused parameters */
+    (void)buffer;
+    (void)buffer_len;
+
+    print_indent(stream, indent);
+    fprintf(stream, "Unsupported.\r\n");
+#endif
 }
 
 void output_data(FILE * stream,

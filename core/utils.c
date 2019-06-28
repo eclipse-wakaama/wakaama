@@ -778,6 +778,112 @@ lwm2m_media_type_t utils_convertMediaType(coap_content_type_t type)
     return result;
 }
 
+uint8_t utils_getResponseFormat(uint8_t accept_num,
+                                const uint16_t *accept,
+                                int numData,
+                                const lwm2m_data_t *dataP,
+                                lwm2m_media_type_t *format)
+{
+    uint8_t result = COAP_205_CONTENT;
+    bool singular;
+
+    if (numData == 1)
+    {
+        switch (dataP->type)
+        {
+        case LWM2M_TYPE_OBJECT:
+        case LWM2M_TYPE_OBJECT_INSTANCE:
+        case LWM2M_TYPE_MULTIPLE_RESOURCE:
+            singular = false;
+            break;
+        default:
+            singular = true;
+            break;
+        }
+    }
+    else
+    {
+        singular = false;
+    }
+
+    *format = LWM2M_CONTENT_TEXT;
+    if (accept_num > 0)
+    {
+        uint8_t i;
+        bool found = false;
+        for(i = 0; i < accept_num && !found; i++)
+        {
+            switch (accept[i])
+            {
+            case TEXT_PLAIN:
+                if (singular)
+                {
+                    found = true;
+                }
+                break;
+            case APPLICATION_OCTET_STREAM:
+                if (singular)
+                {
+                    *format = LWM2M_CONTENT_OPAQUE;
+                    found = true;
+                }
+                break;
+
+#ifdef LWM2M_SUPPORT_TLV
+#ifdef LWM2M_OLD_CONTENT_FORMAT_SUPPORT
+            case LWM2M_CONTENT_TLV_OLD:
+                *format = LWM2M_CONTENT_TLV_OLD;
+                found = true;
+                break;
+#endif
+            case LWM2M_CONTENT_TLV:
+                *format = LWM2M_CONTENT_TLV;
+                found = true;
+                break;
+#endif
+
+#ifdef LWM2M_SUPPORT_JSON
+#ifdef LWM2M_OLD_CONTENT_FORMAT_SUPPORT
+            case LWM2M_CONTENT_JSON_OLD:
+                *format = LWM2M_CONTENT_JSON_OLD;
+                found = true;
+                break;
+#endif
+            case LWM2M_CONTENT_JSON:
+                *format = LWM2M_CONTENT_JSON;
+                found = true;
+                break;
+#endif
+
+#ifdef LWM2M_SUPPORT_SENML_JSON
+            case LWM2M_CONTENT_SENML_JSON:
+                *format = LWM2M_CONTENT_SENML_JSON;
+                found = true;
+                break;
+#endif
+
+            default:
+                break;
+            }
+        }
+        if (!found) result = COAP_406_NOT_ACCEPTABLE;
+    }
+    else
+    {
+#ifdef LWM2M_SUPPORT_SENML_JSON
+        *format = LWM2M_CONTENT_SENML_JSON;
+#elif defined(LWM2M_SUPPORT_JSON)
+        *format = LWM2M_CONTENT_JSON;
+#elif defined(LWM2M_SUPPORT_TLV)
+        *format = LWM2M_CONTENT_TLV;
+#else
+        *format = LWM2M_CONTENT_TEXT;
+#endif
+    }
+
+    return result;
+}
+
 #ifdef LWM2M_CLIENT_MODE
 lwm2m_server_t * utils_findServer(lwm2m_context_t * contextP,
                                   void * fromSessionH)
