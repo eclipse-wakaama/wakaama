@@ -160,6 +160,8 @@
 #define QUERY_STARTER        "?"
 #define QUERY_NAME           "ep="
 #define QUERY_NAME_LEN       3       // strlen("ep=")
+#define QUERY_PCT            "pct="
+#define QUERY_PCT_LEN        4
 #define QUERY_SMS            "sms="
 #define QUERY_SMS_LEN        4
 #define QUERY_LIFETIME       "lt="
@@ -195,6 +197,8 @@
 #define REG_ATTR_TYPE_VALUE_LEN          11
 #define REG_ATTR_CONTENT_KEY             "ct"
 #define REG_ATTR_CONTENT_KEY_LEN         2
+#define REG_ATTR_CONTENT_TLV             "11542"
+#define REG_ATTR_CONTENT_TLV_LEN         5
 #define REG_ATTR_CONTENT_JSON            "11543"
 #define REG_ATTR_CONTENT_JSON_LEN        5
 #define REG_ATTR_CONTENT_JSON_OLD        "1543"

@@ -13,6 +13,7 @@
  * Contributors:
  *    David Navarro, Intel Corporation - initial API and implementation
  *    Christian Renz - Please refer to git log
+ *    Scott Bertin, AMETEK, Inc. - Please refer to git log
  *
  *******************************************************************************/
 
@@ -47,10 +48,11 @@
 typedef struct _endpoint_
 {
     struct _endpoint_ * next;
-    char *          name;
-    void *          handle;
-    bs_command_t *  cmdList;
-    uint8_t         status;
+    char *             name;
+    lwm2m_media_type_t format;
+    void *             handle;
+    bs_command_t *     cmdList;
+    uint8_t            status;
 } endpoint_t;
 
 typedef struct
@@ -229,9 +231,11 @@ static void prv_send_command(internal_data_t * dataP,
     case BS_WRITE_SECURITY:
     {
         lwm2m_uri_t uri;
-        bs_server_tlv_t * serverP;
+        bs_server_data_t * serverP;
+        uint8_t *securityData;
+        lwm2m_media_type_t format = endP->format;
 
-        serverP = (bs_server_tlv_t *)LWM2M_LIST_FIND(dataP->bsInfo->serverList, endP->cmdList->serverId);
+        serverP = (bs_server_data_t *)LWM2M_LIST_FIND(dataP->bsInfo->serverList, endP->cmdList->serverId);
         if (serverP == NULL
          || serverP->securityData == NULL)
         {
@@ -247,16 +251,23 @@ static void prv_send_command(internal_data_t * dataP,
         prv_print_uri(stdout, &uri);
         fprintf(stdout, " to \"%s\"", endP->name);
 
-        res = lwm2m_bootstrap_write(dataP->lwm2mH, endP->handle, &uri, LWM2M_CONTENT_TLV, serverP->securityData, serverP->securityLen);
+        res = lwm2m_data_serialize(&uri, serverP->securitySize, serverP->securityData, &format, &securityData);
+        if (res > 0)
+        {
+            res = lwm2m_bootstrap_write(dataP->lwm2mH, endP->handle, &uri, format, securityData, res);
+            lwm2m_free(securityData);
+        }
     }
         break;
 
     case BS_WRITE_SERVER:
     {
         lwm2m_uri_t uri;
-        bs_server_tlv_t * serverP;
+        bs_server_data_t * serverP;
+        uint8_t *serverData;
+        lwm2m_media_type_t format = endP->format;
 
-        serverP = (bs_server_tlv_t *)LWM2M_LIST_FIND(dataP->bsInfo->serverList, endP->cmdList->serverId);
+        serverP = (bs_server_data_t *)LWM2M_LIST_FIND(dataP->bsInfo->serverList, endP->cmdList->serverId);
         if (serverP == NULL
          || serverP->serverData == NULL)
         {
@@ -272,7 +283,12 @@ static void prv_send_command(internal_data_t * dataP,
         prv_print_uri(stdout, &uri);
         fprintf(stdout, " to \"%s\"", endP->name);
 
-        res = lwm2m_bootstrap_write(dataP->lwm2mH, endP->handle, &uri, LWM2M_CONTENT_TLV, serverP->serverData, serverP->serverLen);
+        res = lwm2m_data_serialize(&uri, serverP->serverSize, serverP->serverData, &format, &serverData);
+        if (res > 0)
+        {
+            res = lwm2m_bootstrap_write(dataP->lwm2mH, endP->handle, &uri, format, serverData, res);
+            lwm2m_free(serverData);
+        }
     }
         break;
 
@@ -305,6 +321,7 @@ static int prv_bootstrap_callback(void * sessionH,
                                   uint8_t status,
                                   lwm2m_uri_t * uriP,
                                   char * name,
+                                  lwm2m_media_type_t format,
                                   void * userData)
 {
     internal_data_t * dataP = (internal_data_t *)userData;
@@ -346,6 +363,7 @@ static int prv_bootstrap_callback(void * sessionH,
         endP->cmdList = endInfoP->commandList;
         endP->handle = sessionH;
         endP->name = strdup(name);
+        endP->format = 0 == format ? LWM2M_CONTENT_TLV : format;
         endP->status = CMD_STATUS_NEW;
         endP->next = dataP->endpointList;
         dataP->endpointList = endP;
@@ -463,7 +481,9 @@ static void prv_bootstrap_client(char * buffer,
     dataP->connList = newConnP;
 
     // simulate a client bootstrap request.
-    if (COAP_204_CHANGED == prv_bootstrap_callback(newConnP, COAP_NO_ERROR, NULL, name, user_data))
+    // Only LWM2M 1.0 clients support this method of bootstrap. For them, TLV
+    // support is mandatory.
+    if (COAP_204_CHANGED == prv_bootstrap_callback(newConnP, COAP_NO_ERROR, NULL, name, LWM2M_CONTENT_TLV, user_data))
     {
         fprintf(stdout, "OK");
     }
@@ -476,7 +496,6 @@ static void prv_bootstrap_client(char * buffer,
 syntax_error:
     fprintf(stdout, "Syntax error !");
 }
-
 
 int main(int argc, char *argv[])
 {
