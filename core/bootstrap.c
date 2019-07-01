@@ -14,6 +14,7 @@
  *    Pascal Rieux - Please refer to git log
  *    Bosch Software Innovations GmbH - Please refer to git log
  *    David Navarro, Intel Corporation - Please refer to git log
+ *    Scott Bertin, AMETEK, Inc. - Please refer to git log
  *
  *******************************************************************************/
 
@@ -91,6 +92,34 @@ static void prv_requestBootstrap(lwm2m_context_t * context,
         return;
     }
     query_length += res;
+
+#ifndef LWM2M_VERSION_1_0
+    // TODO Add SenML CBOR as a preferred content type when supported.
+#if defined(LWM2M_SUPPORT_SENML_JSON) || defined(LWM2M_SUPPORT_TLV)
+    res = utils_stringCopy(query + query_length, PRV_QUERY_BUFFER_LENGTH - query_length, QUERY_DELIMITER QUERY_PCT);
+    if (res < 0)
+    {
+        bootstrapServer->status = STATE_BS_FAILING;
+        return;
+    }
+    query_length += res;
+#if defined(LWM2M_SUPPORT_SENML_JSON)
+    res = utils_stringCopy(query + query_length, PRV_QUERY_BUFFER_LENGTH - query_length, REG_ATTR_CONTENT_SENML_JSON);
+#elif defined(LWM2M_SUPPORT_TLV)
+    res = utils_stringCopy(query + query_length, PRV_QUERY_BUFFER_LENGTH - query_length, REG_ATTR_CONTENT_TLV);
+#else
+    /* This shouldn't be possible. */
+#warning No supported content type for bootstrap. Bootstrap will always fail.
+    res = -1;
+#endif
+    if (res < 0)
+    {
+        bootstrapServer->status = STATE_BS_FAILING;
+        return;
+    }
+    query_length += res;
+#endif
+#endif
 
     if (bootstrapServer->sessionH == NULL)
     {
@@ -583,6 +612,7 @@ uint8_t bootstrap_handleRequest(lwm2m_context_t * contextP,
 {
     uint8_t result;
     char * name;
+    lwm2m_media_type_t format = 0;
 
     LOG_URI(uriP);
     if (contextP->bootstrapCallback == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
@@ -596,7 +626,43 @@ uint8_t bootstrap_handleRequest(lwm2m_context_t * contextP,
     }
 
     if (message->uri_query->len == QUERY_NAME_LEN) return COAP_400_BAD_REQUEST;
+#ifdef LWM2M_VERSION_1_0
     if (message->uri_query->next != NULL) return COAP_400_BAD_REQUEST;
+#else
+    if (message->uri_query->next != NULL)
+    {
+        char formatString[6];
+        char *endP;
+        multi_option_t *uri_query = message->uri_query->next;
+        if (lwm2m_strncmp((char *)uri_query->data, QUERY_PCT, QUERY_PCT_LEN) != 0)
+        {
+            return COAP_400_BAD_REQUEST;
+        }
+
+        if (uri_query->len == QUERY_PCT_LEN) return COAP_400_BAD_REQUEST;
+        if (uri_query->len > QUERY_PCT_LEN + 5) return COAP_400_BAD_REQUEST;
+        if (uri_query->next != NULL) return COAP_400_BAD_REQUEST;
+
+        memcpy(formatString, uri_query->data + QUERY_PCT_LEN, uri_query->len - QUERY_PCT_LEN);
+        formatString[uri_query->len - QUERY_PCT_LEN] = 0;
+
+        format = (lwm2m_media_type_t)strtol(formatString, &endP, 10);
+        if('\0' != *endP) return COAP_400_BAD_REQUEST;
+        switch (format)
+        {
+#ifdef LWM2M_SUPPORT_SENML_JSON
+        case LWM2M_CONTENT_SENML_JSON:
+            break;
+#endif
+        default:
+#ifdef LWM2M_SUPPORT_TLV
+            format = LWM2M_CONTENT_TLV;
+#else
+            return COAP_400_BAD_REQUEST;
+#endif
+        }
+    }
+#endif
 
     name = (char *)lwm2m_malloc(message->uri_query->len - QUERY_NAME_LEN + 1);
     if (name == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
@@ -604,7 +670,7 @@ uint8_t bootstrap_handleRequest(lwm2m_context_t * contextP,
     memcpy(name, message->uri_query->data + QUERY_NAME_LEN, message->uri_query->len - QUERY_NAME_LEN);
     name[message->uri_query->len - QUERY_NAME_LEN] = 0;
 
-    result = contextP->bootstrapCallback(fromSessionH, COAP_NO_ERROR, NULL, name, contextP->bootstrapUserData);
+    result = contextP->bootstrapCallback(fromSessionH, COAP_NO_ERROR, NULL, name, format, contextP->bootstrapUserData);
 
     lwm2m_free(name);
 
@@ -644,6 +710,7 @@ static void prv_resultCallback(lwm2m_context_t * contextP,
                         COAP_503_SERVICE_UNAVAILABLE,
                         uriP,
                         NULL,
+                        0,
                         dataP->userData);
     }
     else
@@ -654,6 +721,7 @@ static void prv_resultCallback(lwm2m_context_t * contextP,
                         packet->code,
                         uriP,
                         NULL,
+                        0,
                         dataP->userData);
     }
     lwm2m_free(dataP);

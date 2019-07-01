@@ -12,6 +12,7 @@
  *
  * Contributors:
  *    David Navarro, Intel Corporation - initial implementation
+ *    Scott Bertin, AMETEK, Inc. - Please refer to git log
  *
  *******************************************************************************/
 
@@ -38,15 +39,15 @@ typedef struct
     uint8_t *   serverKey;
 } server_info_t;
 
-typedef struct _server_tlv_
+typedef struct _server_data_
 {
-    struct _server_tlv_ * next;  // matches lwm2m_list_t::next
-    uint16_t              id;    // matches lwm2m_list_t::id
-    uint8_t *   securityData;
-    size_t      securityLen;
-    uint8_t *   serverData;
-    size_t      serverLen;
-} bs_server_tlv_t;
+    struct _server_data_ * next;  // matches lwm2m_list_t::next
+    uint16_t               id;    // matches lwm2m_list_t::id
+    lwm2m_data_t *         securityData;
+    int                    securitySize;
+    lwm2m_data_t *         serverData;
+    int                    serverSize;
+} bs_server_data_t;
 
 typedef struct _command_
 {
@@ -59,13 +60,13 @@ typedef struct _command_
 typedef struct _endpoint_info_
 {
     struct _endpoint_info_ * next;
-    char *          name;
-    bs_command_t *  commandList;
+    char *             name;
+    bs_command_t *     commandList;
 } bs_endpoint_info_t;
 
 typedef struct
 {
-    bs_server_tlv_t *    serverList;
+    bs_server_data_t *   serverList;
     bs_endpoint_info_t * endpointList;
 } bs_info_t;
 
