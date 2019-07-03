@@ -160,11 +160,23 @@ static void prv_dump_client(lwm2m_client_t * targetP)
     {
         if (objectP->instanceList == NULL)
         {
-            fprintf(stdout, "/%d, ", objectP->id);
+            if (objectP->versionMajor != 0 || objectP->versionMinor != 0)
+            {
+                fprintf(stdout, "/%d (%u.%u), ", objectP->id, objectP->versionMajor, objectP->versionMinor);
+            }
+            else
+            {
+                fprintf(stdout, "/%d, ", objectP->id);
+            }
         }
         else
         {
             lwm2m_list_t * instanceP;
+
+            if (objectP->versionMajor != 0 || objectP->versionMinor != 0)
+            {
+                fprintf(stdout, "/%d (%u.%u), ", objectP->id, objectP->versionMajor, objectP->versionMinor);
+            }
 
             for (instanceP = objectP->instanceList; instanceP != NULL ; instanceP = instanceP->next)
             {

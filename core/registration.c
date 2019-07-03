@@ -1434,61 +1434,158 @@ static int prv_parseLinkAttributes(uint8_t * data,
 static int prv_getId(uint8_t * data,
                      uint16_t length,
                      uint16_t * objId,
-                     uint16_t * instanceId)
+                     uint16_t * instanceId,
+                     uint8_t * versionMajor,
+                     uint8_t * versionMinor)
 {
     int value;
     uint16_t limit;
+    int result = 1;
+
+    *versionMajor = 0;
+    *versionMinor = 0;
 
     // Expecting application/link-format (RFC6690)
     // leading space were removed before. Remove trailing spaces.
     while (length > 0 && data[length-1] == ' ') length--;
 
-    // strip open and close tags
-    if (length >= 1 && data[0] == REG_URI_START && data[length-1] == REG_URI_END)
-    {
-        data += 1;
-        length -= 2;
-    }
-    else
-    {
-        return 0;
-    }
+    // strip open tag
+    if (length < 1 || data[0] != REG_URI_START) return 0;
+    data += 1;
+    length -= 1;
 
     // If there is a preceding /, remove it
-    if (length >= 1 && data[0] == '/')
-    {
-        data += 1;
-        length -= 1;
-    }
+    if (length < 1 || data[0] != '/') return 0;
+    data += 1;
+    length -= 1;
 
     limit = 0;
-    while (limit < length && data[limit] != '/') limit++;
+    while (limit < length && data[limit] != '/' && data[limit] != REG_URI_END) limit++;
+    if (limit == 0 || limit >= length) return 0;
     value = uri_getNumber(data, limit);
     if (value < 0 || value >= LWM2M_MAX_ID) return 0;
     *objId = value;
 
-    if (limit < length)
+    if (data[limit] == '/')
     {
         limit += 1;
         data += limit;
         length -= limit;
+        limit = 0;
+        while (limit < length && data[limit] != REG_URI_END) limit++;
+        if (limit >= length) return 0;
 
-        if (length > 0)
+        if (limit > 0)
         {
-            value = uri_getNumber(data, length);
-            if (value >= 0 && value < LWM2M_MAX_ID)
-            {
-                *instanceId = value;
-                return 2;
-            }
-            else
-            {
-                return 0;
-            }
+            value = uri_getNumber(data, limit);
+            if (value < 0 || value >= LWM2M_MAX_ID) return 0;
+            *instanceId = value;
+            result = 2;
         }
     }
 
-    return 1;
+    // strip close tag
+    if (data[limit] != REG_URI_END) return 0;
+    limit += 1;
+    data += limit;
+    length -= limit;
+
+    if (length > 1 && data[0] == REG_ATTR_SEPARATOR)
+    {
+        data += 1;
+        length -= 1;
+
+        // Parse attributes
+        while (length > 0)
+        {
+            // Skip leading spaces
+            while (length > 0 && data[0] == ' ')
+            {
+                data += 1;
+                length -= 1;
+            }
+            if (length == 0) break;
+
+            limit = 0;
+            while (limit < length && data[limit] != REG_ATTR_SEPARATOR) limit++;
+
+            if (limit > 0)
+            {
+                if (limit > ATTR_VERSION_LEN
+                 && memcmp(data, ATTR_VERSION_STR, ATTR_VERSION_LEN) == 0)
+                {
+                    uint64_t val;
+                    uint16_t limit2;
+                    uint16_t extra = 0;
+
+                    if(*versionMajor != 0 || *versionMinor != 0)
+                    {
+                        // Already seen
+                        *versionMajor = 0;
+                        *versionMinor = 0;
+                        return 0;
+                    }
+
+                    if (limit < ATTR_VERSION_LEN + 2) return 0;
+                    // Some examples use quotes, some don't. They shouldb't be
+                    // there, but be permissive and ignore them if they are.
+                    if (data[ATTR_VERSION_LEN] == '"')
+                    {
+                        data += 1;
+                        limit -= 1;
+                        length -= 1;
+                    }
+                    if(data[limit-1] == '"')
+                    {
+                        limit -= 1;
+                        extra = 1;
+                    }
+                    if (limit < ATTR_VERSION_LEN) return 0;
+
+                    limit2 = ATTR_VERSION_LEN + 1;
+                    while (limit2 < limit && data[limit2] != '.') limit2++;
+
+                    if (limit2 > limit - 2) return 0;
+
+                    // Note that the LWM2M 1.1.1 spec limits the major and
+                    // minor to 1 digit. This allow for values up to 255 in
+                    // case it is expanded in the future or some client
+                    // incorrectly exceeds 1 digit.
+                    if (utils_textToUInt(data + ATTR_VERSION_LEN,
+                                         limit2 - ATTR_VERSION_LEN,
+                                         &val) == 0)
+                    {
+                        return 0;
+                    }
+                    if(val > UINT8_MAX) return 0;
+                    *versionMajor = val;
+                    if (utils_textToUInt(data + limit2 + 1,
+                                         limit - limit2 - 1,
+                                         &val) == 0)
+                    {
+                        *versionMajor = 0;
+                        return 0;
+                    }
+                    if(val > UINT8_MAX)
+                    {
+                        *versionMajor = 0;
+                        return 0;
+                    }
+                    *versionMinor = val;
+                    limit += extra;
+                }
+                // Ignore any unrecognized attribute
+            }
+            if (data[limit] == REG_ATTR_SEPARATOR)
+            {
+                limit += 1;
+            }
+            data += limit;
+            length -= limit;
+        }
+    }
+
+    return result;
 }
 
 static lwm2m_client_object_t * prv_decodeRegisterPayload(uint8_t * payload,
@@ -1513,6 +1610,8 @@ static lwm2m_client_object_t * prv_decodeRegisterPayload(uint8_t * payload,
         int result;
         uint16_t id;
         uint16_t instance;
+        uint8_t versionMajor;
+        uint8_t versionMinor;
 
         while (index < payloadLength && payload[index] == ' ') index++;
         if (index == payloadLength) break;
@@ -1521,7 +1620,7 @@ static lwm2m_client_object_t * prv_decodeRegisterPayload(uint8_t * payload,
         while (index < payloadLength && payload[index] != REG_DELIMITER) index++;
         length = index - start;
 
-        result = prv_getId(payload + start, length, &id, &instance);
+        result = prv_getId(payload + start, length, &id, &instance, &versionMajor, &versionMinor);
         if (result != 0)
         {
             lwm2m_client_object_t * objectP;
@@ -1535,7 +1634,12 @@ static lwm2m_client_object_t * prv_decodeRegisterPayload(uint8_t * payload,
                 objectP->id = id;
                 objList = (lwm2m_client_object_t *)LWM2M_LIST_ADD(objList, objectP);
             }
-            if (result == 2)
+            if (result == 1)
+            {
+                objectP->versionMajor = versionMajor;
+                objectP->versionMinor = versionMinor;
+            }
+            else
             {
                 lwm2m_list_t * instanceP;
 

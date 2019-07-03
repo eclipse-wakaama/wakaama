@@ -147,6 +147,7 @@
 
 #define REG_OBJECT_MIN_LEN  5   // "</n>,"
 #define REG_PATH_END        ">,"
+#define REG_VERSION_START   ">;ver="
 #define REG_PATH_SEPARATOR  "/"
 
 #define REG_OBJECT_PATH             "<%s/%hu>,"
@@ -220,6 +221,8 @@
 #define ATTR_STEP_LEN            3
 #define ATTR_DIMENSION_STR       "dim="
 #define ATTR_DIMENSION_LEN       4
+#define ATTR_VERSION_STR         "ver="
+#define ATTR_VERSION_LEN         4
 
 #ifdef LWM2M_VERSION_1_0
 #define URI_MAX_STRING_LEN    18      // /65535/65535/65535

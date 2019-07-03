@@ -458,6 +458,8 @@ struct _lwm2m_object_t
 {
     struct _lwm2m_object_t * next;           // for internal use only.
     uint16_t       objID;
+    uint8_t        versionMajor;
+    uint8_t        versionMinor;
     lwm2m_list_t * instanceList;
     lwm2m_read_callback_t     readFunc;
     lwm2m_write_callback_t    writeFunc;
@@ -648,6 +650,8 @@ typedef struct _lwm2m_client_object_
 {
     struct _lwm2m_client_object_ * next; // matches lwm2m_list_t::next
     uint16_t                 id;         // matches lwm2m_list_t::id
+    uint8_t                  versionMajor;
+    uint8_t                  versionMinor;
     lwm2m_list_t *           instanceList;
 } lwm2m_client_object_t;
 

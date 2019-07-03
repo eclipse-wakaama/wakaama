@@ -1088,6 +1088,11 @@ lwm2m_object_t * get_server_object(int serverId,
         memset(serverObj, 0, sizeof(lwm2m_object_t));
 
         serverObj->objID = 1;
+#ifndef LWM2M_VERSION_1_0
+        // Not required, but useful for testing.
+        serverObj->versionMajor = 1;
+        serverObj->versionMinor = 1;
+#endif
 
         // Manually create an hardcoded server
         serverInstance = (server_instance_t *)lwm2m_malloc(sizeof(server_instance_t));

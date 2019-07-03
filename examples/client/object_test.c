@@ -526,6 +526,9 @@ lwm2m_object_t * get_test_object(void)
         memset(testObj, 0, sizeof(lwm2m_object_t));
 
         testObj->objID = TEST_OBJECT_ID;
+        // Not required, but useful for testing.
+        testObj->versionMajor = 1;
+        testObj->versionMinor = 0;
         for (i=0 ; i < 3 ; i++)
         {
             targetP = (prv_instance_t *)lwm2m_malloc(sizeof(prv_instance_t));
