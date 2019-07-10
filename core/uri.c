@@ -94,6 +94,7 @@ int uri_getNumber(uint8_t * uriString,
 
 lwm2m_request_type_t uri_decode(char * altPath,
                                 multi_option_t *uriPath,
+                                uint8_t code,
                                 lwm2m_uri_t * uriP)
 {
     int readNum;
@@ -142,7 +143,14 @@ lwm2m_request_type_t uri_decode(char * altPath,
         }
         if (NULL == uriPath || uriPath->len == 0)
         {
-            return LWM2M_REQUEST_TYPE_DELETE_ALL;
+            if (COAP_DELETE == code)
+            {
+                return LWM2M_REQUEST_TYPE_DELETE_ALL;
+            }
+            else
+            {
+                return LWM2M_REQUEST_TYPE_DM;
+            }
         }
     }
 

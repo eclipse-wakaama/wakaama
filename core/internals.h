@@ -148,7 +148,7 @@
 #define REG_OBJECT_MIN_LEN  5   // "</n>,"
 #define REG_PATH_END        ">,"
 #define REG_VERSION_START   ">;ver="
-#define REG_PATH_SEPARATOR  "/"
+#define REG_PATH_SEPARATOR  '/'
 
 #define REG_OBJECT_PATH             "<%s/%hu>,"
 #define REG_OBJECT_INSTANCE_PATH    "<%s/%hu/%hu>,"
@@ -223,6 +223,10 @@
 #define ATTR_DIMENSION_LEN       4
 #define ATTR_VERSION_STR         "ver="
 #define ATTR_VERSION_LEN         4
+#define ATTR_SSID_STR            "ssid="
+#define ATTR_SSID_LEN            5
+#define ATTR_URI_STR             "uri=\""
+#define ATTR_URI_LEN             5
 
 #ifdef LWM2M_VERSION_1_0
 #define URI_MAX_STRING_LEN    18      // /65535/65535/65535
@@ -292,7 +296,7 @@ typedef enum
 } lwm2m_request_type_t;
 
 // defined in uri.c
-lwm2m_request_type_t uri_decode(char * altPath, multi_option_t *uriPath, lwm2m_uri_t *uriP);
+lwm2m_request_type_t uri_decode(char * altPath, multi_option_t *uriPath, uint8_t code, lwm2m_uri_t *uriP);
 int uri_getNumber(uint8_t * uriString, size_t uriLength);
 int uri_toString(const lwm2m_uri_t * uriP, uint8_t * buffer, size_t bufferLen, uri_depth_t * depthP);
 

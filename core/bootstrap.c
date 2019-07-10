@@ -158,6 +158,356 @@ static void prv_requestBootstrap(lwm2m_context_t * context,
     }
 }
 
+static uint8_t prv_handleBootstrapDiscover(lwm2m_context_t * contextP,
+                                           lwm2m_uri_t * uriP,
+                                           uint8_t ** bufferP,
+                                           size_t * lengthP)
+{
+    size_t length;
+    size_t res;
+    int res2;
+    lwm2m_object_t * objectP;
+    uint8_t buffer[REG_OBJECT_MIN_LEN + 5];
+    lwm2m_list_t *instanceP;
+    lwm2m_uri_t uri;
+    int size;
+    lwm2m_data_t *dataP;
+    uint64_t val;
+
+    if (uriP && LWM2M_URI_IS_SET_OBJECT(uriP))
+    {
+        if (LWM2M_URI_IS_SET_INSTANCE(uriP)) return COAP_400_BAD_REQUEST;
+        if (LWM2M_URI_IS_SET_RESOURCE(uriP)) return COAP_400_BAD_REQUEST;
+#ifndef LWM2M_VERSION_1_0
+        if (LWM2M_URI_IS_SET_RESOURCE_INSTANCE(uriP)) return COAP_400_BAD_REQUEST;
+#endif
+
+        objectP = (lwm2m_object_t *)LWM2M_LIST_FIND(contextP->objectList, uriP->objectId);
+        if (objectP == NULL)
+        {
+            return COAP_404_NOT_FOUND;
+        }
+    }
+
+    length = 0;
+#if !defined(LWM2M_VERSION_1_0)
+    // LWM2M 1.1.1 adds "</>;" at the beginning
+    length += 4;
+#endif
+    length += QUERY_VERSION_LEN + LWM2M_VERSION_LEN;
+
+    for (objectP = contextP->objectList; objectP; objectP = objectP->next)
+    {
+        if (uriP && LWM2M_URI_IS_SET_OBJECT(uriP) && uriP->objectId != objectP->objID) continue;
+
+        if (objectP->instanceList == NULL
+         || objectP->versionMajor != 0
+         || objectP->versionMinor != 0)
+        {
+            length += 4; // ",</>"
+            res = utils_uintToText(objectP->objID, buffer, sizeof(buffer));
+            if (res == 0) return COAP_500_INTERNAL_SERVER_ERROR;
+            length += res;
+
+            if (objectP->versionMajor != 0
+             || objectP->versionMinor != 0)
+            {
+                length += 2 + ATTR_VERSION_LEN; // ";ver=."
+                res = utils_uintToText(objectP->versionMajor, buffer, sizeof(buffer));
+                if (res == 0) return COAP_500_INTERNAL_SERVER_ERROR;
+                length += res;
+                res = utils_uintToText(objectP->versionMinor, buffer, sizeof(buffer));
+                if (res == 0) return COAP_500_INTERNAL_SERVER_ERROR;
+                length += res;
+            }
+        }
+        for (instanceP = objectP->instanceList; instanceP; instanceP = instanceP->next)
+        {
+            length += 5; // ",<//>"
+            res = utils_uintToText(objectP->objID, buffer, sizeof(buffer));
+            if (res == 0) return COAP_500_INTERNAL_SERVER_ERROR;
+            length += res;
+            res = utils_uintToText(instanceP->id, buffer, sizeof(buffer));
+            if (res == 0) return COAP_500_INTERNAL_SERVER_ERROR;
+            length += res;
+
+            LWM2M_URI_RESET(&uri);
+            uri.objectId = objectP->objID;
+            uri.instanceId = instanceP->id;
+
+            if (objectP->objID == LWM2M_SECURITY_OBJECT_ID)
+            {
+                bool bootstrap;
+                uri.resourceId = LWM2M_SECURITY_BOOTSTRAP_ID;
+                if (object_readData(contextP, &uri, &size, &dataP) != COAP_205_CONTENT) return COAP_500_INTERNAL_SERVER_ERROR;
+                if (size != 1 || lwm2m_data_decode_bool(dataP, &bootstrap) == 0)
+                {
+                    lwm2m_data_free(size, dataP);
+                    return COAP_500_INTERNAL_SERVER_ERROR;
+                }
+                lwm2m_data_free(size, dataP);
+
+                if (!bootstrap)
+                {
+                    uri.resourceId = LWM2M_SECURITY_SHORT_SERVER_ID;
+                    if (object_readData(contextP, &uri, &size, &dataP) != COAP_205_CONTENT) return COAP_500_INTERNAL_SERVER_ERROR;
+                    if (size != 1 || lwm2m_data_decode_uint(dataP, &val) == 0 )
+                    {
+                        lwm2m_data_free(size, dataP);
+                        return COAP_500_INTERNAL_SERVER_ERROR;
+                    }
+                    lwm2m_data_free(size, dataP);
+
+                    length += 1 + ATTR_SSID_LEN; // ";ssid="
+                    res = utils_uintToText(val, buffer, sizeof(buffer));
+                    if (res == 0) return COAP_500_INTERNAL_SERVER_ERROR;
+                    length += res;
+
+#ifndef LWM2M_VERSION_1_0
+                    length += 3 + ATTR_URI_LEN; // ";uri=\"\"\""
+                    uri.resourceId = LWM2M_SECURITY_URI_ID;
+                    if (object_readData(contextP, &uri, &size, &dataP) != COAP_205_CONTENT) return COAP_500_INTERNAL_SERVER_ERROR;
+                    if (size != 1 || dataP->type != LWM2M_TYPE_STRING)
+                    {
+                        lwm2m_data_free(size, dataP);
+                        return COAP_500_INTERNAL_SERVER_ERROR;
+                    }
+                    length += dataP->value.asBuffer.length;
+                    lwm2m_data_free(size, dataP);
+#endif
+                }
+            }
+            else if (objectP->objID == LWM2M_SERVER_OBJECT_ID)
+            {
+                uri.resourceId = LWM2M_SERVER_SHORT_ID_ID;
+                if (object_readData(contextP, &uri, &size, &dataP) != COAP_205_CONTENT) return COAP_500_INTERNAL_SERVER_ERROR;
+                if (size != 1 || lwm2m_data_decode_uint(dataP, &val) == 0)
+                {
+                    lwm2m_data_free(size, dataP);
+                    return COAP_500_INTERNAL_SERVER_ERROR;
+                }
+                lwm2m_data_free(size, dataP);
+
+                length += 1 + ATTR_SSID_LEN; // ";ssid="
+                res = utils_uintToText(val, buffer, sizeof(buffer));
+                if (res == 0) return COAP_500_INTERNAL_SERVER_ERROR;
+                length += res;
+            }
+        }
+    }
+
+    *lengthP = 0;
+    *bufferP = lwm2m_malloc(length);
+    if (*bufferP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
+
+#if !defined(LWM2M_VERSION_1_0)
+    // LWM2M 1.1.1 adds "</>;" at the beginning
+    if (length - (*lengthP) < 4) goto error;
+    (*bufferP)[(*lengthP)++] = REG_URI_START;
+    (*bufferP)[(*lengthP)++] = REG_PATH_SEPARATOR;
+    (*bufferP)[(*lengthP)++] = REG_URI_END;
+    (*bufferP)[(*lengthP)++] = REG_ATTR_SEPARATOR;
+#endif
+
+    res2 = utils_stringCopy((char*)(*bufferP)+(*lengthP), length-(*lengthP), QUERY_VERSION);
+    if (res2 < 0) goto error;
+    (*lengthP) += res2;
+
+    res2 = utils_stringCopy((char*)(*bufferP)+(*lengthP), length-(*lengthP), LWM2M_VERSION);
+    if (res2 < 0) goto error;
+    (*lengthP) += res2;
+
+    for (objectP = contextP->objectList; objectP; objectP = objectP->next)
+    {
+        if (uriP && LWM2M_URI_IS_SET_OBJECT(uriP) && uriP->objectId != objectP->objID) continue;
+
+        if (objectP->instanceList == NULL
+         || objectP->versionMajor != 0
+         || objectP->versionMinor != 0)
+        {
+            if (length - (*lengthP) < 3) goto error;
+            (*bufferP)[(*lengthP)++] = REG_DELIMITER;
+            (*bufferP)[(*lengthP)++] = REG_URI_START;
+            (*bufferP)[(*lengthP)++] = REG_PATH_SEPARATOR;
+            res = utils_uintToText(objectP->objID, (*bufferP)+(*lengthP), length - (*lengthP));
+            if (res == 0) goto error;
+            (*lengthP) += res;
+            if (length - (*lengthP) < 1) goto error;
+            (*bufferP)[(*lengthP)++] = REG_URI_END;
+
+            if (objectP->versionMajor != 0
+             || objectP->versionMinor != 0)
+            {
+                if (length - (*lengthP) < 1) goto error;
+                (*bufferP)[(*lengthP)++] = REG_ATTR_SEPARATOR;
+
+                res2 = utils_stringCopy((char*)(*bufferP)+(*lengthP), length-(*lengthP), ATTR_VERSION_STR);
+                if (res2 < 0) goto error;
+                (*lengthP) += res2;
+
+                res = utils_uintToText(objectP->versionMajor, (*bufferP)+(*lengthP), length - (*lengthP));
+                if (res == 0) goto error;
+                (*lengthP) += res;
+
+                if (length - (*lengthP) < 1) goto error;
+                (*bufferP)[(*lengthP)++] = '.';
+
+                res = utils_uintToText(objectP->versionMinor, (*bufferP)+(*lengthP), length - (*lengthP));
+                if (res == 0) goto error;
+                (*lengthP) += res;
+            }
+        }
+        for (instanceP = objectP->instanceList; instanceP; instanceP = instanceP->next)
+        {
+            if (length - (*lengthP) < 3) goto error;
+            (*bufferP)[(*lengthP)++] = REG_DELIMITER;
+            (*bufferP)[(*lengthP)++] = REG_URI_START;
+            (*bufferP)[(*lengthP)++] = REG_PATH_SEPARATOR;
+
+            res = utils_uintToText(objectP->objID, (*bufferP)+(*lengthP), length - (*lengthP));
+            if (res == 0) goto error;
+            (*lengthP) += res;
+
+            if (length - (*lengthP) < 1) goto error;
+            (*bufferP)[(*lengthP)++] = REG_PATH_SEPARATOR;
+
+            res = utils_uintToText(instanceP->id, (*bufferP)+(*lengthP), length - (*lengthP));
+            if (res == 0) goto error;
+            (*lengthP) += res;
+
+            if (length - (*lengthP) < 1) goto error;
+            (*bufferP)[(*lengthP)++] = REG_URI_END;
+
+            LWM2M_URI_RESET(&uri);
+            uri.objectId = objectP->objID;
+            uri.instanceId = instanceP->id;
+
+            if (objectP->objID == LWM2M_SECURITY_OBJECT_ID)
+            {
+                bool bootstrap;
+                uri.resourceId = LWM2M_SECURITY_BOOTSTRAP_ID;
+                if (object_readData(contextP, &uri, &size, &dataP) != COAP_205_CONTENT) goto error;
+                if (size != 1 || lwm2m_data_decode_bool(dataP, &bootstrap) == 0)
+                {
+                    lwm2m_data_free(size, dataP);
+                    goto error;
+                }
+                lwm2m_data_free(size, dataP);
+
+                if (!bootstrap)
+                {
+                    uri.resourceId = LWM2M_SECURITY_SHORT_SERVER_ID;
+                    if (object_readData(contextP, &uri, &size, &dataP) != COAP_205_CONTENT) goto error;
+                    if (size != 1 || lwm2m_data_decode_uint(dataP, &val) == 0)
+                    {
+                        lwm2m_data_free(size, dataP);
+                        goto error;
+                    }
+                    lwm2m_data_free(size, dataP);
+
+                    if (length - (*lengthP) < 1) goto error;
+                    (*bufferP)[(*lengthP)++] = REG_ATTR_SEPARATOR;
+
+                    res2 = utils_stringCopy((char*)(*bufferP)+(*lengthP), length-(*lengthP), ATTR_SSID_STR);
+                    if (res2 < 0) goto error;
+                    (*lengthP) += res2;
+
+                    res = utils_uintToText(val, (*bufferP)+(*lengthP), length - (*lengthP));
+                    if (res == 0) goto error;
+                    (*lengthP) += res;
+
+#ifndef LWM2M_VERSION_1_0
+                    if (length - (*lengthP) < 1) goto error;
+                    (*bufferP)[(*lengthP)++] = REG_ATTR_SEPARATOR;
+
+                    res2 = utils_stringCopy((char*)(*bufferP)+(*lengthP), length-(*lengthP), ATTR_URI_STR);
+                    if (res2 < 0) goto error;
+                    (*lengthP) += res2;
+
+                    uri.resourceId = LWM2M_SECURITY_URI_ID;
+                    if (object_readData(contextP, &uri, &size, &dataP) != COAP_205_CONTENT) goto error;
+                    if (size != 1 || dataP->type != LWM2M_TYPE_STRING)
+                    {
+                        lwm2m_data_free(size, dataP);
+                        goto error;
+                    }
+
+                    if (length-(*lengthP) < dataP->value.asBuffer.length)
+                    {
+                        lwm2m_data_free(size, dataP);
+                        goto error;
+                    }
+                    memcpy((*bufferP)+(*lengthP), dataP->value.asBuffer.buffer, dataP->value.asBuffer.length);
+                    (*lengthP) += dataP->value.asBuffer.length;
+                    lwm2m_data_free(size, dataP);
+
+                    if (length - (*lengthP) < 1) goto error;
+                    (*bufferP)[(*lengthP)++] = '"';
+#endif
+                }
+            }
+            else if (objectP->objID == LWM2M_SERVER_OBJECT_ID)
+            {
+                uri.resourceId = LWM2M_SERVER_SHORT_ID_ID;
+                if (object_readData(contextP, &uri, &size, &dataP) != COAP_205_CONTENT) goto error;
+                if (size != 1 || lwm2m_data_decode_uint(dataP, &val) == 0 )
+                {
+                    lwm2m_data_free(size, dataP);
+                    goto error;
+                }
+                lwm2m_data_free(size, dataP);
+
+                if (length - (*lengthP) < 1) goto error;
+                (*bufferP)[(*lengthP)++] = REG_ATTR_SEPARATOR;
+
+                res2 = utils_stringCopy((char*)(*bufferP)+(*lengthP), length-(*lengthP), ATTR_SSID_STR);
+                if (res2 < 0) goto error;
+                (*lengthP) += res2;
+
+                res = utils_uintToText(val, (*bufferP)+(*lengthP), length - (*lengthP));
+                if (res == 0) goto error;
+                (*lengthP) += res;
+            }
+        }
+    }
+
+    return COAP_205_CONTENT;
+
+error:
+    lwm2m_free(*bufferP);
+    *bufferP = NULL;
+    *lengthP = 0;
+    return COAP_500_INTERNAL_SERVER_ERROR;
+}
+
+#ifndef LWM2M_VERSION_1_0
+static uint8_t prv_handleBootstrapRead(lwm2m_context_t * contextP,
+                                       lwm2m_uri_t * uriP,
+                                       uint8_t acceptNum,
+                                       const uint16_t * accept,
+                                       lwm2m_media_type_t * formatP,
+                                       uint8_t ** bufferP,
+                                       size_t * lengthP)
+{
+    uint8_t result = COAP_400_BAD_REQUEST;
+    if (LWM2M_URI_IS_SET_OBJECT(uriP))
+    {
+        if (uriP->objectId == LWM2M_SERVER_OBJECT_ID
+         || uriP->objectId == LWM2M_ACL_OBJECT_ID)
+        {
+            result = object_read(contextP,
+                                 uriP,
+                                 accept,
+                                 acceptNum,
+                                 formatP,
+                                 bufferP,
+                                 lengthP);
+        }
+    }
+    return result;
+}
+#endif
+
 void bootstrap_step(lwm2m_context_t * contextP,
                     time_t currentTime,
                     time_t * timeoutP)
@@ -563,6 +913,43 @@ uint8_t bootstrap_handleCommand(lwm2m_context_t * contextP,
         break;
 
     case COAP_GET:
+        {
+            uint8_t * buffer = NULL;
+            size_t length = 0;
+            if (IS_OPTION(message, COAP_OPTION_ACCEPT)
+             && message->accept_num == 1
+             && message->accept[0] == APPLICATION_LINK_FORMAT)
+            {
+                /* Bootstrap-Discover */
+                format = LWM2M_CONTENT_LINK;
+                result = prv_handleBootstrapDiscover(contextP,
+                                                     uriP,
+                                                     &buffer,
+                                                     &length);
+            }
+            else
+            {
+#ifndef LWM2M_VERSION_1_0
+                /* Bootstrap-Read */
+                result = prv_handleBootstrapRead(contextP,
+                                                 uriP,
+                                                 message->accept_num,
+                                                 message->accept,
+                                                 &format,
+                                                 &buffer,
+                                                 &length);
+#else
+                result = COAP_400_BAD_REQUEST;
+#endif
+            }
+            if (COAP_205_CONTENT == result)
+            {
+                coap_set_header_content_type(response, format);
+                coap_set_payload(response, buffer, length);
+                // lwm2m_handle_packet will free buffer
+            }
+        }
+        break;
     case COAP_POST:
     default:
         result = COAP_400_BAD_REQUEST;
@@ -659,7 +1046,6 @@ uint8_t bootstrap_handleRequest(lwm2m_context_t * contextP,
     if (contextP->bootstrapCallback == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
     if (message->code != COAP_POST) return COAP_400_BAD_REQUEST;
     if (message->uri_query == NULL) return COAP_400_BAD_REQUEST;
-    if (message->payload != NULL) return COAP_400_BAD_REQUEST;
 
     if (lwm2m_strncmp((char *)message->uri_query->data, QUERY_NAME, QUERY_NAME_LEN) != 0)
     {
@@ -705,13 +1091,18 @@ uint8_t bootstrap_handleRequest(lwm2m_context_t * contextP,
     }
 #endif
 
+    if (message->payload)
+    {
+        format = utils_convertMediaType(message->content_type);
+    }
+
     name = (char *)lwm2m_malloc(message->uri_query->len - QUERY_NAME_LEN + 1);
     if (name == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
 
     memcpy(name, message->uri_query->data + QUERY_NAME_LEN, message->uri_query->len - QUERY_NAME_LEN);
     name[message->uri_query->len - QUERY_NAME_LEN] = 0;
 
-    result = contextP->bootstrapCallback(fromSessionH, COAP_NO_ERROR, NULL, name, format, contextP->bootstrapUserData);
+    result = contextP->bootstrapCallback(fromSessionH, COAP_NO_ERROR, NULL, name, format, message->payload, message->payload_len, contextP->bootstrapUserData);
 
     lwm2m_free(name);
 
@@ -752,6 +1143,8 @@ static void prv_resultCallback(lwm2m_context_t * contextP,
                         uriP,
                         NULL,
                         0,
+                        NULL,
+                        0,
                         dataP->userData);
     }
     else
@@ -762,7 +1155,9 @@ static void prv_resultCallback(lwm2m_context_t * contextP,
                         packet->code,
                         uriP,
                         NULL,
-                        0,
+                        utils_convertMediaType(packet->content_type),
+                        packet->payload,
+                        packet->payload_len,
                         dataP->userData);
     }
     transaction_free_userData(contextP, transacP);
@@ -876,5 +1271,87 @@ int lwm2m_bootstrap_finish(lwm2m_context_t * contextP,
 
     return transaction_send(contextP, transaction);
 }
+
+int lwm2m_bootstrap_discover(lwm2m_context_t * contextP, void * sessionH, lwm2m_uri_t * uriP)
+{
+    lwm2m_transaction_t * transaction;
+    bs_data_t * dataP;
+
+    LOG_URI(uriP);
+
+    if (uriP
+     && (LWM2M_URI_IS_SET_INSTANCE(uriP)
+      || LWM2M_URI_IS_SET_RESOURCE(uriP)
+#ifndef LWM2M_VERSION_1_0
+      || LWM2M_URI_IS_SET_RESOURCE_INSTANCE(uriP)
+#endif
+        )) return COAP_400_BAD_REQUEST;
+
+    transaction = transaction_new(sessionH, COAP_GET, NULL, uriP, contextP->nextMID++, 4, NULL);
+    if (transaction == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
+    coap_set_header_accept(transaction->message, APPLICATION_LINK_FORMAT);
+
+    dataP = (bs_data_t *)lwm2m_malloc(sizeof(bs_data_t));
+    if (dataP == NULL)
+    {
+        transaction_free(transaction);
+        return COAP_500_INTERNAL_SERVER_ERROR;
+    }
+    LWM2M_URI_RESET(&dataP->uri);
+    dataP->callback = contextP->bootstrapCallback;
+    dataP->userData = contextP->bootstrapUserData;
+
+    transaction->callback = prv_resultCallback;
+    transaction->userData = (void *)dataP;
+
+    contextP->transactionList = (lwm2m_transaction_t *)LWM2M_LIST_ADD(contextP->transactionList, transaction);
+
+    return transaction_send(contextP, transaction);
+}
+
+#ifndef LWM2M_VERSION_1_0
+int lwm2m_bootstrap_read(lwm2m_context_t * contextP, void * sessionH, lwm2m_uri_t * uriP)
+{
+    lwm2m_transaction_t * transaction;
+    bs_data_t * dataP;
+
+    LOG_URI(uriP);
+
+    if (uriP
+     && (LWM2M_URI_IS_SET_RESOURCE(uriP)
+#ifndef LWM2M_VERSION_1_0
+      || LWM2M_URI_IS_SET_RESOURCE_INSTANCE(uriP)
+#endif
+        )) return COAP_400_BAD_REQUEST;
+
+
+    transaction = transaction_new(sessionH, COAP_GET, NULL, uriP, contextP->nextMID++, 4, NULL);
+    if (transaction == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
+
+    dataP = (bs_data_t *)lwm2m_malloc(sizeof(bs_data_t));
+    if (dataP == NULL)
+    {
+        transaction_free(transaction);
+        return COAP_500_INTERNAL_SERVER_ERROR;
+    }
+    if (uriP == NULL)
+    {
+        LWM2M_URI_RESET(&dataP->uri);
+    }
+    else
+    {
+        memcpy(&dataP->uri, uriP, sizeof(lwm2m_uri_t));
+    }
+    dataP->callback = contextP->bootstrapCallback;
+    dataP->userData = contextP->bootstrapUserData;
+
+    transaction->callback = prv_resultCallback;
+    transaction->userData = (void *)dataP;
+
+    contextP->transactionList = (lwm2m_transaction_t *)LWM2M_LIST_ADD(contextP->transactionList, transaction);
+
+    return transaction_send(contextP, transaction);
+}
+#endif
 
 #endif

@@ -21,7 +21,11 @@
 
 typedef enum
 {
-    BS_DELETE = 0,
+    BS_DISCOVER = 0,
+#ifndef LWM2M_VERSION_1_0
+    BS_READ,
+#endif
+    BS_DELETE,
     BS_WRITE_SECURITY,
     BS_WRITE_SERVER,
     BS_FINISH

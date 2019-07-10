@@ -44,7 +44,7 @@ static void test_uri_decode(void)
 #endif
 
     /* "/rd" */
-    requestType = uri_decode(NULL, &reg, &uri);
+    requestType = uri_decode(NULL, &reg, COAP_POST, &uri);
     CU_ASSERT_EQUAL(requestType, LWM2M_REQUEST_TYPE_REGISTRATION);
     CU_ASSERT(!LWM2M_URI_IS_SET_OBJECT(&uri));
     CU_ASSERT(!LWM2M_URI_IS_SET_INSTANCE(&uri));
@@ -55,13 +55,13 @@ static void test_uri_decode(void)
 
     /* "/rd/5a3f" */
     reg.next = &location;
-    requestType = uri_decode(NULL, &reg, &uri);
+    requestType = uri_decode(NULL, &reg, COAP_POST, &uri);
     /* should not fail, error in uri_parse */
     /* CU_ASSERT_EQUAL(requestType, LWM2M_REQUEST_TYPE_REGISTRATION); */
 
     /* "/rd/5312" */
     reg.next = &locationDecimal;
-    requestType = uri_decode(NULL, &reg, &uri);
+    requestType = uri_decode(NULL, &reg, COAP_POST, &uri);
     CU_ASSERT_EQUAL(requestType, LWM2M_REQUEST_TYPE_REGISTRATION);
     CU_ASSERT(LWM2M_URI_IS_SET_OBJECT(&uri));
     CU_ASSERT(!LWM2M_URI_IS_SET_INSTANCE(&uri));
@@ -72,7 +72,7 @@ static void test_uri_decode(void)
     CU_ASSERT_EQUAL(uri.objectId, 5312);
 
     /* "/bs" */
-    requestType = uri_decode(NULL, &boot, &uri);
+    requestType = uri_decode(NULL, &boot, COAP_POST, &uri);
     CU_ASSERT_EQUAL(requestType, LWM2M_REQUEST_TYPE_BOOTSTRAP);
     CU_ASSERT(!LWM2M_URI_IS_SET_OBJECT(&uri));
     CU_ASSERT(!LWM2M_URI_IS_SET_INSTANCE(&uri));
@@ -83,7 +83,7 @@ static void test_uri_decode(void)
 
     /* "/bs/5a3f" */
     boot.next = &location;
-    requestType = uri_decode(NULL, &boot, &uri);
+    requestType = uri_decode(NULL, &boot, COAP_POST, &uri);
     CU_ASSERT_EQUAL(requestType, LWM2M_REQUEST_TYPE_UNKNOWN);
     CU_ASSERT(!LWM2M_URI_IS_SET_OBJECT(&uri));
     CU_ASSERT(!LWM2M_URI_IS_SET_INSTANCE(&uri));
@@ -93,7 +93,7 @@ static void test_uri_decode(void)
 #endif
 
     /* "/9050/11/0" or "/9050/11/0/12" */
-    requestType = uri_decode(NULL, &oID, &uri);
+    requestType = uri_decode(NULL, &oID, COAP_GET, &uri);
     CU_ASSERT_EQUAL(requestType, LWM2M_REQUEST_TYPE_DM);
     CU_ASSERT(LWM2M_URI_IS_SET_OBJECT(&uri));
     CU_ASSERT(LWM2M_URI_IS_SET_INSTANCE(&uri));
@@ -107,7 +107,7 @@ static void test_uri_decode(void)
 #endif
 
     /* "/11/0" or "/11/0/12"*/
-    requestType = uri_decode(NULL, &iID, &uri);
+    requestType = uri_decode(NULL, &iID, COAP_GET, &uri);
     CU_ASSERT_EQUAL(requestType, LWM2M_REQUEST_TYPE_DM);
     CU_ASSERT(LWM2M_URI_IS_SET_OBJECT(&uri));
     CU_ASSERT(LWM2M_URI_IS_SET_INSTANCE(&uri));
@@ -122,7 +122,7 @@ static void test_uri_decode(void)
 #endif
 
     /* "/0" or "/0/12" */
-    requestType = uri_decode(NULL, &rID, &uri);
+    requestType = uri_decode(NULL, &rID, COAP_GET, &uri);
     CU_ASSERT_EQUAL(requestType, LWM2M_REQUEST_TYPE_DM);
     CU_ASSERT(LWM2M_URI_IS_SET_OBJECT(&uri));
     CU_ASSERT_EQUAL(uri.objectId, 0);
@@ -138,7 +138,7 @@ static void test_uri_decode(void)
 
 #ifndef LWM2M_VERSION_1_0
     /* "/12" */
-    requestType = uri_decode(NULL, &riID, &uri);
+    requestType = uri_decode(NULL, &riID, COAP_GET, &uri);
     CU_ASSERT_EQUAL(requestType, LWM2M_REQUEST_TYPE_DM);
     CU_ASSERT(LWM2M_URI_IS_SET_OBJECT(&uri));
     CU_ASSERT_EQUAL(uri.objectId, 12);
@@ -153,7 +153,7 @@ static void test_uri_decode(void)
 #else
     riID.next = &extraID;
 #endif
-    requestType = uri_decode(NULL, &oID, &uri);
+    requestType = uri_decode(NULL, &oID, COAP_GET, &uri);
     CU_ASSERT_EQUAL(requestType, LWM2M_REQUEST_TYPE_UNKNOWN);
     CU_ASSERT(!LWM2M_URI_IS_SET_OBJECT(&uri));
     CU_ASSERT(!LWM2M_URI_IS_SET_INSTANCE(&uri));
@@ -164,8 +164,26 @@ static void test_uri_decode(void)
 
     /* "/0/5a3f" */
     rID.next = &location;
-    requestType = uri_decode(NULL, &rID, &uri);
+    requestType = uri_decode(NULL, &rID, COAP_GET, &uri);
     CU_ASSERT_EQUAL(requestType, LWM2M_REQUEST_TYPE_UNKNOWN);
+    CU_ASSERT(!LWM2M_URI_IS_SET_OBJECT(&uri));
+    CU_ASSERT(!LWM2M_URI_IS_SET_INSTANCE(&uri));
+    CU_ASSERT(!LWM2M_URI_IS_SET_RESOURCE(&uri));
+#ifndef LWM2M_VERSION_1_0
+    CU_ASSERT(!LWM2M_URI_IS_SET_RESOURCE_INSTANCE(&uri));
+#endif
+
+    requestType = uri_decode(NULL, NULL, COAP_DELETE, &uri);
+    CU_ASSERT_EQUAL(requestType, LWM2M_REQUEST_TYPE_DELETE_ALL);
+    CU_ASSERT(!LWM2M_URI_IS_SET_OBJECT(&uri));
+    CU_ASSERT(!LWM2M_URI_IS_SET_INSTANCE(&uri));
+    CU_ASSERT(!LWM2M_URI_IS_SET_RESOURCE(&uri));
+#ifndef LWM2M_VERSION_1_0
+    CU_ASSERT(!LWM2M_URI_IS_SET_RESOURCE_INSTANCE(&uri));
+#endif
+
+    requestType = uri_decode(NULL, NULL, COAP_GET, &uri);
+    CU_ASSERT_EQUAL(requestType, LWM2M_REQUEST_TYPE_DM);
     CU_ASSERT(!LWM2M_URI_IS_SET_OBJECT(&uri));
     CU_ASSERT(!LWM2M_URI_IS_SET_INSTANCE(&uri));
     CU_ASSERT(!LWM2M_URI_IS_SET_RESOURCE(&uri));

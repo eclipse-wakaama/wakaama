@@ -116,9 +116,9 @@ static uint8_t handle_request(lwm2m_context_t * contextP,
     LOG("Entering");
 
 #ifdef LWM2M_CLIENT_MODE
-    requestType = uri_decode(contextP->altPath, message->uri_path, &uri);
+    requestType = uri_decode(contextP->altPath, message->uri_path, message->code, &uri);
 #else
-    requestType = uri_decode(NULL, message->uri_path, &uri);
+    requestType = uri_decode(NULL, message->uri_path, message->code, &uri);
 #endif
 
     switch(requestType)
@@ -151,14 +151,7 @@ static uint8_t handle_request(lwm2m_context_t * contextP,
 
 #ifdef LWM2M_BOOTSTRAP
     case LWM2M_REQUEST_TYPE_DELETE_ALL:
-        if (COAP_DELETE != message->code)
-        {
-            result = COAP_400_BAD_REQUEST;
-        }
-        else
-        {
-            result = bootstrap_handleDeleteAll(contextP, fromSessionH);
-        }
+        result = bootstrap_handleDeleteAll(contextP, fromSessionH);
         break;
 
     case LWM2M_REQUEST_TYPE_BOOTSTRAP:

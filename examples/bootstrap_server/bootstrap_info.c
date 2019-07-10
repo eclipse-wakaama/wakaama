@@ -632,10 +632,50 @@ static bs_endpoint_info_t * prv_read_next_endpoint(FILE * fd)
         {
             endptP->name = value;
         }
-        else if (strcasecmp(key, "Delete") == 0)
+        else if (strcasecmp(key, "Discover") == 0)
         {
             lwm2m_uri_t uri;
 
+            if (lwm2m_stringToUri(value, strlen(value), &uri) == 0) goto error;
+
+            cmdP = (bs_command_t *)lwm2m_malloc(sizeof(bs_command_t));
+            if (cmdP == NULL) goto error;
+            memset(cmdP, 0, sizeof(bs_command_t));
+
+            cmdP->operation = BS_DISCOVER;
+            if (LWM2M_URI_IS_SET_OBJECT(&uri))
+            {
+                cmdP->uri = (lwm2m_uri_t *)lwm2m_malloc(sizeof(lwm2m_uri_t));
+                if (cmdP->uri == NULL) goto error;
+                memcpy(cmdP->uri, &uri, sizeof(lwm2m_uri_t));
+            }
+
+            lwm2m_free(value);
+        }
+        else if (strcasecmp(key, "Read") == 0)
+        {
+#ifndef LWM2M_VERSION_1_0
+            lwm2m_uri_t uri;
+
+            if (lwm2m_stringToUri(value, strlen(value), &uri) == 0) goto error;
+
+            cmdP = (bs_command_t *)lwm2m_malloc(sizeof(bs_command_t));
+            if (cmdP == NULL) goto error;
+            memset(cmdP, 0, sizeof(bs_command_t));
+
+            cmdP->operation = BS_READ;
+            if (LWM2M_URI_IS_SET_OBJECT(&uri))
+            {
+                cmdP->uri = (lwm2m_uri_t *)lwm2m_malloc(sizeof(lwm2m_uri_t));
+                if (cmdP->uri == NULL) goto error;
+                memcpy(cmdP->uri, &uri, sizeof(lwm2m_uri_t));
+            }
+#endif
+            lwm2m_free(value);
+        }
+        else if (strcasecmp(key, "Delete") == 0)
+        {
+            lwm2m_uri_t uri;
 
             if (lwm2m_stringToUri(value, strlen(value), &uri) == 0) goto error;
 
@@ -701,6 +741,9 @@ static bs_endpoint_info_t * prv_read_next_endpoint(FILE * fd)
             cmdP = NULL;
         }
     }
+
+    if (res != 0) goto error;
+
     if (endptP->commandList != NULL)
     {
         bs_command_t * parentP;

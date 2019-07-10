@@ -761,8 +761,8 @@ typedef enum
 // name is set. The callback must return a COAP_* error code. COAP_204_CHANGED for success.
 // After a lwm2m_bootstrap_delete() or a lwm2m_bootstrap_write(), the callback is called with the status returned by the
 // client, the URI of the operation (may be nil) and name is nil. The callback return value is ignored.
-// If no preferred format is provided by the client the format will be 0, otherwise it will be set.
-typedef int (*lwm2m_bootstrap_callback_t) (void * sessionH, uint8_t status, lwm2m_uri_t * uriP, char * name, lwm2m_media_type_t format, void * userData);
+// If data is present and no preferred format is provided by the client the format will be 0, otherwise it will be set.
+typedef int (*lwm2m_bootstrap_callback_t) (void * sessionH, uint8_t status, lwm2m_uri_t * uriP, char * name, lwm2m_media_type_t format, uint8_t * data, uint16_t dataLength, void * userData);
 #endif
 
 struct _lwm2m_context_
@@ -853,7 +853,10 @@ void lwm2m_set_bootstrap_callback(lwm2m_context_t * contextP, lwm2m_bootstrap_ca
 int lwm2m_bootstrap_delete(lwm2m_context_t * contextP, void * sessionH, lwm2m_uri_t * uriP);
 int lwm2m_bootstrap_write(lwm2m_context_t * contextP, void * sessionH, lwm2m_uri_t * uriP, lwm2m_media_type_t format, uint8_t * buffer, size_t length);
 int lwm2m_bootstrap_finish(lwm2m_context_t * contextP, void * sessionH);
-
+int lwm2m_bootstrap_discover(lwm2m_context_t * contextP, void * sessionH, lwm2m_uri_t * uriP);
+#ifndef LWM2M_VERSION_1_0
+int lwm2m_bootstrap_read(lwm2m_context_t * contextP, void * sessionH, lwm2m_uri_t * uriP);
+#endif
 #endif
 
 #ifdef __cplusplus

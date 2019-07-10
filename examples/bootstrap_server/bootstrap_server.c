@@ -50,6 +50,7 @@ typedef struct _endpoint_
     struct _endpoint_ * next;
     char *             name;
     lwm2m_media_type_t format;
+    lwm2m_version_t    version;
     void *             handle;
     bs_command_t *     cmdList;
     uint8_t            status;
@@ -65,11 +66,7 @@ typedef struct
     int               addressFamily;
 } internal_data_t;
 
-/*
- * ensure sync with: er_coap_13.h COAP_MAX_PACKET_SIZE!
- * or internals.h LWM2M_MAX_PACKET_SIZE!
- */
-#define MAX_PACKET_SIZE 198
+#define MAX_PACKET_SIZE 2048
 
 static int g_quit = 0;
 
@@ -221,6 +218,22 @@ static void prv_send_command(internal_data_t * dataP,
 
     switch (endP->cmdList->operation)
     {
+    case BS_DISCOVER:
+        fprintf(stdout, "Sending DISCOVER ");
+        prv_print_uri(stdout, endP->cmdList->uri);
+        fprintf(stdout, " to \"%s\"", endP->name);
+        res = lwm2m_bootstrap_discover(dataP->lwm2mH, endP->handle, endP->cmdList->uri);
+        break;
+
+#ifndef LWM2M_VERSION_1_0
+        case BS_READ:
+        fprintf(stdout, "Sending READ ");
+        prv_print_uri(stdout, endP->cmdList->uri);
+        fprintf(stdout, " to \"%s\"", endP->name);
+        res = lwm2m_bootstrap_read(dataP->lwm2mH, endP->handle, endP->cmdList->uri);
+        break;
+#endif
+
     case BS_DELETE:
         fprintf(stdout, "Sending DELETE ");
         prv_print_uri(stdout, endP->cmdList->uri);
@@ -322,6 +335,8 @@ static int prv_bootstrap_callback(void * sessionH,
                                   lwm2m_uri_t * uriP,
                                   char * name,
                                   lwm2m_media_type_t format,
+                                  uint8_t * data,
+                                  uint16_t dataLength,
                                   void * userData)
 {
     internal_data_t * dataP = (internal_data_t *)userData;
@@ -364,6 +379,7 @@ static int prv_bootstrap_callback(void * sessionH,
         endP->handle = sessionH;
         endP->name = strdup(name);
         endP->format = 0 == format ? LWM2M_CONTENT_TLV : format;
+        endP->version = VERSION_MISSING;
         endP->status = CMD_STATUS_NEW;
         endP->next = dataP->endpointList;
         dataP->endpointList = endP;
@@ -392,6 +408,49 @@ static int prv_bootstrap_callback(void * sessionH,
 
         switch (endP->cmdList->operation)
         {
+        case BS_DISCOVER:
+            if (status == COAP_205_CONTENT)
+            {
+                uint8_t *start = data;
+                if (dataLength > 4 && !memcmp(data, "</>;", 4))
+                {
+                    start += 4;
+                }
+                if (dataLength - (start-data) >= 10
+                 && start[9] == ','
+                 && start[7] == '.'
+                 && !memcmp(start, "lwm2m=", 6))
+                {
+                    endP->version = VERSION_UNRECOGNIZED;
+                    if (start[6] == '1')
+                    {
+                        if (start[8] == '0')
+                        {
+                            endP->version = VERSION_1_0;
+                        }
+                        else if (start[8] == '1')
+                        {
+                            endP->version = VERSION_1_1;
+                        }
+                    }
+                }
+                output_data(stdout, NULL, format, data, dataLength, 1);
+            }
+            // Can continue even if discover failed.
+            endP->status = CMD_STATUS_OK;
+            break;
+
+#ifndef LWM2M_VERSION_1_0
+        case BS_READ:
+            if (status == COAP_205_CONTENT)
+            {
+                output_data(stdout, NULL, format, data, dataLength, 1);
+            }
+            // Can continue even if read failed.
+            endP->status = CMD_STATUS_OK;
+            break;
+#endif
+
         case BS_DELETE:
             if (status == COAP_202_DELETED)
             {
@@ -483,7 +542,7 @@ static void prv_bootstrap_client(char * buffer,
     // simulate a client bootstrap request.
     // Only LWM2M 1.0 clients support this method of bootstrap. For them, TLV
     // support is mandatory.
-    if (COAP_204_CHANGED == prv_bootstrap_callback(newConnP, COAP_NO_ERROR, NULL, name, LWM2M_CONTENT_TLV, user_data))
+    if (COAP_204_CHANGED == prv_bootstrap_callback(newConnP, COAP_NO_ERROR, NULL, name, LWM2M_CONTENT_TLV, NULL, 0, user_data))
     {
         fprintf(stdout, "OK");
     }
@@ -719,6 +778,20 @@ int main(int argc, char *argv[])
                     endP->status = CMD_STATUS_NEW;
                     // fall through
                 case CMD_STATUS_NEW:
+#ifndef LWM2M_VERSION_1_0
+                    // Client version 1.1 or later is needed to support
+                    // bootstrap-read. Skip any read if the version is
+                    // missing or 1.0.
+                    if (endP->version == VERSION_MISSING
+                     || endP->version == VERSION_1_0)
+                    {
+                        while (endP->cmdList
+                            && endP->cmdList->operation == BS_READ)
+                        {
+                            endP->cmdList = endP->cmdList->next;
+                        }
+                    }
+#endif
                     prv_send_command(&data, endP);
                     break;
                 default:
