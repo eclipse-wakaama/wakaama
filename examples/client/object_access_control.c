@@ -62,8 +62,8 @@ typedef struct acc_ctrl_oi_s
     acc_ctrl_ri_t*          accCtrlValList;
 } acc_ctrl_oi_t;
 
-static uint8_t prv_delete(uint16_t id, lwm2m_object_t * objectP);
-static uint8_t prv_create(uint16_t objInstId, int numData,
+static uint8_t prv_delete(lwm2m_context_t *contextP, uint16_t id, lwm2m_object_t * objectP);
+static uint8_t prv_create(lwm2m_context_t *contextP, uint16_t objInstId, int numData,
                           lwm2m_data_t * tlvArray, lwm2m_object_t * objectP);
 
 static uint8_t prv_set_tlv(lwm2m_data_t* dataP, acc_ctrl_oi_t* accCtrlOiP)
@@ -139,11 +139,14 @@ static uint8_t prv_set_tlv(lwm2m_data_t* dataP, acc_ctrl_oi_t* accCtrlOiP)
     }
 }
 
-static uint8_t prv_read(uint16_t instanceId, int * numDataP,
+static uint8_t prv_read(lwm2m_context_t *contextP, uint16_t instanceId, int * numDataP,
                         lwm2m_data_t** dataArrayP, lwm2m_object_t * objectP)
 {
     uint8_t result;
     int     ri, ni;
+
+    /* unused parameter */
+    (void)contextP;
 
     // multi-instance object: search instance
     acc_ctrl_oi_t* accCtrlOiP =
@@ -216,7 +219,8 @@ static bool prv_add_ac_val(acc_ctrl_oi_t* accCtrlOiP,
     return ret;
 }
 
-static uint8_t prv_write_resources(uint16_t instanceId, int numData,
+static uint8_t prv_write_resources(lwm2m_context_t *contextP,
+               uint16_t instanceId, int numData,
                lwm2m_data_t* tlvArray, lwm2m_object_t* objectP, bool doCreate,
                lwm2m_write_type_t writeType)
 {
@@ -231,10 +235,10 @@ static uint8_t prv_write_resources(uint16_t instanceId, int numData,
 
     if (writeType == LWM2M_WRITE_REPLACE_INSTANCE)
     {
-        result = prv_delete(instanceId, objectP);
+        result = prv_delete(contextP, instanceId, objectP);
         if (result == COAP_202_DELETED)
         {
-            result = prv_create(instanceId, numData, tlvArray, objectP);
+            result = prv_create(contextP, instanceId, numData, tlvArray, objectP);
             if (result == COAP_201_CREATED)
             {
                 result = COAP_204_CHANGED;
@@ -473,16 +477,19 @@ static uint8_t prv_write_resources(uint16_t instanceId, int numData,
     return result;
 }
 
-static uint8_t prv_write(uint16_t instanceId, int numData,
+static uint8_t prv_write(lwm2m_context_t *contextP, uint16_t instanceId, int numData,
                          lwm2m_data_t* tlvArray, lwm2m_object_t* objectP,
                          lwm2m_write_type_t writeType)
 {
-    return prv_write_resources(instanceId, numData, tlvArray, objectP, false, writeType);
+    return prv_write_resources(contextP, instanceId, numData, tlvArray, objectP, false, writeType);
 }
 
-static uint8_t prv_delete(uint16_t id, lwm2m_object_t * objectP)
+static uint8_t prv_delete(lwm2m_context_t *contextP, uint16_t id, lwm2m_object_t * objectP)
 {
     acc_ctrl_oi_t* targetP;
+
+    /* unused parameter */
+    (void)contextP;
 
     objectP->instanceList = lwm2m_list_remove(objectP->instanceList, id,
                                               (lwm2m_list_t**)&targetP);
@@ -494,7 +501,7 @@ static uint8_t prv_delete(uint16_t id, lwm2m_object_t * objectP)
     return COAP_202_DELETED;
 }
 
-static uint8_t prv_create(uint16_t objInstId, int numData,
+static uint8_t prv_create(lwm2m_context_t *contextP, uint16_t objInstId, int numData,
                           lwm2m_data_t * tlvArray, lwm2m_object_t * objectP)
 {
     acc_ctrl_oi_t * targetP;
@@ -507,11 +514,11 @@ static uint8_t prv_create(uint16_t objInstId, int numData,
     targetP->objInstId    = objInstId;
     objectP->instanceList = LWM2M_LIST_ADD(objectP->instanceList, targetP);
 
-    result = prv_write_resources(objInstId, numData, tlvArray, objectP, true, LWM2M_WRITE_REPLACE_RESOURCES);
+    result = prv_write_resources(contextP, objInstId, numData, tlvArray, objectP, true, LWM2M_WRITE_REPLACE_RESOURCES);
 
     if (result != COAP_204_CHANGED)
     {
-        prv_delete(objInstId, objectP);
+        prv_delete(contextP, objInstId, objectP);
     }
     else
     {

@@ -71,7 +71,8 @@ typedef struct
     uint8_t delivery_method;
 } firmware_data_t;
 
-static uint8_t prv_firmware_read(uint16_t instanceId,
+static uint8_t prv_firmware_read(lwm2m_context_t *contextP,
+                                 uint16_t instanceId,
                                  int * numDataP,
                                  lwm2m_data_t ** dataArrayP,
                                  lwm2m_object_t * objectP)
@@ -79,6 +80,9 @@ static uint8_t prv_firmware_read(uint16_t instanceId,
     int i;
     uint8_t result;
     firmware_data_t * data = (firmware_data_t*)(objectP->userData);
+
+    /* unused parameter */
+    (void)contextP;
 
     // this is a single instance object
     if (instanceId != 0)
@@ -199,7 +203,8 @@ static uint8_t prv_firmware_read(uint16_t instanceId,
     return result;
 }
 
-static uint8_t prv_firmware_write(uint16_t instanceId,
+static uint8_t prv_firmware_write(lwm2m_context_t *contextP,
+                                  uint16_t instanceId,
                                   int numData,
                                   lwm2m_data_t * dataArray,
                                   lwm2m_object_t * objectP,
@@ -207,6 +212,9 @@ static uint8_t prv_firmware_write(uint16_t instanceId,
 {
     int i;
     uint8_t result;
+
+    /* unused parameter */
+    (void)contextP;
 
     // All write types are treated the same here
     (void)writeType;
@@ -250,13 +258,17 @@ static uint8_t prv_firmware_write(uint16_t instanceId,
     return result;
 }
 
-static uint8_t prv_firmware_execute(uint16_t instanceId,
+static uint8_t prv_firmware_execute(lwm2m_context_t *contextP,
+                                    uint16_t instanceId,
                                     uint16_t resourceId,
                                     uint8_t * buffer,
                                     int length,
                                     lwm2m_object_t * objectP)
 {
     firmware_data_t * data = (firmware_data_t*)(objectP->userData);
+
+    /* unused parameter */
+    (void)contextP;
 
     // this is a single instance object
     if (instanceId != 0)

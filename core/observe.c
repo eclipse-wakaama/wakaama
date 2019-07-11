@@ -917,7 +917,8 @@ static void prv_obsRequestCallback(lwm2m_context_t * contextP,
         if (has_block2)
         {
             // Do we need a block transfer here?
-            observationData->callback(observationData->client,
+            observationData->callback(contextP,
+                                      observationData->client,
                                       &observationData->uri,
                                       COAP_500_INTERNAL_SERVER_ERROR,  //?
                                       &block_info,
@@ -926,7 +927,8 @@ static void prv_obsRequestCallback(lwm2m_context_t * contextP,
         }
         else
         {
-            observationData->callback(observationData->client,
+            observationData->callback(contextP,
+                                      observationData->client,
                                       &observationData->uri,
                                       COAP_500_INTERNAL_SERVER_ERROR,  //?
                                       NULL,
@@ -960,7 +962,8 @@ static void prv_obsRequestCallback(lwm2m_context_t * contextP,
 
     if (code != COAP_205_CONTENT || (IS_OPTION(packet, COAP_OPTION_BLOCK2) && packet->block2_more))
     {
-        observationData->callback(observationData->client,
+        observationData->callback(contextP,
+                                  observationData->client,
                                   &observationData->uri,
                                   code,  //?
                                   NULL,
@@ -983,7 +986,8 @@ static void prv_obsRequestCallback(lwm2m_context_t * contextP,
 
             // give the user chance to free previous observation userData
             // indicator: COAP_202_DELETED and (Length ==0)
-            observationData->callback(observationData->client,
+            observationData->callback(contextP,
+                                      observationData->client,
                                       &observationData->uri,
                                       COAP_202_DELETED,
                                       NULL,
@@ -1004,7 +1008,8 @@ static void prv_obsRequestCallback(lwm2m_context_t * contextP,
         const int status = 0;
 
         if (has_block2) {
-            observationData->callback(observationData->client,
+            observationData->callback(contextP,
+                                      observationData->client,
                                       &observationData->uri,
                                       status,
                                       &block_info,
@@ -1013,7 +1018,8 @@ static void prv_obsRequestCallback(lwm2m_context_t * contextP,
                                       packet->payload_len,
                                       observationData->userData);
         } else {
-            observationData->callback(observationData->client,
+            observationData->callback(contextP,
+                                      observationData->client,
                                       &observationData->uri,
                                       status,
                                       NULL,
@@ -1054,7 +1060,8 @@ static void prv_obsCancelRequestCallback(lwm2m_context_t * contextP,
     {
         if (has_block2)
         {
-            cancelP->callbackP(cancelP->client,
+            cancelP->callbackP(contextP,
+                               cancelP->client,
                                &cancelP->uri,
                                COAP_500_INTERNAL_SERVER_ERROR,  //?
                                &block_info,
@@ -1065,7 +1072,8 @@ static void prv_obsCancelRequestCallback(lwm2m_context_t * contextP,
         }
         else
         {
-            cancelP->callbackP(cancelP->client,
+            cancelP->callbackP(contextP,
+                               cancelP->client,
                                &cancelP->uri,
                                COAP_500_INTERNAL_SERVER_ERROR,  //?
                                NULL,
@@ -1092,7 +1100,8 @@ static void prv_obsCancelRequestCallback(lwm2m_context_t * contextP,
     {
         if (has_block2)
         {
-            cancelP->callbackP(cancelP->client,
+            cancelP->callbackP(contextP,
+                               cancelP->client,
                                &cancelP->uri,
                                code,  //?
                                &block_info,
@@ -1103,7 +1112,8 @@ static void prv_obsCancelRequestCallback(lwm2m_context_t * contextP,
         }
         else
         {
-            cancelP->callbackP(cancelP->client,
+            cancelP->callbackP(contextP,
+                               cancelP->client,
                                &cancelP->uri,
                                code,  //?
                                NULL,
@@ -1118,7 +1128,8 @@ static void prv_obsCancelRequestCallback(lwm2m_context_t * contextP,
         const int status = 0;
         if (has_block2)
         {
-            cancelP->callbackP(cancelP->client,
+            cancelP->callbackP(contextP,
+                               cancelP->client,
                                &cancelP->uri,
                                status,  //?
                                &block_info,
@@ -1129,7 +1140,8 @@ static void prv_obsCancelRequestCallback(lwm2m_context_t * contextP,
         }
         else
         {
-            cancelP->callbackP(cancelP->client,
+            cancelP->callbackP(contextP,
+                               cancelP->client,
                                &cancelP->uri,
                                status,  //?
                                NULL,
@@ -1386,14 +1398,16 @@ bool observe_handleNotify(lwm2m_context_t * contextP,
             block_info.block_num = block_num;
             block_info.block_size = block_size;
             block_info.block_more = block_more;
-            observationP->callback(clientID,
+            observationP->callback(contextP,
+                                   clientID,
                                    &observationP->uri,
                                    (int)count,
                                    &block_info,
                                    utils_convertMediaType(message->content_type), message->payload, message->payload_len,
                                    observationP->userData);
         } else {
-            observationP->callback(clientID,
+            observationP->callback(contextP,
+                                   clientID,
                                    &observationP->uri,
                                    (int)count,
                                    NULL,

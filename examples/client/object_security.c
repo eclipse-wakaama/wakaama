@@ -134,7 +134,8 @@ static uint8_t prv_get_value(lwm2m_data_t * dataP,
     }
 }
 
-static uint8_t prv_security_read(uint16_t instanceId,
+static uint8_t prv_security_read(lwm2m_context_t *contextP,
+                                 uint16_t instanceId,
                                  int * numDataP,
                                  lwm2m_data_t ** dataArrayP,
                                  lwm2m_object_t * objectP)
@@ -142,6 +143,9 @@ static uint8_t prv_security_read(uint16_t instanceId,
     security_instance_t * targetP;
     uint8_t result;
     int i;
+
+    /* unused parameter */
+    (void)contextP;
 
     targetP = (security_instance_t *)lwm2m_list_find(objectP->instanceList, instanceId);
     if (NULL == targetP) return COAP_404_NOT_FOUND;
@@ -192,7 +196,8 @@ static uint8_t prv_security_read(uint16_t instanceId,
 
 #ifdef LWM2M_BOOTSTRAP
 
-static uint8_t prv_security_write(uint16_t instanceId,
+static uint8_t prv_security_write(lwm2m_context_t *contextP,
+                                  uint16_t instanceId,
                                   int numData,
                                   lwm2m_data_t * dataArray,
                                   lwm2m_object_t * objectP,
@@ -201,6 +206,9 @@ static uint8_t prv_security_write(uint16_t instanceId,
     security_instance_t * targetP;
     int i;
     uint8_t result = COAP_204_CHANGED;
+
+    /* unused parameter */
+    (void)contextP;
 
     /* All write types are ignored. They don't apply during bootstrap. */
     (void)writeType;
@@ -416,10 +424,14 @@ static uint8_t prv_security_write(uint16_t instanceId,
     return result;
 }
 
-static uint8_t prv_security_delete(uint16_t id,
+static uint8_t prv_security_delete(lwm2m_context_t *contextP,
+                                   uint16_t id,
                                    lwm2m_object_t * objectP)
 {
     security_instance_t * targetP;
+
+    /* unused parameter */
+    (void)contextP;
 
     objectP->instanceList = lwm2m_list_remove(objectP->instanceList, id, (lwm2m_list_t **)&targetP);
     if (NULL == targetP) return COAP_404_NOT_FOUND;
@@ -433,7 +445,8 @@ static uint8_t prv_security_delete(uint16_t id,
     return COAP_202_DELETED;
 }
 
-static uint8_t prv_security_create(uint16_t instanceId,
+static uint8_t prv_security_create(lwm2m_context_t *contextP,
+                                   uint16_t instanceId,
                                    int numData,
                                    lwm2m_data_t * dataArray,
                                    lwm2m_object_t * objectP)
@@ -448,11 +461,11 @@ static uint8_t prv_security_create(uint16_t instanceId,
     targetP->instanceId = instanceId;
     objectP->instanceList = LWM2M_LIST_ADD(objectP->instanceList, targetP);
 
-    result = prv_security_write(instanceId, numData, dataArray, objectP, LWM2M_WRITE_REPLACE_RESOURCES);
+    result = prv_security_write(contextP, instanceId, numData, dataArray, objectP, LWM2M_WRITE_REPLACE_RESOURCES);
 
     if (result != COAP_204_CHANGED)
     {
-        (void)prv_security_delete(instanceId, objectP);
+        (void)prv_security_delete(contextP, instanceId, objectP);
     }
     else
     {

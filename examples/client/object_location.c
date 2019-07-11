@@ -160,13 +160,15 @@ static uint8_t prv_res2tlv(lwm2m_data_t* dataP,
   * object, single resources or a sequence of resources
   * see 3GPP TS 23.032 V11.0.0(2012-09) page 23,24.
   * implemented for: HORIZONTAL_VELOCITY_WITH_UNCERTAINT
+  * @param contextP     in,     unused pointer to LWM2M context
   * @param objInstId    in,     instances ID of the location object to read
   * @param numDataP     in/out, pointer to the number of resource to read. 0 is the
   *                             exception for all readable resource of object instance
   * @param tlvArrayP    in/out, TLV data sequence with initialized resource ID to read
   * @param objectP      in,     private location data structure
   */
-static uint8_t prv_location_read(uint16_t objInstId,
+static uint8_t prv_location_read(lwm2m_context_t *contextP,
+                                 uint16_t objInstId,
                                  int*  numDataP,
                                  lwm2m_data_t** tlvArrayP,
                                  lwm2m_object_t*  objectP)
@@ -175,6 +177,9 @@ static uint8_t prv_location_read(uint16_t objInstId,
     int     i;
     uint8_t result = COAP_500_INTERNAL_SERVER_ERROR;
     location_data_t* locDataP = (location_data_t*)(objectP->userData);
+
+    /* unused parameter */
+    (void)contextP;
 
     // defined as single instance object!
     if (objInstId != 0) return COAP_404_NOT_FOUND;

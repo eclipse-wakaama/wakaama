@@ -254,13 +254,17 @@ static uint8_t prv_set_value(lwm2m_data_t * dataP,
     }
 }
 
-static uint8_t prv_read(uint16_t instanceId,
+static uint8_t prv_read(lwm2m_context_t *contextP,
+                        uint16_t instanceId,
                         int * numDataP,
                         lwm2m_data_t ** dataArrayP,
                         lwm2m_object_t * objectP)
 {
     uint8_t result;
     int i;
+
+    /* unused parameter */
+    (void)contextP;
 
     // this is a single instance object
     if (instanceId != 0)

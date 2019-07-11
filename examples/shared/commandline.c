@@ -88,7 +88,8 @@ static void prv_displayHelp(command_desc_t * commandArray,
 }
 
 
-void handle_command(command_desc_t * commandArray,
+void handle_command(lwm2m_context_t *lwm2mH,
+                    command_desc_t * commandArray,
                     char * buffer)
 {
     command_desc_t * cmdP;
@@ -104,7 +105,7 @@ void handle_command(command_desc_t * commandArray,
     {
         while (buffer[length] != 0 && isspace(buffer[length]&0xFF))
             length++;
-        cmdP->callback(buffer + length, cmdP->userData);
+        cmdP->callback(lwm2mH, buffer + length, cmdP->userData);
     }
     else
     {

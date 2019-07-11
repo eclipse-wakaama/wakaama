@@ -19,7 +19,7 @@
 
 #define COMMAND_END_LIST {NULL, NULL, NULL, NULL, NULL}
 
-typedef void (*command_handler_t) (char * args, void * user_data);
+typedef void (*command_handler_t) (lwm2m_context_t *lwm2mH, char * args, void * user_data);
 
 typedef struct
 {
@@ -31,7 +31,7 @@ typedef struct
 } command_desc_t;
 
 
-void handle_command(command_desc_t * commandArray, char * buffer);
+void handle_command(lwm2m_context_t *lwm2mH, command_desc_t * commandArray, char * buffer);
 char* get_end_of_arg(char* buffer);
 char * get_next_arg(char * buffer, char **end);
 int check_end_of_args(char* buffer);
