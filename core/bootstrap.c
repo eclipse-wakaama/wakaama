@@ -1102,7 +1102,7 @@ uint8_t bootstrap_handleRequest(lwm2m_context_t * contextP,
     memcpy(name, message->uri_query->data + QUERY_NAME_LEN, message->uri_query->len - QUERY_NAME_LEN);
     name[message->uri_query->len - QUERY_NAME_LEN] = 0;
 
-    result = contextP->bootstrapCallback(fromSessionH, COAP_NO_ERROR, NULL, name, format, message->payload, message->payload_len, contextP->bootstrapUserData);
+    result = contextP->bootstrapCallback(contextP, fromSessionH, COAP_NO_ERROR, NULL, name, format, message->payload, message->payload_len, contextP->bootstrapUserData);
 
     lwm2m_free(name);
 
@@ -1138,7 +1138,8 @@ static void prv_resultCallback(lwm2m_context_t * contextP,
 
     if (message == NULL)
     {
-        dataP->callback(transacP->peerH,
+        dataP->callback(contextP,
+                        transacP->peerH,
                         COAP_503_SERVICE_UNAVAILABLE,
                         uriP,
                         NULL,
@@ -1151,7 +1152,8 @@ static void prv_resultCallback(lwm2m_context_t * contextP,
     {
         coap_packet_t * packet = (coap_packet_t *)message;
 
-        dataP->callback(transacP->peerH,
+        dataP->callback(contextP,
+                        transacP->peerH,
                         packet->code,
                         uriP,
                         NULL,

@@ -133,9 +133,12 @@ time_t lwm2m_gettime(void);
 void lwm2m_printf(const char * format, ...);
 #endif
 
+typedef struct _lwm2m_context_ lwm2m_context_t;
+
 // communication layer
 #ifdef LWM2M_CLIENT_MODE
 // Returns a session handle that MUST uniquely identify a peer.
+// contextP: Pointer to the LWM2M context
 // secObjInstID: ID of the Securty Object instance to open a connection to
 // userData: parameter to lwm2m_init()
 void * lwm2m_connect_server(uint16_t secObjInstID, void * userData);
@@ -442,17 +445,17 @@ typedef enum
     LWM2M_WRITE_REPLACE_INSTANCE,   // Write should replace the entire instance.
 } lwm2m_write_type_t;
 
-typedef uint8_t (*lwm2m_read_callback_t) (uint16_t instanceId, int * numDataP, lwm2m_data_t ** dataArrayP, lwm2m_object_t * objectP);
-typedef uint8_t (*lwm2m_discover_callback_t) (uint16_t instanceId, int * numDataP, lwm2m_data_t ** dataArrayP, lwm2m_object_t * objectP);
-typedef uint8_t (*lwm2m_write_callback_t) (uint16_t instanceId, int numData, lwm2m_data_t * dataArray, lwm2m_object_t * objectP, lwm2m_write_type_t writeType);
-typedef uint8_t (*lwm2m_execute_callback_t) (uint16_t instanceId, uint16_t resourceId, uint8_t * buffer, int length, lwm2m_object_t * objectP);
-typedef uint8_t (*lwm2m_create_callback_t) (uint16_t instanceId, int numData, lwm2m_data_t * dataArray, lwm2m_object_t * objectP);
+typedef uint8_t (*lwm2m_read_callback_t) (lwm2m_context_t * contextP, uint16_t instanceId, int * numDataP, lwm2m_data_t ** dataArrayP, lwm2m_object_t * objectP);
+typedef uint8_t (*lwm2m_discover_callback_t) (lwm2m_context_t * contextP, uint16_t instanceId, int * numDataP, lwm2m_data_t ** dataArrayP, lwm2m_object_t * objectP);
+typedef uint8_t (*lwm2m_write_callback_t) (lwm2m_context_t * contextP, uint16_t instanceId, int numData, lwm2m_data_t * dataArray, lwm2m_object_t * objectP, lwm2m_write_type_t writeType);
+typedef uint8_t (*lwm2m_execute_callback_t) (lwm2m_context_t * contextP, uint16_t instanceId, uint16_t resourceId, uint8_t * buffer, int length, lwm2m_object_t * objectP);
+typedef uint8_t (*lwm2m_create_callback_t) (lwm2m_context_t * contextP, uint16_t instanceId, int numData, lwm2m_data_t * dataArray, lwm2m_object_t * objectP);
 #ifdef LWM2M_RAW_BLOCK1_REQUESTS
-typedef uint8_t (*lwm2m_raw_block1_create_callback_t) (lwm2m_uri_t * uriP, lwm2m_media_type_t format, uint8_t * buffer, int length, lwm2m_object_t * objectP, uint32_t block_num, uint8_t block_more);
-typedef uint8_t (*lwm2m_raw_block1_write_callback_t) (lwm2m_uri_t * uriP, lwm2m_media_type_t format, uint8_t * buffer, int length, lwm2m_object_t * objectP, uint32_t block_num, uint8_t block_more);
-typedef uint8_t (*lwm2m_raw_block1_execute_callback_t) (lwm2m_uri_t * uriP, uint8_t * buffer, int length, lwm2m_object_t * objectP, uint32_t block_num, uint8_t block_more);
+typedef uint8_t (*lwm2m_raw_block1_create_callback_t) (lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_media_type_t format, uint8_t * buffer, int length, lwm2m_object_t * objectP, uint32_t block_num, uint8_t block_more);
+typedef uint8_t (*lwm2m_raw_block1_write_callback_t) (lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_media_type_t format, uint8_t * buffer, int length, lwm2m_object_t * objectP, uint32_t block_num, uint8_t block_more);
+typedef uint8_t (*lwm2m_raw_block1_execute_callback_t) (lwm2m_context_t * contextP, lwm2m_uri_t * uriP, uint8_t * buffer, int length, lwm2m_object_t * objectP, uint32_t block_num, uint8_t block_more);
 #endif
-typedef uint8_t (*lwm2m_delete_callback_t) (uint16_t instanceId, lwm2m_object_t * objectP);
+typedef uint8_t (*lwm2m_delete_callback_t) (lwm2m_context_t * contextP, uint16_t instanceId, lwm2m_object_t * objectP);
 
 struct _lwm2m_object_t
 {
@@ -577,8 +580,6 @@ typedef struct _lwm2m_server_
 #endif
 } lwm2m_server_t;
 
-typedef struct _lwm2m_context_ lwm2m_context_t;
-
 typedef struct _block_info_t
 {
     int block_num;
@@ -586,12 +587,14 @@ typedef struct _block_info_t
     bool block_more;
 } block_info_t;
 
+typedef struct _lwm2m_context_ lwm2m_context_t;
+
 /*
  * LWM2M result callback
  *
  * When used with an observe, if 'data' is not nil, 'status' holds the observe counter.
  */
-typedef void (*lwm2m_result_callback_t) (uint16_t clientID, lwm2m_uri_t * uriP, int status, block_info_t * block_info, lwm2m_media_type_t format, uint8_t * data, int dataLength, void * userData);
+typedef void (*lwm2m_result_callback_t) (lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, int status, block_info_t * block_info, lwm2m_media_type_t format, uint8_t * data, int dataLength, void * userData);
 
 /*
  * LWM2M Observations
@@ -762,7 +765,7 @@ typedef enum
 // After a lwm2m_bootstrap_delete() or a lwm2m_bootstrap_write(), the callback is called with the status returned by the
 // client, the URI of the operation (may be nil) and name is nil. The callback return value is ignored.
 // If data is present and no preferred format is provided by the client the format will be 0, otherwise it will be set.
-typedef int (*lwm2m_bootstrap_callback_t) (void * sessionH, uint8_t status, lwm2m_uri_t * uriP, char * name, lwm2m_media_type_t format, uint8_t * data, uint16_t dataLength, void * userData);
+typedef int (*lwm2m_bootstrap_callback_t) (lwm2m_context_t * contextP, void * sessionH, uint8_t status, lwm2m_uri_t * uriP, char * name, lwm2m_media_type_t format, uint8_t * data, uint16_t dataLength, void * userData);
 #endif
 
 struct _lwm2m_context_

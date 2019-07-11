@@ -77,9 +77,11 @@
 #include <ctype.h>
 #include <limits.h>
 
-static uint8_t prv_delete(uint16_t id,
+static uint8_t prv_delete(lwm2m_context_t * contextP,
+                          uint16_t id,
                           lwm2m_object_t * objectP);
-static uint8_t prv_create(uint16_t instanceId,
+static uint8_t prv_create(lwm2m_context_t * contextP,
+                          uint16_t instanceId,
                           int numData,
                           lwm2m_data_t * dataArray,
                           lwm2m_object_t * objectP);
@@ -139,13 +141,17 @@ typedef struct _prv_instance_
     int16_t  sig;
 } prv_instance_t;
 
-static uint8_t prv_read(uint16_t instanceId,
+static uint8_t prv_read(lwm2m_context_t * contextP,
+                        uint16_t instanceId,
                         int * numDataP,
                         lwm2m_data_t ** dataArrayP,
                         lwm2m_object_t * objectP)
 {
     prv_instance_t * targetP;
     int i;
+
+    /* Unused parameter */
+    (void)contextP;
 
     targetP = (prv_instance_t *)lwm2m_list_find(objectP->instanceList, instanceId);
     if (NULL == targetP) return COAP_404_NOT_FOUND;
@@ -188,12 +194,16 @@ static uint8_t prv_read(uint16_t instanceId,
     return COAP_205_CONTENT;
 }
 
-static uint8_t prv_discover(uint16_t instanceId,
+static uint8_t prv_discover(lwm2m_context_t * contextP,
+                            uint16_t instanceId,
                             int * numDataP,
                             lwm2m_data_t ** dataArrayP,
                             lwm2m_object_t * objectP)
 {
     int i;
+
+    /* Unused parameter */
+    (void)contextP;
 
     // is the server asking for the full object ?
     if (*numDataP == 0)
@@ -225,7 +235,8 @@ static uint8_t prv_discover(uint16_t instanceId,
     return COAP_205_CONTENT;
 }
 
-static uint8_t prv_write(uint16_t instanceId,
+static uint8_t prv_write(lwm2m_context_t * contextP,
+                         uint16_t instanceId,
                          int numData,
                          lwm2m_data_t * dataArray,
                          lwm2m_object_t * objectP,
@@ -239,10 +250,10 @@ static uint8_t prv_write(uint16_t instanceId,
 
     if (writeType == LWM2M_WRITE_REPLACE_INSTANCE)
     {
-        uint8_t result = prv_delete(instanceId, objectP);
+        uint8_t result = prv_delete(contextP, instanceId, objectP);
         if (result == COAP_202_DELETED)
         {
-            result = prv_create(instanceId, numData, dataArray, objectP);
+            result = prv_create(contextP, instanceId, numData, dataArray, objectP);
             if (result == COAP_201_CREATED)
             {
                 result = COAP_204_CHANGED;
@@ -296,10 +307,14 @@ static uint8_t prv_write(uint16_t instanceId,
     return COAP_204_CHANGED;
 }
 
-static uint8_t prv_delete(uint16_t id,
+static uint8_t prv_delete(lwm2m_context_t * contextP,
+                          uint16_t id,
                           lwm2m_object_t * objectP)
 {
     prv_instance_t * targetP;
+
+    /* Unused parameter */
+    (void)contextP;
 
     objectP->instanceList = lwm2m_list_remove(objectP->instanceList, id, (lwm2m_list_t **)&targetP);
     if (NULL == targetP) return COAP_404_NOT_FOUND;
@@ -309,7 +324,8 @@ static uint8_t prv_delete(uint16_t id,
     return COAP_202_DELETED;
 }
 
-static uint8_t prv_create(uint16_t instanceId,
+static uint8_t prv_create(lwm2m_context_t * contextP,
+                          uint16_t instanceId,
                           int numData,
                           lwm2m_data_t * dataArray,
                           lwm2m_object_t * objectP)
@@ -325,11 +341,11 @@ static uint8_t prv_create(uint16_t instanceId,
     targetP->shortID = instanceId;
     objectP->instanceList = LWM2M_LIST_ADD(objectP->instanceList, targetP);
 
-    result = prv_write(instanceId, numData, dataArray, objectP, LWM2M_WRITE_REPLACE_RESOURCES);
+    result = prv_write(contextP, instanceId, numData, dataArray, objectP, LWM2M_WRITE_REPLACE_RESOURCES);
 
     if (result != COAP_204_CHANGED)
     {
-        (void)prv_delete(instanceId, objectP);
+        (void)prv_delete(contextP, instanceId, objectP);
     }
     else
     {
@@ -339,12 +355,15 @@ static uint8_t prv_create(uint16_t instanceId,
     return result;
 }
 
-static uint8_t prv_exec(uint16_t instanceId,
+static uint8_t prv_exec(lwm2m_context_t * contextP,
+                        uint16_t instanceId,
                         uint16_t resourceId,
                         uint8_t * buffer,
                         int length,
                         lwm2m_object_t * objectP)
 {
+    /* Unused parameter */
+    (void)contextP;
 
     if (NULL == lwm2m_list_find(objectP->instanceList, instanceId)) return COAP_404_NOT_FOUND;
 

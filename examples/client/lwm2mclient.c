@@ -108,9 +108,15 @@ typedef struct
     int addressFamily;
 } client_data_t;
 
-static void prv_quit(char * buffer,
+static void prv_quit(lwm2m_context_t * lwm2mH,
+                     char * buffer,
                      void * user_data)
 {
+    /* unused parameters */
+    (void)lwm2mH;
+    (void)buffer;
+    (void)user_data;
+
     g_quit = 1;
 }
 
@@ -161,7 +167,7 @@ void handle_value_changed(lwm2m_context_t * lwm2mH,
                 lwm2m_data_encode_nstring(value, valueLength, dataP);
             }
 
-            result = object->writeFunc(uri->instanceId, 1, dataP, object, LWM2M_WRITE_PARTIAL_UPDATE);
+            result = object->writeFunc(lwm2mH, uri->instanceId, 1, dataP, object, LWM2M_WRITE_PARTIAL_UPDATE);
             if (COAP_405_METHOD_NOT_ALLOWED == result)
             {
                 switch (uri->objectId)
@@ -322,11 +328,14 @@ void lwm2m_close_connection(void * sessionH,
     }
 }
 
-static void prv_output_servers(char * buffer,
+static void prv_output_servers(lwm2m_context_t * lwm2mH,
+                               char * buffer,
                                void * user_data)
 {
-    lwm2m_context_t * lwm2mH = (lwm2m_context_t *) user_data;
     lwm2m_server_t * targetP;
+
+    /* unused parameter */
+    (void)user_data;
 
     targetP = lwm2mH->bootstrapServerList;
 
@@ -406,13 +415,16 @@ static void prv_output_servers(char * buffer,
     }
 }
 
-static void prv_change(char * buffer,
+static void prv_change(lwm2m_context_t * lwm2mH,
+                       char * buffer,
                        void * user_data)
 {
-    lwm2m_context_t * lwm2mH = (lwm2m_context_t *) user_data;
     lwm2m_uri_t uri;
     char * end = NULL;
     int result;
+
+    /* unused parameter */
+    (void)user_data;
 
     end = get_end_of_arg(buffer);
     if (end[0] == 0) goto syntax_error;
@@ -437,11 +449,14 @@ syntax_error:
     fprintf(stdout, "Syntax error !\n");
 }
 
-static void prv_object_list(char * buffer,
+static void prv_object_list(lwm2m_context_t * lwm2mH,
+                            char * buffer,
                             void * user_data)
 {
-    lwm2m_context_t * lwm2mH = (lwm2m_context_t *)user_data;
     lwm2m_object_t * objectP;
+
+    /* unused parameter */
+    (void)user_data;
 
     for (objectP = lwm2mH->objectList; objectP != NULL; objectP = objectP->next)
     {
@@ -462,7 +477,8 @@ static void prv_object_list(char * buffer,
     }
 }
 
-static void prv_instance_dump(lwm2m_object_t * objectP,
+static void prv_instance_dump(lwm2m_context_t * lwm2mH,
+                              lwm2m_object_t * objectP,
                               uint16_t id)
 {
     int numData;
@@ -470,7 +486,7 @@ static void prv_instance_dump(lwm2m_object_t * objectP,
     uint16_t res;
 
     numData = 0;
-    res = objectP->readFunc(id, &numData, &dataArray, objectP);
+    res = objectP->readFunc(lwm2mH, id, &numData, &dataArray, objectP);
     if (res != COAP_205_CONTENT)
     {
         printf("Error ");
@@ -483,14 +499,17 @@ static void prv_instance_dump(lwm2m_object_t * objectP,
 }
 
 
-static void prv_object_dump(char * buffer,
+static void prv_object_dump(lwm2m_context_t * lwm2mH,
+                            char * buffer,
                             void * user_data)
 {
-    lwm2m_context_t * lwm2mH = (lwm2m_context_t *) user_data;
     lwm2m_uri_t uri;
     char * end = NULL;
     int result;
     lwm2m_object_t * objectP;
+
+    /* unused parameter */
+    (void)user_data;
 
     end = get_end_of_arg(buffer);
     if (end[0] == 0) goto syntax_error;
@@ -508,7 +527,7 @@ static void prv_object_dump(char * buffer,
 
     if (LWM2M_URI_IS_SET_INSTANCE(&uri))
     {
-        prv_instance_dump(objectP, uri.instanceId);
+        prv_instance_dump(lwm2mH, objectP, uri.instanceId);
     }
     else
     {
@@ -517,7 +536,7 @@ static void prv_object_dump(char * buffer,
         for (instanceP = objectP->instanceList; instanceP != NULL ; instanceP = instanceP->next)
         {
             fprintf(stdout, "Instance %d:\r\n", instanceP->id);
-            prv_instance_dump(objectP, instanceP->id);
+            prv_instance_dump(lwm2mH, objectP, instanceP->id);
             fprintf(stdout, "\r\n");
         }
     }
@@ -528,10 +547,13 @@ syntax_error:
     fprintf(stdout, "Syntax error !\n");
 }
 
-static void prv_update(char * buffer,
+static void prv_update(lwm2m_context_t * lwm2mH,
+                       char * buffer,
                        void * user_data)
 {
-    lwm2m_context_t * lwm2mH = (lwm2m_context_t *)user_data;
+    /* unused parameter */
+    (void)user_data;
+
     if (buffer[0] == 0) goto syntax_error;
 
     uint16_t serverId = (uint16_t) atoi(buffer);
@@ -576,12 +598,15 @@ static void update_battery_level(lwm2m_context_t * context)
     }
 }
 
-static void prv_add(char * buffer,
+static void prv_add(lwm2m_context_t * lwm2mH,
+                    char * buffer,
                     void * user_data)
 {
-    lwm2m_context_t * lwm2mH = (lwm2m_context_t *)user_data;
     lwm2m_object_t * objectP;
     int res;
+
+    /* unused parameter */
+    (void)user_data;
 
     objectP = get_test_object();
     if (objectP == NULL)
@@ -603,11 +628,14 @@ static void prv_add(char * buffer,
     return;
 }
 
-static void prv_remove(char * buffer,
+static void prv_remove(lwm2m_context_t * lwm2mH,
+                       char * buffer,
                        void * user_data)
 {
-    lwm2m_context_t * lwm2mH = (lwm2m_context_t *)user_data;
     int res;
+
+    /* unused parameter */
+    (void)user_data;
 
     res = lwm2m_remove_object(lwm2mH, 31024);
     if (res != 0)
@@ -625,11 +653,14 @@ static void prv_remove(char * buffer,
 
 #ifdef LWM2M_BOOTSTRAP
 
-static void prv_initiate_bootstrap(char * buffer,
+static void prv_initiate_bootstrap(lwm2m_context_t * lwm2mH,
+                                   char * buffer,
                                    void * user_data)
 {
-    lwm2m_context_t * lwm2mH = (lwm2m_context_t *)user_data;
     lwm2m_server_t * targetP;
+
+    /* unused parameter */
+    (void)user_data;
 
     // HACK !!!
     lwm2mH->state = STATE_BOOTSTRAP_REQUIRED;
@@ -641,11 +672,14 @@ static void prv_initiate_bootstrap(char * buffer,
     }
 }
 
-static void prv_display_objects(char * buffer,
+static void prv_display_objects(lwm2m_context_t * lwm2mH,
+                                char * buffer,
                                 void * user_data)
 {
-    lwm2m_context_t * lwm2mH = (lwm2m_context_t *)user_data;
     lwm2m_object_t * object;
+
+    /* unused parameter */
+    (void)user_data;
 
     for (object = lwm2mH->objectList; object != NULL; object = object->next){
         if (NULL != object) {
@@ -680,10 +714,17 @@ static void prv_display_objects(char * buffer,
     }
 }
 
-static void prv_display_backup(char * buffer,
-        void * user_data)
+static void prv_display_backup(lwm2m_context_t * lwm2mH,
+                               char * buffer,
+                               void * user_data)
 {
    int i;
+
+   /* unused parameters */
+   (void)lwm2mH;
+   (void)buffer;
+   (void)user_data;
+
    for (i = 0 ; i < BACKUP_OBJECT_COUNT ; i++) {
        lwm2m_object_t * object = backupObjectArray[i];
        if (NULL != object) {
@@ -824,7 +865,6 @@ int main(int argc, char *argv[])
     client_data_t data;
     int result;
     lwm2m_context_t * lwm2mH = NULL;
-    int i;
     const char * localPort = "56830";
     const char * server = NULL;
     const char * serverPort = LWM2M_STANDARD_PORT_STR;
@@ -1134,10 +1174,6 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-#ifdef WITH_TINYDTLS
-    data.lwm2mH = lwm2mH;
-#endif
-
     /*
      * We configure the liblwm2m library with the name of the client - which shall be unique for each client -
      * the number of objects we will be passing through and the objects array
@@ -1156,14 +1192,6 @@ int main(int argc, char *argv[])
      */
     init_value_change(lwm2mH);
 
-    /*
-     * As you now have your lwm2m context complete you can pass it as an argument to all the command line functions
-     * precedently viewed (first point)
-     */
-    for (i = 0 ; commands[i].name != NULL ; i++)
-    {
-        commands[i].userData = (void *)lwm2mH;
-    }
     fprintf(stdout, "LWM2M Client \"%s\" started on port %s\r\n", name, localPort);
     fprintf(stdout, "> "); fflush(stdout);
     /*
@@ -1367,7 +1395,7 @@ int main(int argc, char *argv[])
                     /*
                      * We call the corresponding callback of the typed command passing it the buffer for further arguments
                      */
-                    handle_command(commands, (char*)buffer);
+                    handle_command(lwm2mH, commands, (char*)buffer);
                 }
                 if (g_quit == 0)
                 {
