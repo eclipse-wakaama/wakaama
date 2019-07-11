@@ -33,6 +33,8 @@
  *  Binding                            |  7 |    R/W     |  Single   |    Yes    | String   |         |       |
  *  Registration Update                |  8 |     E      |  Single   |    Yes    |          |         |       |
 #ifndef LWM2M_VERSION_1_0
+ *  Bootstrap-Request Trigger          |  9 |     E      |  Single   |    No     |          |         |       |
+ *  Last Bootstrapped                  | 12 |    R/W     |  Single   |    No     | Time     |         |       |
  *  Registration Priority Order        | 13 |    R/W     |  Single   |    No     | Unsigned |         |       |
  *  Initial Registration Delay Timer   | 14 |    R/W     |  Single   |    No     | Unsigned |         |   s   |
  *  Registration Failure Block         | 15 |    R/W     |  Single   |    No     | Boolean  |         |       |
@@ -51,6 +53,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
+#include <time.h>
 
 typedef struct _server_instance_
 {
@@ -64,6 +67,7 @@ typedef struct _server_instance_
     bool        storing;
     char        binding[4];
 #ifndef LWM2M_VERSION_1_0
+    time_t      lastBootstrapped;
     int         registrationPriorityOrder; // <0 when it doesn't exist
     int         initialRegistrationDelayTimer; // <0 when it doesn't exist
     int8_t      registrationFailureBlock; // <0 when it doesn't exist, 0 for false, > 0 for true
@@ -124,6 +128,10 @@ static uint8_t prv_get_value(lwm2m_data_t * dataP,
         return COAP_405_METHOD_NOT_ALLOWED;
 
 #ifndef LWM2M_VERSION_1_0
+    case LWM2M_SERVER_LAST_BOOTSTRAP_ID:
+        lwm2m_data_encode_int(targetP->lastBootstrapped, dataP);
+        return COAP_205_CONTENT;
+
     case LWM2M_SERVER_REG_ORDER_ID:
         if (targetP->registrationPriorityOrder >= 0)
         {
@@ -247,6 +255,7 @@ static uint8_t prv_server_read(lwm2m_context_t *contextP,
             LWM2M_SERVER_STORING_ID,
             LWM2M_SERVER_BINDING_ID,
 #ifndef LWM2M_VERSION_1_0
+            LWM2M_SERVER_LAST_BOOTSTRAP_ID,
             LWM2M_SERVER_REG_ORDER_ID,
             LWM2M_SERVER_INITIAL_REG_DELAY_ID,
             LWM2M_SERVER_REG_FAIL_BLOCK_ID,
@@ -417,6 +426,7 @@ static uint8_t prv_server_discover(lwm2m_context_t *contextP,
             LWM2M_SERVER_BINDING_ID,
             LWM2M_SERVER_UPDATE_ID,
 #ifndef LWM2M_VERSION_1_0
+            LWM2M_SERVER_BOOTSTRAP_ID,
             LWM2M_SERVER_REG_ORDER_ID,
             LWM2M_SERVER_INITIAL_REG_DELAY_ID,
             LWM2M_SERVER_REG_FAIL_BLOCK_ID,
@@ -554,6 +564,9 @@ static uint8_t prv_server_discover(lwm2m_context_t *contextP,
             case LWM2M_SERVER_UPDATE_ID:
                 break;
 #ifndef LWM2M_VERSION_1_0
+            case LWM2M_SERVER_BOOTSTRAP_ID:
+            case LWM2M_SERVER_LAST_BOOTSTRAP_ID:
+                break;
             case LWM2M_SERVER_REG_ORDER_ID:
                 if(targetP->registrationPriorityOrder < 0)
                 {
@@ -937,6 +950,13 @@ static uint8_t prv_server_write(lwm2m_context_t *contextP,
         i++;
     } while (i < numData && result == COAP_204_CHANGED);
 
+#ifndef LWM2M_VERSION_1_0
+    if (result == COAP_204_CHANGED && contextP->state == STATE_BOOTSTRAPPING)
+    {
+        targetP->lastBootstrapped = time(NULL);
+    }
+#endif
+
     return result;
 }
 
@@ -949,9 +969,7 @@ static uint8_t prv_server_execute(lwm2m_context_t *contextP,
 
 {
     server_instance_t * targetP;
-
-    /* unused parameter */
-    (void)contextP;
+    int res = COAP_405_METHOD_NOT_ALLOWED;
 
     targetP = (server_instance_t *)lwm2m_list_find(objectP->instanceList, instanceId);
     if (NULL == targetP) return COAP_404_NOT_FOUND;
@@ -959,15 +977,31 @@ static uint8_t prv_server_execute(lwm2m_context_t *contextP,
     switch (resourceId)
     {
     case LWM2M_SERVER_DISABLE_ID:
-        // executed in core, if COAP_204_CHANGED is returned
-        if (0 < targetP->disableTimeout) return COAP_204_CHANGED;
-        else return COAP_405_METHOD_NOT_ALLOWED;
+        if (targetP->shortServerId != 0 && 0 < targetP->disableTimeout)
+        {
+            res = lwm2m_registration_disable(contextP, targetP->shortServerId, targetP->disableTimeout);
+        }
+        break;
+
     case LWM2M_SERVER_UPDATE_ID:
-        // executed in core, if COAP_204_CHANGED is returned
-        return COAP_204_CHANGED;
+        if (targetP->shortServerId != 0)
+        {
+            res = lwm2m_update_registration(contextP, targetP->shortServerId, false);
+        }
+        break;
+
+#if !defined(LWM2M_VERSION_1_0) && defined(LWM2M_BOOTSTRAP)
+    case LWM2M_SERVER_BOOTSTRAP_ID:
+        res = lwm2m_initiate_bootstrap(contextP);
+        break;
+#endif
+
     default:
-        return COAP_405_METHOD_NOT_ALLOWED;
+        break;
     }
+
+    if (res == 0) res = COAP_204_CHANGED;
+    return res;
 }
 
 static uint8_t prv_server_delete(lwm2m_context_t *contextP,
@@ -1001,7 +1035,9 @@ static uint8_t prv_server_create(lwm2m_context_t *contextP,
     memset(serverInstance, 0, sizeof(server_instance_t));
 
     serverInstance->instanceId = instanceId;
+    serverInstance->disableTimeout = 86400;
 #ifndef LWM2M_VERSION_1_0
+    serverInstance->lastBootstrapped = (time_t)-1;
     serverInstance->registrationPriorityOrder = -1;
     serverInstance->initialRegistrationDelayTimer = -1;
     serverInstance->registrationFailureBlock = -1;
@@ -1126,9 +1162,11 @@ lwm2m_object_t * get_server_object(int serverId,
         serverInstance->instanceId = 0;
         serverInstance->shortServerId = serverId;
         serverInstance->lifetime = lifetime;
+        serverInstance->disableTimeout = 86400;
         serverInstance->storing = storing;
         memcpy (serverInstance->binding, binding, strlen(binding)+1);
 #ifndef LWM2M_VERSION_1_0
+        serverInstance->lastBootstrapped = (time_t)-1;
         serverInstance->registrationPriorityOrder = -1;
         serverInstance->initialRegistrationDelayTimer = -1;
         serverInstance->registrationFailureBlock = -1;

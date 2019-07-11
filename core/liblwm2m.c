@@ -88,6 +88,36 @@ void lwm2m_deregister(lwm2m_context_t * context)
     }
 }
 
+int lwm2m_registration_disable(lwm2m_context_t * contextP,
+                               uint16_t shortServerID,
+                               time_t timeout)
+{
+    int result = COAP_404_NOT_FOUND;
+    lwm2m_server_t * serverP;
+
+    for (serverP = contextP->serverList; serverP; serverP = serverP->next)
+    {
+        if (serverP->shortID == shortServerID)
+        {
+            result = registration_deregister(contextP, serverP);
+            if (result == NO_ERROR)
+            {
+                if (serverP->status != STATE_DEREG_PENDING && serverP->sessionH != NULL)
+                {
+                    lwm2m_close_connection(serverP->sessionH, contextP->userData);
+                    serverP->sessionH = NULL;
+                }
+
+                serverP->registration = lwm2m_gettime() + timeout;
+                serverP->status = STATE_REG_HOLD_OFF;
+            }
+            break;
+        }
+    }
+
+    return result;
+}
+
 static void prv_deleteServer(lwm2m_server_t * serverP, void *userData)
 {
     // TODO parse transaction and observation to remove the ones related to this server

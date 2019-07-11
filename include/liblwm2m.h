@@ -573,8 +573,8 @@ typedef struct _lwm2m_server_
     char *                  location;
     bool                    dirty;
     lwm2m_block_data_t *    blockData;   // list to handle temporary block data.
-#ifndef LWM2M_VERSION_1_0
     uint16_t                servObjInstID;// Server object instance ID if not a bootstrap server.
+#ifndef LWM2M_VERSION_1_0
     uint8_t                 attempt;      // Current registration attempt
     uint8_t                 sequence;     // Current registration sequence
 #endif
@@ -822,6 +822,17 @@ int lwm2m_update_registration(lwm2m_context_t * contextP, uint16_t shortServerID
 // send deregistration to all servers connected to client
 void lwm2m_deregister(lwm2m_context_t * context);
 void lwm2m_resource_value_changed(lwm2m_context_t * contextP, lwm2m_uri_t * uriP);
+
+// Deregister from a server for a period of time
+int lwm2m_registration_disable(lwm2m_context_t * contextP,
+                               uint16_t shortServerID,
+                               time_t timeout);
+
+#ifdef LWM2M_BOOTSTRAP
+// Start a client initiated bootstrap
+int lwm2m_initiate_bootstrap(lwm2m_context_t * contextP);
+#endif
+
 #endif
 
 #ifdef LWM2M_SERVER_MODE

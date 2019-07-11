@@ -347,7 +347,7 @@ void applyObservationCallback(lwm2m_observation_t * observation, int status, blo
 
 // defined in registration.c
 uint8_t registration_handleRequest(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, void * fromSessionH, coap_packet_t * message, coap_packet_t * response);
-void registration_deregister(lwm2m_context_t * contextP, lwm2m_server_t * serverP);
+uint8_t registration_deregister(lwm2m_context_t * contextP, lwm2m_server_t * serverP);
 void registration_freeClient(lwm2m_client_t * clientP);
 uint8_t registration_start(lwm2m_context_t * contextP, bool restartFailed);
 void registration_step(lwm2m_context_t * contextP, time_t currentTime, time_t * timeoutP);

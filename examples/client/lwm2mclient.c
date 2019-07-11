@@ -393,20 +393,29 @@ static void prv_output_servers(lwm2m_context_t * lwm2mH,
             case STATE_DEREGISTERED:
                 fprintf(stdout, "DEREGISTERED\r\n");
                 break;
+            case STATE_REG_HOLD_OFF:
+                fprintf(stdout, "REGISTRATION HOLD OFF\r\n");
+                break;
             case STATE_REG_PENDING:
                 fprintf(stdout, "REGISTRATION PENDING\r\n");
                 break;
             case STATE_REGISTERED:
                 fprintf(stdout, "REGISTERED\tlocation: \"%s\"\tLifetime: %lus\r\n", targetP->location, (unsigned long)targetP->lifetime);
                 break;
+            case STATE_REG_FAILED:
+                fprintf(stdout, "REGISTRATION FAILED\r\n");
+                break;
             case STATE_REG_UPDATE_PENDING:
                 fprintf(stdout, "REGISTRATION UPDATE PENDING\r\n");
                 break;
+            case STATE_REG_UPDATE_NEEDED:
+                fprintf(stdout, "REGISTRATION UPDATE NEEDED\r\n");
+                break;
+            case STATE_REG_FULL_UPDATE_NEEDED:
+                fprintf(stdout, "REGISTRATION FULL UPDATE NEEDED\r\n");
+                break;
             case STATE_DEREG_PENDING:
                 fprintf(stdout, "DEREGISTRATION PENDING\r\n");
-                break;
-            case STATE_REG_FAILED:
-                fprintf(stdout, "REGISTRATION FAILED\r\n");
                 break;
             default:
                 fprintf(stdout, "INVALID (%d)\r\n", (int)targetP->status);
@@ -657,18 +666,18 @@ static void prv_initiate_bootstrap(lwm2m_context_t * lwm2mH,
                                    char * buffer,
                                    void * user_data)
 {
-    lwm2m_server_t * targetP;
+    int res;
 
-    /* unused parameter */
+    /* unused parameters */
+    (void)buffer;
     (void)user_data;
 
-    // HACK !!!
-    lwm2mH->state = STATE_BOOTSTRAP_REQUIRED;
-    targetP = lwm2mH->bootstrapServerList;
-    while (targetP != NULL)
+    res = lwm2m_initiate_bootstrap(lwm2mH);
+    if (res != 0)
     {
-        targetP->lifetime = 0;
-        targetP = targetP->next;
+        fprintf(stdout, "Initiating bootstrap failed: ");
+        print_status(stdout, res);
+        fprintf(stdout, "\r\n");
     }
 }
 
