@@ -475,17 +475,57 @@ uint8_t bootstrap_handleCommand(lwm2m_context_t * contextP,
             }
             else
             {
-                result = object_delete(contextP, uriP);
                 if (uriP->objectId == LWM2M_SECURITY_OBJECT_ID
-                 && result == COAP_202_DELETED)
+                 && !LWM2M_URI_IS_SET_INSTANCE(uriP))
                 {
-                    if (LWM2M_URI_IS_SET_INSTANCE(uriP))
+                    lwm2m_object_t *objectP;
+                    result = COAP_202_DELETED;
+                    for (objectP = contextP->objectList; objectP != NULL; objectP = objectP->next)
                     {
-                        prv_tagServer(contextP, uriP->instanceId);
+                        if (objectP->objID == LWM2M_SECURITY_OBJECT_ID)
+                        {
+                            lwm2m_list_t * instanceP;
+
+                            instanceP = objectP->instanceList;
+                            while (NULL != instanceP
+                                && result == COAP_202_DELETED)
+                            {
+                                if (instanceP->id == serverP->secObjInstID)
+                                {
+                                    instanceP = instanceP->next;
+                                }
+                                else
+                                {
+                                    lwm2m_uri_t uri;
+
+                                    LWM2M_URI_RESET(&uri);
+                                    uri.objectId = objectP->objID;
+                                    uri.instanceId = instanceP->id;
+                                    result = object_delete(contextP, &uri);
+                                    instanceP = objectP->instanceList;
+                                }
+                            }
+                            if (result == COAP_202_DELETED)
+                            {
+                                prv_tagAllServer(contextP, serverP);
+                            }
+                        }
                     }
-                    else
+                }
+                else
+                {
+                    result = object_delete(contextP, uriP);
+                    if (uriP->objectId == LWM2M_SECURITY_OBJECT_ID
+                     && result == COAP_202_DELETED)
                     {
-                        prv_tagAllServer(contextP, NULL);
+                        if (LWM2M_URI_IS_SET_INSTANCE(uriP))
+                        {
+                            prv_tagServer(contextP, uriP->instanceId);
+                        }
+                        else
+                        {
+                            prv_tagAllServer(contextP, NULL);
+                        }
                     }
                 }
             }
