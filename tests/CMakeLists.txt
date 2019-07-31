@@ -8,11 +8,13 @@ add_executable(
     lwm2munittests
     block1tests.c
     block2tests.c
+    cbor_tests.c
     convert_numbers_test.c
     er_coap_coap_parse_message.c
     registration_tests.c
     list_tests.c
     senml_json_tests.c
+    senml_cbor_tests.c
     tests.h
     tlv_json_lwm2m_data_test.c
     tlvtests.c
@@ -21,14 +23,12 @@ add_executable(
 )
 
 include(FindPkgConfig)
-pkg_search_module(CUNIT
-        REQUIRED
-        IMPORTED_TARGET
-        cunit)
+pkg_search_module(CUNIT REQUIRED IMPORTED_TARGET cunit)
 target_link_libraries(lwm2munittests PkgConfig::CUNIT)
 
 target_compile_definitions(
     lwm2munittests PRIVATE LWM2M_CLIENT_MODE LWM2M_SERVER_MODE LWM2M_SUPPORT_TLV LWM2M_SUPPORT_JSON
+                           LWM2M_SUPPORT_SENML_CBOR
 )
 
 # Our tests are designed for POSIX systems

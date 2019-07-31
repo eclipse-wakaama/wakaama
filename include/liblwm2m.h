@@ -71,6 +71,9 @@ extern "C" {
 #define LWM2M_SUPPORT_JSON
 #endif
 #ifndef LWM2M_VERSION_1_0
+#ifndef LWM2M_SUPPORT_SENML_CBOR
+#define LWM2M_SUPPORT_SENML_CBOR
+#endif
 #ifndef LWM2M_SUPPORT_SENML_JSON
 #define LWM2M_SUPPORT_SENML_JSON
 #endif
@@ -79,6 +82,9 @@ extern "C" {
 
 #ifdef LWM2M_BOOTSTRAP_SERVER_MODE
 #ifndef LWM2M_VERSION_1_0
+#ifndef LWM2M_SUPPORT_SENML_CBOR
+#define LWM2M_SUPPORT_SENML_CBOR
+#endif
 #ifndef LWM2M_SUPPORT_SENML_JSON
 #define LWM2M_SUPPORT_SENML_JSON
 #endif
@@ -393,7 +399,9 @@ typedef enum
     LWM2M_CONTENT_TLV        = 11542,
     LWM2M_CONTENT_JSON_OLD   = 1543,     // Keep old value for backward-compatibility
     LWM2M_CONTENT_JSON       = 11543,
-    LWM2M_CONTENT_SENML_JSON = 110
+    LWM2M_CONTENT_SENML_JSON = 110,
+    LWM2M_CONTENT_CBOR       = 60,
+    LWM2M_CONTENT_SENML_CBOR = 112,
 } lwm2m_media_type_t;
 
 lwm2m_data_t * lwm2m_data_new(int size);
