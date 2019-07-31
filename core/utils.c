@@ -708,6 +708,12 @@ lwm2m_media_type_t utils_convertMediaType(coap_content_type_t type)
     case LWM2M_CONTENT_SENML_JSON:
         result = LWM2M_CONTENT_SENML_JSON;
         break;
+    case LWM2M_CONTENT_CBOR:
+        result = LWM2M_CONTENT_CBOR;
+        break;
+    case LWM2M_CONTENT_SENML_CBOR:
+        result = LWM2M_CONTENT_SENML_CBOR;
+        break;
     case APPLICATION_LINK_FORMAT:
         result = LWM2M_CONTENT_LINK;
         break;
@@ -803,15 +809,37 @@ uint8_t utils_getResponseFormat(uint8_t accept_num,
                 break;
 #endif
 
+#ifdef LWM2M_SUPPORT_SENML_CBOR
+#ifndef LWM2M_VERSION_1_1
+            case LWM2M_CONTENT_CBOR:
+                if (singular)
+                {
+                    *format = LWM2M_CONTENT_CBOR;
+                    found = true;
+                }
+                break;
+#endif
+            case LWM2M_CONTENT_SENML_CBOR:
+                *format = LWM2M_CONTENT_SENML_CBOR;
+                found = true;
+                break;
+#endif
+
             default:
                 break;
             }
         }
         if (!found) result = COAP_406_NOT_ACCEPTABLE;
     }
+    else if (singular)
+    {
+        *format = LWM2M_CONTENT_TEXT;
+    }
     else
     {
-#ifdef LWM2M_SUPPORT_SENML_JSON
+#if defined(LWM2M_SUPPORT_SENML_CBOR)
+        *format = LWM2M_CONTENT_SENML_CBOR;
+#elif defined(LWM2M_SUPPORT_SENML_JSON)
         *format = LWM2M_CONTENT_SENML_JSON;
 #elif defined(LWM2M_SUPPORT_JSON)
         *format = LWM2M_CONTENT_JSON;

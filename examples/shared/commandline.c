@@ -21,6 +21,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <math.h>
 #include <unistd.h>
 #include <inttypes.h>
 #include "liblwm2m.h"
@@ -300,6 +301,419 @@ void output_tlv(FILE * stream,
 #endif
 }
 
+#ifdef LWM2M_SUPPORT_SENML_CBOR
+#define CBOR_UNSIGNED_INTEGER   0
+#define CBOR_NEGATIVE_INTEGER   1
+#define CBOR_BYTE_STRING        2
+#define CBOR_TEXT_STRING        3
+#define CBOR_ARRAY              4
+#define CBOR_MAP                5
+#define CBOR_SEMANTIC_TAG       6
+#define CBOR_FLOATING_OR_SIMPLE 7
+
+#define CBOR_AI_ONE_BYTE_VALUE      24
+#define CBOR_AI_TWO_BYTE_VALUE      25
+#define CBOR_AI_FOUR_BYTE_VALUE     26
+#define CBOR_AI_EIGHT_BYTE_VALUE    27
+#define CBOR_AI_INDEFINITE_OR_BREAK 31
+
+#define CBOR_SIMPLE_FALSE           20
+#define CBOR_SIMPLE_TRUE            21
+#define CBOR_SIMPLE_NULL            22
+#define CBOR_SIMPLE_UNDEFINED       23
+
+static int prv_output_cbor_indefinite(FILE * stream,
+                                      uint8_t * buffer,
+                                      size_t buffer_len,
+                                      bool breakable,
+                                      uint8_t * mt);
+
+static double prv_convert_half(uint16_t half)
+{
+    double result;
+    int exp = (half >> 10) & 0x1f;
+    int mant = half & 0x3ff;
+    if (exp == 0)
+    {
+        result = ldexp(mant, -24);
+    }
+    else if (exp != 31)
+    {
+        result = ldexp(mant + 1024, exp - 25);
+    }
+    else if (mant == 0)
+    {
+        result = INFINITY;
+    }
+    else
+    {
+        result = NAN;
+    }
+    if ((half & 0x8000) != 0)
+    {
+        result = -result;
+    }
+    return result;
+}
+
+static void prv_output_cbor_float(FILE * stream, double val)
+{
+    if (val != val)
+    {
+        fprintf(stream, "NaN");
+    }
+    else if (val == INFINITY)
+    {
+        fprintf(stream, "Infinity");
+    }
+    else if (val == -INFINITY)
+    {
+        fprintf(stream, "-Infinity");
+    }
+    else
+    {
+        fprintf(stream, "%g", val);
+    }
+}
+
+static int prv_output_cbor_definite(FILE * stream,
+                                    uint8_t * buffer,
+                                    size_t buffer_len,
+                                    bool breakable,
+                                    uint8_t *mt)
+{
+    int head;
+    int res;
+    uint8_t ai;
+    union {
+        uint8_t u8;
+        uint16_t u16;
+        uint32_t u32;
+        uint64_t u64;
+        float f;
+        double d;
+    } val;
+    uint8_t valbits;
+    uint64_t i;
+    uint64_t u64;
+    uint64_t i64;
+
+    *mt = buffer[0] >> 5;
+    ai = buffer[0] & 0x1f;
+    head = 1;
+
+    switch (ai)
+    {
+    default:
+        valbits = 8;
+        val.u8 = ai;
+        break;
+    case CBOR_AI_ONE_BYTE_VALUE:
+        valbits = 8;
+        val.u8 = buffer[head++];
+        break;
+    case CBOR_AI_TWO_BYTE_VALUE:
+        valbits = 16;
+        val.u16 = ((uint16_t)buffer[head++]) << 8;
+        val.u16 += buffer[head++];
+        break;
+    case CBOR_AI_FOUR_BYTE_VALUE:
+        valbits = 32;
+        val.u32 = ((uint32_t)buffer[head++]) << 24;
+        val.u32 = ((uint32_t)buffer[head++]) << 16;
+        val.u32 = ((uint32_t)buffer[head++]) << 8;
+        val.u32 += buffer[head++];
+        break;
+    case CBOR_AI_EIGHT_BYTE_VALUE:
+        valbits = 64;
+        val.u64 = ((uint64_t)buffer[head++]) << 56;
+        val.u64 = ((uint64_t)buffer[head++]) << 48;
+        val.u64 = ((uint64_t)buffer[head++]) << 40;
+        val.u64 = ((uint64_t)buffer[head++]) << 32;
+        val.u64 = ((uint64_t)buffer[head++]) << 24;
+        val.u64 = ((uint64_t)buffer[head++]) << 16;
+        val.u64 = ((uint64_t)buffer[head++]) << 8;
+        val.u64 += buffer[head++];
+        break;
+    case 28:
+    case 29:
+    case 30:
+        // Invalid
+        return -1;
+    case CBOR_AI_INDEFINITE_OR_BREAK:
+        res = prv_output_cbor_indefinite(stream,
+                                         buffer + head,
+                                         buffer_len - head,
+                                         breakable,
+                                         mt);
+        if (res < 0) return res;
+        return head + res;
+    }
+
+    switch (valbits)
+    {
+    case 8:
+        u64 = val.u8;
+        i64 = ~(int64_t)val.u8;
+        break;
+    case 16:
+        u64 = val.u16;
+        i64 = ~(int64_t)val.u16;
+        break;
+    case 32:
+        u64 = val.u32;
+        i64 = ~(int64_t)val.u32;
+        break;
+    case 64:
+        u64 = val.u64;
+        i64 = ~(int64_t)val.u64;
+        break;
+    default:
+        // Shouldn't be possible
+        return -1;
+    }
+
+    switch (*mt)
+    {
+    case CBOR_UNSIGNED_INTEGER:
+        fprintf(stream, "%"PRIu64, u64);
+        break;
+    case CBOR_NEGATIVE_INTEGER:
+        if ((u64 >> 63) != 0)
+        {
+            // Unrepresentable
+            return -1;
+        }
+        else
+        {
+            fprintf(stream, "%"PRId64, i64);
+        }
+        break;
+    case CBOR_BYTE_STRING:
+        fprintf(stream, "h'");
+        if (buffer_len - head < u64) return -1;
+        for (i = 0; i < u64; i++)
+        {
+            fprintf(stream, "%02x", buffer[head++]);
+        }
+        fprintf(stream, "'");
+        break;
+    case CBOR_TEXT_STRING:
+        fprintf(stream, "\"");
+        if (buffer_len - head < u64) return -1;
+        for (i = 0; i < u64; i++)
+        {
+            fprintf(stream, "%c", buffer[head++]);
+        }
+        fprintf(stream, "\"");
+        break;
+    case CBOR_ARRAY:
+        fprintf(stream, "[");
+        for (i = 0; i < u64; i++)
+        {
+            if (i != 0) fprintf(stream, ", ");
+            res = prv_output_cbor_definite(stream,
+                                           buffer + head,
+                                           buffer_len - head,
+                                           false,
+                                           mt);
+            if (res <= 0) return -1;
+            head += res;
+        }
+        fprintf(stream, "]");
+        break;
+    case CBOR_MAP:
+        fprintf(stream, "{");
+        for (i = 0; i < u64; i++)
+        {
+            if (i != 0) fprintf(stream, ", ");
+            res = prv_output_cbor_definite(stream,
+                                           buffer + head,
+                                           buffer_len - head,
+                                           false,
+                                           mt);
+            if (res <= 0) return -1;
+            head += res;
+            fprintf(stream, ": ");
+            res = prv_output_cbor_definite(stream,
+                                           buffer + head,
+                                           buffer_len - head,
+                                           false,
+                                           mt);
+            if (res <= 0) return -1;
+            head += res;
+        }
+        fprintf(stream, "}");
+        break;
+    case CBOR_SEMANTIC_TAG:
+        fprintf(stream, "%"PRIu64"(", u64);
+        res = prv_output_cbor_definite(stream,
+                                       buffer + head,
+                                       buffer_len - head,
+                                       false,
+                                       mt);
+        if (res <= 0) return -1;
+        head += res;
+        fprintf(stream, ")");
+        break;
+    case CBOR_FLOATING_OR_SIMPLE:
+        switch (ai)
+        {
+        default:
+            fprintf(stream, "simple(%u)", val.u8);
+            break;
+        case CBOR_SIMPLE_FALSE:
+            fprintf(stream, "false");
+            break;
+        case CBOR_SIMPLE_TRUE:
+            fprintf(stream, "true");
+            break;
+        case CBOR_SIMPLE_NULL:
+            fprintf(stream, "null");
+            break;
+        case CBOR_SIMPLE_UNDEFINED:
+            fprintf(stream, "undefined");
+            break;
+        case CBOR_AI_TWO_BYTE_VALUE:
+            prv_output_cbor_float(stream, prv_convert_half(val.u16));
+            break;
+        case CBOR_AI_FOUR_BYTE_VALUE:
+            prv_output_cbor_float(stream, val.f);
+            break;
+        case CBOR_AI_EIGHT_BYTE_VALUE:
+            prv_output_cbor_float(stream, val.d);
+            break;
+        case 28:
+        case 29:
+        case 30:
+        case CBOR_AI_INDEFINITE_OR_BREAK:
+            // Shouldn't be possible
+            return -1;
+        }
+        break;
+    default:
+        // Should not be possible
+        return -1;
+    }
+    return head;
+}
+
+static int prv_output_cbor_indefinite(FILE * stream,
+                                      uint8_t * buffer,
+                                      size_t buffer_len,
+                                      bool breakable,
+                                      uint8_t * mt)
+{
+    uint8_t it;
+    int head = 0;
+    int res;
+
+    switch (*mt)
+    {
+    case CBOR_BYTE_STRING:
+    case CBOR_TEXT_STRING:
+        fprintf(stream, "(_ ");
+        while (1)
+        {
+            res = prv_output_cbor_definite(stream,
+                                           buffer + head,
+                                           buffer_len - head,
+                                           true,
+                                           &it);
+            if (res <= 0) return -1;
+            head += res;
+            if (it == UINT8_MAX) break;
+            if (it != *mt) return -1;
+            fprintf(stream, ", ");
+        }
+        fprintf(stream, ")");
+        break;
+    case CBOR_ARRAY:
+        fprintf(stream, "[_ ");
+        while (1)
+        {
+            res = prv_output_cbor_definite(stream,
+                                           buffer + head,
+                                           buffer_len - head,
+                                           true,
+                                           &it);
+            if (res <= 0) return -1;
+            head += res;
+            if (it == UINT8_MAX) break;
+            fprintf(stream, ", ");
+        }
+        fprintf(stream, "]");
+        break;
+    case CBOR_MAP:
+        fprintf(stream, "{_ ");
+        while (1)
+        {
+            res = prv_output_cbor_definite(stream,
+                                           buffer + head,
+                                           buffer_len - head,
+                                           true,
+                                           &it);
+            if (res <= 0) return -1;
+            head += res;
+            if (it == UINT8_MAX) break;
+            fprintf(stream, ": ");
+            res = prv_output_cbor_definite(stream,
+                                           buffer + head,
+                                           buffer_len - head,
+                                           false,
+                                           &it);
+            if (res <= 0) return -1;
+            head += res;
+            fprintf(stream, ", ");
+        }
+        fprintf(stream, "}");
+        break;
+    case CBOR_AI_INDEFINITE_OR_BREAK:
+        if (!breakable) return -1;
+        *mt = UINT8_MAX;
+        break;
+    default:
+        return -1;
+    }
+    return head;
+}
+#endif
+
+void output_cbor(FILE * stream,
+                 uint8_t * buffer,
+                 size_t buffer_len,
+                 int indent)
+{
+#ifdef LWM2M_SUPPORT_SENML_CBOR
+    size_t head = 0;
+    int res;
+    uint8_t mt;
+    print_indent(stream, indent);
+    while (head < buffer_len)
+    {
+        if (head != 0) fprintf(stream, ", ");
+        res = prv_output_cbor_definite(stream,
+                                       buffer + head,
+                                       buffer_len - head,
+                                       false,
+                                       &mt);
+        if (res <= 0)
+        {
+            fprintf(stream, "Error.\r\n");
+            break;
+        }
+        head += res;
+    }
+#else
+    /* Unused parameters */
+    (void)buffer;
+    (void)buffer_len;
+
+    print_indent(stream, indent);
+    fprintf(stream, "Unsupported.\r\n");
+#endif
+}
+
 void output_data(FILE *stream, block_info_t *block_info, lwm2m_media_type_t format, uint8_t *data, size_t dataLength,
                  int indent) {
     print_indent(stream, indent);
@@ -344,6 +758,16 @@ void output_data(FILE *stream, block_info_t *block_info, lwm2m_media_type_t form
             fprintf(stream, "%c", data[i]);
         }
         fprintf(stream, "\n");
+        break;
+
+    case LWM2M_CONTENT_CBOR:
+        fprintf(stream, "application/cbor:\r\n");
+        output_cbor(stream, data, dataLength, indent);
+        break;
+
+    case LWM2M_CONTENT_SENML_CBOR:
+        fprintf(stream, "application/senml+cbor:\r\n");
+        output_cbor(stream, data, dataLength, indent);
         break;
 
     case LWM2M_CONTENT_LINK:

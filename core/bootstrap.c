@@ -95,8 +95,7 @@ static void prv_requestBootstrap(lwm2m_context_t * context,
     query_length += res;
 
 #ifndef LWM2M_VERSION_1_0
-    // TODO Add SenML CBOR as a preferred content type when supported.
-#if defined(LWM2M_SUPPORT_SENML_JSON) || defined(LWM2M_SUPPORT_TLV)
+#if defined(LWM2M_SUPPORT_SENML_CBOR) || defined(LWM2M_SUPPORT_SENML_JSON) || defined(LWM2M_SUPPORT_TLV)
     res = utils_stringCopy(query + query_length, PRV_QUERY_BUFFER_LENGTH - query_length, QUERY_DELIMITER QUERY_PCT);
     if (res < 0)
     {
@@ -104,7 +103,9 @@ static void prv_requestBootstrap(lwm2m_context_t * context,
         return;
     }
     query_length += res;
-#if defined(LWM2M_SUPPORT_SENML_JSON)
+#if defined(LWM2M_SUPPORT_SENML_CBOR)
+    res = utils_stringCopy(query + query_length, PRV_QUERY_BUFFER_LENGTH - query_length, REG_ATTR_CONTENT_SENML_CBOR);
+#elif defined(LWM2M_SUPPORT_SENML_JSON)
     res = utils_stringCopy(query + query_length, PRV_QUERY_BUFFER_LENGTH - query_length, REG_ATTR_CONTENT_SENML_JSON);
 #elif defined(LWM2M_SUPPORT_TLV)
     res = utils_stringCopy(query + query_length, PRV_QUERY_BUFFER_LENGTH - query_length, REG_ATTR_CONTENT_TLV);
@@ -1079,6 +1080,11 @@ uint8_t bootstrap_handleRequest(lwm2m_context_t * contextP,
         {
 #ifdef LWM2M_SUPPORT_SENML_JSON
         case LWM2M_CONTENT_SENML_JSON:
+            break;
+#endif
+
+#ifdef LWM2M_SUPPORT_SENML_CBOR
+        case LWM2M_CONTENT_SENML_CBOR:
             break;
 #endif
         default:

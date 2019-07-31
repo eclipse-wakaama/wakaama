@@ -711,6 +711,15 @@ int lwm2m_data_parse(lwm2m_uri_t * uriP,
         return senml_json_parse(uriP, buffer, bufferLen, dataP);
 #endif
 
+#ifdef LWM2M_SUPPORT_SENML_CBOR
+#if !defined(LWM2M_VERSION_1_1)
+    case LWM2M_CONTENT_CBOR:
+        return cbor_parse(uriP, buffer, bufferLen, dataP);
+#endif
+    case LWM2M_CONTENT_SENML_CBOR:
+        return senml_cbor_parse(uriP, buffer, bufferLen, dataP);
+#endif
+
     default:
         return 0;
     }
@@ -727,7 +736,8 @@ int lwm2m_data_serialize(lwm2m_uri_t * uriP,
 
     // Check format
     if (*formatP == LWM2M_CONTENT_TEXT
-     || *formatP == LWM2M_CONTENT_OPAQUE)
+     || *formatP == LWM2M_CONTENT_OPAQUE
+     || *formatP == LWM2M_CONTENT_CBOR)
     {
         if (size != 1
          || (uriP != NULL && !LWM2M_URI_IS_SET_RESOURCE(uriP))
@@ -735,7 +745,9 @@ int lwm2m_data_serialize(lwm2m_uri_t * uriP,
          || dataP->type == LWM2M_TYPE_OBJECT_INSTANCE
          || dataP->type == LWM2M_TYPE_MULTIPLE_RESOURCE)
         {
-#ifdef LWM2M_SUPPORT_SENML_JSON
+#if defined(LWM2M_SUPPORT_SENML_CBOR)
+            *formatP = LWM2M_CONTENT_SENML_CBOR;
+#elif defined(LWM2M_SUPPORT_SENML_JSON)
             *formatP = LWM2M_CONTENT_SENML_JSON;
 #elif defined(LWM2M_SUPPORT_JSON)
             *formatP = LWM2M_CONTENT_JSON;
@@ -813,28 +825,45 @@ int lwm2m_data_serialize(lwm2m_uri_t * uriP,
         return senml_json_serialize(uriP, size, dataP, bufferP);
 #endif
 
+#ifdef LWM2M_SUPPORT_SENML_CBOR
+#ifndef LWM2M_VERSION_1_1
+    case LWM2M_CONTENT_CBOR:
+        return cbor_serialize(uriP, size, dataP, bufferP);
+#endif
+    case LWM2M_CONTENT_SENML_CBOR:
+        return senml_cbor_serialize(uriP, size, dataP, bufferP);
+#endif
+
     default:
         return -1;
     }
 }
 
-int lwm2m_data_append(int *sizeP, lwm2m_data_t **dataP, int addDataSize, lwm2m_data_t *addDataP) {
+int lwm2m_data_append(int *sizeP,
+                      lwm2m_data_t **dataP,
+                      int addDataSize,
+                      lwm2m_data_t *addDataP)
+{
     int result = 0;
     int tmpSize = (*sizeP) + addDataSize;
 
-    if (addDataSize == 0) {
+    if (addDataSize == 0)
+    {
         // Nothing to do.
         result = 1;
     }
-    if (*sizeP == 0) {
+    if (*sizeP == 0)
+    {
         *dataP = addDataP;
         *sizeP = addDataSize;
         result = 1;
     }
     // Guard against overflow
-    else if (tmpSize > *sizeP && tmpSize > addDataSize) {
-        lwm2m_data_t *tmpDataP = lwm2m_data_new(tmpSize);
-        if (tmpDataP != NULL) {
+    else if (tmpSize > *sizeP && tmpSize > addDataSize)
+    {
+        lwm2m_data_t * tmpDataP = lwm2m_data_new(tmpSize);
+        if (tmpDataP != NULL)
+        {
             // Shallow copy into new array
             memcpy(tmpDataP, *dataP, (*sizeP) * sizeof(lwm2m_data_t));
             memcpy(tmpDataP + *sizeP, addDataP, addDataSize * sizeof(lwm2m_data_t));
@@ -853,14 +882,20 @@ int lwm2m_data_append(int *sizeP, lwm2m_data_t **dataP, int addDataSize, lwm2m_d
     return result;
 }
 
-int lwm2m_data_append_one(int *sizeP, lwm2m_data_t **dataP, lwm2m_data_type_t type, uint16_t id) {
+int lwm2m_data_append_one(int *sizeP,
+                          lwm2m_data_t **dataP,
+                          lwm2m_data_type_t type,
+                          uint16_t id)
+{
     int result = 0;
     int tmpSize = *sizeP + 1;
 
     // Guard against overflow
-    if (tmpSize > *sizeP) {
-        lwm2m_data_t *tmpDataP = lwm2m_data_new(tmpSize);
-        if (tmpDataP != NULL) {
+    if (tmpSize > *sizeP)
+    {
+        lwm2m_data_t * tmpDataP = lwm2m_data_new(tmpSize);
+        if (tmpDataP != NULL)
+        {
             // Shallow copy into new array
             memcpy(tmpDataP, *dataP, (*sizeP) * sizeof(lwm2m_data_t));
             // Shallow free old data
