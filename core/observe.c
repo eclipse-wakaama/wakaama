@@ -327,6 +327,8 @@ uint8_t observe_setParameters(lwm2m_context_t * contextP,
     lwm2m_watcher_t * watcherP;
 
     LOG_URI(uriP);
+    fprintf(stderr, "toSet: %08X, toClear: %08X, minPeriod: %d, maxPeriod: %d, greaterThan: %f, lessThan: %f, step: %f",
+            attrP->toSet, attrP->toClear, attrP->minPeriod, attrP->maxPeriod, attrP->greaterThan, attrP->lessThan, attrP->step);
     LOG_ARG("toSet: %08X, toClear: %08X, minPeriod: %d, maxPeriod: %d, greaterThan: %f, lessThan: %f, step: %f",
             attrP->toSet, attrP->toClear, attrP->minPeriod, attrP->maxPeriod, attrP->greaterThan, attrP->lessThan, attrP->step);
 
@@ -1061,6 +1063,7 @@ bool observe_handleNotify(lwm2m_context_t * contextP,
     uint32_t count;
 
     LOG("Entering");
+    fprintf(stderr, "Sending data with obsID: %lu\n", obsID);
     token_len = coap_get_header_token(message, (const uint8_t **)&tokenP);
     if (token_len != sizeof(uint32_t)) return false;
 
