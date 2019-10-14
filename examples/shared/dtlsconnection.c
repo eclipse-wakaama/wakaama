@@ -554,7 +554,7 @@ void connection_free(dtls_connection_t * connList)
 int connection_send(dtls_connection_t *connP, uint8_t * buffer, size_t length){
     if (connP->dtlsSession == NULL) {
         // no security
-        if ( 0 != send_data(connP, buffer, length)) {
+        if (0 >= send_data(connP, buffer, length)) {
             return -1 ;
         }
     } else {
