@@ -17,6 +17,7 @@
  *    Bosch Software Innovations GmbH - Please refer to git log
  *    Pascal Rieux - Please refer to git log
  *    Scott Bertin, AMETEK, Inc. - Please refer to git log
+ *    Tuve Nordius, Husqvarna Group - Please refer to git log
  *    
  *******************************************************************************/
 /*
@@ -199,6 +200,9 @@
 #define REG_ATTR_CONTENT_JSON_OLD_LEN    4
 #define REG_ATTR_CONTENT_SENML_JSON      "110"
 #define REG_ATTR_CONTENT_SENML_JSON_LEN  3
+
+#define REG_ATTR_VERSION_KEY        "ver"
+#define REG_ATTR_VERSION_KEY_LEN    3
 
 #define ATTR_SERVER_ID_STR       "ep="
 #define ATTR_SERVER_ID_LEN       3

@@ -20,6 +20,7 @@
  *    Pascal Rieux - Please refer to git log
  *    Ville Skyttä - Please refer to git log
  *    Scott Bertin, AMETEK, Inc. - Please refer to git log
+ *    Tuve Nordius, Husqvarna Group - Please refer to git log
  *
  *******************************************************************************/
 
@@ -597,6 +598,7 @@ typedef struct _lwm2m_client_object_
     struct _lwm2m_client_object_ * next; // matches lwm2m_list_t::next
     uint16_t                 id;         // matches lwm2m_list_t::id
     lwm2m_list_t *           instanceList;
+    char *                  version;
 } lwm2m_client_object_t;
 
 typedef struct _lwm2m_client_
