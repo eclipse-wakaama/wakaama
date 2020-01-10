@@ -21,6 +21,7 @@
  *    Bosch Software Innovations GmbH - Please refer to git log
  *    Pascal Rieux - Please refer to git log
  *    Scott Bertin, AMETEK, Inc. - Please refer to git log
+ *    Tuve Nordius, Husqvarna Group - Please refer to git log
  *
  *******************************************************************************/
 
@@ -1127,8 +1128,13 @@ static void prv_freeClientObjectList(lwm2m_client_object_t * objects)
             lwm2m_free(target);
         }
 
+        if(objects->version != NULL){
+            lwm2m_free(objects->version);
+        }
+        
         objP = objects;
         objects = objects->next;
+        
         lwm2m_free(objP);
     }
 }
@@ -1279,14 +1285,17 @@ static uint16_t prv_splitLinkAttribute(uint8_t * data,
 static int prv_parseLinkAttributes(uint8_t * data,
                                    uint16_t length,
                                    lwm2m_media_type_t * format,
-                                   char ** altPath)
+                                   char ** altPath,
+                                   lwm2m_client_object_t * objectP)
 {
     uint16_t index;
     uint16_t pathStart;
     uint16_t pathLength;
     bool isValid;
+    bool isVersion;
 
     isValid = false;
+    isVersion = false;
 
     // Expecting application/link-format (RFC6690)
     // leading space were removed before. Remove trailing spaces.
@@ -1368,14 +1377,23 @@ static int prv_parseLinkAttributes(uint8_t * data,
                 return 0;
             }
         }
-        // else ignore this one
+        else if (keyLength == REG_ATTR_VERSION_KEY_LEN
+                 && 0 == lwm2m_strncmp(REG_ATTR_VERSION_KEY, (char*)data + index + keyStart, keyLength))
+        {
+            if(objectP != NULL){
+                objectP->version = lwm2m_malloc(valueLength +1);
+                memcpy(objectP->version, data + index + valueStart, valueLength);
+                (objectP->version)[valueLength] = 0;
+            }
+            isVersion = true;
+        }
 
         index += result;
     }
 
-    if (isValid == false) return 0;
-
-    if (pathLength != 0)
+    if (isValid == false && isVersion == false) return 0;
+    
+    if (isValid && pathLength != 0)
     {
         *altPath = (char *)lwm2m_malloc(pathLength + 1);
         if (*altPath == NULL) return 0;
@@ -1453,13 +1471,12 @@ static lwm2m_client_object_t * prv_decodeRegisterPayload(uint8_t * payload,
 {
     uint16_t index;
     lwm2m_client_object_t * objList;
-    bool linkAttrFound;
 
     *altPath = NULL;
     *format = LWM2M_CONTENT_TLV;
     objList = NULL;
-    linkAttrFound = false;
     index = 0;
+    lwm2m_client_object_t * objectP;
 
     while (index <= payloadLength)
     {
@@ -1479,8 +1496,6 @@ static lwm2m_client_object_t * prv_decodeRegisterPayload(uint8_t * payload,
         result = prv_getId(payload + start, length, &id, &instance);
         if (result != 0)
         {
-            lwm2m_client_object_t * objectP;
-
             objectP = (lwm2m_client_object_t *)lwm2m_list_find((lwm2m_list_t *)objList, id);
             if (objectP == NULL)
             {
@@ -1504,14 +1519,11 @@ static lwm2m_client_object_t * prv_decodeRegisterPayload(uint8_t * payload,
                 }
             }
         }
-        else if (linkAttrFound == false)
+        else
         {
-            result = prv_parseLinkAttributes(payload + start, length, format, altPath);
+            result = prv_parseLinkAttributes(payload + start, length, format, altPath, objectP);
             if (result == 0) goto error;
-
-            linkAttrFound = true;
         }
-        else goto error;
 
         index++;
     }
@@ -1535,7 +1547,7 @@ static lwm2m_client_t * prv_getClientByName(lwm2m_context_t * contextP,
     lwm2m_client_t * targetP;
 
     targetP = contextP->clientList;
-    while (targetP != NULL && strcmp(name, targetP->name) != 0)
+    while (targetP != NULL && targetP->name != NULL && strcmp(name, targetP->name) != 0)
     {
         targetP = targetP->next;
     }
@@ -1652,7 +1664,7 @@ uint8_t registration_handleRequest(lwm2m_context_t * contextP,
                 /* Supported version */
                 break;
             default:
-                lwm2m_free(name);
+                if (name != NULL) lwm2m_free(name);
                 if (msisdn != NULL) lwm2m_free(msisdn);
                 return COAP_412_PRECONDITION_FAILED;
             }
