@@ -16,6 +16,7 @@
  *    Simon Bernard - Please refer to git log
  *    Toby Jaffey - Please refer to git log
  *    Pascal Rieux - Please refer to git log
+ *    Tuve Nordius, Husqvarna Group - Please refer to git log
  *    
  *******************************************************************************/
 
@@ -98,7 +99,15 @@ static void prv_deleteServer(lwm2m_server_t * serverP, void *userData)
     {
         lwm2m_free(serverP->location);
     }
-    free_block1_buffer(serverP->block1Data);
+
+    while(serverP->blockData != NULL)
+    {
+        lwm2m_block_data_t * targetP;
+        targetP = serverP->blockData;
+        serverP->blockData = serverP->blockData->next;
+        free_block_data(targetP);
+    }
+    
     lwm2m_free(serverP);
 }
 
@@ -121,7 +130,6 @@ static void prv_deleteBootstrapServer(lwm2m_server_t * serverP, void *userData)
     {
          lwm2m_close_connection(serverP->sessionH, userData);
     }
-    free_block1_buffer(serverP->block1Data);
     lwm2m_free(serverP);
 }
 
