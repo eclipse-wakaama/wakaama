@@ -18,6 +18,7 @@
  *    Achim Kraus, Bosch Software Innovations GmbH - Please refer to git log
  *    Pascal Rieux - Please refer to git log
  *    Ville Skyttä - Please refer to git log
+ *    Tuve Nordius, Husqvarna Group - Please refer to git log
  *    
  *******************************************************************************/
 
@@ -64,7 +65,7 @@
  *  test |  1 |    R/W     |    No     |    Yes    | Integer | 0-255 |       |             |
  *  exec |  2 |     E      |    No     |    Yes    |         |       |       |             |
  *  dec  |  3 |    R/W     |    No     |    Yes    |  Float  |       |       |             |
- *
+ *  str  |  4 |    R/W     |    No     |    Yes    | String  |       |       |             |
  */
 
 #include "liblwm2m.h"
@@ -92,6 +93,7 @@ typedef struct _prv_instance_
     uint16_t shortID;               // matches lwm2m_list_t::id
     uint8_t  test;
     double   dec;
+    char *   str;
 } prv_instance_t;
 
 static void prv_output_buffer(uint8_t * buffer,
@@ -144,11 +146,12 @@ static uint8_t prv_read(uint16_t instanceId,
 
     if (*numDataP == 0)
     {
-        *dataArrayP = lwm2m_data_new(2);
+        *dataArrayP = lwm2m_data_new(3);
         if (*dataArrayP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
-        *numDataP = 2;
+        *numDataP = 3;
         (*dataArrayP)[0].id = 1;
         (*dataArrayP)[1].id = 3;
+        (*dataArrayP)[2].id = 4;
     }
 
     for (i = 0 ; i < *numDataP ; i++)
@@ -162,6 +165,9 @@ static uint8_t prv_read(uint16_t instanceId,
             return COAP_405_METHOD_NOT_ALLOWED;
         case 3:
             lwm2m_data_encode_float(targetP->dec, *dataArrayP + i);
+            break;
+        case 4:
+            lwm2m_data_encode_string(targetP->str, *dataArrayP + i);
             break;
         default:
             return COAP_404_NOT_FOUND;
@@ -181,12 +187,13 @@ static uint8_t prv_discover(uint16_t instanceId,
     // is the server asking for the full object ?
     if (*numDataP == 0)
     {
-        *dataArrayP = lwm2m_data_new(3);
+        *dataArrayP = lwm2m_data_new(4);
         if (*dataArrayP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
         *numDataP = 3;
         (*dataArrayP)[0].id = 1;
         (*dataArrayP)[1].id = 2;
         (*dataArrayP)[2].id = 3;
+        (*dataArrayP)[3].id = 4;
     }
     else
     {
@@ -197,6 +204,7 @@ static uint8_t prv_discover(uint16_t instanceId,
             case 1:
             case 2:
             case 3:
+            case 4:
                 break;
             default:
                 return COAP_404_NOT_FOUND;
@@ -214,7 +222,8 @@ static uint8_t prv_write(uint16_t instanceId,
 {
     prv_instance_t * targetP;
     int i;
-
+    char * tmp;
+    
     targetP = (prv_instance_t *)lwm2m_list_find(objectP->instanceList, instanceId);
     if (NULL == targetP) return COAP_404_NOT_FOUND;
 
@@ -222,27 +231,33 @@ static uint8_t prv_write(uint16_t instanceId,
     {
         switch (dataArray[i].id)
         {
-        case 1:
-        {
-            int64_t value;
+            case 1:
+            {
+                int64_t value;
 
-            if (1 != lwm2m_data_decode_int(dataArray + i, &value) || value < 0 || value > 0xFF)
-            {
-                return COAP_400_BAD_REQUEST;
-            }
-            targetP->test = (uint8_t)value;
-        }
-        break;
-        case 2:
-            return COAP_405_METHOD_NOT_ALLOWED;
-        case 3:
-            if (1 != lwm2m_data_decode_float(dataArray + i, &(targetP->dec)))
-            {
-                return COAP_400_BAD_REQUEST;
+                if (1 != lwm2m_data_decode_int(dataArray + i, &value) || value < 0 || value > 0xFF)
+                {
+                    return COAP_400_BAD_REQUEST;
+                }
+                targetP->test = (uint8_t)value;
             }
             break;
-        default:
-            return COAP_404_NOT_FOUND;
+            case 2:
+                return COAP_405_METHOD_NOT_ALLOWED;
+            case 3:
+                if (1 != lwm2m_data_decode_float(dataArray + i, &(targetP->dec)))
+                {
+                    return COAP_400_BAD_REQUEST;
+                }
+                break;
+            case 4:
+                tmp = targetP->str;
+                targetP->str = lwm2m_malloc(dataArray[i].value.asBuffer.length + 1);
+                strncpy(targetP->str, (char*)dataArray[i].value.asBuffer.buffer, dataArray[i].value.asBuffer.length);
+                lwm2m_free(tmp);
+                break;
+            default:
+                return COAP_404_NOT_FOUND;
         }
     }
 
@@ -303,20 +318,22 @@ static uint8_t prv_exec(uint16_t instanceId,
 
     switch (resourceId)
     {
-    case 1:
-        return COAP_405_METHOD_NOT_ALLOWED;
-    case 2:
-        fprintf(stdout, "\r\n-----------------\r\n"
-                        "Execute on %hu/%d/%d\r\n"
-                        " Parameter (%d bytes):\r\n",
-                        objectP->objID, instanceId, resourceId, length);
-        prv_output_buffer((uint8_t*)buffer, length);
-        fprintf(stdout, "-----------------\r\n\r\n");
-        return COAP_204_CHANGED;
-    case 3:
-        return COAP_405_METHOD_NOT_ALLOWED;
-    default:
-        return COAP_404_NOT_FOUND;
+        case 1:
+            return COAP_405_METHOD_NOT_ALLOWED;
+        case 2:
+            fprintf(stdout, "\r\n-----------------\r\n"
+                            "Execute on %hu/%d/%d\r\n"
+                            " Parameter (%d bytes):\r\n",
+                            objectP->objID, instanceId, resourceId, length);
+            prv_output_buffer((uint8_t*)buffer, length);
+            fprintf(stdout, "-----------------\r\n\r\n");
+            return COAP_204_CHANGED;
+        case 3:
+            return COAP_405_METHOD_NOT_ALLOWED;
+        case 4:
+            return COAP_405_METHOD_NOT_ALLOWED;
+        default:
+            return COAP_404_NOT_FOUND;
     }
 }
 
@@ -357,6 +374,12 @@ lwm2m_object_t * get_test_object(void)
             targetP->shortID = 10 + i;
             targetP->test    = 20 + i;
             targetP->dec     = -30 + i + (double)i/100.0;
+            char * str = lwm2m_malloc(i + 1);
+            str[0] = 0;
+            for (int j = 0; j <= i; j++) {
+                strcat(str, "I");
+            }
+            targetP->str     = str;
             testObj->instanceList = LWM2M_LIST_ADD(testObj->instanceList, targetP);
         }
         /*
@@ -379,6 +402,16 @@ lwm2m_object_t * get_test_object(void)
 
 void free_test_object(lwm2m_object_t * object)
 {
+    prv_instance_t * targetP = (prv_instance_t *)object->instanceList;
+    while (targetP != NULL)
+    {
+        prv_instance_t * next = targetP->next;
+        if (targetP != NULL)
+        {
+            lwm2m_free(targetP->str);
+        }
+        targetP = next;
+    }
     LWM2M_LIST_FREE(object->instanceList);
     if (object->userData != NULL)
     {
