@@ -31,7 +31,7 @@ set(WAKAAMA_SOURCES
     ${WAKAAMA_SOURCES_DIR}/senml_json.c
     ${WAKAAMA_SOURCES_DIR}/json_common.c
     ${WAKAAMA_SOURCES_DIR}/discover.c
-    ${WAKAAMA_SOURCES_DIR}/block1.c
+    ${WAKAAMA_SOURCES_DIR}/block.c
     ${WAKAAMA_SOURCES_DIR}/internals.h
 	${CORE_HEADERS}
     ${EXT_SOURCES})

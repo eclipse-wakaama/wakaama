@@ -16,6 +16,7 @@
  *    Toby Jaffey - Please refer to git log
  *    Pascal Rieux - Please refer to git log
  *    Bosch Software Innovations GmbH - Please refer to git log
+ *    Tuve Nordius, Husqvarna Group - Please refer to git log
  *
  *******************************************************************************/
 
@@ -411,19 +412,24 @@ int transaction_send(lwm2m_context_t * contextP,
             maxRetriesReached = true;
         }
     }
-
-    if (transacP->ack_received || maxRetriesReached)
+    else
     {
-        if (transacP->callback)
-        {
-            LOG_ARG("transaction %p expired..calling callback", transacP);
-            transacP->callback(contextP, transacP, NULL);
-        }
-        transaction_remove(contextP, transacP);
-        return -1;
+        goto error;
+    }
+    if (maxRetriesReached)
+    {
+        goto error;
     }
 
     return 0;
+error:
+    if (transacP->callback)
+    {
+        LOG_ARG("transaction %p expired..calling callback", transacP);
+        transacP->callback(contextP, transacP, NULL);
+    }
+    transaction_remove(contextP, transacP);
+    return -1;
 }
 
 void transaction_step(lwm2m_context_t * contextP,
@@ -470,4 +476,28 @@ void transaction_step(lwm2m_context_t * contextP,
 
         transacP = nextP;
     }
+}
+
+void transaction_set_payload(lwm2m_transaction_t * transaction, uint8_t * buffer, int length)
+{
+    transaction->payload = buffer;
+    transaction->payload_len = length;
+
+    if ( length > REST_MAX_CHUNK_SIZE ){
+        coap_set_header_block1(transaction->message, 0, true, REST_MAX_CHUNK_SIZE);
+    }
+
+    coap_set_payload(transaction->message, buffer, MIN(length, REST_MAX_CHUNK_SIZE));
+}
+
+bool transaction_free_userData(lwm2m_context_t * context, lwm2m_transaction_t * transaction)
+{
+    lwm2m_transaction_t * target = context->transactionList;
+    while (target != NULL){
+        if (target->userData == transaction->userData && target != transaction) return false;
+        target = target->next;
+    }
+    lwm2m_free(transaction->userData);
+    transaction->userData = NULL;
+    return true;
 }

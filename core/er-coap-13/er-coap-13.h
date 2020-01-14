@@ -36,6 +36,7 @@
  *      Matthias Kovatsch <kovatsch@inf.ethz.ch>
  * \contributors
  *    David Navarro, Intel Corporation - Adapt to usage in liblwm2m
+ *    Tuve Nordius, Husqvarna Group - Please refer to git log
  */
 
 
@@ -104,6 +105,10 @@ enum { OPTION_MAP_SIZE = sizeof(uint8_t) * 8 };
 #ifndef MIN
 #define MIN(a, b) ((a) < (b)? (a) : (b))
 #endif /* MIN */
+
+#ifndef MAX
+#define MAX(a, b) ((a) > (b)? (a) : (b))
+#endif /* MAX */
 
 /* CoAP message types */
 typedef enum {
@@ -330,7 +335,9 @@ size_t coap_serialize_message(void *packet, uint8_t *buffer);
 coap_status_t coap_parse_message(void *request, uint8_t *data, uint16_t data_len);
 void coap_free_header(void *packet);
 
-char * coap_get_multi_option_as_string(multi_option_t * option);
+char * coap_get_multi_option_as_path_string(multi_option_t * option);
+char * coap_get_multi_option_as_query_string(multi_option_t * option);
+char * coap_get_packet_uri_as_string(coap_packet_t * packet);
 void coap_add_multi_option(multi_option_t **dst, uint8_t *option, size_t option_len, uint8_t is_static);
 void free_multi_option(multi_option_t *dst);
 
@@ -372,8 +379,12 @@ int coap_get_header_uri_path(void *packet, const char **path); /* In-place strin
 int coap_set_header_uri_path(void *packet, const char *path);
 int coap_set_header_uri_path_segment(void *packet, const char *path);
 
+uint16_t coap_get_header_uri_port(void *packet);
+void coap_set_header_uri_port(void *packet, uint16_t port);
+
 int coap_get_header_uri_query(void *packet, const char **query); /* In-place string might not be 0-terminated. */
 int coap_set_header_uri_query(void *packet, const char *query);
+int coap_set_header_uri_query_segment(void *packet, const char *segment);
 
 int coap_get_header_location_path(void *packet, const char **path); /* In-place string might not be 0-terminated. */
 int coap_set_header_location_path(void *packet, const char *path); /* Also splits optional query into Location-Query option. */
@@ -389,6 +400,8 @@ int coap_set_header_block2(void *packet, uint32_t num, uint8_t more, uint16_t si
 
 int coap_get_header_block1(void *packet, uint32_t *num, uint8_t *more, uint16_t *size, uint32_t *offset);
 int coap_set_header_block1(void *packet, uint32_t num, uint8_t more, uint16_t size);
+
+int coap_get_header_block(void *packet, uint32_t *num, uint8_t *more, uint16_t *size, uint32_t *offset);
 
 int coap_get_header_size(void *packet, uint32_t *size);
 int coap_set_header_size(void *packet, uint32_t size);
