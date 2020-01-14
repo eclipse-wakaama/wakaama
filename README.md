@@ -46,6 +46,8 @@ Several compilation switches are used:
    Clients will support only that version. Servers will support that version and below.
    By default the latest version is supported. To specify version 1.0, for example, pass
    -DLWM2M_VERSION="1.0" to cmake.
+ - LWM2M_RAW_BLOCK1_REQUESTS For low memory client devices where it is not possible to keep a large post or put request in memory to be parsed (typically a firmware write).
+   This option enable each unprocessed block 1 payload to be passed to the application, typically to be stored to a flash memory. 
 
 Depending on your platform, you need to define LWM2M_BIG_ENDIAN or LWM2M_LITTLE_ENDIAN.
 LWM2M_CLIENT_MODE and LWM2M_SERVER_MODE can be defined at the same time.

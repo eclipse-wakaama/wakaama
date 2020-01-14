@@ -19,6 +19,7 @@
  *    Toby Jaffey - Please refer to git log
  *    Pascal Rieux - Please refer to git log
  *    Bosch Software Innovations GmbH - Please refer to git log
+ *    Tuve Nordius, Husqvarna Group - Please refer to git log
  *
  *******************************************************************************/
 
@@ -194,6 +195,238 @@ static uint8_t handle_request(lwm2m_context_t * contextP,
     return result;
 }
 
+static lwm2m_transaction_t * prv_get_transaction(lwm2m_context_t * contextP, void * sessionH, uint16_t mid)
+{
+    lwm2m_transaction_t * transaction;
+
+    transaction = contextP->transactionList;
+    while (transaction != NULL
+           && lwm2m_session_is_equal(sessionH, transaction->peerH, contextP->userData) == false
+           && transaction->mID != mid)
+    {
+        transaction = transaction->next;
+    }
+    return transaction;
+}
+
+// limited clone of transaction to be used by block transfers
+static lwm2m_transaction_t * prv_create_next_block_transaction(lwm2m_transaction_t * transaction, uint16_t nextMID){
+    static coap_packet_t message[1];
+    if (0 != coap_parse_message(message, transaction->buffer, transaction->buffer_len)){
+        return NULL;
+    }
+
+    lwm2m_transaction_t * clone = transaction_new(transaction->peerH, message->code, NULL, NULL, nextMID, message->token_len, message->token);
+    if (clone == NULL) return NULL;
+
+    coap_set_header_content_type(clone->message, message->type);
+
+    if (message->proxy_uri != NULL)
+    {
+        char  str[message->proxy_uri_len + 1];
+        str[message->proxy_uri_len] = '\0';
+        memcpy(str, message->proxy_uri, message->proxy_uri_len);
+        coap_set_header_proxy_uri(clone->message, str);
+    }
+
+    if (IS_OPTION(message, COAP_OPTION_ETAG))
+    {
+        coap_set_header_etag(clone->message, message->etag, message->etag_len);
+    }
+
+    if (message->uri_host != NULL)
+    {
+        char  str[message->uri_host_len + 1];
+        str[message->uri_host_len] = '\0';
+        memcpy(str, message->uri_host, message->uri_host_len);
+        coap_set_header_uri_host(clone->message, str);
+    }
+
+    if (IS_OPTION(message, COAP_OPTION_URI_PORT))
+    {
+        coap_set_header_uri_port(clone->message, message->uri_port);
+    }
+
+    if(IS_OPTION(message, COAP_OPTION_LOCATION_PATH))
+    {
+        ((coap_packet_t *)clone->message)->location_path = message->location_path;
+        SET_OPTION((coap_packet_t *)clone->message, COAP_OPTION_LOCATION_PATH);
+    }
+    
+    if (message->location_query != NULL)
+    {
+        char  str[message->location_query_len + 1];
+        str[message->location_query_len] = '\0';
+        memcpy(str, message->location_query, message->location_query_len);
+        coap_set_header_location_query(clone->message, str);
+    }
+
+    if(IS_OPTION(message, COAP_OPTION_CONTENT_TYPE))
+    {
+        ((coap_packet_t *)clone->message)->content_type = message->content_type;
+        SET_OPTION((coap_packet_t *)clone->message, COAP_OPTION_CONTENT_TYPE);
+    }
+  
+    if(IS_OPTION(message, COAP_OPTION_URI_PATH))
+    {
+        ((coap_packet_t *)clone->message)->uri_path = message->uri_path;
+        SET_OPTION((coap_packet_t *)clone->message, COAP_OPTION_URI_PATH);
+    }
+
+    if (IS_OPTION(message, COAP_OPTION_OBSERVE))
+    {
+        coap_set_header_observe(clone->message, message->observe);
+    }
+    
+    for (int i = 0; i < message->accept_num; i++) {
+        coap_set_header_accept(clone->message, message->accept[i]);
+    }
+
+    if (IS_OPTION(message, COAP_OPTION_IF_MATCH))
+    {
+        coap_set_header_if_match(clone->message, message->if_match, message->if_match_len);
+    }
+
+    if(IS_OPTION(message, COAP_OPTION_URI_QUERY))
+    {
+        ((coap_packet_t *)clone->message)->uri_query = message->uri_query;
+        SET_OPTION((coap_packet_t *)clone->message, COAP_OPTION_URI_QUERY);
+    }
+
+    if (IS_OPTION(message, COAP_OPTION_IF_NONE_MATCH))
+    {
+        coap_set_header_if_none_match(clone->message);
+    }
+    
+    clone->payload = transaction->payload;
+    clone->payload_len = transaction->payload_len;
+    clone->callback = transaction->callback;
+    clone->userData = transaction->userData;
+    return clone;
+}
+static int prv_send_new_block1(lwm2m_context_t * contextP, lwm2m_transaction_t * previous, uint32_t block_num, uint16_t block_size)
+{
+    lwm2m_transaction_t * next;
+    // Done sending block
+    if (block_num * block_size > previous->payload_len) return 0;
+
+    next = prv_create_next_block_transaction(previous, contextP->nextMID++);
+    if (next == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
+
+    coap_set_header_block1(next->message, block_num, (block_num + 1) * block_size < next->payload_len, block_size);
+    coap_set_payload(next->message, next->payload + block_num * block_size , MIN(block_size, next->payload_len - block_num * block_size));
+
+    contextP->transactionList = (lwm2m_transaction_t *)LWM2M_LIST_ADD(contextP->transactionList, next);
+    return transaction_send(contextP, next);
+}
+
+static int prv_send_next_block1(lwm2m_context_t * contextP, void * sessionH, uint16_t mid, uint16_t block_size)
+{
+    lwm2m_transaction_t * transaction;
+    coap_packet_t * message;
+    uint32_t block_num;
+    
+    transaction = prv_get_transaction(contextP, sessionH, mid);
+    if(transaction == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
+
+    message = transaction->message;
+    
+    // safeguard, requested block size should not be greater or zero
+    if (block_size > message->block1_size || block_size == 0) block_size = message->block1_size;
+    
+    if (message->block1_num == 0)
+    {
+        block_num = message->block1_size / block_size;
+    }
+    else
+    {
+        block_num = message->block1_num + 1;
+    }
+    
+    return prv_send_new_block1(contextP, transaction, block_num, block_size);
+}
+
+static int prv_change_to_block1(lwm2m_context_t * contextP, void * sessionH, uint16_t mid, uint32_t size){
+    lwm2m_transaction_t * transaction;
+    uint16_t block_size = 16;
+    
+    transaction = prv_get_transaction(contextP, sessionH, mid);
+
+    for (int n = 1; 16 << n <= (int)size ; n++) {
+        block_size = 16 << n;
+    }
+
+    block_size = MIN(block_size, REST_MAX_CHUNK_SIZE);
+    
+    return prv_send_new_block1(contextP, transaction, 0, block_size);
+}
+
+
+static int prv_retry_block1(lwm2m_context_t * contextP, void * sessionH, uint16_t mid, uint16_t block_size)
+{
+    lwm2m_transaction_t * transaction;
+    coap_packet_t * message;
+    uint32_t block_num;
+    
+    transaction = prv_get_transaction(contextP, sessionH, mid);
+    if(transaction == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
+
+    message = transaction->message;
+    
+    // safeguard, requested block size should not be greater or zero
+    if (block_size == message->block1_size && block_size > 16) block_size *= 0.5;
+    if (block_size >= message->block1_size || block_size == 0) return COAP_400_BAD_REQUEST;
+    
+    block_num = message->block1_num;
+    
+    return prv_send_new_block1(contextP, transaction, block_num, block_size);
+}
+
+
+
+static int prv_send_get_block2(lwm2m_context_t * contextP,
+                                    void * sessionH,
+                                    lwm2m_block_data_t * blockDataHead,
+                                    uint16_t currentMID,
+                                    uint32_t block2_num,
+                                    uint16_t block2_size
+                                    )
+{
+    lwm2m_transaction_t * transaction;
+    lwm2m_transaction_t * next;
+    uint16_t nextMID;
+    
+    // get current transaction
+    transaction = prv_get_transaction(contextP, sessionH, currentMID);
+    if(transaction == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
+
+    // create new transaction
+    nextMID = contextP->nextMID++;
+    next = prv_create_next_block_transaction(transaction, nextMID);
+    if (next == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
+
+    // set block2 header
+    coap_set_header_block2(next->message, block2_num, 0, MIN(block2_size, REST_MAX_CHUNK_SIZE));
+
+    //  update block2data to nect expected mid
+    coap_block2_set_expected_mid(blockDataHead, currentMID, nextMID);
+
+    contextP->transactionList = (lwm2m_transaction_t *)LWM2M_LIST_ADD(contextP->transactionList, next);
+    return transaction_send(contextP, next);
+}
+
+static int prv_send_get_next_block2(lwm2m_context_t * contextP,
+                                    void * sessionH,
+                                    lwm2m_block_data_t * blockDataHead,
+                                    uint16_t currentMID,
+                                    uint32_t block2_num,
+                                    uint16_t block2_size
+                                    )
+{
+    return prv_send_get_block2(contextP, sessionH, blockDataHead, currentMID, block2_num + 1, block2_size);
+}
+
+
 /* This function is an adaptation of function coap_receive() from Erbium's er-coap-13-engine.c.
  * Erbium is Copyright (c) 2013, Institute for Pervasive Computing, ETH Zurich
  * All rights reserved.
@@ -217,9 +450,8 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
         if (message->code >= COAP_GET && message->code <= COAP_DELETE)
         {
             uint32_t block_num = 0;
-            uint16_t block_size = REST_MAX_CHUNK_SIZE;
+            uint16_t block_size =   REST_MAX_CHUNK_SIZE;
             uint32_t block_offset = 0;
-            int64_t new_offset = 0;
 
             /* prepare response */
             if (message->type == COAP_TYPE_CON)
@@ -239,28 +471,44 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
                 coap_set_header_token(response, message->token, message->token_len);
             }
 
-            /* get offset for blockwise transfers */
-            if (coap_get_header_block2(message, &block_num, NULL, &block_size, &block_offset))
+            if (message->payload_len > REST_MAX_CHUNK_SIZE)
             {
-                LOG_ARG("Blockwise: block request %u (%u/%u) @ %u bytes", block_num, block_size, REST_MAX_CHUNK_SIZE, block_offset);
-                block_size = MIN(block_size, REST_MAX_CHUNK_SIZE);
-                new_offset = block_offset;
+                coap_error_code = COAP_413_ENTITY_TOO_LARGE;
+                coap_set_header_size(response, REST_MAX_CHUNK_SIZE);
             }
-
-            /* handle block1 option */
-            if (IS_OPTION(message, COAP_OPTION_BLOCK1))
+            else if (IS_OPTION(message, COAP_OPTION_BLOCK1))
             {
 #ifdef LWM2M_CLIENT_MODE
                 // get server
-                lwm2m_server_t * serverP;
-                serverP = utils_findServer(contextP, fromSessionH);
+                lwm2m_server_t * peerP;
+                peerP = utils_findServer(contextP, fromSessionH);
 #ifdef LWM2M_BOOTSTRAP
-                if (serverP == NULL)
+                if (peerP == NULL)
                 {
-                    serverP = utils_findBootstrapServer(contextP, fromSessionH);
+                    peerP = utils_findBootstrapServer(contextP, fromSessionH);
                 }
 #endif
-                if (serverP == NULL)
+#else
+                lwm2m_client_t * peerP;
+                multi_option_t * uriPath = message->uri_path;
+                bool isRegistration = NULL != uriPath && URI_REGISTRATION_SEGMENT_LEN == uriPath->len && 0 == strncmp(URI_REGISTRATION_SEGMENT, (char *)uriPath->data, uriPath->len);
+                peerP = utils_findClient(contextP, fromSessionH);
+                if (peerP == NULL && isRegistration)
+                {
+                    peerP = (lwm2m_client_t *)lwm2m_malloc(sizeof(lwm2m_client_t));
+
+                    if (peerP != NULL)
+                    {
+                        memset(peerP, 0, sizeof(lwm2m_client_t));
+                        peerP->lifetime = LWM2M_DEFAULT_LIFETIME;
+                        peerP->endOfLife = lwm2m_gettime() + LWM2M_DEFAULT_LIFETIME;
+                        peerP->sessionH = fromSessionH;
+                        peerP->internalID = lwm2m_list_newId((lwm2m_list_t *)contextP->clientList);
+                        contextP->clientList = (lwm2m_client_t *)LWM2M_LIST_ADD(contextP->clientList, peerP);
+                    }
+                }
+#endif
+                if (peerP == NULL)
                 {
                     coap_error_code = COAP_500_INTERNAL_SERVER_ERROR;
                 }
@@ -276,67 +524,64 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
                     coap_get_header_block1(message, &block1_num, &block1_more, &block1_size, NULL);
                     LOG_ARG("Blockwise: block1 request NUM %u (SZX %u/ SZX Max%u) MORE %u", block1_num, block1_size, REST_MAX_CHUNK_SIZE, block1_more);
 
+                    char * uri = coap_get_packet_uri_as_string(message);
                     // handle block 1
-                    coap_error_code = coap_block1_handler(&serverP->block1Data, message->mid, message->payload, message->payload_len, block1_size, block1_num, block1_more, &complete_buffer, &complete_buffer_size);
-
+#ifdef LWM2M_RAW_BLOCK1_REQUESTS
+                    coap_error_code = coap_block1_handler(&peerP->blockData, uri, message->mid, message->payload, message->payload_len, block1_size, block1_num, block1_more, &complete_buffer, &complete_buffer_size);
+#else
+                    coap_error_code = coap_block1_handler(&peerP->blockData, uri, message->payload, message->payload_len, block1_size, block1_num, block1_more, &complete_buffer, &complete_buffer_size);
+#endif
+                    lwm2m_free(uri);
+#ifndef LWM2M_RAW_BLOCK1_REQUESTS
                     // if payload is complete, replace it in the coap message.
                     if (coap_error_code == NO_ERROR)
                     {
                         message->payload = complete_buffer;
                         message->payload_len = complete_buffer_size;
                     }
-                    else if (coap_error_code == COAP_231_CONTINUE)
-                    {
-                        block1_size = MIN(block1_size, REST_MAX_CHUNK_SIZE);
-                        coap_set_header_block1(response,block1_num, block1_more,block1_size);
-                    }
-                }
-#else
-                coap_error_code = COAP_501_NOT_IMPLEMENTED;
 #endif
+                    block1_size = MIN(block1_size, REST_MAX_CHUNK_SIZE);
+                    coap_set_header_block1(response, block1_num, block1_more, block1_size);
+                }
             }
+#ifdef LWM2M_RAW_BLOCK1_REQUESTS
+            if (coap_error_code == NO_ERROR || coap_error_code == COAP_231_CONTINUE )
+#else
             if (coap_error_code == NO_ERROR)
+#endif
             {
                 coap_error_code = handle_request(contextP, fromSessionH, message, response);
             }
-            if (coap_error_code==NO_ERROR)
+            if (coap_error_code == NO_ERROR)
             {
                 /* Save original payload pointer for later freeing. Payload in response may be updated. */
                 uint8_t *payload = response->payload;
                 if ( IS_OPTION(message, COAP_OPTION_BLOCK2) )
                 {
-                    /* unchanged new_offset indicates that resource is unaware of blockwise transfer */
-                    if (new_offset==block_offset)
+                    /* get offset for blockwise transfers */
+                    if (coap_get_header_block2(message, &block_num, NULL, &block_size, &block_offset))
                     {
-                        LOG_ARG("Blockwise: unaware resource with payload length %u/%u", response->payload_len, block_size);
-                        if (block_offset >= response->payload_len)
-                        {
-                            LOG("handle_incoming_data(): block_offset >= response->payload_len");
+                        LOG_ARG("Blockwise: block request %u (%u/%u) @ %u bytes", block_num, block_size, REST_MAX_CHUNK_SIZE, block_offset);
+                        block_size = MIN(block_size, REST_MAX_CHUNK_SIZE);
+                    }
 
-                            response->code = COAP_402_BAD_OPTION;
-                            coap_set_payload(response, "BlockOutOfScope", 15); /* a const char str[] and sizeof(str) produces larger code size */
-                        }
-                        else
-                        {
-                            coap_set_header_block2(response, block_num, response->payload_len - block_offset > block_size, block_size);
-                            coap_set_payload(response, response->payload+block_offset, MIN(response->payload_len - block_offset, block_size));
-                        } /* if (valid offset) */
+                    if (block_offset >= response->payload_len)
+                    {
+                        LOG("handle_incoming_data(): block_offset >= response->payload_len");
+
+                        response->code = COAP_402_BAD_OPTION;
+                        coap_set_payload(response, "BlockOutOfScope", 15); /* a const char str[] and sizeof(str) produces larger code size */
                     }
                     else
                     {
-                        /* resource provides chunk-wise data */
-                        LOG_ARG("Blockwise: blockwise resource, new offset %d", (int) new_offset);
-                        coap_set_header_block2(response, block_num, new_offset!=-1 || response->payload_len > block_size, block_size);
-                        if (response->payload_len > block_size) coap_set_payload(response, response->payload, block_size);
-                    } /* if (resource aware of blockwise) */
+                        coap_set_header_block2(response, block_num, response->payload_len - block_offset > block_size, block_size);
+                        coap_set_payload(response, response->payload+block_offset, MIN(response->payload_len - block_offset, block_size));
+                    } /* if (valid offset) */
                 }
-                else if (new_offset!=0)
-                {
-                    LOG_ARG("Blockwise: no block option for blockwise resource, using block size %u", REST_MAX_CHUNK_SIZE);
-
-                    coap_set_header_block2(response, 0, new_offset!=-1, REST_MAX_CHUNK_SIZE);
-                    coap_set_payload(response, response->payload, MIN(response->payload_len, REST_MAX_CHUNK_SIZE));
-                } /* if (blockwise request) */
+                else if (response->payload_len > REST_MAX_CHUNK_SIZE){
+                    coap_set_header_block2(response, 0, response->payload_len > REST_MAX_CHUNK_SIZE, REST_MAX_CHUNK_SIZE);
+                    coap_set_payload(response, response->payload, REST_MAX_CHUNK_SIZE);
+                }
 
                 coap_error_code = message_send(contextP, response, fromSessionH);
 
@@ -372,6 +617,10 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
                     if (!done && message->type == COAP_TYPE_CON )
                     {
                         coap_init_message(response, COAP_TYPE_ACK, 0, message->mid);
+                        if (message->payload_len > REST_MAX_CHUNK_SIZE) 
+                        {
+                            coap_set_status_code(response, COAP_413_ENTITY_TOO_LARGE);
+                        }
                         coap_error_code = message_send(contextP, response, fromSessionH);
                     }
                 }
@@ -384,7 +633,116 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
                 break;
 
             case COAP_TYPE_ACK:
-                transaction_handleResponse(contextP, fromSessionH, message, NULL);
+                if (message->payload_len > REST_MAX_CHUNK_SIZE)
+                {
+#ifdef LWM2M_CLIENT_MODE
+                    // get server
+                    lwm2m_server_t * peerP;
+                    peerP = utils_findServer(contextP, fromSessionH);
+#ifdef LWM2M_BOOTSTRAP
+                    if (peerP == NULL)
+                    {
+                        peerP = utils_findBootstrapServer(contextP, fromSessionH);
+                    }
+#endif
+#else
+                    lwm2m_client_t * peerP;
+                    peerP = utils_findClient(contextP, fromSessionH);
+#endif
+
+                    if (peerP == NULL)
+                    {
+                        coap_error_code = COAP_500_INTERNAL_SERVER_ERROR;
+                    }
+                    else
+                    {
+                        prv_send_get_block2(contextP, fromSessionH, peerP->blockData, message->mid, 0, REST_MAX_CHUNK_SIZE);
+                        transaction_handleResponse(contextP, fromSessionH, message, NULL);
+                    }
+                }
+                else if (IS_OPTION(message, COAP_OPTION_BLOCK1))
+                {
+                    uint32_t block_num;
+                    uint16_t block_size;
+
+                    coap_get_header_block1(message, &block_num, NULL, &block_size, NULL);
+
+                    switch (message->code) {
+                        case COAP_201_CREATED:
+                        case COAP_204_CHANGED:
+                        case COAP_231_CONTINUE:
+                            prv_send_next_block1(contextP, fromSessionH, message->mid, block_size);
+                            break;
+                        case COAP_413_ENTITY_TOO_LARGE:
+                            // resend with smaller block size
+                            if (block_num > 0) break;
+                            prv_retry_block1(contextP, fromSessionH, message->mid, message->size > 0 ? message->size : block_size);
+                        default:
+                            break;
+                    }
+                    
+                    transaction_handleResponse(contextP, fromSessionH, message, NULL);
+                }
+                else if (IS_OPTION(message, COAP_OPTION_BLOCK2))
+                {
+#ifdef LWM2M_CLIENT_MODE
+                    // get server
+                    lwm2m_server_t * peerP;
+                    peerP = utils_findServer(contextP, fromSessionH);
+#ifdef LWM2M_BOOTSTRAP
+                    if (peerP == NULL)
+                    {
+                        peerP = utils_findBootstrapServer(contextP, fromSessionH);
+                    }
+#endif
+#else
+                    lwm2m_client_t * peerP;
+                    peerP = utils_findClient(contextP, fromSessionH);
+#endif
+
+                    if (peerP == NULL)
+                    {
+                        coap_error_code = COAP_500_INTERNAL_SERVER_ERROR;
+                    }
+                    else
+                    {
+                        uint32_t block2_num;
+                        uint8_t  block2_more;
+                        uint16_t block2_size;
+                        uint8_t * complete_buffer = NULL;
+                        size_t complete_buffer_size;
+
+                        // parse block2 header
+                        coap_get_header_block2(message, &block2_num, &block2_more, &block2_size, NULL);
+                        LOG_ARG("Blockwise: block2 response NUM %u (SZX %u/ SZX Max%u) MORE %u", block2_num, block2_size, REST_MAX_CHUNK_SIZE, block2_more);
+
+                        // handle block 2
+                        coap_error_code = coap_block2_handler(&peerP->blockData, message->mid, message->payload, message->payload_len, block2_size, block2_num, block2_more, &complete_buffer, &complete_buffer_size);
+
+                        // if payload is complete, replace it in the coap message.
+                        if (coap_error_code == NO_ERROR)
+                        {
+                            message->payload = complete_buffer;
+                            message->payload_len = complete_buffer_size;
+                            transaction_handleResponse(contextP, fromSessionH, message, NULL);
+                            block2_delete(&peerP->blockData, message->mid);
+                        }
+                        else if (coap_error_code == COAP_231_CONTINUE)
+                        {
+                            prv_send_get_next_block2(contextP, fromSessionH, peerP->blockData, message->mid, block2_num, block2_size);
+                            transaction_handleResponse(contextP, fromSessionH, message, NULL);
+                        }
+                    }
+                }
+                else if (message->code == COAP_413_ENTITY_TOO_LARGE)
+                {
+                    prv_change_to_block1(contextP, fromSessionH, message->mid, message->size);
+                    transaction_handleResponse(contextP, fromSessionH, message, NULL);
+                }
+                else
+                {
+                    transaction_handleResponse(contextP, fromSessionH, message, NULL);
+                }
                 break;
 
             default:

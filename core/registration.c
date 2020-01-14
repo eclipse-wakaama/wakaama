@@ -21,6 +21,7 @@
  *    Bosch Software Innovations GmbH - Please refer to git log
  *    Pascal Rieux - Please refer to git log
  *    Scott Bertin, AMETEK, Inc. - Please refer to git log
+ *    Tuve Nordius, Husqvarna Group - Please refer to git log
  *
  *******************************************************************************/
 
@@ -611,34 +612,46 @@ static void prv_handleRegistrationAttemptFailure(lwm2m_context_t *contextP, lwm2
 }
 #endif
 
+typedef struct
+{
+    lwm2m_server_t * server;
+    char * query;
+    uint8_t * payload;
+} registration_data_t;
+
 static void prv_handleRegistrationReply(lwm2m_context_t * contextP,
                                         lwm2m_transaction_t * transacP,
                                         void * message)
 {
     coap_packet_t * packet = (coap_packet_t *)message;
-    lwm2m_server_t * targetP = (lwm2m_server_t *)(transacP->userData);
+    registration_data_t * dataP = (registration_data_t *)(transacP->userData);
 
 #ifdef LWM2M_VERSION_1_0
     (void)contextP; /* unused */
 #endif
 
-    if (targetP->status == STATE_REG_PENDING)
+    if (dataP->server->status == STATE_REG_PENDING)
     {
         time_t tv_sec = lwm2m_gettime();
         if (tv_sec >= 0)
         {
-            targetP->registration = tv_sec;
+            dataP->server->registration = tv_sec;
+        }
+        if (packet != NULL && (packet->code == COAP_231_CONTINUE || (packet->code == COAP_413_ENTITY_TOO_LARGE && (!IS_OPTION(packet, COAP_OPTION_BLOCK1) || packet->block1_num == 0))))
+        {
+            transaction_free_userData(contextP, transacP);
+            return;
         }
         if (packet != NULL && packet->code == COAP_201_CREATED)
         {
-            targetP->status = STATE_REGISTERED;
-            if (NULL != targetP->location)
+            dataP->server->status = STATE_REGISTERED;
+            if (NULL != dataP->server->location)
             {
-                lwm2m_free(targetP->location);
+                lwm2m_free(dataP->server->location);
             }
-            targetP->location = coap_get_multi_option_as_string(packet->location_path);
+            dataP->server->location = coap_get_multi_option_as_path_string(packet->location_path);
 
-            LOG_ARG("%d Registration successful", targetP->shortID);
+            LOG_ARG("%d Registration successful", dataP->server->shortID);
 #ifndef LWM2M_VERSION_1_0
             {
                 lwm2m_object_t *serverObjP;
@@ -649,19 +662,19 @@ static void prv_handleRegistrationReply(lwm2m_context_t * contextP,
                     bool ordered;
                     uint8_t result;
 
-                    result = prv_getRegistrationOrder(targetP, serverObjP, &ordered, NULL);
+                    result = prv_getRegistrationOrder(dataP->server, serverObjP, &ordered, NULL);
                     if (result == COAP_NO_ERROR && ordered)
                     {
                         bool blocking;
 
-                        if (1 == targetP->sequence)
+                        if (1 == dataP->server->sequence)
                         {
                             /* Find the next ordered registration to start */
                             registration_start(contextP, false);
                         }
                         else
                         {
-                            result = prv_getRegistrationFailureBlocking(targetP, serverObjP, &blocking);
+                            result = prv_getRegistrationFailureBlocking(dataP->server, serverObjP, &blocking);
                             if (result == COAP_NO_ERROR && !blocking)
                             {
                                 /* Find the next ordered registration to start */
@@ -676,12 +689,19 @@ static void prv_handleRegistrationReply(lwm2m_context_t * contextP,
         else
         {
 #ifdef LWM2M_VERSION_1_0
-            targetP->status = STATE_REG_FAILED;
-            LOG_ARG("%d Registration failed", targetP->shortID);
+            dataP->server->status = STATE_REG_FAILED;
+            LOG_ARG("%d Registration failed", dataP->server->shortID);
 #else
-            prv_handleRegistrationAttemptFailure(contextP, targetP);
+            prv_handleRegistrationAttemptFailure(contextP, dataP->server);
 #endif
         }
+    }
+    char * query = dataP->query;
+    uint8_t * payload = dataP->payload;
+    if (transaction_free_userData(contextP, transacP))
+    {
+            lwm2m_free(query);
+            lwm2m_free(payload);
     }
 }
 
@@ -748,21 +768,29 @@ static uint8_t prv_register(lwm2m_context_t * contextP,
     coap_set_header_uri_path(transaction->message, "/"URI_REGISTRATION_SEGMENT);
     coap_set_header_uri_query(transaction->message, query);
     coap_set_header_content_type(transaction->message, LWM2M_CONTENT_LINK);
-    coap_set_payload(transaction->message, payload, payload_length);
 
-    transaction->callback = prv_handleRegistrationReply;
-    transaction->userData = (void *) server;
+    transaction_set_payload(transaction, payload, payload_length);
 
-    contextP->transactionList = (lwm2m_transaction_t *)LWM2M_LIST_ADD(contextP->transactionList, transaction);
-    if (transaction_send(contextP, transaction) != 0)
-    {
+    registration_data_t * dataP = lwm2m_malloc(sizeof(registration_data_t));
+    if (dataP == NULL){
         lwm2m_free(payload);
         lwm2m_free(query);
         return COAP_503_SERVICE_UNAVAILABLE;
     }
 
-    lwm2m_free(payload);
-    lwm2m_free(query);
+    dataP->payload = payload;
+    dataP->query = query;
+    dataP->server = server;
+    
+    transaction->callback = prv_handleRegistrationReply;
+    transaction->userData = (void *) dataP;
+
+    contextP->transactionList = (lwm2m_transaction_t *)LWM2M_LIST_ADD(contextP->transactionList, transaction);
+    if (transaction_send(contextP, transaction) != 0)
+    {
+        return COAP_503_SERVICE_UNAVAILABLE;
+    }
+
 #ifndef LWM2M_VERSION_1_0
     if (0 == server->attempt)
     {
@@ -780,27 +808,37 @@ static void prv_handleRegistrationUpdateReply(lwm2m_context_t * contextP,
                                               void * message)
 {
     coap_packet_t * packet = (coap_packet_t *)message;
-    lwm2m_server_t * targetP = (lwm2m_server_t *)(transacP->userData);
+    registration_data_t * dataP = (registration_data_t *)(transacP->userData);
 
     (void)contextP; /* unused */
 
-    if (targetP->status == STATE_REG_UPDATE_PENDING)
+    if (dataP->server->status == STATE_REG_UPDATE_PENDING)
     {
         time_t tv_sec = lwm2m_gettime();
         if (tv_sec >= 0)
         {
-            targetP->registration = tv_sec;
+            dataP->server->registration = tv_sec;
+        }
+        if (packet != NULL && (packet->code == COAP_231_CONTINUE || (packet->code == COAP_413_ENTITY_TOO_LARGE && (!IS_OPTION(packet, COAP_OPTION_BLOCK1) || packet->block1_num == 0))))
+        {
+            transaction_free_userData(contextP, transacP);
+            return;
         }
         if (packet != NULL && packet->code == COAP_204_CHANGED)
         {
-            targetP->status = STATE_REGISTERED;
-            LOG_ARG("%d Registration update successful", targetP->shortID);
+            dataP->server->status = STATE_REGISTERED;
+            LOG_ARG("%d Registration update successful", dataP->server->shortID);
         }
         else
         {
-            targetP->status = STATE_REG_FAILED;
-            LOG_ARG("%d Registration update failed", targetP->shortID);
+            dataP->server->status = STATE_REG_FAILED;
+            LOG_ARG("%d Registration update failed", dataP->server->shortID);
         }
+    }
+    if (packet != NULL && packet->code != COAP_231_CONTINUE)
+    {
+        lwm2m_free(dataP->payload);
+        transaction_free_userData(contextP, transacP);
     }
 }
 
@@ -840,23 +878,27 @@ static int prv_updateRegistration(lwm2m_context_t * contextP,
             lwm2m_free(payload);
             return COAP_500_INTERNAL_SERVER_ERROR;
         }
-        coap_set_payload(transaction->message, payload, payload_length);
+        transaction_set_payload(transaction, payload, payload_length);
     }
 
+    registration_data_t * dataP = lwm2m_malloc(sizeof(registration_data_t));
+    if (dataP == NULL){
+        lwm2m_free(payload);
+        return COAP_500_INTERNAL_SERVER_ERROR;
+    }
+
+    dataP->payload = payload;
+    dataP->server = server;
+
     transaction->callback = prv_handleRegistrationUpdateReply;
-    transaction->userData = (void *) server;
+    transaction->userData = (void *) dataP;
 
     contextP->transactionList = (lwm2m_transaction_t *)LWM2M_LIST_ADD(contextP->transactionList, transaction);
 
-    if (transaction_send(contextP, transaction) == 0)
-    {
+    if (transaction_send(contextP, transaction) == 0) {
         server->status = STATE_REG_UPDATE_PENDING;
     }
-
-    if (withObjects == true)
-    {
-        lwm2m_free(payload);
-    }
+    
     return COAP_NO_ERROR;
 }
 
@@ -1538,7 +1580,7 @@ static lwm2m_client_t * prv_getClientByName(lwm2m_context_t * contextP,
     lwm2m_client_t * targetP;
 
     targetP = contextP->clientList;
-    while (targetP != NULL && strcmp(name, targetP->name) != 0)
+    while (targetP != NULL && (targetP->name == NULL || strcmp(name, targetP->name) != 0))
     {
         targetP = targetP->next;
     }
@@ -1561,6 +1603,14 @@ void registration_freeClient(lwm2m_client_t * clientP)
         clientP->observationList = clientP->observationList->next;
         lwm2m_free(targetP);
     }
+    while(clientP->blockData != NULL)
+    {
+        lwm2m_block_data_t * targetP;
+        targetP = clientP->blockData;
+        clientP->blockData = clientP->blockData->next;
+
+        free_block_data(targetP);
+    }
     lwm2m_free(clientP);
 }
 
@@ -1582,7 +1632,7 @@ static int prv_getLocationString(uint16_t id,
     return index + result;
 }
 
-uint8_t registration_handleRequest(lwm2m_context_t * contextP,
+uint8_t  registration_handleRequest(lwm2m_context_t * contextP,
                                    lwm2m_uri_t * uriP,
                                    void * fromSessionH,
                                    coap_packet_t * message,
@@ -1666,6 +1716,19 @@ uint8_t registration_handleRequest(lwm2m_context_t * contextP,
             }
 
             clientP = prv_getClientByName(contextP, name);
+            if (IS_OPTION(message, COAP_OPTION_BLOCK1))
+            {
+                if(clientP == NULL)
+                {
+                    clientP = utils_findClient(contextP, fromSessionH);
+                }
+                else
+                {
+                    lwm2m_client_t * tmpClientP = utils_findClient(contextP, fromSessionH);
+                    contextP->clientList = (lwm2m_client_t *)LWM2M_LIST_RM(contextP->clientList, tmpClientP->internalID, &tmpClientP);
+                    registration_freeClient(tmpClientP);
+                }
+            }
             if (clientP != NULL)
             {
                 // we reset this registration
@@ -1766,11 +1829,7 @@ uint8_t registration_handleRequest(lwm2m_context_t * contextP,
                     objP = (lwm2m_client_object_t *)lwm2m_list_find((lwm2m_list_t *)objects, observationP->uri.objectId);
                     if (objP == NULL)
                     {
-                        observationP->callback(clientP->internalID,
-                                               &observationP->uri,
-                                               COAP_202_DELETED,
-                                               LWM2M_CONTENT_TEXT, NULL, 0,
-                                               observationP->userData);
+                        applyObservationCallback(observationP, COAP_202_DELETED, 0, 0, false, LWM2M_CONTENT_TEXT, NULL, 0);
                         observe_remove(observationP);
                     }
                     else
@@ -1779,11 +1838,7 @@ uint8_t registration_handleRequest(lwm2m_context_t * contextP,
                         {
                             if (lwm2m_list_find((lwm2m_list_t *)objP->instanceList, observationP->uri.instanceId) == NULL)
                             {
-                                observationP->callback(clientP->internalID,
-                                                       &observationP->uri,
-                                                       COAP_202_DELETED,
-                                                       LWM2M_CONTENT_TEXT, NULL, 0,
-                                                       observationP->userData);
+                                applyObservationCallback(observationP, COAP_202_DELETED, 0, 0, false, LWM2M_CONTENT_TEXT, NULL, 0);
                                 observe_remove(observationP);
                             }
                         }

@@ -17,6 +17,7 @@
  *    Bosch Software Innovations GmbH - Please refer to git log
  *    Pascal Rieux - Please refer to git log
  *    Scott Bertin, AMETEK, Inc. - Please refer to git log
+ *    Tuve Nordius, Husqvarna Group - Please refer to git log
  *    
  *******************************************************************************/
 /*
@@ -243,8 +244,20 @@ typedef struct
     uint16_t clientID;
     lwm2m_uri_t uri;
     lwm2m_result_callback_t callback;
+    lwm2m_block_result_callback_t blockCallback;
     void * userData;
 } dm_data_t;
+
+typedef struct
+{
+    uint16_t                id;
+    uint16_t                client;
+    lwm2m_uri_t             uri;
+    lwm2m_result_callback_t callback;
+    lwm2m_block_result_callback_t blockCallback;
+    void *                  userData;
+    lwm2m_context_t *       contextP;
+} observation_data_t;
 
 typedef enum
 {
@@ -284,6 +297,11 @@ uint8_t object_read(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, const uint16
 uint8_t object_write(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_media_type_t format, uint8_t * buffer, size_t length, bool partial);
 uint8_t object_create(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_media_type_t format, uint8_t * buffer, size_t length);
 uint8_t object_execute(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, uint8_t * buffer, size_t length);
+#ifdef LWM2M_RAW_BLOCK1_REQUESTS
+uint8_t object_raw_block1_write(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_media_type_t format, uint8_t * buffer, size_t length, uint32_t block_num, uint8_t block_more);
+uint8_t object_raw_block1_create(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_media_type_t format, uint8_t * buffer, size_t length, uint32_t block_num, uint8_t block_more);
+uint8_t object_raw_block1_execute(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, uint8_t * buffer, size_t length, uint32_t block_num, uint8_t block_more);
+#endif
 uint8_t object_delete(lwm2m_context_t * contextP, lwm2m_uri_t * uriP);
 uint8_t object_discover(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_server_t * serverP, uint8_t ** bufferP, size_t * lengthP);
 uint8_t object_checkReadable(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_attributes_t * attrP);
@@ -301,6 +319,8 @@ void transaction_free(lwm2m_transaction_t * transacP);
 void transaction_remove(lwm2m_context_t * contextP, lwm2m_transaction_t * transacP);
 bool transaction_handleResponse(lwm2m_context_t * contextP, void * fromSessionH, coap_packet_t * message, coap_packet_t * response);
 void transaction_step(lwm2m_context_t * contextP, time_t currentTime, time_t * timeoutP);
+bool transaction_free_userData(lwm2m_context_t * context, lwm2m_transaction_t * transaction);
+void transaction_set_payload(lwm2m_transaction_t * transaction, uint8_t * buffer, int length);
 
 // defined in management.c
 uint8_t dm_handleRequest(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_server_t * serverP, coap_packet_t * message, coap_packet_t * response);
@@ -314,6 +334,7 @@ void observe_clear(lwm2m_context_t * contextP, lwm2m_uri_t * uriP);
 bool observe_handleNotify(lwm2m_context_t * contextP, void * fromSessionH, coap_packet_t * message, coap_packet_t * response);
 void observe_remove(lwm2m_observation_t * observationP);
 lwm2m_observed_t * observe_findByUri(lwm2m_context_t * contextP, lwm2m_uri_t * uriP);
+void applyObservationCallback(lwm2m_observation_t * observation, int status, int block_num, int block_size, bool block_more, lwm2m_media_type_t format, uint8_t * data, int dataLength);
 
 // defined in registration.c
 uint8_t registration_handleRequest(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, void * fromSessionH, coap_packet_t * message, coap_packet_t * response);
@@ -373,9 +394,17 @@ int json_findAndCheckData(const lwm2m_uri_t * uriP, uri_depth_t baseLevel, size_
 // defined in discover.c
 int discover_serialize(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_server_t * serverP, int size, lwm2m_data_t * dataP, uint8_t ** bufferP);
 
-// defined in block1.c
-uint8_t coap_block1_handler(lwm2m_block1_data_t ** block1Data, uint16_t mid, uint8_t * buffer, size_t length, uint16_t blockSize, uint32_t blockNum, bool blockMore, uint8_t ** outputBuffer, size_t * outputLength);
-void free_block1_buffer(lwm2m_block1_data_t * block1Data);
+// defined in block.c
+#ifdef LWM2M_RAW_BLOCK1_REQUESTS
+uint8_t coap_block1_handler(lwm2m_block_data_t ** blockData, const char * uri, uint16_t mid, uint8_t * buffer, size_t length, uint16_t blockSize, uint32_t blockNum, bool blockMore, uint8_t ** outputBuffer, size_t * outputLength);
+#else
+uint8_t coap_block1_handler(lwm2m_block_data_t ** blockData, const char * uri, uint8_t * buffer, size_t length, uint16_t blockSize, uint32_t blockNum, bool blockMore, uint8_t ** outputBuffer, size_t * outputLength);
+#endif
+void block1_delete(lwm2m_block_data_t ** pBlockDataHead, char * uri);
+uint8_t coap_block2_handler(lwm2m_block_data_t ** blockData, uint16_t mid, uint8_t * buffer, size_t length, uint16_t blockSize, uint32_t blockNum, bool blockMore, uint8_t ** outputBuffer, size_t * outputLength);
+void coap_block2_set_expected_mid(lwm2m_block_data_t *blockDataHead, uint16_t currentMid, uint16_t expectedMid);
+void free_block_data(lwm2m_block_data_t * blockData);
+void block2_delete(lwm2m_block_data_t ** pBlockDataHead, uint16_t mid);
 
 // defined in utils.c
 lwm2m_data_type_t utils_depthToDatatype(uri_depth_t depth);
@@ -412,6 +441,8 @@ size_t utils_base64Decode(const char * dataP, size_t dataLen, uint8_t * bufferP,
 #ifdef LWM2M_CLIENT_MODE
 lwm2m_server_t * utils_findServer(lwm2m_context_t * contextP, void * fromSessionH);
 lwm2m_server_t * utils_findBootstrapServer(lwm2m_context_t * contextP, void * fromSessionH);
+#else
+lwm2m_client_t * utils_findClient(lwm2m_context_t * contextP, void * fromSessionH);
 #endif
 
 #endif

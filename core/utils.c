@@ -14,6 +14,7 @@
  *    David Navarro, Intel Corporation - initial API and implementation
  *    Toby Jaffey - Please refer to git log
  *    Scott Bertin, AMETEK, Inc. - Please refer to git log
+ *    Tuve Nordius, Husqvarna Group - Please refer to git log
  *    
  *******************************************************************************/
 
@@ -926,6 +927,23 @@ lwm2m_server_t * utils_findBootstrapServer(lwm2m_context_t * contextP,
 
 #endif
 }
+
+#ifndef LWM2M_CLIENT_MODE
+lwm2m_client_t * utils_findClient(lwm2m_context_t * contextP,
+                                  void * fromSessionH)
+{
+    lwm2m_client_t * targetP;
+
+    targetP = contextP->clientList;
+    while (targetP != NULL
+        && false == lwm2m_session_is_equal(targetP->sessionH, fromSessionH, contextP->userData))
+    {
+        targetP = targetP->next;
+    }
+
+    return targetP;
+}
+#endif
 
 int utils_isAltPathValid(const char * altPath)
 {

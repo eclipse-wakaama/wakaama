@@ -15,6 +15,7 @@
  *    Toby Jaffey - Please refer to git log
  *    Bosch Software Innovations GmbH - Please refer to git log
  *    Scott Bertin, AMETEK, Inc. - Please refer to git log
+ *    Tuve Nordius, Husqvarna Group - Please refer to git log
  *
  *******************************************************************************/
 
@@ -848,24 +849,13 @@ void observe_step(lwm2m_context_t * contextP,
 
 typedef struct
 {
-    uint16_t                client;
-    lwm2m_uri_t             uri;
-    lwm2m_result_callback_t callbackP;
-    void *                  userDataP;
-    lwm2m_context_t *       contextP;
+    uint16_t                        client;
+    lwm2m_uri_t                     uri;
+    lwm2m_result_callback_t         callbackP;
+    lwm2m_block_result_callback_t   blockCallbackP;
+    void *                          userDataP;
+    lwm2m_context_t *               contextP;
 } cancellation_data_t;
-
-typedef struct
-{
-    uint16_t                id;
-    uint16_t                client;
-    lwm2m_uri_t             uri;
-    lwm2m_result_callback_t callback;
-    void *                  userData;
-    lwm2m_context_t *       contextP;
-} observation_data_t;
-
-
 
 static lwm2m_observation_t * prv_findObservationByURI(lwm2m_client_t * clientP,
                                                       lwm2m_uri_t * uriP)
@@ -898,6 +888,47 @@ void observe_remove(lwm2m_observation_t * observationP)
     observationP->clientP->observationList = (lwm2m_observation_t *) LWM2M_LIST_RM(observationP->clientP->observationList, observationP->id, NULL);
     lwm2m_free(observationP);
 }
+static
+void prv_applyObservationRequestCallback(observation_data_t * observationData, int status, int block_num, int block_size, bool block_more, lwm2m_media_type_t format, uint8_t * data, int dataLength)
+{
+    if (observationData->blockCallback != NULL)
+    {
+        observationData->blockCallback(observationData->client,
+                &observationData->uri,
+                status, block_num, block_size, block_more,
+                format,data, dataLength,
+                observationData->userData);
+    }
+    else if (observationData->callback != NULL)
+    {
+        observationData->callback(observationData->client,
+                &observationData->uri,
+                status, format, data, dataLength,
+                observationData->userData);
+    }
+
+}
+
+
+void applyObservationCallback(lwm2m_observation_t * observation, int status, int block_num, int block_size, bool block_more, lwm2m_media_type_t format, uint8_t * data, int dataLength)
+{
+    if (observation->blockCallback != NULL)
+    {
+        observation->blockCallback(observation->clientP->internalID,
+                &observation->uri,
+                status, block_num, block_size, block_more,
+                format,data, dataLength,
+                observation->userData);
+    }
+    else if (observation->callback != NULL)
+    {
+        observation->callback(observation->clientP->internalID,
+                &observation->uri,
+                status, format, data, dataLength,
+                observation->userData);
+    }
+
+}
 
 static void prv_obsRequestCallback(lwm2m_context_t * contextP,
                                    lwm2m_transaction_t * transacP,
@@ -909,17 +940,20 @@ static void prv_obsRequestCallback(lwm2m_context_t * contextP,
     uint8_t code;
     lwm2m_client_t * clientP;
     lwm2m_uri_t * uriP = & observationData->uri;
+    uint32_t block_num = 0;
+    uint16_t block_size = 0;
+    uint8_t block_more = 0;
+    coap_get_header_block(message, &block_num, &block_more, &block_size, NULL);
 
     (void)contextP; /* unused */
 
     clientP = (lwm2m_client_t *)lwm2m_list_find((lwm2m_list_t *)observationData->contextP->clientList, observationData->client);
     if (clientP == NULL)
     {
-        observationData->callback(observationData->client,
-                &observationData->uri,
+        prv_applyObservationRequestCallback(observationData,
                 COAP_500_INTERNAL_SERVER_ERROR,  //?
-                0, NULL, 0,
-                observationData->userData);
+                0, false, 0,
+                0, NULL, 0);
         goto end;
     }
 
@@ -944,13 +978,9 @@ static void prv_obsRequestCallback(lwm2m_context_t * contextP,
         code = packet->code;
     }
 
-    if (code != COAP_205_CONTENT)
+    if (code != COAP_205_CONTENT || (IS_OPTION(packet, COAP_OPTION_BLOCK2) && packet->block2_more))
     {
-        observationData->callback(clientP->internalID,
-                &observationData->uri,
-                code,
-                LWM2M_CONTENT_TEXT, NULL, 0,
-                observationData->userData);
+        prv_applyObservationRequestCallback(observationData, code, block_num, block_size, block_more, LWM2M_CONTENT_TEXT, NULL, 0);
     }
     else
     {
@@ -966,33 +996,55 @@ static void prv_obsRequestCallback(lwm2m_context_t * contextP,
 
             // give the user chance to free previous observation userData
             // indicator: COAP_202_DELETED and (Length ==0)
-            observationP->callback(observationP->clientP->internalID,
-                    &observationP->uri,
-                    COAP_202_DELETED,
-                    0, NULL, 0,
-                    observationP->userData);
+            prv_applyObservationRequestCallback(observationData, COAP_202_DELETED, block_num, block_size, block_more, 0, NULL, 0);
         }
 
         observationP->id = observationData->id;
         observationP->clientP = clientP;
 
         observationP->callback = observationData->callback;
+        observationP->blockCallback = observationData->blockCallback;
         observationP->userData = observationData->userData;
         observationP->status = STATE_REGISTERED;
         memcpy(&observationP->uri, uriP, sizeof(lwm2m_uri_t));
 
         observationP->clientP->observationList = (lwm2m_observation_t *)LWM2M_LIST_ADD(observationP->clientP->observationList, observationP);
 
-        observationData->callback(observationData->client,
-                &observationData->uri,
-                0,
-                packet->content_type, packet->payload, packet->payload_len,
-                observationData->userData);
+        uint32_t block_num = 0;
+        uint16_t block_size = 0;
+        uint8_t block_more = 0;
+        coap_get_header_block(message, &block_num, &block_more, &block_size, NULL);
+        prv_applyObservationRequestCallback(observationData, 0, block_num, block_size, block_more, utils_convertMediaType(packet->content_type), packet->payload, packet->payload_len);
     }
 
 end:
-    lwm2m_free(observationData);
+    transaction_free_userData(contextP, transacP);
 }
+
+
+static
+void prv_applyCancelRequestCallback(cancellation_data_t * cancelP, int status, int block_num, int block_size, bool block_more, lwm2m_media_type_t format, uint8_t * data, int dataLength)
+{
+    if (cancelP->blockCallbackP != NULL)
+    {
+        cancelP->blockCallbackP(cancelP->client,
+                &cancelP->uri,
+                status,  //?
+                block_num, block_size, block_more,
+                format,data, dataLength,
+                cancelP->userDataP);
+    }
+    else if (cancelP->callbackP != NULL)
+    {
+        cancelP->callbackP(cancelP->client,
+                &cancelP->uri,
+                status,  //?
+                format, data, dataLength,
+                cancelP->userDataP);
+    }
+
+}
+
 
 
 static void prv_obsCancelRequestCallback(lwm2m_context_t * contextP,
@@ -1003,16 +1055,16 @@ static void prv_obsCancelRequestCallback(lwm2m_context_t * contextP,
     coap_packet_t * packet = (coap_packet_t *)message;
     uint8_t code;
     lwm2m_client_t * clientP = (lwm2m_client_t *)lwm2m_list_find((lwm2m_list_t *)cancelP->contextP->clientList, cancelP->client);
+    uint32_t block_num = 0;
+    uint16_t block_size = 0;
+    uint8_t block_more = 0;
+    coap_get_header_block(message, &block_num, &block_more, &block_size, NULL);
 
     (void)contextP; /* unused */
 
     if (clientP == NULL)
     {
-        cancelP->callbackP(cancelP->client,
-                &cancelP->uri,
-                COAP_500_INTERNAL_SERVER_ERROR,
-                packet->content_type, NULL, 0,
-                cancelP->userDataP);
+        prv_applyCancelRequestCallback(cancelP, COAP_500_INTERNAL_SERVER_ERROR, block_num, block_size, block_more, utils_convertMediaType(packet->content_type), NULL, 0);
         goto end;
     }
 
@@ -1029,31 +1081,24 @@ static void prv_obsCancelRequestCallback(lwm2m_context_t * contextP,
 
     if (code != COAP_205_CONTENT)
     {
-        cancelP->callbackP(cancelP->client,
-                &cancelP->uri,
-                code,
-                LWM2M_CONTENT_TEXT, NULL, 0,
-                cancelP->userDataP);
+        prv_applyCancelRequestCallback(cancelP, code, block_num, block_size, block_more, LWM2M_CONTENT_TEXT, NULL, 0);
     }
     else
     {
-        cancelP->callbackP(cancelP->client,
-                &cancelP->uri,
-                0,
-                packet->content_type, packet->payload, packet->payload_len,
-                cancelP->userDataP);
+        prv_applyCancelRequestCallback(cancelP, 0, block_num, block_size, block_more, utils_convertMediaType(packet->content_type), packet->payload, packet->payload_len);
     }
 
     observe_remove(observationP);
 end:
-    lwm2m_free(cancelP);
+    transaction_free_userData(contextP, transacP);
 }
 
-
-int lwm2m_observe(lwm2m_context_t * contextP,
+static
+int prv_lwm2m_observe(lwm2m_context_t * contextP,
         uint16_t clientID,
         lwm2m_uri_t * uriP,
         lwm2m_result_callback_t callback,
+        lwm2m_block_result_callback_t blockCallback,
         void * userData)
 {
     lwm2m_client_t * clientP;
@@ -1091,6 +1136,7 @@ int lwm2m_observe(lwm2m_context_t * contextP,
     // don't hold refer to the clientP
     observationData->client = clientP->internalID;
     observationData->callback = callback;
+    observationData->blockCallback = blockCallback;
     observationData->userData = userData;
     observationData->contextP = contextP;
 
@@ -1126,10 +1172,39 @@ int lwm2m_observe(lwm2m_context_t * contextP,
     return ret;
 }
 
-int lwm2m_observe_cancel(lwm2m_context_t * contextP,
+int lwm2m_observe(lwm2m_context_t * contextP,
         uint16_t clientID,
         lwm2m_uri_t * uriP,
         lwm2m_result_callback_t callback,
+        void * userData)
+{
+    return prv_lwm2m_observe(contextP,
+                             clientID,
+                             uriP,
+                             callback,
+                             NULL,
+                             userData);
+}
+
+int lwm2m_observe_block(lwm2m_context_t * contextP,
+        uint16_t clientID,
+        lwm2m_uri_t * uriP,
+        lwm2m_block_result_callback_t blockCallback,
+        void * userData)
+{
+    return prv_lwm2m_observe(contextP,
+                             clientID,
+                             uriP,
+                             NULL,
+                             blockCallback,
+                             userData);
+}
+static
+int prv_lwm2m_observe_cancel(lwm2m_context_t * contextP,
+        uint16_t clientID,
+        lwm2m_uri_t * uriP,
+        lwm2m_result_callback_t callback,
+        lwm2m_block_result_callback_t blockCallback,
         void * userData)
 {
     lwm2m_client_t * clientP;
@@ -1176,6 +1251,7 @@ int lwm2m_observe_cancel(lwm2m_context_t * contextP,
         cancelP->client = clientP->internalID;
         memcpy(&cancelP->uri, uriP, sizeof(lwm2m_uri_t));
         cancelP->callbackP = callback;
+        cancelP->blockCallbackP = blockCallback;
         cancelP->userDataP = userData;
         cancelP->contextP = contextP;
 
@@ -1207,6 +1283,25 @@ int lwm2m_observe_cancel(lwm2m_context_t * contextP,
 
     // need to give a indicator (non-zero) to user for properly freeing the userData
     return ret;
+}
+
+
+int lwm2m_observe_cancel(lwm2m_context_t * contextP,
+        uint16_t clientID,
+        lwm2m_uri_t * uriP,
+        lwm2m_result_callback_t callback,
+        void * userData)
+{
+    return prv_lwm2m_observe_cancel(contextP, clientID, uriP, callback, NULL, userData);
+}
+
+int lwm2m_observe_cancel_block(lwm2m_context_t * contextP,
+        uint16_t clientID,
+        lwm2m_uri_t * uriP,
+        lwm2m_block_result_callback_t blockCallback,
+        void * userData)
+{
+    return prv_lwm2m_observe_cancel(contextP, clientID, uriP, NULL, blockCallback, userData);
 }
 
 bool observe_handleNotify(lwm2m_context_t * contextP,
@@ -1246,11 +1341,29 @@ bool observe_handleNotify(lwm2m_context_t * contextP,
             coap_init_message(response, COAP_TYPE_ACK, 0, message->mid);
             message_send(contextP, response, fromSessionH);
         }
-        observationP->callback(clientID,
-                               &observationP->uri,
-                               (int)count,
-                               message->content_type, message->payload, message->payload_len,
-                               observationP->userData);
+        if (observationP->blockCallback != NULL)
+        {
+            uint32_t block_num = 0;
+            uint16_t block_size = 0;
+            uint8_t block_more = 0;
+
+            coap_get_header_block(message, &block_num, &block_more, &block_size, NULL);
+
+            observationP->blockCallback(clientID,
+                    &observationP->uri,
+                    (int)count,
+                    block_num, block_size, block_more,
+                    utils_convertMediaType(message->content_type), message->payload, message->payload_len,
+                    observationP->userData);
+        }
+        else if (observationP->callback != NULL)
+        {
+            observationP->callback(clientID,
+                    &observationP->uri,
+                    (int)count,
+                    utils_convertMediaType(message->content_type), message->payload, message->payload_len,
+                    observationP->userData);
+        }
     }
     return true;
 }

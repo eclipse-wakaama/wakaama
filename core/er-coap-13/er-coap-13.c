@@ -36,6 +36,7 @@
  *      Matthias Kovatsch <kovatsch@inf.ethz.ch>
  * \contributors
  *    David Navarro, Intel Corporation - Adapt to usage in liblwm2m
+ *    Tuve Nordius, Husqvarna Group - Please refer to git log
  */
 
 
@@ -311,7 +312,9 @@ free_multi_option(multi_option_t *dst)
   }
 }
 
-char * coap_get_multi_option_as_string(multi_option_t * option)
+static
+char *
+prv_coap_get_multi_option_as_string(multi_option_t * option, char prefix, char delimiter)
 {
     size_t len = 0;
     multi_option_t * opt;
@@ -329,7 +332,11 @@ char * coap_get_multi_option_as_string(multi_option_t * option)
 
         for (opt = option; opt != NULL; opt = opt->next)
         {
-            output[i] = '/';
+            if (i == 0){
+                output[i] = prefix;
+            } else {
+                output[i] = delimiter;
+            }
             i += 1;
 
             memmove(output + i, opt->data, opt->len);
@@ -341,7 +348,81 @@ char * coap_get_multi_option_as_string(multi_option_t * option)
     return output;
 }
 
+char * coap_get_multi_option_as_path_string(multi_option_t * option)
+{
+    return prv_coap_get_multi_option_as_string(option, '/', '/');
+}
+
+char * coap_get_multi_option_as_query_string(multi_option_t * option)
+{
+    return prv_coap_get_multi_option_as_string(option, '?', '&');
+}
+
+
+static
+bool
+is_non_std_coap_port(uint16_t port)
+{
+    return !(port == 0 || port == 5683 || port == 5684);
+}
+
+static
+int nDigits(unsigned x) {
+    if (x >= 1000000000) return 10;
+    if (x >= 100000000)  return 9;
+    if (x >= 10000000)   return 8;
+    if (x >= 1000000)    return 7;
+    if (x >= 100000)     return 6;
+    if (x >= 10000)      return 5;
+    if (x >= 1000)       return 4;
+    if (x >= 100)        return 3;
+    if (x >= 10)         return 2;
+    return 1;
+}
+char * coap_get_packet_uri_as_string(coap_packet_t * packet)
+{
+    // We do not know the destination or if it is secured with dtls or not therefor
+    // we omit the protocol part as well as host and port if not in the options
+    //
+    char * output;
+    
+    char * path_string = coap_get_multi_option_as_path_string(packet->uri_path);
+    size_t path_len = strlen(path_string);
+    char * query_string = coap_get_multi_option_as_query_string(packet->uri_query);
+    size_t query_len = strlen(query_string);
+
+    size_t len = 2 * sizeof(char); // "//"
+    len += packet->uri_host_len;
+    len += is_non_std_coap_port(packet->uri_port) ? (int)(nDigits(packet->uri_port)*sizeof(char)) : 0;
+    //len += + sizeof(char); // "/"
+    len += 1 > path_len ? 1 : path_len; // "/" or path
+    len += query_len;
+    
+    output = lwm2m_malloc(len + 1);
+    
+    
+    strcpy(output, "//");
+    strncat(output, (char *)packet->uri_host, packet->uri_host_len);
+    if (1 > path_len)
+    {
+        strcat(output, "/");
+    }
+    else
+    {
+        strncat(output, path_string, path_len);
+    }
+    strncat(output, query_string, query_len);
+    
+    output[len] = 0;
+    
+    lwm2m_free(path_string);
+    lwm2m_free(query_string);
+    
+    return output;
+}
+
 /*-----------------------------------------------------------------------------------*/
+
 static
 int
 coap_get_variable(const uint8_t *buffer, size_t length, const char *name, const char **output)
@@ -696,7 +777,7 @@ coap_parse_message(void *packet, uint8_t *data, uint16_t data_len)
         ++current_option;
       }
     }
-    while (x!=&option_length && (x=&option_length));
+    while (x != &option_length && (x = &option_length));
 
     option_number += option_delta;
 
@@ -1153,6 +1234,25 @@ coap_set_header_uri_path_segment(void *packet, const char *segment)
   return length;
 }
 /*-----------------------------------------------------------------------------------*/
+uint16_t
+coap_get_header_uri_port(void *packet)
+{
+  coap_packet_t *const coap_pkt = (coap_packet_t *) packet;
+
+  if (!IS_OPTION(coap_pkt, COAP_OPTION_URI_PORT)) return 0;
+
+  return coap_pkt->uri_port;
+}
+
+void
+coap_set_header_uri_port(void *packet, uint16_t port)
+{
+  coap_packet_t *const coap_pkt = (coap_packet_t *) packet;
+
+  coap_pkt->uri_port = port;
+  SET_OPTION(coap_pkt, COAP_OPTION_URI_PORT);
+}
+/*-----------------------------------------------------------------------------------*/
 int
 coap_get_header_uri_query(void *packet, const char **query)
 {
@@ -1190,6 +1290,28 @@ coap_set_header_uri_query(void *packet, const char *query)
     SET_OPTION(coap_pkt, COAP_OPTION_URI_QUERY);
     return length;
  }
+
+int
+coap_set_header_uri_query_segment(void *packet, const char *segment)
+{
+  coap_packet_t *coap_pkt = (coap_packet_t *) packet;
+  int length;
+
+  if (segment == NULL || segment[0] == 0)
+  {
+      coap_add_multi_option(&(coap_pkt->uri_query), NULL, 0, 1);
+      length = 0;
+  }
+  else
+  {
+      length = strlen(segment);
+      coap_add_multi_option(&(coap_pkt->uri_query), (uint8_t *)segment, length, 0);
+  }
+
+  SET_OPTION(coap_pkt, COAP_OPTION_URI_QUERY);
+  return length;
+}
+
 /*-----------------------------------------------------------------------------------*/
 int
 coap_get_header_location_path(void *packet, const char **path)
@@ -1340,6 +1462,19 @@ coap_set_header_block1(void *packet, uint32_t num, uint8_t more, uint16_t size)
   SET_OPTION(coap_pkt, COAP_OPTION_BLOCK1);
   return 1;
 }
+
+int
+coap_get_header_block(void *packet, uint32_t *num, uint8_t *more, uint16_t *size, uint32_t *offset)
+{
+    if (1 == coap_get_header_block1(packet, num, more, size, offset))
+    {
+        return 1;
+    }
+
+    return coap_get_header_block1(packet, num, more, size, offset);
+}
+
+
 /*-----------------------------------------------------------------------------------*/
 int
 coap_get_header_size(void *packet, uint32_t *size)

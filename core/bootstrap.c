@@ -14,6 +14,7 @@
  *    Pascal Rieux - Please refer to git log
  *    Bosch Software Innovations GmbH - Please refer to git log
  *    David Navarro, Intel Corporation - Please refer to git log
+ *    Tuve Nordius, Husqvarna Group - Please refer to git log
  *
  *******************************************************************************/
 
@@ -696,7 +697,7 @@ static void prv_resultCallback(lwm2m_context_t * contextP,
                         NULL,
                         dataP->userData);
     }
-    lwm2m_free(dataP);
+    transaction_free_userData(contextP, transacP);
 }
 
 int lwm2m_bootstrap_delete(lwm2m_context_t * contextP,
@@ -757,7 +758,8 @@ int lwm2m_bootstrap_write(lwm2m_context_t * contextP,
     if (transaction == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
 
     coap_set_header_content_type(transaction->message, format);
-    coap_set_payload(transaction->message, buffer, length);
+
+    transaction_set_payload(transaction, buffer, length);
 
     dataP = (bs_data_t *)lwm2m_malloc(sizeof(bs_data_t));
     if (dataP == NULL)

@@ -360,7 +360,7 @@ uint8_t object_create(lwm2m_context_t * contextP,
 
     LOG_URI(uriP);
 
-    if (length == 0 || buffer == 0)
+    if (length == 0 || buffer == NULL)
     {
         return COAP_400_BAD_REQUEST;
     }
@@ -410,6 +410,98 @@ exit:
 
     return result;
 }
+
+#ifdef LWM2M_RAW_BLOCK1_REQUESTS
+uint8_t object_raw_block1_write(lwm2m_context_t * contextP,
+                            lwm2m_uri_t * uriP,
+                            lwm2m_media_type_t format,
+                            uint8_t * buffer,
+                            size_t length,
+                            uint32_t block_num,
+                            uint8_t block_more)
+{
+    uint8_t result = NO_ERROR;
+    lwm2m_object_t * targetP;
+    lwm2m_data_t * dataP = NULL;
+    int size = 0;
+
+    LOG_URI(uriP);
+    targetP = (lwm2m_object_t *)LWM2M_LIST_FIND(contextP->objectList, uriP->objectId);
+    if (NULL == targetP) return COAP_404_NOT_FOUND;
+    if (NULL == targetP->rawBlock1WriteFunc) return COAP_405_METHOD_NOT_ALLOWED;
+#ifndef LWM2M_VERSION_1_0
+    // TODO: support resource instance
+    if (LWM2M_URI_IS_SET_RESOURCE_INSTANCE(uriP)) return COAP_400_BAD_REQUEST;
+#endif
+    result = targetP->rawBlock1WriteFunc(uriP, format, buffer, length, targetP, block_num, block_more);
+
+    if (block_more > 0 && (result == COAP_204_CHANGED || result == NO_ERROR)){
+        result = COAP_231_CONTINUE;
+    }
+
+    LOG_ARG("result: %u.%02u", (result & 0xFF) >> 5, (result & 0x1F));
+
+    return result;
+}
+
+uint8_t object_raw_block1_execute(lwm2m_context_t * contextP,
+                              lwm2m_uri_t * uriP,
+                              uint8_t * buffer,
+                              size_t length,
+                              uint32_t block_num,
+                              uint8_t block_more)
+{
+    lwm2m_object_t * targetP;
+    uint8_t result;
+    
+    LOG_URI(uriP);
+    targetP = (lwm2m_object_t *)LWM2M_LIST_FIND(contextP->objectList, uriP->objectId);
+    if (NULL == targetP) return COAP_404_NOT_FOUND;
+    if (NULL == targetP->rawBlock1ExecuteFunc) return COAP_405_METHOD_NOT_ALLOWED;
+    if (NULL == lwm2m_list_find(targetP->instanceList, uriP->instanceId)) return COAP_404_NOT_FOUND;
+
+    result = targetP->rawBlock1ExecuteFunc(uriP, buffer, length, targetP, block_num, block_more);
+
+    if (block_more > 0 && (result == COAP_204_CHANGED || result == NO_ERROR)){
+        result = COAP_231_CONTINUE;
+    }
+
+    return result;
+
+}
+
+uint8_t object_raw_block1_create(lwm2m_context_t * contextP,
+                             lwm2m_uri_t * uriP,
+                             lwm2m_media_type_t format,
+                             uint8_t * buffer,
+                             size_t length,
+                             uint32_t block_num,
+                             uint8_t block_more)
+{
+    lwm2m_object_t * targetP;
+    uint8_t result;
+
+    LOG_URI(uriP);
+
+    if (length == 0 || buffer == NULL)
+    {
+        return COAP_400_BAD_REQUEST;
+    }
+
+    targetP = (lwm2m_object_t *)LWM2M_LIST_FIND(contextP->objectList, uriP->objectId);
+    if (NULL == targetP) return COAP_404_NOT_FOUND;
+    if (NULL == targetP->rawBlock1CreateFunc) return COAP_405_METHOD_NOT_ALLOWED;
+
+    result = targetP->rawBlock1CreateFunc(uriP, format, buffer, length, targetP, block_num, block_more);
+
+    if (block_more > 0 && (result == COAP_201_CREATED || result == NO_ERROR)){
+        result = COAP_231_CONTINUE;
+    }
+
+    return result;
+}
+#endif
+
 
 uint8_t object_delete(lwm2m_context_t * contextP,
                       lwm2m_uri_t * uriP)
