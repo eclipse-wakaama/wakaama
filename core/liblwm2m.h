@@ -20,6 +20,7 @@
  *    Pascal Rieux - Please refer to git log
  *    Ville Skyttä - Please refer to git log
  *    Scott Bertin, AMETEK, Inc. - Please refer to git log
+ *    Tuve Nordius, Husqvarna Group - Please refer to git log
  *
  *******************************************************************************/
 
@@ -496,19 +497,28 @@ typedef enum
 typedef uint8_t lwm2m_binding_t;
 
 /*
- * LWM2M block1 data
+ * LWM2M block data
  *
- * Temporary data needed to handle block1 request.
- * Currently support only one block1 request by server.
+ * Temporary data needed to handle block1 request and block2 responses.
  */
-typedef struct _lwm2m_block1_data_ lwm2m_block1_data_t;
-
-struct _lwm2m_block1_data_
+typedef union _block_data_identifier_
 {
-    uint8_t *             block1buffer;     // data buffer
-    size_t                block1bufferSize; // buffer size
-    uint16_t              lastmid;          // mid of the last message received
+    char * uri;                                    // resource string if block1 
+    int32_t mid;                                    // mid of the last request if block2 eg the mid for the expected block
+} block_data_identifier_t;
+
+
+typedef struct _lwm2m_block_data_ lwm2m_block_data_t;
+
+struct _lwm2m_block_data_
+{
+    struct _lwm2m_block_data_ *     next;
+    block_data_identifier_t         identifier;
+    uint8_t *                       blockBuffer;       // data buffer
+    size_t                          blockBufferSize;   // buffer size
+    uint32_t                        blockNum;         // block num of the last message received
 };
+
 
 typedef struct _lwm2m_server_
 {
@@ -522,7 +532,7 @@ typedef struct _lwm2m_server_
     lwm2m_status_t          status;
     char *                  location;
     bool                    dirty;
-    lwm2m_block1_data_t *   block1Data;   // buffer to handle block1 data, should be replace by a list to support several block1 transfer by server.
+    lwm2m_block_data_t *    blockData;   // list to handle temporary block data.
 #ifndef LWM2M_VERSION_1_0
     uint16_t                servObjInstID;// Server object instance ID if not a bootstrap server.
     uint8_t                 attempt;      // Current registration attempt
@@ -538,6 +548,12 @@ typedef struct _lwm2m_context_ lwm2m_context_t;
  * When used with an observe, if 'data' is not nil, 'status' holds the observe counter.
  */
 typedef void (*lwm2m_result_callback_t) (uint16_t clientID, lwm2m_uri_t * uriP, int status, lwm2m_media_type_t format, uint8_t * data, int dataLength, void * userData);
+
+/*
+ * Extended LWM2M result callback, use if there is a need to know number of blocks (count) and block_size transfered
+ * count does also hold the observe counter
+ */
+typedef void (*lwm2m_block_result_callback_t) (uint16_t clientID, lwm2m_uri_t * uriP, int status, int block_num, int block_size, bool block_more, lwm2m_media_type_t format, uint8_t * data, int dataLength, void * userData);
 
 /*
  * LWM2M Observations
@@ -557,6 +573,7 @@ typedef struct _lwm2m_observation_
     lwm2m_uri_t             uri;
     lwm2m_status_t          status;     // latest user operation
     lwm2m_result_callback_t callback;
+    lwm2m_block_result_callback_t blockCallback;
     void *                  userData;
 } lwm2m_observation_t;
 
@@ -615,6 +632,7 @@ typedef struct _lwm2m_client_
     lwm2m_client_object_t * objectList;
     lwm2m_observation_t *   observationList;
     uint16_t                observationId;
+    lwm2m_block_data_t *    blockData;   // list to handle temporary block data.
 } lwm2m_client_t;
 
 
@@ -640,6 +658,8 @@ struct _lwm2m_transaction_
     void * message;
     uint16_t buffer_len;
     uint8_t * buffer;
+    uint16_t payload_len; // the length of the entire payload, message payload migth be smaller in case of a block1 transfer
+    uint8_t * payload; // carries the entire payload accross multiple transactions in case of a block 1 transfer
     lwm2m_transaction_callback_t callback;
     void * userData;
 };
@@ -723,6 +743,7 @@ struct _lwm2m_context_
     void *                  monitorUserData;
 #endif
 #ifdef LWM2M_BOOTSTRAP_SERVER_MODE
+    lwm2m_client_t *        clientList;
     lwm2m_bootstrap_callback_t bootstrapCallback;
     void *                     bootstrapUserData;
 #endif
@@ -770,16 +791,21 @@ void lwm2m_set_monitoring_callback(lwm2m_context_t * contextP, lwm2m_result_call
 
 // Device Management APIs
 int lwm2m_dm_read(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, lwm2m_result_callback_t callback, void * userData);
+int lwm2m_dm_read_block(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, lwm2m_block_result_callback_t callback, void * userData);
 int lwm2m_dm_discover(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, lwm2m_result_callback_t callback, void * userData);
 int lwm2m_dm_write(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, lwm2m_media_type_t format, uint8_t * buffer, int length, lwm2m_result_callback_t callback, void * userData);
+int lwm2m_dm_write_block(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, lwm2m_media_type_t format, uint8_t * buffer, int length, lwm2m_block_result_callback_t callback, void * userData);
 int lwm2m_dm_write_attributes(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, lwm2m_attributes_t * attrP, lwm2m_result_callback_t callback, void * userData);
 int lwm2m_dm_execute(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, lwm2m_media_type_t format, uint8_t * buffer, int length, lwm2m_result_callback_t callback, void * userData);
 int lwm2m_dm_create(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, lwm2m_media_type_t format, uint8_t * buffer, int length, lwm2m_result_callback_t callback, void * userData);
+int lwm2m_dm_create_block(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, lwm2m_media_type_t format, uint8_t * buffer, int length, lwm2m_block_result_callback_t callback, void * userData);
 int lwm2m_dm_delete(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, lwm2m_result_callback_t callback, void * userData);
 
 // Information Reporting APIs
 int lwm2m_observe(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, lwm2m_result_callback_t callback, void * userData);
+int lwm2m_observe_block(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, lwm2m_block_result_callback_t callback, void * userData);
 int lwm2m_observe_cancel(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, lwm2m_result_callback_t callback, void * userData);
+int lwm2m_observe_cancel_block(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, lwm2m_block_result_callback_t blockCallback, void * userData);
 #endif
 
 #ifdef LWM2M_BOOTSTRAP_SERVER_MODE

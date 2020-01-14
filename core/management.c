@@ -16,6 +16,7 @@
  *    Toby Jaffey - Please refer to git log
  *    Bosch Software Innovations GmbH - Please refer to git log
  *    Pascal Rieux - Please refer to git log
+ *    Tuve Nordius, Husqvarna Group - Please refer to git log
  *    
  *******************************************************************************/
 /*
@@ -360,6 +361,27 @@ uint8_t dm_handleRequest(lwm2m_context_t * contextP,
 
 #define ID_AS_STRING_MAX_LEN 8
 
+static void prv_applyCallback(dm_data_t * dataP, int status, int block_num, int block_size, bool block_more, lwm2m_media_type_t format, uint8_t * data, int dataLength)
+{
+    if (dataP->blockCallback != NULL)
+    {
+        dataP->blockCallback(dataP->clientID,
+                        &dataP->uri, status,
+                        block_num, block_size, block_more,
+                        format, data, dataLength,
+                        dataP->userData);
+    }
+    else if(dataP->callback != NULL)
+    {
+        dataP->callback(dataP->clientID,
+                        &dataP->uri,
+                        status,
+                        format, data, dataLength,
+                        dataP->userData);
+    }
+}
+
+
 static void prv_resultCallback(lwm2m_context_t * contextP,
                                lwm2m_transaction_t * transacP,
                                void * message)
@@ -370,11 +392,7 @@ static void prv_resultCallback(lwm2m_context_t * contextP,
 
     if (message == NULL)
     {
-        dataP->callback(dataP->clientID,
-                        &dataP->uri,
-                        COAP_503_SERVICE_UNAVAILABLE,
-                        LWM2M_CONTENT_TEXT, NULL, 0,
-                        dataP->userData);
+        prv_applyCallback(dataP, COAP_503_SERVICE_UNAVAILABLE, 0, 0, false, LWM2M_CONTENT_TEXT, NULL, 0);
     }
     else
     {
@@ -388,10 +406,10 @@ static void prv_resultCallback(lwm2m_context_t * contextP,
             int result = 0;
             lwm2m_uri_t locationUri;
 
-            locationString = coap_get_multi_option_as_string(packet->location_path);
+            locationString = coap_get_multi_option_as_path_string(packet->location_path);
             if (locationString == NULL)
             {
-                LOG("Error: coap_get_multi_option_as_string() failed for Location_path option in prv_resultCallback()");
+                LOG("Error: coap_get_multi_option_as_path_string() failed for Location_path option in prv_resultCallback()");
                 return;
             }
 
@@ -416,16 +434,14 @@ static void prv_resultCallback(lwm2m_context_t * contextP,
 
             lwm2m_free(locationString);
         }
-
-        dataP->callback(dataP->clientID,
-                        &dataP->uri,
-                        packet->code,
-                        utils_convertMediaType(packet->content_type),
-                        packet->payload,
-                        packet->payload_len,
-                        dataP->userData);
+        
+        uint32_t block_num = 0;
+        uint16_t block_size = 0;
+        uint8_t block_more = 0;
+        coap_get_header_block(message, &block_num, &block_more, &block_size, NULL);
+        prv_applyCallback(dataP, packet->code, block_num, block_size, block_more, utils_convertMediaType(packet->content_type), packet->payload, packet->payload_len);
     }
-    lwm2m_free(dataP);
+    transaction_free_userData(contextP, transacP);
 }
 
 static int prv_makeOperation(lwm2m_context_t * contextP,
@@ -436,6 +452,7 @@ static int prv_makeOperation(lwm2m_context_t * contextP,
                              uint8_t * buffer,
                              int length,
                              lwm2m_result_callback_t callback,
+                             lwm2m_block_result_callback_t blockCallback,
                              void * userData)
 {
     lwm2m_client_t * clientP;
@@ -455,8 +472,10 @@ static int prv_makeOperation(lwm2m_context_t * contextP,
     else if (buffer != NULL)
     {
         coap_set_header_content_type(transaction->message, format);
+        
         // TODO: Take care of fragmentation
-        coap_set_payload(transaction->message, buffer, length);
+ 
+        transaction_set_payload(transaction, buffer, length);
     }
 
     if (callback != NULL)
@@ -470,6 +489,7 @@ static int prv_makeOperation(lwm2m_context_t * contextP,
         memcpy(&dataP->uri, uriP, sizeof(lwm2m_uri_t));
         dataP->clientID = clientP->internalID;
         dataP->callback = callback;
+        dataP->blockCallback = blockCallback;
         dataP->userData = userData;
 
         transaction->callback = prv_resultCallback;
@@ -481,10 +501,12 @@ static int prv_makeOperation(lwm2m_context_t * contextP,
     return transaction_send(contextP, transaction);
 }
 
-int lwm2m_dm_read(lwm2m_context_t * contextP,
+static
+int prv_lwm2m_dm_read(lwm2m_context_t * contextP,
                   uint16_t clientID,
                   lwm2m_uri_t * uriP,
                   lwm2m_result_callback_t callback,
+                  lwm2m_block_result_callback_t blockCallback,
                   void * userData)
 {
     lwm2m_client_t * clientP;
@@ -499,16 +521,36 @@ int lwm2m_dm_read(lwm2m_context_t * contextP,
                              COAP_GET,
                              clientP->format,
                              NULL, 0,
-                             callback, userData);
+                             callback, blockCallback, userData);
 }
 
-int lwm2m_dm_write(lwm2m_context_t * contextP,
+int lwm2m_dm_read(lwm2m_context_t * contextP,
+                  uint16_t clientID,
+                  lwm2m_uri_t * uriP,
+                  lwm2m_result_callback_t callback,
+                  void * userData)
+{
+    return prv_lwm2m_dm_read(contextP, clientID, uriP, callback, NULL, userData);
+}
+
+int lwm2m_dm_read_block(lwm2m_context_t * contextP,
+                  uint16_t clientID,
+                  lwm2m_uri_t * uriP,
+                  lwm2m_block_result_callback_t blockCallback,
+                  void * userData)
+{
+    return prv_lwm2m_dm_read(contextP, clientID, uriP, NULL, blockCallback, userData);
+}
+
+static
+int prv_lwm2m_dm_write(lwm2m_context_t * contextP,
                    uint16_t clientID,
                    lwm2m_uri_t * uriP,
                    lwm2m_media_type_t format,
                    uint8_t * buffer,
                    int length,
                    lwm2m_result_callback_t callback,
+                   lwm2m_block_result_callback_t blockCallback,
                    void * userData)
 {
     LOG_ARG("clientID: %d, format: %s, length: %d", clientID, STR_MEDIA_TYPE(format), length);
@@ -524,15 +566,39 @@ int lwm2m_dm_write(lwm2m_context_t * contextP,
         return prv_makeOperation(contextP, clientID, uriP,
                                   COAP_PUT,
                                   format, buffer, length,
-                                  callback, userData);
+                                  callback, blockCallback, userData);
     }
     else
     {
         return prv_makeOperation(contextP, clientID, uriP,
                                   COAP_POST,
                                   format, buffer, length,
-                                  callback, userData);
+                                  callback, blockCallback, userData);
     }
+}
+
+int lwm2m_dm_write(lwm2m_context_t * contextP,
+                   uint16_t clientID,
+                   lwm2m_uri_t * uriP,
+                   lwm2m_media_type_t format,
+                   uint8_t * buffer,
+                   int length,
+                   lwm2m_result_callback_t callback,
+                   void * userData)
+{
+    return prv_lwm2m_dm_write(contextP, clientID, uriP, format, buffer, length, callback, NULL, userData);
+}
+
+int lwm2m_dm_write_block(lwm2m_context_t * contextP,
+                   uint16_t clientID,
+                   lwm2m_uri_t * uriP,
+                   lwm2m_media_type_t format,
+                   uint8_t * buffer,
+                   int length,
+                   lwm2m_block_result_callback_t blockCallback,
+                   void * userData)
+{
+    return prv_lwm2m_dm_write(contextP, clientID, uriP, format, buffer, length, NULL, blockCallback, userData);
 }
 
 int lwm2m_dm_execute(lwm2m_context_t * contextP,
@@ -554,16 +620,18 @@ int lwm2m_dm_execute(lwm2m_context_t * contextP,
     return prv_makeOperation(contextP, clientID, uriP,
                               COAP_POST,
                               format, buffer, length,
-                              callback, userData);
+                              callback, NULL, userData);
 }
 
-int lwm2m_dm_create(lwm2m_context_t * contextP,
+static
+int prv_lwm2m_dm_create(lwm2m_context_t * contextP,
                     uint16_t clientID,
                     lwm2m_uri_t * uriP,
                     lwm2m_media_type_t format,
                     uint8_t * buffer,
                     int length,
                     lwm2m_result_callback_t callback,
+                    lwm2m_block_result_callback_t blockCallback,
                     void * userData)
 {
     LOG_ARG("clientID: %d, format: %s, length: %d", clientID, STR_MEDIA_TYPE(format), length);
@@ -578,7 +646,31 @@ int lwm2m_dm_create(lwm2m_context_t * contextP,
     return prv_makeOperation(contextP, clientID, uriP,
                               COAP_POST,
                               format, buffer, length,
-                              callback, userData);
+                              callback, blockCallback, userData);
+}
+
+int lwm2m_dm_create(lwm2m_context_t * contextP,
+                    uint16_t clientID,
+                    lwm2m_uri_t * uriP,
+                    lwm2m_media_type_t format,
+                    uint8_t * buffer,
+                    int length,
+                    lwm2m_result_callback_t callback,
+                    void * userData)
+{
+    return prv_lwm2m_dm_create(contextP, clientID, uriP, format, buffer, length, callback, NULL, userData);
+}
+
+int lwm2m_dm_create_block(lwm2m_context_t * contextP,
+                    uint16_t clientID,
+                    lwm2m_uri_t * uriP,
+                    lwm2m_media_type_t format,
+                    uint8_t * buffer,
+                    int length,
+                    lwm2m_block_result_callback_t blockCallback,
+                    void * userData)
+{
+    return prv_lwm2m_dm_create(contextP, clientID, uriP, format, buffer, length, NULL, blockCallback, userData);
 }
 
 int lwm2m_dm_delete(lwm2m_context_t * contextP,
@@ -598,7 +690,7 @@ int lwm2m_dm_delete(lwm2m_context_t * contextP,
     return prv_makeOperation(contextP, clientID, uriP,
                               COAP_DELETE,
                               LWM2M_CONTENT_TEXT, NULL, 0,
-                              callback, userData);
+                              callback, NULL, userData);
 }
 
 int lwm2m_dm_write_attributes(lwm2m_context_t * contextP,
@@ -643,6 +735,7 @@ int lwm2m_dm_write_attributes(lwm2m_context_t * contextP,
         memcpy(&dataP->uri, uriP, sizeof(lwm2m_uri_t));
         dataP->clientID = clientP->internalID;
         dataP->callback = callback;
+        dataP->blockCallback = NULL;
         dataP->userData = userData;
 
         transaction->callback = prv_resultCallback;
@@ -773,6 +866,7 @@ int lwm2m_dm_discover(lwm2m_context_t * contextP,
         memcpy(&dataP->uri, uriP, sizeof(lwm2m_uri_t));
         dataP->clientID = clientP->internalID;
         dataP->callback = callback;
+        dataP->blockCallback  = NULL;
         dataP->userData = userData;
 
         transaction->callback = prv_resultCallback;
