@@ -1143,7 +1143,7 @@ size_t utils_base64Decode(const char * dataP, size_t dataLen, uint8_t * bufferP,
                     {
                         v4 = prv_base64Value(dataP[dataIndex++]);
                         if (v4 >= 64) return 0;
-                        bufferP[bufferIndex++] = (v2 << 6) + v4;
+                        bufferP[bufferIndex++] = (v3 << 6) + v4;
                     }
                     else
                     {
