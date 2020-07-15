@@ -115,7 +115,12 @@ static uint8_t handle_request(lwm2m_context_t * contextP,
     LOG("Entering");
 	
 #ifdef LWM2M_CLIENT_MODE
-    requestType = uri_decode(contextP->altPath, message->uri_path, &uri);
+    if(contextP->state == STATE_BOOTSTRAPPING) {
+        requestType = uri_decode(NULL, message->uri_path, &uri);
+    }
+    else {
+        requestType = uri_decode(contextP->altPath, message->uri_path, &uri);
+    }
 #else
     requestType = uri_decode(NULL, message->uri_path, &uri);
 #endif
