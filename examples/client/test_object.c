@@ -65,7 +65,7 @@
  *  test |  1 |    R/W     |    No     |    Yes    | Integer | 0-255 |       |             |
  *  exec |  2 |     E      |    No     |    Yes    |         |       |       |             |
  *  dec  |  3 |    R/W     |    No     |    Yes    |  Float  |       |       |             |
- *  str  |  4 |    R/W     |    No     |    Yes    | String  |       |       |             |
+ *  str  |  4 |    R/W     |    No     |    No     | String  |       |       |             |
  */
 
 #include "liblwm2m.h"
@@ -251,6 +251,9 @@ static uint8_t prv_write(uint16_t instanceId,
                 }
                 break;
             case 4:
+                if(dataArray[i].type != LWM2M_TYPE_STRING && dataArray[i].type != LWM2M_TYPE_OPAQUE) {
+                    return COAP_400_BAD_REQUEST;
+                }
                 tmp = targetP->str;
                 targetP->str = lwm2m_malloc(dataArray[i].value.asBuffer.length + 1);
                 strncpy(targetP->str, (char*)dataArray[i].value.asBuffer.buffer, dataArray[i].value.asBuffer.length);

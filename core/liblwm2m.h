@@ -658,7 +658,7 @@ struct _lwm2m_transaction_
     void * message;
     uint16_t buffer_len;
     uint8_t * buffer;
-    uint16_t payload_len; // the length of the entire payload, message payload migth be smaller in case of a block1 transfer
+    uint16_t payload_len; // the length of the entire payload, message payload might be smaller in case of a block1 transfer
     uint8_t * payload; // carries the entire payload accross multiple transactions in case of a block 1 transfer
     lwm2m_transaction_callback_t callback;
     void * userData;
