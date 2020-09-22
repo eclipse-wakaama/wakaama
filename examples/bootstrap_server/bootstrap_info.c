@@ -517,7 +517,7 @@ static int prv_add_server(bs_info_t * infoP,
         if (size == 7)
         {
             tlvP[6].id = LWM2M_SECURITY_SERVER_PUBLIC_KEY_ID;
-            lwm2m_data_encode_opaque(dataP->serverKey, dataP->serverKeyLen, tlvP + 5);
+            lwm2m_data_encode_opaque(dataP->serverKey, dataP->serverKeyLen, tlvP + 6);
         }
     }
 
