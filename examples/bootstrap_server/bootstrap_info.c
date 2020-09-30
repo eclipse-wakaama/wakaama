@@ -62,7 +62,7 @@ static int prv_find_next_section(FILE * fd,
     {
         if (line[0] == '[')
         {
-            int i;
+            size_t i;
 
             length = strlen(line);
             i = 1;
