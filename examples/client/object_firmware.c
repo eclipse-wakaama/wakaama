@@ -88,7 +88,7 @@ static uint8_t prv_firmware_read(uint16_t instanceId,
     // is the server asking for the full object ?
     if (*numDataP == 0)
     {
-        *dataArrayP = lwm2m_data_new(3);
+        *dataArrayP = lwm2m_data_new(6);
         if (*dataArrayP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
         *numDataP = 6;
         (*dataArrayP)[0].id = 3;
