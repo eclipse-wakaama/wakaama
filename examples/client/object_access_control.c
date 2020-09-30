@@ -261,7 +261,7 @@ static uint8_t prv_write_resources(uint16_t instanceId, int numData,
                 acc_ctrl_ri_t* acValListSave = accCtrlOiP->accCtrlValList;
                 accCtrlOiP->accCtrlValList = NULL;
 
-                int ri;
+                size_t ri;
                 lwm2m_data_t* subTlvArray = tlvArray[i].value.asChildren.array;
 
                 if (tlvArray[i].value.asChildren.count == 0)
