@@ -1,0 +1,43 @@
+name: Build and Test
+
+on:
+  push:
+    branches: '**'
+  pull_request:
+    branches: '**'
+
+jobs:
+  build_and_test:
+    runs-on: ubuntu-20.04
+
+    steps:
+    - name: Checkout code including full history and submodules
+      uses: actions/checkout@v2
+      with:
+        submodules: true
+        fetch-depth: 0
+        path: wakaama
+
+    - name: Install dependencies from APT repository
+      run: sudo apt-get install libcunit1-dev wget unzip
+
+    - name: Install CMake
+      uses: lukka/get-cmake@latest
+
+    - name: Install Ninja
+      uses: ashutoshvarma/setup-ninja@master
+      with:
+        version: 1.10.0
+
+    - name: Build and execute unit tests
+      run: |
+        cmake -GNinja -S wakaama/tests -B build-wakaama-tests
+        cmake --build build-wakaama-tests
+        build-wakaama-tests/lwm2munittests
+      working-directory: ${{ github.workspace }}
+
+    - name: Build examples
+      run: |
+        cmake -GNinja -S wakaama/examples -B build-wakaama-examples
+        cmake --build build-wakaama-examples
+      working-directory: ${{ github.workspace }}
