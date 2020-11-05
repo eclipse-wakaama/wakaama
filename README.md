@@ -7,7 +7,7 @@ Developers mailing list: https://dev.eclipse.org/mailman/listinfo/wakaama-dev
 
     -+- core                   (the LWM2M engine)
      |    |
-     |    +- er-coap-13        (Slightly modified Erbium's CoAP engine from
+     |    +- er-coap-13        (Modified Erbium's CoAP engine from
      |                          https://web.archive.org/web/20180316172739/http://people.inf.ethz.ch/mkovatsc/erbium.php)
      |
      +- tests                  (test cases)
