@@ -25,9 +25,7 @@ jobs:
       uses: lukka/get-cmake@latest
 
     - name: Install Ninja
-      uses: ashutoshvarma/setup-ninja@master
-      with:
-        version: 1.10.0
+      uses: seanmiddleditch/gha-setup-ninja@master
 
     - name: Build and execute unit tests
       run: |
