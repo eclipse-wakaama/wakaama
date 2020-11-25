@@ -131,6 +131,9 @@ If DTLS feature enable:
 To launch a bootstrap session:
 ``./lwm2mclient -b``
 
+***Note:***
+*If used with the examples/bootstrap_server the client needs to be built with LWM2M_SUPPORT_TLV* 
+
 ### Simpler test client example
 
 In the any directory, run the following commands:
@@ -154,3 +157,10 @@ Options are:
  - -l PORT	Set the local UDP port of the Client. Default: 56830
  - -4		Use IPv4 connection. Default: IPv6 connection
 
+### Bootstrap Server example
+ * Create a build directory and change to that.
+ * ``cmake [wakaama directory]/examples/bootstrap_server``
+ * ``make``
+ * ``./bootstrap_server [Options]``
+
+Refer to examples/bootstrap_server/README for more information.
