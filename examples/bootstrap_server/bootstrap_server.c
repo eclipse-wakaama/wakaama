@@ -89,7 +89,7 @@ void print_usage(char * filename,
     fprintf(stderr, "Launch a LWM2M Bootstrap Server.\r\n\n");
     fprintf(stdout, "Options:\r\n");
     fprintf(stdout, "  -f FILE\tSpecify BootStrap Information file. Default: ./%s\r\n", filename);
-    fprintf(stdout, "  -l PORT\tSet the local UDP port of the Client. Default: %s\r\n", port);
+    fprintf(stdout, "  -l PORT\tSet the local UDP port of the Bootstrap Server. Default: %s\r\n", port);
     fprintf(stdout, "  -4\t\tUse IPv4 connection. Default: IPv6 connection\r\n");
     fprintf(stdout, "\r\n");
 }
