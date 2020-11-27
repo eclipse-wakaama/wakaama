@@ -163,4 +163,4 @@ Options are:
  * ``make``
  * ``./bootstrap_server [Options]``
 
-Refer to examples/bootstrap_server/README for more information.
+Refer to [examples/bootstrap_server/README](./examples/bootstrap_server/README) for more information.
