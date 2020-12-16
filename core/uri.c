@@ -289,7 +289,7 @@ int uri_toString(const lwm2m_uri_t * uriP,
     LOG_ARG("bufferLen: %u", bufferLen);
     LOG_URI(uriP);
 
-    if (uriP && LWM2M_URI_IS_SET_OBJECT(uriP))
+    if (NULL != uriP && LWM2M_URI_IS_SET_OBJECT(uriP))
     {
         int res;
         depth = URI_DEPTH_OBJECT;
@@ -335,7 +335,7 @@ int uri_toString(const lwm2m_uri_t * uriP,
             }
         }
     }
-    else if(uriP)
+    else if(NULL != uriP)
     {
         if (head >= bufferLen - 1) return -1;
         buffer[head++] = '/';
