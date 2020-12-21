@@ -471,7 +471,7 @@ struct _lwm2m_object_t
 
 typedef enum
 {
-    STATE_DEREGISTERED = 0,        // not registered or boostrap not started
+    STATE_DEREGISTERED = 0,        // not registered or bootstrap not started
     STATE_REG_HOLD_OFF,            // initial registration delay or delay between retries
     STATE_REG_PENDING,             // registration pending
     STATE_REGISTERED,              // successfully registered
@@ -482,8 +482,8 @@ typedef enum
     STATE_DEREG_PENDING,           // deregistration pending
     STATE_BS_HOLD_OFF,             // bootstrap hold off time
     STATE_BS_INITIATED,            // bootstrap request sent
-    STATE_BS_PENDING,              // boostrap ongoing
-    STATE_BS_FINISHING,            // boostrap finish received
+    STATE_BS_PENDING,              // bootstrap ongoing
+    STATE_BS_FINISHING,            // bootstrap finish received
     STATE_BS_FINISHED,             // bootstrap done
     STATE_BS_FAILING,              // bootstrap error occurred
     STATE_BS_FAILED,               // bootstrap failed
