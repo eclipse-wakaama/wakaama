@@ -220,7 +220,6 @@ static uint8_t prv_location_read(uint16_t objInstId,
 
 void display_location_object(lwm2m_object_t * object)
 {
-#ifdef WITH_LOGS
     location_data_t * data = (location_data_t *)object->userData;
     fprintf(stdout, "  /%u: Location object:\r\n", object->objID);
     if (NULL != data)
@@ -228,7 +227,6 @@ void display_location_object(lwm2m_object_t * object)
         fprintf(stdout, "    latitude: %.6f, longitude: %.6f, altitude: %.6f, radius: %.6f, timestamp: %lu, speed: %.6f\r\n",
                 data->latitude, data->longitude, data->altitude, data->radius, data->timestamp, data->speed);
     }
-#endif
 }
 
 /**

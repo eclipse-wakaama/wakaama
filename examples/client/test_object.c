@@ -353,7 +353,6 @@ static uint8_t prv_exec(uint16_t instanceId,
 
 void display_test_object(lwm2m_object_t * object)
 {
-#ifdef WITH_LOGS
     fprintf(stdout, "  /%u: Test object, instances:\r\n", object->objID);
     prv_instance_t * instance = (prv_instance_t *)object->instanceList;
     while (instance != NULL)
@@ -363,7 +362,6 @@ void display_test_object(lwm2m_object_t * object)
                 instance->shortID, instance->test);
         instance = (prv_instance_t *)instance->next;
     }
-#endif
 }
 
 lwm2m_object_t * get_test_object(void)

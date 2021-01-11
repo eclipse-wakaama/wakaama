@@ -606,7 +606,6 @@ static uint8_t prv_device_execute(uint16_t instanceId,
 
 void display_device_object(lwm2m_object_t * object)
 {
-#ifdef WITH_LOGS
     device_data_t * data = (device_data_t *)object->userData;
     fprintf(stdout, "  /%u: Device object:\r\n", object->objID);
     if (NULL != data)
@@ -614,7 +613,6 @@ void display_device_object(lwm2m_object_t * object)
         fprintf(stdout, "    time: %lld, time_offset: %s\r\n",
                 (long long) data->time, data->time_offset);
     }
-#endif
 }
 
 lwm2m_object_t * get_object_device()

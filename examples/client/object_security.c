@@ -500,7 +500,6 @@ void copy_security_object(lwm2m_object_t * objectDest, lwm2m_object_t * objectSr
 
 void display_security_object(lwm2m_object_t * object)
 {
-#ifdef WITH_LOGS
     fprintf(stdout, "  /%u: Security object, instances:\r\n", object->objID);
     security_instance_t * instance = (security_instance_t *)object->instanceList;
     while (instance != NULL)
@@ -511,7 +510,6 @@ void display_security_object(lwm2m_object_t * object)
                 instance->shortID, instance->clientHoldOffTime);
         instance = (security_instance_t *)instance->next;
     }
-#endif
 }
 
 void clean_security_object(lwm2m_object_t * objectP)

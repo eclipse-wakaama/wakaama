@@ -289,7 +289,6 @@ static uint8_t prv_firmware_execute(uint16_t instanceId,
 
 void display_firmware_object(lwm2m_object_t * object)
 {
-#ifdef WITH_LOGS
     firmware_data_t * data = (firmware_data_t *)object->userData;
     fprintf(stdout, "  /%u: Firmware object:\r\n", object->objID);
     if (NULL != data)
@@ -297,7 +296,6 @@ void display_firmware_object(lwm2m_object_t * object)
         fprintf(stdout, "    state: %u, result: %u\r\n", data->state,
                 data->result);
     }
-#endif
 }
 
 lwm2m_object_t * get_object_firmware(void)

@@ -1039,7 +1039,6 @@ void copy_server_object(lwm2m_object_t * objectDest, lwm2m_object_t * objectSrc)
 
 void display_server_object(lwm2m_object_t * object)
 {
-#ifdef WITH_LOGS
     fprintf(stdout, "  /%u: Server object, instances:\r\n", object->objID);
     server_instance_t * serverInstance = (server_instance_t *)object->instanceList;
     while (serverInstance != NULL)
@@ -1071,7 +1070,6 @@ void display_server_object(lwm2m_object_t * object)
         fprintf(stdout, "\r\n");
         serverInstance = (server_instance_t *)serverInstance->next;
     }
-#endif
 }
 
 lwm2m_object_t * get_server_object(int serverId,
