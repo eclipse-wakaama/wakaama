@@ -19,7 +19,7 @@ SET(SOURCES
     ${CMAKE_CURRENT_LIST_DIR}/object_security.c
     ${CMAKE_CURRENT_LIST_DIR}/object_server.c
     ${CMAKE_CURRENT_LIST_DIR}/object_device.c
-    ${CMAKE_CURRENT_LIST_DIR}/test_object.c
+    ${CMAKE_CURRENT_LIST_DIR}/object_test.c
     )
 
 add_executable(${PROJECT_NAME} ${SOURCES} ${WAKAAMA_SOURCES} ${SHARED_SOURCES})
