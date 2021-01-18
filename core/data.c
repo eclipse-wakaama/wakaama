@@ -211,7 +211,7 @@ void lwm2m_data_encode_string(const char * string,
     size_t len;
     int res;
 
-    LOG_ARG("\"%s\"", string);
+    LOG_ARG("\"%s\"", STR_NULL2EMPTY(string));
     if (string == NULL)
     {
         len = 0;
@@ -274,7 +274,7 @@ void lwm2m_data_encode_nstring(const char * string,
                                size_t length,
                                lwm2m_data_t * dataP)
 {
-    LOG_ARG("length: %d, string: \"%.*s\"", length, length, string);
+    LOG_ARG("length: %d, string: \"%.*s\"", length, length, STR_NULL2EMPTY(string));
     lwm2m_data_encode_opaque((uint8_t *)string, length, dataP);
 
     if (dataP->type == LWM2M_TYPE_OPAQUE)
@@ -584,7 +584,7 @@ int lwm2m_data_decode_bool(const lwm2m_data_t * dataP,
 
 void lwm2m_data_encode_corelink(const char * corelink, lwm2m_data_t * dataP)
 {
-    LOG_ARG("\"%s\"", corelink);
+    LOG_ARG("\"%s\"", STR_NULL2EMPTY(corelink));
     lwm2m_data_encode_string(corelink, dataP);
     if (dataP->type == LWM2M_TYPE_STRING)
     {

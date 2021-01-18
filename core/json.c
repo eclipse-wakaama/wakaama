@@ -494,7 +494,7 @@ int json_parse(lwm2m_uri_t * uriP,
     _record_t * recordArray;
     lwm2m_data_t * parsedP;
 
-    LOG_ARG("bufferLen: %d, buffer: \"%s\"", bufferLen, (char *)buffer);
+    LOG_ARG("bufferLen: %d, buffer: \"%s\"", bufferLen, STR_NULL2EMPTY((char *)buffer));
     LOG_URI(uriP);
     *dataP = NULL;
     recordArray = NULL;

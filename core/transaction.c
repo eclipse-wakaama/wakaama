@@ -153,7 +153,7 @@ lwm2m_transaction_t * transaction_new(void * sessionH,
     int result;
 
     LOG_ARG("method: %d, altPath: \"%s\", mID: %d, token_len: %d",
-            method, altPath, mID, token_len);
+            method, STR_NULL2EMPTY(altPath), mID, token_len);
     LOG_URI(uriP);
 
     // no transactions without peer
@@ -285,11 +285,11 @@ bool transaction_handleResponse(lwm2m_context_t * contextP,
                 if ((COAP_TYPE_ACK == message->type) || (COAP_TYPE_RST == message->type))
                 {
                     if (transacP->mID == message->mid)
-	                {
-    	                found = true;
-        	            transacP->ack_received = true;
-            	        reset = COAP_TYPE_RST == message->type;
-            	    }
+                    {
+                        found = true;
+                        transacP->ack_received = true;
+                        reset = COAP_TYPE_RST == message->type;
+                    }
                 }
             }
 
@@ -305,14 +305,14 @@ bool transaction_handleResponse(lwm2m_context_t * contextP,
                         coap_init_message(response, COAP_TYPE_ACK, 0, message->mid);
                         message_send(contextP, response, fromSessionH);
                     }
-                
-	                if ((COAP_401_UNAUTHORIZED == message->code) && (COAP_MAX_RETRANSMIT > transacP->retrans_counter))
-    	            {
-        	            transacP->ack_received = false;
-            	        transacP->retrans_time += COAP_RESPONSE_TIMEOUT;
-                	    return true;
-                	}
-				}       
+
+                    if ((COAP_401_UNAUTHORIZED == message->code) && (COAP_MAX_RETRANSMIT > transacP->retrans_counter))
+                    {
+                        transacP->ack_received = false;
+                        transacP->retrans_time += COAP_RESPONSE_TIMEOUT;
+                        return true;
+                    }
+                }
                 if (transacP->callback != NULL)
                 {
                     transacP->callback(contextP, transacP, message);

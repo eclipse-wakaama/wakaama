@@ -122,6 +122,7 @@
 ((S) == STATE_REGISTERING ? "STATE_REGISTERING" :      \
 ((S) == STATE_READY ? "STATE_READY" :      \
 "Unknown"))))))
+#define STR_NULL2EMPTY(S) ((const char *)(S) ? (const char *)(S) : "")
 #else
 #define LOG_ARG(FMT, ...)
 #define LOG(STR)

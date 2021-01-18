@@ -113,7 +113,7 @@ static uint8_t handle_request(lwm2m_context_t * contextP,
     uint8_t result = COAP_IGNORE;
 
     LOG("Entering");
-	
+
 #ifdef LWM2M_CLIENT_MODE
     requestType = uri_decode(contextP->altPath, message->uri_path, &uri);
 #else
@@ -213,7 +213,7 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
     {
         LOG_ARG("Parsed: ver %u, type %u, tkl %u, code %u.%.2u, mid %u, Content type: %d",
                 message->version, message->type, message->token_len, message->code >> 5, message->code & 0x1F, message->mid, message->content_type);
-        LOG_ARG("Payload: %.*s", message->payload_len, message->payload);
+        LOG_ARG("Payload: %.*s", message->payload_len, STR_NULL2EMPTY(message->payload));
         if (message->code >= COAP_GET && message->code <= COAP_DELETE)
         {
             uint32_t block_num = 0;
@@ -400,7 +400,7 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
 
     if (coap_error_code != NO_ERROR && coap_error_code != COAP_IGNORE)
     {
-        LOG_ARG("ERROR %u: %s", coap_error_code, coap_error_message);
+        LOG_ARG("ERROR %u: %s", coap_error_code, STR_NULL2EMPTY(coap_error_message));
 
         /* Set to sendable error code. */
         if (coap_error_code >= 192)
