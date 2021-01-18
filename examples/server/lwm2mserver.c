@@ -750,6 +750,10 @@ static void prv_create_client(char * buffer,
     }
    /* End Client dependent part*/
 
+    if (size <= 0) {
+        goto syntax_error;
+    }
+
     if (LWM2M_URI_IS_SET_INSTANCE(&uri))
     {
         /* URI is only allowed to have the object ID. Wrap the instance in an
