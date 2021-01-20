@@ -71,12 +71,12 @@ uint8_t coap_block1_handler(lwm2m_block1_data_t ** pBlock1Data,
        }
        else
        {
-           block1Data = lwm2m_malloc(sizeof(lwm2m_block1_data_t));
+           block1Data = (lwm2m_block1_data_t*) lwm2m_malloc(sizeof(lwm2m_block1_data_t));
            *pBlock1Data = block1Data;
            if (NULL == block1Data) return COAP_500_INTERNAL_SERVER_ERROR;
        }
 
-       block1Data->block1buffer = lwm2m_malloc(length);
+       block1Data->block1buffer = (uint8_t*) lwm2m_malloc(length);
        block1Data->block1bufferSize = length;
 
        // write new block in buffer
@@ -112,7 +112,7 @@ uint8_t coap_block1_handler(lwm2m_block1_data_t ** pBlock1Data,
           }
           // re-alloc new buffer
           block1Data->block1bufferSize = oldSize+length;
-          block1Data->block1buffer = lwm2m_malloc(block1Data->block1bufferSize);
+          block1Data->block1buffer = (uint8_t*) lwm2m_malloc(block1Data->block1bufferSize);
           if (NULL == block1Data->block1buffer) return COAP_500_INTERNAL_SERVER_ERROR;
           memcpy(block1Data->block1buffer, oldBuffer, oldSize);
           lwm2m_free(oldBuffer);

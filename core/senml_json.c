@@ -474,7 +474,7 @@ static bool prv_convertValue(const _record_t * recordP,
             uint8_t *data;
             dataLength = utils_base64GetDecodedSize((const char *)recordP->value.value.asBuffer.buffer,
                                                     recordP->value.value.asBuffer.length);
-            data = lwm2m_malloc(dataLength);
+            data = (uint8_t*) lwm2m_malloc(dataLength);
             if (!data) return false;
             dataLength = utils_base64Decode((const char *)recordP->value.value.asBuffer.buffer,
                                    recordP->value.value.asBuffer.length,

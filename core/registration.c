@@ -697,7 +697,7 @@ static uint8_t prv_register(lwm2m_context_t * contextP,
 
     payload_length = object_getRegisterPayloadBufferLength(contextP);
     if(payload_length == 0) return COAP_500_INTERNAL_SERVER_ERROR;
-    payload = lwm2m_malloc(payload_length);
+    payload = (uint8_t*) lwm2m_malloc(payload_length);
     if(!payload) return COAP_500_INTERNAL_SERVER_ERROR;
     payload_length = object_getRegisterPayload(contextP, payload, payload_length);
     if(payload_length == 0)
@@ -712,7 +712,7 @@ static uint8_t prv_register(lwm2m_context_t * contextP,
         lwm2m_free(payload);
         return COAP_500_INTERNAL_SERVER_ERROR;
     }
-    query = lwm2m_malloc(query_length);
+    query = (char*) lwm2m_malloc(query_length);
     if(!query)
     {
         lwm2m_free(payload);
@@ -826,7 +826,7 @@ static int prv_updateRegistration(lwm2m_context_t * contextP,
             return COAP_500_INTERNAL_SERVER_ERROR;
         }
 
-        payload = lwm2m_malloc(payload_length);
+        payload = (uint8_t*) lwm2m_malloc(payload_length);
         if(!payload)
         {
             transaction_free(transaction);

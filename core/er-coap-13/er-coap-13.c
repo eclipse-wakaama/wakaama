@@ -322,7 +322,7 @@ char * coap_get_multi_option_as_string(multi_option_t * option)
        len += opt->len + 1;     // for separator
     }
 
-    output = lwm2m_malloc(len + 1); // for String terminator
+    output = (char*) lwm2m_malloc(len + 1); // for String terminator
     if (output != NULL)
     {
         size_t i = 0;
@@ -630,7 +630,7 @@ coap_parse_message(void *packet, uint8_t *data, uint16_t data_len)
 
   /* parse header fields */
   coap_pkt->version = (COAP_HEADER_VERSION_MASK & coap_pkt->buffer[0])>>COAP_HEADER_VERSION_POSITION;
-  coap_pkt->type = (COAP_HEADER_TYPE_MASK & coap_pkt->buffer[0])>>COAP_HEADER_TYPE_POSITION;
+  coap_pkt->type = (coap_message_type_t) ((COAP_HEADER_TYPE_MASK & coap_pkt->buffer[0])>>COAP_HEADER_TYPE_POSITION);
   coap_pkt->token_len = MIN(COAP_TOKEN_LEN, (COAP_HEADER_TOKEN_LEN_MASK & coap_pkt->buffer[0])>>COAP_HEADER_TOKEN_LEN_POSITION);
   coap_pkt->code = coap_pkt->buffer[1];
   coap_pkt->mid = coap_pkt->buffer[2]<<8 | coap_pkt->buffer[3];
@@ -716,7 +716,7 @@ coap_parse_message(void *packet, uint8_t *data, uint16_t data_len)
     switch (option_number)
     {
       case COAP_OPTION_CONTENT_TYPE:
-        coap_pkt->content_type = coap_parse_int_option(current_option, option_length);
+        coap_pkt->content_type = (coap_content_type_t) coap_parse_int_option(current_option, option_length);
         PRINTF("Content-Format [%u]\n", coap_pkt->content_type);
         break;
       case COAP_OPTION_MAX_AGE:

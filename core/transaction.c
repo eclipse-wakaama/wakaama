@@ -119,7 +119,7 @@ static int prv_checkFinished(lwm2m_transaction_t * transacP,
 {
     int len;
     uint8_t* token;
-    coap_packet_t * transactionMessage = transacP->message;
+    coap_packet_t * transactionMessage = (coap_packet_t *) transacP->message;
 
     if (COAP_DELETE < transactionMessage->code)
     {
