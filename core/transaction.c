@@ -304,10 +304,6 @@ bool transaction_handleResponse(lwm2m_context_t * contextP,
                     if (COAP_TYPE_CON == message->type && NULL != response)
                     {
                         coap_init_message(response, COAP_TYPE_ACK, 0, message->mid);
-                        if (message->payload_len > REST_MAX_CHUNK_SIZE)
-                        {
-                            coap_set_status_code(response, COAP_413_ENTITY_TOO_LARGE);
-                        }
                         message_send(contextP, response, fromSessionH);
                     }
 

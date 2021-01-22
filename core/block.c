@@ -182,11 +182,6 @@ uint8_t prv_coap_raw_block_handler(lwm2m_block_data_t ** pBlockDataHead,
         }
     }
 
-    // is it too large?
-    if (length > REST_MAX_CHUNK_SIZE) {
-        return COAP_413_ENTITY_TOO_LARGE;
-    }
-
     blockData->blockNum = blockNum;
     blockData->mid = mid;
 
@@ -265,10 +260,6 @@ uint8_t prv_coap_block_handler(lwm2m_block_data_t ** pBlockDataHead,
               return COAP_408_REQ_ENTITY_INCOMPLETE;
           }
 
-          // is it too large?
-          if (blockData->blockBufferSize + length >= MAX_BLOCK_SIZE) {
-              return COAP_413_ENTITY_TOO_LARGE;
-          }
           // re-alloc new buffer
           blockData->blockBufferSize = oldSize+length;
           blockData->blockBuffer = lwm2m_malloc(blockData->blockBufferSize);

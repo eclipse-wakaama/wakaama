@@ -372,7 +372,11 @@ static int prv_retry_block1(lwm2m_context_t * contextP, void * sessionH, uint16_
     if(transaction == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
 
     message = transaction->message;
-    
+    if(!IS_OPTION(message, COAP_OPTION_BLOCK1)){
+        // This wasn't a block option, just switch to block1 transfer with the given size
+        return prv_send_new_block1(contextP, transaction, 0, block_size);
+    }
+
     // safeguard, requested block size should not be greater or zero
     if (block_size == message->block1_size && block_size > 16) block_size *= 0.5;
     if (block_size >= message->block1_size || block_size == 0) return COAP_400_BAD_REQUEST;
@@ -474,7 +478,15 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
             if (message->payload_len > REST_MAX_CHUNK_SIZE)
             {
                 coap_error_code = COAP_413_ENTITY_TOO_LARGE;
-                coap_set_header_size(response, REST_MAX_CHUNK_SIZE);
+
+                if (IS_OPTION(message, COAP_OPTION_BLOCK1)){
+                    uint32_t block1_num;
+                    uint8_t  block1_more;
+                    coap_get_header_block1(message, &block1_num, &block1_more, NULL, NULL);
+                    coap_set_header_block1(response, block1_num, block1_more, REST_MAX_CHUNK_SIZE);
+                } else {
+                    coap_set_header_block1(response, 0, 1, REST_MAX_CHUNK_SIZE);
+                }
             }
             else if (IS_OPTION(message, COAP_OPTION_BLOCK1))
             {
@@ -604,16 +616,46 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
             {
             case COAP_TYPE_NON:
             case COAP_TYPE_CON:
+                if (message->payload_len > REST_MAX_CHUNK_SIZE)
                 {
+#ifdef LWM2M_CLIENT_MODE
+                    // get server
+                    lwm2m_server_t * peerP;
+                    peerP = utils_findServer(contextP, fromSessionH);
+#ifdef LWM2M_BOOTSTRAP
+                    if (peerP == NULL)
+                    {
+                        peerP = utils_findBootstrapServer(contextP, fromSessionH);
+                    }
+#endif
+#else
+                    lwm2m_client_t * peerP;
+                    peerP = utils_findClient(contextP, fromSessionH);
+#endif
+
+                    if (peerP == NULL)
+                    {
+                        coap_error_code = COAP_500_INTERNAL_SERVER_ERROR;
+                    }
+                    else
+                    {
+                        // retry as a block2 request
+                        prv_send_get_block2(contextP, fromSessionH, peerP->blockData, message->mid, 0, REST_MAX_CHUNK_SIZE);
+
+                        coap_error_code = COAP_413_ENTITY_TOO_LARGE;
+                        transaction_handleResponse(contextP, fromSessionH, message, NULL);
+                    }
+                } else {
+
                     bool done = transaction_handleResponse(contextP, fromSessionH, message, response);
 
-#ifdef LWM2M_SERVER_MODE
+    #ifdef LWM2M_SERVER_MODE
                     if (!done && IS_OPTION(message, COAP_OPTION_OBSERVE) &&
                         ((message->code == COAP_204_CHANGED) || (message->code == COAP_205_CONTENT)))
                     {
                         done = observe_handleNotify(contextP, fromSessionH, message, response);
                     }
-#endif
+    #endif
                     if (!done && message->type == COAP_TYPE_CON )
                     {
                         coap_init_message(response, COAP_TYPE_ACK, 0, message->mid);
@@ -656,7 +698,10 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
                     }
                     else
                     {
+                        // retry as a block2 request
                         prv_send_get_block2(contextP, fromSessionH, peerP->blockData, message->mid, 0, REST_MAX_CHUNK_SIZE);
+
+                        coap_error_code = COAP_413_ENTITY_TOO_LARGE;
                         transaction_handleResponse(contextP, fromSessionH, message, NULL);
                     }
                 }
@@ -674,9 +719,9 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
                             prv_send_next_block1(contextP, fromSessionH, message->mid, block_size);
                             break;
                         case COAP_413_ENTITY_TOO_LARGE:
-                            // resend with smaller block size
+                            // resend with smaller block size as specified in the block 1 option
                             if (block_num > 0) break;
-                            prv_retry_block1(contextP, fromSessionH, message->mid, message->size > 0 ? message->size : block_size);
+                            prv_retry_block1(contextP, fromSessionH, message->mid, block_size);
                         default:
                             break;
                     }
@@ -736,6 +781,10 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
                 }
                 else if (message->code == COAP_413_ENTITY_TOO_LARGE)
                 {
+                    /*
+                    All our responses are piggyback so this must be the result of request being too large (not a separate CON)
+                    switch to a block1 request.
+                    */
                     prv_change_to_block1(contextP, fromSessionH, message->mid, message->size);
                     transaction_handleResponse(contextP, fromSessionH, message, NULL);
                 }
