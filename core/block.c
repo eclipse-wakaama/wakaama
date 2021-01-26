@@ -227,7 +227,11 @@ uint8_t prv_coap_block_handler(lwm2m_block_data_t ** pBlockDataHead,
             blockData->blockBufferSize = 0;
         }
 
-        blockData->blockBuffer = lwm2m_malloc(length);
+        uint8_t * buf = lwm2m_malloc(length);
+        if(buf == NULL){
+            return COAP_500_INTERNAL_SERVER_ERROR;
+        }
+        blockData->blockBuffer = buf;
         blockData->blockBufferSize = length;
 
         // write new block in buffer

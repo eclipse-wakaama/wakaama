@@ -537,13 +537,17 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
                     LOG_ARG("Blockwise: block1 request NUM %u (SZX %u/ SZX Max%u) MORE %u", block1_num, block1_size, REST_MAX_CHUNK_SIZE, block1_more);
 
                     char * uri = coap_get_packet_uri_as_string(message);
+                    if (uri == NULL){
+                        coap_error_code = COAP_500_INTERNAL_SERVER_ERROR;
+                    } else {
                     // handle block 1
 #ifdef LWM2M_RAW_BLOCK1_REQUESTS
-                    coap_error_code = coap_block1_handler(&peerP->blockData, uri, message->mid, message->payload, message->payload_len, block1_size, block1_num, block1_more, &complete_buffer, &complete_buffer_size);
+                        coap_error_code = coap_block1_handler(&peerP->blockData, uri, message->mid, message->payload, message->payload_len, block1_size, block1_num, block1_more, &complete_buffer, &complete_buffer_size);
 #else
-                    coap_error_code = coap_block1_handler(&peerP->blockData, uri, message->payload, message->payload_len, block1_size, block1_num, block1_more, &complete_buffer, &complete_buffer_size);
+                        coap_error_code = coap_block1_handler(&peerP->blockData, uri, message->payload, message->payload_len, block1_size, block1_num, block1_more, &complete_buffer, &complete_buffer_size);
 #endif
-                    lwm2m_free(uri);
+                        lwm2m_free(uri);
+                    }
 #ifndef LWM2M_RAW_BLOCK1_REQUESTS
                     // if payload is complete, replace it in the coap message.
                     if (coap_error_code == NO_ERROR)

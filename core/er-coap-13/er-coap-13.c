@@ -394,12 +394,13 @@ char * coap_get_packet_uri_as_string(coap_packet_t * packet)
     size_t len = 2 * sizeof(char); // "//"
     len += packet->uri_host_len;
     len += is_non_std_coap_port(packet->uri_port) ? (int)(nDigits(packet->uri_port)*sizeof(char)) : 0;
-    //len += + sizeof(char); // "/"
     len += 1 > path_len ? 1 : path_len; // "/" or path
     len += query_len;
     
     output = lwm2m_malloc(len + 1);
-    
+    if(output == NULL){
+      return NULL;
+    }
     
     strcpy(output, "//");
     strncat(output, (char *)packet->uri_host, packet->uri_host_len);
@@ -777,7 +778,7 @@ coap_parse_message(void *packet, uint8_t *data, uint16_t data_len)
         ++current_option;
       }
     }
-    while (x != &option_length && (x = &option_length));
+    while (x != &option_length && x = &option_length);
 
     option_number += option_delta;
 
