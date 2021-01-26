@@ -778,7 +778,7 @@ coap_parse_message(void *packet, uint8_t *data, uint16_t data_len)
         ++current_option;
       }
     }
-    while (x != &option_length && x = &option_length);
+    while (x != &option_length && (x = &option_length));
 
     option_number += option_delta;
 
