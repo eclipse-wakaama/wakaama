@@ -59,6 +59,52 @@
 #include <string.h>
 #include <stdio.h>
 
+static int prv_getMandatoryInfo(lwm2m_object_t * objectP,
+                                uint16_t instanceID,
+                                lwm2m_server_t * targetP)
+{
+    lwm2m_data_t * dataP;
+    int size;
+    int64_t value;
+
+    size = 2;
+    dataP = lwm2m_data_new(size);
+    if (dataP == NULL) return -1;
+    dataP[0].id = LWM2M_SERVER_LIFETIME_ID;
+    dataP[1].id = LWM2M_SERVER_BINDING_ID;
+
+    if (objectP->readFunc(instanceID, &size, &dataP, objectP) != COAP_205_CONTENT)
+    {
+        lwm2m_data_free(size, dataP);
+        return -1;
+    }
+
+    if (0 == lwm2m_data_decode_int(dataP, &value)
+        || value < 0 || value >0xFFFFFFFF)             // This is an implementation limit
+    {
+        lwm2m_data_free(size, dataP);
+        return -1;
+    }
+    targetP->lifetime = value;
+
+    if (dataP[1].type == LWM2M_TYPE_STRING)
+    {
+        targetP->binding = utils_stringToBinding(dataP[1].value.asBuffer.buffer, dataP[1].value.asBuffer.length);
+    }
+    else
+    {
+        targetP->binding = BINDING_UNKNOWN;
+    }
+
+    lwm2m_data_free(size, dataP);
+
+    if (targetP->binding == BINDING_UNKNOWN)
+    {
+        return -1;
+    }
+
+    return 0;
+}
 
 uint8_t object_checkReadable(lwm2m_context_t * contextP,
                              lwm2m_uri_t * uriP,
@@ -262,6 +308,57 @@ uint8_t object_read(lwm2m_context_t * contextP,
     return result;
 }
 
+// Get the short id from a server object. Valid range 1-65535. Returns 0 if error.
+static uint16_t prv_getServerShortId(lwm2m_object_t *serverObjectP, uint16_t instanceId)
+{
+    int64_t value;
+    lwm2m_data_t * dataP;
+    int size;
+
+    size = 1;
+    dataP = lwm2m_data_new(size);
+    if (dataP == NULL) return 0;
+    dataP->id = LWM2M_SERVER_SHORT_ID_ID;
+
+    if (serverObjectP->readFunc(instanceId, &size, &dataP, serverObjectP) != COAP_205_CONTENT)
+    {
+        lwm2m_data_free(size, dataP);
+        return 0;
+    }
+
+    if (1 != lwm2m_data_decode_int(dataP, &value))
+    {
+        value = 0;
+    }
+    lwm2m_data_free(size, dataP);
+
+    if(value < 0 || value > UINT16_MAX)
+    {
+        value = 0;
+    }
+
+    return value;
+}
+
+// Update the server info of an already in-use server
+static void prv_updateServerInfo(lwm2m_context_t * contextP, lwm2m_object_t *serverObjectP, uint16_t instanceId)
+{
+    uint16_t serverId = prv_getServerShortId(serverObjectP, instanceId);
+    lwm2m_server_t *serverP = (lwm2m_server_t *)contextP->serverList;
+
+    if(serverId == 0)
+        return;
+
+    while(serverP && serverP->shortID != serverId)
+    {
+        serverP = serverP->next;
+    }
+    if(serverP)
+    {
+        prv_getMandatoryInfo(serverObjectP, instanceId, serverP);
+    }
+}
+
 uint8_t object_write(lwm2m_context_t * contextP,
                      lwm2m_uri_t * uriP,
                      lwm2m_media_type_t format,
@@ -323,6 +420,13 @@ uint8_t object_write(lwm2m_context_t * contextP,
             }
         }
         result = targetP->writeFunc(uriP->instanceId, size, dataP, targetP, writeType);
+
+        if(result == COAP_204_CHANGED && targetP->objID == LWM2M_SERVER_OBJECT_ID)
+        {
+            // Server object has been written to, and this needs to be reflected in the core
+            prv_updateServerInfo(contextP, targetP, uriP->instanceId);
+        }
+
         lwm2m_data_free(size, dataP);
     }
 
@@ -867,53 +971,6 @@ static lwm2m_list_t * prv_findServerInstance(lwm2m_object_t * objectP,
     }
 
     return instanceP;
-}
-
-static int prv_getMandatoryInfo(lwm2m_object_t * objectP,
-                                uint16_t instanceID,
-                                lwm2m_server_t * targetP)
-{
-    lwm2m_data_t * dataP;
-    int size;
-    int64_t value;
-
-    size = 2;
-    dataP = lwm2m_data_new(size);
-    if (dataP == NULL) return -1;
-    dataP[0].id = LWM2M_SERVER_LIFETIME_ID;
-    dataP[1].id = LWM2M_SERVER_BINDING_ID;
-
-    if (objectP->readFunc(instanceID, &size, &dataP, objectP) != COAP_205_CONTENT)
-    {
-        lwm2m_data_free(size, dataP);
-        return -1;
-    }
-
-    if (0 == lwm2m_data_decode_int(dataP, &value)
-     || value < 0 || value >0xFFFFFFFF)             // This is an implementation limit
-    {
-        lwm2m_data_free(size, dataP);
-        return -1;
-    }
-    targetP->lifetime = value;
-
-    if (dataP[1].type == LWM2M_TYPE_STRING)
-    {
-        targetP->binding = utils_stringToBinding(dataP[1].value.asBuffer.buffer, dataP[1].value.asBuffer.length);
-    }
-    else
-    {
-        targetP->binding = BINDING_UNKNOWN;
-    }
-
-    lwm2m_data_free(size, dataP);
-
-    if (targetP->binding == BINDING_UNKNOWN)
-    {
-        return -1;
-    }
-
-    return 0;
 }
 
 int object_getServers(lwm2m_context_t * contextP, bool checkOnly)
