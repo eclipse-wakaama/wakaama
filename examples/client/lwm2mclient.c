@@ -80,7 +80,7 @@
 #include <errno.h>
 #include <signal.h>
 
-#define MAX_PACKET_SIZE 1024
+#define MAX_PACKET_SIZE 2048
 #define DEFAULT_SERVER_IPV6 "[::1]"
 #define DEFAULT_SERVER_IPV4 "127.0.0.1"
 
@@ -1297,6 +1297,10 @@ int main(int argc, char *argv[])
                 {
                     fprintf(stderr, "Error in recvfrom(): %d %s\r\n", errno, strerror(errno));
                 }
+                else if (numBytes >= MAX_PACKET_SIZE) 
+                {
+                    fprintf(stderr, "Received packet >= MAX_PACKET_SIZE\r\n");
+                } 
                 else if (0 < numBytes)
                 {
                     char s[INET6_ADDRSTRLEN];

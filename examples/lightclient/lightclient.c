@@ -83,7 +83,7 @@ extern char * get_server_uri(lwm2m_object_t * objectP, uint16_t secObjInstID);
 extern lwm2m_object_t * get_test_object(void);
 extern void free_test_object(lwm2m_object_t * object);
 
-#define MAX_PACKET_SIZE 1024
+#define MAX_PACKET_SIZE 2048
 
 int g_reboot = 0;
 static int g_quit = 0;
@@ -514,6 +514,10 @@ int main(int argc, char *argv[])
                 {
                     fprintf(stderr, "Error in recvfrom(): %d %s\r\n", errno, strerror(errno));
                 }
+                else if (numBytes >= MAX_PACKET_SIZE) 
+                {
+                    fprintf(stderr, "Received packet >= MAX_PACKET_SIZE\r\n");
+                } 
                 else if (0 < numBytes)
                 {
                     connection_t * connP;

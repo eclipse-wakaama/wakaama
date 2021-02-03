@@ -74,7 +74,7 @@
 #include "commandline.h"
 #include "connection.h"
 
-#define MAX_PACKET_SIZE 1024
+#define MAX_PACKET_SIZE 2048
 
 static int g_quit = 0;
 
@@ -1140,6 +1140,10 @@ int main(int argc, char *argv[])
                 {
                     fprintf(stderr, "Error in recvfrom(): %d\r\n", errno);
                 }
+                else if (numBytes >= MAX_PACKET_SIZE) 
+                {
+                    fprintf(stderr, "Received packet >= MAX_PACKET_SIZE\r\n");
+                } 
                 else
                 {
                     char s[INET6_ADDRSTRLEN];
