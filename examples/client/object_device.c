@@ -136,7 +136,7 @@ static int prv_check_time_offset(char * buffer,
         if (buffer[2] < '0' || buffer[2] > '9') return 0;
         break;
     case '1':
-        if (buffer[2] < '0' || buffer[2] > '2') return 0;
+        if (buffer[2] < '0' || (buffer[0] == '-' && buffer[2] > '2') || (buffer[0] == '+' && buffer[2] > '4')) return 0;
         break;
     default:
         return 0;
