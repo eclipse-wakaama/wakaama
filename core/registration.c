@@ -1077,6 +1077,7 @@ lwm2m_status_t registration_getStatus(lwm2m_context_t * contextP)
             case STATE_REG_UPDATE_NEEDED:
             case STATE_REG_FULL_UPDATE_NEEDED:
             case STATE_REG_UPDATE_PENDING:
+            case STATE_DEREG_PENDING:
                 if (reg_status == STATE_REG_FAILED)
                 {
                     reg_status = STATE_REGISTERED;
@@ -1089,7 +1090,6 @@ lwm2m_status_t registration_getStatus(lwm2m_context_t * contextP)
                 break;
 
             case STATE_REG_FAILED:
-            case STATE_DEREG_PENDING:
             case STATE_DEREGISTERED:
             default:
                 break;
