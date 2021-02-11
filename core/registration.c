@@ -1777,7 +1777,7 @@ uint8_t  registration_handleRequest(lwm2m_context_t * contextP,
 
             if (contextP->monitorCallback != NULL)
             {
-                contextP->monitorCallback(clientP->internalID, NULL, COAP_201_CREATED, LWM2M_CONTENT_TEXT, NULL, 0, contextP->monitorUserData);
+                contextP->monitorCallback(clientP->internalID, NULL, COAP_201_CREATED, NULL, LWM2M_CONTENT_TEXT, NULL, 0, contextP->monitorUserData);
             }
             result = COAP_201_CREATED;
         }
@@ -1829,7 +1829,9 @@ uint8_t  registration_handleRequest(lwm2m_context_t * contextP,
                     objP = (lwm2m_client_object_t *)lwm2m_list_find((lwm2m_list_t *)objects, observationP->uri.objectId);
                     if (objP == NULL)
                     {
-                        applyObservationCallback(observationP, COAP_202_DELETED, 0, 0, false, LWM2M_CONTENT_TEXT, NULL, 0);
+                        observationP->callback(observationP->clientP->internalID, &observationP->uri,
+                                               COAP_202_DELETED, NULL, LWM2M_CONTENT_TEXT, NULL, 0,
+                                               observationP->userData);
                         observe_remove(observationP);
                     }
                     else
@@ -1838,7 +1840,9 @@ uint8_t  registration_handleRequest(lwm2m_context_t * contextP,
                         {
                             if (lwm2m_list_find((lwm2m_list_t *)objP->instanceList, observationP->uri.instanceId) == NULL)
                             {
-                                applyObservationCallback(observationP, COAP_202_DELETED, 0, 0, false, LWM2M_CONTENT_TEXT, NULL, 0);
+                                observationP->callback(observationP->clientP->internalID, &observationP->uri,
+                                                       COAP_202_DELETED, NULL, LWM2M_CONTENT_TEXT, NULL, 0,
+                                                       observationP->userData);
                                 observe_remove(observationP);
                             }
                         }
@@ -1855,7 +1859,7 @@ uint8_t  registration_handleRequest(lwm2m_context_t * contextP,
 
             if (contextP->monitorCallback != NULL)
             {
-                contextP->monitorCallback(clientP->internalID, NULL, COAP_204_CHANGED, LWM2M_CONTENT_TEXT, NULL, 0, contextP->monitorUserData);
+                contextP->monitorCallback(clientP->internalID, NULL, COAP_204_CHANGED, NULL, LWM2M_CONTENT_TEXT, NULL, 0, contextP->monitorUserData);
             }
             result = COAP_204_CHANGED;
         }
@@ -1873,7 +1877,7 @@ uint8_t  registration_handleRequest(lwm2m_context_t * contextP,
         if (clientP == NULL) return COAP_400_BAD_REQUEST;
         if (contextP->monitorCallback != NULL)
         {
-            contextP->monitorCallback(clientP->internalID, NULL, COAP_202_DELETED, LWM2M_CONTENT_TEXT, NULL, 0, contextP->monitorUserData);
+            contextP->monitorCallback(clientP->internalID, NULL, COAP_202_DELETED, NULL, LWM2M_CONTENT_TEXT, NULL, 0, contextP->monitorUserData);
         }
         registration_freeClient(clientP);
         result = COAP_202_DELETED;
@@ -1993,7 +1997,7 @@ void registration_step(lwm2m_context_t * contextP,
             contextP->clientList = (lwm2m_client_t *)LWM2M_LIST_RM(contextP->clientList, clientP->internalID, NULL);
             if (contextP->monitorCallback != NULL)
             {
-                contextP->monitorCallback(clientP->internalID, NULL, COAP_202_DELETED, LWM2M_CONTENT_TEXT, NULL, 0, contextP->monitorUserData);
+                contextP->monitorCallback(clientP->internalID, NULL, COAP_202_DELETED, NULL, LWM2M_CONTENT_TEXT, NULL, 0, contextP->monitorUserData);
             }
             registration_freeClient(clientP);
         }

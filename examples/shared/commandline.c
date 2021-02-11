@@ -304,6 +304,7 @@ void output_tlv(FILE * stream,
 }
 
 void output_data(FILE * stream,
+                 block_info_t * block_info,
                  lwm2m_media_type_t format,
                  uint8_t * data,
                  int dataLength,
@@ -311,6 +312,12 @@ void output_data(FILE * stream,
 {
     int i;
 
+    print_indent(stream, indent);
+    if (block_info != NULL) {
+        fprintf(stream, "block transfer: size: %d, num: %d, more: %d\n\r", block_info->block_size, block_info->block_num, block_info->block_more);
+    } else {
+        fprintf(stream, "non block transfer\n\r");
+    }
     print_indent(stream, indent);
     fprintf(stream, "%d bytes received of type ", dataLength);
 

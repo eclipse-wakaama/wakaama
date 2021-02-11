@@ -244,7 +244,6 @@ typedef struct
     uint16_t clientID;
     lwm2m_uri_t uri;
     lwm2m_result_callback_t callback;
-    lwm2m_block_result_callback_t blockCallback;
     void * userData;
 } dm_data_t;
 
@@ -254,7 +253,6 @@ typedef struct
     uint16_t                client;
     lwm2m_uri_t             uri;
     lwm2m_result_callback_t callback;
-    lwm2m_block_result_callback_t blockCallback;
     void *                  userData;
     lwm2m_context_t *       contextP;
 } observation_data_t;
@@ -334,7 +332,7 @@ void observe_clear(lwm2m_context_t * contextP, lwm2m_uri_t * uriP);
 bool observe_handleNotify(lwm2m_context_t * contextP, void * fromSessionH, coap_packet_t * message, coap_packet_t * response);
 void observe_remove(lwm2m_observation_t * observationP);
 lwm2m_observed_t * observe_findByUri(lwm2m_context_t * contextP, lwm2m_uri_t * uriP);
-void applyObservationCallback(lwm2m_observation_t * observation, int status, int block_num, int block_size, bool block_more, lwm2m_media_type_t format, uint8_t * data, int dataLength);
+void applyObservationCallback(lwm2m_observation_t * observation, int status, block_info_t * block_info, lwm2m_media_type_t format, uint8_t * data, int dataLength);
 
 // defined in registration.c
 uint8_t registration_handleRequest(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, void * fromSessionH, coap_packet_t * message, coap_packet_t * response);

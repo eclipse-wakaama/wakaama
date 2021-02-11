@@ -237,6 +237,7 @@ static void prv_printUri(const lwm2m_uri_t * uriP)
 static void prv_result_callback(uint16_t clientID,
                                 lwm2m_uri_t * uriP,
                                 int status,
+                                block_info_t * block_info,
                                 lwm2m_media_type_t format,
                                 uint8_t * data,
                                 int dataLength,
@@ -248,7 +249,7 @@ static void prv_result_callback(uint16_t clientID,
     print_status(stdout, status);
     fprintf(stdout, "\r\n");
 
-    output_data(stdout, format, data, dataLength, 1);
+    output_data(stdout, block_info, format, data, dataLength, 1);
 
     fprintf(stdout, "\r\n> ");
     fflush(stdout);
@@ -257,6 +258,7 @@ static void prv_result_callback(uint16_t clientID,
 static void prv_notify_callback(uint16_t clientID,
                                 lwm2m_uri_t * uriP,
                                 int count,
+                                block_info_t * block_info,
                                 lwm2m_media_type_t format,
                                 uint8_t * data,
                                 int dataLength,
@@ -266,7 +268,7 @@ static void prv_notify_callback(uint16_t clientID,
     prv_printUri(uriP);
     fprintf(stdout, " number %d\r\n", count);
 
-    output_data(stdout, format, data, dataLength, 1);
+    output_data(stdout, block_info, format, data, dataLength, 1);
 
     fprintf(stdout, "\r\n> ");
     fflush(stdout);
@@ -292,7 +294,7 @@ static void prv_read_client(char * buffer,
 
     if (!check_end_of_args(end)) goto syntax_error;
 
-    result = lwm2m_dm_read(lwm2mH, clientId, &uri, prv_result_callback, NULL);
+    result = lwm2m_dm_read(lwm2mH, clientId, &uri,  prv_result_callback, NULL);
 
     if (result == 0)
     {
@@ -903,6 +905,7 @@ syntax_error:
 static void prv_monitor_callback(uint16_t clientID,
                                  lwm2m_uri_t * uriP,
                                  int status,
+                                 block_info_t * block_info,
                                  lwm2m_media_type_t format,
                                  uint8_t * data,
                                  int dataLength,
