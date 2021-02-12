@@ -240,6 +240,11 @@ lwm2m_transaction_t * transaction_new(void * sessionH,
 
 error:
     LOG("Exiting on failure");
+    if(transacP->message)
+    {
+        coap_free_header(transacP->message);
+        lwm2m_free(transacP->message);
+    }
     lwm2m_free(transacP);
     return NULL;
 }
