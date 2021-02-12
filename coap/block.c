@@ -100,7 +100,7 @@ lwm2m_block_data_t * find_block_data(lwm2m_block_data_t * blockDataHead,
 static
 lwm2m_block_data_t * prv_block_insert(lwm2m_block_data_t ** pBlockDataHead, block_data_identifier_t identifier, block_type_t blockType)
 {
-    lwm2m_block_data_t * blockData = lwm2m_malloc(sizeof(lwm2m_block_data_t));
+    lwm2m_block_data_t * blockData = (lwm2m_block_data_t *) lwm2m_malloc(sizeof(lwm2m_block_data_t));
     if (NULL == blockData) return NULL;
     blockData->next = *pBlockDataHead;
     blockData->blockType = blockType;
@@ -227,7 +227,7 @@ uint8_t prv_coap_block_handler(lwm2m_block_data_t ** pBlockDataHead,
             blockData->blockBufferSize = 0;
         }
 
-        uint8_t * buf = lwm2m_malloc(length);
+        uint8_t * buf = (uint8_t *) lwm2m_malloc(length);
         if(buf == NULL){
             return COAP_500_INTERNAL_SERVER_ERROR;
         }
@@ -266,7 +266,7 @@ uint8_t prv_coap_block_handler(lwm2m_block_data_t ** pBlockDataHead,
 
           // re-alloc new buffer
           blockData->blockBufferSize = oldSize+length;
-          blockData->blockBuffer = lwm2m_malloc(blockData->blockBufferSize);
+          blockData->blockBuffer = (uint8_t *) lwm2m_malloc(blockData->blockBufferSize);
           if (NULL == blockData->blockBuffer) return COAP_500_INTERNAL_SERVER_ERROR; //TODO: should we clean up
           memcpy(blockData->blockBuffer, oldBuffer, oldSize);
           lwm2m_free(oldBuffer);

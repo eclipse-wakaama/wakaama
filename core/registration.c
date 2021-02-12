@@ -771,7 +771,7 @@ static uint8_t prv_register(lwm2m_context_t * contextP,
 
     transaction_set_payload(transaction, payload, payload_length);
 
-    registration_data_t * dataP = lwm2m_malloc(sizeof(registration_data_t));
+    registration_data_t * dataP = (registration_data_t *) lwm2m_malloc(sizeof(registration_data_t));
     if (dataP == NULL){
         lwm2m_free(payload);
         lwm2m_free(query);
@@ -881,7 +881,7 @@ static int prv_updateRegistration(lwm2m_context_t * contextP,
         transaction_set_payload(transaction, payload, payload_length);
     }
 
-    registration_data_t * dataP = lwm2m_malloc(sizeof(registration_data_t));
+    registration_data_t * dataP = (registration_data_t *) lwm2m_malloc(sizeof(registration_data_t));
     if (dataP == NULL){
         lwm2m_free(payload);
         return COAP_500_INTERNAL_SERVER_ERROR;
