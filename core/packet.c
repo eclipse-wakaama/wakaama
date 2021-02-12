@@ -216,7 +216,7 @@ static lwm2m_transaction_t * prv_create_next_block_transaction(lwm2m_transaction
         return NULL;
     }
 
-    lwm2m_transaction_t * clone = transaction_new(transaction->peerH, message->code, NULL, NULL, nextMID, message->token_len, message->token);
+    lwm2m_transaction_t * clone = transaction_new(transaction->peerH, (coap_method_t) message->code, NULL, NULL, nextMID, message->token_len, message->token);
     if (clone == NULL) return NULL;
 
     coap_set_header_content_type(clone->message, message->type);
@@ -329,7 +329,7 @@ static int prv_send_next_block1(lwm2m_context_t * contextP, void * sessionH, uin
     transaction = prv_get_transaction(contextP, sessionH, mid);
     if(transaction == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
 
-    message = transaction->message;
+    message = (coap_packet_t *) transaction->message;
     
     // safeguard, requested block size should not be greater or zero
     if (block_size > message->block1_size || block_size == 0) block_size = message->block1_size;
@@ -371,7 +371,7 @@ static int prv_retry_block1(lwm2m_context_t * contextP, void * sessionH, uint16_
     transaction = prv_get_transaction(contextP, sessionH, mid);
     if(transaction == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
 
-    message = transaction->message;
+    message = (coap_packet_t *) transaction->message;
     if(!IS_OPTION(message, COAP_OPTION_BLOCK1)){
         // This wasn't a block option, just switch to block1 transfer with the given size
         return prv_send_new_block1(contextP, transaction, 0, block_size);

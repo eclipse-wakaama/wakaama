@@ -397,7 +397,7 @@ char * coap_get_packet_uri_as_string(coap_packet_t * packet)
     len += 1 > path_len ? 1 : path_len; // "/" or path
     len += query_len;
     
-    output = lwm2m_malloc(len + 1);
+    output = (char *) lwm2m_malloc(len + 1);
     if(output == NULL){
       return NULL;
     }
