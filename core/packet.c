@@ -404,6 +404,10 @@ static int prv_send_get_block2(lwm2m_context_t * contextP,
     transaction = prv_get_transaction(contextP, sessionH, currentMID);
     if(transaction == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
 
+    // Are we retrying something that already is a block 2 request?
+    coap_packet_t * message = transaction->message;
+    if (block2_num == 0 && IS_OPTION(message, COAP_OPTION_BLOCK2)) return COAP_IGNORE;
+
     // create new transaction
     nextMID = contextP->nextMID++;
     next = prv_create_next_block_transaction(transaction, nextMID);
