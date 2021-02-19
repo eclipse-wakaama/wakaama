@@ -640,19 +640,12 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
                     lwm2m_client_t * peerP;
                     peerP = utils_findClient(contextP, fromSessionH);
 #endif
-
-                    if (peerP == NULL)
-                    {
-                        coap_error_code = COAP_500_INTERNAL_SERVER_ERROR;
-                    }
-                    else
+                    if (peerP != NULL)
                     {
                         // retry as a block2 request
                         prv_send_get_block2(contextP, fromSessionH, peerP->blockData, message->mid, 0, REST_MAX_CHUNK_SIZE);
-
-                        coap_error_code = COAP_413_ENTITY_TOO_LARGE;
-                        transaction_handleResponse(contextP, fromSessionH, message, NULL);
                     }
+                    transaction_handleResponse(contextP, fromSessionH, message, NULL);
                 } else {
 
                     bool done = transaction_handleResponse(contextP, fromSessionH, message, response);
@@ -699,19 +692,12 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
                     lwm2m_client_t * peerP;
                     peerP = utils_findClient(contextP, fromSessionH);
 #endif
-
-                    if (peerP == NULL)
-                    {
-                        coap_error_code = COAP_500_INTERNAL_SERVER_ERROR;
-                    }
-                    else
+                    if (peerP != NULL)
                     {
                         // retry as a block2 request
                         prv_send_get_block2(contextP, fromSessionH, peerP->blockData, message->mid, 0, REST_MAX_CHUNK_SIZE);
-
-                        coap_error_code = COAP_413_ENTITY_TOO_LARGE;
-                        transaction_handleResponse(contextP, fromSessionH, message, NULL);
                     }
+                    transaction_handleResponse(contextP, fromSessionH, message, NULL);
                 }
                 else if (IS_OPTION(message, COAP_OPTION_BLOCK1))
                 {
