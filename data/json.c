@@ -276,7 +276,7 @@ static bool prv_convertValue(_record_t * recordP,
         {
             size_t stringLen;
             uint8_t *string = (uint8_t *)lwm2m_malloc(recordP->valueLen);
-            if (!string) return false;
+            if (string == NULL) return false;
             stringLen = json_unescapeString(string, recordP->value, recordP->valueLen);
             if (stringLen)
             {
