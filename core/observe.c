@@ -394,6 +394,10 @@ uint8_t observe_setParameters(lwm2m_context_t * contextP,
             if (watcherP->parameters == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
             memcpy(watcherP->parameters, attrP, sizeof(lwm2m_attributes_t));
         }
+        else
+        {
+            return COAP_204_CHANGED;
+        }
     }
     else
     {
