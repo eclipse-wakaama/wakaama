@@ -1085,6 +1085,7 @@ int senml_json_serialize(const lwm2m_uri_t * uriP,
     LOG_ARG("size: %d", size);
     LOG_URI(uriP);
     if (size != 0 && tlvP == NULL) return -1;
+    if (uriP == NULL) return -1;
 
     baseUriLen = uri_toString(uriP, baseUriStr, URI_MAX_STRING_LEN, &baseLevel);
     if (baseUriLen < 0) return -1;
