@@ -786,7 +786,8 @@ struct _lwm2m_context_
     void *                  monitorUserData;
 #endif
 #ifdef LWM2M_BOOTSTRAP_SERVER_MODE
-    lwm2m_client_t *        clientList;
+    lwm2m_client_t *        clientList;     // TODO: this is not used and should be removed??
+    lwm2m_block_data_t *       blockData;   // list to handle temporary block data.
     lwm2m_bootstrap_callback_t bootstrapCallback;
     void *                     bootstrapUserData;
 #endif

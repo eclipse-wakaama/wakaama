@@ -727,11 +727,15 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
                         peerP = utils_findBootstrapServer(contextP, fromSessionH);
                     }
 #endif
-#else
+#endif
+#ifdef LWM2M_SERVER_MODE
                     lwm2m_client_t * peerP;
                     peerP = utils_findClient(contextP, fromSessionH);
 #endif
-
+#ifdef LWM2M_BOOTSTRAP_SERVER_MODE
+                    lwm2m_context_t * peerP;
+                    peerP = contextP;
+#endif
                     if (peerP == NULL)
                     {
                         coap_error_code = COAP_500_INTERNAL_SERVER_ERROR;
@@ -763,6 +767,7 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
                         {
                             prv_send_get_next_block2(contextP, fromSessionH, peerP->blockData, message->mid, block2_num, block2_size);
                             transaction_handleResponse(contextP, fromSessionH, message, NULL);
+                            coap_error_code = NO_ERROR;
                         }
                     }
                 }
