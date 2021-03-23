@@ -165,6 +165,7 @@ bool lwm2m_session_is_equal(void * session1, void * session2, void * userData);
 
 #define COAP_NO_ERROR                   (uint8_t)0x00
 #define COAP_IGNORE                     (uint8_t)0x01
+#define COAP_RETRANSMISSION             (uint8_t)0x02
 
 #define COAP_201_CREATED                (uint8_t)0x41
 #define COAP_202_DELETED                (uint8_t)0x42
