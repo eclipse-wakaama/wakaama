@@ -604,6 +604,20 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
             }
             else if (coap_error_code != COAP_IGNORE)
             {
+                if (coap_error_code == COAP_RETRANSMISSION) {
+                    if (IS_OPTION(response, COAP_OPTION_BLOCK1)) {
+                        uint32_t block1_num;
+                        uint8_t block1_more;
+                        uint16_t block1_size;
+                        // parse block1 header
+                        coap_get_header_block1(response, &block1_num, &block1_more, &block1_size, NULL);
+                        if (block1_more) {
+                            coap_error_code = COAP_231_CONTINUE;
+                        } else {
+                            coap_error_code = COAP_204_CHANGED;
+                        }
+                    }
+                }
                 if (1 == coap_set_status_code(response, coap_error_code))
                 {
                     coap_error_code = message_send(contextP, response, fromSessionH);

@@ -247,8 +247,8 @@ uint8_t prv_coap_block_handler(lwm2m_block_data_t ** pBlockDataHead,
         }
 
         if (blockNum <= blockData->blockNum){
-            // this is a retransmissiion, ignore
-            return COAP_IGNORE;
+            // this is a retransmission
+            return COAP_RETRANSMISSION;
         }
 
         // If this is a retransmission, we already did that.
