@@ -495,6 +495,7 @@ typedef enum
     STATE_REG_UPDATE_PENDING,      // registration update pending
     STATE_REG_UPDATE_NEEDED,       // registration update required
     STATE_REG_FULL_UPDATE_NEEDED,  // registration update with objects required
+    STATE_DEREG_NEEDED,            // deregistration needed
     STATE_DEREG_PENDING,           // deregistration pending
     STATE_BS_HOLD_OFF,             // bootstrap hold off time
     STATE_BS_INITIATED,            // bootstrap request sent

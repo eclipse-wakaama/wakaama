@@ -414,6 +414,9 @@ static void prv_output_servers(lwm2m_context_t * lwm2mH,
             case STATE_REG_FULL_UPDATE_NEEDED:
                 fprintf(stdout, "REGISTRATION FULL UPDATE NEEDED\r\n");
                 break;
+            case STATE_DEREG_NEEDED:
+                fprintf(stdout, "DEREGISTRATION NEEDED\r\n");
+                break;
             case STATE_DEREG_PENDING:
                 fprintf(stdout, "DEREGISTRATION PENDING\r\n");
                 break;

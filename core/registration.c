@@ -1093,6 +1093,7 @@ lwm2m_status_t registration_getStatus(lwm2m_context_t * contextP)
             case STATE_REG_UPDATE_NEEDED:
             case STATE_REG_FULL_UPDATE_NEEDED:
             case STATE_REG_UPDATE_PENDING:
+            case STATE_DEREG_NEEDED:
             case STATE_DEREG_PENDING:
                 if (reg_status == STATE_REG_FAILED)
                 {
@@ -1150,7 +1151,9 @@ uint8_t registration_deregister(lwm2m_context_t * contextP,
                              lwm2m_server_t * serverP)
 {
     int result = NO_ERROR;
-    lwm2m_transaction_t * transaction;
+#ifndef LWM2M_WITH_LOGS
+    (void)contextP; /* unused */
+#endif
 
     LOG_ARG("State: %s, %d status: %s", STR_STATE(contextP->state), serverP->shortID, STR_STATUS(serverP->status));
 
@@ -1164,29 +1167,7 @@ uint8_t registration_deregister(lwm2m_context_t * contextP,
     }
     else
     {
-        transaction = transaction_new(serverP->sessionH, COAP_DELETE, NULL, NULL, contextP->nextMID++, 4, NULL);
-        if (transaction != NULL)
-        {
-            coap_set_header_uri_path(transaction->message, serverP->location);
-
-            transaction->callback = prv_handleDeregistrationReply;
-            transaction->userData = (void *) serverP;
-
-            contextP->transactionList = (lwm2m_transaction_t *)LWM2M_LIST_ADD(contextP->transactionList, transaction);
-            result = transaction_send(contextP, transaction);
-            if (result == 0)
-            {
-                serverP->status = STATE_DEREG_PENDING;
-            }
-            else if (result < 0)
-            {
-                result = COAP_500_INTERNAL_SERVER_ERROR;
-            }
-        }
-        else
-        {
-            result = COAP_500_INTERNAL_SERVER_ERROR;
-        }
+        serverP->status = STATE_DEREG_NEEDED;
     }
 
     return result;
@@ -2128,6 +2109,44 @@ void registration_step(lwm2m_context_t * contextP,
                 targetP->sessionH = NULL;
             }
             break;
+
+        case STATE_DEREG_NEEDED:
+        {
+            lwm2m_transaction_t *transaction;
+            int result;
+            LOG_ARG("%d Deregistering", targetP->shortID);
+            transaction = transaction_new(targetP->sessionH, COAP_DELETE, NULL, NULL, contextP->nextMID++, 4, NULL);
+            if (transaction != NULL)
+            {
+                coap_set_header_uri_path(transaction->message, targetP->location);
+
+                transaction->callback = prv_handleDeregistrationReply;
+                transaction->userData = (void *) targetP;
+
+                contextP->transactionList = (lwm2m_transaction_t *)LWM2M_LIST_ADD(contextP->transactionList, transaction);
+                result = transaction_send(contextP, transaction);
+                if (result == 0)
+                {
+                    if (targetP->registration <= lwm2m_gettime())
+                    {
+                        targetP->status = STATE_DEREG_PENDING;
+                    }
+                    else
+                    {
+                        targetP->status = STATE_REG_HOLD_OFF;
+                    }
+                }
+                else if (result < 0)
+                {
+                    targetP->status = STATE_REG_FAILED;
+                }
+            }
+            else
+            {
+                targetP->status = STATE_REG_FAILED;
+            }
+        }
+        break;
 
         default:
             break;
