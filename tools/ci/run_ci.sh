@@ -44,8 +44,8 @@ Available steps (executed by --all):
 function usage() {
   exit_code=$1
 
-  echo "$HELP_MSG"
-  exit "$exit_code"
+  echo "${HELP_MSG}"
+  exit "${exit_code}"
 }
 
 function run_clean() {
@@ -77,7 +77,7 @@ function run_tests() {
 
 ret=0
 getopt --test > /dev/null || ret=$?
-if [[ $ret -ne 4 ]]; then
+if [ $ret -ne 4 ]; then
   echo "Error: getopt version is not as expected"
   exit 1
 fi
@@ -89,12 +89,12 @@ if ! PARSED_OPTS=$(getopt -o vah \
                           -l help \
                           -l run-tests \
                           -l verbose \
-                          --name "$SCRIPT_NAME" -- "$@");
+                          --name "${SCRIPT_NAME}" -- "$@");
 then
   usage 1
 fi
 
-eval set -- "$PARSED_OPTS"
+eval set -- "${PARSED_OPTS}"
 
 while true; do
   case "$1" in
@@ -134,25 +134,25 @@ while true; do
   esac
 done
 
-if [[ $# -gt 0 ]]; then
+if [ $# -gt 0 ]; then
   echo "too many arguments"
   usage 1
 fi
 
-if [[ $OPT_VERBOSE != 0 ]]; then
+if [ "${OPT_VERBOSE}" -ne 0 ]; then
   CMAKE_ARGS="${CMAKE_ARGS} -DCMAKE_VERBOSE_MAKEFILE=ON"
 fi
 
 # Run Steps
 
-if [[ $RUN_CLEAN == 1 ]]; then
+if [ "${RUN_CLEAN}" -eq 1 ]; then
     run_clean
 fi
 
-if [[ $RUN_TESTS == 1 ]]; then
+if [ "${RUN_TESTS}" -eq 1 ]; then
     run_tests
 fi
 
-if [[ $RUN_BUILD == 1 ]]; then
+if [ "${RUN_BUILD}" -eq 1 ]; then
     run_build
 fi
