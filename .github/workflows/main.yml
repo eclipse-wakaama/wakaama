@@ -10,6 +10,10 @@ jobs:
   build_and_test:
     runs-on: ubuntu-20.04
 
+    strategy:
+      matrix:
+        sanitizer: ["address", "leak", "thread", "undefined"]
+
     steps:
     - name: Checkout code including full history and submodules
       uses: actions/checkout@v2
@@ -30,6 +34,6 @@ jobs:
       run: |
         tools/ci/run_ci.sh --build --verbose
 
-    - name: Execute unit tests
+    - name: Build, execute sanititzed unit tests
       run: |
-        tools/ci/run_ci.sh --run-tests
+        tools/ci/run_ci.sh --run-tests --clean --sanitizer ${{ matrix.sanitizer }}

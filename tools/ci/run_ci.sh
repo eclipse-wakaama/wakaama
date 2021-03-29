@@ -19,11 +19,12 @@ set -eu -o pipefail
 readonly REPO_ROOT_DIR="${PWD}"
 readonly SCRIPT_NAME="$(basename "$0")"
 
-CMAKE_ARGS=""
+CMAKE_ARGS="-DCMAKE_BUILD_TYPE=RelWithDebInfo"
 RUN_CLEAN=0
 RUN_BUILD=0
 RUN_TESTS=0
 OPT_VERBOSE=0
+OPT_SANITIZER=""
 
 HELP_MSG="usage: ${SCRIPT_NAME} <OPTIONS>...
 Runs build and test steps in CI.
@@ -32,8 +33,9 @@ Select steps to execute with --run- options
 Options:
  -v, --verbose             Verbose output
  -a, --all                 Run all steps required for a MR
-
- -h, --help                display this help and exit
+ -h, --help                Display this help and exit
+ --sanitizer TYPE          Enable sanitizer
+                           (TYPE: address leak thread undefined)
 
 Available steps (executed by --all):
   --clean                  Remove all build artifacts
@@ -87,6 +89,7 @@ if ! PARSED_OPTS=$(getopt -o vah \
                           -l build \
                           -l clean \
                           -l help \
+                          -l sanitizer: \
                           -l run-tests \
                           -l verbose \
                           --name "${SCRIPT_NAME}" -- "$@");
@@ -109,6 +112,10 @@ while true; do
     --run-tests)
       RUN_TESTS=1
       shift
+      ;;
+    --sanitizer)
+      OPT_SANITIZER=$2
+      shift 2
       ;;
     --)
       shift
@@ -141,6 +148,10 @@ fi
 
 if [ "${OPT_VERBOSE}" -ne 0 ]; then
   CMAKE_ARGS="${CMAKE_ARGS} -DCMAKE_VERBOSE_MAKEFILE=ON"
+fi
+
+if [ -n "${OPT_SANITIZER}" ]; then
+  CMAKE_ARGS="${CMAKE_ARGS} -DSANITIZER=${OPT_SANITIZER}"
 fi
 
 # Run Steps

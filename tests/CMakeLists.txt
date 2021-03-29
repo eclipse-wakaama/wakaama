@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.0)
+cmake_minimum_required (VERSION 3.13)
 
 project (lwm2munittests C)
 
@@ -22,3 +22,12 @@ file(GLOB SOURCES "*.c")
 
 add_executable(${PROJECT_NAME} ${SOURCES} ${WAKAAMA_SOURCES} ${COAP_SOURCES} ${DATA_SOURCES} ${SHARED_SOURCES})
 target_link_libraries(${PROJECT_NAME} cunit)
+
+if(SANITIZER)
+    target_compile_options(${PROJECT_NAME} PRIVATE -fsanitize=${SANITIZER} -fno-sanitize-recover=all)
+    target_link_options(${PROJECT_NAME} PRIVATE -fsanitize=${SANITIZER} -fno-sanitize-recover=all)
+endif()
+
+# Enable "test" target, add our unit tests to it
+enable_testing()
+add_test(NAME ${PROJECT_NAME}_test COMMAND ${PROJECT_NAME})
