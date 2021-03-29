@@ -21,4 +21,4 @@ set_source_files_properties(${DATA_SOURCES_DIR}/senml_json.c PROPERTIES COMPILE_
 file(GLOB SOURCES "*.c")
 
 add_executable(${PROJECT_NAME} ${SOURCES} ${WAKAAMA_SOURCES} ${COAP_SOURCES} ${DATA_SOURCES} ${SHARED_SOURCES})
-target_link_libraries(lwm2munittests cunit)
+target_link_libraries(${PROJECT_NAME} cunit)
