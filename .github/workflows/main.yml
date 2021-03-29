@@ -16,7 +16,6 @@ jobs:
       with:
         submodules: true
         fetch-depth: 0
-        path: wakaama
 
     - name: Install dependencies from APT repository
       run: sudo apt-get install libcunit1-dev wget unzip
@@ -27,15 +26,10 @@ jobs:
     - name: Install Ninja
       uses: seanmiddleditch/gha-setup-ninja@master
 
-    - name: Build and execute unit tests
+    - name: Build all binaries
       run: |
-        cmake -GNinja -S wakaama/tests -B build-wakaama-tests
-        cmake --build build-wakaama-tests
-        build-wakaama-tests/lwm2munittests
-      working-directory: ${{ github.workspace }}
+        tools/ci/run_ci.sh --build --verbose
 
-    - name: Build examples
+    - name: Execute unit tests
       run: |
-        cmake -GNinja -S wakaama/examples -B build-wakaama-examples
-        cmake --build build-wakaama-examples
-      working-directory: ${{ github.workspace }}
+        tools/ci/run_ci.sh --run-tests
