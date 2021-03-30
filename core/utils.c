@@ -281,7 +281,21 @@ size_t utils_intToText(int64_t data,
     {
         if (length == 0) return 0;
         string[0] = '-';
-        result = utils_uintToText((uint64_t)(0-data), string + 1, length - 1);
+        /*
+         * Hack around the fact that -1 * INT64_MIN can not be represented as
+         * int64_t.
+         */
+        if (data == INT64_MIN) {
+            const char *const int64_min_str = "-9223372036854775808";
+            const size_t int64_min_strlen = strlen(int64_min_str);
+            if (int64_min_strlen >= length) {
+                return 0;
+            }
+            memcpy(string, "-9223372036854775808", int64_min_strlen);
+            string[int64_min_strlen] = '\0';
+            return int64_min_strlen;
+        }
+        result = utils_uintToText((uint64_t)labs(data), string + 1, length - 1);
         if(result != 0)
         {
             result += 1;
