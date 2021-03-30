@@ -580,7 +580,9 @@ int tlv_serialize(bool isResourceInstance,
         case LWM2M_TYPE_CORE_LINK:
             headerLen = prv_createHeader(*bufferP + index, isInstance, cur->type, cur->id, cur->value.asBuffer.length);
             index += headerLen;
-            memcpy(*bufferP + index, cur->value.asBuffer.buffer, cur->value.asBuffer.length);
+            if (cur->value.asBuffer.length > 0) {
+                memcpy(*bufferP + index, cur->value.asBuffer.buffer, cur->value.asBuffer.length);
+            }
             index += cur->value.asBuffer.length;
             break;
 
