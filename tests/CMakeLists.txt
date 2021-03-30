@@ -28,6 +28,11 @@ if(SANITIZER)
     target_link_options(${PROJECT_NAME} PRIVATE -fsanitize=${SANITIZER} -fno-sanitize-recover=all)
 endif()
 
+if(COVERAGE)
+    target_compile_options(${PROJECT_NAME} PRIVATE --coverage)
+    target_link_options(${PROJECT_NAME} PRIVATE --coverage)
+endif()
+
 # Enable "test" target, add our unit tests to it
 enable_testing()
 add_test(NAME ${PROJECT_NAME}_test COMMAND ${PROJECT_NAME})

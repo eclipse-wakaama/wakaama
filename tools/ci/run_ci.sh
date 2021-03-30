@@ -25,6 +25,7 @@ RUN_BUILD=0
 RUN_TESTS=0
 OPT_VERBOSE=0
 OPT_SANITIZER=""
+OPT_TEST_COVERAGE_FORMAT=""
 
 HELP_MSG="usage: ${SCRIPT_NAME} <OPTIONS>...
 Runs build and test steps in CI.
@@ -36,6 +37,8 @@ Options:
  -h, --help                Display this help and exit
  --sanitizer TYPE          Enable sanitizer
                            (TYPE: address leak thread undefined)
+ --test-coverage FORMAT    Create coverage info in given FORMAT
+                           (FORMAT: xml html text)
 
 Available steps (executed by --all):
   --clean                  Remove all build artifacts
@@ -73,6 +76,40 @@ function run_build() {
 function run_tests() {
   run_build_tests
   build-wakaama-tests/lwm2munittests
+
+  mkdir -p "${REPO_ROOT_DIR}/build-wakaama-tests/coverage"
+
+  if [ -z "${OPT_TEST_COVERAGE_FORMAT}" ]; then
+    return 0
+  fi
+
+  #see https://github.com/koalaman/shellcheck/wiki/SC2089
+  gcovr_opts=(-r "${REPO_ROOT_DIR}" \
+    --exclude "${REPO_ROOT_DIR}"/build-wakaama-tests \
+    --exclude "${REPO_ROOT_DIR}"/tests)
+
+  case "${OPT_TEST_COVERAGE_FORMAT}" in
+    xml)
+      gcovr_out="--xml"
+      gcovr_file=("${REPO_ROOT_DIR}/build-wakaama-tests/coverage/report.xml")
+      ;;
+    html)
+      gcovr_out="--html --html-details"
+      gcovr_file=("${REPO_ROOT_DIR}/build-wakaama-tests/coverage/report.html")
+      ;;
+    text)
+      gcovr_out=""
+      gcovr_file=("${REPO_ROOT_DIR}/build-wakaama-tests/coverage/report.txt")
+      ;;
+    *)
+      echo "Error: Unsupported coverage output format: " \
+           "${OPT_TEST_COVERAGE_FORMAT}"
+      usage 1
+      ;;
+  esac
+
+  gcovr "${gcovr_opts[@]}" $gcovr_out -o "${gcovr_file[@]}"
+  echo Coverage file "${gcovr_file[@]}" ready
 }
 
 # Parse Options
@@ -91,6 +128,7 @@ if ! PARSED_OPTS=$(getopt -o vah \
                           -l help \
                           -l sanitizer: \
                           -l run-tests \
+                          -l test-coverage: \
                           -l verbose \
                           --name "${SCRIPT_NAME}" -- "$@");
 then
@@ -115,6 +153,10 @@ while true; do
       ;;
     --sanitizer)
       OPT_SANITIZER=$2
+      shift 2
+      ;;
+    --test-coverage)
+      OPT_TEST_COVERAGE_FORMAT=$2
       shift 2
       ;;
     --)
@@ -152,6 +194,10 @@ fi
 
 if [ -n "${OPT_SANITIZER}" ]; then
   CMAKE_ARGS="${CMAKE_ARGS} -DSANITIZER=${OPT_SANITIZER}"
+fi
+
+if [ -n "${OPT_TEST_COVERAGE_FORMAT}" ]; then
+  CMAKE_ARGS="${CMAKE_ARGS} -DCOVERAGE=ON"
 fi
 
 # Run Steps
