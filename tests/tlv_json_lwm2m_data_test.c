@@ -428,6 +428,8 @@ static void test_15(void)
 
 
     test_raw(NULL, (uint8_t *)buffer, strlen(buffer), LWM2M_CONTENT_JSON, "15b");
+
+    lwm2m_data_free(1, tlvP);
 }
 
 static struct TestTable table[] = {
