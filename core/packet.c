@@ -763,6 +763,7 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
                         {
                             prv_send_get_next_block2(contextP, fromSessionH, peerP->blockData, message->mid, block2_num, block2_size);
                             transaction_handleResponse(contextP, fromSessionH, message, NULL);
+                            coap_error_code = NO_ERROR;
                         }
                     }
                 }
