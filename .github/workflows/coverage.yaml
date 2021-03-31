@@ -33,4 +33,4 @@ jobs:
       uses: actions/upload-artifact@v1
       with:
         name: Coverage Report (HTML)
-        path: build-wakaama-tests/coverage
+        path: build-wakaama/coverage

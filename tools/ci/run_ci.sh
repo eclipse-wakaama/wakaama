@@ -54,51 +54,43 @@ function usage() {
 }
 
 function run_clean() {
-  rm -rf build-wakaama-tests
-  rm -rf build-wakaama-examples
-}
-
-function run_build_tests() {
-  cmake -GNinja -S tests -B build-wakaama-tests ${CMAKE_ARGS}
-  cmake --build build-wakaama-tests
-}
-
-function run_build_examples() {
-  cmake -GNinja -S examples -B build-wakaama-examples ${CMAKE_ARGS}
-  cmake --build build-wakaama-examples
+  rm -rf build-wakaama
 }
 
 function run_build() {
-  run_build_tests
-  run_build_examples
+  mkdir build-wakaama
+  pushd build-wakaama
+  cmake -GNinja -S .. ${CMAKE_ARGS}
+  ninja
+  popd
 }
 
 function run_tests() {
-  build-wakaama-tests/lwm2munittests
+  build-wakaama/tests/lwm2munittests
 
-  mkdir -p "${REPO_ROOT_DIR}/build-wakaama-tests/coverage"
+  mkdir -p "${REPO_ROOT_DIR}/build-wakaama/coverage"
 
   if [ -z "${OPT_TEST_COVERAGE_FORMAT}" ]; then
     return 0
   fi
 
   #see https://github.com/koalaman/shellcheck/wiki/SC2089
-  gcovr_opts=(-r "${REPO_ROOT_DIR}" \
-    --exclude "${REPO_ROOT_DIR}"/build-wakaama-tests \
+  gcovr_opts=(-r "${REPO_ROOT_DIR}/build-wakaama" \
+    --exclude "${REPO_ROOT_DIR}"/examples \
     --exclude "${REPO_ROOT_DIR}"/tests)
 
   case "${OPT_TEST_COVERAGE_FORMAT}" in
     xml)
       gcovr_out="--xml"
-      gcovr_file=("${REPO_ROOT_DIR}/build-wakaama-tests/coverage/report.xml")
+      gcovr_file=("${REPO_ROOT_DIR}/build-wakaama/coverage/report.xml")
       ;;
     html)
       gcovr_out="--html --html-details"
-      gcovr_file=("${REPO_ROOT_DIR}/build-wakaama-tests/coverage/report.html")
+      gcovr_file=("${REPO_ROOT_DIR}/build-wakaama/coverage/report.html")
       ;;
     text)
       gcovr_out=""
-      gcovr_file=("${REPO_ROOT_DIR}/build-wakaama-tests/coverage/report.txt")
+      gcovr_file=("${REPO_ROOT_DIR}/build-wakaama/coverage/report.txt")
       ;;
     *)
       echo "Error: Unsupported coverage output format: " \

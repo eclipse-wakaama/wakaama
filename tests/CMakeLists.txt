@@ -33,6 +33,5 @@ if(COVERAGE)
     target_link_options(${PROJECT_NAME} PRIVATE --coverage)
 endif()
 
-# Enable "test" target, add our unit tests to it
-enable_testing()
+# Add our unit tests to it "test" target
 add_test(NAME ${PROJECT_NAME}_test COMMAND ${PROJECT_NAME})
