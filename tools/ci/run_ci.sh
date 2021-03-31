@@ -26,6 +26,8 @@ RUN_TESTS=0
 OPT_VERBOSE=0
 OPT_SANITIZER=""
 OPT_TEST_COVERAGE_FORMAT=""
+OPT_SCAN_BUILD=""
+OPT_WRAPPER_CMD=""
 
 HELP_MSG="usage: ${SCRIPT_NAME} <OPTIONS>...
 Runs build and test steps in CI.
@@ -37,6 +39,9 @@ Options:
  -h, --help                Display this help and exit
  --sanitizer TYPE          Enable sanitizer
                            (TYPE: address leak thread undefined)
+ --scan-build BINARY       Enable Clang code analyzer using specified
+                           executable
+                           (BINARY: e.g. scan-build-10)
  --test-coverage FORMAT    Create coverage info in given FORMAT
                            (FORMAT: xml html text)
 
@@ -60,8 +65,8 @@ function run_clean() {
 function run_build() {
   mkdir build-wakaama
   pushd build-wakaama
-  cmake -GNinja -S .. ${CMAKE_ARGS}
-  ninja
+  ${OPT_WRAPPER_CMD} cmake -GNinja -S .. ${CMAKE_ARGS}
+  ${OPT_WRAPPER_CMD} ninja
   popd
 }
 
@@ -118,6 +123,7 @@ if ! PARSED_OPTS=$(getopt -o vah \
                           -l clean \
                           -l help \
                           -l sanitizer: \
+                          -l scan-build: \
                           -l run-tests \
                           -l test-coverage: \
                           -l verbose \
@@ -144,6 +150,11 @@ while true; do
       ;;
     --sanitizer)
       OPT_SANITIZER=$2
+      shift 2
+      ;;
+    --scan-build)
+      OPT_SCAN_BUILD=$2
+      RUN_CLEAN=1 # Analyzing works only when code gets actually built
       shift 2
       ;;
     --test-coverage)
@@ -189,6 +200,11 @@ fi
 
 if [ -n "${OPT_TEST_COVERAGE_FORMAT}" ]; then
   CMAKE_ARGS="${CMAKE_ARGS} -DCOVERAGE=ON"
+fi
+
+if [ -n "${OPT_SCAN_BUILD}" ]; then
+  OPT_WRAPPER_CMD="${OPT_SCAN_BUILD} \
+    -o clang-static-analyzer"
 fi
 
 # Run Steps
