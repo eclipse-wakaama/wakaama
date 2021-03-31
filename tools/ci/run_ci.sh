@@ -74,7 +74,6 @@ function run_build() {
 }
 
 function run_tests() {
-  run_build_tests
   build-wakaama-tests/lwm2munittests
 
   mkdir -p "${REPO_ROOT_DIR}/build-wakaama-tests/coverage"
@@ -206,10 +205,10 @@ if [ "${RUN_CLEAN}" -eq 1 ]; then
   run_clean
 fi
 
-if [ "${RUN_TESTS}" -eq 1 ]; then
-  run_tests
-fi
-
 if [ "${RUN_BUILD}" -eq 1 ]; then
   run_build
+fi
+
+if [ "${RUN_TESTS}" -eq 1 ]; then
+  run_tests
 fi

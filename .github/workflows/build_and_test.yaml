@@ -39,6 +39,6 @@ jobs:
 
     - name: Build, execute sanititzed unit tests
       run: |
-        tools/ci/run_ci.sh --run-tests --clean --sanitizer ${{ matrix.sanitizer }}
+        tools/ci/run_ci.sh --run-tests --sanitizer ${{ matrix.sanitizer }}
       env:
         CC:  ${{ matrix.compiler }}
