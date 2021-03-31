@@ -203,13 +203,13 @@ fi
 # Run Steps
 
 if [ "${RUN_CLEAN}" -eq 1 ]; then
-    run_clean
+  run_clean
 fi
 
 if [ "${RUN_TESTS}" -eq 1 ]; then
-    run_tests
+  run_tests
 fi
 
 if [ "${RUN_BUILD}" -eq 1 ]; then
-    run_build
+  run_build
 fi
