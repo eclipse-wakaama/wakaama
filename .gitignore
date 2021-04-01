@@ -17,6 +17,10 @@
 # QtCreator
 build-*
 
+# CLion
+.idea
+cmake-build-*
+
 # In source build
 Makefile
 CMakeCache.txt
