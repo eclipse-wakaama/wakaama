@@ -7,4 +7,5 @@ set(COAP_HEADERS_DIR ${CMAKE_CURRENT_LIST_DIR})
 set(COAP_SOURCES
     ${COAP_SOURCES_DIR}/transaction.c
     ${COAP_SOURCES_DIR}/block.c
-    ${COAP_SOURCES_DIR}/er-coap-13/er-coap-13.c)
+    ${COAP_SOURCES_DIR}/er-coap-13/er-coap-13.c
+)

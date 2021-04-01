@@ -806,7 +806,7 @@ static void update_bootstrap_info(lwm2m_client_state_t * previousBootstrapState,
         switch(context->state)
         {
             case STATE_BOOTSTRAPPING:
-#ifdef WITH_LOGS
+#ifdef LWM2M_WITH_LOGS
                 fprintf(stdout, "[BOOTSTRAP] backup security and server objects\r\n");
 #endif
                 prv_backup_objects(context);
@@ -1277,7 +1277,7 @@ int main(int argc, char *argv[])
             fprintf(stderr, "lwm2m_step() failed: 0x%X\r\n", result);
             if(previousState == STATE_BOOTSTRAPPING)
             {
-#ifdef WITH_LOGS
+#ifdef LWM2M_WITH_LOGS
                 fprintf(stdout, "[BOOTSTRAP] restore security and server objects\r\n");
 #endif
                 prv_restore_objects(lwm2mH);

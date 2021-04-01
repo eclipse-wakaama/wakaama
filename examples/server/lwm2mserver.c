@@ -1037,7 +1037,6 @@ void print_usage(void)
     fprintf(stdout, "\r\n");
 }
 
-
 int main(int argc, char *argv[])
 {
     int sock;

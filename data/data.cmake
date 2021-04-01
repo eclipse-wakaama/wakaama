@@ -9,4 +9,5 @@ set(DATA_SOURCES
     ${DATA_SOURCES_DIR}/tlv.c
     ${DATA_SOURCES_DIR}/json.c
     ${DATA_SOURCES_DIR}/senml_json.c
-    ${DATA_SOURCES_DIR}/json_common.c)
+    ${DATA_SOURCES_DIR}/json_common.c
+)
