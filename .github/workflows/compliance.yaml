@@ -20,3 +20,22 @@ jobs:
     - name: Check commits with gitlint
       run: |
         tools/ci/run_ci.sh --branch-target origin/${{ github.base_ref }} --run-gitlint
+
+  check-clang-format:
+    name: Run clang-format
+    runs-on: ubuntu-20.04
+
+    steps:
+    - name: Checkout code including full history
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+
+    - name: Install clang-format
+      run: |
+        sudo apt update
+        sudo apt -qy --no-install-recommends install clang-format-10
+
+    - name: Check commits with clang-format
+      run: |
+        tools/ci/run_ci.sh --branch-target origin/${{ github.base_ref }} --run-clang-format

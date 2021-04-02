@@ -24,6 +24,7 @@ OPT_BRANCH_SOURCE=
 OPT_BRANCH_TARGET=master
 OPT_C_EXTENSIONS=""
 OPT_C_STANDARD=""
+OPT_CLANG_FORMAT="clang-format-10"
 OPT_SANITIZER=""
 OPT_SCAN_BUILD=""
 OPT_SONARQUBE=""
@@ -31,8 +32,10 @@ OPT_TEST_COVERAGE_REPORT=""
 OPT_VERBOSE=0
 OPT_WRAPPER_CMD=""
 RUN_BUILD=0
+RUN_CLANG_FORMAT=0
 RUN_CLEAN=0
 RUN_GITLINT=0
+RUN_GIT_BLAME_IGNORE=0
 RUN_TESTS=0
 
 HELP_MSG="usage: ${SCRIPT_NAME} <OPTIONS>...
@@ -49,6 +52,8 @@ Options:
                             (ENABLE: ON or OFF)
   --c-standard VERSION      Explicitly specify C VERSION to be used
                             (VERSION: 99, 11)
+  --clang-format BINARY     Set specific clang-format binary
+                            (BINARY: defaults to ${OPT_CLANG_FORMAT})
   --sanitizer TYPE          Enable sanitizer
                             (TYPE: address leak thread undefined)
   --scan-build BINARY       Enable Clang code analyzer using specified
@@ -64,6 +69,8 @@ Options:
 
 Available steps (executed by --all):
   --run-gitlint            Check git commits with gitlint
+  --run-clang-format       Check code formatting with clang-format
+  --run-git-blame-ignore   Validate .git-blame-ignore-revs
   --run-clean              Remove all build artifacts
   --run-build              Build all targets
   --run-tests              Build and execute tests
@@ -76,6 +83,27 @@ function usage() {
   exit "${exit_code}"
 }
 
+function run_clang_format() {
+  local patch_file
+
+  patch_file="$(mktemp -t clang-format-patch.XXX)"
+  # shellcheck disable=SC2064
+  trap "{ rm -f -- '${patch_file}'; }" EXIT TERM INT
+
+  "git-${OPT_CLANG_FORMAT}" --diff "${OPT_BRANCH_TARGET}" 2>&1 |
+    { grep -v \
+      -e 'no modified files to format' \
+      -e 'clang-format did not modify any files' || true;
+    } > "${patch_file}"
+
+  if [ -s "${patch_file}" ]; then
+    cat "${patch_file}"
+    exit 1
+  fi
+
+  echo "No code formatting errors found"
+}
+
 function run_clean() {
   rm -rf build-wakaama
 }
@@ -84,6 +112,15 @@ function run_gitlint() {
   commits="${OPT_BRANCH_TARGET}...${OPT_BRANCH_SOURCE}"
 
   gitlint --commits "${commits}"
+}
+
+function run_git_blame_ignore() {
+  for commit in $(grep -E '^[A-Za-z0-9]{40}$' .git-blame-ignore-revs); do
+    if ! git merge-base --is-ancestor "${commit}" HEAD; then
+      echo ".git-blame-ignore-revs: Commit ${commit} is not an ancestor."
+      exit
+    fi
+  done
 }
 
 function run_build() {
@@ -153,10 +190,13 @@ if ! PARSED_OPTS=$(getopt -o vah \
                           -l branch-target: \
                           -l c-extensions: \
                           -l c-standard: \
+                          -l clang-format: \
                           -l help \
                           -l run-build \
+                          -l run-clang-format \
                           -l run-clean \
                           -l run-gitlint \
+                          -l run-git-blame-ignore \
                           -l run-tests \
                           -l sanitizer: \
                           -l scan-build: \
@@ -188,6 +228,14 @@ while true; do
       OPT_C_STANDARD=$2
       shift 2
       ;;
+    --clang-format)
+      OPT_CLANG_FORMAT=$2
+      shift 2
+      ;;
+    --run-clang-format)
+      RUN_CLANG_FORMAT=1
+      shift
+      ;;
     --run-clean)
       RUN_CLEAN=1
       shift
@@ -198,6 +246,10 @@ while true; do
       ;;
     --run-gitlint)
       RUN_GITLINT=1
+      shift
+      ;;
+    --run-git-blame-ignore)
+      RUN_GIT_BLAME_IGNORE=1
       shift
       ;;
     --run-tests)
@@ -233,8 +285,10 @@ while true; do
       shift
       ;;
     -a|--all)
+      RUN_CLANG_FORMAT=1
       RUN_CLEAN=1
       RUN_GITLINT=1
+      RUN_GIT_BLAME_IGNORE=1
       RUN_BUILD=1
       RUN_TESTS=1
       shift
@@ -294,6 +348,14 @@ fi
 
 if [ "${RUN_GITLINT}" -eq 1 ]; then
   run_gitlint
+fi
+
+if [ "${RUN_CLANG_FORMAT}" -eq 1 ]; then
+  run_clang_format
+fi
+
+if [ "${RUN_GIT_BLAME_IGNORE}" -eq 1 ]; then
+  run_git_blame_ignore
 fi
 
 if [ "${RUN_CLEAN}" -eq 1 ]; then

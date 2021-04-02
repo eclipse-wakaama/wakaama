@@ -61,6 +61,37 @@ Several compilation switches are used:
 Depending on your platform, you need to define LWM2M_BIG_ENDIAN or LWM2M_LITTLE_ENDIAN.
 LWM2M_CLIENT_MODE and LWM2M_SERVER_MODE can be defined at the same time.
 
+## Development
+
+### Dependencies and Tools
+- Mandatory:
+  - Compiler: GCC and/or Clang
+- Optional (but strongly recommended):
+  - Build system generator: CMake 3.13+
+  - Version control system: Git (and a GitHub account)
+  - Git commit message linter: gitlint
+  - Build system: ninja
+  - C code formatting: clang-format, version 10
+  - Unit testing: CUnit
+
+On Ubuntu 20.04, used in CI, the dependencies can be installed as such:
+- `apt install build-essential clang-format clang-format-10 clang-tools-10 cmake gcovr git libcunit1-dev ninja-build python3-pip`
+- `pip3 install gitlint`
+
+### Code formatting
+New code must be formatted with [clang-format](https://clang.llvm.org/docs/ClangFormat.html).
+
+The style is based on the LLVM style, but with 4 instead of 2 spaces indentation and allowing for 120 instead of 80
+characters per line.
+
+To check if your code matches the expected style, the following commands are helpful:
+ - `git clang-format-10 --diff`: Show what needs to be changed to match the expected code style
+ - `git clang-format-10`: Apply all needed changes directly
+ - `git clang-format-10 --commit master`: Fix code style for all changes since master
+
+If existing code gets reformatted, this must be done in a separate commit. Its commit id has to be added to the file
+`.git-blame-ignore-revs` and committed in yet another commit.
+
 
 ## Examples
 
