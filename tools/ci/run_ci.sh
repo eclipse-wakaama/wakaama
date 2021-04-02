@@ -27,8 +27,9 @@ OPT_C_EXTENSIONS=""
 OPT_C_STANDARD=""
 OPT_VERBOSE=0
 OPT_SANITIZER=""
-OPT_TEST_COVERAGE_FORMAT=""
+OPT_TEST_COVERAGE_REPORT=""
 OPT_SCAN_BUILD=""
+OPT_SONARQUBE=""
 OPT_WRAPPER_CMD=""
 
 HELP_MSG="usage: ${SCRIPT_NAME} <OPTIONS>...
@@ -44,13 +45,15 @@ Options:
  --scan-build BINARY       Enable Clang code analyzer using specified
                            executable
                            (BINARY: e.g. scan-build-10)
- --test-coverage FORMAT    Create coverage info in given FORMAT
-                           (FORMAT: xml html text)
+ --test-coverage REPORT    Enable code coverage measurement, output REPORT
+                           (REPORT: xml html text none)
  --c-standard VERSION      Explicitly specify C VERSION to be used
                            (VERSION: 99, 11)
  --c-extensions ENABLE     Whether to allow compiler extensions. Defaults to
                            ON.
                            (ENABLE: ON or OFF)
+ --sonarqube WRAPPER       Collect data for SonarQube
+                           (WRAPPER: path to build-wrapper)
 
 Available steps (executed by --all):
   --clean                  Remove all build artifacts
@@ -70,11 +73,11 @@ function run_clean() {
 }
 
 function run_build() {
-  mkdir build-wakaama
-  pushd build-wakaama
-  ${OPT_WRAPPER_CMD} cmake -GNinja -S .. ${CMAKE_ARGS}
-  ${OPT_WRAPPER_CMD} ninja
-  popd
+  # Existing directory eeded by SonarQube build-wrapper
+  mkdir -p build-wakaama
+
+  ${OPT_WRAPPER_CMD} cmake -GNinja -S . -B build-wakaama ${CMAKE_ARGS}
+  ${OPT_WRAPPER_CMD} cmake --build build-wakaama
 }
 
 function run_tests() {
@@ -82,16 +85,17 @@ function run_tests() {
 
   mkdir -p "${REPO_ROOT_DIR}/build-wakaama/coverage"
 
-  if [ -z "${OPT_TEST_COVERAGE_FORMAT}" ]; then
+  if [ -z "${OPT_TEST_COVERAGE_REPORT}" ]; then
     return 0
   fi
 
   #see https://github.com/koalaman/shellcheck/wiki/SC2089
   gcovr_opts=(-r "${REPO_ROOT_DIR}/build-wakaama" \
+    --keep `: # Needed for SonarQube` \
     --exclude "${REPO_ROOT_DIR}"/examples \
     --exclude "${REPO_ROOT_DIR}"/tests)
 
-  case "${OPT_TEST_COVERAGE_FORMAT}" in
+  case "${OPT_TEST_COVERAGE_REPORT}" in
     xml)
       gcovr_out="--xml"
       gcovr_file=("${REPO_ROOT_DIR}/build-wakaama/coverage/report.xml")
@@ -104,9 +108,14 @@ function run_tests() {
       gcovr_out=""
       gcovr_file=("${REPO_ROOT_DIR}/build-wakaama/coverage/report.txt")
       ;;
+    none)
+      gcovr "${gcovr_opts[@]}" >/dev/null
+      echo "Coverage measured, but no report generated"
+      return 0
+      ;;
     *)
       echo "Error: Unsupported coverage output format: " \
-           "${OPT_TEST_COVERAGE_FORMAT}"
+           "${OPT_TEST_COVERAGE_REPORT}"
       usage 1
       ;;
   esac
@@ -133,6 +142,7 @@ if ! PARSED_OPTS=$(getopt -o vah \
                           -l help \
                           -l sanitizer: \
                           -l scan-build: \
+                          -l sonarqube: \
                           -l run-tests \
                           -l test-coverage: \
                           -l verbose \
@@ -171,11 +181,18 @@ while true; do
       ;;
     --scan-build)
       OPT_SCAN_BUILD=$2
-      RUN_CLEAN=1 # Analyzing works only when code gets actually built
+      # Analyzing works only when code gets actually built
+      RUN_CLEAN=1
+      shift 2
+      ;;
+    --sonarqube)
+      OPT_SONARQUBE=$2
+      # Analyzing works only when code gets actually built
+      RUN_CLEAN=1
       shift 2
       ;;
     --test-coverage)
-      OPT_TEST_COVERAGE_FORMAT=$2
+      OPT_TEST_COVERAGE_REPORT=$2
       shift 2
       ;;
     --)
@@ -223,13 +240,24 @@ if [ -n "${OPT_SANITIZER}" ]; then
   CMAKE_ARGS="${CMAKE_ARGS} -DSANITIZER=${OPT_SANITIZER}"
 fi
 
-if [ -n "${OPT_TEST_COVERAGE_FORMAT}" ]; then
+if [ -n "${OPT_SCAN_BUILD}" ] && [ -n "${OPT_SONARQUBE}" ]; then
+  echo "--sonarqube and --scan-build can not be enabled at the same time"
+  exit 1
+fi
+
+if [ -n "${OPT_SONARQUBE}" ]; then
+  OPT_TEST_COVERAGE_REPORT="${OPT_TEST_COVERAGE_REPORT:-none}"
+  OPT_WRAPPER_CMD="${OPT_SONARQUBE} \
+    --out-dir build-wakaama/sonar-cloud-build-wrapper-output"
+fi
+
+if [ -n "${OPT_TEST_COVERAGE_REPORT}" ]; then
   CMAKE_ARGS="${CMAKE_ARGS} -DCOVERAGE=ON"
 fi
 
 if [ -n "${OPT_SCAN_BUILD}" ]; then
   OPT_WRAPPER_CMD="${OPT_SCAN_BUILD} \
-    -o clang-static-analyzer"
+    -o build-wakaama/clang-static-analyzer"
 fi
 
 # Run Steps
