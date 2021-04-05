@@ -41,6 +41,8 @@ endif()
 
 if (LWM2M_LITTLE_ENDIAN)
     add_compile_definitions(LWM2M_LITTLE_ENDIAN)
+else()
+    add_compile_definitions(LWM2M_BIG_ENDIAN)
 endif()
 
 # Set the LWM2M version

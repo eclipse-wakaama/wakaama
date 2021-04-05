@@ -102,11 +102,11 @@ static void test_utils_textToFloat(void)
         {
             CU_ASSERT_DOUBLE_EQUAL(res, floats[i], floats[i]/1000000.0);
             if(fabs(res - floats[i]) > fabs(floats[i]/1000000.0))
-                printf("%zu \"%s\" -> fail (%f)\n", i, floats_text[i], res);
+                printf("Entry #%zu, \"%s\" -> fail (%f)\n", i, floats_text[i], res);
         }
         else
         {
-            printf("%zu \"%s\" -> fail\n", i, floats_text[i]);
+            printf("Entry #%zu, \"%s\" could not be converted to \"%f\"-> fail\n", i, floats_text[i], floats[i]);
         }
     }
 }
