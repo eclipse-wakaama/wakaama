@@ -71,7 +71,7 @@ static int prv_find_next_section(FILE * fd,
             if (i < length)
             {
                 line[i] = 0;
-                if (strcasecmp(line + 1, tag) == 0)
+                if (lwm2m_strcasecmp(line + 1, tag) == 0)
                 {
                     found = 1;
                 }
@@ -263,7 +263,7 @@ static read_server_t * prv_read_next_server(FILE * fd)
 
     while((res = prv_read_key_value(fd, &key, &value)) == 1)
     {
-        if (strcasecmp(key, "id") == 0)
+        if (lwm2m_strcasecmp(key, "id") == 0)
         {
             int num;
 
@@ -272,24 +272,24 @@ static read_server_t * prv_read_next_server(FILE * fd)
             readSrvP->id = num;
             lwm2m_free(value);
         }
-        else if (strcasecmp(key, "uri") == 0)
+        else if (lwm2m_strcasecmp(key, "uri") == 0)
         {
             readSrvP->uri = value;
         }
-        else if (strcasecmp(key, "bootstrap") == 0)
+        else if (lwm2m_strcasecmp(key, "bootstrap") == 0)
         {
-            if (strcasecmp(value, "yes") == 0)
+            if (lwm2m_strcasecmp(value, "yes") == 0)
             {
                 readSrvP->isBootstrap = true;
             }
-            else if (strcasecmp(value, "no") == 0)
+            else if (lwm2m_strcasecmp(value, "no") == 0)
             {
                 readSrvP->isBootstrap = false;
             }
             else goto error;
             lwm2m_free(value);
         }
-        else if (strcasecmp(key, "lifetime") == 0)
+        else if (lwm2m_strcasecmp(key, "lifetime") == 0)
         {
             int num;
 
@@ -298,47 +298,47 @@ static read_server_t * prv_read_next_server(FILE * fd)
             readSrvP->lifetime = num;
             lwm2m_free(value);
         }
-        else if (strcasecmp(key, "security") == 0)
+        else if (lwm2m_strcasecmp(key, "security") == 0)
         {
-            if (strcasecmp(value, "nosec") == 0)
+            if (lwm2m_strcasecmp(value, "nosec") == 0)
             {
                 readSrvP->securityMode = LWM2M_SECURITY_MODE_NONE;
             }
-            else if (strcasecmp(value, "PSK") == 0)
+            else if (lwm2m_strcasecmp(value, "PSK") == 0)
             {
                 readSrvP->securityMode = LWM2M_SECURITY_MODE_PRE_SHARED_KEY;
             }
-            else if (strcasecmp(value, "RPK") == 0)
+            else if (lwm2m_strcasecmp(value, "RPK") == 0)
             {
                 readSrvP->securityMode = LWM2M_SECURITY_MODE_RAW_PUBLIC_KEY;
             }
-            else if (strcasecmp(value, "certificate") == 0)
+            else if (lwm2m_strcasecmp(value, "certificate") == 0)
             {
                 readSrvP->securityMode = LWM2M_SECURITY_MODE_CERTIFICATE;
             }
             else goto error;
             lwm2m_free(value);
         }
-        else if (strcasecmp(key, "public") == 0)
+        else if (lwm2m_strcasecmp(key, "public") == 0)
         {
             readSrvP->publicKeyLen = prv_readSecurityKey(value, &(readSrvP->publicKey));
             if (readSrvP->publicKeyLen == 0) goto error;
             lwm2m_free(value);
         }
-        else if (strcasecmp(key, "server") == 0)
+        else if (lwm2m_strcasecmp(key, "server") == 0)
         {
             readSrvP->serverKeyLen = prv_readSecurityKey(value, &(readSrvP->serverKey));
             if (readSrvP->serverKeyLen == 0) goto error;
             lwm2m_free(value);
         }
-        else if (strcasecmp(key, "secret") == 0)
+        else if (lwm2m_strcasecmp(key, "secret") == 0)
         {
             readSrvP->secretKeyLen = prv_readSecurityKey(value, &(readSrvP->secretKey));
             if (readSrvP->secretKeyLen == 0) goto error;
             lwm2m_free(value);
         }
 #ifndef LWM2M_VERSION_1_0
-        else if (strcasecmp(key, "registrationPriorityOrder") == 0)
+        else if (lwm2m_strcasecmp(key, "registrationPriorityOrder") == 0)
         {
             int num;
 
@@ -347,7 +347,7 @@ static read_server_t * prv_read_next_server(FILE * fd)
             readSrvP->registrationPriorityOrder = num;
             lwm2m_free(value);
         }
-        else if (strcasecmp(key, "initialRegistrationDelay") == 0)
+        else if (lwm2m_strcasecmp(key, "initialRegistrationDelay") == 0)
         {
             int num;
 
@@ -356,33 +356,33 @@ static read_server_t * prv_read_next_server(FILE * fd)
             readSrvP->initialRegistrationDelayTimer = num;
             lwm2m_free(value);
         }
-        else if (strcasecmp(key, "registrationFailureBlock") == 0)
+        else if (lwm2m_strcasecmp(key, "registrationFailureBlock") == 0)
         {
-            if (strcasecmp(value, "yes") == 0)
+            if (lwm2m_strcasecmp(value, "yes") == 0)
             {
                 readSrvP->registrationFailureBlock = true;
             }
-            else if (strcasecmp(value, "no") == 0)
+            else if (lwm2m_strcasecmp(value, "no") == 0)
             {
                 readSrvP->registrationFailureBlock = false;
             }
             else goto error;
             lwm2m_free(value);
         }
-        else if (strcasecmp(key, "bootstrapOnRegistrationFailure") == 0)
+        else if (lwm2m_strcasecmp(key, "bootstrapOnRegistrationFailure") == 0)
         {
-            if (strcasecmp(value, "yes") == 0)
+            if (lwm2m_strcasecmp(value, "yes") == 0)
             {
                 readSrvP->bootstrapOnRegistrationFailure = true;
             }
-            else if (strcasecmp(value, "no") == 0)
+            else if (lwm2m_strcasecmp(value, "no") == 0)
             {
                 readSrvP->bootstrapOnRegistrationFailure = false;
             }
             else goto error;
             lwm2m_free(value);
         }
-        else if (strcasecmp(key, "communicationRetryCount") == 0)
+        else if (lwm2m_strcasecmp(key, "communicationRetryCount") == 0)
         {
             int num;
 
@@ -391,7 +391,7 @@ static read_server_t * prv_read_next_server(FILE * fd)
             readSrvP->communicationRetryCount = num;
             lwm2m_free(value);
         }
-        else if (strcasecmp(key, "communicationRetryTimer") == 0)
+        else if (lwm2m_strcasecmp(key, "communicationRetryTimer") == 0)
         {
             int num;
 
@@ -400,7 +400,7 @@ static read_server_t * prv_read_next_server(FILE * fd)
             readSrvP->communicationRetryTimer = num;
             lwm2m_free(value);
         }
-        else if (strcasecmp(key, "communicationSequenceDelayTimer") == 0)
+        else if (lwm2m_strcasecmp(key, "communicationSequenceDelayTimer") == 0)
         {
             int num;
 
@@ -409,7 +409,7 @@ static read_server_t * prv_read_next_server(FILE * fd)
             readSrvP->communicationSequenceDelayTimer = num;
             lwm2m_free(value);
         }
-        else if (strcasecmp(key, "communicationSequenceRetryCount") == 0)
+        else if (lwm2m_strcasecmp(key, "communicationSequenceRetryCount") == 0)
         {
             int num;
 
@@ -628,11 +628,11 @@ static bs_endpoint_info_t * prv_read_next_endpoint(FILE * fd)
 
     while((res = prv_read_key_value(fd, &key, &value)) == 1)
     {
-        if (strcasecmp(key, "Name") == 0)
+        if (lwm2m_strcasecmp(key, "Name") == 0)
         {
             endptP->name = value;
         }
-        else if (strcasecmp(key, "Discover") == 0)
+        else if (lwm2m_strcasecmp(key, "Discover") == 0)
         {
             lwm2m_uri_t uri;
 
@@ -652,7 +652,7 @@ static bs_endpoint_info_t * prv_read_next_endpoint(FILE * fd)
 
             lwm2m_free(value);
         }
-        else if (strcasecmp(key, "Read") == 0)
+        else if (lwm2m_strcasecmp(key, "Read") == 0)
         {
 #ifndef LWM2M_VERSION_1_0
             lwm2m_uri_t uri;
@@ -673,7 +673,7 @@ static bs_endpoint_info_t * prv_read_next_endpoint(FILE * fd)
 #endif
             lwm2m_free(value);
         }
-        else if (strcasecmp(key, "Delete") == 0)
+        else if (lwm2m_strcasecmp(key, "Delete") == 0)
         {
             lwm2m_uri_t uri;
 
@@ -693,7 +693,7 @@ static bs_endpoint_info_t * prv_read_next_endpoint(FILE * fd)
 
             lwm2m_free(value);
         }
-        else if (strcasecmp(key, "Server") == 0)
+        else if (lwm2m_strcasecmp(key, "Server") == 0)
         {
             int num;
 

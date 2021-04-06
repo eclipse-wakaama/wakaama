@@ -17,6 +17,7 @@
 #include <liblwm2m.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <time.h>
@@ -35,7 +36,19 @@ void lwm2m_free(void * p)
 
 char * lwm2m_strdup(const char * str)
 {
-    return strdup(str);
+    if (!str) {
+      return NULL;
+    }
+
+    const int len = strlen(str) + 1;
+    char * const buf = lwm2m_malloc(len);
+
+    if (buf) {
+      memset(buf, 0, len);
+      memcpy(buf, str, len - 1);
+    }
+
+    return buf;
 }
 
 #endif
@@ -45,6 +58,10 @@ int lwm2m_strncmp(const char * s1,
                      size_t n)
 {
     return strncmp(s1, s2, n);
+}
+
+int lwm2m_strcasecmp(const char * str1, const char * str2) {
+    return strcasecmp(str1, str2);
 }
 
 time_t lwm2m_gettime(void)

@@ -22,6 +22,10 @@
 #include "connection.h"
 #include "commandline.h"
 
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <netdb.h>
+
 int create_socket(const char * portStr, int addressFamily)
 {
     int s = -1;

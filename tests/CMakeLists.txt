@@ -2,6 +2,8 @@ cmake_minimum_required (VERSION 3.13)
 
 project (lwm2munittests C)
 
+add_compile_definitions(_POSIX_C_SOURCE=200809)
+
 include(${CMAKE_CURRENT_LIST_DIR}/../core/wakaama.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/../coap/coap.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/../data/data.cmake)

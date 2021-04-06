@@ -1153,12 +1153,12 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Failed to create Access Control object instance\r\n");
         return -1;
     }
-    else if (acc_ctrl_oi_add_ac_val(objArray[8], instId, 0, 0b000000000001111)==false)
+    else if (acc_ctrl_oi_add_ac_val(objArray[8], instId, 0, 0xF /* == 0b000000000001111 */)==false)
     {
         fprintf(stderr, "Failed to create Access Control ACL default resource\r\n");
         return -1;
     }
-    else if (acc_ctrl_oi_add_ac_val(objArray[8], instId, 999, 0b000000000000001)==false)
+    else if (acc_ctrl_oi_add_ac_val(objArray[8], instId, 999, 0x1 /* == 0b000000000000001 */)==false)
     {
         fprintf(stderr, "Failed to create Access Control ACL resource for serverId: 999\r\n");
         return -1;

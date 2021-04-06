@@ -120,6 +120,7 @@ void    lwm2m_trace_free(void * mem, const char * file, const char * function, i
 #endif
 // Compare at most the n first bytes of s1 and s2, return 0 if they match
 int lwm2m_strncmp(const char * s1, const char * s2, size_t n);
+int lwm2m_strcasecmp(const char * str1, const char * str2);
 // This function must return the number of seconds elapsed since origin.
 // The origin (Epoch, system boot, etc...) does not matter as this
 // function is used only to determine the elapsed time since the last
@@ -586,8 +587,6 @@ typedef struct _block_info_t
     int block_size;
     bool block_more;
 } block_info_t;
-
-typedef struct _lwm2m_context_ lwm2m_context_t;
 
 /*
  * LWM2M result callback

@@ -1,0 +1,41 @@
+name: C Standards
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+
+    strategy:
+      matrix:
+        compiler: ["clang-10", "gcc-10"]
+        c_standard: ["99", "11"]
+        c_extensions: ["ON", "OFF"]
+
+    steps:
+    - name: Checkout code including full history and submodules
+      uses: actions/checkout@v2
+      with:
+        submodules: true
+        fetch-depth: 0
+
+    - name: Install dependencies from APT repository
+      run: |
+        sudo apt-get update
+        sudo apt-get install libcunit1-dev wget unzip
+
+    - name: Install CMake
+      uses: lukka/get-cmake@latest
+
+    - name: Install Ninja
+      uses: seanmiddleditch/gha-setup-ninja@master
+
+    - name: Build all binaries
+      run: |
+        tools/ci/run_ci.sh \
+          --clean \
+          --build \
+          --c-standard ${{ matrix.c_standard }} \
+          --c-extensions ${{ matrix.c_extensions }}
+      env:
+        CC:  ${{ matrix.compiler }}

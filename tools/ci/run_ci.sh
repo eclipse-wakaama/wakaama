@@ -23,6 +23,8 @@ CMAKE_ARGS="-DCMAKE_BUILD_TYPE=RelWithDebInfo"
 RUN_CLEAN=0
 RUN_BUILD=0
 RUN_TESTS=0
+OPT_C_EXTENSIONS=""
+OPT_C_STANDARD=""
 OPT_VERBOSE=0
 OPT_SANITIZER=""
 OPT_TEST_COVERAGE_FORMAT=""
@@ -44,6 +46,11 @@ Options:
                            (BINARY: e.g. scan-build-10)
  --test-coverage FORMAT    Create coverage info in given FORMAT
                            (FORMAT: xml html text)
+ --c-standard VERSION      Explicitly specify C VERSION to be used
+                           (VERSION: 99, 11)
+ --c-extensions ENABLE     Whether to allow compiler extensions. Defaults to
+                           ON.
+                           (ENABLE: ON or OFF)
 
 Available steps (executed by --all):
   --clean                  Remove all build artifacts
@@ -120,6 +127,8 @@ fi
 if ! PARSED_OPTS=$(getopt -o vah \
                           -l all \
                           -l build \
+                          -l c-extensions: \
+                          -l c-standard: \
                           -l clean \
                           -l help \
                           -l sanitizer: \
@@ -143,6 +152,14 @@ while true; do
     --build)
       RUN_BUILD=1
       shift 1
+      ;;
+    --c-extensions)
+      OPT_C_EXTENSIONS=$2
+      shift 2
+      ;;
+    --c-standard)
+      OPT_C_STANDARD=$2
+      shift 2
       ;;
     --run-tests)
       RUN_TESTS=1
@@ -192,6 +209,14 @@ fi
 
 if [ "${OPT_VERBOSE}" -ne 0 ]; then
   CMAKE_ARGS="${CMAKE_ARGS} -DCMAKE_VERBOSE_MAKEFILE=ON"
+fi
+
+if [ -n "${OPT_C_EXTENSIONS}" ]; then
+  CMAKE_ARGS="${CMAKE_ARGS} -DCMAKE_C_EXTENSIONS=${OPT_C_EXTENSIONS}"
+fi
+
+if [ -n "${OPT_C_STANDARD}" ]; then
+  CMAKE_ARGS="${CMAKE_ARGS} -DCMAKE_C_STANDARD=${OPT_C_STANDARD}"
 fi
 
 if [ -n "${OPT_SANITIZER}" ]; then
