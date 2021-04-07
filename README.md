@@ -1,7 +1,12 @@
+# Wakaama
+
 Wakaama (formerly liblwm2m) is an implementation of the Open Mobile Alliance's LightWeight M2M
 protocol (LWM2M).
 
 Developers mailing list: https://dev.eclipse.org/mailman/listinfo/wakaama-dev
+
+## Badges
+[![Build](https://github.com/eclipse/wakaama/actions/workflows/build_and_test.yaml/badge.svg)](https://github.com/eclipse/wakaama/actions/workflows/build_and_test.yaml)
 
 ## Source Layout
 
