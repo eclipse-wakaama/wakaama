@@ -115,6 +115,16 @@ static void test_utils_textToFloat(void)
     CU_ASSERT_DOUBLE_EQUAL(res, 1.0, 1.0/1000000.0);
 }
 
+static void test_utils_textToFloatNegativeTests(void)
+{
+    double res;
+
+    CU_ASSERT_FALSE(utils_textToFloat((const uint8_t *)"", 0, &res, true));
+
+    const char *not_a_float = "not-a-float";
+    CU_ASSERT_FALSE(utils_textToFloat((const uint8_t *)not_a_float, strlen(not_a_float), &res, true));
+}
+
 static void test_utils_textToFloatExponential(void)
 {
     size_t i;
@@ -142,6 +152,17 @@ static void test_utils_textToFloatExponential(void)
             printf("%zu \"%s\" -> fail\n", i, floats_exponential[i]);
         }
     }
+}
+
+static void test_utils_textToFloatUnwantedExponential(void)
+{
+    double res;
+    const char *with_exponential_e = "6.667e-11";
+
+    CU_ASSERT_FALSE(utils_textToFloat((const uint8_t *)with_exponential_e, strlen(with_exponential_e), &res, false));
+
+    const char *with_exponential_E = "2.2250738585072E-308";
+    CU_ASSERT_FALSE(utils_textToFloat((const uint8_t *)with_exponential_E, strlen(with_exponential_E), &res, false));
 }
 
 static void test_utils_textToObjLink(void)
@@ -411,7 +432,9 @@ static struct TestTable table[] = {
         { "test of utils_textToInt()", test_utils_textToInt },
         { "test of utils_textToUInt()", test_utils_textToUInt },
         { "test of utils_textToFloat()", test_utils_textToFloat },
+        { "test of utils_textToFloat(negative)", test_utils_textToFloatNegativeTests },
         { "test of utils_textToFloat(exponential)", test_utils_textToFloatExponential },
+        { "test of utils_textToFloat(unwanted exponential)", test_utils_textToFloatUnwantedExponential },
         { "test of utils_textToObjLink()", test_utils_textToObjLink },
         { "test of utils_intToText()", test_utils_intToText },
         { "test of utils_uintToText()", test_utils_uintToText },

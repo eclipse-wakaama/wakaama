@@ -136,114 +136,37 @@ int utils_textToFloat(const uint8_t * buffer,
                       double * dataP,
                       bool allowExponential)
 {
-    double result;
-    int sign;
-    int i;
+    int ret = 0;
 
-    if (0 == length) return 0;
-
-    if (buffer[0] == '-')
-    {
-        sign = -1;
-        i = 1;
-    }
-    else
-    {
-        sign = 1;
-        i = 0;
+    if (length == 0) {
+        return 0;
     }
 
-    /* Must have a decimal digit first after optional sign */
-    if (i >= length || !isdigit(buffer[i])) return 0;
+    char *const buffer_c_str = lwm2m_malloc(length + 1);
+    char *tailptr;
 
-    result = 0;
-    while (i < length && buffer[i] != '.' && buffer[i] != 'e' && buffer[i] != 'E')
-    {
-        if (isdigit(buffer[i]))
-        {
-            if (result > (DBL_MAX / 10)) return 0;
-            result *= 10;
-            result += (buffer[i] - '0');
-        }
-        else
-        {
-            return 0;
-        }
-        i++;
+    if (!buffer_c_str) {
+        return 0;
     }
-    if (i < length && buffer[i] == '.')
-    {
-        double dec;
 
-        i++;
+    memcpy(buffer_c_str, buffer, length);
+    buffer_c_str[length] = '\0';
 
-        dec = 0.1;
-        while (i < length && buffer[i] != 'e' && buffer[i] != 'E')
-        {
-            if (isdigit(buffer[i]))
-            {
-                result += (buffer[i] - '0') * dec;
-                dec /= 10;
-            }
-            else
-            {
-                return 0;
-            }
-            i++;
-        }
+    if (!allowExponential && (strchr(buffer_c_str, 'e') != NULL || strchr(buffer_c_str, 'E') != NULL)) {
+        goto out;
     }
-    if (i < length && (buffer[i] == 'e' || buffer[i] == 'E'))
-    {
-        int64_t exp;
-        int res;
 
-        if (!allowExponential) return 0;
+    *dataP = strtod(buffer_c_str, &tailptr);
 
-        i++;
-        if (i < length && buffer[i] == '+') i++;
-        res = utils_textToInt(buffer + i, length - i, &exp);
-        if (res == 0) return 0;
-        if (exp > 0)
-        {
-            while (exp > 100)
-            {
-                result *= 1e100;
-                exp -= 100;
-            }
-            while (exp > 10)
-            {
-                result *= 1e10;
-                exp -= 10;
-            }
-            while (exp != 0)
-            {
-                result *= 10;
-                exp -= 1;
-            }
-        }
-        else if (exp < 0)
-        {
-            while (exp < -100)
-            {
-                result *= 1e-100;
-                exp += 100;
-            }
-            while (exp < -10)
-            {
-                result *= 1e-10;
-                exp += 10;
-            }
-            while (exp != 0)
-            {
-                result *= 0.1;
-                exp += 1;
-            }
-        }
+    if (tailptr == buffer_c_str) {
+        goto out;
     }
-    if (result > DBL_MAX) result = DBL_MAX; /* Keep the result finite */
 
-    *dataP = result * sign;
-    return 1;
+    ret = 1;
+
+out:
+    lwm2m_free(buffer_c_str);
+    return ret;
 }
 
 int utils_textToObjLink(const uint8_t * buffer,
