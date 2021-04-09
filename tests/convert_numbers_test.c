@@ -89,10 +89,10 @@ static void test_utils_textToUInt(void)
 static void test_utils_textToFloat(void)
 {
     size_t i;
+    double res;
 
     for (i = 0 ; i < sizeof(floats)/sizeof(floats[0]) ; i++)
     {
-        double res;
         int converted;
 
         converted = utils_textToFloat((const uint8_t*)floats_text[i], strlen(floats_text[i]), &res, false);
@@ -109,6 +109,10 @@ static void test_utils_textToFloat(void)
             printf("Entry #%zu, \"%s\" could not be converted to \"%f\"-> fail\n", i, floats_text[i], floats[i]);
         }
     }
+
+    const char *float_with_text = "1.0-followed-by-text";
+    CU_ASSERT(utils_textToFloat((const uint8_t *)float_with_text, strlen(float_with_text), &res, true));
+    CU_ASSERT_DOUBLE_EQUAL(res, 1.0, 1.0/1000000.0);
 }
 
 static void test_utils_textToFloatExponential(void)
