@@ -538,7 +538,7 @@ uint8_t object_raw_block1_write(lwm2m_context_t * contextP,
     // TODO: support resource instance
     if (LWM2M_URI_IS_SET_RESOURCE_INSTANCE(uriP)) return COAP_400_BAD_REQUEST;
 #endif
-    result = targetP->rawBlock1WriteFunc(uriP, format, buffer, length, targetP, block_num, block_more);
+    result = targetP->rawBlock1WriteFunc(contextP, uriP, format, buffer, length, targetP, block_num, block_more);
 
     if (block_more > 0 && (result == COAP_204_CHANGED || result == NO_ERROR)){
         result = COAP_231_CONTINUE;
@@ -565,7 +565,7 @@ uint8_t object_raw_block1_execute(lwm2m_context_t * contextP,
     if (NULL == targetP->rawBlock1ExecuteFunc) return COAP_405_METHOD_NOT_ALLOWED;
     if (NULL == lwm2m_list_find(targetP->instanceList, uriP->instanceId)) return COAP_404_NOT_FOUND;
 
-    result = targetP->rawBlock1ExecuteFunc(uriP, buffer, length, targetP, block_num, block_more);
+    result = targetP->rawBlock1ExecuteFunc(contextP, uriP, buffer, length, targetP, block_num, block_more);
 
     if (block_more > 0 && (result == COAP_204_CHANGED || result == NO_ERROR)){
         result = COAP_231_CONTINUE;
@@ -597,7 +597,7 @@ uint8_t object_raw_block1_create(lwm2m_context_t * contextP,
     if (NULL == targetP) return COAP_404_NOT_FOUND;
     if (NULL == targetP->rawBlock1CreateFunc) return COAP_405_METHOD_NOT_ALLOWED;
 
-    result = targetP->rawBlock1CreateFunc(uriP, format, buffer, length, targetP, block_num, block_more);
+    result = targetP->rawBlock1CreateFunc(contextP, uriP, format, buffer, length, targetP, block_num, block_more);
 
     if (block_more > 0 && (result == COAP_201_CREATED || result == NO_ERROR)){
         result = COAP_231_CONTINUE;
