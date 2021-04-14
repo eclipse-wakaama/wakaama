@@ -65,27 +65,21 @@ static uint8_t prv_set_tlv(lwm2m_data_t * dataP, conn_s_data_t * connStDataP)
     case RES_O_SMS_TX_COUNTER:
         lwm2m_data_encode_int(connStDataP->smsTxCounter, dataP);
         return COAP_205_CONTENT;
-        break;
     case RES_O_SMS_RX_COUNTER:
         lwm2m_data_encode_int(connStDataP->smsRxCounter, dataP);
         return COAP_205_CONTENT;
-        break;
     case RES_O_TX_DATA:
         lwm2m_data_encode_int(connStDataP->txDataByte/1024, dataP);
         return COAP_205_CONTENT;
-        break;
     case RES_O_RX_DATA:
         lwm2m_data_encode_int(connStDataP->rxDataByte/1024, dataP);
         return COAP_205_CONTENT;
-        break;
     case RES_O_MAX_MESSAGE_SIZE:
         lwm2m_data_encode_int(connStDataP->maxMessageSize, dataP);
         return COAP_205_CONTENT;
-        break;
     case RES_O_AVERAGE_MESSAGE_SIZE:
         lwm2m_data_encode_int(connStDataP->avrMessageSize, dataP);
         return COAP_205_CONTENT;
-        break;
     default:
         return COAP_404_NOT_FOUND ;
     }
