@@ -89,7 +89,7 @@ static void test_data_and_compare(const char * uriStr,
 
     if (format != LWM2M_CONTENT_JSON)
     {
-        CU_ASSERT_EQUAL(original_length, length);
+        CU_ASSERT_EQUAL(original_length, length)
 
         if ((original_length != (size_t)length) ||
             (memcmp(original_buffer, buffer, length) != 0))
@@ -133,7 +133,7 @@ static void test_raw(const char * uriStr,
     {
         printf("(Parsing %s from %s failed.)\t", id, format == LWM2M_CONTENT_JSON ? "JSON" : "TLV");
     }
-    CU_ASSERT_TRUE_FATAL(size>0);
+    CU_ASSERT_TRUE_FATAL(size>0)
 
     // Serialize to the same format and compare to the input buffer
     test_data_and_compare(uriStr, format, tlvP, size, id, testBuf, testLen);
@@ -165,7 +165,7 @@ static void test_raw_expected(const char * uriStr,
     }
 
     size = lwm2m_data_parse((uriStr != NULL) ? &uri : NULL, testBuf, testLen, format, &tlvP);
-    CU_ASSERT_TRUE_FATAL(size>0);
+    CU_ASSERT_TRUE_FATAL(size>0)
 
     // Serialize to the same format and compare to the input buffer
     test_data_and_compare(uriStr, format, tlvP, size, id, (uint8_t*)expectBuf, expectLen);
@@ -186,7 +186,7 @@ static void test_1(void)
     lwm2m_media_type_t format = LWM2M_CONTENT_TLV;
     lwm2m_data_t * tlvP;
     int size = lwm2m_data_parse(NULL, buffer, testLen, format, &tlvP);
-    CU_ASSERT_TRUE_FATAL(size>0);
+    CU_ASSERT_TRUE_FATAL(size>0)
     // Serialize to the same format and compare to the input buffer
     test_data_and_compare(NULL, format, tlvP, size, "1", (uint8_t*)buffer, testLen);
     lwm2m_data_free(size, tlvP);
@@ -422,9 +422,9 @@ static void test_15(void)
     {
         printf("(Parsing 15a from JSON failed.)\t");
     }
-    CU_ASSERT_EQUAL_FATAL(size, 1);
-    CU_ASSERT_EQUAL(tlvP->id, 2);
-    CU_ASSERT_EQUAL(tlvP->type, LWM2M_TYPE_MULTIPLE_RESOURCE);
+    CU_ASSERT_EQUAL_FATAL(size, 1)
+    CU_ASSERT_EQUAL(tlvP->id, 2)
+    CU_ASSERT_EQUAL(tlvP->type, LWM2M_TYPE_MULTIPLE_RESOURCE)
 
 
     test_raw(NULL, (uint8_t *)buffer, strlen(buffer), LWM2M_CONTENT_JSON, "15b");
