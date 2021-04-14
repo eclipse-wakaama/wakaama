@@ -103,7 +103,7 @@ static void senml_json_test_data_and_compare(const char * uriStr,
 
     if (format != LWM2M_CONTENT_JSON && format != LWM2M_CONTENT_SENML_JSON)
     {
-        CU_ASSERT_EQUAL(original_length, length);
+        CU_ASSERT_EQUAL(original_length, length)
 
         if ((original_length != (size_t)length) ||
             (memcmp(original_buffer, buffer, length) != 0))
@@ -180,7 +180,7 @@ static void senml_json_test_raw(const char * uriStr,
     {
         printf("(Parsing %s from %s failed.)\t", id, STR_MEDIA_TYPE(format));
     }
-    CU_ASSERT_TRUE_FATAL(size>0);
+    CU_ASSERT_TRUE_FATAL(size>0)
 
     // Serialize to the same format and compare to the input buffer
     senml_json_test_data_and_compare(uriStr, format, tlvP, size, id, testBuf, testLen);
@@ -216,7 +216,7 @@ static void senml_json_test_raw_expected(const char * uriStr,
     }
 
     size = lwm2m_data_parse((uriStr != NULL) ? &uri : NULL, testBuf, testLen, format, &tlvP);
-    CU_ASSERT_TRUE_FATAL(size>0);
+    CU_ASSERT_TRUE_FATAL(size>0)
 
     // Serialize to the same format and compare to the input buffer
     senml_json_test_data_and_compare(uriStr, format, tlvP, size, id, (uint8_t*)expectBuf, expectLen);
@@ -251,7 +251,7 @@ static void senml_json_test_raw_error(const char * uriStr,
     {
         printf("(Parsing %s from %s succeeded but should have failed.)\t", id, STR_MEDIA_TYPE(format));
     }
-    CU_ASSERT_TRUE_FATAL(size<0);
+    CU_ASSERT_TRUE_FATAL(size<0)
 }
 
 static void senml_json_test_1(void)
@@ -565,7 +565,7 @@ static void senml_json_test_23(void)
     /* Opaque data */
     const uint8_t rawData[] = { 1, 2, 3, 4, 5 };
     lwm2m_data_t *dataP = lwm2m_data_new(1);
-    CU_ASSERT_PTR_NOT_NULL_FATAL(dataP);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(dataP)
     lwm2m_data_encode_opaque(rawData, sizeof(rawData), dataP);
     const char * buffer = "[{\"bn\":\"/34/0/2\",\"vd\":\"AQIDBAU=\"}]";
     senml_json_test_raw("/34/0/2", (uint8_t *)buffer, strlen(buffer), LWM2M_CONTENT_SENML_JSON, "23a");
