@@ -29,8 +29,8 @@ static void handle_12345(lwm2m_block_data_t ** blk1,
     uint8_t *resultBuffer = NULL;
 
     uint8_t st = coap_block1_handler(blk1, uri, buffer, 5, 5, 0, true, &resultBuffer, &bsize);
-    CU_ASSERT_EQUAL(st, COAP_231_CONTINUE);
-    CU_ASSERT_PTR_NULL(resultBuffer);
+    CU_ASSERT_EQUAL(st, COAP_231_CONTINUE)
+    CU_ASSERT_PTR_NULL(resultBuffer)
 }
 
 static void handle_67(lwm2m_block_data_t ** blk1,
@@ -40,10 +40,10 @@ static void handle_67(lwm2m_block_data_t ** blk1,
     uint8_t *resultBuffer = NULL;
 
     uint8_t st = coap_block1_handler(blk1, uri, buffer, 2, 5, 1, false, &resultBuffer, &bsize);
-    CU_ASSERT_EQUAL(st, NO_ERROR);
-    CU_ASSERT_PTR_NOT_NULL(resultBuffer);
-    CU_ASSERT_EQUAL(bsize, 7);
-    CU_ASSERT_NSTRING_EQUAL(resultBuffer, "1234567", 7);
+    CU_ASSERT_EQUAL(st, NO_ERROR)
+    CU_ASSERT_PTR_NOT_NULL(resultBuffer)
+    CU_ASSERT_EQUAL(bsize, 7)
+    CU_ASSERT_NSTRING_EQUAL(resultBuffer, "1234567", 7)
 }
 
 

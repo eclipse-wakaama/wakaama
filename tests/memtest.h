@@ -25,8 +25,8 @@ static size_t size_before = 0;
 static int blocks_after = 0;
 static size_t size_after = 0;
 #define MEMORY_TRACE_BEFORE trace_status(&blocks_before, &size_before)
-#define MEMORY_TRACE_AFTER(OP) { trace_status(&blocks_after, &size_after); CU_ASSERT(blocks_before OP blocks_after); CU_ASSERT(size_before OP size_after); }
-#define MEMORY_TRACE_AFTER_EQ { trace_status(&blocks_after, &size_after); CU_ASSERT_EQUAL(blocks_before, blocks_after); CU_ASSERT_EQUAL(size_before, size_after); }
+#define MEMORY_TRACE_AFTER(OP) { trace_status(&blocks_after, &size_after); CU_ASSERT(blocks_before OP blocks_after); CU_ASSERT(size_before OP size_after) }
+#define MEMORY_TRACE_AFTER_EQ { trace_status(&blocks_after, &size_after); CU_ASSERT_EQUAL(blocks_before, blocks_after); CU_ASSERT_EQUAL(size_before, size_after) }
 #else
 #define MEMORY_TRACE_BEFORE
 #define MEMORY_TRACE_AFTER(OP)
