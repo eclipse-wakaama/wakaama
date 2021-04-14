@@ -73,12 +73,10 @@ static uint8_t prv_set_tlv(lwm2m_data_t* dataP, acc_ctrl_oi_t* accCtrlOiP)
         if (dataP->type == LWM2M_TYPE_MULTIPLE_RESOURCE) return COAP_404_NOT_FOUND;
         lwm2m_data_encode_int(accCtrlOiP->objectId, dataP);
         return COAP_205_CONTENT;
-        break;
     case RES_M_OBJECT_INSTANCE_ID:
         if (dataP->type == LWM2M_TYPE_MULTIPLE_RESOURCE) return COAP_404_NOT_FOUND;
         lwm2m_data_encode_int(accCtrlOiP->objectInstId, dataP);
         return COAP_205_CONTENT;
-        break;
     case RES_O_ACL:
     {
         size_t count;
@@ -128,12 +126,11 @@ static uint8_t prv_set_tlv(lwm2m_data_t* dataP, acc_ctrl_oi_t* accCtrlOiP)
             }
             return COAP_205_CONTENT;
         }
-    }   break;
+    }
     case RES_M_ACCESS_CONTROL_OWNER:
         if (dataP->type == LWM2M_TYPE_MULTIPLE_RESOURCE) return COAP_404_NOT_FOUND;
         lwm2m_data_encode_int(accCtrlOiP->accCtrlOwner, dataP);
         return COAP_205_CONTENT;
-        break;
     default:
         return COAP_404_NOT_FOUND ;
     }

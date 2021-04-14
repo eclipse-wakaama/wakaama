@@ -167,7 +167,6 @@ static uint8_t prv_set_value(lwm2m_data_t * dataP,
         }
         return COAP_205_CONTENT ;
     }
-        break;
 
     case RES_O_ROUTER_IP_ADDRESS:
     {
@@ -197,7 +196,6 @@ static uint8_t prv_set_value(lwm2m_data_t * dataP,
         }
         return COAP_205_CONTENT ;
     }
-        break;
 
     case RES_O_LINK_UTILIZATION:
         if (dataP->type == LWM2M_TYPE_MULTIPLE_RESOURCE) return COAP_404_NOT_FOUND;
@@ -232,7 +230,6 @@ static uint8_t prv_set_value(lwm2m_data_t * dataP,
         }
         return COAP_205_CONTENT;
     }
-        break;
 
     case RES_O_CELL_ID:
         if (dataP->type == LWM2M_TYPE_MULTIPLE_RESOURCE) return COAP_404_NOT_FOUND;

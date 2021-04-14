@@ -401,7 +401,6 @@ next_step:
             contextP->state = STATE_BOOTSTRAP_REQUIRED;
         }
         goto next_step;
-        break;
 
     case STATE_BOOTSTRAP_REQUIRED:
 #ifdef LWM2M_BOOTSTRAP
@@ -425,7 +424,6 @@ next_step:
         case STATE_BS_FINISHED:
             contextP->state = STATE_INITIAL;
             goto next_step;
-            break;
 
         case STATE_BS_FAILED:
             return COAP_503_SERVICE_UNAVAILABLE;
@@ -457,7 +455,6 @@ next_step:
             // TODO avoid infinite loop by checking the bootstrap info is different
             contextP->state = STATE_BOOTSTRAP_REQUIRED;
             goto next_step;
-            break;
 
         case STATE_REG_PENDING:
         default:
