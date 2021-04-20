@@ -56,3 +56,5 @@ jobs:
           -Dsonar.projectKey="$(echo ${{ github.repository }} | tr / _)" \
           -Dsonar.sourceEncoding=UTF-8 \
           -Dsonar.sources=.
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
