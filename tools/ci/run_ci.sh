@@ -56,8 +56,8 @@ Options:
   -h, --help                Display this help and exit
 
 Available steps (executed by --all):
-  --clean                  Remove all build artifacts
-  --build                  Build all targets
+  --run-clean              Remove all build artifacts
+  --run-build              Build all targets
   --run-tests              Build and execute tests
 "
 
@@ -135,11 +135,11 @@ fi
 
 if ! PARSED_OPTS=$(getopt -o vah \
                           -l all \
-                          -l build \
                           -l c-extensions: \
                           -l c-standard: \
-                          -l clean \
                           -l help \
+                          -l run-build \
+                          -l run-clean \
                           -l run-tests \
                           -l sanitizer: \
                           -l scan-build: \
@@ -155,14 +155,6 @@ eval set -- "${PARSED_OPTS}"
 
 while true; do
   case "$1" in
-    --clean)
-      RUN_CLEAN=1
-      shift
-      ;;
-    --build)
-      RUN_BUILD=1
-      shift 1
-      ;;
     --c-extensions)
       OPT_C_EXTENSIONS=$2
       shift 2
@@ -170,6 +162,14 @@ while true; do
     --c-standard)
       OPT_C_STANDARD=$2
       shift 2
+      ;;
+    --run-clean)
+      RUN_CLEAN=1
+      shift
+      ;;
+    --run-build)
+      RUN_BUILD=1
+      shift 1
       ;;
     --run-tests)
       RUN_TESTS=1

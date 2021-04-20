@@ -43,4 +43,4 @@ jobs:
           cd ..
           rm -r cmake-${{ env.cmake_version }} cmake-${{ env.cmake_version }}.tar.gz
         run: |
-          tools/ci/run_ci.sh --build --run-tests
+          tools/ci/run_ci.sh --run-build --run-tests
