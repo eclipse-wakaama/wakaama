@@ -26,8 +26,9 @@ jobs:
 
     - name: Collect test coverage data
       run: |
-        tools/ci/run_ci.sh --run-tests \
-          --build \
+        tools/ci/run_ci.sh \
+          --run-build \
+          --run-tests \
           --test-coverage html
 
     - name: Upload HTML coverage report

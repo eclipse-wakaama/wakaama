@@ -35,7 +35,7 @@ jobs:
 
     - name: Build all binaries
       run: |
-        tools/ci/run_ci.sh --build --verbose
+        tools/ci/run_ci.sh --run-build --verbose
       env:
         CC:  ${{ matrix.compiler }}
 

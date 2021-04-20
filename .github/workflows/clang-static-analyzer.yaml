@@ -25,7 +25,7 @@ jobs:
       uses: seanmiddleditch/gha-setup-ninja@master
 
     - name: Run Clang Static Analyzer
-      run: tools/ci/run_ci.sh --build --scan-build scan-build-10
+      run: tools/ci/run_ci.sh --run-build --scan-build scan-build-10
 
     - name: Upload scan build reports
       uses: actions/upload-artifact@v1
