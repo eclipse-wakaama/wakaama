@@ -20,40 +20,40 @@ readonly REPO_ROOT_DIR="${PWD}"
 readonly SCRIPT_NAME="$(basename "$0")"
 
 CMAKE_ARGS="-DCMAKE_BUILD_TYPE=RelWithDebInfo"
-RUN_CLEAN=0
-RUN_BUILD=0
-RUN_TESTS=0
 OPT_C_EXTENSIONS=""
 OPT_C_STANDARD=""
-OPT_VERBOSE=0
 OPT_SANITIZER=""
-OPT_TEST_COVERAGE_REPORT=""
 OPT_SCAN_BUILD=""
 OPT_SONARQUBE=""
+OPT_TEST_COVERAGE_REPORT=""
+OPT_VERBOSE=0
 OPT_WRAPPER_CMD=""
+RUN_BUILD=0
+RUN_CLEAN=0
+RUN_TESTS=0
 
 HELP_MSG="usage: ${SCRIPT_NAME} <OPTIONS>...
 Runs build and test steps in CI.
 Select steps to execute with --run- options
 
 Options:
- -v, --verbose             Verbose output
- -a, --all                 Run all steps required for a MR
- -h, --help                Display this help and exit
- --sanitizer TYPE          Enable sanitizer
-                           (TYPE: address leak thread undefined)
- --scan-build BINARY       Enable Clang code analyzer using specified
-                           executable
-                           (BINARY: e.g. scan-build-10)
- --test-coverage REPORT    Enable code coverage measurement, output REPORT
-                           (REPORT: xml html text none)
- --c-standard VERSION      Explicitly specify C VERSION to be used
-                           (VERSION: 99, 11)
- --c-extensions ENABLE     Whether to allow compiler extensions. Defaults to
-                           ON.
-                           (ENABLE: ON or OFF)
- --sonarqube WRAPPER       Collect data for SonarQube
-                           (WRAPPER: path to build-wrapper)
+  --c-extensions ENABLE     Whether to allow compiler extensions. Defaults to
+                            ON.
+                            (ENABLE: ON or OFF)
+  --c-standard VERSION      Explicitly specify C VERSION to be used
+                            (VERSION: 99, 11)
+  --sanitizer TYPE          Enable sanitizer
+                            (TYPE: address leak thread undefined)
+  --scan-build BINARY       Enable Clang code analyzer using specified
+                            executable
+                            (BINARY: e.g. scan-build-10)
+  --sonarqube WRAPPER       Collect data for SonarQube
+                            (WRAPPER: path to build-wrapper)
+  --test-coverage REPORT    Enable code coverage measurement, output REPORT
+                            (REPORT: xml html text none)
+  -v, --verbose             Verbose output
+  -a, --all                 Run all steps required for a MR
+  -h, --help                Display this help and exit
 
 Available steps (executed by --all):
   --clean                  Remove all build artifacts
@@ -140,10 +140,10 @@ if ! PARSED_OPTS=$(getopt -o vah \
                           -l c-standard: \
                           -l clean \
                           -l help \
+                          -l run-tests \
                           -l sanitizer: \
                           -l scan-build: \
                           -l sonarqube: \
-                          -l run-tests \
                           -l test-coverage: \
                           -l verbose \
                           --name "${SCRIPT_NAME}" -- "$@");
