@@ -33,7 +33,6 @@ jobs:
     - name: Build all binaries
       run: |
         tools/ci/run_ci.sh \
-          --clean \
           --build \
           --c-standard ${{ matrix.c_standard }} \
           --c-extensions ${{ matrix.c_extensions }}
