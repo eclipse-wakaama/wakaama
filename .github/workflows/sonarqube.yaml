@@ -38,7 +38,8 @@ jobs:
     - name: Collect test coverage data
       run: |
         tools/ci/run_ci.sh \
-        --all \
+        --run-build \
+        --run-tests \
         --sonarqube ~/opt/build-wrapper-linux-x86/build-wrapper-linux-x86-64
 
     - name: Run SonarCloud Scan
