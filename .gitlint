@@ -1,0 +1,12 @@
+[general]
+ignore-fixup-commits=false
+
+[title-must-not-contain-word]
+words=wip,fixup
+
+# Enforce at least 20 characters (default value) in every commit body
+[body-min-length]
+
+# Tags do not count towards the body length
+[ignore-body-lines]
+regex=^Signed-off-by
