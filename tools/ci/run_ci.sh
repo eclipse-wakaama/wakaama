@@ -20,6 +20,8 @@ readonly REPO_ROOT_DIR="${PWD}"
 readonly SCRIPT_NAME="$(basename "$0")"
 
 CMAKE_ARGS="-DCMAKE_BUILD_TYPE=RelWithDebInfo"
+OPT_BRANCH_SOURCE=
+OPT_BRANCH_TARGET=master
 OPT_C_EXTENSIONS=""
 OPT_C_STANDARD=""
 OPT_SANITIZER=""
@@ -30,6 +32,7 @@ OPT_VERBOSE=0
 OPT_WRAPPER_CMD=""
 RUN_BUILD=0
 RUN_CLEAN=0
+RUN_GITLINT=0
 RUN_TESTS=0
 
 HELP_MSG="usage: ${SCRIPT_NAME} <OPTIONS>...
@@ -37,6 +40,10 @@ Runs build and test steps in CI.
 Select steps to execute with --run- options
 
 Options:
+  --branch-source BRANCH    Source branch for MRs
+                            (default: current branch)
+  --branch-target BRANCH    Target branch for MRs
+                            (default: $OPT_BRANCH_TARGET)
   --c-extensions ENABLE     Whether to allow compiler extensions. Defaults to
                             ON.
                             (ENABLE: ON or OFF)
@@ -56,6 +63,7 @@ Options:
   -h, --help                Display this help and exit
 
 Available steps (executed by --all):
+  --run-gitlint            Check git commits with gitlint
   --run-clean              Remove all build artifacts
   --run-build              Build all targets
   --run-tests              Build and execute tests
@@ -70,6 +78,12 @@ function usage() {
 
 function run_clean() {
   rm -rf build-wakaama
+}
+
+function run_gitlint() {
+  commits="${OPT_BRANCH_TARGET}...${OPT_BRANCH_SOURCE}"
+
+  gitlint --commits "${commits}"
 }
 
 function run_build() {
@@ -135,11 +149,14 @@ fi
 
 if ! PARSED_OPTS=$(getopt -o vah \
                           -l all \
+                          -l branch-source: \
+                          -l branch-target: \
                           -l c-extensions: \
                           -l c-standard: \
                           -l help \
                           -l run-build \
                           -l run-clean \
+                          -l run-gitlint \
                           -l run-tests \
                           -l sanitizer: \
                           -l scan-build: \
@@ -155,6 +172,14 @@ eval set -- "${PARSED_OPTS}"
 
 while true; do
   case "$1" in
+    --branch-source)
+      OPT_BRANCH_SOURCE=$2
+      shift 2
+      ;;
+    --branch-target)
+      OPT_BRANCH_TARGET=$2
+      shift 2
+      ;;
     --c-extensions)
       OPT_C_EXTENSIONS=$2
       shift 2
@@ -170,6 +195,10 @@ while true; do
     --run-build)
       RUN_BUILD=1
       shift 1
+      ;;
+    --run-gitlint)
+      RUN_GITLINT=1
+      shift
       ;;
     --run-tests)
       RUN_TESTS=1
@@ -205,6 +234,7 @@ while true; do
       ;;
     -a|--all)
       RUN_CLEAN=1
+      RUN_GITLINT=1
       RUN_BUILD=1
       RUN_TESTS=1
       shift
@@ -261,6 +291,10 @@ if [ -n "${OPT_SCAN_BUILD}" ]; then
 fi
 
 # Run Steps
+
+if [[ $RUN_GITLINT == 1 ]]; then
+  run_gitlint
+fi
 
 if [ "${RUN_CLEAN}" -eq 1 ]; then
   run_clean

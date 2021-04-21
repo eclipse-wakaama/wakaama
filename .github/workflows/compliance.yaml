@@ -1,0 +1,23 @@
+name: Compliance
+
+on: pull_request
+
+jobs:
+  check-gitlint:
+    name: Run gitlint
+    runs-on: ubuntu-20.04
+
+    steps:
+    - name: Checkout code including full history
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+
+    - name: Install gitlint
+      run: |
+        pip3 install gitlint
+
+    - name: Check commits with checkpatch
+      run: |
+        git branch -a
+        tools/ci/run_ci.sh --branch-target origin/${{ github.base_ref }} --run-gitlint
