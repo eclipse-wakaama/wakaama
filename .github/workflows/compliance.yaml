@@ -19,5 +19,4 @@ jobs:
 
     - name: Check commits with checkpatch
       run: |
-        git branch -a
         tools/ci/run_ci.sh --branch-target origin/${{ github.base_ref }} --run-gitlint
