@@ -292,7 +292,7 @@ fi
 
 # Run Steps
 
-if [[ $RUN_GITLINT == 1 ]]; then
+if [ "${RUN_GITLINT}" -eq 1 ]; then
   run_gitlint
 fi
 
