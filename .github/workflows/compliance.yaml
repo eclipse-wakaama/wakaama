@@ -17,6 +17,6 @@ jobs:
       run: |
         pip3 install gitlint
 
-    - name: Check commits with checkpatch
+    - name: Check commits with gitlint
       run: |
         tools/ci/run_ci.sh --branch-target origin/${{ github.base_ref }} --run-gitlint
