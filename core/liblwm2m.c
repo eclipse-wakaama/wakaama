@@ -17,7 +17,7 @@
  *    Toby Jaffey - Please refer to git log
  *    Pascal Rieux - Please refer to git log
  *    Tuve Nordius, Husqvarna Group - Please refer to git log
- *    
+ *
  *******************************************************************************/
 
 /*

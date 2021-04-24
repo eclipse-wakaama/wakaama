@@ -18,7 +18,7 @@
  *    Pascal Rieux - Please refer to git log
  *    Gregory Lemercier - Please refer to git log
  *    Scott Bertin, AMETEK, Inc. - Please refer to git log
- *    
+ *
  *******************************************************************************/
 
 /*

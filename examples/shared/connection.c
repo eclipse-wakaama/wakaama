@@ -13,7 +13,7 @@
  * Contributors:
  *    David Navarro, Intel Corporation - initial API and implementation
  *    Pascal Rieux - Please refer to git log
- *    
+ *
  *******************************************************************************/
 
 #include <stdlib.h>
