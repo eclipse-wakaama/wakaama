@@ -20,7 +20,7 @@
  *    Ville Skyttä - Please refer to git log
  *    Scott Bertin, AMETEK, Inc. - Please refer to git log
  *    Tuve Nordius, Husqvarna Group - Please refer to git log
- *    
+ *
  *******************************************************************************/
 
 /*

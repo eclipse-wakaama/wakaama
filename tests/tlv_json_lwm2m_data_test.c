@@ -13,7 +13,7 @@
  * Contributors:
  *    David Navarro, Intel Corporation - initial API and implementation
  *    David Gräff - Convert to test case
- *    
+ *
  *******************************************************************************/
 
 #include "liblwm2m.h"

@@ -1,6 +1,6 @@
 /*******************************************************************************
  *
- * Copyright (c) 2014 Bosch Software Innovations GmbH Germany. 
+ * Copyright (c) 2014 Bosch Software Innovations GmbH Germany.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v2.0
  * and Eclipse Distribution License v1.0 which accompany this distribution.
@@ -14,7 +14,7 @@
  *    Bosch Software Innovations GmbH - Please refer to git log
  *    Pascal Rieux - Please refer to git log
  *    Scott Bertin, AMETEK, Inc. - Please refer to git log
- *    
+ *
  *******************************************************************************/
 
 /*

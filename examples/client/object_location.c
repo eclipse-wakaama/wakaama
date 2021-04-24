@@ -1,5 +1,5 @@
 /*******************************************************************************
- * 
+ *
  * Copyright (c) 2014 Bosch Software Innovations GmbH, Germany.
  *
  * All rights reserved. This program and the accompanying materials
@@ -15,7 +15,7 @@
  *    Bosch Software Innovations GmbH - Please refer to git log
  *    Pascal Rieux - Please refer to git log
  *    Scott Bertin, AMETEK, Inc. - Please refer to git log
- *    
+ *
  ******************************************************************************/
 /*! \file
   LWM2M object "Location" implementation
