@@ -92,6 +92,8 @@ To check if your code matches the expected style, the following commands are hel
 If existing code gets reformatted, this must be done in a separate commit. Its commit id has to be added to the file
 `.git-blame-ignore-revs` and committed in yet another commit.
 
+### Running CI tests locally
+To avoid unneeded load on the GitHub infrastructure, please consider running `tools/ci/run_ci.sh --all` before pushing.
 
 ## Examples
 
