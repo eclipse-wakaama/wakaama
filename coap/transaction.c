@@ -487,12 +487,12 @@ void transaction_set_payload(lwm2m_transaction_t * transaction, uint8_t * buffer
 {
     transaction->payload = buffer;
     transaction->payload_len = length;
-
-    if ( length > REST_MAX_CHUNK_SIZE ){
-        coap_set_header_block1(transaction->message, 0, true, REST_MAX_CHUNK_SIZE);
+    const uint16_t lwm2m_coap_block_size = lwm2m_get_coap_block_size();
+    if (length > lwm2m_coap_block_size) {
+        coap_set_header_block1(transaction->message, 0, true, lwm2m_coap_block_size);
     }
 
-    coap_set_payload(transaction->message, buffer, MIN(length, REST_MAX_CHUNK_SIZE));
+    coap_set_payload(transaction->message, buffer, MIN(length, lwm2m_coap_block_size));
 }
 
 bool transaction_free_userData(lwm2m_context_t * context, lwm2m_transaction_t * transaction)

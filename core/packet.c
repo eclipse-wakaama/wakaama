@@ -93,6 +93,37 @@ Contains code snippets which are:
 
 #include <stdio.h>
 
+#if __STDC_VERSION__ >= 201112L
+#include <assert.h>
+static_assert(LWM2M_COAP_DEFAULT_BLOCK_SIZE == 16 || LWM2M_COAP_DEFAULT_BLOCK_SIZE == 32 ||
+                  LWM2M_COAP_DEFAULT_BLOCK_SIZE == 64 || LWM2M_COAP_DEFAULT_BLOCK_SIZE == 128 ||
+                  LWM2M_COAP_DEFAULT_BLOCK_SIZE == 256 || LWM2M_COAP_DEFAULT_BLOCK_SIZE == 512 ||
+                  LWM2M_COAP_DEFAULT_BLOCK_SIZE == 1024,
+              "Block transfer options support only power-of-two block sizes, from 2**4 (16) to 2**10 (1024) bytes.");
+#endif
+
+uint16_t coap_block_size = LWM2M_COAP_DEFAULT_BLOCK_SIZE;
+
+static bool validate_block_size(const uint16_t coap_block_size_arg) {
+    const uint16_t valid_block_sizes[7] = {16, 32, 64, 128, 256, 512, 1024};
+    int i;
+    for (i = 0; i < 7; i++) {
+        if (coap_block_size_arg == valid_block_sizes[i]) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool lwm2m_set_coap_block_size(const uint16_t coap_block_size_arg) {
+    if (validate_block_size(coap_block_size_arg)) {
+        coap_block_size = coap_block_size_arg;
+        return true;
+    }
+    return false;
+}
+
+uint16_t lwm2m_get_coap_block_size() { return coap_block_size; }
 
 static void handle_reset(lwm2m_context_t * contextP,
                          void * fromSessionH,
@@ -349,8 +380,8 @@ static int prv_change_to_block1(lwm2m_context_t * contextP, void * sessionH, uin
         block_size = 16 << n;
     }
 
-    block_size = MIN(block_size, REST_MAX_CHUNK_SIZE);
-    
+    block_size = MIN(block_size, lwm2m_get_coap_block_size());
+
     return prv_send_new_block1(contextP, transaction, 0, block_size);
 }
 
@@ -407,7 +438,7 @@ static int prv_send_get_block2(lwm2m_context_t * contextP,
     if (next == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
 
     // set block2 header
-    coap_set_header_block2(next->message, block2_num, 0, MIN(block2_size, REST_MAX_CHUNK_SIZE));
+    coap_set_header_block2(next->message, block2_num, 0, MIN(block2_size, lwm2m_get_coap_block_size()));
 
     //  update block2data to nect expected mid
     coap_block2_set_expected_mid(blockDataHead, currentMID, nextMID);
@@ -451,7 +482,7 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
         if (message->code >= COAP_GET && message->code <= COAP_DELETE)
         {
             uint32_t block_num = 0;
-            uint16_t block_size =   REST_MAX_CHUNK_SIZE;
+            uint16_t block_size = lwm2m_get_coap_block_size();
             uint32_t block_offset = 0;
 
             /* prepare response */
@@ -472,17 +503,16 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
                 coap_set_header_token(response, message->token, message->token_len);
             }
 
-            if (message->payload_len > REST_MAX_CHUNK_SIZE)
-            {
+            if (message->payload_len > lwm2m_get_coap_block_size()) {
                 coap_error_code = COAP_413_ENTITY_TOO_LARGE;
 
                 if (IS_OPTION(message, COAP_OPTION_BLOCK1)){
                     uint32_t block1_num;
                     uint8_t  block1_more;
                     coap_get_header_block1(message, &block1_num, &block1_more, NULL, NULL);
-                    coap_set_header_block1(response, block1_num, block1_more, REST_MAX_CHUNK_SIZE);
+                    coap_set_header_block1(response, block1_num, block1_more, lwm2m_get_coap_block_size());
                 } else {
-                    coap_set_header_block1(response, 0, 1, REST_MAX_CHUNK_SIZE);
+                    coap_set_header_block1(response, 0, 1, lwm2m_get_coap_block_size());
                 }
             }
             else if (IS_OPTION(message, COAP_OPTION_BLOCK1))
@@ -531,7 +561,8 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
 
                     // parse block1 header
                     coap_get_header_block1(message, &block1_num, &block1_more, &block1_size, NULL);
-                    LOG_ARG("Blockwise: block1 request NUM %u (SZX %u/ SZX Max%u) MORE %u", block1_num, block1_size, REST_MAX_CHUNK_SIZE, block1_more);
+                    LOG_ARG("Blockwise: block1 request NUM %u (SZX %u/ SZX Max%u) MORE %u", block1_num, block1_size,
+                            lwm2m_get_coap_block_size(), block1_more);
 
                     char * uri = coap_get_packet_uri_as_string(message);
                     if (uri == NULL){
@@ -553,7 +584,7 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
                         message->payload_len = complete_buffer_size;
                     }
 #endif
-                    block1_size = MIN(block1_size, REST_MAX_CHUNK_SIZE);
+                    block1_size = MIN(block1_size, lwm2m_get_coap_block_size());
                     coap_set_header_block1(response, block1_num, block1_more, block1_size);
                 }
             }
@@ -574,8 +605,9 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
                     /* get offset for blockwise transfers */
                     if (coap_get_header_block2(message, &block_num, NULL, &block_size, &block_offset))
                     {
-                        LOG_ARG("Blockwise: block request %u (%u/%u) @ %u bytes", block_num, block_size, REST_MAX_CHUNK_SIZE, block_offset);
-                        block_size = MIN(block_size, REST_MAX_CHUNK_SIZE);
+                        LOG_ARG("Blockwise: block request %u (%u/%u) @ %u bytes", block_num, block_size,
+                                lwm2m_get_coap_block_size(), block_offset);
+                        block_size = MIN(block_size, lwm2m_get_coap_block_size());
                     }
 
                     if (block_offset >= response->payload_len)
@@ -590,10 +622,10 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
                         coap_set_header_block2(response, block_num, response->payload_len - block_offset > block_size, block_size);
                         coap_set_payload(response, response->payload+block_offset, MIN(response->payload_len - block_offset, block_size));
                     } /* if (valid offset) */
-                }
-                else if (response->payload_len > REST_MAX_CHUNK_SIZE){
-                    coap_set_header_block2(response, 0, response->payload_len > REST_MAX_CHUNK_SIZE, REST_MAX_CHUNK_SIZE);
-                    coap_set_payload(response, response->payload, REST_MAX_CHUNK_SIZE);
+                } else if (response->payload_len > lwm2m_get_coap_block_size()) {
+                    coap_set_header_block2(response, 0, response->payload_len > lwm2m_get_coap_block_size(),
+                                           lwm2m_get_coap_block_size());
+                    coap_set_payload(response, response->payload, lwm2m_get_coap_block_size());
                 }
 
                 coap_error_code = message_send(contextP, response, fromSessionH);
@@ -631,8 +663,7 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
             {
             case COAP_TYPE_NON:
             case COAP_TYPE_CON:
-                if (message->payload_len > REST_MAX_CHUNK_SIZE)
-                {
+                if (message->payload_len > lwm2m_get_coap_block_size()) {
 #ifdef LWM2M_CLIENT_MODE
                     // get server
                     lwm2m_server_t * peerP;
@@ -650,7 +681,8 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
                     if (peerP != NULL)
                     {
                         // retry as a block2 request
-                        prv_send_get_block2(contextP, fromSessionH, peerP->blockData, message->mid, 0, REST_MAX_CHUNK_SIZE);
+                        prv_send_get_block2(contextP, fromSessionH, peerP->blockData, message->mid, 0,
+                                            lwm2m_get_coap_block_size());
                     }
                     transaction_handleResponse(contextP, fromSessionH, message, NULL);
                 } else {
@@ -667,8 +699,7 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
                     if (!done && message->type == COAP_TYPE_CON )
                     {
                         coap_init_message(response, COAP_TYPE_ACK, 0, message->mid);
-                        if (message->payload_len > REST_MAX_CHUNK_SIZE) 
-                        {
+                        if (message->payload_len > lwm2m_get_coap_block_size()) {
                             coap_set_status_code(response, COAP_413_ENTITY_TOO_LARGE);
                         }
                         coap_error_code = message_send(contextP, response, fromSessionH);
@@ -683,8 +714,7 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
                 break;
 
             case COAP_TYPE_ACK:
-                if (message->payload_len > REST_MAX_CHUNK_SIZE)
-                {
+                if (message->payload_len > lwm2m_get_coap_block_size()) {
 #ifdef LWM2M_CLIENT_MODE
                     // get server
                     lwm2m_server_t * peerP;
@@ -702,7 +732,8 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
                     if (peerP != NULL)
                     {
                         // retry as a block2 request
-                        prv_send_get_block2(contextP, fromSessionH, peerP->blockData, message->mid, 0, REST_MAX_CHUNK_SIZE);
+                        prv_send_get_block2(contextP, fromSessionH, peerP->blockData, message->mid, 0,
+                                            lwm2m_get_coap_block_size());
                     }
                     transaction_handleResponse(contextP, fromSessionH, message, NULL);
                 }
@@ -760,7 +791,8 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
 
                         // parse block2 header
                         coap_get_header_block2(message, &block2_num, &block2_more, &block2_size, NULL);
-                        LOG_ARG("Blockwise: block2 response NUM %u (SZX %u/ SZX Max%u) MORE %u", block2_num, block2_size, REST_MAX_CHUNK_SIZE, block2_more);
+                        LOG_ARG("Blockwise: block2 response NUM %u (SZX %u/ SZX Max%u) MORE %u", block2_num,
+                                block2_size, lwm2m_get_coap_block_size(), block2_more);
 
                         // handle block 2
                         coap_error_code = coap_block2_handler(&peerP->blockData, message->mid, message->payload, message->payload_len, block2_size, block2_num, block2_more, &complete_buffer, &complete_buffer_size);

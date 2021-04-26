@@ -46,14 +46,6 @@
 #include <stdint.h>
 #include <stddef.h> /* for size_t */
 
-/*
- * The maximum buffer size that is provided for resource responses and must be respected due to the limited IP buffer.
- * Larger data must be handled by the resource and will be sent chunk-wise through a TCP stream or CoAP blocks.
- */
-#ifndef REST_MAX_CHUNK_SIZE
-#define REST_MAX_CHUNK_SIZE     128
-#endif
-
 #define COAP_DEFAULT_MAX_AGE                 60
 #define COAP_RESPONSE_TIMEOUT                2
 #define COAP_MAX_RETRANSMIT                  4
@@ -81,21 +73,6 @@
 
 #define COAP_HEADER_OPTION_DELTA_MASK        0xF0
 #define COAP_HEADER_OPTION_SHORT_LENGTH_MASK 0x0F
-
-/*
- * Conservative size limit, as not all options have to be set at the same time.
- */
-#ifndef COAP_MAX_HEADER_SIZE
-/*                            Hdr CoT Age  Tag              Obs  Tok               Blo strings */
-#define COAP_MAX_HEADER_SIZE  (4 + 3 + 5 + 1+COAP_ETAG_LEN + 3 + 1+COAP_TOKEN_LEN + 4 + 30) /* 70 */
-#endif /* COAP_MAX_HEADER_SIZE */
-
-#define COAP_MAX_PACKET_SIZE  (COAP_MAX_HEADER_SIZE + REST_MAX_CHUNK_SIZE)
-/*                                        0/14          48 for IPv6 (28 for IPv4) */
-#if COAP_MAX_PACKET_SIZE > (UIP_BUFSIZE - UIP_LLH_LEN - UIP_IPUDPH_LEN)
-//#error "UIP_CONF_BUFFER_SIZE too small for REST_MAX_CHUNK_SIZE"
-#endif
-
 
 /* Bitmap for set options */
 enum { OPTION_MAP_SIZE = sizeof(uint8_t) * 8 };

@@ -278,6 +278,12 @@ void lwm2m_list_free(lwm2m_list_t * head);
 #define LWM2M_LIST_FREE(H) lwm2m_list_free((lwm2m_list_t *)H)
 
 /*
+ * Helper functions for CoAP block size settings.
+ */
+bool lwm2m_set_coap_block_size(uint16_t coap_block_size_arg);
+uint16_t lwm2m_get_coap_block_size(void);
+
+/*
  * URI
  *
  * objectId is always set

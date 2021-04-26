@@ -4,6 +4,7 @@ Options:
   -f FILE       Specify BootStrap Information file. Default: ./bootstrap_info.ini
   -l PORT       Set the local UDP port of the Bootstrap Server. Default: 5685
   -4            Use IPv4 connection. Default: IPv6 connection
+  -S BYTES      CoAP block size. Options: 16, 32, 64, 128, 256, 512, 1024. Default: 1024
 
 When it receives a Bootstrap Request from a LWM2M Client, it sends commands as
 described in the Bootstrap Information file.
