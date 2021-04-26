@@ -79,6 +79,7 @@
 #include <sys/stat.h>
 #include <errno.h>
 #include <signal.h>
+#include <inttypes.h>
 
 #define MAX_PACKET_SIZE 2048
 #define DEFAULT_SERVER_IPV6 "[::1]"
@@ -853,6 +854,8 @@ void print_usage(void)
     fprintf(stdout, "  -t TIME\tSet the lifetime of the Client. Default: 300\r\n");
     fprintf(stdout, "  -b\t\tBootstrap requested.\r\n");
     fprintf(stdout, "  -c\t\tChange battery level over time.\r\n");
+    fprintf(stdout, "  -S BYTES\tCoAP block size. Options: 16, 32, 64, 128, 256, 512, 1024. Default: %" PRIu16 "\r\n",
+            LWM2M_COAP_DEFAULT_BLOCK_SIZE);
 #ifdef WITH_TINYDTLS
     fprintf(stdout, "  -i STRING\tSet the device management or bootstrap server PSK identity. If not set use none secure mode\r\n");
     fprintf(stdout, "  -s HEXSTRING\tSet the device management or bootstrap server Pre-Shared-Key. If not set use none secure mode\r\n");
@@ -1014,6 +1017,20 @@ int main(int argc, char *argv[])
         case '4':
             data.addressFamily = AF_INET;
             break;
+        case 'S':
+            opt++;
+            if (opt >= argc) {
+                print_usage();
+                return 0;
+            }
+            uint16_t coap_block_size_arg;
+            if (1 == sscanf(argv[opt], "%" SCNu16, &coap_block_size_arg) &&
+                lwm2m_set_coap_block_size(coap_block_size_arg)) {
+                break;
+            } else {
+                print_usage();
+                return 0;
+            }
         default:
             print_usage();
             return 0;

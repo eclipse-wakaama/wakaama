@@ -7,6 +7,12 @@
 set(WAKAAMA_SOURCES_DIR ${CMAKE_CURRENT_LIST_DIR})
 set(WAKAAMA_HEADERS_DIR ${CMAKE_CURRENT_LIST_DIR}/../include)
 
+# The maximum buffer size that is provided for resource responses and must be respected due to the limited IP buffer.
+# Larger data must be handled by the resource and will be sent chunk-wise through a TCP stream or CoAP blocks.
+# Block size is set to 1024 bytes if not specified otherwise to avoid block transfers in common use cases.
+set(LWM2M_COAP_DEFAULT_BLOCK_SIZE 1024 CACHE STRING "Set default coap block size")
+add_compile_definitions(LWM2M_COAP_DEFAULT_BLOCK_SIZE=${LWM2M_COAP_DEFAULT_BLOCK_SIZE})
+
 set(WAKAAMA_SOURCES
     ${WAKAAMA_SOURCES_DIR}/liblwm2m.c
     ${WAKAAMA_SOURCES_DIR}/uri.c

@@ -1034,6 +1034,8 @@ void print_usage(void)
     fprintf(stdout, "Options:\r\n");
     fprintf(stdout, "  -4\t\tUse IPv4 connection. Default: IPv6 connection\r\n");
     fprintf(stdout, "  -l PORT\tSet the local UDP port of the Server. Default: "LWM2M_STANDARD_PORT_STR"\r\n");
+    fprintf(stdout, "  -S BYTES\tCoAP block size. Options: 16, 32, 64, 128, 256, 512, 1024. Default: %" PRIu16 "\r\n",
+            LWM2M_COAP_DEFAULT_BLOCK_SIZE);
     fprintf(stdout, "\r\n");
 }
 
@@ -1138,6 +1140,20 @@ int main(int argc, char *argv[])
             }
             localPort = argv[opt];
             break;
+        case 'S':
+            opt++;
+            if (opt >= argc) {
+                print_usage();
+                return 0;
+            }
+            uint16_t coap_block_size_arg;
+            if (1 == sscanf(argv[opt], "%" SCNu16, &coap_block_size_arg) &&
+                lwm2m_set_coap_block_size(coap_block_size_arg)) {
+                break;
+            } else {
+                print_usage();
+                return 0;
+            }
         default:
             print_usage();
             return 0;

@@ -72,6 +72,7 @@
 #include <sys/stat.h>
 #include <errno.h>
 #include <signal.h>
+#include <inttypes.h>
 
 extern lwm2m_object_t * get_object_device(void);
 extern void free_object_device(lwm2m_object_t * objectP);
@@ -200,6 +201,8 @@ void print_usage(void)
     fprintf(stdout, "  -n NAME\tSet the endpoint name of the Client. Default: testlightclient\r\n");
     fprintf(stdout, "  -l PORT\tSet the local UDP port of the Client. Default: 56830\r\n");
     fprintf(stdout, "  -4\t\tUse IPv4 connection. Default: IPv6 connection\r\n");
+    fprintf(stdout, "  -S BYTES\tCoAP block size. Options: 16, 32, 64, 128, 256, 512, 1024. Default: %" PRIu16 "\r\n",
+            LWM2M_COAP_DEFAULT_BLOCK_SIZE);
     fprintf(stdout, "\r\n");
 }
 
@@ -368,6 +371,20 @@ int main(int argc, char *argv[])
         case '4':
             data.addressFamily = AF_INET;
             break;
+        case 'S':
+            opt++;
+            if (opt >= argc) {
+                print_usage();
+                return 0;
+            }
+            uint16_t coap_block_size_arg;
+            if (1 == sscanf(argv[opt], "%" SCNu16, &coap_block_size_arg) &&
+                lwm2m_set_coap_block_size(coap_block_size_arg)) {
+                break;
+            } else {
+                print_usage();
+                return 0;
+            }
         default:
             print_usage();
             return 0;

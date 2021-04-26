@@ -89,6 +89,8 @@ void print_usage(char * filename,
     fprintf(stdout, "  -f FILE\tSpecify BootStrap Information file. Default: ./%s\r\n", filename);
     fprintf(stdout, "  -l PORT\tSet the local UDP port of the Bootstrap Server. Default: %s\r\n", port);
     fprintf(stdout, "  -4\t\tUse IPv4 connection. Default: IPv6 connection\r\n");
+    fprintf(stdout, "  -S BYTES\tCoAP block size. Options: 16, 32, 64, 128, 256, 512, 1024. Default: %" PRIu16 "\r\n",
+            LWM2M_COAP_DEFAULT_BLOCK_SIZE);
     fprintf(stdout, "\r\n");
 }
 
@@ -617,6 +619,20 @@ int main(int argc, char *argv[])
         case '4':
             data.addressFamily = AF_INET;
             break;
+        case 'S':
+            opt++;
+            if (opt >= argc) {
+                print_usage(filename, port);
+                return 0;
+            }
+            uint16_t coap_block_size_arg;
+            if (1 == sscanf(argv[opt], "%" SCNu16, &coap_block_size_arg) &&
+                lwm2m_set_coap_block_size(coap_block_size_arg)) {
+                break;
+            } else {
+                print_usage(filename, port);
+                return 0;
+            }
         default:
             print_usage(filename, port);
             return 0;

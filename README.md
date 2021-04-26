@@ -57,6 +57,7 @@ Several compilation switches are used:
    -DLWM2M_VERSION="1.0" to cmake.
  - LWM2M_RAW_BLOCK1_REQUESTS For low memory client devices where it is not possible to keep a large post or put request in memory to be parsed (typically a firmware write).
    This option enable each unprocessed block 1 payload to be passed to the application, typically to be stored to a flash memory. 
+ - LWM2M_COAP_DEFAULT_BLOCK_SIZE CoAP block size used by CoAP layer when performing block-wise transfers. Possible values: 16, 32, 64, 128, 256, 512 and 1024. Defaults to 1024.
 
 Depending on your platform, you need to define LWM2M_BIG_ENDIAN or LWM2M_LITTLE_ENDIAN.
 LWM2M_CLIENT_MODE and LWM2M_SERVER_MODE can be defined at the same time.
@@ -110,7 +111,15 @@ The lwm2mserver listens on UDP port 5683. It features a basic command line
 interface. Type 'help' for a list of supported commands.
 
 Options are:
- - -4		Use IPv4 connection. Default: IPv6 connection
+```
+Usage: lwm2mserver [OPTION]
+Launch a LWM2M server on localhost.
+
+Options:
+  -4		Use IPv4 connection. Default: IPv6 connection
+  -l PORT	Set the local UDP port of the Server. Default: 5683
+  -S BYTES	CoAP block size. Options: 16, 32, 64, 128, 256, 512, 1024. Default: 1024
+```
 
 ### Test client example
  * Create a build directory and change to that.
@@ -159,18 +168,27 @@ The lwm2mclient opens udp port 56830 and tries to register to a LWM2M Server at
 list of supported commands.
 
 Options are:
-- -n NAME	Set the endpoint name of the Client. Default: testlwm2mclient
-- -l PORT	Set the local UDP port of the Client. Default: 56830
-- -h HOST	Set the hostname of the LWM2M Server to connect to. Default: localhost
-- -p HOST	Set the port of the LWM2M Server to connect to. Default: 5683
-- -4		Use IPv4 connection. Default: IPv6 connection
-- -t TIME	Set the lifetime of the Client. Default: 300
-- -b		Bootstrap requested.
-- -c		Change battery level over time.
-  
+```
+Usage: lwm2mclient [OPTION]
+Launch a LWM2M client.
+Options:
+  -n NAME	Set the endpoint name of the Client. Default: testlwm2mclient
+  -l PORT	Set the local UDP port of the Client. Default: 56830
+  -h HOST	Set the hostname of the LWM2M Server to connect to. Default: localhost
+  -p PORT	Set the port of the LWM2M Server to connect to. Default: 5683
+  -4		Use IPv4 connection. Default: IPv6 connection
+  -t TIME	Set the lifetime of the Client. Default: 300
+  -b		Bootstrap requested.
+  -c		Change battery level over time.
+  -S BYTES	CoAP block size. Options: 16, 32, 64, 128, 256, 512, 1024. Default: 1024
+
+```
+
 If DTLS feature enable:
-- -i Set the device management or bootstrap server PSK identity. If not set use none secure mode
-- -s Set the device management or bootstrap server Pre-Shared-Key. If not set use none secure mode
+```
+  -i Set the device management or bootstrap server PSK identity. If not set use none secure mode
+  -s Set the device management or bootstrap server Pre-Shared-Key. If not set use none secure mode
+```
 
 To launch a bootstrap session:
 ``./lwm2mclient -b``
@@ -194,10 +212,15 @@ LWM2M objects:
 The lightclient does not feature any command-line interface.
 
 Options are:
- -  -n NAME	Set the endpoint name of the Client. Default: testlightclient
- - -l PORT	Set the local UDP port of the Client. Default: 56830
- - -4		Use IPv4 connection. Default: IPv6 connection
-
+```
+Usage: lwm2mclient [OPTION]
+Launch a LWM2M client.
+Options:
+  -n NAME	Set the endpoint name of the Client. Default: testlightclient
+  -l PORT	Set the local UDP port of the Client. Default: 56830
+  -4		Use IPv4 connection. Default: IPv6 connection
+  -S BYTES	CoAP block size. Options: 16, 32, 64, 128, 256, 512, 1024. Default: 1024
+```
 ### Bootstrap Server example
  * Create a build directory and change to that.
  * ``cmake [wakaama directory]/examples/bootstrap_server``
