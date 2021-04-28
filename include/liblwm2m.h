@@ -780,13 +780,14 @@ struct _lwm2m_context_
     lwm2m_object_t *     objectList;
     lwm2m_observed_t *   observedList;
 #endif
-#ifdef LWM2M_SERVER_MODE
+#if defined(LWM2M_SERVER_MODE) || defined(LWM2M_BOOTSTRAP_SERVER_MODE)
     lwm2m_client_t *        clientList;
+#endif
+#ifdef LWM2M_SERVER_MODE
     lwm2m_result_callback_t monitorCallback;
     void *                  monitorUserData;
 #endif
 #ifdef LWM2M_BOOTSTRAP_SERVER_MODE
-    lwm2m_client_t *        clientList;
     lwm2m_bootstrap_callback_t bootstrapCallback;
     void *                     bootstrapUserData;
 #endif
