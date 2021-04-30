@@ -514,9 +514,7 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
                 } else {
                     coap_set_header_block1(response, 0, 1, lwm2m_get_coap_block_size());
                 }
-            }
-            else if (IS_OPTION(message, COAP_OPTION_BLOCK1))
-            {
+            } else if (IS_OPTION(message, COAP_OPTION_BLOCK1)) {
 #ifdef LWM2M_CLIENT_MODE
                 // get server
                 lwm2m_server_t * peerP;
@@ -736,9 +734,7 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
                                             lwm2m_get_coap_block_size());
                     }
                     transaction_handleResponse(contextP, fromSessionH, message, NULL);
-                }
-                else if (IS_OPTION(message, COAP_OPTION_BLOCK1))
-                {
+                } else if (IS_OPTION(message, COAP_OPTION_BLOCK1)) {
                     uint32_t block_num;
                     uint16_t block_size;
 
@@ -759,9 +755,7 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
                     }
                     
                     transaction_handleResponse(contextP, fromSessionH, message, NULL);
-                }
-                else if (IS_OPTION(message, COAP_OPTION_BLOCK2))
-                {
+                } else if (IS_OPTION(message, COAP_OPTION_BLOCK2)) {
 #ifdef LWM2M_CLIENT_MODE
                     // get server
                     lwm2m_server_t * peerP;
@@ -812,18 +806,14 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
                             coap_error_code = NO_ERROR;
                         }
                     }
-                }
-                else if (message->code == COAP_413_ENTITY_TOO_LARGE)
-                {
+                } else if (message->code == COAP_413_ENTITY_TOO_LARGE) {
                     /*
                     All our responses are piggyback so this must be the result of request being too large (not a separate CON)
                     switch to a block1 request.
                     */
                     prv_change_to_block1(contextP, fromSessionH, message->mid, message->size);
                     transaction_handleResponse(contextP, fromSessionH, message, NULL);
-                }
-                else
-                {
+                } else {
                     transaction_handleResponse(contextP, fromSessionH, message, NULL);
                 }
                 break;
