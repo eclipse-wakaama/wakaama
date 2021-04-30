@@ -58,21 +58,21 @@
 #include "liblwm2m.h"
 #include "connection.h"
 
-#include <string.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <stdio.h>
-#include <ctype.h>
-#include <sys/select.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
 #include <arpa/inet.h>
-#include <netdb.h>
-#include <sys/stat.h>
+#include <ctype.h>
 #include <errno.h>
-#include <signal.h>
 #include <inttypes.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/select.h>
+#include <sys/socket.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 extern lwm2m_object_t * get_object_device(void);
 extern void free_object_device(lwm2m_object_t * objectP);
