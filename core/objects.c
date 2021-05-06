@@ -798,7 +798,11 @@ int object_getRegisterPayloadBufferLength(lwm2m_context_t * contextP)
         index += strlen(REG_DEFAULT_PATH);
     }
 
-    index += strlen(REG_LWM2M_RESOURCE_TYPE);
+    if (contextP->defaultregformat != NULL) {
+        index += strlen(">;rt=\"oma.lwm2m\",") + 4 + strlen(contextP->defaultregformat);
+    } else {
+        index += strlen(REG_LWM2M_RESOURCE_TYPE);
+    }
 
     for (objectP = contextP->objectList; objectP != NULL; objectP = objectP->next)
     {
@@ -903,9 +907,27 @@ int object_getRegisterPayload(lwm2m_context_t * contextP,
     if (result < 0) return 0;
     index += result;
 
-    result = utils_stringCopy((char *)buffer + index, bufferLen - index, REG_LWM2M_RESOURCE_TYPE);
-    if (result < 0) return 0;
-    index += result;
+    if (contextP->defaultregformat != NULL) {
+        result = utils_stringCopy((char *)buffer + index, bufferLen - index, ">;rt=\"oma.lwm2m\";ct=");
+        if (result < 0)
+            return 0;
+        index += result;
+
+        result = utils_stringCopy((char *)buffer + index, bufferLen - index, contextP->defaultregformat);
+        if (result < 0)
+            return 0;
+        index += result;
+
+        result = utils_stringCopy((char *)buffer + index, bufferLen - index, ",");
+        if (result < 0)
+            return 0;
+        index += result;
+    } else {
+        result = utils_stringCopy((char *)buffer + index, bufferLen - index, REG_LWM2M_RESOURCE_TYPE);
+        if (result < 0)
+            return 0;
+        index += result;
+    }
 
     for (objectP = contextP->objectList; objectP != NULL; objectP = objectP->next)
     {

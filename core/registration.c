@@ -1330,7 +1330,6 @@ static uint16_t prv_splitLinkAttribute(uint8_t * data,
 
     index--;
     while (index > *valueStart && data[index] == ' ') index--;
-    if (index == *valueStart) return 0;
 
     *valueLength = index - *valueStart + 1;
 
@@ -1423,9 +1422,11 @@ static int prv_parseLinkAttributes(uint8_t * data,
              && 0 == lwm2m_strncmp(REG_ATTR_CONTENT_SENML_JSON, (char*)data + index + valueStart, valueLength))
             {
                 *format = LWM2M_CONTENT_SENML_JSON;
-            }
-            else
-            {
+            } else if (valueLength == REG_ATTR_CONTENT_TEXT_PLAIN_LEN &&
+                       0 ==
+                           lwm2m_strncmp(REG_ATTR_CONTENT_TEXT_PLAIN, (char *)data + index + valueStart, valueLength)) {
+                *format = LWM2M_CONTENT_TEXT;
+            } else {
                 return 0;
             }
         }
