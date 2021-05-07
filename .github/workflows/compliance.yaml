@@ -39,3 +39,20 @@ jobs:
     - name: Check commits with clang-format
       run: |
         tools/ci/run_ci.sh --branch-target origin/${{ github.base_ref }} --run-clang-format
+
+  check-pylint:
+    name: Run pylint
+    runs-on: ubuntu-20.04
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Install pylint
+      run: |
+        pip3 install pylint -r tests/integration/requirements.txt
+
+    - name: Check python code with pylint
+      run: |
+          python -c "import sys; print(sys.version)"
+          pylint tests
