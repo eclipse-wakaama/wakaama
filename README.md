@@ -20,7 +20,9 @@ Developers mailing list: https://dev.eclipse.org/mailman/listinfo/wakaama-dev
      +- data                   (data formats serialization/deserialization)
      |
      +- tests                  (test cases)
-     |
+     |    |
+     |    +- integration       (pytest based integration tests implementing the OMA-ETS-LightweightM2M-V1_1-20190912-D specification
+     |                          https://www.openmobilealliance.org/release/LightweightM2M/ETS/OMA-ETS-LightweightM2M-V1_1-20190912-D.pdf)
      +- examples
           |
           +- bootstrap_server  (a command-line LWM2M bootstrap server)
@@ -96,6 +98,10 @@ If existing code gets reformatted, this must be done in a separate commit. Its c
 ### Running CI tests locally
 To avoid unneeded load on the GitHub infrastructure, please consider running `tools/ci/run_ci.sh --all` before pushing.
 
+### Running integration tests locally
+`cd wakaama`
+`tools/ci/run_ci.sh --run-build`
+`pytest -v`
 ## Examples
 
 There are some example applications provided to test the server, client and bootstrap capabilities of Wakaama.
