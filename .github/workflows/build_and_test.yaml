@@ -44,3 +44,13 @@ jobs:
         tools/ci/run_ci.sh --run-tests --sanitizer ${{ matrix.sanitizer }}
       env:
         CC:  ${{ matrix.compiler }}
+
+    - name: Install dependencies
+      run: |
+          python -m pip install --upgrade pip
+          pip install -r tests/integration/requirements.txt
+
+    - name: Execute integration tests
+      run: |
+          python -c "import sys; print(sys.version)"
+          pytest -v
