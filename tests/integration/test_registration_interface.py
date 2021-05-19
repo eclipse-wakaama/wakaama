@@ -41,3 +41,21 @@ def test_registration_interface(lwm2mserver, lwm2mclient):
     assert lifetime == 300
     assert "/1 (1.1)" in objects
     assert "/1/0" in objects
+
+
+def test_registration_information_update(lwm2mserver, lwm2mclient):
+    """LightweightM2M-1.1-int-102
+    Test that the client updates the registration information on the Server."""
+
+    lwm2mclient.waitfortext("STATE_READY")
+    # Test Procedure 1
+    assert lwm2mserver.commandresponse("write 0 /1/0/1 20", "OK")
+    text = lwm2mserver.waitforpacket()
+    # Pass-Criteria A
+    assert text.find("COAP_204_CHANGED") > 0
+    # Test Procedure 2
+    text = lwm2mserver.waitfortime(20)
+    # Pass-Criteria B, D (C not observable)
+    assert text.find("lifetime: 300 sec") > 0 # NOTE: this should be 20 sec?
+    # expect update response immediately and again after every half "lifetime" (10s)
+    assert 2 <= text.count("Client #0 updated.") <= 3
