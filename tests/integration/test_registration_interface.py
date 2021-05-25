@@ -13,7 +13,8 @@ def parse_client_registration(server_output):
         version: "1.1"
         binding: "UDP"
         lifetime: 300 sec
-        objects: /1 (1.1), /1/0, /2/0, /3/0, /4/0, /5/0, /6/0, /7/0, /31024 (1.0), /31024/10, /31024/11, /31024/12,
+        objects: /1 (1.1), /1/0, /2/0, /3/0, /4/0, /5/0, /6/0, /7/0, <added linebreak>
+                 /31024 (1.0), /31024/10, /31024/11, /31024/12,
     """
     client_id, = re.findall(r".lient #([0-9]+) ", server_output)
     event, = re.findall(r"(registered|updated)", server_output)
