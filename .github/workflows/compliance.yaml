@@ -55,4 +55,5 @@ jobs:
     - name: Check python code with pylint
       run: |
           python -c "import sys; print(sys.version)"
-          pylint tests
+          cd tests
+          pylint integration
