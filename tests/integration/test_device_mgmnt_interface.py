@@ -32,7 +32,7 @@ def test_read_on_object(lwm2mserver, lwm2mclient):
     assert get_senml_json_record(parsed, "0/1", "v") == 300
     assert get_senml_json_record(parsed, "0/2", "v") == 0
     assert get_senml_json_record(parsed, "0/3", "v") == 0
-    assert get_senml_json_record(parsed, "0/5", "v") == 0
+    assert get_senml_json_record(parsed, "0/5", "v") == 86400
     assert get_senml_json_record(parsed, "0/6", "vb") is False
     assert get_senml_json_record(parsed, "0/7", "vs") == 'U'
     # Test Procedure 2
