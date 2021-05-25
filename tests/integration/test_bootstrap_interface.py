@@ -2,6 +2,7 @@
 import pytest
 
 
+@pytest.mark.slow
 @pytest.mark.client_args("-b -n apa")
 def test_client_initiated_bootstrap(lwm2mbootstrapserver, lwm2mclient):
     """LightweightM2M-1.1-int-0
