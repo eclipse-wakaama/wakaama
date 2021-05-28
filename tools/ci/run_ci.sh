@@ -20,6 +20,7 @@ readonly REPO_ROOT_DIR="${PWD}"
 readonly SCRIPT_NAME="$(basename "$0")"
 
 CMAKE_ARGS="-DCMAKE_BUILD_TYPE=RelWithDebInfo"
+OPT_ADD_CMAKE_ARG=""
 OPT_BRANCH_SOURCE=
 OPT_BRANCH_TARGET=master
 OPT_C_EXTENSIONS=""
@@ -43,6 +44,8 @@ Runs build and test steps in CI.
 Select steps to execute with --run- options
 
 Options:
+  --add-cmake-arg ARG=VAL   Add cmake argument -DARG=VAL
+                            (e.g. add-cmake-arg LWM2M_VERSION=1.0)
   --branch-source BRANCH    Source branch for MRs
                             (default: current branch)
   --branch-target BRANCH    Target branch for MRs
@@ -185,6 +188,7 @@ if [ $ret -ne 4 ]; then
 fi
 
 if ! PARSED_OPTS=$(getopt -o vah \
+                          -l add-cmake-arg: \
                           -l all \
                           -l branch-source: \
                           -l branch-target: \
@@ -212,6 +216,10 @@ eval set -- "${PARSED_OPTS}"
 
 while true; do
   case "$1" in
+    --add-cmake-arg)
+      OPT_ADD_CMAKE_ARG=$2
+      shift 2
+      ;;
     --branch-source)
       OPT_BRANCH_SOURCE=$2
       shift 2
@@ -314,6 +322,10 @@ fi
 
 if [ -n "${OPT_C_EXTENSIONS}" ]; then
   CMAKE_ARGS="${CMAKE_ARGS} -DCMAKE_C_EXTENSIONS=${OPT_C_EXTENSIONS}"
+fi
+
+if [ -n "${OPT_ADD_CMAKE_ARG}" ]; then
+  CMAKE_ARGS="${CMAKE_ARGS} -D${OPT_ADD_CMAKE_ARG}"
 fi
 
 if [ -n "${OPT_C_STANDARD}" ]; then

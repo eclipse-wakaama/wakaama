@@ -1,7 +1,54 @@
 """Wakaama integration tests (pytest)"""
 import re
 import json
+import pytest
 from helpers.helpers import get_senml_json_record
+from helpers.helpers import get_json_record
+from helpers.helpers import get_tlv_record
+
+# pylint: disable=unused-argument
+
+@pytest.mark.specialbuild
+def test_querying_basic_information_in_tlv_format(lwm2mserver, lwm2mclient):
+    """LightweightM2M-1.1-int-203
+    Querying the Resources Values of Device Object ID:3 on the Client
+    Resources Values of Device Object ID:3"""
+
+    # Test Procedure 1
+    assert lwm2mserver.commandresponse("read 0 /3/0", "OK")
+    text = lwm2mserver.waitforpacket()
+    # Pass-Criteria A
+    assert text.find("COAP_205_CONTENT") > 0
+    assert text.find("lwm2m+tlv") > 0
+    assert get_tlv_record(text, 0) == "Open Mobile Alliance"
+    assert get_tlv_record(text, 1) == "Lightweight M2M Client"
+    assert get_tlv_record(text, 2) == "345000123"
+    assert get_tlv_record(text, 3) == "1.0"
+    assert get_tlv_record(text, 11) == "." # not printable char
+    assert get_tlv_record(text, 16) == "U"
+
+
+@pytest.mark.specialbuild
+def test_querying_basic_information_in_json_format(lwm2mserver, lwm2mclient):
+    """LightweightM2M-1.1-int-204
+    Querying the Resources Values of Device Object ID:3 on the Client using
+    JSON data format"""
+
+    # Test Procedure 1
+    assert lwm2mserver.commandresponse("read 0 /3/0", "OK")
+    text = lwm2mserver.waitforpacket()
+    # Pass-Criteria A
+    assert text.find("COAP_205_CONTENT") > 0
+    assert text.find("lwm2m+json") > 0
+    packet = re.findall(r"({.*})", text)
+    parsed = json.loads("["+packet[0]+"]")[0]
+    assert parsed['bn'] == "/3/0/"
+    assert get_json_record(parsed, "0", "sv") == "Open Mobile Alliance"
+    assert get_json_record(parsed, "1", "sv") == "Lightweight M2M Client"
+    assert get_json_record(parsed, "2", "sv") == "345000123"
+    assert get_json_record(parsed, "3", "sv") == "1.0"
+    assert get_json_record(parsed, "11/0", "v") == 0
+    assert get_json_record(parsed, "16", "sv") == "U"
 
 
 def test_read_on_object(lwm2mserver, lwm2mclient):

@@ -99,11 +99,9 @@ If existing code gets reformatted, this must be done in a separate commit. Its c
 To avoid unneeded load on the GitHub infrastructure, please consider running `tools/ci/run_ci.sh --all` before pushing.
 
 ### Running integration tests locally
-```
-cd wakaama
-tools/ci/run_ci.sh --run-build
-pytest -v tests/integration
-```
+* ``cd wakaama``
+* ``tools/ci/run_ci.sh --run-build``
+* ``pytest -v tests/integration -m "not specialbuild"``
 
 ## Examples
 

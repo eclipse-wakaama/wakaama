@@ -1,4 +1,4 @@
-name: Build and Test
+name: Build and Test Special
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
     branches: '**'
 
 jobs:
-  build_and_test:
+  build_and_test_special:
     runs-on: ubuntu-20.04
 
     strategy:
@@ -33,24 +33,29 @@ jobs:
     - name: Install Ninja
       uses: seanmiddleditch/gha-setup-ninja@master
 
-    - name: Build all binaries
-      run: |
-        tools/ci/run_ci.sh --run-build --verbose
-      env:
-        CC:  ${{ matrix.compiler }}
-
-    - name: Build, execute sanititzed unit tests
-      run: |
-        tools/ci/run_ci.sh --run-tests --sanitizer ${{ matrix.sanitizer }}
-      env:
-        CC:  ${{ matrix.compiler }}
-
     - name: Install dependencies
       run: |
           pip install -r tests/integration/requirements.txt
 
-    - name: Execute integration tests
+    - name: Build all binaries JSON
+      run: |
+        tools/ci/run_ci.sh --run-build --verbose --add-cmake-arg LWM2M_VERSION=1.0
+      env:
+        CC:  ${{ matrix.compiler }}
+
+    - name: Execute JSON integration test
       run: |
           python -c "import sys; print(sys.version)"
-          pytest -v tests/integration -m "not specialbuild"
+          pytest -v tests/integration -k json_format
+
+    - name: Build all binaries TLV
+      run: |
+        tools/ci/run_ci.sh --run-clean --run-build --verbose --add-cmake-arg CLIENT_TLV_ONLY=ON
+      env:
+        CC:  ${{ matrix.compiler }}
+
+    - name: Execute TLV integration test
+      run: |
+          python -c "import sys; print(sys.version)"
+          pytest -v tests/integration -k tlv_format
 
