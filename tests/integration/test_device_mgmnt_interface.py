@@ -3,6 +3,23 @@ import re
 import json
 from helpers.helpers import get_senml_json_record
 
+# pylint: disable=unused-argument
+
+def test_querying_basic_information_in_plain_text_format(lwm2mserver, lwm2mclient):
+    """LightweightM2M-1.1-int-201
+    Querying the following data on the client (Device Object: ID 3) using Plain
+    Text data format
+    """
+
+    # Test Procedure 1
+    assert lwm2mserver.commandresponse("read 0 /3/0/0 0", "OK")
+    text = lwm2mserver.waitforpacket()
+    # Pass-Criteria A
+    assert text.find("COAP_205_CONTENT") > 0
+    assert text.find("text/plain") > 0
+    assert text.find("Open Mobile Alli") > 0
+    assert text.find("ance") > 0
+
 
 def test_read_on_object(lwm2mserver, lwm2mclient):
     """LightweightM2M-1.1-int-222
