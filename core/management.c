@@ -546,13 +546,8 @@ static int prv_makeOperation(lwm2m_context_t * contextP,
     return transaction_send(contextP, transaction);
 }
 
-static
-int prv_lwm2m_dm_read(lwm2m_context_t * contextP,
-                  uint16_t clientID,
-                  lwm2m_uri_t * uriP,
-                  lwm2m_result_callback_t callback,
-                  void * userData)
-{
+static int prv_lwm2m_dm_read(lwm2m_context_t *contextP, uint16_t clientID, lwm2m_uri_t *uriP, lwm2m_media_type_t format,
+                             lwm2m_result_callback_t callback, void *userData) {
     lwm2m_client_t * clientP;
 
     LOG_ARG("clientID: %d", clientID);
@@ -561,20 +556,16 @@ int prv_lwm2m_dm_read(lwm2m_context_t * contextP,
     clientP = (lwm2m_client_t *)lwm2m_list_find((lwm2m_list_t *)contextP->clientList, clientID);
     if (clientP == NULL) return COAP_404_NOT_FOUND;
 
-    return prv_makeOperation(contextP, clientID, uriP,
-                             COAP_GET,
-                             clientP->format,
-                             NULL, 0,
-                             callback, userData);
+    if (format == -1) {
+        format = clientP->format;
+    }
+
+    return prv_makeOperation(contextP, clientID, uriP, COAP_GET, format, NULL, 0, callback, userData);
 }
 
-int lwm2m_dm_read(lwm2m_context_t * contextP,
-                  uint16_t clientID,
-                  lwm2m_uri_t * uriP,
-                  lwm2m_result_callback_t callback,
-                  void * userData)
-{
-    return prv_lwm2m_dm_read(contextP, clientID, uriP, callback, userData);
+int lwm2m_dm_read(lwm2m_context_t *contextP, uint16_t clientID, lwm2m_uri_t *uriP, lwm2m_media_type_t format,
+                  lwm2m_result_callback_t callback, void *userData) {
+    return prv_lwm2m_dm_read(contextP, clientID, uriP, format, callback, userData);
 }
 
 static
