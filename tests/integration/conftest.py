@@ -74,7 +74,8 @@ class Lwm2mServer(HelperBase):
         # pylint: disable=consider-using-with
         self.pexpectobj.logfile = open(base_path +
                                        "/lwm2mserver_log.txt",
-                                       "w")
+                                       "w",
+                                       encoding="utf-8")
 
 class Lwm2mClient(HelperBase):
     """Client subclass of HelperBase"""
@@ -88,7 +89,8 @@ class Lwm2mClient(HelperBase):
         # pylint: disable=consider-using-with
         self.pexpectobj.logfile = open(base_path +
                                        "/lwm2mclient_log.txt",
-                                       "w")
+                                       "w",
+                                       encoding="utf-8")
 
 class Lwm2mBootstrapServer(HelperBase):
     """Bootstrap-server subclass of HelperBase"""
@@ -103,7 +105,8 @@ class Lwm2mBootstrapServer(HelperBase):
         # pylint: disable=consider-using-with
         self.pexpectobj.logfile = open(base_path +
                                        "/lwm2mbootstrapserver_log.txt",
-                                       "w")
+                                       "w",
+                                       encoding="utf-8")
 
 
 @pytest.fixture
