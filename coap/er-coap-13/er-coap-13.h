@@ -240,7 +240,7 @@ typedef struct {
   multi_option_t *uri_query;
   uint8_t if_none_match;
 
-  uint16_t payload_len;
+  size_t payload_len;
   uint8_t *payload;
 
 } coap_packet_t;
@@ -383,7 +383,7 @@ int coap_get_header_block(void *packet, uint32_t *num, uint8_t *more, uint16_t *
 int coap_get_header_size(void *packet, uint32_t *size);
 int coap_set_header_size(void *packet, uint32_t size);
 
-int coap_get_payload(void *packet, const uint8_t **payload);
-int coap_set_payload(void *packet, const void *payload, size_t length);
+size_t coap_get_payload(void *packet, const uint8_t **payload);
+size_t coap_set_payload(void *packet, const void *payload, size_t length);
 
 #endif /* COAP_13_H_ */

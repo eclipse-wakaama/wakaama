@@ -342,13 +342,13 @@ static int prv_send_new_block1(lwm2m_context_t * contextP, lwm2m_transaction_t *
 {
     lwm2m_transaction_t * next;
     // Done sending block
-    if (block_num * block_size >= previous->payload_len)
+    if (block_num * (size_t)block_size >= previous->payload_len)
         return 0;
 
     next = prv_create_next_block_transaction(previous, contextP->nextMID++);
     if (next == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
 
-    size_t remaining_payload_length = next->payload_len - block_num * block_size;
+    size_t remaining_payload_length = next->payload_len - block_num * (size_t)block_size;
     uint8_t *new_block_start = next->payload + block_num * block_size;
 
     coap_set_header_block1(next->message, block_num, remaining_payload_length > block_size, block_size);
@@ -390,7 +390,7 @@ static int prv_change_to_block1(lwm2m_context_t * contextP, void * sessionH, uin
     
     transaction = prv_get_transaction(contextP, sessionH, mid);
 
-    for (int n = 1; 16 << n <= (int)size ; n++) {
+    for (uint16_t n = 1; 16 << n <= (uint16_t)size; n++) {
         block_size = 16 << n;
     }
 
@@ -477,16 +477,15 @@ static int prv_send_get_next_block2(lwm2m_context_t * contextP,
  * Erbium is Copyright (c) 2013, Institute for Pervasive Computing, ETH Zurich
  * All rights reserved.
  */
-void lwm2m_handle_packet(lwm2m_context_t * contextP,
-                         uint8_t * buffer,
-                         int length,
-                         void * fromSessionH)
-{
+void lwm2m_handle_packet(lwm2m_context_t *contextP, uint8_t *buffer, size_t length, void *fromSessionH) {
     uint8_t coap_error_code = NO_ERROR;
     static coap_packet_t message[1];
     static coap_packet_t response[1];
 
     LOG("Entering");
+    /* The buffer length is uint16_t here, as UDP packet length field is 16 bit.
+     * This might change in the future e.g. for supporting TCP or other transport.
+     */
     coap_error_code = coap_parse_message(message, buffer, (uint16_t)length);
     if (coap_error_code == NO_ERROR)
     {
@@ -858,7 +857,6 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
         message_send(contextP, message, fromSessionH);
     }
 }
-
 
 uint8_t message_send(lwm2m_context_t * contextP,
                      coap_packet_t * message,

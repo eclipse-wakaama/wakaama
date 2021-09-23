@@ -785,7 +785,7 @@ static uint8_t prv_register(lwm2m_context_t * contextP,
     coap_set_header_uri_query(transaction->message, query);
     coap_set_header_content_type(transaction->message, LWM2M_CONTENT_LINK);
 
-    if (!transaction_set_payload(transaction, payload, payload_length)) {
+    if (!transaction_set_payload(transaction, payload, (size_t)payload_length)) {
         lwm2m_free(payload);
         lwm2m_free(query);
         transaction_free(transaction);
@@ -901,7 +901,7 @@ static int prv_updateRegistration(lwm2m_context_t * contextP,
             return COAP_500_INTERNAL_SERVER_ERROR;
         }
 
-        if (!transaction_set_payload(transaction, payload, payload_length)) {
+        if (!transaction_set_payload(transaction, payload, (size_t)payload_length)) {
             transaction_free(transaction);
             lwm2m_free(payload);
             return COAP_500_INTERNAL_SERVER_ERROR;
@@ -1616,12 +1616,9 @@ static int prv_getId(uint8_t * data,
     return result;
 }
 
-static lwm2m_client_object_t * prv_decodeRegisterPayload(uint8_t * payload,
-                                                         uint16_t payloadLength,
-                                                         lwm2m_media_type_t * format,
-                                                         char ** altPath)
-{
-    uint16_t index;
+static lwm2m_client_object_t *prv_decodeRegisterPayload(uint8_t *payload, size_t payloadLength,
+                                                        lwm2m_media_type_t *format, char **altPath) {
+    size_t index;
     lwm2m_client_object_t * objList;
     bool linkAttrFound;
 
