@@ -510,7 +510,7 @@ int main(int argc, char *argv[])
         else if (result > 0)
         {
             uint8_t buffer[MAX_PACKET_SIZE];
-            int numBytes;
+            ssize_t numBytes;
 
             /*
              * If an event happens on the socket
@@ -545,7 +545,7 @@ int main(int argc, char *argv[])
                         /*
                          * Let liblwm2m respond to the query depending on the context
                          */
-                        lwm2m_handle_packet(lwm2mH, buffer, numBytes, connP);
+                        lwm2m_handle_packet(lwm2mH, buffer, (size_t)numBytes, connP);
                     }
                     else
                     {

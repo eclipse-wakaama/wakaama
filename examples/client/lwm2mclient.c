@@ -1321,7 +1321,7 @@ int main(int argc, char *argv[])
         else if (result > 0)
         {
             uint8_t buffer[MAX_PACKET_SIZE];
-            int numBytes;
+            ssize_t numBytes;
 
             /*
              * If an event happens on the socket
@@ -1368,12 +1368,12 @@ int main(int argc, char *argv[])
                         inet_ntop(saddr->sin6_family, &saddr->sin6_addr, s, INET6_ADDRSTRLEN);
                         port = saddr->sin6_port;
                     }
-                    fprintf(stderr, "%d bytes received from [%s]:%hu\r\n", numBytes, s, ntohs(port));
+                    fprintf(stderr, "%zd bytes received from [%s]:%hu\r\n", numBytes, s, ntohs(port));
 
                     /*
                      * Display it in the STDERR
                      */
-                    output_buffer(stderr, buffer, numBytes, 0);
+                    output_buffer(stderr, buffer, (size_t)numBytes, 0);
 
                     connP = connection_find(data.connList, &addr, addrLen);
                     if (connP != NULL)
@@ -1388,7 +1388,7 @@ int main(int argc, char *argv[])
                              printf("error handling message %d\n",result);
                         }
 #else
-                        lwm2m_handle_packet(lwm2mH, buffer, numBytes, connP);
+                        lwm2m_handle_packet(lwm2mH, buffer, (size_t)numBytes, connP);
 #endif
                         conn_s_updateRxStatistic(objArray[7], numBytes, false);
                     }

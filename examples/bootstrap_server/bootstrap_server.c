@@ -332,16 +332,9 @@ static void prv_send_command(lwm2m_context_t *lwm2mH,
     }
 }
 
-static int prv_bootstrap_callback(lwm2m_context_t * lwm2mH,
-                                  void * sessionH,
-                                  uint8_t status,
-                                  lwm2m_uri_t * uriP,
-                                  char * name,
-                                  lwm2m_media_type_t format,
-                                  uint8_t * data,
-                                  uint16_t dataLength,
-                                  void * userData)
-{
+static int prv_bootstrap_callback(lwm2m_context_t *lwm2mH, void *sessionH, uint8_t status, lwm2m_uri_t *uriP,
+                                  char *name, lwm2m_media_type_t format, uint8_t *data, size_t dataLength,
+                                  void *userData) {
     internal_data_t * dataP = (internal_data_t *)userData;
     endpoint_t * endP;
 
@@ -706,7 +699,7 @@ int main(int argc, char *argv[])
         else if (result >= 0)
         {
             uint8_t buffer[MAX_PACKET_SIZE];
-            int numBytes;
+            ssize_t numBytes;
 
             // Packet received
             if (FD_ISSET(data.sock, &readfds))
@@ -745,9 +738,9 @@ int main(int argc, char *argv[])
                         port = saddr->sin6_port;
                     }
 
-                    fprintf(stderr, "%d bytes received from [%s]:%hu\r\n", numBytes, s, ntohs(port));
+                    fprintf(stderr, "%zd bytes received from [%s]:%hu\r\n", numBytes, s, ntohs(port));
 
-                    output_buffer(stderr, buffer, numBytes, 0);
+                    output_buffer(stderr, buffer, (size_t)numBytes, 0);
 
                     connP = connection_find(data.connList, &addr, addrLen);
                     if (connP == NULL)
@@ -760,7 +753,7 @@ int main(int argc, char *argv[])
                     }
                     if (connP != NULL)
                     {
-                        lwm2m_handle_packet(lwm2mH, buffer, numBytes, connP);
+                        lwm2m_handle_packet(lwm2mH, buffer, (size_t)numBytes, connP);
                     }
                 }
             }

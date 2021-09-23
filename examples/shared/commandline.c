@@ -174,12 +174,8 @@ static void print_indent(FILE * stream,
         fprintf(stream, "    ");
 }
 
-void output_buffer(FILE * stream,
-                   const uint8_t * buffer,
-                   int length,
-                   int indent)
-{
-    int i;
+void output_buffer(FILE *stream, const uint8_t *buffer, size_t length, int indent) {
+    size_t i;
 
     if (length == 0) fprintf(stream, "\n");
 
@@ -304,15 +300,8 @@ void output_tlv(FILE * stream,
 #endif
 }
 
-void output_data(FILE * stream,
-                 block_info_t * block_info,
-                 lwm2m_media_type_t format,
-                 uint8_t * data,
-                 int dataLength,
-                 int indent)
-{
-    int i;
-
+void output_data(FILE *stream, block_info_t *block_info, lwm2m_media_type_t format, uint8_t *data, size_t dataLength,
+                 int indent) {
     print_indent(stream, indent);
     if (block_info != NULL) {
         fprintf(stream, "block transfer: size: %d, num: %d, more: %d\n\r", block_info->block_size, block_info->block_num, block_info->block_more);
@@ -320,7 +309,7 @@ void output_data(FILE * stream,
         fprintf(stream, "non block transfer\n\r");
     }
     print_indent(stream, indent);
-    fprintf(stream, "%d bytes received of type ", dataLength);
+    fprintf(stream, "%zu bytes received of type ", dataLength);
 
     switch (format)
     {
@@ -342,8 +331,7 @@ void output_data(FILE * stream,
     case LWM2M_CONTENT_JSON:
         fprintf(stream, "application/vnd.oma.lwm2m+json:\r\n");
         print_indent(stream, indent);
-        for (i = 0 ; i < dataLength ; i++)
-        {
+        for (size_t i = 0; i < dataLength; i++) {
             fprintf(stream, "%c", data[i]);
         }
         fprintf(stream, "\n");
@@ -352,8 +340,7 @@ void output_data(FILE * stream,
     case LWM2M_CONTENT_SENML_JSON:
         fprintf(stream, "application/senml+json:\r\n");
         print_indent(stream, indent);
-        for (i = 0 ; i < dataLength ; i++)
-        {
+        for (size_t i = 0; i < dataLength; i++) {
             fprintf(stream, "%c", data[i]);
         }
         fprintf(stream, "\n");
@@ -362,8 +349,7 @@ void output_data(FILE * stream,
     case LWM2M_CONTENT_LINK:
         fprintf(stream, "application/link-format:\r\n");
         print_indent(stream, indent);
-        for (i = 0 ; i < dataLength ; i++)
-        {
+        for (size_t i = 0; i < dataLength; i++) {
             fprintf(stream, "%c", data[i]);
         }
         fprintf(stream, "\n");

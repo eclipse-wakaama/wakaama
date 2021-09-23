@@ -493,7 +493,7 @@ void transaction_step(lwm2m_context_t * contextP,
     }
 }
 
-bool transaction_set_payload(lwm2m_transaction_t *transaction, uint8_t *buffer, int length) {
+bool transaction_set_payload(lwm2m_transaction_t *transaction, uint8_t *buffer, size_t length) {
     // copy payload as we might need it beyond scope of the current request / method call (e.g. in case of
     // retransmissions or block transfer)
     uint8_t *transaction_payload = (uint8_t *)lwm2m_malloc(length);
