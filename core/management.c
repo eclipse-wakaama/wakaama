@@ -518,9 +518,6 @@ static int prv_makeOperation(lwm2m_context_t * contextP,
     else if (buffer != NULL)
     {
         coap_set_header_content_type(transaction->message, format);
-        
-        // TODO: Take care of fragmentation
-
         if (!transaction_set_payload(transaction, buffer, length)) {
             transaction_free(transaction);
             return COAP_500_INTERNAL_SERVER_ERROR;
