@@ -321,8 +321,14 @@ static lwm2m_transaction_t * prv_create_next_block_transaction(lwm2m_transaction
     {
         coap_set_header_if_none_match(clone->message);
     }
-    
-    clone->payload = transaction->payload;
+
+    uint8_t *cloned_transaction_payload = (uint8_t *)lwm2m_malloc(transaction->payload_len);
+    if (cloned_transaction_payload == NULL) {
+        return NULL;
+    }
+    memcpy(cloned_transaction_payload, transaction->payload, transaction->payload_len);
+
+    clone->payload = cloned_transaction_payload;
     clone->payload_len = transaction->payload_len;
     clone->callback = transaction->callback;
     clone->userData = transaction->userData;

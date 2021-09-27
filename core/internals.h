@@ -329,7 +329,7 @@ void transaction_remove(lwm2m_context_t * contextP, lwm2m_transaction_t * transa
 bool transaction_handleResponse(lwm2m_context_t * contextP, void * fromSessionH, coap_packet_t * message, coap_packet_t * response);
 void transaction_step(lwm2m_context_t * contextP, time_t currentTime, time_t * timeoutP);
 bool transaction_free_userData(lwm2m_context_t * context, lwm2m_transaction_t * transaction);
-void transaction_set_payload(lwm2m_transaction_t * transaction, uint8_t * buffer, int length);
+bool transaction_set_payload(lwm2m_transaction_t *transaction, uint8_t *buffer, int length);
 
 // defined in management.c
 uint8_t dm_handleRequest(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_server_t * serverP, coap_packet_t * message, coap_packet_t * response);
