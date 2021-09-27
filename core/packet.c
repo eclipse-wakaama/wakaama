@@ -344,8 +344,11 @@ static int prv_send_new_block1(lwm2m_context_t * contextP, lwm2m_transaction_t *
     next = prv_create_next_block_transaction(previous, contextP->nextMID++);
     if (next == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
 
-    coap_set_header_block1(next->message, block_num, (block_num + 1) * block_size < next->payload_len, block_size);
-    coap_set_payload(next->message, next->payload + block_num * block_size , MIN(block_size, next->payload_len - block_num * block_size));
+    size_t remaining_payload_length = next->payload_len - block_num * block_size;
+    uint8_t *new_block_start = next->payload + block_num * block_size;
+
+    coap_set_header_block1(next->message, block_num, remaining_payload_length > block_size, block_size);
+    coap_set_payload(next->message, new_block_start, MIN(block_size, remaining_payload_length));
 
     contextP->transactionList = (lwm2m_transaction_t *)LWM2M_LIST_ADD(contextP->transactionList, next);
     return transaction_send(contextP, next);
