@@ -338,7 +338,8 @@ static int prv_send_new_block1(lwm2m_context_t * contextP, lwm2m_transaction_t *
 {
     lwm2m_transaction_t * next;
     // Done sending block
-    if (block_num * block_size > previous->payload_len) return 0;
+    if (block_num * block_size >= previous->payload_len)
+        return 0;
 
     next = prv_create_next_block_transaction(previous, contextP->nextMID++);
     if (next == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
