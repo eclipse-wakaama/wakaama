@@ -796,6 +796,7 @@ static uint8_t prv_register(lwm2m_context_t * contextP,
     if (dataP == NULL){
         lwm2m_free(payload);
         lwm2m_free(query);
+        transaction_free(transaction);
         return COAP_503_SERVICE_UNAVAILABLE;
     }
 
@@ -909,6 +910,7 @@ static int prv_updateRegistration(lwm2m_context_t * contextP,
 
     registration_data_t * dataP = (registration_data_t *) lwm2m_malloc(sizeof(registration_data_t));
     if (dataP == NULL){
+        transaction_free(transaction);
         lwm2m_free(payload);
         return COAP_500_INTERNAL_SERVER_ERROR;
     }
