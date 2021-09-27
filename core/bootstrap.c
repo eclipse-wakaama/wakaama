@@ -1224,7 +1224,10 @@ int lwm2m_bootstrap_write(lwm2m_context_t * contextP,
 
     coap_set_header_content_type(transaction->message, format);
 
-    transaction_set_payload(transaction, buffer, length);
+    if (!transaction_set_payload(transaction, buffer, length)) {
+        transaction_free(transaction);
+        return COAP_500_INTERNAL_SERVER_ERROR;
+    }
 
     dataP = (bs_data_t *)lwm2m_malloc(sizeof(bs_data_t));
     if (dataP == NULL)

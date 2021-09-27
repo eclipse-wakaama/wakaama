@@ -258,6 +258,11 @@ void transaction_free(lwm2m_transaction_t * transacP)
        lwm2m_free(transacP->message);
     }
 
+    if (transacP->payload) {
+        lwm2m_free(transacP->payload);
+        transacP->payload = NULL;
+    }
+
     if (transacP->buffer) lwm2m_free(transacP->buffer);
     lwm2m_free(transacP);
 }
@@ -483,9 +488,16 @@ void transaction_step(lwm2m_context_t * contextP,
     }
 }
 
-void transaction_set_payload(lwm2m_transaction_t * transaction, uint8_t * buffer, int length)
-{
-    transaction->payload = buffer;
+bool transaction_set_payload(lwm2m_transaction_t *transaction, uint8_t *buffer, int length) {
+    // copy payload as we might need it beyond scope of the current request / method call (e.g. in case of
+    // retransmissions or block transfer)
+    uint8_t *transaction_payload = (uint8_t *)lwm2m_malloc(length);
+    if (transaction_payload == NULL) {
+        return false;
+    }
+    memcpy(transaction_payload, buffer, length);
+
+    transaction->payload = transaction_payload;
     transaction->payload_len = length;
     const uint16_t lwm2m_coap_block_size = lwm2m_get_coap_block_size();
     if (length > lwm2m_coap_block_size) {
@@ -493,6 +505,7 @@ void transaction_set_payload(lwm2m_transaction_t * transaction, uint8_t * buffer
     }
 
     coap_set_payload(transaction->message, buffer, MIN(length, lwm2m_coap_block_size));
+    return true;
 }
 
 bool transaction_free_userData(lwm2m_context_t * context, lwm2m_transaction_t * transaction)
