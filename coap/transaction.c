@@ -256,6 +256,7 @@ void transaction_free(lwm2m_transaction_t * transacP)
     {
        coap_free_header(transacP->message);
        lwm2m_free(transacP->message);
+       transacP->message = NULL;
     }
 
     if (transacP->payload) {
@@ -263,7 +264,11 @@ void transaction_free(lwm2m_transaction_t * transacP)
         transacP->payload = NULL;
     }
 
-    if (transacP->buffer) lwm2m_free(transacP->buffer);
+    if (transacP->buffer) {
+        lwm2m_free(transacP->buffer);
+        transacP->buffer = NULL;
+    }
+
     lwm2m_free(transacP);
 }
 
