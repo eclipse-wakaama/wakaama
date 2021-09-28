@@ -607,10 +607,7 @@ int prv_lwm2m_dm_write(lwm2m_context_t * contextP,
     }
     else
     {
-        return prv_makeOperation(contextP, clientID, uriP,
-                                  COAP_POST,
-                                  format, buffer, length,
-                                  callback, userData);
+        return prv_makeOperation(contextP, clientID, uriP, method, format, buffer, length, callback, userData);
     }
 }
 
