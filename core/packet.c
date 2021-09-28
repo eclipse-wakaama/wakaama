@@ -230,6 +230,12 @@ static lwm2m_transaction_t * prv_get_transaction(lwm2m_context_t * contextP, voi
     {
         transaction = transaction->next;
     }
+
+    if (transaction != NULL && lwm2m_session_is_equal(sessionH, transaction->peerH, contextP->userData) == false &&
+        transaction->mID != mid) {
+        return NULL;
+    }
+
     return transaction;
 }
 
