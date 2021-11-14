@@ -93,7 +93,7 @@ typedef struct
 {
     lwm2m_object_t * securityObjP;
     int sock;
-    connection_t * connList;
+    lwm2m_connection_layer_t *connLayer;
     int addressFamily;
 } client_data_t;
 
@@ -149,12 +149,9 @@ void * lwm2m_connect_server(uint16_t secObjInstID,
     *port = 0;
     port++;
 
-    newConnP = connection_create(dataP->connList, dataP->sock, host, port, dataP->addressFamily);
+    newConnP = connection_create(dataP->connLayer, dataP->sock, host, port, dataP->addressFamily);
     if (newConnP == NULL) {
         fprintf(stderr, "Connection creation failed.\r\n");
-    }
-    else {
-        dataP->connList = newConnP;
     }
 
 exit:
@@ -171,26 +168,7 @@ void lwm2m_close_connection(void * sessionH,
     app_data = (client_data_t *)userData;
     targetP = (connection_t *)sessionH;
 
-    if (targetP == app_data->connList)
-    {
-        app_data->connList = targetP->next;
-        lwm2m_free(targetP);
-    }
-    else
-    {
-        connection_t * parentP;
-
-        parentP = app_data->connList;
-        while (parentP != NULL && parentP->next != targetP)
-        {
-            parentP = parentP->next;
-        }
-        if (parentP != NULL)
-        {
-            parentP->next = targetP->next;
-            lwm2m_free(targetP);
-        }
-    }
+    connectionlayer_free_connection(app_data->connLayer, targetP);
 }
 
 void print_usage(void)
@@ -447,6 +425,8 @@ int main(int argc, char *argv[])
         return -1;
     }
 
+    data.connLayer = connectionlayer_create(lwm2mH);
+
     /*
      * We configure the liblwm2m library with the name of the client - which shall be unique for each client -
      * the number of objects we will be passing through and the objects array
@@ -534,21 +514,8 @@ int main(int argc, char *argv[])
                 else if (numBytes >= MAX_PACKET_SIZE) 
                 {
                     fprintf(stderr, "Received packet >= MAX_PACKET_SIZE\r\n");
-                } 
-                else if (0 < numBytes)
-                {
-                    connection_t * connP;
-
-                    connP = connection_find(data.connList, &addr, addrLen);
-                    if (connP != NULL)
-                    {
-                        /*
-                         * Let liblwm2m respond to the query depending on the context
-                         */
-                        lwm2m_handle_packet(lwm2mH, buffer, (size_t)numBytes, connP);
-                    }
-                    else
-                    {
+                } else if (0 < numBytes) {
+                    if (-1 == connectionlayer_handle_packet(data.connLayer, &addr, addrLen, buffer, numBytes)) {
                         /*
                          * This packet comes from an unknown peer
                          */
@@ -564,7 +531,7 @@ int main(int argc, char *argv[])
      */
     lwm2m_close(lwm2mH);
     close(data.sock);
-    connection_free(data.connList);
+    connectionlayer_free(data.connLayer);
 
     free_security_object(objArray[0]);
     free_server_object(objArray[1]);

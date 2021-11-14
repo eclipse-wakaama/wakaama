@@ -58,7 +58,7 @@ typedef struct _endpoint_
 typedef struct
 {
     int               sock;
-    connection_t *    connList;
+    lwm2m_connection_layer_t *connLayer;
     bs_info_t *       bsInfo;
     endpoint_t *      endpointList;
     int               addressFamily;
@@ -529,12 +529,11 @@ static void prv_bootstrap_client(lwm2m_context_t *lwm2mH,
     port++;
 
     fprintf(stderr, "Trying to connect to LWM2M CLient at %s:%s\r\n", host, port);
-    newConnP = connection_create(dataP->connList, dataP->sock, host, port, dataP->addressFamily);
+    newConnP = connection_create(dataP->connLayer, dataP->sock, host, port, dataP->addressFamily);
     if (newConnP == NULL) {
         fprintf(stderr, "Connection creation failed.\r\n");
         return;
     }
-    dataP->connList = newConnP;
 
     // simulate a client bootstrap request.
     // Only LWM2M 1.0 clients support this method of bootstrap. For them, TLV
@@ -647,6 +646,8 @@ int main(int argc, char *argv[])
         return -1;
     }
 
+    data.connLayer = connectionlayer_create(lwm2mH);
+
     signal(SIGINT, handle_sigint);
 
     fd = fopen(filename, "r");
@@ -742,19 +743,11 @@ int main(int argc, char *argv[])
 
                     output_buffer(stderr, buffer, (size_t)numBytes, 0);
 
-                    connP = connection_find(data.connList, &addr, addrLen);
-                    if (connP == NULL)
-                    {
-                        connP = connection_new_incoming(data.connList, data.sock, (struct sockaddr *)&addr, addrLen);
-                        if (connP != NULL)
-                        {
-                            data.connList = connP;
-                        }
+                    connP = connectionlayer_find_connection(data.connLayer, &addr, addrLen);
+                    if (connP == NULL) {
+                        connP = connection_new_incoming(data.connLayer, data.sock, &addr, addrLen);
                     }
-                    if (connP != NULL)
-                    {
-                        lwm2m_handle_packet(lwm2mH, buffer, (size_t)numBytes, connP);
-                    }
+                    connectionlayer_handle_packet(data.connLayer, &addr, addrLen, buffer, numBytes);
                 }
             }
             // command line input
@@ -827,7 +820,7 @@ int main(int argc, char *argv[])
         prv_endpoint_free(endP);
     }
     close(data.sock);
-    connection_free(data.connList);
+    connectionlayer_free(data.connLayer);
 
     return 0;
 }

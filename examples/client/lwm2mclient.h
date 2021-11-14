@@ -27,6 +27,7 @@
 #ifndef LWM2MCLIENT_H_
 #define LWM2MCLIENT_H_
 
+#include "connection.h"
 #include "liblwm2m.h"
 
 extern int g_reboot;
@@ -107,5 +108,14 @@ void clean_security_object(lwm2m_object_t * objectP);
 char * get_server_uri(lwm2m_object_t * objectP, uint16_t secObjInstID);
 void display_security_object(lwm2m_object_t * objectP);
 void copy_security_object(lwm2m_object_t * objectDest, lwm2m_object_t * objectSrc);
+
+typedef struct {
+    lwm2m_object_t *securityObjP;
+    lwm2m_object_t *serverObject;
+    lwm2m_context_t *ctx;
+    int sock;
+    lwm2m_connection_layer_t *connLayer;
+    int addressFamily;
+} client_data_t;
 
 #endif /* LWM2MCLIENT_H_ */

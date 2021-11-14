@@ -28,6 +28,11 @@ file(GLOB SOURCES "*.c")
 add_executable(${PROJECT_NAME} ${SOURCES} ${WAKAAMA_SOURCES} ${COAP_SOURCES} ${DATA_SOURCES} ${SHARED_SOURCES})
 target_link_libraries(${PROJECT_NAME} cunit)
 
+if (DTLS_MBEDTLS)
+    add_definitions(-DMBEDTLS_CONFIG_FILE="${CMAKE_CURRENT_LIST_DIR}/../examples/shared/dtls/config-ccm-psk-tls1_2.h")
+    target_link_libraries(${PROJECT_NAME} mbedtls)
+endif()
+
 if(SANITIZER)
     target_compile_options(${PROJECT_NAME} PRIVATE -fsanitize=${SANITIZER} -fno-sanitize-recover=all)
     target_link_options(${PROJECT_NAME} PRIVATE -fsanitize=${SANITIZER} -fno-sanitize-recover=all)

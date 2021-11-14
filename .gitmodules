@@ -1,3 +1,6 @@
 [submodule "platforms/Linux/tinydtls"]
-	path = examples/shared/tinydtls
+	path = examples/shared/dtls/tinydtls
 	url = https://github.com/eclipse/tinydtls.git
+[submodule "examples/shared/mbedtls"]
+	path = examples/shared/mbedtls
+	url = https://github.com/ARMmbed/mbedtls
