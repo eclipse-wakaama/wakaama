@@ -59,7 +59,7 @@
 #include "lwm2mclient.h"
 #include "liblwm2m.h"
 #include "commandline.h"
-#if defined(WITH_TINYDTLS) || defined(WITH_MBEDTLS)
+#if defined(DTLS)
 #include "dtlsconnection.h"
 #endif
 
@@ -204,27 +204,29 @@ void *lwm2m_connect_server(uint16_t secObjInstID, void *userData) {
 
     uri = get_server_uri(dataP->securityObjP, secObjInstID);
 
-    if (uri == NULL)
-        return NULL;
+    if (uri == NULL) return NULL;
 
     // parse uri in the form "coaps://[host]:[port]"
-    if (0 == strncmp(uri, "coaps://", strlen("coaps://"))) {
-        host = uri + strlen("coaps://");
-    } else if (0 == strncmp(uri, "coap://", strlen("coap://"))) {
-        host = uri + strlen("coap://");
-    } else {
+    if (0==strncmp(uri, "coaps://", strlen("coaps://"))) {
+        host = uri+strlen("coaps://");
+    }
+    else if (0==strncmp(uri, "coap://",  strlen("coap://"))) {
+        host = uri+strlen("coap://");
+    }
+    else {
         goto exit;
     }
     port = strrchr(host, ':');
-    if (port == NULL)
-        goto exit;
+    if (port == NULL) goto exit;
     // remove brackets
-    if (host[0] == '[') {
+    if (host[0] == '[')
+    {
         host++;
-        if (*(port - 1) == ']') {
+        if (*(port - 1) == ']')
+        {
             *(port - 1) = 0;
-        } else
-            goto exit;
+        }
+        else goto exit;
     }
     // split strings
     *port = 0;
@@ -236,7 +238,7 @@ void *lwm2m_connect_server(uint16_t secObjInstID, void *userData) {
         goto exit;
     }
     if (securityMode == LWM2M_SECURITY_MODE_PRE_SHARED_KEY) {
-#if defined(WITH_TINYDTLS) || defined(WITH_MBEDTLS)
+#if defined(DTLS)
         newConnP = (connection_t *)dtlsconnection_create(dataP->connLayer, secObjInstID, dataP->sock, host, port,
                                                          dataP->addressFamily);
 #endif
@@ -789,12 +791,9 @@ void print_usage(void)
     fprintf(stdout, "  -c\t\tChange battery level over time.\r\n");
     fprintf(stdout, "  -S BYTES\tCoAP block size. Options: 16, 32, 64, 128, 256, 512, 1024. Default: %" PRIu16 "\r\n",
             LWM2M_COAP_DEFAULT_BLOCK_SIZE);
-#if defined WITH_TINYDTLS || defined WITH_MBEDTLS
-    fprintf(
-        stdout,
-        "  -i STRING\tSet the device management or bootstrap server PSK identity. If not set use none secure mode\r\n");
-    fprintf(stdout, "  -s HEXSTRING\tSet the device management or bootstrap server Pre-Shared-Key. If not set use none "
-                    "secure mode\r\n");
+#if defined DTLS
+    fprintf(stdout, "  -i STRING\tSet the device management or bootstrap server PSK identity. If not set use none secure mode\r\n");
+    fprintf(stdout, "  -s HEXSTRING\tSet the device management or bootstrap server Pre-Shared-Key. If not set use none secure mode\r\n");
 #endif
     fprintf(stdout, "\r\n");
 }
@@ -820,7 +819,7 @@ int main(int argc, char *argv[])
 #endif
 
     char * pskId = NULL;
-#if defined WITH_TINYDTLS || defined WITH_MBEDTLS
+#if defined DTLS
     char *psk = NULL;
 #endif
     uint16_t pskLen = -1;
@@ -893,7 +892,7 @@ int main(int argc, char *argv[])
                 return 0;
             }
             break;
-#if defined WITH_TINYDTLS || defined WITH_MBEDTLS
+#if defined DTLS
         case 'i':
             opt++;
             if (opt >= argc)
@@ -994,7 +993,7 @@ int main(int argc, char *argv[])
      * Now the main function fill an array with each object, this list will be later passed to liblwm2m.
      * Those functions are located in their respective object file.
      */
-#if defined WITH_TINYDTLS || defined WITH_MBEDTLS
+#if DTLS
     if (psk != NULL)
     {
         pskLen = strlen(psk) / 2;
@@ -1028,7 +1027,7 @@ int main(int argc, char *argv[])
 
     char serverUri[50];
     int serverId = 123;
-#if defined WITH_TINYDTLS || defined WITH_MBEDTLS
+#if defined DTLS
     sprintf (serverUri, "coaps://%s:%s", server, serverPort);
 #else
     sprintf (serverUri, "coap://%s:%s", server, serverPort);
@@ -1228,17 +1227,19 @@ int main(int argc, char *argv[])
             fprintf(stdout, "Unknown...\r\n");
             break;
         }
-        if (result != 0) {
+        if (result != 0)
+        {
 #ifdef LWM2M_BOOTSTRAP
             fprintf(stderr, "lwm2m_step() failed: 0x%X\r\n", result);
-            if (previousState == STATE_BOOTSTRAPPING) {
+            if(previousState == STATE_BOOTSTRAPPING)
+            {
 #ifdef LWM2M_WITH_LOGS
                 fprintf(stdout, "[BOOTSTRAP] restore security and server objects\r\n");
 #endif
                 prv_restore_objects(lwm2mH);
                 lwm2mH->state = STATE_INITIAL;
-            } else
-                return -1;
+            }
+            else return -1;
 #else
             return -1;
 #endif
@@ -1286,7 +1287,9 @@ int main(int argc, char *argv[])
                 else if (numBytes >= MAX_PACKET_SIZE) 
                 {
                     fprintf(stderr, "Received packet >= MAX_PACKET_SIZE\r\n");
-                } else if (0 < numBytes) {
+                } 
+                else if (0 < numBytes)
+                {
                     char s[INET6_ADDRSTRLEN];
                     in_port_t port;
                     connection_t *connP;
@@ -1294,7 +1297,9 @@ int main(int argc, char *argv[])
                         struct sockaddr_in *saddr = (struct sockaddr_in *)&addr;
                         inet_ntop(saddr->sin_family, &saddr->sin_addr, s, INET6_ADDRSTRLEN);
                         port = saddr->sin_port;
-                    } else if (AF_INET6 == addr.ss_family) {
+                    }
+                    else if (AF_INET6 == addr.ss_family)
+                    {
                         struct sockaddr_in6 *saddr = (struct sockaddr_in6 *)&addr;
                         inet_ntop(saddr->sin6_family, &saddr->sin6_addr, s, INET6_ADDRSTRLEN);
                         port = saddr->sin6_port;
@@ -1307,13 +1312,16 @@ int main(int argc, char *argv[])
                     output_buffer(stderr, buffer, (size_t)numBytes, 0);
 
                     connP = connectionlayer_find_connection(data.connLayer, &addr, addrLen);
-                    if (connP != NULL) {
+                    if (connP != NULL)
+                    {
                         /*
                          * Let liblwm2m respond to the query depending on the context
                          */
                         connectionlayer_handle_packet(data.connLayer, &addr, addrLen, buffer, numBytes);
                         conn_s_updateRxStatistic(objArray[7], numBytes, false);
-                    } else {
+                    }
+                    else
+                    {
                         fprintf(stderr, "received bytes ignored!\r\n");
                     }
                 }
@@ -1352,7 +1360,7 @@ int main(int argc, char *argv[])
      */
     if (g_quit == 1)
     {
-#ifdef WITH_TINYDTLS
+#ifdef DTLS
         free(pskBuffer);
 #endif
 

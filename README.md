@@ -136,7 +136,7 @@ Options:
  * ``make``
  * ``./lwm2mclient [Options]``
 
-DTLS feature requires the tinydtls submodule. To include it, on the first run,
+DTLS feature requires either **tinydtls** or **mbedtls** submodule. To include it, on the first run,
 use the following commands to retrieve the sources:
  * ``git submodule init``
  * ``git submodule update``
@@ -145,7 +145,13 @@ You need to install autoconf and automake to build with tinydtls.
 
 Build with tinydtls:
  * Create a build directory and change to that.
- * ``cmake -DDTLS=1 [wakaama directory]/examples/client``
+ * ``cmake -DDTLS_TINYDTLS=1 [wakaama directory]/examples/client``
+ * ``make``
+ * ``./lwm2mclient [Options]``
+
+Build with mbedtls:
+ * Create a build directory and change to that.
+ * ``cmake -DDTLS_MBEDTLS=1 [wakaama directory]/examples/client``
  * ``make``
  * ``./lwm2mclient [Options]``
 

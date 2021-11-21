@@ -2,15 +2,17 @@ cmake_minimum_required(VERSION 3.13)
 
 project(lightclient C)
 
-if(DTLS)
-    message(FATAL_ERROR "DTLS option is not supported." )
-endif()
-
 include(${CMAKE_CURRENT_LIST_DIR}/../../core/wakaama.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/../../coap/coap.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/../../data/data.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/../shared/shared.cmake)
 
+if(DTLS)
+    message(STATUS "lightclient does not support DTLS")
+    list(REMOVE_ITEM SHARED_DEFINITIONS DTLS)
+endif()
+
+add_compile_definitions(SHARED_DEFINITIONS)
 add_compile_definitions(LWM2M_CLIENT_MODE)
 
 if(LWM2M_VERSION VERSION_GREATER "1.0")

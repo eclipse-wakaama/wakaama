@@ -17,7 +17,7 @@
  *******************************************************************************/
 
 #include "dtlsconnection.h"
-#ifdef LWM2M_CLIENT_MODE
+#if defined LWM2M_CLIENT_MODE && defined DTLS
 
 #include "commandline.h"
 #include "dtls.h"
@@ -295,6 +295,12 @@ connection_t *dtlsconnection_create(lwm2m_connection_layer_t *connLayerP, uint16
 #else
 connection_t *dtlsconnection_create(lwm2m_connection_layer_t *connLayerP, uint16_t securityInstance, int sock,
                                     char *host, char *port, int addressFamily) {
+    (void)connLayerP;
+    (void)securityInstance;
+    (void)sock;
+    (void)host;
+    (void)port;
+    (void)addressFamily;
     return NULL;
 }
 #endif

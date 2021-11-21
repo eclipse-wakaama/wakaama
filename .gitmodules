@@ -2,5 +2,5 @@
 	path = examples/shared/dtls/tinydtls
 	url = https://github.com/eclipse/tinydtls.git
 [submodule "examples/shared/mbedtls"]
-	path = examples/shared/mbedtls
+	path = examples/shared/dtls/mbedtls
 	url = https://github.com/ARMmbed/mbedtls

@@ -9,6 +9,11 @@ include(${CMAKE_CURRENT_LIST_DIR}/../coap/coap.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/../data/data.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/../examples/shared/shared.cmake)
 
+if(DTLS)
+    list(REMOVE_ITEM SHARED_DEFINITIONS DTLS)
+endif()
+
+add_compile_definitions(SHARED_DEFINITIONS)
 add_compile_definitions(LWM2M_CLIENT_MODE)
 add_compile_definitions(LWM2M_SUPPORT_TLV)
 add_compile_definitions(LWM2M_SUPPORT_JSON)
@@ -27,11 +32,6 @@ file(GLOB SOURCES "*.c")
 
 add_executable(${PROJECT_NAME} ${SOURCES} ${WAKAAMA_SOURCES} ${COAP_SOURCES} ${DATA_SOURCES} ${SHARED_SOURCES})
 target_link_libraries(${PROJECT_NAME} cunit)
-
-if (DTLS_MBEDTLS)
-    add_definitions(-DMBEDTLS_CONFIG_FILE="${CMAKE_CURRENT_LIST_DIR}/../examples/shared/dtls/config-ccm-psk-tls1_2.h")
-    target_link_libraries(${PROJECT_NAME} mbedtls)
-endif()
 
 if(SANITIZER)
     target_compile_options(${PROJECT_NAME} PRIVATE -fsanitize=${SANITIZER} -fno-sanitize-recover=all)
