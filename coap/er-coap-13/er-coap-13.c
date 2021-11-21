@@ -704,6 +704,11 @@ coap_parse_message(void *packet, uint8_t *data, uint16_t data_len)
   uint32_t option_length = 0;
   uint32_t *x;
 
+  if (data_len < COAP_HEADER_LEN) {
+    coap_error_message = "Illegal CoAP message";
+    return BAD_REQUEST_4_00;
+  }
+
   /* Initialize packet */
   memset(coap_pkt, 0, sizeof(coap_packet_t));
 
