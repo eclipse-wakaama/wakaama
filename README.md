@@ -112,9 +112,9 @@ The following recipes assume you are on a unix like platform and you have cmake 
 
 ### Server example
  * Create a build directory and change to that.
- * ``cmake [wakaama directory]/examples/server``
- * ``make``
- * ``./lwm2mserver [Options]``
+ * ``cmake [wakaama directory]``
+ * ``make lwm2mserver``
+ * ``./examples/server/lwm2mserver [Options]``
 
 The lwm2mserver listens on UDP port 5683. It features a basic command line
 interface. Type 'help' for a list of supported commands.
@@ -132,9 +132,9 @@ Options:
 
 ### Test client example
  * Create a build directory and change to that.
- * ``cmake [wakaama directory]/examples/client``
- * ``make``
- * ``./lwm2mclient [Options]``
+ * ``cmake [wakaama directory]``
+ * ``make lwm2mclient``
+ * ``./examples/client/lwm2mclient [Options]``
 
 DTLS feature requires either **tinydtls** or **mbedtls** submodule. To include it, on the first run,
 use the following commands to retrieve the sources:
@@ -145,15 +145,16 @@ You need to install autoconf and automake to build with tinydtls.
 
 Build with tinydtls:
  * Create a build directory and change to that.
- * ``cmake -DDTLS_TINYDTLS=1 [wakaama directory]/examples/client``
- * ``make``
- * ``./lwm2mclient [Options]``
+ * ``cmake -DDTLS_TINYDTLS=1 [wakaama directory]``
+ * ``make lwm2mclient``
+ * ``cd examples/client``
+ * ``./examples/client/lwm2mclient [Options]``
 
 Build with mbedtls:
  * Create a build directory and change to that.
- * ``cmake -DDTLS_MBEDTLS=1 [wakaama directory]/examples/client``
- * ``make``
- * ``./lwm2mclient [Options]``
+ * ``cmake -DDTLS_MBEDTLS=1 [wakaama directory]``
+ * ``make lwm2mclient``
+ * ``./examples/client/lwm2mclient [Options]``
 
 The lwm2mclient features nine LWM2M objects:
  - Security Object (id: 0)
@@ -212,9 +213,9 @@ To launch a bootstrap session:
 
 In the any directory, run the following commands:
  * Create a build directory and change to that.
- * ``cmake [wakaama directory]/examples/lightclient``
- * ``make``
- * ``./lightclient [Options]``
+ * ``cmake [wakaama directory]``
+ * ``make lightclient``
+ * ``./examples/lightclient/lightclient [Options]``
 
 The lightclient is much simpler that the lwm2mclient and features only four
 LWM2M objects:
@@ -238,8 +239,8 @@ Options:
 ```
 ### Bootstrap Server example
  * Create a build directory and change to that.
- * ``cmake [wakaama directory]/examples/bootstrap_server``
- * ``make``
- * ``./bootstrap_server [Options]``
+ * ``cmake [wakaama directory]``
+ * ``make bootstrap_server``
+ * ``./examples/bootstrap_server/bootstrap_server [Options]``
 
 Refer to [examples/bootstrap_server/README](./examples/bootstrap_server/README) for more information.
