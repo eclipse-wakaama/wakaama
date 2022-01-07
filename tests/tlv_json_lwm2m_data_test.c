@@ -89,8 +89,6 @@ static void test_data_and_compare(const char * uriStr,
 
     if (format != LWM2M_CONTENT_JSON)
     {
-        CU_ASSERT_EQUAL(original_length, length)
-
         if ((original_length != (size_t)length) ||
             (memcmp(original_buffer, buffer, length) != 0))
         {
