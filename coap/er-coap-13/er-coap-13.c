@@ -755,6 +755,13 @@ coap_parse_message(void *packet, uint8_t *data, uint16_t data_len)
     /* Payload marker 0xFF, currently only checking for 0xF* because rest is reserved */
     if ((current_option[0] & 0xF0)==0xF0)
     {
+      /*
+       * The presence of a marker followed by a zero-length payload MUST be
+       * processed as a message format error.
+       */
+      if (current_option + 1 == data_end) {
+        goto exit_parse_error;
+      }
       coap_pkt->payload = ++current_option;
       coap_pkt->payload_len = data_end - coap_pkt->payload;
 
