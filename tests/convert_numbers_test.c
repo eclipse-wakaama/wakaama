@@ -323,7 +323,10 @@ static void test_utils_floatToTextExponential(void)
 
     /* Test when no significant digits */
     double val = DBL_MIN/FLT_RADIX;
-    CU_ASSERT_NOT_EQUAL(val, 0)
+    _Pragma("GCC diagnostic push");
+    _Pragma("GCC diagnostic ignored \"-Wfloat-equal\"");
+    CU_ASSERT_NOT_EQUAL(val, 0);
+    _Pragma("GCC diagnostic pop");
     len = utils_floatToText(val, (uint8_t*)res, 6, true);
     CU_ASSERT(len == 3)
     if(len)
