@@ -185,6 +185,8 @@ int connection_send(connection_t *connP,
         struct sockaddr_in6 *saddr = (struct sockaddr_in6 *)&connP->addr;
         inet_ntop(saddr->sin6_family, &saddr->sin6_addr, s, INET6_ADDRSTRLEN);
         port = saddr->sin6_port;
+    } else {
+        return -1;
     }
 
     fprintf(stderr, "Sending %lu bytes to [%s]:%hu\r\n", length, s, ntohs(port));
