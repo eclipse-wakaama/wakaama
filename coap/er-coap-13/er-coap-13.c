@@ -730,6 +730,17 @@ coap_parse_message(void *packet, uint8_t *data, uint16_t data_len)
     return BAD_REQUEST_4_00;
   }
 
+  /*
+   * Empty Message:
+   *   A message with a Code of 0.00; neither a request nor a response.
+   *   An Empty message only contains the 4-byte header.
+   *
+   * TODO: Error on requests and responses
+   */
+  if ((coap_pkt->code == COAP_EMPTY_MESSAGE_CODE) && (data_len > COAP_HEADER_LEN)) {
+    goto exit_parse_error;
+  }
+
   current_option = data + COAP_HEADER_LEN;
 
   if (coap_pkt->token_len != 0)
