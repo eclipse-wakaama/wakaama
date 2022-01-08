@@ -103,6 +103,8 @@ typedef enum {
   COAP_DELETE
 } coap_method_t;
 
+#define COAP_EMPTY_MESSAGE_CODE 0x00
+
 /* CoAP response codes */
 typedef enum {
   NO_ERROR = 0,
