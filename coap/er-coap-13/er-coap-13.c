@@ -771,8 +771,7 @@ coap_parse_message(void *packet, uint8_t *data, uint16_t data_len)
 
   while (current_option < data_end)
   {
-    /* Payload marker 0xFF, currently only checking for 0xF* because rest is reserved */
-    if ((current_option[0] & 0xF0)==0xF0)
+    if (current_option[0] == 0xFF)
     {
       /*
        * The presence of a marker followed by a zero-length payload MUST be
@@ -789,6 +788,11 @@ coap_parse_message(void *packet, uint8_t *data, uint16_t data_len)
 
     option_delta = current_option[0]>>4;
     option_length = current_option[0] & 0x0F;
+    /* Error on reserved option values */
+    if ((option_delta == COAP_HEADER_OPTION_DELTA_RESERVED) ||
+        (option_length == COAP_HEADER_OPTION_LENGTH_RESERVED)) {
+      goto exit_parse_error;
+    }
 
     if (++current_option == data_end) {
       goto exit_parse_error;

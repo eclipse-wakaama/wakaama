@@ -72,7 +72,9 @@
 #define COAP_HEADER_TOKEN_LEN_POSITION       0
 
 #define COAP_HEADER_OPTION_DELTA_MASK        0xF0
+#define COAP_HEADER_OPTION_DELTA_RESERVED    0x0F
 #define COAP_HEADER_OPTION_SHORT_LENGTH_MASK 0x0F
+#define COAP_HEADER_OPTION_LENGTH_RESERVED   0x0F
 
 /* Bitmap for set options */
 enum { OPTION_MAP_SIZE = sizeof(uint8_t) * 8 };
