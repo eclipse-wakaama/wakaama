@@ -22,6 +22,16 @@
 #include "liblwm2m.h"
 #include "memtest.h"
 
+/**
+ * Comparing floats for equality, suppress warnings. Please do not use for new code!
+ */
+#define CU_ASSERT_DOUBLE_EQUAL_HIT_AND_MISS(actual, expected)                                                          \
+    {                                                                                                                  \
+        _Pragma("GCC diagnostic push");                                                                                \
+        _Pragma("GCC diagnostic ignored \"-Wfloat-equal\"");                                                           \
+        CU_ASSERT_EQUAL((actual), (expected));                                                                         \
+        _Pragma("GCC diagnostic pop");                                                                                 \
+    }
 
 static void test_tlv_new(void)
 {
@@ -468,10 +478,10 @@ static void test_tlv_float(void)
 
     lwm2m_data_encode_float(1234.56, dataP);
     CU_ASSERT_EQUAL(dataP->type, LWM2M_TYPE_FLOAT)
-    CU_ASSERT_EQUAL(dataP->value.asFloat, 1234.56)
+    CU_ASSERT_DOUBLE_EQUAL_HIT_AND_MISS(dataP->value.asFloat, 1234.56)
     result = lwm2m_data_decode_float(dataP, &value);
     CU_ASSERT_EQUAL(result, 1)
-    CU_ASSERT_EQUAL(value, 1234.56)
+    CU_ASSERT_DOUBLE_EQUAL_HIT_AND_MISS(value, 1234.56)
 
     lwm2m_data_encode_string("1234.56", dataP);
     CU_ASSERT_EQUAL(dataP->type, LWM2M_TYPE_STRING)
@@ -479,7 +489,7 @@ static void test_tlv_float(void)
     CU_ASSERT(0 == memcmp(dataP->value.asBuffer.buffer, "1234.56", 7))
     result = lwm2m_data_decode_float(dataP, &value);
     CU_ASSERT_EQUAL(result, 1)
-    CU_ASSERT_EQUAL(value, 1234.56)
+    CU_ASSERT_DOUBLE_EQUAL_HIT_AND_MISS(value, 1234.56)
     lwm2m_free(dataP->value.asBuffer.buffer);
 
     lwm2m_data_encode_string("-123456789.987", dataP);
@@ -488,7 +498,7 @@ static void test_tlv_float(void)
     CU_ASSERT(0 == memcmp(dataP->value.asBuffer.buffer, "-123456789.987", 14))
     result = lwm2m_data_decode_float(dataP, &value);
     CU_ASSERT_EQUAL(result, 1)
-    CU_ASSERT_EQUAL(value, -123456789.987)
+    CU_ASSERT_DOUBLE_EQUAL_HIT_AND_MISS(value, -123456789.987)
 
     lwm2m_data_free(1, dataP);
     MEMORY_TRACE_AFTER_EQ;
