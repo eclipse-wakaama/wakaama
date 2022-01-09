@@ -698,19 +698,21 @@ coap_status_t
 coap_parse_message(void *packet, uint8_t *data, uint16_t data_len)
 {
   coap_packet_t *const coap_pkt = (coap_packet_t *) packet;
+  const uint8_t * const data_end = data + data_len;
   uint8_t *current_option;
   uint32_t option_number = 0;
   uint32_t option_delta = 0;
   uint32_t option_length = 0;
   uint32_t *x;
-
-  if (data_len < COAP_HEADER_LEN) {
-    coap_error_message = "Illegal CoAP message";
-    return BAD_REQUEST_4_00;
-  }
+  int i;
 
   /* Initialize packet */
   memset(coap_pkt, 0, sizeof(coap_packet_t));
+
+  /* Care: Error case requries an initialized coap_pkt! */
+  if (data_len < COAP_HEADER_LEN) {
+    goto exit_parse_error;
+  }
 
   /* pointer to packet bytes */
   coap_pkt->buffer = data;
@@ -732,38 +734,39 @@ coap_parse_message(void *packet, uint8_t *data, uint16_t data_len)
 
   if (coap_pkt->token_len != 0)
   {
+      if (current_option + coap_pkt->token_len > data_end) {
+        goto exit_parse_error;
+      }
       memcpy(coap_pkt->token, current_option, coap_pkt->token_len);
       SET_OPTION(coap_pkt, COAP_OPTION_TOKEN);
 
-      PRINTF("Token (len %u) [0x%02X%02X%02X%02X%02X%02X%02X%02X]\n", coap_pkt->token_len,
-        coap_pkt->token[0],
-        coap_pkt->token[1],
-        coap_pkt->token[2],
-        coap_pkt->token[3],
-        coap_pkt->token[4],
-        coap_pkt->token[5],
-        coap_pkt->token[6],
-        coap_pkt->token[7]
-      ); /*FIXME always prints 8 bytes */
+      PRINTF("Token (len %u) [0x%02X", coap_pkt->token_len, coap_pkt->token[0]);
+      for (i = 1; i < coap_pkt->token_len; i++) {
+        PRINTF("%02X", coap_pkt->token[i]);
+      }
+      PRINTF("]\n");
   }
 
   /* parse options */
   current_option += coap_pkt->token_len;
 
-  while (current_option < data+data_len)
+  while (current_option < data_end)
   {
     /* Payload marker 0xFF, currently only checking for 0xF* because rest is reserved */
     if ((current_option[0] & 0xF0)==0xF0)
     {
       coap_pkt->payload = ++current_option;
-      coap_pkt->payload_len = data_len - (coap_pkt->payload - data);
+      coap_pkt->payload_len = data_end - coap_pkt->payload;
 
       break;
     }
 
     option_delta = current_option[0]>>4;
     option_length = current_option[0] & 0x0F;
-    ++current_option;
+
+    if (++current_option == data_end) {
+      goto exit_parse_error;
+    }
 
     /* avoids code duplication without function overhead */
     x = &option_delta;
@@ -772,26 +775,31 @@ coap_parse_message(void *packet, uint8_t *data, uint16_t data_len)
       if (*x==13)
       {
         *x += current_option[0];
-        ++current_option;
+        if (++current_option == data_end) {
+          goto exit_parse_error;
+        }
       }
       else if (*x==14)
       {
         *x += 255;
         *x += current_option[0]<<8;
-        ++current_option;
+        if (++current_option == data_end) {
+          goto exit_parse_error;
+        }
         *x += current_option[0];
-        ++current_option;
+        if (++current_option == data_end) {
+          goto exit_parse_error;
+        }
       }
     }
     while (x != &option_length && (x = &option_length));
 
     option_number += option_delta;
 
-    if (current_option + option_length > data + data_len)
+    if (current_option + option_length > data_end)
     {
         PRINTF("OPTION %u (delta %u, len %u) has invalid length.\n", option_number, option_delta, option_length);
-        coap_free_header(coap_pkt);
-        return BAD_REQUEST_4_00;
+        goto exit_parse_error;
     }
     else
     {
@@ -813,16 +821,11 @@ coap_parse_message(void *packet, uint8_t *data, uint16_t data_len)
       case COAP_OPTION_ETAG:
         coap_pkt->etag_len = (uint8_t)(MIN(COAP_ETAG_LEN, option_length));
         memcpy(coap_pkt->etag, current_option, coap_pkt->etag_len);
-        PRINTF("ETag %u [0x%02X%02X%02X%02X%02X%02X%02X%02X]\n", coap_pkt->etag_len,
-          coap_pkt->etag[0],
-          coap_pkt->etag[1],
-          coap_pkt->etag[2],
-          coap_pkt->etag[3],
-          coap_pkt->etag[4],
-          coap_pkt->etag[5],
-          coap_pkt->etag[6],
-          coap_pkt->etag[7]
-        ); /*FIXME always prints 8 bytes */
+        PRINTF("ETag %u [0x%02X", coap_pkt->etag_len);
+        for (i = 1; i < coap_pkt->etag_len; i++) {
+          PRINTF("%02X", coap_pkt->etag[i]);
+        }
+        PRINTF("]\n");
         break;
       case COAP_OPTION_ACCEPT:
         if (coap_pkt->accept_num < COAP_MAX_ACCEPT_NUM)
@@ -836,16 +839,11 @@ coap_parse_message(void *packet, uint8_t *data, uint16_t data_len)
         /*FIXME support multiple ETags */
         coap_pkt->if_match_len = (uint8_t)(MIN(COAP_ETAG_LEN, option_length));
         memcpy(coap_pkt->if_match, current_option, coap_pkt->if_match_len);
-        PRINTF("If-Match %u [0x%02X%02X%02X%02X%02X%02X%02X%02X]\n", coap_pkt->if_match_len,
-          coap_pkt->if_match[0],
-          coap_pkt->if_match[1],
-          coap_pkt->if_match[2],
-          coap_pkt->if_match[3],
-          coap_pkt->if_match[4],
-          coap_pkt->if_match[5],
-          coap_pkt->if_match[6],
-          coap_pkt->if_match[7]
-        ); /*FIXME always prints 8 bytes */
+        PRINTF("If-Match %u [0x%02X", coap_pkt->if_match_len);
+        for (i = 1; i < coap_pkt->if_match_len; i++) {
+          PRINTF("%02X", coap_pkt->if_match[i]);
+        }
+        PRINTF("]\n");
         break;
       case COAP_OPTION_IF_NONE_MATCH:
         coap_pkt->if_none_match = 1;
@@ -934,6 +932,11 @@ coap_parse_message(void *packet, uint8_t *data, uint16_t data_len)
 
 
   return NO_ERROR;
+
+exit_parse_error:
+  coap_free_header(coap_pkt);
+  coap_error_message = "Invalid COAP message";
+  return BAD_REQUEST_4_00;
 }
 /*-----------------------------------------------------------------------------------*/
 /*- REST FRAMEWORK FUNCTIONS --------------------------------------------------------*/
