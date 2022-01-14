@@ -257,8 +257,7 @@ uint8_t prv_coap_block_handler(lwm2m_block_data_t ** pBlockDataHead,
           uint8_t * oldBuffer = blockData->blockBuffer;
           size_t oldSize = blockData->blockBufferSize;
 
-          if (blockData->blockBufferSize != blockSize * blockNum)
-          {
+          if (blockData->blockBufferSize != (size_t)blockSize * blockNum) {
               // we don't receive block in right order
               // TODO should we clean block1 data for this server ?
               return COAP_408_REQ_ENTITY_INCOMPLETE;
