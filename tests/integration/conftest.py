@@ -1,65 +1,66 @@
 """Wakaama integration tests (pytest) fixtures"""
 from pathlib import Path
 from time import sleep
-import pytest
+
 import pexpect
+import pytest
 
 
 # pylint: disable=no-member
 class HelperBase:
     """Provides helper methods for integration tests. Wraps "pexpect" API"""
 
-    def __dumptext(self):
+    def __dump_text(self):
         """Internal method that prints debug help"""
         print("Debug help: actual output---------------------")
         print(self.pexpectobj.before)
         print("----------------------------------------------")
 
-    def commandresponse(self, cmd,resp):
+    def command_response(self, cmd, resp):
         """Issue CLI command and check response"""
         self.pexpectobj.sendline(cmd)
         try:
             self.pexpectobj.expect_exact(resp)
         except pexpect.exceptions.TIMEOUT:
-            self.__dumptext()
+            self.__dump_text()
             return False
         return True
 
-    def waitforpacket(self):
+    def wait_for_packet(self):
         """Wait for "packet printout" and return text output"""
         try:
             self.pexpectobj.expect_exact("bytes received from")
         except pexpect.exceptions.TIMEOUT:
-            self.__dumptext()
+            self.__dump_text()
             assert False
         try:
             self.pexpectobj.expect_exact("\r\r\n>")
         except pexpect.exceptions.TIMEOUT:
-            self.__dumptext()
+            self.__dump_text()
             assert False
         return self.pexpectobj.before
 
-    def waitfortext(self,txt):
+    def wait_for_text(self, txt):
         """Wait for text printout and return True if found"""
         try:
             self.pexpectobj.expect_exact(txt)
         except pexpect.exceptions.TIMEOUT:
-            self.__dumptext()
+            self.__dump_text()
             return False
         return True
 
-    def waitfortime(self, timedelay):
+    def wait_for_time(self, timedelay):
         """Wait for time and return output since last command"""
         sleep(timedelay)
         # this is a "hack" to be able to return output between commands
-        self.commandresponse("help", "help")
+        self.command_response("help", "help")
         return self.pexpectobj.before
 
     def quit(self):
         """Quit client or server"""
-        self.pexpectobj.sendline("q")       # exit, if client
-        self.pexpectobj.sendline("quit")    # exit, if server
-        self.pexpectobj.expect(pexpect.EOF) # make sure exited
+        self.pexpectobj.sendline("q")  # exit, if client
+        self.pexpectobj.sendline("quit")  # exit, if server
+        self.pexpectobj.expect(pexpect.EOF)  # make sure exited
 
 
 class Lwm2mServer(HelperBase):
@@ -77,6 +78,7 @@ class Lwm2mServer(HelperBase):
                                        "w",
                                        encoding="utf-8")
 
+
 class Lwm2mClient(HelperBase):
     """Client subclass of HelperBase"""
     def __init__(self, arguments="", timeout=3, encoding="utf8"):
@@ -91,6 +93,7 @@ class Lwm2mClient(HelperBase):
                                        "/lwm2mclient_log.txt",
                                        "w",
                                        encoding="utf-8")
+
 
 class Lwm2mBootstrapServer(HelperBase):
     """Bootstrap-server subclass of HelperBase"""
@@ -140,6 +143,6 @@ def lwm2mbootstrapserver():
     """Provide bootstrap_server instance."""
     bootstrapserver = Lwm2mBootstrapServer("-f examples/bootstrap_server/bootstrap_server.ini",
                                            timeout=13)
-    bootstrapserver.waitfortext(">")
+    bootstrapserver.wait_for_text(">")
     yield bootstrapserver
     bootstrapserver.quit()
