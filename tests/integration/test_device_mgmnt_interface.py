@@ -1,6 +1,7 @@
 """Wakaama integration tests (pytest)"""
-import re
 import json
+import re
+
 from helpers.helpers import get_senml_json_record
 
 
@@ -9,10 +10,10 @@ def test_read_on_object(lwm2mserver, lwm2mclient):
     Purpose of this test is to show conformance with the LwM2M Read
     operation on whole Object"""
 
-    lwm2mclient.waitfortext("STATE_READY")
+    lwm2mclient.wait_for_text("STATE_READY")
     # Test Procedure 1
-    assert lwm2mserver.commandresponse("read 0 /1", "OK")
-    text = lwm2mserver.waitforpacket()
+    assert lwm2mserver.command_response("read 0 /1", "OK")
+    text = lwm2mserver.wait_for_packet()
     # Pass-Criteria A
     assert text.find("COAP_205_CONTENT") > 0
     packet = re.findall(r"(\[.*\])", text)
@@ -26,8 +27,8 @@ def test_read_on_object(lwm2mserver, lwm2mclient):
     assert get_senml_json_record(parsed, "0/6", "vb") is False
     assert get_senml_json_record(parsed, "0/7", "vs") == 'U'
     # Test Procedure 2
-    assert lwm2mserver.commandresponse("read 0 /3", "OK")
-    text = lwm2mserver.waitforpacket()
+    assert lwm2mserver.command_response("read 0 /3", "OK")
+    text = lwm2mserver.wait_for_packet()
     # Pass-Criteria B
     assert text.find("COAP_205_CONTENT") > 0
     packet = re.findall(r"(\[.*\])", text)
@@ -48,7 +49,7 @@ def test_read_on_object(lwm2mserver, lwm2mclient):
     assert get_senml_json_record(parsed, "0/9", "v") == 100
     assert get_senml_json_record(parsed, "0/10", "v") == 15
     assert get_senml_json_record(parsed, "0/11/0", "v") == 0
-    assert get_senml_json_record(parsed, "0/13", "v") > 0    # current time
+    assert get_senml_json_record(parsed, "0/13", "v") > 0  # current time
     assert get_senml_json_record(parsed, "0/14", "vs") == "+01:00"
     assert get_senml_json_record(parsed, "0/15", "vs") == "Europe/Berlin"
     assert get_senml_json_record(parsed, "0/16", "vs") == "U"

@@ -1,5 +1,6 @@
 """Wakaama integration tests (pytest)"""
 import re
+
 import pytest
 
 
@@ -31,8 +32,8 @@ def test_registration_interface(lwm2mserver, lwm2mclient):
     """LightweightM2M-1.1-int-101
     Test that the Client registers with the Server."""
 
-    lwm2mclient.waitfortext("STATE_READY")
-    text = lwm2mserver.waitforpacket()
+    lwm2mclient.wait_for_text("STATE_READY")
+    text = lwm2mserver.wait_for_packet()
     client_id, event, endpoint, version, binding, lifetime, objects = \
         parse_client_registration(text)
     assert client_id == 0
@@ -50,16 +51,16 @@ def test_registration_information_update(lwm2mserver, lwm2mclient):
     """LightweightM2M-1.1-int-102
     Test that the client updates the registration information on the Server."""
 
-    lwm2mclient.waitfortext("STATE_READY")
+    lwm2mclient.wait_for_text("STATE_READY")
     # Test Procedure 1
-    assert lwm2mserver.commandresponse("write 0 /1/0/1 20", "OK")
-    text = lwm2mserver.waitforpacket()
+    assert lwm2mserver.command_response("write 0 /1/0/1 20", "OK")
+    text = lwm2mserver.wait_for_packet()
     # Pass-Criteria A
     assert text.find("COAP_204_CHANGED") > 0
     # Test Procedure 2
-    text = lwm2mserver.waitfortime(20)
+    text = lwm2mserver.wait_for_time(20)
     # Pass-Criteria B, D (C not observable)
-    assert text.find("lifetime: 300 sec") > 0 # NOTE: this should be 20 sec?
+    assert text.find("lifetime: 300 sec") > 0  # NOTE: this should be 20 sec?
     # expect update response immediately and again after every half "lifetime" (10s)
     assert 2 <= text.count("Client #0 updated.") <= 3
 
@@ -74,22 +75,22 @@ def test_discarded_register_update(lwm2mserver, lwm2mclient):
 
     Test only partially implemented due to limitations (see comments)"""
 
-    lwm2mclient.waitfortext("STATE_READY")
+    lwm2mclient.wait_for_text("STATE_READY")
     # Test Procedure 1
     # server learns client lifetime when client registers
     # a server write to /1/x/1 does not affect the servers knowledge about
     # client lifetime therefore a higher value than the inital registration lifetime
     # is written to this resource to provoke the server to drop the client
-    text = lwm2mserver.waitfortime(60)
+    text = lwm2mserver.wait_for_time(60)
     # Pass-Criteria A
     assert text.find("Client #0 updated.")
     # Test Procedure 2
     # Client reports 60s lifetime to server
     # Server changes client lifetime to 180
     #   => server will drop client before an update is received
-    assert lwm2mserver.commandresponse("write 0 /1/0/1 180", "OK")
+    assert lwm2mserver.command_response("write 0 /1/0/1 180", "OK")
     # ensure client is dropped >60s (in practice >30s)
-    text = lwm2mserver.waitfortime(70)
+    text = lwm2mserver.wait_for_time(70)
     # Pass-Criteria B
     assert text.find("Client #0 unregistered.") > 0
     # Test Procedure 3
