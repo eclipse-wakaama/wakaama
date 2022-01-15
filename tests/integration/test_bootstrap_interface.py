@@ -17,7 +17,7 @@ def test_client_initiated_bootstrap(lwm2mbootstrapserver, lwm2mclient):
     assert lwm2mbootstrapserver.waitfortext('Bootstrap request from "apa"\r\r\n')
 
     # Pass-Criteria A
-    # should check for "2.04" changed but informarmation not available at CLI.
+    # should check for "2.04" changed but information not available at CLI.
     # Just check that we got packet (of correct size)
     assert lwm2mclient.waitfortext("8 bytes received from")
 
