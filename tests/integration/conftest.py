@@ -137,7 +137,7 @@ def lwm2mclient(request):
 
 @pytest.fixture
 def lwm2mbootstrapserver():
-    """Provide lwm2mclient instance."""
+    """Provide bootstrap_server instance."""
     bootstrapserver = Lwm2mBootstrapServer("-f examples/bootstrap_server/bootstrap_server.ini",
                                            timeout=13)
     bootstrapserver.waitfortext(">")
