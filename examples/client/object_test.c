@@ -559,7 +559,7 @@ lwm2m_object_t * get_test_object(void)
             targetP->dec     = -30 + i + (double)i/100.0;
             char * str = lwm2m_malloc(i + 1);
             str[0] = 0;
-            for (int j = 0; j <= i; j++) {
+            for (int j = 0; j < i; j++) {
                 strcat(str, "I");
             }
             targetP->str     = str;
