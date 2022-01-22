@@ -1,9 +1,9 @@
-name: C Standards
+name: Compilation only checks
 
 on: [push, pull_request]
 
 jobs:
-  build:
+  standards:
     runs-on: ubuntu-20.04
 
     strategy:
@@ -38,3 +38,35 @@ jobs:
           --c-extensions ${{ matrix.c_extensions }}
       env:
         CC:  ${{ matrix.compiler }}
+
+  standalone-examples:
+    runs-on: ubuntu-20.04
+
+    strategy:
+      matrix:
+        example: ["bootstrap_server", "client", "lightclient", "server"]
+
+    steps:
+    - name: Checkout code including full history and submodules
+      uses: actions/checkout@v2
+      with:
+        submodules: true
+        fetch-depth: 0
+
+    - name: Install dependencies from APT repository
+      run: |
+        sudo apt-get update
+        sudo apt-get install libcunit1-dev wget unzip
+
+    - name: Install CMake
+      uses: lukka/get-cmake@latest
+
+    - name: Install Ninja
+      uses: seanmiddleditch/gha-setup-ninja@master
+
+    - Build examples as stand-alone projects
+      run: |
+        tools/ci/run_ci.sh \
+          --run-clean \
+          --run-build \
+          --source-directory examples/${{ matrix.example }}
