@@ -97,6 +97,10 @@ extern "C" {
 #error "LWM2M_BOOTSTRAP and LWM2M_BOOTSTRAP_SERVER_MODE cannot be defined at the same time!"
 #endif
 
+#if !defined(LWM2M_CLIENT_MODE) && !defined(LWM2M_SERVER_MODE) && !defined(LWM2M_BOOTSTRAP_SERVER_MODE)
+#error At least one mode must be defined!
+#endif
+
 /*
  * Platform abstraction functions to be implemented by the user
  */

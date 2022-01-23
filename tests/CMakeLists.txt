@@ -9,15 +9,7 @@ include(${CMAKE_CURRENT_LIST_DIR}/../coap/coap.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/../data/data.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/../examples/shared/shared.cmake)
 
-add_compile_definitions(LWM2M_CLIENT_MODE)
-add_compile_definitions(LWM2M_SUPPORT_TLV)
-add_compile_definitions(LWM2M_SUPPORT_JSON)
-
-if(LWM2M_VERSION VERSION_GREATER "1.0")
-    add_compile_definitions(LWM2M_SUPPORT_SENML_JSON)
-endif()
-
-# Enable all warnings for this test build  
+# Enable certain warnings for all test builds
 add_compile_options(-pedantic -Wall -Wextra -Wfloat-equal -Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings -Waggregate-return -Wswitch-default)
 
 include_directories(${WAKAAMA_HEADERS_DIR} ${COAP_HEADERS_DIR} ${DATA_HEADERS_DIR} ${WAKAAMA_SOURCES_DIR} ${SHARED_INCLUDE_DIRS})
@@ -27,6 +19,12 @@ file(GLOB SOURCES "*.c")
 
 add_executable(${PROJECT_NAME} ${SOURCES} ${WAKAAMA_SOURCES} ${COAP_SOURCES} ${DATA_SOURCES} ${SHARED_SOURCES})
 target_link_libraries(${PROJECT_NAME} cunit)
+
+target_compile_definitions(${PROJECT_NAME} PRIVATE LWM2M_CLIENT_MODE LWM2M_SUPPORT_TLV LWM2M_SUPPORT_JSON)
+
+if(LWM2M_VERSION VERSION_GREATER "1.0")
+    target_compile_definitions(${PROJECT_NAME} PRIVATE LWM2M_SUPPORT_SENML_JSON)
+endif()
 
 if(SANITIZER)
     target_compile_options(${PROJECT_NAME} PRIVATE -fsanitize=${SANITIZER} -fno-sanitize-recover=all)
@@ -38,5 +36,7 @@ if(COVERAGE)
     target_link_options(${PROJECT_NAME} PRIVATE --coverage)
 endif()
 
-# Add our unit tests to it "test" target
+# Add our unit tests to the "test" target
 add_test(NAME ${PROJECT_NAME}_test COMMAND ${PROJECT_NAME})
+
+add_subdirectory(cartesian_compilation)
