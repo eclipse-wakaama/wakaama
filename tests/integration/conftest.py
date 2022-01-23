@@ -65,6 +65,7 @@ class HelperBase:
 
 class Lwm2mServer(HelperBase):
     """Server subclass of HelperBase"""
+
     def __init__(self, arguments="", timeout=3, encoding="utf8"):
         base_path = str(Path(__file__).parent.absolute())
         self.pexpectobj = pexpect.spawn(base_path +
@@ -81,6 +82,7 @@ class Lwm2mServer(HelperBase):
 
 class Lwm2mClient(HelperBase):
     """Client subclass of HelperBase"""
+
     def __init__(self, arguments="", timeout=3, encoding="utf8"):
         base_path = str(Path(__file__).parent.absolute())
         self.pexpectobj = pexpect.spawn(base_path +
@@ -97,6 +99,7 @@ class Lwm2mClient(HelperBase):
 
 class Lwm2mBootstrapServer(HelperBase):
     """Bootstrap-server subclass of HelperBase"""
+
     def __init__(self, arguments="", timeout=3, encoding="utf8"):
         base_path = str(Path(__file__).parent.absolute())
         self.pexpectobj = pexpect.spawn(base_path +
