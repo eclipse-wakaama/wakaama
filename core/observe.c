@@ -1256,7 +1256,7 @@ int prv_lwm2m_observe_cancel(lwm2m_context_t * contextP,
 
         observationP->status = STATE_DEREG_PENDING;
 
-        int ret = transaction_send(contextP, transactionP);
+        ret = transaction_send(contextP, transactionP);
         if (ret != 0) lwm2m_free(cancelP);
         return ret;
     }
