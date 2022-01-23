@@ -1,4 +1,4 @@
-name: C Standards
+name: Compilation only checks
 
 on: [push, pull_request]
 
@@ -36,5 +36,15 @@ jobs:
           --run-build \
           --c-standard ${{ matrix.c_standard }} \
           --c-extensions ${{ matrix.c_extensions }}
+      env:
+        CC:  ${{ matrix.compiler }}
+
+    - Special case: lwm2mclient with DTLS (tinydtls)
+      run: |
+        tools/ci/run_ci.sh \
+          --run-build \
+          --c-standard ${{ matrix.c_standard }} \
+          --c-extensions ${{ matrix.c_extensions }} \
+          --source-directory examples/client
       env:
         CC:  ${{ matrix.compiler }}
