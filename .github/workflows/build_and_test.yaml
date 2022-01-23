@@ -39,7 +39,7 @@ jobs:
       env:
         CC:  ${{ matrix.compiler }}
 
-    - name: Build, execute sanititzed unit tests
+    - name: Build, execute sanitized unit tests
       run: |
         tools/ci/run_ci.sh --run-tests --sanitizer ${{ matrix.sanitizer }}
       env:
