@@ -865,7 +865,7 @@ lwm2m_server_t * utils_findBootstrapServer(lwm2m_context_t * contextP,
 #endif
 }
 
-#ifndef LWM2M_CLIENT_MODE
+#if defined(LWM2M_SERVER_MODE) || defined(LWM2M_BOOTSTRAP_SERVER_MODE)
 lwm2m_client_t * utils_findClient(lwm2m_context_t * contextP,
                                   void * fromSessionH)
 {
