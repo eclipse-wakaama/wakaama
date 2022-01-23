@@ -449,7 +449,8 @@ size_t utils_base64Decode(const char * dataP, size_t dataLen, uint8_t * bufferP,
 #ifdef LWM2M_CLIENT_MODE
 lwm2m_server_t * utils_findServer(lwm2m_context_t * contextP, void * fromSessionH);
 lwm2m_server_t * utils_findBootstrapServer(lwm2m_context_t * contextP, void * fromSessionH);
-#else
+#endif
+#if defined(LWM2M_SERVER_MODE) || defined(LWM2M_BOOTSTRAP_SERVER_MODE)
 lwm2m_client_t * utils_findClient(lwm2m_context_t * contextP, void * fromSessionH);
 #endif
 
