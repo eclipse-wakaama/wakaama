@@ -3,8 +3,8 @@ name: Compliance
 on: pull_request
 
 jobs:
-  check-gitlint:
-    name: Run gitlint
+  lint-code:
+    name: Run compliance checks
     runs-on: ubuntu-20.04
 
     steps:
@@ -13,47 +13,21 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Install gitlint
+    - name: Install compliance tools
       run: |
+        sudo apt update
+        sudo apt -qy --no-install-recommends install clang-format-10
         pip3 install gitlint
 
     - name: Check commits with gitlint
       run: |
         tools/ci/run_ci.sh --branch-target origin/${{ github.base_ref }} --run-gitlint
 
-  check-clang-format:
-    name: Run clang-format
-    runs-on: ubuntu-20.04
-
-    steps:
-    - name: Checkout code including full history
-      uses: actions/checkout@v2
-      with:
-        fetch-depth: 0
-
-    - name: Install clang-format
-      run: |
-        sudo apt update
-        sudo apt -qy --no-install-recommends install clang-format-10
-
-    - name: Check commits with clang-format
+    - name: Check C code (delta) with clang-format
       run: |
         tools/ci/run_ci.sh --branch-target origin/${{ github.base_ref }} --run-clang-format
 
-  check-pylint:
-    name: Run pylint
-    runs-on: ubuntu-20.04
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
-
-    - name: Install pylint
+    - name: Check Python code with pylint
       run: |
-        pip3 install pylint -r tests/integration/requirements.txt
-
-    - name: Check python code with pylint
-      run: |
-          python -c "import sys; print(sys.version)"
           cd tests
           pylint integration
