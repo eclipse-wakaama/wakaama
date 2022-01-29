@@ -2,43 +2,34 @@ cmake_minimum_required(VERSION 3.13)
 
 project(lwm2mclient C)
 
-option(DTLS "Enable DTLS" OFF)
+include(../../wakaama.cmake)
 
-include(${CMAKE_CURRENT_LIST_DIR}/../../core/wakaama.cmake)
-include(${CMAKE_CURRENT_LIST_DIR}/../../coap/coap.cmake)
-include(${CMAKE_CURRENT_LIST_DIR}/../../data/data.cmake)
-include(${CMAKE_CURRENT_LIST_DIR}/../shared/shared.cmake)
-
-add_compile_definitions(LWM2M_CLIENT_MODE)
-add_compile_definitions(LWM2M_BOOTSTRAP)
-
-if(LWM2M_VERSION VERSION_GREATER "1.0")
-    add_compile_definitions(LWM2M_SUPPORT_SENML_JSON)
-else()
-    add_compile_definitions(LWM2M_SUPPORT_JSON)
-endif()
-
-if(LWM2M_RAW_BLOCK1_REQUESTS)
-    add_compile_definitions(LWM2M_RAW_BLOCK1_REQUESTS)
-endif()
-
-include_directories (${WAKAAMA_HEADERS_DIR} ${COAP_HEADERS_DIR} ${DATA_HEADERS_DIR} ${WAKAAMA_SOURCES_DIR} ${SHARED_INCLUDE_DIRS})
-
-SET(SOURCES
-    ${CMAKE_CURRENT_LIST_DIR}/lwm2mclient.c
-    ${CMAKE_CURRENT_LIST_DIR}/lwm2mclient.h
-    ${CMAKE_CURRENT_LIST_DIR}/system_api.c
-    ${CMAKE_CURRENT_LIST_DIR}/object_security.c
-    ${CMAKE_CURRENT_LIST_DIR}/object_server.c
-    ${CMAKE_CURRENT_LIST_DIR}/object_device.c
-    ${CMAKE_CURRENT_LIST_DIR}/object_firmware.c
-    ${CMAKE_CURRENT_LIST_DIR}/object_location.c
-    ${CMAKE_CURRENT_LIST_DIR}/object_connectivity_moni.c
-    ${CMAKE_CURRENT_LIST_DIR}/object_connectivity_stat.c
-    ${CMAKE_CURRENT_LIST_DIR}/object_access_control.c
-    ${CMAKE_CURRENT_LIST_DIR}/object_test.c
+set(SOURCES
+    lwm2mclient.c
+    lwm2mclient.h
+    object_access_control.c
+    object_connectivity_moni.c
+    object_connectivity_stat.c
+    object_device.c
+    object_firmware.c
+    object_location.c
+    object_security.c
+    object_server.c
+    object_test.c
+    system_api.c
 )
 
-add_executable(${PROJECT_NAME} ${SOURCES} ${WAKAAMA_SOURCES} ${COAP_SOURCES} ${DATA_SOURCES} ${SHARED_SOURCES})
+# Client without DTLS support
+add_executable(lwm2mclient ${SOURCES})
+target_compile_definitions(lwm2mclient PRIVATE LWM2M_CLIENT_MODE LWM2M_BOOTSTRAP LWM2M_SUPPORT_SENML_JSON)
+target_compile_definitions(lwm2mclient PRIVATE)
+target_sources_wakaama(lwm2mclient)
+target_sources_shared(lwm2mclient)
 
-SOURCE_GROUP(wakaama FILES ${WAKAAMA_SOURCES})
+# Client with DTLS support provided by tinydtls
+add_executable(lwm2mclient_tinydtls ${SOURCES})
+set_target_properties(lwm2mclient_tinydtls PROPERTIES DTLS "tinydtls")
+target_compile_definitions(lwm2mclient_tinydtls PRIVATE LWM2M_CLIENT_MODE)
+target_compile_definitions(lwm2mclient_tinydtls PRIVATE LWM2M_BOOTSTRAP)
+target_sources_wakaama(lwm2mclient_tinydtls)
+target_sources_shared(lwm2mclient_tinydtls)

@@ -24,6 +24,15 @@ jobs:
         githubToken: ${{ github.token }}
         install: |
           apt update
-          apt -qy --no-install-recommends install libcunit1-dev ninja-build unzip wget build-essential cmake
+          apt -qy --no-install-recommends install \
+                autoconf \
+                build-essential \
+                cmake \
+                git \
+                libcunit1-dev \
+                ninja-build \
+                unzip \
+                wget \
+                ;
         run: |
           tools/ci/run_ci.sh --run-build --run-tests
