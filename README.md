@@ -42,7 +42,7 @@ Developers mailing list: https://dev.eclipse.org/mailman/listinfo/wakaama-dev
 Wakaama is not a library but files to be built with an application.
 Wakaama uses CMake >= 3.13. Look at examples/server/CMakeLists.txt for an
 example of how to include it.
-Several compilation switches are used:
+Several preprocessor definitions are supported:
  - Endianness: Exactly one has to be defined.
    - LWM2M_BIG_ENDIAN if your target platform uses big-endian format.
    - LWM2M_LITTLE_ENDIAN if your target platform uses little-endian format.
@@ -55,10 +55,9 @@ Several compilation switches are used:
  - LWM2M_SUPPORT_JSON to enable JSON payload support (implicit when defining LWM2M_SERVER_MODE)
  - LWM2M_SUPPORT_SENML_JSON to enable SenML JSON payload support (implicit for LWM2M 1.1 or greater when defining LWM2M_SERVER_MODE or LWM2M_BOOTSTRAP_SERVER_MODE)
  - LWM2M_OLD_CONTENT_FORMAT_SUPPORT to support the deprecated content format values for TLV and JSON.
- - LWM2M_VERSION to specify which version of the LWM2M spec to support.
-   Clients will support only that version. Servers will support that version and below.
-   By default the latest version is supported. To specify version 1.0, for example, pass
-   -DLWM2M_VERSION="1.0" to cmake.
+ - Version 1.1 of LWM2M is supported per default, but can be constrained to older versions:
+   - LWM2M_VERSION_1_0 to support only version 1.0
+   Please note: Clients support only the specified version, while servers are backward compatible.
  - LWM2M_RAW_BLOCK1_REQUESTS For low memory client devices where it is not possible to keep a large post or put request in memory to be parsed (typically a firmware write).
    This option enable each unprocessed block 1 payload to be passed to the application, typically to be stored to a flash memory. 
  - LWM2M_COAP_DEFAULT_BLOCK_SIZE CoAP block size used by CoAP layer when performing block-wise transfers. Possible values: 16, 32, 64, 128, 256, 512 and 1024. Defaults to 1024.
