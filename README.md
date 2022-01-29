@@ -36,6 +36,21 @@ Developers mailing list: https://dev.eclipse.org/mailman/listinfo/wakaama-dev
           +- shared            (utility functions for connection handling and command-
                                 line interface)
 
+## Checking out the code
+
+### Using Wakaama as library
+
+```
+git clone https://github.com/eclipse/wakaama.git
+```
+
+### Working on Wakaama
+
+When working on Wakaama itself, or intending to run the example client application, submodules must be checked out:
+
+```
+git clone --recurse-submodules https://github.com/eclipse/wakaama.git
+```
 
 ## Compiling
 
@@ -136,18 +151,7 @@ Options:
  * ``make``
  * ``./lwm2mclient [Options]``
 
-DTLS feature requires the tinydtls submodule. To include it, on the first run,
-use the following commands to retrieve the sources:
- * ``git submodule init``
- * ``git submodule update``
-
-You need to install autoconf and automake to build with tinydtls.
-
-Build with tinydtls:
- * Create a build directory and change to that.
- * ``cmake -DDTLS=1 [wakaama directory]/examples/client``
- * ``make``
- * ``./lwm2mclient [Options]``
+Next to lwm2mclient a DTLS enabled variant named lwm2mclient_tinydtls gets built.
 
 The lwm2mclient features nine LWM2M objects:
  - Security Object (id: 0)
@@ -172,7 +176,7 @@ The lwm2mclient features nine LWM2M objects:
            exec |  2 |     E      |    No     |    Yes    |         |       |
            dec  |  3 |    R/W     |    No     |    Yes    |  Float  |       |
 
-The lwm2mclient opens udp port 56830 and tries to register to a LWM2M Server at
+The lwm2mclient opens UDP port 56830 and tries to register to a LWM2M Server at
 127.0.0.1:5683. It features a basic command line interface. Type 'help' for a
 list of supported commands.
 
@@ -193,7 +197,7 @@ Options:
 
 ```
 
-If DTLS feature enable:
+Additional values for the lwm2mclient_tinydtls binary:
 ```
   -i Set the device management or bootstrap server PSK identity. If not set use none secure mode
   -s Set the device management or bootstrap server Pre-Shared-Key. If not set use none secure mode

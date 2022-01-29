@@ -2,41 +2,38 @@ cmake_minimum_required(VERSION 3.13)
 
 project(lwm2munittests C)
 
-add_compile_definitions(_POSIX_C_SOURCE=200809)
+add_executable(
+    lwm2munittests
+    block1tests.c
+    convert_numbers_test.c
+    er_coap_coap_parse_message.c
+    memtest.h
+    senml_json_tests.c
+    tests.h
+    tlv_json_lwm2m_data_test.c
+    tlvtests.c
+    unittests.c
+    uritests.c
+)
 
-include(${CMAKE_CURRENT_LIST_DIR}/../core/wakaama.cmake)
-include(${CMAKE_CURRENT_LIST_DIR}/../coap/coap.cmake)
-include(${CMAKE_CURRENT_LIST_DIR}/../data/data.cmake)
-include(${CMAKE_CURRENT_LIST_DIR}/../examples/shared/shared.cmake)
+target_link_libraries(lwm2munittests cunit)
+target_compile_definitions(lwm2munittests PRIVATE LWM2M_CLIENT_MODE LWM2M_SUPPORT_TLV LWM2M_SUPPORT_JSON)
 
-add_compile_definitions(LWM2M_CLIENT_MODE)
-add_compile_definitions(LWM2M_SUPPORT_TLV)
-add_compile_definitions(LWM2M_SUPPORT_JSON)
+# Our tests are designed for POSIX systems
+target_compile_definitions(lwm2munittests PRIVATE _POSIX_C_SOURCE=200809)
 
-if(LWM2M_VERSION VERSION_GREATER "1.0")
-    add_compile_definitions(LWM2M_SUPPORT_SENML_JSON)
-endif()
-
-# Enable all warnings for this test build  
-add_compile_options(-pedantic -Wall -Wextra -Wfloat-equal -Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings -Waggregate-return -Wswitch-default)
-
-include_directories(${WAKAAMA_HEADERS_DIR} ${COAP_HEADERS_DIR} ${DATA_HEADERS_DIR} ${WAKAAMA_SOURCES_DIR} ${SHARED_INCLUDE_DIRS})
-set_source_files_properties(${DATA_SOURCES_DIR}/senml_json.c PROPERTIES COMPILE_FLAGS -Wno-float-equal)
-
-file(GLOB SOURCES "*.c")
-
-add_executable(${PROJECT_NAME} ${SOURCES} ${WAKAAMA_SOURCES} ${COAP_SOURCES} ${DATA_SOURCES} ${SHARED_SOURCES})
-target_link_libraries(${PROJECT_NAME} cunit)
+target_sources_wakaama(lwm2munittests)
+target_sources_shared(lwm2munittests)
 
 if(SANITIZER)
-    target_compile_options(${PROJECT_NAME} PRIVATE -fsanitize=${SANITIZER} -fno-sanitize-recover=all)
-    target_link_options(${PROJECT_NAME} PRIVATE -fsanitize=${SANITIZER} -fno-sanitize-recover=all)
+    target_compile_options(lwm2munittests PRIVATE -fsanitize=${SANITIZER} -fno-sanitize-recover=all)
+    target_link_options(lwm2munittests PRIVATE -fsanitize=${SANITIZER} -fno-sanitize-recover=all)
 endif()
 
 if(COVERAGE)
-    target_compile_options(${PROJECT_NAME} PRIVATE --coverage)
-    target_link_options(${PROJECT_NAME} PRIVATE --coverage)
+    target_compile_options(lwm2munittests PRIVATE --coverage)
+    target_link_options(lwm2munittests PRIVATE --coverage)
 endif()
 
-# Add our unit tests to it "test" target
-add_test(NAME ${PROJECT_NAME}_test COMMAND ${PROJECT_NAME})
+# Add our unit tests to the "test" target
+add_test(NAME lwm2munittests_test COMMAND lwm2munittests)
