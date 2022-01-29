@@ -34,6 +34,7 @@ OPT_WRAPPER_CMD=""
 RUN_BUILD=0
 RUN_CLANG_FORMAT=0
 RUN_CLEAN=0
+RUN_CMAKE_LINT=0
 RUN_GITLINT=0
 RUN_GIT_BLAME_IGNORE=0
 RUN_TESTS=0
@@ -69,9 +70,10 @@ Options:
 
 Available steps (executed by --all):
   --run-gitlint            Check git commits with gitlint
-  --run-clang-format       Check code formatting with clang-format
+  --run-clang-format       Check C code formatting
   --run-git-blame-ignore   Validate .git-blame-ignore-revs
   --run-clean              Remove all build artifacts
+  --run-cmake-lint         Check CMake files formatting
   --run-build              Build all targets
   --run-tests              Build and execute tests
 "
@@ -101,11 +103,15 @@ function run_clang_format() {
     exit 1
   fi
 
-  echo "No code formatting errors found"
+  echo "No C code formatting errors found"
 }
 
 function run_clean() {
   rm -rf build-wakaama
+}
+
+function run_cmake_lint() {
+  git ls-files '*CMakeLists.txt' '*.cmake' | xargs cmake-lint
 }
 
 function run_gitlint() {
@@ -195,6 +201,7 @@ if ! PARSED_OPTS=$(getopt -o vah \
                           -l run-build \
                           -l run-clang-format \
                           -l run-clean \
+                          -l run-cmake-lint \
                           -l run-gitlint \
                           -l run-git-blame-ignore \
                           -l run-tests \
@@ -238,6 +245,10 @@ while true; do
       ;;
     --run-clean)
       RUN_CLEAN=1
+      shift
+      ;;
+    --run-cmake-lint)
+      RUN_CMAKE_LINT=1
       shift
       ;;
     --run-build)
@@ -287,6 +298,7 @@ while true; do
     -a|--all)
       RUN_CLANG_FORMAT=1
       RUN_CLEAN=1
+      RUN_CMAKE_LINT=1
       RUN_GITLINT=1
       RUN_GIT_BLAME_IGNORE=1
       RUN_BUILD=1
@@ -360,6 +372,10 @@ fi
 
 if [ "${RUN_CLEAN}" -eq 1 ]; then
   run_clean
+fi
+
+if [ "${RUN_CMAKE_LINT}" -eq 1 ]; then
+  run_cmake_lint
 fi
 
 if [ "${RUN_BUILD}" -eq 1 ]; then

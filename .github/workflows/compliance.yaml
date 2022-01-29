@@ -17,7 +17,7 @@ jobs:
       run: |
         sudo apt update
         sudo apt -qy --no-install-recommends install clang-format-10
-        pip3 install gitlint
+        pip3 install -r tools/requirements-compliance.txt
 
     - name: Check commits with gitlint
       run: |
@@ -26,6 +26,10 @@ jobs:
     - name: Check C code (delta) with clang-format
       run: |
         tools/ci/run_ci.sh --branch-target origin/${{ github.base_ref }} --run-clang-format
+
+    - name: Check CMakeLists.txt files with cmake-lint
+      run: |
+        tools/ci/run_ci.sh --run-cmake-lint
 
     - name: Check Python code with pylint
       run: |

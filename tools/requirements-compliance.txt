@@ -1,0 +1,4 @@
+cmake-format
+gitlint
+pylint
+-r ../tests/integration/requirements.txt

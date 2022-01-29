@@ -90,11 +90,12 @@ LWM2M_CLIENT_MODE and LWM2M_SERVER_MODE can be defined at the same time.
   - Git commit message linter: gitlint
   - Build system: ninja
   - C code formatting: clang-format, version 10
+  - CMake list files formatting: cmake-format, version 0.6.13
   - Unit testing: CUnit
 
 On Ubuntu 20.04, used in CI, the dependencies can be installed as such:
 - `apt install build-essential clang-format clang-format-10 clang-tools-10 cmake gcovr git libcunit1-dev ninja-build python3-pip`
-- `pip3 install gitlint`
+- `pip3 install -r tools/requirements-compliance.txt`
 
 ### Code formatting
 New code must be formatted with [clang-format](https://clang.llvm.org/docs/ClangFormat.html).

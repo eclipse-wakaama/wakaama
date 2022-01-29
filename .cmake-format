@@ -1,0 +1,17 @@
+with section("format"):
+  # Same as for our C code
+  line_width = 120
+  tab_size = 4
+
+  # Smaller diffs
+  dangle_parens = True
+
+  # Settling cross platform disputes
+  line_ending = 'unix'
+
+  # Format keywords consistently
+  keyword_case = 'upper'
+
+with section("markup"):
+  # What character to use for bulleted lists
+  bullet_char = '-'
