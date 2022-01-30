@@ -10,4 +10,7 @@ For more details, please look at https://www.eclipse.org/security/.
 
 ## Supported Versions
 
-To Be Defined.
+None
+
+Please use the most recent commit in the master branch. Release 1.0 is not
+supported anymore.

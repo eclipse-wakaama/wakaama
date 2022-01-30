@@ -5,6 +5,17 @@ protocol (LWM2M).
 
 Developers mailing list: https://dev.eclipse.org/mailman/listinfo/wakaama-dev
 
+## Security warning
+
+The only official release of Wakaama, version 1.0, is affected by various
+security issues ([CVE-2019-9004], [CVE-2021-41040]).
+
+Please use the most recent commit in the master branch. Release 1.0 is not
+supported anymore.
+
+[CVE-2019-9004]: https://www.cve.org/CVERecord?id=CVE-2019-9004
+[CVE-2021-41040]: https://www.cve.org/CVERecord?id=CVE-2021-41040
+
 ## Badges
 [![Build](https://github.com/eclipse/wakaama/actions/workflows/build_and_test.yaml/badge.svg)](https://github.com/eclipse/wakaama/actions/workflows/build_and_test.yaml)
 
