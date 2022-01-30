@@ -1190,6 +1190,9 @@ int main(int argc, char *argv[])
         fprintf(stderr, "lwm2m_init() failed\r\n");
         return -1;
     }
+#ifdef WITH_TINYDTLS
+    data.lwm2mH = lwm2mH;
+#endif
 
     /*
      * We configure the liblwm2m library with the name of the client - which shall be unique for each client -
