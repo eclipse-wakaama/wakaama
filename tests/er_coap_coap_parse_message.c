@@ -245,6 +245,49 @@ static void test_option_format_unsupported_critical(void) {
     CU_ASSERT_EQUAL(coap_parse_message(&coap_pkt, data, sizeof(data)), BAD_OPTION_4_02);
 }
 
+static void test_option_format_content_format_null(void) {
+    uint8_t data[] = {
+        0x60, // version 1, no options, no tokens
+        0x83, // Non-empty message
+        0xC3, // Message ID
+        0xF8, // Message ID
+        0xC0, // Content format "text/plain; charset=utf-8"
+    };
+
+    CU_ASSERT_EQUAL(coap_parse_message(&coap_pkt, data, sizeof(data)), NO_ERROR);
+    CU_ASSERT_PTR_EQUAL(coap_pkt.content_type, 0);
+}
+
+static void test_option_format_content_format_non_null(void) {
+    uint8_t data[] = {
+        0x60, // version 1, no options, no tokens
+        0x83, // Non-empty message
+        0xC3, // Message ID
+        0xF8, // Message ID
+        0xC2, // Content format; option length is 2 byte
+        0xFD, // 1st byte of 0xFDE8 (experimental usage)
+        0xE8, // 2nd byte
+    };
+
+    CU_ASSERT_EQUAL(coap_parse_message(&coap_pkt, data, sizeof(data)), NO_ERROR);
+    CU_ASSERT_PTR_EQUAL(coap_pkt.content_type, 0xFDE8);
+}
+
+static void test_option_format_content_format_invalid(void) {
+    uint8_t data[] = {
+        0x60, // version 1, no options, no tokens
+        0x83, // Non-empty message
+        0xC3, // Message ID
+        0xF8, // Message ID
+        0xC3, // Content format; option length is 3 byte (invalid!)
+        0xFD, // 1st byte of 0x999999 (invalid!)
+        0xE8, // 2nd byte
+        0xE8, // 3nd byte
+    };
+
+    CU_ASSERT_NOT_EQUAL(coap_parse_message(&coap_pkt, data, sizeof(data)), NO_ERROR);
+}
+
 static void test_option_format_unsupported_elective(void) {
     uint8_t data[] = {
         0x40, // version 1, no options, no token
@@ -324,6 +367,9 @@ static struct TestTable table[] = {
     {"Option format: If none match", test_option_format_if_none_match},
     {"Option format: Unsupported, elective", test_option_format_unsupported_elective},
     {"Option format: Unsupported, critical", test_option_format_unsupported_critical},
+    {"Option format: Content format zero", test_option_format_content_format_null},
+    {"Option format: Content format 2 byte size", test_option_format_content_format_non_null},
+    {"Option format: Content format with invalid option length", test_option_format_content_format_invalid},
     {"Payload: Minimal", test_payload_min},
     {"Payload: Maximal", test_payload_max},
     {NULL, NULL},

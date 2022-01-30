@@ -794,39 +794,35 @@ coap_parse_message(void *packet, uint8_t *data, uint16_t data_len)
       goto exit_parse_error;
     }
 
-    if (++current_option == data_end) {
-      goto exit_parse_error;
-    }
-
     /* avoids code duplication without function overhead */
     x = &option_delta;
     do
     {
       if (*x==13)
       {
-        *x += current_option[0];
         if (++current_option == data_end) {
           goto exit_parse_error;
         }
+        *x += current_option[0];
       }
       else if (*x==14)
       {
         *x += 255;
+        if (++current_option == data_end) {
+          goto exit_parse_error;
+        }
         *x += current_option[0]<<8;
         if (++current_option == data_end) {
           goto exit_parse_error;
         }
         *x += current_option[0];
-        if (++current_option == data_end) {
-          goto exit_parse_error;
-        }
       }
     }
     while (x != &option_length && (x = &option_length));
 
     option_number += option_delta;
 
-    if (current_option + option_length > data_end)
+    if (++current_option + option_length > data_end)
     {
         PRINTF("OPTION %u (delta %u, len %u) has invalid length.\n", option_number, option_delta, option_length);
         goto exit_parse_error;
@@ -841,6 +837,9 @@ coap_parse_message(void *packet, uint8_t *data, uint16_t data_len)
     switch (option_number)
     {
       case COAP_OPTION_CONTENT_TYPE:
+        if (option_length > 2) {
+            goto exit_parse_error;
+        }
         coap_pkt->content_type = (coap_content_type_t) coap_parse_int_option(current_option, option_length);
         PRINTF("Content-Format [%u]\n", coap_pkt->content_type);
         break;
