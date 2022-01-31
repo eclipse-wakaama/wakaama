@@ -673,48 +673,6 @@ static void prv_initiate_bootstrap(lwm2m_context_t * lwm2mH,
     }
 }
 
-static void prv_display_objects(lwm2m_context_t * lwm2mH,
-                                char * buffer,
-                                void * user_data)
-{
-    lwm2m_object_t * object;
-
-    /* unused parameter */
-    (void)user_data;
-
-    for (object = lwm2mH->objectList; object != NULL; object = object->next){
-        if (NULL != object) {
-            switch (object->objID)
-            {
-            case LWM2M_SECURITY_OBJECT_ID:
-                display_security_object(object);
-                break;
-            case LWM2M_SERVER_OBJECT_ID:
-                display_server_object(object);
-                break;
-            case LWM2M_ACL_OBJECT_ID:
-                break;
-            case LWM2M_DEVICE_OBJECT_ID:
-                display_device_object(object);
-                break;
-            case LWM2M_CONN_MONITOR_OBJECT_ID:
-                break;
-            case LWM2M_FIRMWARE_UPDATE_OBJECT_ID:
-                display_firmware_object(object);
-                break;
-            case LWM2M_LOCATION_OBJECT_ID:
-                display_location_object(object);
-                break;
-            case LWM2M_CONN_STATS_OBJECT_ID:
-                break;
-            case TEST_OBJECT_ID:
-                display_test_object(object);
-                break;
-            }
-        }
-    }
-}
-
 static void prv_display_backup(lwm2m_context_t * lwm2mH,
                                char * buffer,
                                void * user_data)
@@ -840,6 +798,44 @@ static void close_backup_object()
     }
 }
 #endif
+
+static void prv_display_objects(lwm2m_context_t *lwm2mH, char *buffer, void *user_data) {
+    lwm2m_object_t *object;
+
+    /* unused parameter */
+    (void)user_data;
+
+    for (object = lwm2mH->objectList; object != NULL; object = object->next) {
+        if (NULL != object) {
+            switch (object->objID) {
+            case LWM2M_SECURITY_OBJECT_ID:
+                display_security_object(object);
+                break;
+            case LWM2M_SERVER_OBJECT_ID:
+                display_server_object(object);
+                break;
+            case LWM2M_ACL_OBJECT_ID:
+                break;
+            case LWM2M_DEVICE_OBJECT_ID:
+                display_device_object(object);
+                break;
+            case LWM2M_CONN_MONITOR_OBJECT_ID:
+                break;
+            case LWM2M_FIRMWARE_UPDATE_OBJECT_ID:
+                display_firmware_object(object);
+                break;
+            case LWM2M_LOCATION_OBJECT_ID:
+                display_location_object(object);
+                break;
+            case LWM2M_CONN_STATS_OBJECT_ID:
+                break;
+            case TEST_OBJECT_ID:
+                display_test_object(object);
+                break;
+            }
+        }
+    }
+}
 
 void print_usage(void)
 {
@@ -1295,6 +1291,7 @@ int main(int argc, char *argv[])
         if (result != 0)
         {
             fprintf(stderr, "lwm2m_step() failed: 0x%X\r\n", result);
+#ifdef LWM2M_BOOTSTRAP
             if(previousState == STATE_BOOTSTRAPPING)
             {
 #ifdef LWM2M_WITH_LOGS
@@ -1302,8 +1299,9 @@ int main(int argc, char *argv[])
 #endif
                 prv_restore_objects(lwm2mH);
                 lwm2mH->state = STATE_INITIAL;
-            }
-            else return -1;
+            } else
+#endif
+                return -1;
         }
 #ifdef LWM2M_BOOTSTRAP
         update_bootstrap_info(&previousState, lwm2mH);
