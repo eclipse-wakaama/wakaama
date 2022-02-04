@@ -29,7 +29,7 @@ jobs:
 
     - name: Check CMakeLists.txt files with cmake-lint
       run: |
-        tools/ci/run_ci.sh --run-cmake-lint
+        tools/ci/run_ci.sh --run-cmake-format
 
     - name: Check Python code with pylint
       run: |
