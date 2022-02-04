@@ -35,7 +35,7 @@ OPT_WRAPPER_CMD=""
 RUN_BUILD=0
 RUN_CLANG_FORMAT=0
 RUN_CLEAN=0
-RUN_CMAKE_LINT=0
+RUN_CMAKE_FORMAT=0
 RUN_GITLINT=0
 RUN_GIT_BLAME_IGNORE=0
 RUN_TESTS=0
@@ -76,7 +76,7 @@ Available steps (executed by --all):
   --run-clang-format       Check C code formatting
   --run-git-blame-ignore   Validate .git-blame-ignore-revs
   --run-clean              Remove all build artifacts
-  --run-cmake-lint         Check CMake files formatting
+  --run-cmake-format       Check CMake files formatting
   --run-build              Build all targets
   --run-tests              Execute tests (works only for top level project)
 "
@@ -113,8 +113,17 @@ function run_clean() {
   rm -rf build-wakaama
 }
 
-function run_cmake_lint() {
+function run_cmake_format() {
+  # Ensure formatting respects the defined style. Running cmake-lint before
+  # cmake-format gives a nicer message if formatting does not match the
+  # specified format.
   git ls-files '*CMakeLists.txt' '*.cmake' | xargs cmake-lint
+
+  # Ensure formatting is exactly what cmake-format produces. Insisting on this
+  # ensures we can run cmake-format on all CMake files at any time.
+  if ! git ls-files '*CMakeLists.txt' '*.cmake' | xargs cmake-format --check; then
+    echo 'Please run cmake-format on all (changed) CMake files.'
+  fi
 }
 
 function run_gitlint() {
@@ -204,7 +213,7 @@ if ! PARSED_OPTS=$(getopt -o vah \
                           -l run-build \
                           -l run-clang-format \
                           -l run-clean \
-                          -l run-cmake-lint \
+                          -l run-cmake-format \
                           -l run-gitlint \
                           -l run-git-blame-ignore \
                           -l run-tests \
@@ -251,8 +260,8 @@ while true; do
       RUN_CLEAN=1
       shift
       ;;
-    --run-cmake-lint)
-      RUN_CMAKE_LINT=1
+    --run-cmake-format)
+      RUN_CMAKE_FORMAT=1
       shift
       ;;
     --run-build)
@@ -306,7 +315,7 @@ while true; do
     -a|--all)
       RUN_CLANG_FORMAT=1
       RUN_CLEAN=1
-      RUN_CMAKE_LINT=1
+      RUN_CMAKE_FORMAT=1
       RUN_GITLINT=1
       RUN_GIT_BLAME_IGNORE=1
       RUN_BUILD=1
@@ -382,8 +391,8 @@ if [ "${RUN_CLEAN}" -eq 1 ]; then
   run_clean
 fi
 
-if [ "${RUN_CMAKE_LINT}" -eq 1 ]; then
-  run_cmake_lint
+if [ "${RUN_CMAKE_FORMAT}" -eq 1 ]; then
+  run_cmake_format
 fi
 
 if [ "${RUN_BUILD}" -eq 1 ]; then

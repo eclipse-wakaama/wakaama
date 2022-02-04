@@ -96,7 +96,8 @@ On Ubuntu 20.04, used in CI, the dependencies can be installed as such:
 - `pip3 install -r tools/requirements-compliance.txt`
 
 ### Code formatting
-New code must be formatted with [clang-format](https://clang.llvm.org/docs/ClangFormat.html).
+#### C
+New C code must be formatted with [clang-format](https://clang.llvm.org/docs/ClangFormat.html).
 
 The style is based on the LLVM style, but with 4 instead of 2 spaces indentation and allowing for 120 instead of 80
 characters per line.
@@ -108,6 +109,13 @@ To check if your code matches the expected style, the following commands are hel
 
 If existing code gets reformatted, this must be done in a separate commit. Its commit id has to be added to the file
 `.git-blame-ignore-revs` and committed in yet another commit.
+
+#### CMake
+All CMake code must be formatted with [cmake-format](https://github.com/cheshirekow/cmake_format).
+
+To check if your code matches the expected style, the following commands are helpful:
+ - `tools/ci/run_ci.sh --run-cmake-format`: Test all CMake files, print offending ones
+ - `cmake-format --in-place <unformatted-file>`: Apply all needed changes directly to <unformatted-file>
 
 ### Running CI tests locally
 To avoid unneeded load on the GitHub infrastructure, please consider running `tools/ci/run_ci.sh --all` before pushing.
