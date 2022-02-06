@@ -25,12 +25,13 @@ jobs:
         install: |
           apt update
           apt -qy --no-install-recommends install \
-                autoconf \
+                automake \
                 build-essential \
                 cmake \
                 git \
                 libcunit1-dev \
                 ninja-build \
+                pkg-config \
                 unzip \
                 wget \
                 ;

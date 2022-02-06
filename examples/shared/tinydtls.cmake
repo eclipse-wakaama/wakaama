@@ -10,9 +10,11 @@ set(TINYDTLS_SOURCES
     ${TINYDTLS_SOURCES_DIR}/dtls_debug.c
     ${TINYDTLS_SOURCES_DIR}/netq.c
     ${TINYDTLS_SOURCES_DIR}/peer.c
+    ${TINYDTLS_SOURCES_DIR}/dtls_prng.c
     ${TINYDTLS_SOURCES_DIR}/dtls_time.c
     ${TINYDTLS_SOURCES_DIR}/session.c
     ${TINYDTLS_SOURCES_DIR}/aes/rijndael.c
+    ${TINYDTLS_SOURCES_DIR}/aes/rijndael_wrap.c
     ${TINYDTLS_SOURCES_DIR}/sha2/sha2.c
     ${TINYDTLS_SOURCES_DIR}/ecc/ecc.c
 )
@@ -66,7 +68,7 @@ if(NOT EXISTS ${TINYDTLS_SOURCES_GENERATED})
 
     ExternalProject_Add_Step(
         external_tinydtls autoconf
-        COMMAND "autoconf"
+        COMMAND "autoreconf"
         ALWAYS 1
         WORKING_DIRECTORY "${TINYDTLS_SOURCES_DIR}"
         DEPENDERS autoheader
@@ -81,7 +83,14 @@ if(NOT EXISTS ${TINYDTLS_SOURCES_GENERATED})
     )
 endif()
 
-set(TINYDTLS_SOURCES ${TINYDTLS_SOURCES} ${TINYDTLS_SOURCES_GENERATED})
+# Prevent cryptic error messages down the road
+if(NOT EXISTS ${TINYDTLS_SOURCES_DIR}/tinydtls.h)
+    message(FATAL_ERROR "${target}: tinydtls support requested, but submodule not checked out")
+endif()
 
-# Compile definitions for tinydtls
-set_source_files_properties(${TINYDTLS_SOURCES} PROPERTIES COMPILE_DEFINITIONS WITH_SHA256)
+# Add tinydtls sources to an existing target.
+function(target_sources_tinydtls target)
+    target_sources(${target} PRIVATE ${TINYDTLS_SOURCES} ${TINYDTLS_SOURCES_GENERATED})
+    target_compile_definitions(${target} PRIVATE WITH_SHA256 SHA2_USE_INTTYPES_H)
+    target_include_directories(${target} PRIVATE ${TINYDTLS_SOURCES_DIR})
+endfunction()
