@@ -28,6 +28,6 @@ target_sources_shared(lwm2mclient)
 # Client with DTLS support provided by tinydtls
 add_executable(lwm2mclient_tinydtls ${SOURCES})
 set_target_properties(lwm2mclient_tinydtls PROPERTIES DTLS "tinydtls")
-target_compile_definitions(lwm2mclient_tinydtls PRIVATE LWM2M_CLIENT_MODE LWM2M_BOOTSTRAP)
+target_compile_definitions(lwm2mclient_tinydtls PRIVATE LWM2M_CLIENT_MODE LWM2M_BOOTSTRAP LWM2M_SUPPORT_SENML_JSON)
 target_sources_wakaama(lwm2mclient_tinydtls)
 target_sources_shared(lwm2mclient_tinydtls)
