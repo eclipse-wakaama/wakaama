@@ -64,7 +64,7 @@ jobs:
     - name: Install Ninja
       uses: seanmiddleditch/gha-setup-ninja@master
 
-    - Build examples as stand-alone projects
+    - name: Build examples as stand-alone projects
       run: |
         tools/ci/run_ci.sh \
           --run-clean \
