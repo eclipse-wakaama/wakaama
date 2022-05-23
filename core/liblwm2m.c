@@ -332,6 +332,16 @@ int lwm2m_configure(lwm2m_context_t * contextP,
     return COAP_NO_ERROR;
 }
 
+void lwm2m_reset(lwm2m_context_t *contextP) {
+    LOG("Entering");
+    contextP->state = STATE_INITIAL;
+    prv_deleteServerList(contextP);
+    prv_deleteBootstrapServerList(contextP);
+    prv_deleteObservedList(contextP);
+
+    prv_deleteTransactionList(contextP);
+}
+
 int lwm2m_add_object(lwm2m_context_t * contextP,
                      lwm2m_object_t * objectP)
 {
