@@ -16,7 +16,7 @@ jobs:
     - name: Install compliance tools
       run: |
         sudo apt update
-        sudo apt -qy --no-install-recommends install clang-format-10
+        sudo apt -qy --no-install-recommends install clang-format-12
         pip3 install -r tools/requirements-compliance.txt
 
     - name: Check commits with gitlint

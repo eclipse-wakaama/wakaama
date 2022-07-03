@@ -24,7 +24,7 @@ OPT_BRANCH_SOURCE=
 OPT_BRANCH_TARGET=master
 OPT_C_EXTENSIONS=""
 OPT_C_STANDARD=""
-OPT_CLANG_FORMAT="clang-format-10"
+OPT_CLANG_FORMAT="clang-format-12"
 OPT_SANITIZER=""
 OPT_SCAN_BUILD=""
 OPT_SONARQUBE=""
@@ -90,6 +90,8 @@ function usage() {
 
 function run_clang_format() {
   local patch_file
+
+  command "git-${OPT_CLANG_FORMAT}"
 
   patch_file="$(mktemp -t clang-format-patch.XXX)"
   # shellcheck disable=SC2064
