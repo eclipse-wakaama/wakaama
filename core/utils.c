@@ -218,7 +218,7 @@ size_t utils_intToText(int64_t data,
             string[int64_min_strlen] = '\0';
             return int64_min_strlen;
         }
-        result = utils_uintToText((uint64_t)labs(data), string + 1, length - 1);
+        result = utils_uintToText(llabs(data), string + 1, length - 1);
         if(result != 0)
         {
             result += 1;
