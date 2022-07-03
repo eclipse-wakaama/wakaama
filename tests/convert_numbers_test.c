@@ -28,8 +28,22 @@
 #include <inttypes.h>
 #include <float.h>
 
-static const int64_t ints[]={12, -114 , 1 , 134 , 43243 , 0, -215025, INT64_MIN, INT64_MAX};
-static const char* ints_text[] = {"12","-114","1", "134", "43243","0","-215025", "-9223372036854775808", "9223372036854775807"};
+#define ONE_LESS_INT32_MIN ((int64_t)INT32_MIN - 1)
+#define ONE_MORE_INT32_MAX ((int64_t)INT32_MAX + 1)
+
+static const int64_t ints[] = {12,        -114,     1, 134, 43243, 0, -215025, ONE_LESS_INT32_MIN, ONE_MORE_INT32_MAX,
+                               INT64_MIN, INT64_MAX};
+static const char *ints_text[] = {"12",
+                                  "-114",
+                                  "1",
+                                  "134",
+                                  "43243",
+                                  "0",
+                                  "-215025",
+                                  "-2147483649",
+                                  "2147483648",
+                                  "-9223372036854775808",
+                                  "9223372036854775807"};
 static const uint64_t uints[]={12, 1 , 134 , 43243 , 0, UINT64_MAX};
 static const char* uints_text[] = {"12","1", "134", "43243","0","18446744073709551615"};
 static const double floats[]={12, -114 , -30 , 1.02 , 134.000235 , 0.43243 , 0, -21.5025, -0.0925, 0.98765, 6.667e-11, 56.789, -52.0006, FLT_MIN, FLT_MAX, DBL_MIN, DBL_MAX};
