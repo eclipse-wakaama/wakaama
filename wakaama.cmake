@@ -124,6 +124,7 @@ add_compile_options(
     -Wshadow
     -Wswitch-default
     -Wwrite-strings
+    -Werror=absolute-value
     -pedantic
 )
 
