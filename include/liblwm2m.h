@@ -158,6 +158,11 @@ uint8_t lwm2m_buffer_send(void * sessionH, uint8_t * buffer, size_t length, void
 bool lwm2m_session_is_equal(void * session1, void * session2, void * userData);
 
 /*
+ * Remove session from list
+ */
+void lwm2m_session_remove(void *sessionH);
+
+/*
  * Error code
  */
 
