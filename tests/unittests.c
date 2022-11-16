@@ -59,6 +59,9 @@ int main()
    if (CUE_SUCCESS != create_block1_suit())
       goto exit;
 
+   if (CUE_SUCCESS != create_block2_suit())
+       goto exit;
+
    if (CUE_SUCCESS != create_convert_numbers_suit())
       goto exit;
 
