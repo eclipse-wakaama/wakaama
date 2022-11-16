@@ -112,10 +112,40 @@ static void test_block1_retransmit(void)
 
     free_block_data(blk1);
 }
+static void test_block1_same_message_after_success(void) {
+    lwm2m_block_data_t *blk1 = NULL;
+
+    uint8_t *resultBuffer = NULL;
+    size_t resultLen;
+
+    uint8_t status = handle_12345(&blk1, &resultBuffer, &resultLen);
+    CU_ASSERT_EQUAL(status, COAP_231_CONTINUE)
+    CU_ASSERT_PTR_NULL(resultBuffer)
+
+    status = handle_67(&blk1, &resultBuffer, &resultLen);
+    CU_ASSERT_EQUAL(status, NO_ERROR)
+    CU_ASSERT_PTR_NOT_NULL(resultBuffer)
+    CU_ASSERT_EQUAL(resultLen, 7)
+    CU_ASSERT_NSTRING_EQUAL(resultBuffer, "1234567", 7)
+
+    /* Same message again */
+    status = handle_12345(&blk1, &resultBuffer, &resultLen);
+    CU_ASSERT_EQUAL(status, COAP_231_CONTINUE)
+    CU_ASSERT_PTR_NOT_NULL(resultBuffer)
+
+    status = handle_67(&blk1, &resultBuffer, &resultLen);
+    CU_ASSERT_EQUAL(status, NO_ERROR)
+    CU_ASSERT_PTR_NOT_NULL(resultBuffer)
+    CU_ASSERT_EQUAL(resultLen, 7)
+    CU_ASSERT_NSTRING_EQUAL(resultBuffer, "1234567", 7)
+
+    free_block_data(blk1);
+}
 
 static struct TestTable table[] = {
     {"test of test_block1_nominal()", test_block1_nominal},
     {"test of test_block1_retransmit()", test_block1_retransmit},
+    {"test of test_block1_same_message_after_success()", test_block1_same_message_after_success},
     {NULL, NULL},
 };
 
