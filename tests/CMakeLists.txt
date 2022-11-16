@@ -5,6 +5,7 @@ project(lwm2munittests C)
 add_executable(
     lwm2munittests
     block1tests.c
+    block2tests.c
     convert_numbers_test.c
     er_coap_coap_parse_message.c
     senml_json_tests.c
