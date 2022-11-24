@@ -139,6 +139,8 @@ static int prv_parseItem(const uint8_t *buffer, size_t bufferLen, senml_record_t
             bvSeen = true;
             memcpy(baseValue, &data, sizeof(lwm2m_data_t));
             /* Convert explicit 0 to implicit 0 */
+            _Pragma("GCC diagnostic push");
+            _Pragma("GCC diagnostic ignored \"-Wfloat-equal\"");
             switch (baseValue->type) {
             case LWM2M_TYPE_INTEGER:
                 if (baseValue->value.asInteger == 0) {
@@ -159,6 +161,7 @@ static int prv_parseItem(const uint8_t *buffer, size_t bufferLen, senml_record_t
                 // Only numeric types are valid
                 return -1;
             }
+            _Pragma("GCC diagnostic pop");
             break;
         case SENML_CBOR_BASE_TIME_LABEL:
             if (btSeen)
