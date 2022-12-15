@@ -40,6 +40,10 @@ uint8_t reporting_handleSend(lwm2m_context_t *contextP, void *fromSessionH, coap
 
     format = utils_convertMediaType(message->content_type);
 
+    if (format != LWM2M_CONTENT_SENML_JSON && format != LWM2M_CONTENT_SENML_CBOR) {
+        return COAP_400_BAD_REQUEST;
+    }
+
     if (contextP->reportingSendCallback != NULL) {
         contextP->reportingSendCallback(contextP, clientP->internalID, NULL, message->code, NULL, format,
                                         message->payload, message->payload_len, contextP->reportingSendUserData);
