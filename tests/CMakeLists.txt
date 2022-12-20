@@ -7,7 +7,6 @@ add_executable(
     block1tests.c
     convert_numbers_test.c
     er_coap_coap_parse_message.c
-    memtest.h
     senml_json_tests.c
     tests.h
     tlv_json_lwm2m_data_test.c
