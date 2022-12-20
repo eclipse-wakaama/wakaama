@@ -18,7 +18,6 @@
 #include "tests.h"
 #include "CUnit/Basic.h"
 #include "internals.h"
-#include "memtest.h"
 
 
 static void test_uri_decode(void)
@@ -37,7 +36,6 @@ static void test_uri_decode(void)
     multi_option_t reg = { .next = NULL, .is_static = 1, .len = 2, .data = (uint8_t *) "rd" };
     multi_option_t boot = { .next = NULL, .is_static = 1, .len = 2, .data = (uint8_t *) "bs" };
 
-    MEMORY_TRACE_BEFORE;
 
 #ifndef LWM2M_VERSION_1_0
     rID.next = &riID;
@@ -191,7 +189,6 @@ static void test_uri_decode(void)
     CU_ASSERT(!LWM2M_URI_IS_SET_RESOURCE_INSTANCE(&uri))
 #endif
 
-    MEMORY_TRACE_AFTER_EQ;
 }
 
 
@@ -199,7 +196,6 @@ static void test_string_to_uri(void)
 {
     int result;
     lwm2m_uri_t uri;
-    MEMORY_TRACE_BEFORE;
     result = lwm2m_stringToUri("", 0, &uri);
     CU_ASSERT_EQUAL(result, 0)
     result = lwm2m_stringToUri("no_uri", 6, &uri);
@@ -253,7 +249,6 @@ static void test_string_to_uri(void)
 #endif
     CU_ASSERT_EQUAL(result, 0)
 
-    MEMORY_TRACE_AFTER_EQ;
 }
 
 static void test_uri_to_string(void)
@@ -263,8 +258,6 @@ static void test_uri_to_string(void)
     uri_depth_t depth;
     int result;
     char buffer[URI_MAX_STRING_LEN];
-
-    MEMORY_TRACE_BEFORE;
 
     result = uri_toString(NULL, (uint8_t*)buffer, sizeof(buffer), &depth);
     CU_ASSERT_EQUAL(result, 0)
@@ -377,8 +370,6 @@ static void test_uri_to_string(void)
 #ifndef LWM2M_VERSION_1_0
     CU_ASSERT_EQUAL(uri2.resourceInstanceId, uri.resourceInstanceId)
 #endif
-
-    MEMORY_TRACE_AFTER_EQ;
 }
 
 static struct TestTable table[] = {

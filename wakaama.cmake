@@ -92,7 +92,7 @@ function(target_sources_shared target)
 
     target_sources(
         ${target} PRIVATE ${WAKAAMA_EXAMPLE_SHARED_DIRECTORY}/commandline.c
-                          ${WAKAAMA_EXAMPLE_SHARED_DIRECTORY}/memtrace.c ${WAKAAMA_EXAMPLE_SHARED_DIRECTORY}/platform.c
+                          ${WAKAAMA_EXAMPLE_SHARED_DIRECTORY}/platform.c
     )
 
     if(NOT TARGET_PROPERTY_DTLS)

@@ -22,7 +22,6 @@
 #include <stdarg.h>
 #include <time.h>
 
-#ifndef LWM2M_MEMORY_TRACE
 
 void * lwm2m_malloc(size_t s)
 {
@@ -51,7 +50,6 @@ char * lwm2m_strdup(const char * str)
     return buf;
 }
 
-#endif
 
 int lwm2m_strncmp(const char * s1,
                      const char * s2,

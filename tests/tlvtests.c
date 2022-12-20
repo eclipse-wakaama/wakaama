@@ -20,7 +20,6 @@
 #include "CUnit/Basic.h"
 #include "internals.h"
 #include "liblwm2m.h"
-#include "memtest.h"
 
 /**
  * Comparing floats for equality, suppress warnings. Please do not use for new code!
@@ -35,25 +34,20 @@
 
 static void test_tlv_new(void)
 {
-   MEMORY_TRACE_BEFORE;
    lwm2m_data_t *dataP =  lwm2m_data_new(10);
    CU_ASSERT_PTR_NOT_NULL(dataP)
-   MEMORY_TRACE_AFTER(<);
    lwm2m_data_free(10, dataP);
 }
 
 static void test_tlv_free(void)
 {
-   MEMORY_TRACE_BEFORE;
    lwm2m_data_t *dataP =  lwm2m_data_new(10);
    CU_ASSERT_PTR_NOT_NULL_FATAL(dataP)
    lwm2m_data_free(10, dataP);
-   MEMORY_TRACE_AFTER_EQ;
 }
 
 static void test_decodeTLV()
 {
-    MEMORY_TRACE_BEFORE;
     uint8_t data1[] = {0xC3, 55, 1, 2, 3};
     uint8_t data2[] = {0x28, 2, 3, 9, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
     uint8_t data3[0x194] = {0x90, 33, 1, 0x90 };
@@ -93,13 +87,10 @@ static void test_decodeTLV()
     CU_ASSERT_EQUAL(id, 33)
     CU_ASSERT_EQUAL(index, 4)
     CU_ASSERT_EQUAL(length, 0x190)
-
-    MEMORY_TRACE_AFTER_EQ;
 }
 
 static void test_tlv_parse()
 {
-    MEMORY_TRACE_BEFORE;
     // Resource 55 {1, 2, 3}
     uint8_t data1[] = {0xC3, 55, 1, 2, 3};
     // Instance 0x203 {Resource 55 {1, 2, 3}, Resource 66 {4, 5, 6, 7, 8, 9, 10, 11, 12 } }
@@ -164,14 +155,10 @@ static void test_tlv_parse()
     CU_ASSERT_EQUAL(tlvSubP[1].value.asBuffer.length, 160)
     CU_ASSERT(0 == memcmp(tlvSubP[1].value.asBuffer.buffer, &data3[14], 160))
     lwm2m_data_free(result, dataP);
-
-    MEMORY_TRACE_AFTER_EQ;
 }
 
 static void test_tlv_serialize()
 {
-    MEMORY_TRACE_BEFORE;
-
     int result;
     lwm2m_data_t *dataP;
     lwm2m_data_t *tlvSubP;
@@ -235,13 +222,10 @@ static void test_tlv_serialize()
 
     lwm2m_data_free(1, dataP);
     lwm2m_free(buffer);
-
-    MEMORY_TRACE_AFTER_EQ;
 }
 
 static void test_tlv_int(void)
 {
-   MEMORY_TRACE_BEFORE;
    int64_t value;
    int result;
    lwm2m_data_t *dataP =  lwm2m_data_new(1);
@@ -310,12 +294,10 @@ static void test_tlv_int(void)
    CU_ASSERT_EQUAL(value, 0x7f34567891223344)
 
    lwm2m_data_free(1, dataP);
-   MEMORY_TRACE_AFTER_EQ;
 }
 
 static void test_tlv_uint(void)
 {
-   MEMORY_TRACE_BEFORE;
    uint64_t value;
    int result;
    lwm2m_data_t *dataP =  lwm2m_data_new(1);
@@ -394,12 +376,10 @@ static void test_tlv_uint(void)
    CU_ASSERT_EQUAL(value, 0x8f34567891223344)
 
    lwm2m_data_free(1, dataP);
-   MEMORY_TRACE_AFTER_EQ;
 }
 
 static void test_tlv_bool(void)
 {
-   MEMORY_TRACE_BEFORE;
    bool value;
    int result;
    lwm2m_data_t *dataP =  lwm2m_data_new(1);
@@ -462,12 +442,10 @@ static void test_tlv_bool(void)
    CU_ASSERT_EQUAL(value, true)
 
    lwm2m_data_free(1, dataP);
-   MEMORY_TRACE_AFTER_EQ;
 }
 
 static void test_tlv_float(void)
 {
-    MEMORY_TRACE_BEFORE;
     double value;
     int result;
     lwm2m_data_t *dataP = lwm2m_data_new(1);
@@ -501,7 +479,6 @@ static void test_tlv_float(void)
     CU_ASSERT_DOUBLE_EQUAL_HIT_AND_MISS(value, -123456789.987)
 
     lwm2m_data_free(1, dataP);
-    MEMORY_TRACE_AFTER_EQ;
 }
 
 static struct TestTable table[] = {
