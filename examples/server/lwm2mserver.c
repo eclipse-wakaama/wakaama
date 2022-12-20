@@ -1270,12 +1270,5 @@ int main(int argc, char *argv[])
     close(sock);
     connection_free(connList);
 
-#ifdef MEMORY_TRACE
-    if (g_quit == 1)
-    {
-        trace_print(0, 1);
-    }
-#endif
-
     return 0;
 }
