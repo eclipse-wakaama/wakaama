@@ -774,7 +774,34 @@ void observe_step(lwm2m_context_t * contextP,
                         notify = true;
                     }
                 }
-
+                // By default, observers are sent as often as there is a change
+                // in the observed value.
+                if (notify == false && watcherP->parameters == NULL)
+                {
+                    switch (dataType)
+                    {
+                    case LWM2M_TYPE_INTEGER:
+                        if (integerValue != watcherP->lastValue.asInteger)
+                        {
+                            notify = true;
+                        }
+                        break;
+                    case LWM2M_TYPE_UNSIGNED_INTEGER:
+                        if (unsignedValue != watcherP->lastValue.asUnsigned)
+                        {
+                            notify = true;
+                        }
+                        break;
+                    case LWM2M_TYPE_FLOAT:
+                        if (floatValue != watcherP->lastValue.asFloat)
+                        {
+                            notify = true;
+                        }
+                        break;
+                    default:
+                        break;
+                    }
+                }
                 if (notify == true)
                 {
                     if (buffer == NULL)

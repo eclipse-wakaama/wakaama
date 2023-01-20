@@ -52,7 +52,7 @@
 #define MAX_BLOCK_SIZE 4096
 #endif
 
-    
+
 bool prv_matchBlock1 (block_data_identifier_t identifier, lwm2m_block_data_t * blockData)
     {
     if (blockData->identifier.uri == NULL || identifier.uri == NULL)
@@ -61,7 +61,7 @@ bool prv_matchBlock1 (block_data_identifier_t identifier, lwm2m_block_data_t * b
     }
     return strcmp(identifier.uri, blockData->identifier.uri) == 0;
 }
-    
+
 bool prv_matchBlock2 (block_data_identifier_t identifier, lwm2m_block_data_t * blockData)
 {
     return identifier.mid == blockData->identifier.mid;
@@ -84,11 +84,11 @@ lwm2m_block_data_t * find_block_data(lwm2m_block_data_t * blockDataHead,
 {
     bool (* match) (block_data_identifier_t, lwm2m_block_data_t *) = prv_get_matcher(blockType);
     lwm2m_block_data_t * blockData = blockDataHead;
-    
+
     while(blockData != NULL && !match(identifier, blockData))
     {
         blockData = blockData->next;
-}
+    }
 
     return blockData;
 }
@@ -119,7 +119,7 @@ void prv_block_data_delete(lwm2m_block_data_t ** pBlockDataHead,
                                            )
 {
     lwm2m_block_data_t * removed = find_block_data(*pBlockDataHead, identifier, blockType);
-    
+
     if (removed == NULL) {
         return;
     }
@@ -154,7 +154,7 @@ uint8_t prv_coap_raw_block_handler(lwm2m_block_data_t ** pBlockDataHead,
                                bool blockMore)
 {
     lwm2m_block_data_t * blockData = find_block_data(*pBlockDataHead, identifier, blockType);
-    
+
     // manage new block transfer
     if (blockNum == 0)
     {
@@ -164,7 +164,11 @@ uint8_t prv_coap_raw_block_handler(lwm2m_block_data_t ** pBlockDataHead,
         }
         else if (blockData->mid == mid)
         {
+#ifdef LWM2M_RAW_BLOCK1_RETRANSMISSION_RESPONSE
+            return COAP_RETRANSMISSION;
+#else
             return COAP_IGNORE;
+#endif
         }
     }
     // manage already started block1 transfer
@@ -177,8 +181,11 @@ uint8_t prv_coap_raw_block_handler(lwm2m_block_data_t ** pBlockDataHead,
         }
 
         if (blockNum <= blockData->blockNum){
-            // this is a retransmissiion, ignore
+#ifdef LWM2M_RAW_BLOCK1_RETRANSMISSION_RESPONSE
+            return COAP_RETRANSMISSION;
+#else
             return COAP_IGNORE;
+#endif
         }
     }
 
@@ -211,7 +218,7 @@ uint8_t prv_coap_block_handler(lwm2m_block_data_t ** pBlockDataHead,
                                size_t * outputLength)
 {
     lwm2m_block_data_t * blockData = find_block_data(*pBlockDataHead, identifier, blockType);
-    
+
     // manage new block transfer
     if (blockNum == 0)
     {
@@ -309,7 +316,7 @@ void block1_delete(lwm2m_block_data_t ** pBlockDataHead,
 }
 
 uint8_t coap_block1_handler (lwm2m_block_data_t ** pBlockDataHead,
- 
+
                             const char * uri,
 #ifdef LWM2M_RAW_BLOCK1_REQUESTS
                             uint16_t mid,
@@ -350,7 +357,7 @@ void coap_block2_set_expected_mid(lwm2m_block_data_t * blockDataHead, uint16_t c
 {
     block_data_identifier_t identifier;
     identifier.mid = currentMid;
-    
+
     lwm2m_block_data_t * blockData = find_block_data(blockDataHead, identifier, BLOCK_2);
     if(blockData == NULL)
     {

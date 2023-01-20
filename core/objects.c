@@ -527,8 +527,6 @@ uint8_t object_raw_block1_write(lwm2m_context_t * contextP,
 {
     uint8_t result = NO_ERROR;
     lwm2m_object_t * targetP;
-    lwm2m_data_t * dataP = NULL;
-    int size = 0;
 
     LOG_URI(uriP);
     targetP = (lwm2m_object_t *)LWM2M_LIST_FIND(contextP->objectList, uriP->objectId);
@@ -558,7 +556,7 @@ uint8_t object_raw_block1_execute(lwm2m_context_t * contextP,
 {
     lwm2m_object_t * targetP;
     uint8_t result;
-    
+
     LOG_URI(uriP);
     targetP = (lwm2m_object_t *)LWM2M_LIST_FIND(contextP->objectList, uriP->objectId);
     if (NULL == targetP) return COAP_404_NOT_FOUND;
