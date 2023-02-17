@@ -35,4 +35,9 @@ jobs:
                 wget \
                 ;
         run: |
+          # Mark submodule as safe directory to prevent error because of code
+          # getting built by root (inside QEMU) but checked out by a non-root
+          # user (host system).
+          git config --global --add safe.directory "${PWD}/examples/shared/tinydtls"
+
           tools/ci/run_ci.sh --run-build --run-tests
