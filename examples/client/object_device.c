@@ -631,8 +631,7 @@ void display_device_object(lwm2m_object_t * object)
     }
 }
 
-lwm2m_object_t * get_object_device(void)
-{
+lwm2m_object_t *get_object_device(void) {
     /*
      * The get_object_device function create the object itself and return a pointer to the structure that represent it.
      */

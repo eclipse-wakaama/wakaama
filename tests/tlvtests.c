@@ -46,17 +46,15 @@ static void test_tlv_free(void)
    lwm2m_data_free(10, dataP);
 }
 
-static void test_decodeTLV(void)
-{
+static void test_decodeTLV(void) {
     uint8_t data1[] = {0xC3, 55, 1, 2, 3};
-    uint8_t data2[] = {0x28, 2, 3, 9, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-    uint8_t data3[0x194] = {0x90, 33, 1, 0x90 };
+    uint8_t data2[] = {0x28, 2, 3, 9, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+    uint8_t data3[0x194] = {0x90, 33, 1, 0x90};
     lwm2m_data_type_t type;
     uint16_t id = 0;
-    size_t   index = 0;
-    size_t   length = 0;
+    size_t index = 0;
+    size_t length = 0;
     int result;
-
 
     result = lwm2m_decode_TLV(data1, sizeof(data1) - 1, &type, &id, &index, &length);
     CU_ASSERT_EQUAL(result, 0)
@@ -89,12 +87,13 @@ static void test_decodeTLV(void)
     CU_ASSERT_EQUAL(length, 0x190)
 }
 
-static void test_tlv_parse(void)
-{
+static void test_tlv_parse(void) {
     // Resource 55 {1, 2, 3}
     uint8_t data1[] = {0xC3, 55, 1, 2, 3};
     // Instance 0x203 {Resource 55 {1, 2, 3}, Resource 66 {4, 5, 6, 7, 8, 9, 10, 11, 12 } }
-    uint8_t data2[] = {0x28, 2, 3, 17, 0xC3, 55, 1, 2, 3, 0xC8, 66, 9, 4, 5, 6, 7, 8, 9, 10, 11, 12, };
+    uint8_t data2[] = {
+        0x28, 2, 3, 17, 0xC3, 55, 1, 2, 3, 0xC8, 66, 9, 4, 5, 6, 7, 8, 9, 10, 11, 12,
+    };
     // Instance 11 {MultiResource 11 {ResourceInstance 0 {1, 2, 3}, ResourceInstance 1 {4, 5, 6, 7, 8, 9, ... } }
     uint8_t data3[174] = {0x08, 11, 171, 0x88, 77, 168, 0x43, 0, 1, 2, 3, 0x48, 1, 160, 4, 5, 6, 7, 8, 9};
     int result;
@@ -157,17 +156,14 @@ static void test_tlv_parse(void)
     lwm2m_data_free(result, dataP);
 }
 
-static void test_tlv_serialize(void)
-{
+static void test_tlv_serialize(void) {
     int result;
     lwm2m_data_t *dataP;
     lwm2m_data_t *tlvSubP;
     lwm2m_data_t *tlvRscInstP;
     uint8_t data1[] = {1, 2, 3, 4};
     uint8_t data2[170] = {5, 6, 7, 8};
-    uint8_t* buffer;
-
-
+    uint8_t *buffer;
 
     tlvSubP = lwm2m_data_new(2);
     CU_ASSERT_PTR_NOT_NULL_FATAL(tlvSubP)
@@ -494,16 +490,13 @@ static struct TestTable table[] = {
         { NULL, NULL },
 };
 
-CU_ErrorCode create_tlv_suit(void)
-{
-   CU_pSuite pSuite = NULL;
+CU_ErrorCode create_tlv_suit(void) {
+    CU_pSuite pSuite = NULL;
 
-   pSuite = CU_add_suite("Suite_TLV", NULL, NULL);
-   if (NULL == pSuite) {
-      return CU_get_error();
-   }
+    pSuite = CU_add_suite("Suite_TLV", NULL, NULL);
+    if (NULL == pSuite) {
+        return CU_get_error();
+    }
 
-   return add_tests(pSuite, table);
+    return add_tests(pSuite, table);
 }
-
-
