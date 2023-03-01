@@ -449,7 +449,7 @@ static struct TestTable table[] = {
         { NULL, NULL },
 };
 
-CU_ErrorCode create_tlv_json_suit()
+CU_ErrorCode create_tlv_json_suit(void)
 {
    CU_pSuite pSuite = NULL;
 

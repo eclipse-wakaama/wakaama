@@ -199,7 +199,7 @@ static uint8_t prv_security_read(lwm2m_context_t * contextP,
     return result;
 }
 
-lwm2m_object_t * get_security_object()
+lwm2m_object_t * get_security_object(void)
 {
     lwm2m_object_t * securityObj;
 

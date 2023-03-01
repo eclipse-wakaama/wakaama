@@ -26,16 +26,16 @@ struct TestTable {
 };
 
 CU_ErrorCode add_tests(CU_pSuite pSuite, struct TestTable* testTable);
-CU_ErrorCode create_uri_suit();
-CU_ErrorCode create_tlv_suit();
-CU_ErrorCode create_object_read_suit();
-CU_ErrorCode create_convert_numbers_suit();
-CU_ErrorCode create_tlv_json_suit();
-CU_ErrorCode create_block1_suit();
+CU_ErrorCode create_uri_suit(void);
+CU_ErrorCode create_tlv_suit(void);
+CU_ErrorCode create_object_read_suit(void);
+CU_ErrorCode create_convert_numbers_suit(void);
+CU_ErrorCode create_tlv_json_suit(void);
+CU_ErrorCode create_block1_suit(void);
 CU_ErrorCode create_block2_suit(void);
 #ifdef LWM2M_SUPPORT_SENML_JSON
-CU_ErrorCode create_senml_json_suit();
+CU_ErrorCode create_senml_json_suit(void);
 #endif
-CU_ErrorCode create_er_coap_parse_message_suit();
+CU_ErrorCode create_er_coap_parse_message_suit(void);
 
 #endif /* TESTS_H_ */

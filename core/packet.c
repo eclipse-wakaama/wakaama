@@ -123,7 +123,7 @@ bool lwm2m_set_coap_block_size(const uint16_t coap_block_size_arg) {
     return false;
 }
 
-uint16_t lwm2m_get_coap_block_size() { return coap_block_size; }
+uint16_t lwm2m_get_coap_block_size(void) { return coap_block_size; }
 
 static void handle_reset(lwm2m_context_t * contextP,
                          void * fromSessionH,

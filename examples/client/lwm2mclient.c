@@ -776,7 +776,7 @@ static void update_bootstrap_info(lwm2m_client_state_t * previousBootstrapState,
     }
 }
 
-static void close_backup_object()
+static void close_backup_object(void)
 {
     int i;
     for (i = 0; i < BACKUP_OBJECT_COUNT; i++) {
