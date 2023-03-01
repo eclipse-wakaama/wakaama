@@ -1,5 +1,6 @@
 [general]
 ignore-fixup-commits=false
+regex-style-search=True
 
 [title-must-not-contain-word]
 words=wip,fixup
