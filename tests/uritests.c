@@ -379,15 +379,13 @@ static struct TestTable table[] = {
         { NULL, NULL },
 };
 
-CU_ErrorCode create_uri_suit(void)
-{
-   CU_pSuite pSuite = NULL;
+CU_ErrorCode create_uri_suit(void) {
+    CU_pSuite pSuite = NULL;
 
-   pSuite = CU_add_suite("Suite_URI", NULL, NULL);
-   if (NULL == pSuite) {
-      return CU_get_error();
-   }
+    pSuite = CU_add_suite("Suite_URI", NULL, NULL);
+    if (NULL == pSuite) {
+        return CU_get_error();
+    }
 
-   return add_tests(pSuite, table);
+    return add_tests(pSuite, table);
 }
-

@@ -50,29 +50,28 @@ CU_ErrorCode add_tests(CU_pSuite pSuite, struct TestTable* testTable)
     return CUE_SUCCESS;
 }
 
-int main(void)
-{
-   /* initialize the CUnit test registry */
-   if (CUE_SUCCESS != CU_initialize_registry())
-      return CU_get_error();
+int main(void) {
+    /* initialize the CUnit test registry */
+    if (CUE_SUCCESS != CU_initialize_registry())
+        return CU_get_error();
 
-   if (CUE_SUCCESS != create_block1_suit())
-      goto exit;
+    if (CUE_SUCCESS != create_block1_suit())
+        goto exit;
 
-   if (CUE_SUCCESS != create_block2_suit())
-       goto exit;
+    if (CUE_SUCCESS != create_block2_suit())
+        goto exit;
 
-   if (CUE_SUCCESS != create_convert_numbers_suit())
-      goto exit;
+    if (CUE_SUCCESS != create_convert_numbers_suit())
+        goto exit;
 
-   if (CUE_SUCCESS != create_tlv_json_suit())
-      goto exit;
+    if (CUE_SUCCESS != create_tlv_json_suit())
+        goto exit;
 
-   if (CUE_SUCCESS != create_tlv_suit())
-      goto exit;
+    if (CUE_SUCCESS != create_tlv_suit())
+        goto exit;
 
-   if (CUE_SUCCESS != create_uri_suit())
-      goto exit;
+    if (CUE_SUCCESS != create_uri_suit())
+        goto exit;
 
 #ifdef LWM2M_SUPPORT_SENML_JSON
    if (CUE_SUCCESS != create_senml_json_suit())

@@ -55,9 +55,6 @@ void init_value_change(lwm2m_context_t * lwm2m)
 {
 }
 
-void system_reboot(void)
-{
-    exit(1);
-}
+void system_reboot(void) { exit(1); }
 
 #endif

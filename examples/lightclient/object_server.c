@@ -432,8 +432,7 @@ static uint8_t prv_server_create(lwm2m_context_t * contextP,
     return result;
 }
 
-lwm2m_object_t * get_server_object(void)
-{
+lwm2m_object_t *get_server_object(void) {
     lwm2m_object_t * serverObj;
 
     serverObj = (lwm2m_object_t *)lwm2m_malloc(sizeof(lwm2m_object_t));
