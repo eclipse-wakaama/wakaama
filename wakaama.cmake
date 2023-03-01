@@ -124,6 +124,11 @@ add_compile_options(
     -pedantic
 )
 
+# Turn certain warnings into errors
+add_compile_options(
+    -Werror=strict-prototypes
+)
+
 # The maximum buffer size that is provided for resource responses and must be respected due to the limited IP buffer.
 # Larger data must be handled by the resource and will be sent chunk-wise through a TCP stream or CoAP blocks. Block
 # size is set to 1024 bytes if not specified otherwise to avoid block transfers in common use cases.

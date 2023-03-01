@@ -50,7 +50,7 @@ CU_ErrorCode add_tests(CU_pSuite pSuite, struct TestTable* testTable)
     return CUE_SUCCESS;
 }
 
-int main()
+int main(void)
 {
    /* initialize the CUnit test registry */
    if (CUE_SUCCESS != CU_initialize_registry())

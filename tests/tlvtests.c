@@ -46,7 +46,7 @@ static void test_tlv_free(void)
    lwm2m_data_free(10, dataP);
 }
 
-static void test_decodeTLV()
+static void test_decodeTLV(void)
 {
     uint8_t data1[] = {0xC3, 55, 1, 2, 3};
     uint8_t data2[] = {0x28, 2, 3, 9, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
@@ -89,7 +89,7 @@ static void test_decodeTLV()
     CU_ASSERT_EQUAL(length, 0x190)
 }
 
-static void test_tlv_parse()
+static void test_tlv_parse(void)
 {
     // Resource 55 {1, 2, 3}
     uint8_t data1[] = {0xC3, 55, 1, 2, 3};
@@ -157,7 +157,7 @@ static void test_tlv_parse()
     lwm2m_data_free(result, dataP);
 }
 
-static void test_tlv_serialize()
+static void test_tlv_serialize(void)
 {
     int result;
     lwm2m_data_t *dataP;
@@ -494,7 +494,7 @@ static struct TestTable table[] = {
         { NULL, NULL },
 };
 
-CU_ErrorCode create_tlv_suit()
+CU_ErrorCode create_tlv_suit(void)
 {
    CU_pSuite pSuite = NULL;
 

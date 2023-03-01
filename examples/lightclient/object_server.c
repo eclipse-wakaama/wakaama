@@ -432,7 +432,7 @@ static uint8_t prv_server_create(lwm2m_context_t * contextP,
     return result;
 }
 
-lwm2m_object_t * get_server_object()
+lwm2m_object_t * get_server_object(void)
 {
     lwm2m_object_t * serverObj;
 

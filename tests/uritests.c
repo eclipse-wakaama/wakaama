@@ -379,7 +379,7 @@ static struct TestTable table[] = {
         { NULL, NULL },
 };
 
-CU_ErrorCode create_uri_suit()
+CU_ErrorCode create_uri_suit(void)
 {
    CU_pSuite pSuite = NULL;
 

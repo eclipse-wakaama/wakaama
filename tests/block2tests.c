@@ -98,7 +98,7 @@ static struct TestTable table[] = {
     {NULL, NULL},
 };
 
-CU_ErrorCode create_block2_suit() {
+CU_ErrorCode create_block2_suit(void) {
     CU_pSuite pSuite = NULL;
     pSuite = CU_add_suite("Suite_block2", NULL, NULL);
 
