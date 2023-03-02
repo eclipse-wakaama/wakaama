@@ -85,3 +85,10 @@ set(TINYDTLS_SOURCES ${TINYDTLS_SOURCES} ${TINYDTLS_SOURCES_GENERATED})
 
 # Compile definitions for tinydtls
 set_source_files_properties(${TINYDTLS_SOURCES} PROPERTIES COMPILE_DEFINITIONS WITH_SHA256)
+
+# Disable warnings from tinydtls for examples
+set_source_files_properties(${TINYDTLS_SOURCES} PROPERTIES COMPILE_FLAGS "-Wno-discarded-qualifiers \
+                                                                          -Wno-old-style-declaration \
+                                                                          -Wno-unused-parameter \
+                                                                          -Wno-sign-compare \
+                                                                          -Wno-array-parameter")
