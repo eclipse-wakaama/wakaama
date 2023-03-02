@@ -406,10 +406,14 @@ int discover_serialize(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_ser
 #ifdef LWM2M_RAW_BLOCK1_REQUESTS
 uint8_t coap_block1_handler(lwm2m_block_data_t ** blockData, const char * uri, uint16_t mid, uint8_t * buffer, size_t length, uint16_t blockSize, uint32_t blockNum, bool blockMore, uint8_t ** outputBuffer, size_t * outputLength);
 #else
-uint8_t coap_block1_handler(lwm2m_block_data_t ** blockData, const char * uri, uint8_t * buffer, size_t length, uint16_t blockSize, uint32_t blockNum, bool blockMore, uint8_t ** outputBuffer, size_t * outputLength);
+uint8_t coap_block1_handler(lwm2m_block_data_t **blockData, const char *uri, const uint8_t *buffer, size_t length,
+                            uint16_t blockSize, uint32_t blockNum, bool blockMore, uint8_t **outputBuffer,
+                            size_t *outputLength);
 #endif
 void block1_delete(lwm2m_block_data_t ** pBlockDataHead, char * uri);
-uint8_t coap_block2_handler(lwm2m_block_data_t ** blockData, uint16_t mid, uint8_t * buffer, size_t length, uint16_t blockSize, uint32_t blockNum, bool blockMore, uint8_t ** outputBuffer, size_t * outputLength);
+uint8_t coap_block2_handler(lwm2m_block_data_t **blockData, uint16_t mid, const uint8_t *buffer, size_t length,
+                            uint16_t blockSize, uint32_t blockNum, bool blockMore, uint8_t **outputBuffer,
+                            size_t *outputLength);
 void coap_block2_set_expected_mid(lwm2m_block_data_t *blockDataHead, uint16_t currentMid, uint16_t expectedMid);
 void free_block_data(lwm2m_block_data_t * blockData);
 void block2_delete(lwm2m_block_data_t ** pBlockDataHead, uint16_t mid);

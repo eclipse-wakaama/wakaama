@@ -142,17 +142,9 @@ void prv_block_data_delete(lwm2m_block_data_t ** pBlockDataHead,
 }
 
 #ifdef LWM2M_RAW_BLOCK1_REQUESTS
-static
-uint8_t prv_coap_raw_block_handler(lwm2m_block_data_t ** pBlockDataHead,
-                               block_data_identifier_t identifier,
-                               uint16_t mid,
-                               block_type_t blockType,
-                               uint8_t * buffer,
-                               size_t length,
-                               uint16_t blockSize,
-                               uint32_t blockNum,
-                               bool blockMore)
-{
+static uint8_t prv_coap_raw_block_handler(lwm2m_block_data_t **pBlockDataHead, block_data_identifier_t identifier,
+                                          uint16_t mid, block_type_t blockType, const uint8_t *buffer, size_t length,
+                                          uint16_t blockSize, uint32_t blockNum, bool blockMore) {
     lwm2m_block_data_t * blockData = find_block_data(*pBlockDataHead, identifier, blockType);
     
     // manage new block transfer
@@ -198,18 +190,9 @@ uint8_t prv_coap_raw_block_handler(lwm2m_block_data_t ** pBlockDataHead,
 }
 #endif
 
-static
-uint8_t prv_coap_block_handler(lwm2m_block_data_t ** pBlockDataHead,
-                               block_data_identifier_t identifier,
-                               block_type_t blockType,
-                               uint8_t * buffer,
-                               size_t length,
-                               uint16_t blockSize,
-                               uint32_t blockNum,
-                               bool blockMore,
-                               uint8_t ** outputBuffer,
-                               size_t * outputLength)
-{
+static uint8_t prv_coap_block_handler(lwm2m_block_data_t **pBlockDataHead, block_data_identifier_t identifier,
+                                      block_type_t blockType, const uint8_t *buffer, size_t length, uint16_t blockSize,
+                                      uint32_t blockNum, bool blockMore, uint8_t **outputBuffer, size_t *outputLength) {
     lwm2m_block_data_t * blockData = find_block_data(*pBlockDataHead, identifier, blockType);
     
     // manage new block transfer
@@ -308,20 +291,14 @@ void block1_delete(lwm2m_block_data_t ** pBlockDataHead,
     prv_block_data_delete(pBlockDataHead, identifier, BLOCK_1);
 }
 
-uint8_t coap_block1_handler (lwm2m_block_data_t ** pBlockDataHead,
- 
-                            const char * uri,
+uint8_t coap_block1_handler(lwm2m_block_data_t **pBlockDataHead,
+
+                            const char *uri,
 #ifdef LWM2M_RAW_BLOCK1_REQUESTS
                             uint16_t mid,
 #endif
-                            uint8_t * buffer,
-                            size_t length,
-                            uint16_t blockSize,
-                            uint32_t blockNum,
-                            bool blockMore,
-                            uint8_t ** outputBuffer,
-                            size_t * outputLength)
-{
+                            const uint8_t *buffer, size_t length, uint16_t blockSize, uint32_t blockNum, bool blockMore,
+                            uint8_t **outputBuffer, size_t *outputLength) {
     block_data_identifier_t identifier;
     identifier.uri = (char *) uri;
 #ifdef LWM2M_RAW_BLOCK1_REQUESTS
@@ -359,22 +336,14 @@ void coap_block2_set_expected_mid(lwm2m_block_data_t * blockDataHead, uint16_t c
     blockData->identifier.mid = expectedMid;
 }
 
-uint8_t coap_block2_handler(lwm2m_block_data_t ** pBlockDataHead,
-                            uint16_t mid,
-                            uint8_t * buffer,
-                            size_t length,
-                            uint16_t blockSize,
-                            uint32_t blockNum,
-                            bool blockMore,
-                            uint8_t ** outputBuffer,
-                            size_t * outputLength)
-{
+uint8_t coap_block2_handler(lwm2m_block_data_t **pBlockDataHead, uint16_t mid, const uint8_t *buffer, size_t length,
+                            uint16_t blockSize, uint32_t blockNum, bool blockMore, uint8_t **outputBuffer,
+                            size_t *outputLength) {
     block_data_identifier_t identifier;
     identifier.mid = mid;
 
     return prv_coap_block_handler(pBlockDataHead, identifier, BLOCK_2, buffer, length, blockSize, blockNum, blockMore, outputBuffer, outputLength);
 }
-
 
 void free_block_data(lwm2m_block_data_t * blockData)
 {
