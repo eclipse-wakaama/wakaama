@@ -36,7 +36,7 @@ uint8_t reporting_handleSend(lwm2m_context_t *contextP, void *fromSessionH, coap
             break;
     }
     if (clientP == NULL)
-        return COAP_400_BAD_REQUEST;
+        return COAP_404_NOT_FOUND;
 
     format = utils_convertMediaType(message->content_type);
 
