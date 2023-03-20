@@ -98,12 +98,12 @@ Several preprocessor definitions are supported:
   - Version control system: Git (and a GitHub account)
   - Git commit message linter: gitlint
   - Build system: ninja
-  - C code formatting: clang-format, version 12
+  - C code formatting: clang-format, version 14
   - CMake list files formatting: cmake-format, version 0.6.13
   - Unit testing: CUnit
 
 On Ubuntu 20.04, used in CI, the dependencies can be installed as such:
-- `apt install build-essential clang-format clang-format-12 clang-tools-12 cmake gcovr git libcunit1-dev ninja-build python3-pip`
+- `apt install build-essential clang-format clang-format-14 clang-tools-14 cmake gcovr git libcunit1-dev ninja-build python3-pip`
 - `pip3 install -r tools/requirements-compliance.txt`
 
 ### Code formatting
@@ -114,9 +114,9 @@ The style is based on the LLVM style, but with 4 instead of 2 spaces indentation
 characters per line.
 
 To check if your code matches the expected style, the following commands are helpful:
- - `git clang-format-12 --diff`: Show what needs to be changed to match the expected code style
- - `git clang-format-12`: Apply all needed changes directly
- - `git clang-format-12 --commit master`: Fix code style for all changes since master
+ - `git clang-format-14 --diff`: Show what needs to be changed to match the expected code style
+ - `git clang-format-14`: Apply all needed changes directly
+ - `git clang-format-14 --commit master`: Fix code style for all changes since master
 
 If existing code gets reformatted, this must be done in a separate commit. Its commit id has to be added to the file
 `.git-blame-ignore-revs` and committed in yet another commit.

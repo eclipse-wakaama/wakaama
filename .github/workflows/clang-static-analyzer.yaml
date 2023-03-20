@@ -4,7 +4,7 @@ on: [push, pull_request]
 
 jobs:
   clang_static_analyzer:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
     steps:
     - name: Checkout code including full history and submodules
@@ -16,7 +16,7 @@ jobs:
     - name: Install dependencies from APT repository
       run:  |
         sudo apt-get update
-        sudo apt-get install clang-tools-10 libcunit1-dev wget unzip
+        sudo apt-get install clang-tools-14 libcunit1-dev wget unzip
 
     - name: Install CMake
       uses: lukka/get-cmake@latest
@@ -25,7 +25,7 @@ jobs:
       uses: seanmiddleditch/gha-setup-ninja@master
 
     - name: Run Clang Static Analyzer
-      run: tools/ci/run_ci.sh --run-build --scan-build scan-build-10
+      run: tools/ci/run_ci.sh --run-build --scan-build scan-build-14
 
     - name: Upload scan build reports
       uses: actions/upload-artifact@v1
