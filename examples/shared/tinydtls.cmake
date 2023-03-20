@@ -59,20 +59,10 @@ if(NOT EXISTS ${TINYDTLS_SOURCES_GENERATED})
 
     ExternalProject_Add_Step(
         external_tinydtls autoheader
-        COMMAND "autoheader"
+        COMMAND "./autogen.sh"
         ALWAYS 1
         WORKING_DIRECTORY "${TINYDTLS_SOURCES_DIR}"
         DEPENDERS configure
-        DEPENDEES autoconf
-    )
-
-    ExternalProject_Add_Step(
-        external_tinydtls autoconf
-        COMMAND "autoreconf"
-        ALWAYS 1
-        WORKING_DIRECTORY "${TINYDTLS_SOURCES_DIR}"
-        DEPENDERS autoheader
-        DEPENDEES download
     )
 
     add_custom_command(
