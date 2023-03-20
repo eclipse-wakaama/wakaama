@@ -5,7 +5,7 @@ on: pull_request
 jobs:
   lint-code:
     name: Run compliance checks
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
     steps:
     - name: Checkout code including full history
@@ -16,7 +16,7 @@ jobs:
     - name: Install compliance tools
       run: |
         sudo apt update
-        sudo apt -qy --no-install-recommends install clang-format-12
+        sudo apt -qy --no-install-recommends install clang-format-14
         pip3 install -r tools/requirements-compliance.txt
 
     - name: Check commits with gitlint
