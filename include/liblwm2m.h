@@ -765,7 +765,7 @@ typedef enum
 // client, the URI of the operation (may be nil) and name is nil. The callback return value is ignored.
 // If data is present and no preferred format is provided by the client the format will be 0, otherwise it will be set.
 typedef int (*lwm2m_bootstrap_callback_t)(lwm2m_context_t *contextP, void *sessionH, uint8_t status, lwm2m_uri_t *uriP,
-                                          char *name, lwm2m_media_type_t format, uint8_t *data, size_t dataLength,
+                                          const char *name, lwm2m_media_type_t format, uint8_t *data, size_t dataLength,
                                           void *userData);
 #endif
 
