@@ -178,10 +178,13 @@ static int prv_parseItem(const uint8_t * buffer,
                         }
                         break;
                     case LWM2M_TYPE_FLOAT:
+                        _Pragma("GCC diagnostic push");
+                        _Pragma("GCC diagnostic ignored \"-Wfloat-equal\"");
                         if (baseValue->value.asFloat == 0.0)
                         {
                             baseValue->type = LWM2M_TYPE_UNDEFINED;
                         }
+                        _Pragma("GCC diagnostic pop");
                         break;
                     default:
                         return -1;
