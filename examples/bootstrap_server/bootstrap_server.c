@@ -721,7 +721,7 @@ int main(int argc, char *argv[])
                 else
                 {
                     char s[INET6_ADDRSTRLEN];
-                    in_port_t port;
+                    in_port_t rec_port;
                     connection_t * connP;
 
 					s[0] = 0;
@@ -729,16 +729,16 @@ int main(int argc, char *argv[])
                     {
                         struct sockaddr_in *saddr = (struct sockaddr_in *)&addr;
                         inet_ntop(saddr->sin_family, &saddr->sin_addr, s, INET6_ADDRSTRLEN);
-                        port = saddr->sin_port;
+                        rec_port = saddr->sin_port;
                     }
                     else if (AF_INET6 == addr.ss_family)
                     {
                         struct sockaddr_in6 *saddr = (struct sockaddr_in6 *)&addr;
                         inet_ntop(saddr->sin6_family, &saddr->sin6_addr, s, INET6_ADDRSTRLEN);
-                        port = saddr->sin6_port;
+                        rec_port = saddr->sin6_port;
                     }
 
-                    fprintf(stderr, "%zd bytes received from [%s]:%hu\r\n", numBytes, s, ntohs(port));
+                    fprintf(stderr, "%zd bytes received from [%s]:%hu\r\n", numBytes, s, ntohs(rec_port));
 
                     output_buffer(stderr, buffer, (size_t)numBytes, 0);
 

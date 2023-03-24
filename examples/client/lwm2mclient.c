@@ -1382,7 +1382,7 @@ int main(int argc, char *argv[])
                          * Let liblwm2m respond to the query depending on the context
                          */
 #ifdef WITH_TINYDTLS
-                        int result = connection_handle_packet(connP, buffer, numBytes);
+                        result = connection_handle_packet(connP, buffer, numBytes);
                         if (0 != result)
                         {
                              printf("error handling message %d\n",result);
