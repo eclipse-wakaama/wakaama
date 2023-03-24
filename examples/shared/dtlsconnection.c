@@ -34,8 +34,6 @@ typedef struct _dtls_app_context_
     dtls_connection_t * connList;
 } dtls_app_context_t;
 
-dtls_app_context_t appContext;
-
 /********************* Security Obj Helpers **********************/
 char * security_get_uri(lwm2m_context_t * lwm2mH, lwm2m_object_t * obj, int instanceId, char * uriBuffer, int bufferSize){
     int size = 1;
@@ -197,16 +195,16 @@ static int get_psk_info(struct dtls_context_t *ctx,
         case DTLS_PSK_IDENTITY:
         {
             int idLen;
-            char * id;
-            id = security_get_public_id(appContext->lwm2mH, cnx->securityObj, cnx->securityInstId, &idLen);
+            char *id2;
+            id2 = security_get_public_id(appContext->lwm2mH, cnx->securityObj, cnx->securityInstId, &idLen);
             if (result_length < idLen)
             {
                 printf("cannot set psk_identity -- buffer too small\n");
                 return dtls_alert_fatal_create(DTLS_ALERT_INTERNAL_ERROR);
             }
 
-            memcpy(result, id,idLen);
-            lwm2m_free(id);
+            memcpy(result, id2, idLen);
+            lwm2m_free(id2);
             return idLen;
         }
         case DTLS_PSK_KEY:
@@ -292,6 +290,7 @@ static dtls_handler_t cb = {
 };
 
 dtls_context_t * get_dtls_context(lwm2m_context_t * lwm2mH, dtls_connection_t * connList) {
+    static dtls_app_context_t appContext;
     appContext.lwm2mH = lwm2mH;
     appContext.connList = connList;
     if (dtlsContext == NULL) {
