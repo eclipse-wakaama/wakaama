@@ -127,6 +127,7 @@ add_compile_options(
 # Turn certain warnings into errors
 add_compile_options(
     -Werror=discarded-qualifiers
+    -Werror=incompatible-pointer-types
     -Werror=strict-prototypes
 )
 
