@@ -866,7 +866,7 @@ int main(int argc, char *argv[])
     const char * localPort = "56830";
     const char * server = NULL;
     const char * serverPort = LWM2M_STANDARD_PORT_STR;
-    char * name = "testlwm2mclient";
+    const char * name = "testlwm2mclient";
     int lifetime = 300;
     int batterylevelchanging = 0;
     time_t reboot_time = 0;

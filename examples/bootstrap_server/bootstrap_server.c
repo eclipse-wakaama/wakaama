@@ -80,8 +80,8 @@ void handle_sigint(int signum)
     prv_quit(NULL, NULL, NULL);
 }
 
-void print_usage(char * filename,
-                 char * port)
+void print_usage(const char * filename,
+                 const char * port)
 {
     fprintf(stdout, "Usage: bootstap_server [OPTION]\r\n");
     fprintf(stderr, "Launch a LWM2M Bootstrap Server.\r\n\n");
@@ -333,7 +333,7 @@ static void prv_send_command(lwm2m_context_t *lwm2mH,
 }
 
 static int prv_bootstrap_callback(lwm2m_context_t *lwm2mH, void *sessionH, uint8_t status, lwm2m_uri_t *uriP,
-                                  char *name, lwm2m_media_type_t format, uint8_t *data, size_t dataLength,
+                                  const char *name, lwm2m_media_type_t format, uint8_t *data, size_t dataLength,
                                   void *userData) {
     internal_data_t * dataP = (internal_data_t *)userData;
     endpoint_t * endP;
@@ -486,7 +486,7 @@ static void prv_bootstrap_client(lwm2m_context_t *lwm2mH,
 {
     internal_data_t * dataP = (internal_data_t *)user_data;
     char * uri;
-    char * name = "";
+    const char * name = "";
     char * end = NULL;
     char * host;
     char * port;
@@ -558,9 +558,9 @@ int main(int argc, char *argv[])
     fd_set readfds;
     struct timeval tv;
     int result;
-    char * port = "5685";
+    const char * port = "5685";
     internal_data_t data;
-    char * filename = "bootstrap_server.ini";
+    const char * filename = "bootstrap_server.ini";
     int opt;
     FILE * fd;
     lwm2m_context_t * lwm2mH;
