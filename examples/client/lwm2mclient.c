@@ -831,6 +831,9 @@ static void prv_display_objects(lwm2m_context_t *lwm2mH, char *buffer, void *use
             case TEST_OBJECT_ID:
                 display_test_object(object);
                 break;
+            default:
+                fprintf(stdout, "unknown object ID: %" PRIu16 "\n", object->objID);
+                break;
             }
         }
     }
