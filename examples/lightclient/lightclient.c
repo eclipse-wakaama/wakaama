@@ -329,7 +329,7 @@ int main(int argc, char *argv[])
     lwm2m_object_t * objArray[OBJ_COUNT];
 
     const char * localPort = "56830";
-    char * name = "testlwm2mclient";
+    const char * name = "testlwm2mclient";
 
     int result;
     int opt;

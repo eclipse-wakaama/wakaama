@@ -462,16 +462,16 @@ dtls_connection_t * connection_create(dtls_connection_t * connList,
     if (uri == NULL) return NULL;
 
     // parse uri in the form "coaps://[host]:[port]"
-    char * defaultport;
+    char defaultport[5];
     if (0 == strncmp(uri, "coaps://", strlen("coaps://")))
     {
         host = uri+strlen("coaps://");
-        defaultport = COAPS_PORT;
+        strncpy(defaultport, COAPS_PORT, 5);
     }
     else if (0 == strncmp(uri, "coap://", strlen("coap://")))
     {
         host = uri+strlen("coap://");
-        defaultport = COAP_PORT;
+        strncpy(defaultport, COAP_PORT, 5);
     }
     else
     {

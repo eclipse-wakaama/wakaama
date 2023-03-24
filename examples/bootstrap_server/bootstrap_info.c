@@ -48,7 +48,7 @@ typedef struct
 } read_server_t;
 
 static int prv_find_next_section(FILE * fd,
-                                 char * tag)
+                                 const char * tag)
 {
     char * line;
     size_t length;
