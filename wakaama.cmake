@@ -130,6 +130,7 @@ add_compile_options(
     -Werror=incompatible-pointer-types
     -Werror=shadow
     -Werror=strict-prototypes
+    -Werror=switch-default
 )
 
 # The maximum buffer size that is provided for resource responses and must be respected due to the limited IP buffer.
