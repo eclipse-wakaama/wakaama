@@ -129,6 +129,7 @@ add_compile_options(
     -Werror=discarded-qualifiers
     -Werror=incompatible-pointer-types
     -Werror=shadow
+    -Werror=sign-compare
     -Werror=strict-prototypes
     -Werror=switch-default
 )
