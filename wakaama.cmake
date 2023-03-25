@@ -125,6 +125,8 @@ add_compile_options(
 
     # Reduce noise: Unused parameters are common in this ifdef-littered code-base, but of no danger
     -Wno-unused-parameter
+    # Reduce noise: Too many false positives
+    -Wno-uninitialized
 )
 
 # Turn certain warnings into errors
