@@ -35,7 +35,8 @@ typedef struct _dtls_app_context_
 } dtls_app_context_t;
 
 /********************* Security Obj Helpers **********************/
-char * security_get_uri(lwm2m_context_t * lwm2mH, lwm2m_object_t * obj, int instanceId, char * uriBuffer, size_t bufferSize){
+char *security_get_uri(lwm2m_context_t *lwm2mH, lwm2m_object_t *obj, int instanceId, char *uriBuffer,
+                       size_t bufferSize) {
     int size = 1;
     lwm2m_data_t * dataP = lwm2m_data_new(size);
     dataP->id = 0; // security server uri
@@ -74,7 +75,7 @@ int64_t security_get_mode(lwm2m_context_t * lwm2mH, lwm2m_object_t * obj, int in
     return LWM2M_SECURITY_MODE_NONE;
 }
 
-char * security_get_public_id(lwm2m_context_t * lwm2mH, lwm2m_object_t * obj, int instanceId, size_t * length){
+char *security_get_public_id(lwm2m_context_t *lwm2mH, lwm2m_object_t *obj, int instanceId, size_t *length) {
     int size = 1;
     lwm2m_data_t * dataP = lwm2m_data_new(size);
     dataP->id = 3; // public key or id
@@ -99,8 +100,7 @@ char * security_get_public_id(lwm2m_context_t * lwm2mH, lwm2m_object_t * obj, in
     }
 }
 
-
-char * security_get_secret_key(lwm2m_context_t * lwm2mH, lwm2m_object_t * obj, int instanceId, size_t * length){
+char *security_get_secret_key(lwm2m_context_t *lwm2mH, lwm2m_object_t *obj, int instanceId, size_t *length) {
     int size = 1;
     lwm2m_data_t * dataP = lwm2m_data_new(size);
     dataP->id = 5; // secret key
