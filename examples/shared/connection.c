@@ -189,7 +189,7 @@ int connection_send(connection_t *connP,
         return -1;
     }
 
-    fprintf(stderr, "Sending %lu bytes to [%s]:%hu\r\n", length, s, ntohs(port));
+    fprintf(stderr, "Sending %zu bytes to [%s]:%hu\r\n", length, s, ntohs(port));
 
     output_buffer(stderr, buffer, length, 0);
 #endif
@@ -215,13 +215,13 @@ uint8_t lwm2m_buffer_send(void * sessionH,
 
     if (connP == NULL)
     {
-        fprintf(stderr, "#> failed sending %lu bytes, missing connection\r\n", length);
+        fprintf(stderr, "#> failed sending %zu bytes, missing connection\r\n", length);
         return COAP_500_INTERNAL_SERVER_ERROR ;
     }
 
     if (-1 == connection_send(connP, buffer, length))
     {
-        fprintf(stderr, "#> failed sending %lu bytes\r\n", length);
+        fprintf(stderr, "#> failed sending %zu bytes\r\n", length);
         return COAP_500_INTERNAL_SERVER_ERROR ;
     }
 

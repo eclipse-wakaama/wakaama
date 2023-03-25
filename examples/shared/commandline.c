@@ -267,7 +267,7 @@ void output_tlv(FILE * stream,
             uint8_t tmp;
 
             print_indent(stream, indent+2);
-            fprintf(stream, "data (%ld bytes):\r\n", dataLen);
+            fprintf(stream, "data (%zu bytes):\r\n", dataLen);
             output_buffer(stream, (uint8_t*)buffer + length + dataIndex, dataLen, indent+2);
 
             tmp = buffer[length + dataIndex + dataLen];
