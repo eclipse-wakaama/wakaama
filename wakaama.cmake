@@ -109,7 +109,7 @@ function(target_sources_shared target)
     target_include_directories(${target} PUBLIC ${WAKAAMA_EXAMPLE_SHARED_DIRECTORY})
 endfunction()
 
-# Warn about problematic code (not yet enforced)
+# Enforce a certain level of hygiene
 add_compile_options(
     -Waggregate-return
     -Wall
@@ -120,24 +120,17 @@ add_compile_options(
     -Wshadow
     -Wswitch-default
     -Wwrite-strings
-    -Werror=absolute-value
     -pedantic
 
     # Reduce noise: Unused parameters are common in this ifdef-littered code-base, but of no danger
     -Wno-unused-parameter
     # Reduce noise: Too many false positives
     -Wno-uninitialized
-)
 
-# Turn certain warnings into errors
-add_compile_options(
-    -Werror=discarded-qualifiers
-    -Werror=incompatible-pointer-types
-    -Werror=float-equal
-    -Werror=shadow
-    -Werror=sign-compare
-    -Werror=strict-prototypes
-    -Werror=switch-default
+     # Turn (most) warnings into errors
+    -Werror
+    # Disabled because of existing, non-trivially fixable code
+    -Wno-error=cast-align
 )
 
 # The maximum buffer size that is provided for resource responses and must be respected due to the limited IP buffer.
