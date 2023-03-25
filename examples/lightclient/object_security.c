@@ -110,7 +110,7 @@ static uint8_t prv_get_value(lwm2m_data_t * dataP,
     case LWM2M_SECURITY_SMS_KEY_PARAM_ID:
         // Here we return an opaque of 6 bytes containing a buggy value
         {
-            const char * value = "12345";
+            const char *value = "12345";
             lwm2m_data_encode_opaque((uint8_t *)value, 6, dataP);
         }
         return COAP_205_CONTENT;
@@ -118,7 +118,7 @@ static uint8_t prv_get_value(lwm2m_data_t * dataP,
     case LWM2M_SECURITY_SMS_SECRET_KEY_ID:
         // Here we return an opaque of 32 bytes containing a buggy value
         {
-            const char * value = "1234567890abcdefghijklmnopqrstu";
+            const char *value = "1234567890abcdefghijklmnopqrstu";
             lwm2m_data_encode_opaque((uint8_t *)value, 32, dataP);
         }
         return COAP_205_CONTENT;

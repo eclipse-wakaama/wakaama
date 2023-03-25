@@ -746,15 +746,12 @@ void observe_step(lwm2m_context_t * contextP,
                     {
                         LOG_ARG("Checking minimal period (%d s)", watcherP->parameters->minPeriod);
 
-                        if ((time_t)(watcherP->lastTime + watcherP->parameters->minPeriod) > currentTime)
-                        {
+                        if ((time_t)(watcherP->lastTime + watcherP->parameters->minPeriod) > currentTime) {
                             // Minimum Period did not elapse yet
                             interval = watcherP->lastTime + watcherP->parameters->minPeriod - currentTime;
                             if (*timeoutP > interval) *timeoutP = interval;
                             notify = false;
-                        }
-                        else
-                        {
+                        } else {
                             LOG("Notify on minimal period");
                             notify = true;
                         }
@@ -768,8 +765,7 @@ void observe_step(lwm2m_context_t * contextP,
                 {
                     LOG_ARG("Checking maximal period (%d s)", watcherP->parameters->maxPeriod);
 
-                    if ((time_t)(watcherP->lastTime + watcherP->parameters->maxPeriod) <= currentTime)
-                    {
+                    if ((time_t)(watcherP->lastTime + watcherP->parameters->maxPeriod) <= currentTime) {
                         LOG("Notify on maximal period");
                         notify = true;
                     }

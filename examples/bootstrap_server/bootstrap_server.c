@@ -80,9 +80,7 @@ void handle_sigint(int signum)
     prv_quit(NULL, NULL, NULL);
 }
 
-void print_usage(const char * filename,
-                 const char * port)
-{
+void print_usage(const char *filename, const char *port) {
     fprintf(stdout, "Usage: bootstap_server [OPTION]\r\n");
     fprintf(stderr, "Launch a LWM2M Bootstrap Server.\r\n\n");
     fprintf(stdout, "Options:\r\n");
@@ -486,7 +484,7 @@ static void prv_bootstrap_client(lwm2m_context_t *lwm2mH,
 {
     internal_data_t * dataP = (internal_data_t *)user_data;
     char * uri;
-    const char * name = "";
+    const char *name = "";
     char * end = NULL;
     char * host;
     char * port;
@@ -558,9 +556,9 @@ int main(int argc, char *argv[])
     fd_set readfds;
     struct timeval tv;
     int result;
-    const char * port = "5685";
+    const char *port = "5685";
     internal_data_t data;
-    const char * filename = "bootstrap_server.ini";
+    const char *filename = "bootstrap_server.ini";
     int opt;
     FILE * fd;
     lwm2m_context_t * lwm2mH;
