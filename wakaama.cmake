@@ -239,6 +239,17 @@ function(target_sources_wakaama target)
         message(STATUS "${target}: Default CoAP block size not set, using ${LWM2M_COAP_DEFAULT_BLOCK_SIZE}")
     endif()
 
+    # LWM2M_COAP_DEFAULT_MAX_RETRANSMIT is needed by source files -> always set it
+    if(NOT CURRENT_TARGET_COMPILE_DEFINITIONS MATCHES "LWM2M_COAP_DEFAULT_MAX_RETRANSMIT=")
+        target_compile_definitions(
+            ${target} PRIVATE "LWM2M_COAP_DEFAULT_MAX_RETRANSMIT=${LWM2M_COAP_DEFAULT_MAX_RETRANSMIT}"
+        )
+        message(
+            STATUS
+                "${target}: Default CoAP max retransmission count not set, using ${LWM2M_COAP_DEFAULT_MAX_RETRANSMIT}"
+        )
+    endif()
+
     # Detect invalid configuration already during CMake run
     if(NOT CURRENT_TARGET_COMPILE_DEFINITIONS MATCHES "LWM2M_SERVER_MODE|LWM2M_BOOTSTRAP_SERVER_MODE|LWM2M_CLIENT_MODE")
         message(FATAL_ERROR "${target}: At least one mode (client, server, bootstrap server) must be enabled!")
@@ -338,4 +349,10 @@ add_compile_options(
 set(LWM2M_COAP_DEFAULT_BLOCK_SIZE
     1024
     CACHE STRING "Default CoAP block size; Used if not set on a per-target basis"
+)
+
+# The maximum number of retransmissions used for confirmable messages.
+set(LWM2M_COAP_DEFAULT_MAX_RETRANSMIT
+    4
+    CACHE STRING "Default CoAP max retransmissions; Used if not set on a per-target basis"
 )
