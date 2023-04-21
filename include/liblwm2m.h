@@ -157,23 +157,24 @@ bool lwm2m_session_is_equal(void * session1, void * session2, void * userData);
 #define COAP_IGNORE                     (uint8_t)0x01
 #define COAP_RETRANSMISSION             (uint8_t)0x02
 
-#define COAP_201_CREATED                (uint8_t)0x41
-#define COAP_202_DELETED                (uint8_t)0x42
-#define COAP_204_CHANGED                (uint8_t)0x44
-#define COAP_205_CONTENT                (uint8_t)0x45
-#define COAP_231_CONTINUE               (uint8_t)0x5F
-#define COAP_400_BAD_REQUEST            (uint8_t)0x80
-#define COAP_401_UNAUTHORIZED           (uint8_t)0x81
-#define COAP_402_BAD_OPTION             (uint8_t)0x82
-#define COAP_404_NOT_FOUND              (uint8_t)0x84
-#define COAP_405_METHOD_NOT_ALLOWED     (uint8_t)0x85
-#define COAP_406_NOT_ACCEPTABLE         (uint8_t)0x86
-#define COAP_408_REQ_ENTITY_INCOMPLETE  (uint8_t)0x88
-#define COAP_412_PRECONDITION_FAILED    (uint8_t)0x8C
-#define COAP_413_ENTITY_TOO_LARGE       (uint8_t)0x8D
-#define COAP_500_INTERNAL_SERVER_ERROR  (uint8_t)0xA0
-#define COAP_501_NOT_IMPLEMENTED        (uint8_t)0xA1
-#define COAP_503_SERVICE_UNAVAILABLE    (uint8_t)0xA3
+#define COAP_201_CREATED                    (uint8_t)0x41
+#define COAP_202_DELETED                    (uint8_t)0x42
+#define COAP_204_CHANGED                    (uint8_t)0x44
+#define COAP_205_CONTENT                    (uint8_t)0x45
+#define COAP_231_CONTINUE                   (uint8_t)0x5F
+#define COAP_400_BAD_REQUEST                (uint8_t)0x80
+#define COAP_401_UNAUTHORIZED               (uint8_t)0x81
+#define COAP_402_BAD_OPTION                 (uint8_t)0x82
+#define COAP_404_NOT_FOUND                  (uint8_t)0x84
+#define COAP_405_METHOD_NOT_ALLOWED         (uint8_t)0x85
+#define COAP_406_NOT_ACCEPTABLE             (uint8_t)0x86
+#define COAP_408_REQ_ENTITY_INCOMPLETE      (uint8_t)0x88
+#define COAP_412_PRECONDITION_FAILED        (uint8_t)0x8C
+#define COAP_413_ENTITY_TOO_LARGE           (uint8_t)0x8D
+#define COAP_415_UNSUPPORTED_CONTENT_FORMAT (uint8_t)0x8F
+#define COAP_500_INTERNAL_SERVER_ERROR      (uint8_t)0xA0
+#define COAP_501_NOT_IMPLEMENTED            (uint8_t)0xA1
+#define COAP_503_SERVICE_UNAVAILABLE        (uint8_t)0xA3
 
 /*
  * Standard Object IDs
@@ -387,6 +388,8 @@ lwm2m_data_t * lwm2m_data_new(int size);
 int lwm2m_data_parse(lwm2m_uri_t * uriP, const uint8_t * buffer, size_t bufferLen, lwm2m_media_type_t format, lwm2m_data_t ** dataP);
 int lwm2m_data_serialize(lwm2m_uri_t * uriP, int size, lwm2m_data_t * dataP, lwm2m_media_type_t * formatP, uint8_t ** bufferP);
 void lwm2m_data_free(int size, lwm2m_data_t * dataP);
+int lwm2m_data_append(int * sizeP, lwm2m_data_t ** dataP, int addDataSize, lwm2m_data_t * addDataP);
+int lwm2m_data_append_one(int * sizeP, lwm2m_data_t ** dataP, lwm2m_data_type_t type, uint16_t id);
 
 void lwm2m_data_encode_string(const char * string, lwm2m_data_t * dataP);
 void lwm2m_data_encode_nstring(const char * string, size_t length, lwm2m_data_t * dataP);
@@ -824,6 +827,13 @@ int lwm2m_update_registration(lwm2m_context_t * contextP, uint16_t shortServerID
 // send deregistration to all servers connected to client
 void lwm2m_deregister(lwm2m_context_t * context);
 void lwm2m_resource_value_changed(lwm2m_context_t * contextP, lwm2m_uri_t * uriP);
+
+#ifndef LWM2M_VERSION_1_0
+// send resources specified by URIs to the server specified by the server short
+// identifier or all if the ID is 0. NO_ERROR is returned if sending to any
+// server is successful.
+int lwm2m_send(lwm2m_context_t * contextP, uint16_t shortServerID, lwm2m_uri_t * urisP, size_t numUris, lwm2m_transaction_callback_t callback, void * userData);
+#endif
 #endif
 
 #ifdef LWM2M_SERVER_MODE

@@ -818,3 +818,77 @@ int lwm2m_data_serialize(lwm2m_uri_t * uriP,
     }
 }
 
+int lwm2m_data_append(int * sizeP,
+                      lwm2m_data_t ** dataP,
+                      int addDataSize,
+                      lwm2m_data_t * addDataP)
+{
+    int result = 0;
+    int tmpSize = (*sizeP) + addDataSize;
+
+    if (addDataSize == 0)
+    {
+        // Nothing to do.
+        result = 1;
+    }
+    if (*sizeP == 0)
+    {
+        *dataP = addDataP;
+        *sizeP = addDataSize;
+        result = 1;
+    }
+    // Guard against overflow
+    else if (tmpSize > *sizeP && tmpSize > addDataSize)
+    {
+        lwm2m_data_t * tmpDataP = lwm2m_data_new(tmpSize);
+        if (tmpDataP != NULL)
+        {
+            // Shallow copy into new array
+            memcpy(tmpDataP, *dataP, (*sizeP) * sizeof(lwm2m_data_t));
+            memcpy(tmpDataP + *sizeP, addDataP, addDataSize * sizeof(lwm2m_data_t));
+            // Shallow free old data
+            memset(*dataP, 0, (*sizeP) * sizeof(lwm2m_data_t));
+            lwm2m_data_free(*sizeP, *dataP);
+            memset(addDataP, 0, addDataSize * sizeof(lwm2m_data_t));
+            lwm2m_data_free(addDataSize, addDataP);
+            // Set new data
+            *dataP = tmpDataP;
+            *sizeP = tmpSize;
+            result = 1;
+        }
+    }
+
+    return result;
+}
+
+int lwm2m_data_append_one(int * sizeP,
+                          lwm2m_data_t ** dataP,
+                          lwm2m_data_type_t type,
+                          uint16_t id)
+{
+    int result = 0;
+    int tmpSize = *sizeP + 1;
+
+    // Guard against overflow
+    if (tmpSize > *sizeP)
+    {
+        lwm2m_data_t * tmpDataP = lwm2m_data_new(tmpSize);
+        if (tmpDataP != NULL)
+        {
+            // Shallow copy into new array
+            memcpy(tmpDataP, *dataP, (*sizeP) * sizeof(lwm2m_data_t));
+            // Shallow free old data
+            memset(*dataP, 0, (*sizeP) * sizeof(lwm2m_data_t));
+            lwm2m_data_free(*sizeP, *dataP);
+            // Set the new one
+            tmpDataP[*sizeP].id = id;
+            tmpDataP[*sizeP].type = type;
+            // Set new data
+            *dataP = tmpDataP;
+            *sizeP = tmpSize;
+            result = 1;
+        }
+    }
+
+    return result;
+}

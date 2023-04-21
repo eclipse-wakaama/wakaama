@@ -571,6 +571,72 @@ syntax_error:
     fprintf(stdout, "Syntax error !\n");
 }
 
+#ifndef LWM2M_VERSION_1_0
+static void prv_send(lwm2m_context_t * lwm2mH,
+                     char * buffer,
+                     void * user_data)
+{
+    lwm2m_uri_t uri;
+    lwm2m_uri_t* uris = NULL;
+    size_t uriCount = 0;
+    char* tmp;
+    char* end = NULL;
+    int result;
+    uint16_t serverId;
+
+    /* unused parameter */
+    (void)user_data;
+
+    if (buffer[0] == 0) goto syntax_error;
+
+    result = atoi(buffer);
+    if (result < 0 || result > LWM2M_MAX_ID) goto syntax_error;
+    serverId = (uint16_t)result;
+
+    tmp = buffer;
+    do
+    {
+        tmp = get_next_arg(tmp, &end);
+        if (tmp[0] == 0) goto syntax_error;
+
+        result = lwm2m_stringToUri(tmp, end - tmp, &uri);
+        if (result == 0) goto syntax_error;
+        uriCount++;
+    } while (!check_end_of_args(end));
+
+    uris = lwm2m_malloc(uriCount * sizeof(lwm2m_uri_t));
+    if (uris != NULL)
+    {
+        size_t i;
+        for(i = 0; i < uriCount; i++)
+        {
+            buffer = get_next_arg(buffer, &end);
+            if (buffer[0] == 0) goto syntax_error;
+
+            result = lwm2m_stringToUri(buffer, end - buffer, uris + i);
+            if (result == 0) goto syntax_error;
+        }
+
+        result = lwm2m_send(lwm2mH, serverId, uris, uriCount, NULL, NULL);
+        lwm2m_free(uris);
+    }
+    else
+    {
+        result = COAP_500_INTERNAL_SERVER_ERROR;
+    }
+    if (result != 0)
+    {
+        fprintf(stdout, "Send error: ");
+        print_status(stdout, result);
+        fprintf(stdout, "\r\n");
+    }
+    return;
+
+syntax_error:
+    fprintf(stdout, "Syntax error !\n");
+}
+#endif
+
 static void update_battery_level(lwm2m_context_t * context)
 {
     static time_t next_change_time = 0;
@@ -853,7 +919,7 @@ void print_usage(void)
     fprintf(stdout, "  -b\t\tBootstrap requested.\r\n");
     fprintf(stdout, "  -c\t\tChange battery level over time.\r\n");
     fprintf(stdout, "  -S BYTES\tCoAP block size. Options: 16, 32, 64, 128, 256, 512, 1024. Default: %" PRIu16 "\r\n",
-            LWM2M_COAP_DEFAULT_BLOCK_SIZE);
+            (uint16_t)LWM2M_COAP_DEFAULT_BLOCK_SIZE);
 #ifdef WITH_TINYDTLS
     fprintf(stdout, "  -i STRING\tSet the device management or bootstrap server PSK identity. If not set use none secure mode\r\n");
     fprintf(stdout, "  -s HEXSTRING\tSet the device management or bootstrap server Pre-Shared-Key. If not set use none secure mode\r\n");
@@ -903,6 +969,11 @@ int main(int argc, char *argv[])
                                                         "   DATA: (optional) new value\r\n", prv_change, NULL},
             {"update", "Trigger a registration update", " update SERVER\r\n"
                                                         "   SERVER: short server id such as 123\r\n", prv_update, NULL},
+#ifndef LWM2M_VERSION_1_0
+            {"send", "Send one or more resources", " server SERVER URI [URI...]\r\n"
+                                                   "   SERVER: short server id such as 123. 0 for all.\r\n"
+                                                   "   URI: uri of the resource such as /3/0, /3/0/2\r\n", prv_send, NULL},
+#endif
 #ifdef LWM2M_BOOTSTRAP
             {"bootstrap", "Initiate a DI bootstrap process", NULL, prv_initiate_bootstrap, NULL},
             {"dispb", "Display current backup of objects/instances/resources\r\n"

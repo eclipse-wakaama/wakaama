@@ -843,6 +843,160 @@ void observe_step(lwm2m_context_t * contextP,
     }
 }
 
+#ifndef LWM2M_VERSION_1_0
+int lwm2m_send(lwm2m_context_t * contextP,
+        uint16_t shortServerID,
+        lwm2m_uri_t * urisP,
+        size_t numUris,
+        lwm2m_transaction_callback_t callback,
+        void * userData)
+{
+#if defined(LWM2M_SUPPORT_SENML_CBOR) || defined(LWM2M_SUPPORT_SENML_JSON)
+    lwm2m_transaction_t * transactionP;
+    lwm2m_server_t * targetP;
+    lwm2m_data_t * dataP = NULL;
+#ifdef LWM2M_SUPPORT_SENML_CBOR
+    lwm2m_media_type_t format = LWM2M_CONTENT_SENML_CBOR;
+#else
+    lwm2m_media_type_t format = LWM2M_CONTENT_SENML_JSON;
+#endif
+    lwm2m_uri_t uri;
+    int ret;
+    int size = 0;
+    uint8_t * buffer = NULL;
+    int length;
+    size_t i;
+    bool oneGood = false;
+
+    LOG_ARG("shortServerID: %d", shortServerID);
+    for(i = 0; i < numUris; i++)
+    {
+        LOG_URI(urisP + i);
+    }
+
+    for(i = 0; i < numUris; i++)
+    {
+        if (!LWM2M_URI_IS_SET_OBJECT(urisP + i)) return COAP_400_BAD_REQUEST;
+        if (!LWM2M_URI_IS_SET_INSTANCE(urisP + i)
+         && LWM2M_URI_IS_SET_RESOURCE(urisP + i)) return COAP_400_BAD_REQUEST;
+    }
+
+    ret = object_readCompositeData(contextP, urisP, numUris, &size, &dataP);
+    if (ret != COAP_205_CONTENT) return ret;
+
+    LWM2M_URI_RESET(&uri);
+    if (size == 1)
+    {
+        uri.objectId = dataP->id;
+        if (dataP->value.asChildren.count == 1)
+        {
+            uri.instanceId = dataP->value.asChildren.array->id;
+        }
+    }
+    ret = lwm2m_data_serialize(&uri, size, dataP, &format, &buffer);
+    lwm2m_data_free(size, dataP);
+    if (ret < 0)
+    {
+        return COAP_500_INTERNAL_SERVER_ERROR;
+    }
+    else
+    {
+        length = ret;
+    }
+
+    if (shortServerID == 0
+     && contextP->serverList != NULL
+     && contextP->serverList->next == NULL)
+    {
+        // Only 1 server
+        shortServerID = contextP->serverList->shortID;
+    }
+
+    ret = COAP_404_NOT_FOUND;
+    for (targetP = contextP->serverList; targetP != NULL; targetP = targetP->next)
+    {
+        bool mute = true;
+        lwm2m_data_t *muteDataP;
+        int muteSize;
+
+        if (shortServerID != 0 && shortServerID != targetP->shortID) continue;
+        if (targetP->sessionH == NULL
+         || (targetP->status != STATE_REGISTERED
+          && targetP->status != STATE_REG_UPDATE_PENDING
+          && targetP->status != STATE_REG_UPDATE_NEEDED
+          && targetP->status != STATE_REG_FULL_UPDATE_NEEDED))
+        {
+            if (ret == COAP_404_NOT_FOUND) ret = COAP_405_METHOD_NOT_ALLOWED;
+            if (shortServerID == 0) continue;
+            break;
+        }
+
+        LWM2M_URI_RESET(&uri);
+        uri.objectId = LWM2M_SERVER_OBJECT_ID;
+        uri.instanceId = targetP->servObjInstID;
+        uri.resourceId = LWM2M_SERVER_MUTE_SEND_ID;
+        if (COAP_205_CONTENT == object_readData(contextP, &uri, &muteSize, &muteDataP))
+        {
+            lwm2m_data_decode_bool(muteDataP, &mute);
+            lwm2m_data_free(muteSize, muteDataP);
+        }
+        if (mute)
+        {
+            if (ret == COAP_404_NOT_FOUND) ret = COAP_405_METHOD_NOT_ALLOWED;
+            if (shortServerID == 0) continue;
+            break;
+        }
+
+        LWM2M_URI_RESET(&uri);
+        transactionP = transaction_new(targetP->sessionH, COAP_POST, NULL, &uri, contextP->nextMID++, 0, NULL);
+        if (transactionP == NULL)
+        {
+            if (shortServerID == 0) lwm2m_free(buffer);
+            ret = COAP_500_INTERNAL_SERVER_ERROR;
+            // Going to the next server likely won't fix this, just get out.
+            break;
+        }
+
+        coap_set_header_uri_path(transactionP->message, "/"URI_SEND_SEGMENT);
+        coap_set_header_content_type(transactionP->message, format);
+        coap_set_payload(transactionP->message, buffer, length);
+
+        transactionP->callback = callback;
+        transactionP->userData = userData;
+
+        contextP->transactionList = (lwm2m_transaction_t *)LWM2M_LIST_ADD(contextP->transactionList, transactionP);
+
+        ret = transaction_send(contextP, transactionP);
+        if (ret == NO_ERROR)
+        {
+            oneGood = true;
+        }
+        else
+        {
+            LOG_ARG("transaction_send failed for %d: 0x%02X!", targetP->shortID, ret);
+        }
+        if (shortServerID != 0) break;
+    }
+    if (buffer)
+    {
+        lwm2m_free(buffer);
+        coap_set_payload(transactionP->message, NULL, 0);
+    }
+    if (oneGood) ret = NO_ERROR;
+    return ret;
+#else
+    /* Unused parameters */
+    (void)contextP;
+    (void)shortServerID;
+    (void)urisP;
+    (void)numUris;
+    (void)callback;
+    (void)userData;
+    return COAP_415_UNSUPPORTED_CONTENT_FORMAT;
+#endif
+}
+#endif
+
 #endif
 
 #ifdef LWM2M_SERVER_MODE
