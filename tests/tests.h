@@ -38,9 +38,9 @@ CU_ErrorCode create_senml_json_suit(void);
 #endif
 #ifdef LWM2M_SUPPORT_SENML_CBOR
 #ifndef LWM2M_VERSION_1_1
-CU_ErrorCode create_cbor_suit();
+CU_ErrorCode create_cbor_suit(void);
 #endif
-CU_ErrorCode create_senml_cbor_suit();
+CU_ErrorCode create_senml_cbor_suit(void);
 #endif
 CU_ErrorCode create_er_coap_parse_message_suit(void);
 CU_ErrorCode create_list_test_suit(void);
