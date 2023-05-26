@@ -124,12 +124,21 @@ static void prv_deleteServerList(lwm2m_context_t * context)
 
 static void prv_deleteBootstrapServer(lwm2m_server_t * serverP, void *userData)
 {
-    // TODO should we free location as in prv_deleteServer ?
+    LOG("Entering");
     // TODO should we parse transaction and observation to remove the ones related to this server ?
-    if (serverP->sessionH != NULL)
-    {
-         lwm2m_close_connection(serverP->sessionH, userData);
+    if (serverP->sessionH != NULL) {
+        lwm2m_close_connection(serverP->sessionH, userData);
     }
+
+    lwm2m_free(serverP->location);
+
+    while (serverP->blockData != NULL) {
+        lwm2m_block_data_t *targetP;
+        targetP = serverP->blockData;
+        serverP->blockData = serverP->blockData->next;
+        free_block_data(targetP);
+    }
+
     lwm2m_free(serverP);
 }
 
