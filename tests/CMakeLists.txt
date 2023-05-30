@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.13)
 
 project(lwm2munittests C)
 
+include(../wakaama.cmake)
+
 add_executable(
     lwm2munittests
     block1tests.c
