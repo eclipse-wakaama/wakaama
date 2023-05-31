@@ -735,10 +735,7 @@ int lwm2m_data_serialize(lwm2m_uri_t * uriP,
     LOG_ARG("size: %d, formatP: %s", size, STR_MEDIA_TYPE(*formatP));
 
     // Check format
-    if (*formatP == LWM2M_CONTENT_TEXT
-     || *formatP == LWM2M_CONTENT_OPAQUE
-     || *formatP == LWM2M_CONTENT_CBOR)
-    {
+    if (*formatP == LWM2M_CONTENT_TEXT || *formatP == LWM2M_CONTENT_OPAQUE || *formatP == LWM2M_CONTENT_CBOR) {
         if (size != 1
          || (uriP != NULL && !LWM2M_URI_IS_SET_RESOURCE(uriP))
          || dataP->type == LWM2M_TYPE_OBJECT
@@ -839,31 +836,23 @@ int lwm2m_data_serialize(lwm2m_uri_t * uriP,
     }
 }
 
-int lwm2m_data_append(int *sizeP,
-                      lwm2m_data_t **dataP,
-                      int addDataSize,
-                      lwm2m_data_t *addDataP)
-{
+int lwm2m_data_append(int *sizeP, lwm2m_data_t **dataP, int addDataSize, lwm2m_data_t *addDataP) {
     int result = 0;
     int tmpSize = (*sizeP) + addDataSize;
 
-    if (addDataSize == 0)
-    {
+    if (addDataSize == 0) {
         // Nothing to do.
         result = 1;
     }
-    if (*sizeP == 0)
-    {
+    if (*sizeP == 0) {
         *dataP = addDataP;
         *sizeP = addDataSize;
         result = 1;
     }
     // Guard against overflow
-    else if (tmpSize > *sizeP && tmpSize > addDataSize)
-    {
-        lwm2m_data_t * tmpDataP = lwm2m_data_new(tmpSize);
-        if (tmpDataP != NULL)
-        {
+    else if (tmpSize > *sizeP && tmpSize > addDataSize) {
+        lwm2m_data_t *tmpDataP = lwm2m_data_new(tmpSize);
+        if (tmpDataP != NULL) {
             // Shallow copy into new array
             memcpy(tmpDataP, *dataP, (*sizeP) * sizeof(lwm2m_data_t));
             memcpy(tmpDataP + *sizeP, addDataP, addDataSize * sizeof(lwm2m_data_t));
@@ -882,20 +871,14 @@ int lwm2m_data_append(int *sizeP,
     return result;
 }
 
-int lwm2m_data_append_one(int *sizeP,
-                          lwm2m_data_t **dataP,
-                          lwm2m_data_type_t type,
-                          uint16_t id)
-{
+int lwm2m_data_append_one(int *sizeP, lwm2m_data_t **dataP, lwm2m_data_type_t type, uint16_t id) {
     int result = 0;
     int tmpSize = *sizeP + 1;
 
     // Guard against overflow
-    if (tmpSize > *sizeP)
-    {
-        lwm2m_data_t * tmpDataP = lwm2m_data_new(tmpSize);
-        if (tmpDataP != NULL)
-        {
+    if (tmpSize > *sizeP) {
+        lwm2m_data_t *tmpDataP = lwm2m_data_new(tmpSize);
+        if (tmpDataP != NULL) {
             // Shallow copy into new array
             memcpy(tmpDataP, *dataP, (*sizeP) * sizeof(lwm2m_data_t));
             // Shallow free old data

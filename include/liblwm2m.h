@@ -390,17 +390,16 @@ struct _lwm2m_data_t
     } value;
 };
 
-typedef enum
-{
-    LWM2M_CONTENT_TEXT       = 0,        // Also used as undefined
-    LWM2M_CONTENT_LINK       = 40,
-    LWM2M_CONTENT_OPAQUE     = 42,
-    LWM2M_CONTENT_TLV_OLD    = 1542,     // Keep old value for backward-compatibility
-    LWM2M_CONTENT_TLV        = 11542,
-    LWM2M_CONTENT_JSON_OLD   = 1543,     // Keep old value for backward-compatibility
-    LWM2M_CONTENT_JSON       = 11543,
+typedef enum {
+    LWM2M_CONTENT_TEXT = 0, // Also used as undefined
+    LWM2M_CONTENT_LINK = 40,
+    LWM2M_CONTENT_OPAQUE = 42,
+    LWM2M_CONTENT_TLV_OLD = 1542, // Keep old value for backward-compatibility
+    LWM2M_CONTENT_TLV = 11542,
+    LWM2M_CONTENT_JSON_OLD = 1543, // Keep old value for backward-compatibility
+    LWM2M_CONTENT_JSON = 11543,
     LWM2M_CONTENT_SENML_JSON = 110,
-    LWM2M_CONTENT_CBOR       = 60,
+    LWM2M_CONTENT_CBOR = 60,
     LWM2M_CONTENT_SENML_CBOR = 112,
 } lwm2m_media_type_t;
 

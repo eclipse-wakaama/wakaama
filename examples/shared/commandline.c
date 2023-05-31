@@ -17,14 +17,14 @@
  *
  *******************************************************************************/
 
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <ctype.h>
-#include <math.h>
-#include <unistd.h>
-#include <inttypes.h>
 #include "liblwm2m.h"
+#include <ctype.h>
+#include <inttypes.h>
+#include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 
 #include "commandline.h"
 
@@ -302,86 +302,60 @@ void output_tlv(FILE * stream,
 }
 
 #ifdef LWM2M_SUPPORT_SENML_CBOR
-#define CBOR_UNSIGNED_INTEGER   0
-#define CBOR_NEGATIVE_INTEGER   1
-#define CBOR_BYTE_STRING        2
-#define CBOR_TEXT_STRING        3
-#define CBOR_ARRAY              4
-#define CBOR_MAP                5
-#define CBOR_SEMANTIC_TAG       6
+#define CBOR_UNSIGNED_INTEGER 0
+#define CBOR_NEGATIVE_INTEGER 1
+#define CBOR_BYTE_STRING 2
+#define CBOR_TEXT_STRING 3
+#define CBOR_ARRAY 4
+#define CBOR_MAP 5
+#define CBOR_SEMANTIC_TAG 6
 #define CBOR_FLOATING_OR_SIMPLE 7
 
-#define CBOR_AI_ONE_BYTE_VALUE      24
-#define CBOR_AI_TWO_BYTE_VALUE      25
-#define CBOR_AI_FOUR_BYTE_VALUE     26
-#define CBOR_AI_EIGHT_BYTE_VALUE    27
+#define CBOR_AI_ONE_BYTE_VALUE 24
+#define CBOR_AI_TWO_BYTE_VALUE 25
+#define CBOR_AI_FOUR_BYTE_VALUE 26
+#define CBOR_AI_EIGHT_BYTE_VALUE 27
 #define CBOR_AI_INDEFINITE_OR_BREAK 31
 
-#define CBOR_SIMPLE_FALSE           20
-#define CBOR_SIMPLE_TRUE            21
-#define CBOR_SIMPLE_NULL            22
-#define CBOR_SIMPLE_UNDEFINED       23
+#define CBOR_SIMPLE_FALSE 20
+#define CBOR_SIMPLE_TRUE 21
+#define CBOR_SIMPLE_NULL 22
+#define CBOR_SIMPLE_UNDEFINED 23
 
-static int prv_output_cbor_indefinite(FILE * stream,
-                                      uint8_t * buffer,
-                                      size_t buffer_len,
-                                      bool breakable,
-                                      uint8_t * mt);
+static int prv_output_cbor_indefinite(FILE *stream, uint8_t *buffer, size_t buffer_len, bool breakable, uint8_t *mt);
 
-static double prv_convert_half(uint16_t half)
-{
+static double prv_convert_half(uint16_t half) {
     double result;
     int exp = (half >> 10) & 0x1f;
     int mant = half & 0x3ff;
-    if (exp == 0)
-    {
+    if (exp == 0) {
         result = ldexp(mant, -24);
-    }
-    else if (exp != 31)
-    {
+    } else if (exp != 31) {
         result = ldexp(mant + 1024, exp - 25);
-    }
-    else if (mant == 0)
-    {
+    } else if (mant == 0) {
         result = INFINITY;
-    }
-    else
-    {
+    } else {
         result = NAN;
     }
-    if ((half & 0x8000) != 0)
-    {
+    if ((half & 0x8000) != 0) {
         result = -result;
     }
     return result;
 }
 
-static void prv_output_cbor_float(FILE * stream, double val)
-{
-    if (val != val)
-    {
+static void prv_output_cbor_float(FILE *stream, double val) {
+    if (val != val) {
         fprintf(stream, "NaN");
-    }
-    else if (val == INFINITY)
-    {
+    } else if (val == INFINITY) {
         fprintf(stream, "Infinity");
-    }
-    else if (val == -INFINITY)
-    {
+    } else if (val == -INFINITY) {
         fprintf(stream, "-Infinity");
-    }
-    else
-    {
+    } else {
         fprintf(stream, "%g", val);
     }
 }
 
-static int prv_output_cbor_definite(FILE * stream,
-                                    uint8_t * buffer,
-                                    size_t buffer_len,
-                                    bool breakable,
-                                    uint8_t *mt)
-{
+static int prv_output_cbor_definite(FILE *stream, uint8_t *buffer, size_t buffer_len, bool breakable, uint8_t *mt) {
     int head;
     int res;
     uint8_t ai;
@@ -402,8 +376,7 @@ static int prv_output_cbor_definite(FILE * stream,
     ai = buffer[0] & 0x1f;
     head = 1;
 
-    switch (ai)
-    {
+    switch (ai) {
     default:
         valbits = 8;
         val.u8 = ai;
@@ -441,17 +414,13 @@ static int prv_output_cbor_definite(FILE * stream,
         // Invalid
         return -1;
     case CBOR_AI_INDEFINITE_OR_BREAK:
-        res = prv_output_cbor_indefinite(stream,
-                                         buffer + head,
-                                         buffer_len - head,
-                                         breakable,
-                                         mt);
-        if (res < 0) return res;
+        res = prv_output_cbor_indefinite(stream, buffer + head, buffer_len - head, breakable, mt);
+        if (res < 0)
+            return res;
         return head + res;
     }
 
-    switch (valbits)
-    {
+    switch (valbits) {
     case 8:
         u64 = val.u8;
         i64 = ~(int64_t)val.u8;
@@ -473,92 +442,75 @@ static int prv_output_cbor_definite(FILE * stream,
         return -1;
     }
 
-    switch (*mt)
-    {
+    switch (*mt) {
     case CBOR_UNSIGNED_INTEGER:
-        fprintf(stream, "%"PRIu64, u64);
+        fprintf(stream, "%" PRIu64, u64);
         break;
     case CBOR_NEGATIVE_INTEGER:
-        if ((u64 >> 63) != 0)
-        {
+        if ((u64 >> 63) != 0) {
             // Unrepresentable
             return -1;
-        }
-        else
-        {
-            fprintf(stream, "%"PRId64, i64);
+        } else {
+            fprintf(stream, "%" PRId64, i64);
         }
         break;
     case CBOR_BYTE_STRING:
         fprintf(stream, "h'");
-        if (buffer_len - head < u64) return -1;
-        for (i = 0; i < u64; i++)
-        {
+        if (buffer_len - head < u64)
+            return -1;
+        for (i = 0; i < u64; i++) {
             fprintf(stream, "%02x", buffer[head++]);
         }
         fprintf(stream, "'");
         break;
     case CBOR_TEXT_STRING:
         fprintf(stream, "\"");
-        if (buffer_len - head < u64) return -1;
-        for (i = 0; i < u64; i++)
-        {
+        if (buffer_len - head < u64)
+            return -1;
+        for (i = 0; i < u64; i++) {
             fprintf(stream, "%c", buffer[head++]);
         }
         fprintf(stream, "\"");
         break;
     case CBOR_ARRAY:
         fprintf(stream, "[");
-        for (i = 0; i < u64; i++)
-        {
-            if (i != 0) fprintf(stream, ", ");
-            res = prv_output_cbor_definite(stream,
-                                           buffer + head,
-                                           buffer_len - head,
-                                           false,
-                                           mt);
-            if (res <= 0) return -1;
+        for (i = 0; i < u64; i++) {
+            if (i != 0)
+                fprintf(stream, ", ");
+            res = prv_output_cbor_definite(stream, buffer + head, buffer_len - head, false, mt);
+            if (res <= 0)
+                return -1;
             head += res;
         }
         fprintf(stream, "]");
         break;
     case CBOR_MAP:
         fprintf(stream, "{");
-        for (i = 0; i < u64; i++)
-        {
-            if (i != 0) fprintf(stream, ", ");
-            res = prv_output_cbor_definite(stream,
-                                           buffer + head,
-                                           buffer_len - head,
-                                           false,
-                                           mt);
-            if (res <= 0) return -1;
+        for (i = 0; i < u64; i++) {
+            if (i != 0)
+                fprintf(stream, ", ");
+            res = prv_output_cbor_definite(stream, buffer + head, buffer_len - head, false, mt);
+            if (res <= 0)
+                return -1;
             head += res;
             fprintf(stream, ": ");
-            res = prv_output_cbor_definite(stream,
-                                           buffer + head,
-                                           buffer_len - head,
-                                           false,
-                                           mt);
-            if (res <= 0) return -1;
+            res = prv_output_cbor_definite(stream, buffer + head, buffer_len - head, false, mt);
+            if (res <= 0)
+                return -1;
             head += res;
         }
         fprintf(stream, "}");
         break;
     case CBOR_SEMANTIC_TAG:
-        fprintf(stream, "%"PRIu64"(", u64);
-        res = prv_output_cbor_definite(stream,
-                                       buffer + head,
-                                       buffer_len - head,
-                                       false,
-                                       mt);
-        if (res <= 0) return -1;
+        fprintf(stream, "%" PRIu64 "(", u64);
+        res = prv_output_cbor_definite(stream, buffer + head, buffer_len - head, false, mt);
+        if (res <= 0)
+            return -1;
         head += res;
         fprintf(stream, ")");
         break;
     case CBOR_FLOATING_OR_SIMPLE:
-        switch (ai)
-        {
+        switch (ai) {
         default:
             fprintf(stream, "simple(%u)", val.u8);
             break;
@@ -598,78 +550,62 @@ static int prv_output_cbor_definite(FILE * stream,
     return head;
 }
 
-static int prv_output_cbor_indefinite(FILE * stream,
-                                      uint8_t * buffer,
-                                      size_t buffer_len,
-                                      bool breakable,
-                                      uint8_t * mt)
-{
+static int prv_output_cbor_indefinite(FILE *stream, uint8_t *buffer, size_t buffer_len, bool breakable, uint8_t *mt) {
     uint8_t it;
     int head = 0;
     int res;
 
-    switch (*mt)
-    {
+    switch (*mt) {
     case CBOR_BYTE_STRING:
     case CBOR_TEXT_STRING:
         fprintf(stream, "(_ ");
-        while (1)
-        {
-            res = prv_output_cbor_definite(stream,
-                                           buffer + head,
-                                           buffer_len - head,
-                                           true,
-                                           &it);
-            if (res <= 0) return -1;
+        while (1) {
+            res = prv_output_cbor_definite(stream, buffer + head, buffer_len - head, true, &it);
+            if (res <= 0)
+                return -1;
             head += res;
-            if (it == UINT8_MAX) break;
-            if (it != *mt) return -1;
+            if (it == UINT8_MAX)
+                break;
+            if (it != *mt)
+                return -1;
             fprintf(stream, ", ");
         }
         fprintf(stream, ")");
         break;
     case CBOR_ARRAY:
         fprintf(stream, "[_ ");
-        while (1)
-        {
-            res = prv_output_cbor_definite(stream,
-                                           buffer + head,
-                                           buffer_len - head,
-                                           true,
-                                           &it);
-            if (res <= 0) return -1;
+        while (1) {
+            res = prv_output_cbor_definite(stream, buffer + head, buffer_len - head, true, &it);
+            if (res <= 0)
+                return -1;
             head += res;
-            if (it == UINT8_MAX) break;
+            if (it == UINT8_MAX)
+                break;
             fprintf(stream, ", ");
         }
         fprintf(stream, "]");
         break;
     case CBOR_MAP:
         fprintf(stream, "{_ ");
-        while (1)
-        {
-            res = prv_output_cbor_definite(stream,
-                                           buffer + head,
-                                           buffer_len - head,
-                                           true,
-                                           &it);
-            if (res <= 0) return -1;
+        while (1) {
+            res = prv_output_cbor_definite(stream, buffer + head, buffer_len - head, true, &it);
+            if (res <= 0)
+                return -1;
             head += res;
-            if (it == UINT8_MAX) break;
+            if (it == UINT8_MAX)
+                break;
             fprintf(stream, ": ");
-            res = prv_output_cbor_definite(stream,
-                                           buffer + head,
-                                           buffer_len - head,
-                                           false,
-                                           &it);
-            if (res <= 0) return -1;
+            res = prv_output_cbor_definite(stream, buffer + head, buffer_len - head, false, &it);
+            if (res <= 0)
+                return -1;
             head += res;
             fprintf(stream, ", ");
         }
         fprintf(stream, "}");
         break;
     case CBOR_AI_INDEFINITE_OR_BREAK:
-        if (!breakable) return -1;
+        if (!breakable)
+            return -1;
         *mt = UINT8_MAX;
         break;
     default:
@@ -679,26 +615,17 @@ static int prv_output_cbor_indefinite(FILE * stream,
 }
 #endif
 
-void output_cbor(FILE * stream,
-                 uint8_t * buffer,
-                 size_t buffer_len,
-                 int indent)
-{
+void output_cbor(FILE *stream, uint8_t *buffer, size_t buffer_len, int indent) {
 #ifdef LWM2M_SUPPORT_SENML_CBOR
     size_t head = 0;
     int res;
     uint8_t mt;
     print_indent(stream, indent);
-    while (head < buffer_len)
-    {
-        if (head != 0) fprintf(stream, ", ");
-        res = prv_output_cbor_definite(stream,
-                                       buffer + head,
-                                       buffer_len - head,
-                                       false,
-                                       &mt);
-        if (res <= 0)
-        {
+    while (head < buffer_len) {
+        if (head != 0)
+            fprintf(stream, ", ");
+        res = prv_output_cbor_definite(stream, buffer + head, buffer_len - head, false, &mt);
+        if (res <= 0) {
             fprintf(stream, "Error.\r\n");
             break;
         }
