@@ -812,8 +812,7 @@ uint8_t utils_getResponseFormat(uint8_t accept_num,
 #ifdef LWM2M_SUPPORT_SENML_CBOR
 #ifndef LWM2M_VERSION_1_1
             case LWM2M_CONTENT_CBOR:
-                if (singular)
-                {
+                if (singular) {
                     *format = LWM2M_CONTENT_CBOR;
                     found = true;
                 }
@@ -830,13 +829,9 @@ uint8_t utils_getResponseFormat(uint8_t accept_num,
             }
         }
         if (!found) result = COAP_406_NOT_ACCEPTABLE;
-    }
-    else if (singular)
-    {
+    } else if (singular) {
         *format = LWM2M_CONTENT_TEXT;
-    }
-    else
-    {
+    } else {
 #if defined(LWM2M_SUPPORT_SENML_CBOR)
         *format = LWM2M_CONTENT_SENML_CBOR;
 #elif defined(LWM2M_SUPPORT_SENML_JSON)

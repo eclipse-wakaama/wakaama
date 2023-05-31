@@ -1433,14 +1433,11 @@ static int prv_parseLinkAttributes(uint8_t * data,
              && 0 == lwm2m_strncmp(REG_ATTR_CONTENT_SENML_JSON, (char*)data + index + valueStart, valueLength))
             {
                 *format = LWM2M_CONTENT_SENML_JSON;
-            }
-            else if (valueLength == REG_ATTR_CONTENT_SENML_CBOR_LEN
-             && 0 == lwm2m_strncmp(REG_ATTR_CONTENT_SENML_CBOR, (char*)data + index + valueStart, valueLength))
-            {
+            } else if (valueLength == REG_ATTR_CONTENT_SENML_CBOR_LEN &&
+                       0 ==
+                           lwm2m_strncmp(REG_ATTR_CONTENT_SENML_CBOR, (char *)data + index + valueStart, valueLength)) {
                 *format = LWM2M_CONTENT_SENML_CBOR;
-            }
-            else
-            {
+            } else {
                 return 0;
             }
         }
