@@ -14,12 +14,12 @@
  *    Scott Bertin, AMETEK, Inc. - Please refer to git log
  *
  *******************************************************************************/
-
 #include <float.h>
 #include <math.h>
 
 #include "internals.h"
 #include <assert.h>
+
 #ifdef LWM2M_SUPPORT_SENML_CBOR
 
 /*
@@ -80,21 +80,23 @@ int cbor_get_type_and_value(const uint8_t *buffer, size_t bufferLen, cbor_type_t
     case CBOR_AI_TWO_BYTE_VALUE:
         if (bufferLen < 3)
             return -1;
-        val = (((uint16_t)buffer[1]) << 8) + buffer[2];
+        uint16_t val16;
+        utils_copyValue(&val16, &buffer[1], 2);
+        val = val16;
         result += 2;
         break;
     case CBOR_AI_FOUR_BYTE_VALUE:
         if (bufferLen < 5)
             return -1;
-        val = (((uint32_t)buffer[1]) << 24) + (((uint32_t)buffer[2]) << 16) + (((uint32_t)buffer[3]) << 8) + buffer[4];
+        uint32_t val32;
+        utils_copyValue(&val32, &buffer[1], 4);
+        val = val32;
         result += 4;
         break;
     case CBOR_AI_EIGHT_BYTE_VALUE:
         if (bufferLen < 9)
             return -1;
-        val = (((uint64_t)buffer[1]) << 56) + (((uint64_t)buffer[2]) << 48) + (((uint64_t)buffer[3]) << 40) +
-              (((uint64_t)buffer[4]) << 32) + (((uint64_t)buffer[5]) << 24) + (((uint64_t)buffer[6]) << 16) +
-              (((uint64_t)buffer[7]) << 8) + buffer[8];
+        utils_copyValue(&val, &buffer[1], 8);
         result += 8;
         break;
     case 28:
@@ -163,7 +165,8 @@ int cbor_get_type_and_value(const uint8_t *buffer, size_t bufferLen, cbor_type_t
             break;
         case CBOR_AI_FOUR_BYTE_VALUE: {
             float fval;
-            memcpy(&fval, &val, sizeof(fval));
+            uint32_t val32 = (uint32_t)val;
+            memcpy(&fval, &val32, sizeof(fval));
             dval = fval;
         }
             *type = CBOR_TYPE_FLOAT;
@@ -279,60 +282,83 @@ int cbor_get_singular(const uint8_t *buffer, size_t bufferLen, lwm2m_data_t *dat
     return result;
 }
 
-int prv_put_value(uint8_t *buffer, int bufferLen, uint8_t mt, uint64_t val) {
-    int result = 0;
-    uint8_t val8 = (uint8_t)val;
-    uint16_t val16 = (uint16_t)val;
-    uint32_t val32 = (uint32_t)val;
+/**
+ * Serialize CBOR values from internal representation into a buffer.
+ * @param buffer output buffer
+ * @param bufferLen output buffer length
+ * @param mt CBOR major type
+ * @param val
+ * @return 0 on error, else number of bytes
+ */
+static int prv_serialize_value(uint8_t *buffer, size_t bufferLen, uint8_t mt, uint64_t val) {
+    int buffer_index = 0;
     uint8_t ai = CBOR_AI_EIGHT_BYTE_VALUE;
 
-    if (val8 == val) {
-        if (val8 < 24) {
+    /* Calculate additional information (ai) bits. */
+    if (val < 0xff) {
+        if ((uint8_t)val < 24) {
+            /* Value fits in a single byte. */
             if (bufferLen < 1)
                 return 0;
-            ai = val8;
+            ai = (uint8_t)val;
         } else {
+            /* Value needs an extra byte. */
             if (bufferLen < 2)
                 return 0;
             ai = CBOR_AI_ONE_BYTE_VALUE;
         }
-    } else if (val16 == val) {
+    } else if (val < 0xffff) {
+        /* Value needs two extra bytes. */
         if (bufferLen < 3)
             return 0;
         ai = CBOR_AI_TWO_BYTE_VALUE;
-    } else if (val32 == val) {
+    } else if (val < 0xffffffff) {
+        /* Value needs four extra bytes. */
         if (bufferLen < 5)
             return 0;
         ai = CBOR_AI_FOUR_BYTE_VALUE;
     } else if (bufferLen < 9)
         return 0;
 
-    buffer[result++] = (mt << 5) | ai;
+    /* Serialize values according to */
+    buffer[buffer_index++] = (mt << 5) | ai;
     switch (ai) {
     case CBOR_AI_EIGHT_BYTE_VALUE:
-        buffer[result++] = (uint8_t)(val >> 56);
-        buffer[result++] = (uint8_t)(val >> 48);
-        buffer[result++] = (uint8_t)(val >> 40);
-        buffer[result++] = (uint8_t)(val >> 32);
-        // fall through
-    case CBOR_AI_FOUR_BYTE_VALUE:
-        buffer[result++] = (uint8_t)(val32 >> 24);
-        buffer[result++] = (uint8_t)(val32 >> 16);
-        // fall through
-    case CBOR_AI_TWO_BYTE_VALUE:
-        buffer[result++] = (uint8_t)(val16 >> 8);
-        // fall through
+        utils_copyValue(&buffer[buffer_index], &val, 8);
+        buffer_index += 8;
+        break;
+    case CBOR_AI_FOUR_BYTE_VALUE: {
+        int32_t val32 = (int32_t)val;
+        utils_copyValue(&buffer[buffer_index], &val32, 4);
+        buffer_index += 4;
+        break;
+    }
+    case CBOR_AI_TWO_BYTE_VALUE: {
+        int16_t val16 = (int16_t)val;
+        utils_copyValue(&buffer[buffer_index], &val16, 2);
+        buffer_index += 2;
+        break;
+    }
     case CBOR_AI_ONE_BYTE_VALUE:
-        buffer[result++] = val8;
+        buffer[buffer_index] = (uint8_t)val;
+        buffer_index += 1;
         break;
     default:
         break;
     }
 
-    return result;
+    return buffer_index;
 }
 
-int prv_put_float(uint8_t *buffer, size_t bufferLen, double val) {
+/**
+ * Serialize CBOR float values from internal representation into a buffer.
+ * @param buffer output buffer
+ * @param bufferLen output buffer length
+ * @param mt CBOR major type
+ * @param val
+ * @return 0 on error, else number of bytes
+ */
+static int prv_serialize_float(uint8_t *buffer, size_t bufferLen, double val) {
     int result = 0;
     float fval = (float)val;
 
@@ -347,10 +373,10 @@ int prv_put_float(uint8_t *buffer, size_t bufferLen, double val) {
         buffer[2] = 0;
         result = 3;
     } else if (fval == val) {
-#ifndef CBOR_NO_FLOAT16_ENCODING
-        // Single or half precision
         uint32_t uval;
         memcpy(&uval, &fval, sizeof(fval));
+#ifndef CBOR_NO_FLOAT16_ENCODING
+        // Single or half precision
         uint32_t mant = uval & 0x7FFFFF;
         int32_t exp = ((uval >> 23) & 0xFF) - 127;
         uint8_t sign = (uint8_t)((uval & 0x80000000u) >> 24);
@@ -382,43 +408,25 @@ int prv_put_float(uint8_t *buffer, size_t bufferLen, double val) {
             buffer[2] = mant & 0xFF;
             result = 3;
         } else {
-            // Single precision
+#else
+        {
+#endif
+            /* Serialize a single precision value. */
             if (bufferLen < 5)
                 return 0;
+
             buffer[0] = (CBOR_FLOATING_OR_SIMPLE << 5) | CBOR_AI_FOUR_BYTE_VALUE;
-            buffer[1] = (uint8_t)(uval >> 24);
-            buffer[2] = (uint8_t)(uval >> 16);
-            buffer[3] = (uint8_t)(uval >> 8);
-            buffer[4] = (uint8_t)uval;
+            utils_copyValue(&buffer[1], &uval, 4);
             result = 5;
         }
-#else
-        uint32_t uval;
-        if (bufferLen < 5)
-            return 0;
-        uval = *(uint32_t *)&fval;
-        buffer[0] = (CBOR_FLOATING_OR_SIMPLE << 5) | CBOR_AI_FOUR_BYTE_VALUE;
-        buffer[1] = (uint8_t)(uval >> 24);
-        buffer[2] = (uint8_t)(uval >> 16);
-        buffer[3] = (uint8_t)(uval >> 8);
-        buffer[4] = (uint8_t)uval;
-        result = 5;
-#endif
     } else {
-        // Double precision
+        /* Serialize a double precision value. */
         uint64_t uval;
         if (bufferLen < 9)
             return 0;
         memcpy(&uval, &val, sizeof(val));
         buffer[0] = (CBOR_FLOATING_OR_SIMPLE << 5) | CBOR_AI_EIGHT_BYTE_VALUE;
-        buffer[1] = (uint8_t)(uval >> 56);
-        buffer[2] = (uint8_t)(uval >> 48);
-        buffer[3] = (uint8_t)(uval >> 40);
-        buffer[4] = (uint8_t)(uval >> 32);
-        buffer[5] = (uint8_t)(uval >> 24);
-        buffer[6] = (uint8_t)(uval >> 16);
-        buffer[7] = (uint8_t)(uval >> 8);
-        buffer[8] = (uint8_t)uval;
+        utils_copyValue(&buffer[1], &uval, 8);
         result = 9;
     }
     _Pragma("GCC diagnostic pop");
@@ -436,7 +444,7 @@ int cbor_put_type_and_value(uint8_t *buffer, size_t bufferLen, cbor_type_t type,
     if (type == CBOR_TYPE_FLOAT) {
         double dval;
         memcpy(&dval, &val, sizeof(val));
-        return prv_put_float(buffer, bufferLen, dval);
+        return prv_serialize_float(buffer, bufferLen, dval);
     }
 
     switch (type) {
@@ -473,7 +481,7 @@ int cbor_put_type_and_value(uint8_t *buffer, size_t bufferLen, cbor_type_t type,
         break;
     }
 
-    return prv_put_value(buffer, bufferLen, mt, val);
+    return prv_serialize_value(buffer, bufferLen, mt, val);
 }
 
 int cbor_put_singular(uint8_t *buffer, size_t bufferLen, const lwm2m_data_t *dataP) {
@@ -492,9 +500,9 @@ int cbor_put_singular(uint8_t *buffer, size_t bufferLen, const lwm2m_data_t *dat
     case LWM2M_TYPE_STRING:
     case LWM2M_TYPE_CORE_LINK:
     case LWM2M_TYPE_OPAQUE:
-        res = prv_put_value(buffer + result, bufferLen - result,
-                            (LWM2M_TYPE_OPAQUE == dataP->type ? CBOR_BYTE_STRING : CBOR_TEXT_STRING),
-                            dataP->value.asBuffer.length);
+        res = prv_serialize_value(buffer + result, bufferLen - result,
+                                  (LWM2M_TYPE_OPAQUE == dataP->type ? CBOR_BYTE_STRING : CBOR_TEXT_STRING),
+                                  dataP->value.asBuffer.length);
         if (dataP->value.asBuffer.length > 0) {
             if (res <= 0)
                 return 0;
@@ -505,25 +513,26 @@ int cbor_put_singular(uint8_t *buffer, size_t bufferLen, const lwm2m_data_t *dat
         break;
     case LWM2M_TYPE_INTEGER:
         if (dataP->value.asInteger < 0) {
-            res = prv_put_value(buffer + result, bufferLen - result, CBOR_NEGATIVE_INTEGER, ~dataP->value.asInteger);
+            res = prv_serialize_value(buffer + result, bufferLen - result, CBOR_NEGATIVE_INTEGER,
+                                      ~dataP->value.asInteger);
             break;
         }
         // fall through
     case LWM2M_TYPE_UNSIGNED_INTEGER:
-        res = prv_put_value(buffer + result, bufferLen - result, CBOR_UNSIGNED_INTEGER, dataP->value.asUnsigned);
+        res = prv_serialize_value(buffer + result, bufferLen - result, CBOR_UNSIGNED_INTEGER, dataP->value.asUnsigned);
         break;
     case LWM2M_TYPE_FLOAT:
-        res = prv_put_float(buffer + result, bufferLen - result, dataP->value.asFloat);
+        res = prv_serialize_float(buffer + result, bufferLen - result, dataP->value.asFloat);
         break;
     case LWM2M_TYPE_BOOLEAN:
-        res = prv_put_value(buffer + result, bufferLen - result, CBOR_FLOATING_OR_SIMPLE,
-                            dataP->value.asBoolean ? CBOR_SIMPLE_TRUE : CBOR_SIMPLE_FALSE);
+        res = prv_serialize_value(buffer + result, bufferLen - result, CBOR_FLOATING_OR_SIMPLE,
+                                  dataP->value.asBoolean ? CBOR_SIMPLE_TRUE : CBOR_SIMPLE_FALSE);
         break;
     case LWM2M_TYPE_OBJECT_LINK:
         res = snprintf((char *)buffer + result + 1, bufferLen - result - 1, "%u:%u", dataP->value.asObjLink.objectId,
                        dataP->value.asObjLink.objectInstanceId);
         if ((int)(bufferLen - result - 1) > res) {
-            if (prv_put_value(buffer + result, bufferLen - result, CBOR_TEXT_STRING, res) == 1) {
+            if (prv_serialize_value(buffer + result, bufferLen - result, CBOR_TEXT_STRING, res) == 1) {
                 res += 1;
             } else {
                 res = 0;
@@ -614,8 +623,9 @@ int cbor_serialize(const lwm2m_uri_t *uriP, int size, const lwm2m_data_t *dataP,
     case LWM2M_TYPE_STRING:
     case LWM2M_TYPE_CORE_LINK:
     case LWM2M_TYPE_OPAQUE:
-        res = prv_put_value(tmp, sizeof(tmp), (LWM2M_TYPE_OPAQUE == dataP->type ? CBOR_BYTE_STRING : CBOR_TEXT_STRING),
-                            dataP->value.asBuffer.length);
+        res = prv_serialize_value(tmp, sizeof(tmp),
+                                  (LWM2M_TYPE_OPAQUE == dataP->type ? CBOR_BYTE_STRING : CBOR_TEXT_STRING),
+                                  dataP->value.asBuffer.length);
         if (res > 0) {
             *bufferP = lwm2m_malloc(res + dataP->value.asBuffer.length);
             if (*bufferP != NULL) {
