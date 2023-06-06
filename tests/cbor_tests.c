@@ -90,7 +90,7 @@ static void cbor_test_data_expected(const char *uriStr, lwm2m_data_t *dataP, con
         return;
     }
 
-    CU_ASSERT_EQUAL(length, expectLen);
+    CU_ASSERT_EQUAL(length, (int)expectLen);
     if (length == (int)expectLen) {
         if (memcmp(buffer, expectBuf, expectLen) != 0) {
             printf("(Serialize lwm2m_data_t %s to %s differs from expected.)\t", id, STR_MEDIA_TYPE(format));
