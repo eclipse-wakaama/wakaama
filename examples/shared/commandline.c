@@ -344,6 +344,8 @@ static double prv_convert_half(uint16_t half) {
 }
 
 static void prv_output_cbor_float(FILE *stream, double val) {
+    _Pragma("GCC diagnostic push");
+    _Pragma("GCC diagnostic ignored \"-Wfloat-equal\"");
     if (val != val) {
         fprintf(stream, "NaN");
     } else if (val == INFINITY) {
@@ -353,6 +355,7 @@ static void prv_output_cbor_float(FILE *stream, double val) {
     } else {
         fprintf(stream, "%g", val);
     }
+    _Pragma("GCC diagnostic pop");
 }
 
 static int prv_output_cbor_definite(FILE *stream, uint8_t *buffer, size_t buffer_len, bool breakable, uint8_t *mt) {
