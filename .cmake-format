@@ -15,3 +15,13 @@ with section("format"):
 with section("markup"):
   # What character to use for bulleted lists
   bullet_char = '-'
+
+additional_commands = {
+  "add_test_variant": {
+    "kwargs": {
+      "TARGET_NAME": '*',
+      "SOURCE_FILES": '*',
+      "COMPILE_DEFINITIONS": '*',
+    }
+  }
+}

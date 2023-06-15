@@ -3,9 +3,9 @@ cmake_minimum_required(VERSION 3.13)
 project(lwm2munittests C)
 
 include(../wakaama.cmake)
+include(tests.cmake)
 
-add_executable(
-    lwm2munittests
+set(TEST_SOURCES
     block1tests.c
     block2tests.c
     cbor_tests.c
@@ -22,30 +22,76 @@ add_executable(
     uritests.c
 )
 
-include(FindPkgConfig)
-pkg_search_module(CUNIT REQUIRED IMPORTED_TARGET cunit)
-target_link_libraries(lwm2munittests PkgConfig::CUNIT)
-
-target_compile_definitions(
-    lwm2munittests PRIVATE LWM2M_CLIENT_MODE LWM2M_SERVER_MODE LWM2M_SUPPORT_TLV LWM2M_SUPPORT_JSON
-                           LWM2M_SUPPORT_SENML_CBOR
+add_test_variant(
+    TARGET_NAME lwm2munittests
+    SOURCE_FILES ${TEST_SOURCES}
+    COMPILE_DEFINITIONS LWM2M_CLIENT_MODE
 )
 
-# Our tests are designed for POSIX systems
-target_compile_definitions(lwm2munittests PRIVATE _POSIX_C_SOURCE=200809)
+add_test_variant(
+    TARGET_NAME lwm2munittests_client_lwm2m_1_0
+    SOURCE_FILES ${TEST_SOURCES}
+    COMPILE_DEFINITIONS LWM2M_CLIENT_MODE LWM2M_VERSION_1_0
+)
 
-target_sources_wakaama(lwm2munittests)
-target_sources_shared(lwm2munittests)
+add_test_variant(
+    TARGET_NAME lwm2munittests_client_bootstrap
+    SOURCE_FILES ${TEST_SOURCES}
+    COMPILE_DEFINITIONS LWM2M_CLIENT_MODE LWM2M_BOOTSTRAP
+)
 
-if(SANITIZER)
-    target_compile_options(lwm2munittests PRIVATE -fsanitize=${SANITIZER} -fno-sanitize-recover=all)
-    target_link_options(lwm2munittests PRIVATE -fsanitize=${SANITIZER} -fno-sanitize-recover=all)
-endif()
+add_test_variant(
+    TARGET_NAME lwm2munittests_server
+    SOURCE_FILES ${TEST_SOURCES}
+    COMPILE_DEFINITIONS LWM2M_SERVER_MODE LWM2M_WITH_LOGS
+)
 
-if(COVERAGE)
-    target_compile_options(lwm2munittests PRIVATE --coverage)
-    target_link_options(lwm2munittests PRIVATE --coverage)
-endif()
+add_test_variant(
+    TARGET_NAME lwm2munittests_server_formats
+    SOURCE_FILES ${TEST_SOURCES}
+    COMPILE_DEFINITIONS LWM2M_SERVER_MODE LWM2M_OLD_CONTENT_FORMAT_SUPPORT LWM2M_SUPPORT_SENML_JSON
+)
 
-# Add our unit tests to the "test" target
-add_test(NAME lwm2munittests_test COMMAND lwm2munittests)
+add_test_variant(
+    TARGET_NAME lwm2munittests_bootstrap_server
+    SOURCE_FILES ${TEST_SOURCES}
+    COMPILE_DEFINITIONS LWM2M_BOOTSTRAP_SERVER_MODE
+)
+
+add_test_variant(
+    TARGET_NAME lwm2munittests_server_and_bootstrap_server
+    SOURCE_FILES ${TEST_SOURCES}
+    COMPILE_DEFINITIONS LWM2M_SERVER_MODE LWM2M_BOOTSTRAP_SERVER_MODE
+)
+
+add_test_variant(
+    TARGET_NAME lwm2munittests_server_blocksize_16
+    SOURCE_FILES ${TEST_SOURCES}
+    COMPILE_DEFINITIONS LWM2M_CLIENT_MODE COAP_DEFAULT_BLOCK_SIZE=16
+)
+
+add_test_variant(
+    TARGET_NAME lwm2munittests_server_blocksize_64
+    SOURCE_FILES ${TEST_SOURCES}
+    COMPILE_DEFINITIONS LWM2M_SERVER_MODE COAP_DEFAULT_BLOCK_SIZE=64
+)
+
+add_test_variant(
+    TARGET_NAME lwm2munittests_server_blocksize_1024
+    SOURCE_FILES ${TEST_SOURCES}
+    COMPILE_DEFINITIONS LWM2M_SERVER_MODE COAP_DEFAULT_BLOCK_SIZE=1024
+)
+
+add_test_variant(
+    TARGET_NAME lwm2munittests_client_server_bootstrap_all_formats
+    SOURCE_FILES ${TEST_SOURCES}
+    COMPILE_DEFINITIONS
+        LWM2M_CLIENT_MODE
+        LWM2M_SERVER_MODE
+        LWM2M_BOOTSTRAP_SERVER_MODE
+        LWM2M_SERVER_MODE
+        LWM2M_WITH_LOGS
+        LWM2M_OLD_CONTENT_FORMAT_SUPPORT
+        LWM2M_SUPPORT_SENML_JSON
+        COAP_DEFAULT_BLOCK_SIZE=32
+)
