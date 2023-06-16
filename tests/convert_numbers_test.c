@@ -419,29 +419,55 @@ static void test_utils_objLinkToText(void)
     CU_ASSERT_EQUAL(utils_objLinkToText(0, 0, text, 3), 3)
 }
 
-static void test_utils_base64_1(const uint8_t *binary, size_t binaryLength, const char *base64)
+static void test_utils_base64WithPadding_1(const uint8_t *binary, size_t binaryLength, const char *base64WithPadding)
 {
-    uint8_t encodeBuffer[8];
-    uint8_t decodeBuffer[6];
-    size_t base64Length = strlen(base64);
+    uint8_t encodeBuffer[12];
+    uint8_t decodeBuffer[7];
+    size_t base64WithPaddingLength = strlen(base64WithPadding);
     memset(encodeBuffer, 0, sizeof(encodeBuffer));
     memset(decodeBuffer, 0xFF, sizeof(decodeBuffer));
-    CU_ASSERT_EQUAL(utils_base64GetSize(binaryLength), base64Length)
-    CU_ASSERT_EQUAL(utils_base64GetDecodedSize(base64, base64Length), binaryLength)
-    CU_ASSERT_EQUAL(utils_base64Encode(binary, binaryLength, encodeBuffer, sizeof(encodeBuffer)), base64Length)
-    CU_ASSERT_NSTRING_EQUAL(encodeBuffer, base64, base64Length)
-    CU_ASSERT_EQUAL(utils_base64Decode(base64, base64Length, decodeBuffer, sizeof(decodeBuffer)), binaryLength)
+    CU_ASSERT_EQUAL(utils_base64GetSize(binaryLength, true), base64WithPaddingLength)
+    CU_ASSERT_EQUAL(utils_base64GetDecodedSize(base64WithPadding, base64WithPaddingLength), binaryLength)
+    CU_ASSERT_EQUAL(utils_base64Encode(binary, binaryLength, encodeBuffer, sizeof(encodeBuffer), false, true), base64WithPaddingLength)
+    CU_ASSERT_NSTRING_EQUAL(encodeBuffer, base64WithPadding, base64WithPaddingLength)
+    CU_ASSERT_EQUAL(utils_base64Decode(base64WithPadding, base64WithPaddingLength, decodeBuffer, sizeof(decodeBuffer), false), binaryLength)
     CU_ASSERT_EQUAL(memcmp(decodeBuffer, binary, binaryLength), 0)
 }
 
-static void test_utils_base64(void)
+static void test_utils_base64UrlNoPadding_1(const uint8_t *binary, size_t binaryLength, const char *base64UrlNoPadding)
 {
-    uint8_t binary[] = { 0, 1, 2, 3, 4, 5 };
-    const char * base64[] = { "AA==", "AAE=", "AAEC", "AAECAw==", "AAECAwQ=", "AAECAwQF" };
+    uint8_t encodeBuffer[10];
+    uint8_t decodeBuffer[7];
+    size_t base64UrlNoPaddingLength = strlen(base64UrlNoPadding);
+    memset(encodeBuffer, 0, sizeof(encodeBuffer));
+    memset(decodeBuffer, 0xFF, sizeof(decodeBuffer));
+    CU_ASSERT_EQUAL(utils_base64GetSize(binaryLength, false), base64UrlNoPaddingLength)
+    CU_ASSERT_EQUAL(utils_base64GetDecodedSize(base64UrlNoPadding, base64UrlNoPaddingLength), binaryLength)
+    CU_ASSERT_EQUAL(utils_base64Encode(binary, binaryLength, encodeBuffer, sizeof(encodeBuffer), true, false), base64UrlNoPaddingLength)
+    CU_ASSERT_NSTRING_EQUAL(encodeBuffer, base64UrlNoPadding, base64UrlNoPaddingLength)
+    CU_ASSERT_EQUAL(utils_base64Decode(base64UrlNoPadding, base64UrlNoPaddingLength, decodeBuffer, sizeof(decodeBuffer), true), binaryLength)
+    CU_ASSERT_EQUAL(memcmp(decodeBuffer, binary, binaryLength), 0)
+}
+
+static void test_utils_base64WithPadding(void)
+{
+    uint8_t binary[] = { 0, 1, 2, 3, 4, 5, 0xFF };
+    const char * base64WithPadding[] = { "AA==", "AAE=", "AAEC", "AAECAw==", "AAECAwQ=", "AAECAwQF", "AAECAwQF/w==" };
     size_t i;
     for (i = 0; i < sizeof(binary); i++)
     {
-        test_utils_base64_1(binary, i+1, base64[i]);
+        test_utils_base64WithPadding_1(binary, i+1, base64WithPadding[i]);
+    }
+}
+
+static void test_utils_base64UrlNoPadding(void)
+{
+    uint8_t binary[] = { 0, 1, 2, 3, 4, 5, 0xFF };
+    const char * base64UrlNoPadding[] = { "AA", "AAE", "AAEC", "AAECAw", "AAECAwQ", "AAECAwQF", "AAECAwQF_w" };
+    size_t i;
+    for (i = 0; i < sizeof(binary); i++)
+    {
+        test_utils_base64UrlNoPadding_1(binary, i+1, base64UrlNoPadding[i]);
     }
 }
 
@@ -458,11 +484,13 @@ static struct TestTable table[] = {
         { "test of utils_floatToText()", test_utils_floatToText },
         { "test of utils_floatToText(exponential)", test_utils_floatToTextExponential },
         { "test of utils_objLinkToText()", test_utils_objLinkToText },
-        { "test of base64 functions", test_utils_base64 },
+        { "test of base64 (with padding) functions", test_utils_base64WithPadding },
+        { "test of base64Url (without padding) functions", test_utils_base64UrlNoPadding },
         { NULL, NULL },
 };
 
-CU_ErrorCode create_convert_numbers_suit(void) {
+CU_ErrorCode create_convert_numbers_suit(void)
+{
     CU_pSuite pSuite = NULL;
 
     pSuite = CU_add_suite("Suite_ConvertNumbers", NULL, NULL);
