@@ -353,7 +353,8 @@ int lwm2m_add_object(lwm2m_context_t * contextP,
 }
 
 int lwm2m_remove_object(lwm2m_context_t * contextP,
-                        uint16_t id)
+                        uint16_t id,
+                        lwm2m_object_t **obj_removed)
 {
     lwm2m_object_t * targetP;
 
@@ -361,6 +362,10 @@ int lwm2m_remove_object(lwm2m_context_t * contextP,
     contextP->objectList = (lwm2m_object_t *)LWM2M_LIST_RM(contextP->objectList, id, &targetP);
 
     if (targetP == NULL) return COAP_404_NOT_FOUND;
+
+    if(obj_removed != NULL) {
+        *obj_removed = targetP;
+    }
 
     if (contextP->state == STATE_READY)
     {
