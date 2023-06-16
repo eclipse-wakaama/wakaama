@@ -1007,7 +1007,7 @@ int json_serialize(lwm2m_uri_t * uriP,
     }
 #endif
 
-    baseUriLen = uri_toString(uriP, baseUriStr, URI_MAX_STRING_LEN, &baseLevel);
+    baseUriLen = lwm2m_uriToString(uriP, baseUriStr, URI_MAX_STRING_LEN, &baseLevel);
     if (baseUriLen < 0) return -1;
 
     num = json_findAndCheckData(uriP, baseLevel, size, tlvP, &targetP, &rootLevel);

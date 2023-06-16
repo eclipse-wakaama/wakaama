@@ -268,15 +268,6 @@ typedef struct
     lwm2m_context_t *       contextP;
 } observation_data_t;
 
-typedef enum
-{
-    URI_DEPTH_NONE,
-    URI_DEPTH_OBJECT,
-    URI_DEPTH_OBJECT_INSTANCE,
-    URI_DEPTH_RESOURCE,
-    URI_DEPTH_RESOURCE_INSTANCE
-} uri_depth_t;
-
 #ifdef LWM2M_BOOTSTRAP_SERVER_MODE
 typedef struct
 {
@@ -298,7 +289,6 @@ typedef enum
 // defined in uri.c
 lwm2m_request_type_t uri_decode(char * altPath, multi_option_t *uriPath, uint8_t code, lwm2m_uri_t *uriP);
 int uri_getNumber(uint8_t * uriString, size_t uriLength);
-int uri_toString(const lwm2m_uri_t * uriP, uint8_t * buffer, size_t bufferLen, uri_depth_t * depthP);
 
 // defined in objects.c
 uint8_t object_readData(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, int * sizeP, lwm2m_data_t ** dataP);
