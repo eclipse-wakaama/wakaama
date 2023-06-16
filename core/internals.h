@@ -157,6 +157,8 @@
 #define URI_REGISTRATION_SEGMENT_LEN    2
 #define URI_BOOTSTRAP_SEGMENT           "bs"
 #define URI_BOOTSTRAP_SEGMENT_LEN       2
+#define URI_SEND_SEGMENT "dp"
+#define URI_SEND_SEGMENT_LEN 2
 
 #define QUERY_STARTER        "?"
 #define QUERY_NAME           "ep="
@@ -310,6 +312,10 @@ int object_getRegisterPayload(lwm2m_context_t * contextP, uint8_t * buffer, size
 int object_getServers(lwm2m_context_t * contextP, bool checkOnly);
 uint8_t object_createInstance(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_data_t * dataP);
 uint8_t object_writeInstance(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_data_t * dataP);
+#ifndef LWM2M_VERSION_1_0
+uint8_t object_readCompositeData(lwm2m_context_t *contextP, lwm2m_uri_t *uriP, size_t numUris, int *sizeP,
+                                 lwm2m_data_t **dataP);
+#endif
 
 // defined in transaction.c
 lwm2m_transaction_t * transaction_new(void * sessionH, coap_method_t method, char * altPath, lwm2m_uri_t * uriP, uint16_t mID, uint8_t token_len, uint8_t* token);

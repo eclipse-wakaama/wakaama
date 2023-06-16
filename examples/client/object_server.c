@@ -72,6 +72,7 @@ typedef struct _server_instance_
     int         communicationRetryTimer; // <0 when it doesn't exist
     int         communicationSequenceDelayTimer; // <0 when it doesn't exist
     int         communicationSequenceRetryCount; // <0 when it doesn't exist
+    bool muteSend;
 #endif
 } server_instance_t;
 
@@ -212,6 +213,10 @@ static uint8_t prv_get_value(lwm2m_data_t * dataP,
             return COAP_404_NOT_FOUND;
         }
 
+    case LWM2M_SERVER_MUTE_SEND_ID:
+        lwm2m_data_encode_bool(targetP->muteSend, dataP);
+        return COAP_205_CONTENT;
+
 #endif
 
     default:
@@ -239,22 +244,16 @@ static uint8_t prv_server_read(lwm2m_context_t *contextP,
     if (*numDataP == 0)
     {
         uint16_t resList[] = {
-            LWM2M_SERVER_SHORT_ID_ID,
-            LWM2M_SERVER_LIFETIME_ID,
-            LWM2M_SERVER_MIN_PERIOD_ID,
-            LWM2M_SERVER_MAX_PERIOD_ID,
-            LWM2M_SERVER_TIMEOUT_ID,
-            LWM2M_SERVER_STORING_ID,
+            LWM2M_SERVER_SHORT_ID_ID,         LWM2M_SERVER_LIFETIME_ID,
+            LWM2M_SERVER_MIN_PERIOD_ID,       LWM2M_SERVER_MAX_PERIOD_ID,
+            LWM2M_SERVER_TIMEOUT_ID,          LWM2M_SERVER_STORING_ID,
             LWM2M_SERVER_BINDING_ID,
 #ifndef LWM2M_VERSION_1_0
-            LWM2M_SERVER_REG_ORDER_ID,
-            LWM2M_SERVER_INITIAL_REG_DELAY_ID,
-            LWM2M_SERVER_REG_FAIL_BLOCK_ID,
-            LWM2M_SERVER_REG_FAIL_BOOTSTRAP_ID,
-            LWM2M_SERVER_COMM_RETRY_COUNT_ID,
-            LWM2M_SERVER_COMM_RETRY_TIMER_ID,
-            LWM2M_SERVER_SEQ_DELAY_TIMER_ID,
-            LWM2M_SERVER_SEQ_RETRY_COUNT_ID,
+            LWM2M_SERVER_REG_ORDER_ID,        LWM2M_SERVER_INITIAL_REG_DELAY_ID,
+            LWM2M_SERVER_REG_FAIL_BLOCK_ID,   LWM2M_SERVER_REG_FAIL_BOOTSTRAP_ID,
+            LWM2M_SERVER_COMM_RETRY_COUNT_ID, LWM2M_SERVER_COMM_RETRY_TIMER_ID,
+            LWM2M_SERVER_SEQ_DELAY_TIMER_ID,  LWM2M_SERVER_SEQ_RETRY_COUNT_ID,
+            LWM2M_SERVER_MUTE_SEND_ID,
 #endif
         };
         int nbRes = sizeof(resList)/sizeof(uint16_t);
@@ -407,24 +406,17 @@ static uint8_t prv_server_discover(lwm2m_context_t *contextP,
     if (*numDataP == 0)
     {
         uint16_t resList[] = {
-            LWM2M_SERVER_SHORT_ID_ID,
-            LWM2M_SERVER_LIFETIME_ID,
-            LWM2M_SERVER_MIN_PERIOD_ID,
-            LWM2M_SERVER_MAX_PERIOD_ID,
-            LWM2M_SERVER_DISABLE_ID,
-            LWM2M_SERVER_TIMEOUT_ID,
-            LWM2M_SERVER_STORING_ID,
-            LWM2M_SERVER_BINDING_ID,
+            LWM2M_SERVER_SHORT_ID_ID,         LWM2M_SERVER_LIFETIME_ID,
+            LWM2M_SERVER_MIN_PERIOD_ID,       LWM2M_SERVER_MAX_PERIOD_ID,
+            LWM2M_SERVER_DISABLE_ID,          LWM2M_SERVER_TIMEOUT_ID,
+            LWM2M_SERVER_STORING_ID,          LWM2M_SERVER_BINDING_ID,
             LWM2M_SERVER_UPDATE_ID,
 #ifndef LWM2M_VERSION_1_0
-            LWM2M_SERVER_REG_ORDER_ID,
-            LWM2M_SERVER_INITIAL_REG_DELAY_ID,
-            LWM2M_SERVER_REG_FAIL_BLOCK_ID,
-            LWM2M_SERVER_REG_FAIL_BOOTSTRAP_ID,
-            LWM2M_SERVER_COMM_RETRY_COUNT_ID,
-            LWM2M_SERVER_COMM_RETRY_TIMER_ID,
-            LWM2M_SERVER_SEQ_DELAY_TIMER_ID,
-            LWM2M_SERVER_SEQ_RETRY_COUNT_ID,
+            LWM2M_SERVER_REG_ORDER_ID,        LWM2M_SERVER_INITIAL_REG_DELAY_ID,
+            LWM2M_SERVER_REG_FAIL_BLOCK_ID,   LWM2M_SERVER_REG_FAIL_BOOTSTRAP_ID,
+            LWM2M_SERVER_COMM_RETRY_COUNT_ID, LWM2M_SERVER_COMM_RETRY_TIMER_ID,
+            LWM2M_SERVER_SEQ_DELAY_TIMER_ID,  LWM2M_SERVER_SEQ_RETRY_COUNT_ID,
+            LWM2M_SERVER_MUTE_SEND_ID,
 #endif
         };
         int nbRes = sizeof(resList) / sizeof(uint16_t);
@@ -608,6 +600,9 @@ static uint8_t prv_server_discover(lwm2m_context_t *contextP,
                 {
                     result = COAP_404_NOT_FOUND;
                 }
+                break;
+
+            case LWM2M_SERVER_MUTE_SEND_ID:
                 break;
 #endif
 
@@ -929,6 +924,17 @@ static uint8_t prv_server_write(lwm2m_context_t *contextP,
             }
             break;
         }
+
+        case LWM2M_SERVER_MUTE_SEND_ID: {
+            bool value;
+            if (1 == lwm2m_data_decode_bool(dataArray + i, &value)) {
+                targetP->muteSend = value;
+                result = COAP_204_CHANGED;
+            } else {
+                result = COAP_400_BAD_REQUEST;
+            }
+            break;
+        }
 #endif
 
         default:
@@ -1086,6 +1092,7 @@ void display_server_object(lwm2m_object_t * object)
             fprintf(stdout, ", communicationSequenceDelayTimer: %d", serverInstance->communicationSequenceDelayTimer);
         if(serverInstance->communicationSequenceRetryCount >= 0)
             fprintf(stdout, ", communicationSequenceRetryCount: %d", serverInstance->communicationSequenceRetryCount);
+        fprintf(stdout, ", muteSend: %s", serverInstance->muteSend ? "true" : "false");
 #endif
         fprintf(stdout, "\r\n");
         serverInstance = (server_instance_t *)serverInstance->next;
@@ -1137,6 +1144,7 @@ lwm2m_object_t * get_server_object(int serverId,
         serverInstance->communicationRetryTimer = -1;
         serverInstance->communicationSequenceDelayTimer = -1;
         serverInstance->communicationSequenceRetryCount = -1;
+        serverInstance->muteSend = false;
 #endif
         serverObj->instanceList = LWM2M_LIST_ADD(serverObj->instanceList, serverInstance);
 
