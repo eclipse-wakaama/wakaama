@@ -1233,4 +1233,218 @@ uint8_t object_writeInstance(lwm2m_context_t * contextP,
     return targetP->writeFunc(contextP, dataP->id, dataP->value.asChildren.count, dataP->value.asChildren.array, targetP, LWM2M_WRITE_REPLACE_INSTANCE);
 }
 
+#ifndef LWM2M_VERSION_1_0
+uint8_t object_readCompositeData(lwm2m_context_t *contextP, lwm2m_uri_t *uriP, size_t numUris, int *sizeP,
+                                 lwm2m_data_t **dataP) {
+    size_t i;
+    int count;
+    uint8_t result = COAP_205_CONTENT;
+
+    *sizeP = 0;
+    *dataP = NULL;
+
+    for (i = 0; i < numUris; i++) {
+        int partialSize = 0;
+        lwm2m_data_t *partialDataP = NULL;
+        uint8_t res;
+        if (uriP[i].objectId == LWM2M_SECURITY_OBJECT_ID || uriP[i].objectId == LWM2M_OSCORE_OBJECT_ID) {
+            res = COAP_401_UNAUTHORIZED;
+        } else {
+            res = object_readData(contextP, uriP + i, &partialSize, &partialDataP);
+        }
+        if (res == COAP_205_CONTENT && partialSize > 0) {
+            size_t *countP;
+            lwm2m_data_t **childrenP;
+            bool finished = false;
+            lwm2m_data_t *parentP = NULL;
+            size_t j;
+
+            if (LWM2M_URI_IS_SET_OBJECT(uriP + i)) {
+                // Find the object
+                for (j = 0; (int)j < *sizeP; j++) {
+                    if (uriP[i].objectId == (*dataP)[j].id) {
+                        if (LWM2M_URI_IS_SET_INSTANCE(uriP + i)) {
+                            parentP = (*dataP) + j;
+                        } else {
+                            // Duplicate or overlapping reads. Replace all instances.
+                            lwm2m_data_free((*dataP)[j].value.asChildren.count, (*dataP)[j].value.asChildren.array);
+                            (*dataP)[j].value.asChildren.count = partialSize;
+                            (*dataP)[j].value.asChildren.array = partialDataP;
+                            finished = true;
+                        }
+                        break;
+                    }
+                }
+                if ((int)j == *sizeP) {
+                    // Need to add a new object
+                    if (0 != lwm2m_data_append_one(sizeP, dataP, LWM2M_TYPE_OBJECT, uriP[i].objectId)) {
+                        parentP = *dataP + *sizeP - 1;
+
+                        if (!LWM2M_URI_IS_SET_INSTANCE(uriP + i)) {
+                            // Need to add the instances
+                            parentP->value.asChildren.count = partialSize;
+                            parentP->value.asChildren.array = partialDataP;
+                            finished = true;
+                        }
+                    } else {
+                        lwm2m_data_free(partialSize, partialDataP);
+                        if (result == COAP_205_CONTENT) {
+                            result = COAP_400_BAD_REQUEST;
+                        }
+                        finished = true;
+                    }
+                }
+            } else {
+                // Root level. Add objects
+                if (0 == lwm2m_data_append(sizeP, dataP, partialSize, partialDataP)) {
+                    lwm2m_data_free(partialSize, partialDataP);
+                    if (result == COAP_205_CONTENT) {
+                        result = COAP_400_BAD_REQUEST;
+                    }
+                }
+                finished = true;
+            }
+
+            if (!finished) {
+                // Find the instance
+                countP = &parentP->value.asChildren.count;
+                childrenP = &parentP->value.asChildren.array;
+                for (j = 0; j < *countP; j++) {
+                    if (uriP[i].instanceId == (*childrenP)[j].id) {
+                        if (LWM2M_URI_IS_SET_RESOURCE(uriP + i)) {
+                            parentP = (*childrenP) + j;
+                        } else {
+                            // Duplicate or overlapping reads. replace all resources.
+                            lwm2m_data_free((*childrenP)[j].value.asChildren.count,
+                                            (*childrenP)[j].value.asChildren.array);
+                            (*childrenP)[j].value.asChildren.count = partialSize;
+                            (*childrenP)[j].value.asChildren.array = partialDataP;
+                            finished = true;
+                        }
+                        break;
+                    }
+                }
+                if (j == *countP) {
+                    // Need to add a new instance
+                    count = parentP->value.asChildren.count;
+                    if (0 != lwm2m_data_append_one(&count, &parentP->value.asChildren.array, LWM2M_TYPE_OBJECT_INSTANCE,
+                                                   uriP[i].instanceId)) {
+                        parentP->value.asChildren.count = count;
+                        parentP = parentP->value.asChildren.array + count - 1;
+
+                        if (!LWM2M_URI_IS_SET_RESOURCE(uriP + i)) {
+                            parentP->value.asChildren.count = partialSize;
+                            parentP->value.asChildren.array = partialDataP;
+                            finished = true;
+                        }
+                    } else {
+                        lwm2m_data_free(partialSize, partialDataP);
+                        if (result == COAP_205_CONTENT) {
+                            result = COAP_400_BAD_REQUEST;
+                        }
+                        finished = true;
+                    }
+                }
+            }
+
+            if (!finished) {
+                // Find the resource
+                countP = &parentP->value.asChildren.count;
+                childrenP = &parentP->value.asChildren.array;
+                for (j = 0; j < *countP; j++) {
+                    if (uriP[i].resourceId == (*childrenP)[j].id) {
+                        if (LWM2M_URI_IS_SET_RESOURCE_INSTANCE(uriP + i)) {
+                            parentP = (*childrenP) + j;
+                        } else {
+                            // Duplicate or overlapping reads.
+                            if ((*childrenP)[j].type == LWM2M_TYPE_MULTIPLE_RESOURCE) {
+                                // Replace the resource instances
+                                lwm2m_data_free((*childrenP)[j].value.asChildren.count,
+                                                (*childrenP)[j].value.asChildren.array);
+                                (*childrenP)[j].value.asChildren.count = partialSize;
+                                (*childrenP)[j].value.asChildren.array = partialDataP;
+                            } else {
+                                // Overwrite the value
+                                memcpy((*childrenP) + j, partialDataP, sizeof(lwm2m_data_t));
+                                // Shallow free
+                                memset(partialDataP, 0, sizeof(lwm2m_data_t));
+                                lwm2m_data_free(partialSize, partialDataP);
+                            }
+                            finished = true;
+                        }
+                        break;
+                    }
+                }
+                if (j == *countP) {
+                    // Need to add a new resource
+                    count = parentP->value.asChildren.count;
+                    if (0 != lwm2m_data_append_one(&count, &parentP->value.asChildren.array, LWM2M_TYPE_UNDEFINED,
+                                                   uriP[i].instanceId)) {
+                        parentP->value.asChildren.count = count;
+                        parentP = parentP->value.asChildren.array + count - 1;
+
+                        memcpy(parentP, partialDataP, sizeof(lwm2m_data_t));
+                        // Shallow free
+                        memset(partialDataP, 0, sizeof(lwm2m_data_t));
+                        lwm2m_data_free(partialSize, partialDataP);
+                        finished = true;
+                    } else {
+                        lwm2m_data_free(partialSize, partialDataP);
+                        if (result == COAP_205_CONTENT) {
+                            result = COAP_400_BAD_REQUEST;
+                        }
+                        finished = true;
+                    }
+                }
+            }
+
+            if (!finished) {
+                // Find the resource instance
+                countP = &parentP->value.asChildren.count;
+                childrenP = &parentP->value.asChildren.array;
+                for (j = 0; j < *countP; j++) {
+                    if (uriP[i].resourceInstanceId == (*childrenP)[j].id) {
+                        // Duplicate or overlapping reads.
+                        // Overwrite the value
+                        memcpy((*childrenP) + j, partialDataP->value.asChildren.array, sizeof(lwm2m_data_t));
+                        // Shallow free
+                        memset(partialDataP, 0, sizeof(lwm2m_data_t));
+                        lwm2m_data_free(partialSize, partialDataP);
+                        break;
+                    }
+                }
+                if (j == *countP) {
+                    // Need to add a new resource instance
+                    count = parentP->value.asChildren.count;
+                    if (0 != lwm2m_data_append_one(&count, &parentP->value.asChildren.array, LWM2M_TYPE_UNDEFINED,
+                                                   uriP[i].instanceId)) {
+                        parentP->value.asChildren.count = count;
+                        parentP = parentP->value.asChildren.array + count - 1;
+                        memcpy(parentP, partialDataP->value.asChildren.array, sizeof(lwm2m_data_t));
+                        // Shallow free
+                        memset(partialDataP, 0, sizeof(lwm2m_data_t));
+                        lwm2m_data_free(partialSize, partialDataP);
+                    } else {
+                        lwm2m_data_free(partialSize, partialDataP);
+                        if (result == COAP_205_CONTENT) {
+                            result = COAP_400_BAD_REQUEST;
+                        }
+                    }
+                }
+            }
+        } else if (result == COAP_205_CONTENT && res != COAP_404_NOT_FOUND) {
+            result = res;
+        }
+    }
+
+    if (*sizeP > 0) {
+        result = COAP_205_CONTENT;
+    } else if (result == COAP_205_CONTENT) {
+        result = COAP_404_NOT_FOUND;
+    }
+
+    return result;
+}
+#endif
+
 #endif

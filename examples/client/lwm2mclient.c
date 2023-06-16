@@ -571,6 +571,72 @@ syntax_error:
     fprintf(stdout, "Syntax error !\n");
 }
 
+#ifndef LWM2M_VERSION_1_0
+static void prv_send(lwm2m_context_t *lwm2mH, char *buffer, void *user_data) {
+    lwm2m_uri_t uri;
+    lwm2m_uri_t *uris = NULL;
+    size_t uriCount = 0;
+    char *tmp;
+    char *end = NULL;
+    int result;
+    uint16_t serverId;
+
+    /* unused parameter */
+    (void)user_data;
+
+    if (buffer[0] == 0)
+        goto syntax_error;
+
+    result = atoi(buffer);
+    if (result < 0 || result > LWM2M_MAX_ID)
+        goto syntax_error;
+    serverId = (uint16_t)result;
+
+    tmp = buffer;
+    do {
+        tmp = get_next_arg(tmp, &end);
+        if (tmp[0] == 0)
+            goto syntax_error;
+
+        result = lwm2m_stringToUri(tmp, end - tmp, &uri);
+        if (result == 0)
+            goto syntax_error;
+        uriCount++;
+    } while (!check_end_of_args(end));
+
+    uris = lwm2m_malloc(uriCount * sizeof(lwm2m_uri_t));
+    if (uris != NULL) {
+        size_t i;
+        for (i = 0; i < uriCount; i++) {
+            buffer = get_next_arg(buffer, &end);
+            if (buffer[0] == 0)
+                goto syntax_error;
+
+            result = lwm2m_stringToUri(buffer, end - buffer, uris + i);
+            if (result == 0)
+                goto syntax_error;
+        }
+
+        result = lwm2m_send(lwm2mH, serverId, uris, uriCount, NULL, NULL);
+        lwm2m_free(uris);
+    } else {
+        result = COAP_500_INTERNAL_SERVER_ERROR;
+    }
+    if (result != 0) {
+        fprintf(stdout, "Send error: ");
+        print_status(stdout, result);
+        fprintf(stdout, "\r\n");
+    }
+    return;
+
+syntax_error:
+    if (uris != NULL) {
+        lwm2m_free(uris);
+    }
+    fprintf(stdout, "Syntax error !\n");
+}
+#endif
+
 static void update_battery_level(lwm2m_context_t * context)
 {
     static time_t next_change_time = 0;
@@ -895,30 +961,43 @@ int main(int argc, char *argv[])
      * The firsts tree are easy to understand, the callback is the function that will be called when this command is typed
      * and in the last one will be stored the lwm2m context (allowing access to the server settings and the objects).
      */
-    command_desc_t commands[] =
-    {
-            {"list", "List known servers.", NULL, prv_output_servers, NULL},
-            {"change", "Change the value of resource.", " change URI [DATA]\r\n"
-                                                        "   URI: uri of the resource such as /3/0, /3/0/2\r\n"
-                                                        "   DATA: (optional) new value\r\n", prv_change, NULL},
-            {"update", "Trigger a registration update", " update SERVER\r\n"
-                                                        "   SERVER: short server id such as 123\r\n", prv_update, NULL},
-#ifdef LWM2M_BOOTSTRAP
-            {"bootstrap", "Initiate a DI bootstrap process", NULL, prv_initiate_bootstrap, NULL},
-            {"dispb", "Display current backup of objects/instances/resources\r\n"
-                    "\t(only security and server objects are backupped)", NULL, prv_display_backup, NULL},
+    command_desc_t commands[] = {
+        {"list", "List known servers.", NULL, prv_output_servers, NULL},
+        {"change", "Change the value of resource.",
+         " change URI [DATA]\r\n"
+         "   URI: uri of the resource such as /3/0, /3/0/2\r\n"
+         "   DATA: (optional) new value\r\n",
+         prv_change, NULL},
+        {"update", "Trigger a registration update",
+         " update SERVER\r\n"
+         "   SERVER: short server id such as 123\r\n",
+         prv_update, NULL},
+#ifndef LWM2M_VERSION_1_0
+        {"send", "Send one or more resources",
+         " send SERVER URI [URI...]\r\n"
+         "   SERVER: short server id such as 123. 0 for all.\r\n"
+         "   URI: uri of the resource such as /3/0, /3/0/2\r\n",
+         prv_send, NULL},
 #endif
-            {"ls", "List Objects and Instances", NULL, prv_object_list, NULL},
-            {"disp", "Display current objects/instances/resources", NULL, prv_display_objects, NULL},
-            {"dump", "Dump an Object", "dump URI"
-                                       "URI: uri of the Object or Instance such as /3/0, /1\r\n", prv_object_dump, NULL},
-            {"add", "Add support of object 31024", NULL, prv_add, NULL},
-            {"rm", "Remove support of object 31024", NULL, prv_remove, NULL},
-            {"quit", "Quit the client gracefully.", NULL, prv_quit, NULL},
-            {"^C", "Quit the client abruptly (without sending a de-register message).", NULL, NULL, NULL},
+#ifdef LWM2M_BOOTSTRAP
+        {"bootstrap", "Initiate a DI bootstrap process", NULL, prv_initiate_bootstrap, NULL},
+        {"dispb",
+         "Display current backup of objects/instances/resources\r\n"
+         "\t(only security and server objects are backupped)",
+         NULL, prv_display_backup, NULL},
+#endif
+        {"ls", "List Objects and Instances", NULL, prv_object_list, NULL},
+        {"disp", "Display current objects/instances/resources", NULL, prv_display_objects, NULL},
+        {"dump", "Dump an Object",
+         "dump URI"
+         "URI: uri of the Object or Instance such as /3/0, /1\r\n",
+         prv_object_dump, NULL},
+        {"add", "Add support of object 31024", NULL, prv_add, NULL},
+        {"rm", "Remove support of object 31024", NULL, prv_remove, NULL},
+        {"quit", "Quit the client gracefully.", NULL, prv_quit, NULL},
+        {"^C", "Quit the client abruptly (without sending a de-register message).", NULL, NULL, NULL},
 
-            COMMAND_END_LIST
-    };
+        COMMAND_END_LIST};
 
     memset(&data, 0, sizeof(client_data_t));
     data.addressFamily = AF_INET6;
