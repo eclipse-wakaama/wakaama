@@ -259,13 +259,13 @@ static void test_uri_to_string(void)
     int result;
     char buffer[URI_MAX_STRING_LEN];
 
-    result = uri_toString(NULL, (uint8_t*)buffer, sizeof(buffer), &depth);
+    result = lwm2m_uriToString(NULL, (uint8_t*)buffer, sizeof(buffer), &depth);
     CU_ASSERT_EQUAL(result, 0)
     CU_ASSERT_EQUAL(depth, URI_DEPTH_NONE)
     CU_ASSERT_EQUAL(lwm2m_stringToUri(buffer, result, &uri2), result)
 
     LWM2M_URI_RESET(&uri);
-    result = uri_toString(&uri, (uint8_t*)buffer, sizeof(buffer), &depth);
+    result = lwm2m_uriToString(&uri, (uint8_t*)buffer, sizeof(buffer), &depth);
     CU_ASSERT_EQUAL(result, 1)
     CU_ASSERT_EQUAL(depth, URI_DEPTH_NONE)
     CU_ASSERT_NSTRING_EQUAL(buffer, "/", result)
@@ -278,7 +278,7 @@ static void test_uri_to_string(void)
 #endif
 
     uri.objectId = 1;
-    result = uri_toString(&uri, (uint8_t*)buffer, sizeof(buffer), &depth);
+    result = lwm2m_uriToString(&uri, (uint8_t*)buffer, sizeof(buffer), &depth);
     CU_ASSERT_EQUAL(result, 2)
     CU_ASSERT_EQUAL(depth, URI_DEPTH_OBJECT)
     CU_ASSERT_NSTRING_EQUAL(buffer, "/1", result)
@@ -292,7 +292,7 @@ static void test_uri_to_string(void)
     CU_ASSERT_EQUAL(uri2.objectId, uri.objectId)
 
     uri.instanceId = 2;
-    result = uri_toString(&uri, (uint8_t*)buffer, sizeof(buffer), &depth);
+    result = lwm2m_uriToString(&uri, (uint8_t*)buffer, sizeof(buffer), &depth);
     CU_ASSERT_EQUAL(result, 4)
     CU_ASSERT_EQUAL(depth, URI_DEPTH_OBJECT_INSTANCE)
     CU_ASSERT_NSTRING_EQUAL(buffer, "/1/2", result)
@@ -307,7 +307,7 @@ static void test_uri_to_string(void)
     CU_ASSERT_EQUAL(uri2.instanceId, uri.instanceId)
 
     uri.resourceId = 3;
-    result = uri_toString(&uri, (uint8_t*)buffer, sizeof(buffer), &depth);
+    result = lwm2m_uriToString(&uri, (uint8_t*)buffer, sizeof(buffer), &depth);
     CU_ASSERT_EQUAL(result, 6)
     CU_ASSERT_EQUAL(depth, URI_DEPTH_RESOURCE)
     CU_ASSERT_NSTRING_EQUAL(buffer, "/1/2/3", result)
@@ -324,7 +324,7 @@ static void test_uri_to_string(void)
 
 #ifndef LWM2M_VERSION_1_0
     uri.resourceInstanceId = 4;
-    result = uri_toString(&uri, (uint8_t*)buffer, sizeof(buffer), &depth);
+    result = lwm2m_uriToString(&uri, (uint8_t*)buffer, sizeof(buffer), &depth);
     CU_ASSERT_EQUAL(depth, URI_DEPTH_RESOURCE_INSTANCE)
     CU_ASSERT_EQUAL(result, 8)
     CU_ASSERT_NSTRING_EQUAL(buffer, "/1/2/3/4", result)
@@ -346,7 +346,7 @@ static void test_uri_to_string(void)
 #ifndef LWM2M_VERSION_1_0
     uri.resourceInstanceId = LWM2M_MAX_ID - 1;
 #endif
-    result = uri_toString(&uri, (uint8_t*)buffer, sizeof(buffer), &depth);
+    result = lwm2m_uriToString(&uri, (uint8_t*)buffer, sizeof(buffer), &depth);
     CU_ASSERT_EQUAL(result, URI_MAX_STRING_LEN)
 #ifdef LWM2M_VERSION_1_0
     CU_ASSERT_EQUAL(depth, URI_DEPTH_RESOURCE)
@@ -375,7 +375,7 @@ static void test_uri_to_string(void)
 static struct TestTable table[] = {
         { "test of uri_decode()", test_uri_decode },
         { "test of lwm2m_stringToUri()", test_string_to_uri },
-        { "test of uri_toString()", test_uri_to_string },
+        { "test of lwm2m_uriToString()", test_uri_to_string },
         { NULL, NULL },
 };
 

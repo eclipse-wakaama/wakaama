@@ -286,10 +286,10 @@ int lwm2m_stringToUri(const char * buffer,
     return head;
 }
 
-int uri_toString(const lwm2m_uri_t * uriP,
-                 uint8_t * buffer,
-                 size_t bufferLen,
-                 uri_depth_t * depthP)
+int lwm2m_uriToString(const lwm2m_uri_t * uriP,
+                      uint8_t * buffer,
+                      size_t bufferLen,
+                      uri_depth_t * depthP)
 {
     size_t head = 0;
     uri_depth_t depth = URI_DEPTH_NONE;

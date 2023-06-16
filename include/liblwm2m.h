@@ -300,6 +300,15 @@ typedef struct
 #endif
 } lwm2m_uri_t;
 
+typedef enum
+{
+    URI_DEPTH_NONE,
+    URI_DEPTH_OBJECT,
+    URI_DEPTH_OBJECT_INSTANCE,
+    URI_DEPTH_RESOURCE,
+    URI_DEPTH_RESOURCE_INSTANCE
+} uri_depth_t;
+
 #define LWM2M_URI_RESET(uri) memset((uri), 0xFF, sizeof(lwm2m_uri_t))
 
 #define LWM2M_STRING_ID_MAX_LEN 6
@@ -309,6 +318,7 @@ typedef struct
 // Valid URIs: /1, /1/, /1/2, /1/2/, /1/2/3
 // Invalid URIs: /, //, //2, /1//, /1//3, /1/2/3/, /1/2/3/4
 int lwm2m_stringToUri(const char * buffer, size_t buffer_len, lwm2m_uri_t * uriP);
+int lwm2m_uriToString(const lwm2m_uri_t * uriP, uint8_t * buffer, size_t bufferLen, uri_depth_t * depthP);
 
 /*
  * The lwm2m_data_t is used to store LWM2M resource values in a hierarchical way.
