@@ -67,6 +67,16 @@ time_t lwm2m_gettime(void)
     return time(NULL);
 }
 
+int lwm2m_seed(void) {
+    /*
+     * Return a seed for random number generation, the seed must be a
+     * different number at every boot and unpredictable, time(NULL) may not be
+     * a reliable source as a seed.
+     * See: https://github.com/eclipse/wakaama/pull/711
+     */
+    return time(NULL);
+}
+
 void lwm2m_printf(const char * format, ...)
 {
     va_list ap;

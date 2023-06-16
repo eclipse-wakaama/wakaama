@@ -118,6 +118,8 @@ int lwm2m_strcasecmp(const char * str1, const char * str2);
 // In case of error, this must return a negative value.
 // Per POSIX specifications, time_t is a signed integer.
 time_t lwm2m_gettime(void);
+// Get a seed (which must not repeat when the device reboots) for generating a random number
+int lwm2m_seed(void);
 
 #ifdef LWM2M_WITH_LOGS
 // Same usage as C89 printf()
