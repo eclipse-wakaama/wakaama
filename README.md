@@ -106,6 +106,16 @@ On Ubuntu 20.04, used in CI, the dependencies can be installed as such:
 - `apt install build-essential clang-format clang-format-14 clang-tools-14 cmake gcovr git libcunit1-dev ninja-build python3-pip`
 - `pip3 install -r tools/requirements-compliance.txt`
 
+#### Compiler and Libraries
+
+New code is written with the C11 standard.
+
+A C standard library is required. If your system does not provide one
+there are several open source variants available (musl, uClib-ng, newlib, ...).
+
+Wakaama expects a POSIX (or Linux) OS to run on. Some effort has been
+made to be able to run on other platforms but expect some issues when targeting a different platform.
+
 ### Code formatting
 #### C
 New C code must be formatted with [clang-format](https://clang.llvm.org/docs/ClangFormat.html).
