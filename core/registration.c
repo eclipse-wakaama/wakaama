@@ -1357,9 +1357,9 @@ static int prv_parseLinkAttributes(uint8_t * data,
     uint16_t index;
     uint16_t pathStart;
     uint16_t pathLength;
-    bool isValid;
+    uint8_t rtValCount;
 
-    isValid = false;
+    rtValCount = 0;
 
     // Expecting application/link-format (RFC6690)
     // leading space were removed before. Remove trailing spaces.
@@ -1404,20 +1404,18 @@ static int prv_parseLinkAttributes(uint8_t * data,
         result = prv_splitLinkAttribute(data + index, length - index, &keyStart, &keyLength, &valueStart, &valueLength);
         if (result == 0) return 0;
 
-        if (keyLength == REG_ATTR_TYPE_KEY_LEN
-         && 0 == lwm2m_strncmp(REG_ATTR_TYPE_KEY, (char*)data + index + keyStart, keyLength))
-        {
-            if (isValid == true) return 0; // declared twice
+        if (keyLength == REG_ATTR_TYPE_KEY_LEN &&
+            0 == lwm2m_strncmp(REG_ATTR_TYPE_KEY, (char *)data + index + keyStart, keyLength)) {
             if (valueLength != REG_ATTR_TYPE_VALUE_LEN
              || 0 != lwm2m_strncmp(REG_ATTR_TYPE_VALUE, (char*)data + index + valueStart, valueLength))
             {
                 return 0;
             }
-            isValid = true;
-        }
-        else if (keyLength == REG_ATTR_CONTENT_KEY_LEN
-              && 0 == lwm2m_strncmp(REG_ATTR_CONTENT_KEY, (char*)data + index + keyStart, keyLength))
-        {
+            ++rtValCount;
+            if (rtValCount > 1)
+                return 0; // declared twice (or more times)
+        } else if (keyLength == REG_ATTR_CONTENT_KEY_LEN &&
+                   0 == lwm2m_strncmp(REG_ATTR_CONTENT_KEY, (char *)data + index + keyStart, keyLength)) {
             if (*format != LWM2M_CONTENT_TLV) return 0; // declared twice
             if (valueLength == REG_ATTR_CONTENT_JSON_LEN
              && 0 == lwm2m_strncmp(REG_ATTR_CONTENT_JSON, (char*)data + index + valueStart, valueLength))
@@ -1446,7 +1444,8 @@ static int prv_parseLinkAttributes(uint8_t * data,
         index += result;
     }
 
-    if (isValid == false) return 0;
+    if (rtValCount > 1)
+        return 0;
 
     if (pathLength != 0)
     {
