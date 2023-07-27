@@ -121,13 +121,11 @@ add_compile_options(
     -Wswitch-default
     -Wwrite-strings
     -pedantic
-
     # Reduce noise: Unused parameters are common in this ifdef-littered code-base, but of no danger
     -Wno-unused-parameter
     # Reduce noise: Too many false positives
     -Wno-uninitialized
-
-     # Turn (most) warnings into errors
+    # Turn (most) warnings into errors
     -Werror
     # Disabled because of existing, non-trivially fixable code
     -Wno-error=cast-align

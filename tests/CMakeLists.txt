@@ -10,6 +10,7 @@ add_executable(
     block2tests.c
     convert_numbers_test.c
     er_coap_coap_parse_message.c
+    registration_tests.c
     list_tests.c
     senml_json_tests.c
     tests.h
@@ -20,7 +21,9 @@ add_executable(
 )
 
 target_link_libraries(lwm2munittests cunit)
-target_compile_definitions(lwm2munittests PRIVATE LWM2M_CLIENT_MODE LWM2M_SUPPORT_TLV LWM2M_SUPPORT_JSON)
+target_compile_definitions(
+    lwm2munittests PRIVATE LWM2M_CLIENT_MODE LWM2M_SERVER_MODE LWM2M_SUPPORT_TLV LWM2M_SUPPORT_JSON
+)
 
 # Our tests are designed for POSIX systems
 target_compile_definitions(lwm2munittests PRIVATE _POSIX_C_SOURCE=200809)

@@ -38,5 +38,5 @@ CU_ErrorCode create_senml_json_suit(void);
 #endif
 CU_ErrorCode create_er_coap_parse_message_suit(void);
 CU_ErrorCode create_list_test_suit(void);
-
+CU_ErrorCode create_registration_test_suit(void);
 #endif /* TESTS_H_ */
