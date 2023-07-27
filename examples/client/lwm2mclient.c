@@ -1407,15 +1407,18 @@ int main(int argc, char *argv[])
              */
             else if (FD_ISSET(STDIN_FILENO, &readfds))
             {
-                numBytes = read(STDIN_FILENO, buffer, MAX_PACKET_SIZE - 1);
+                char *line = NULL;
+                size_t bufLen = 0;
+
+                numBytes = getline(&line, &bufLen, stdin);
 
                 if (numBytes > 1)
                 {
-                    buffer[numBytes] = 0;
+                    line[numBytes] = 0;
                     /*
                      * We call the corresponding callback of the typed command passing it the buffer for further arguments
                      */
-                    handle_command(lwm2mH, commands, (char*)buffer);
+                    handle_command(lwm2mH, commands, line);
                 }
                 if (g_quit == 0)
                 {
@@ -1426,6 +1429,8 @@ int main(int argc, char *argv[])
                 {
                     fprintf(stdout, "\r\n");
                 }
+
+                lwm2m_free(line);
             }
         }
     }
