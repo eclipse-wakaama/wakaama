@@ -16,7 +16,14 @@ supported anymore.
 [CVE-2019-9004]: https://www.cve.org/CVERecord?id=CVE-2019-9004
 [CVE-2021-41040]: https://www.cve.org/CVERecord?id=CVE-2021-41040
 
+## License
+
+This work is dual-licensed under the Eclipse Public License v2.0 and Eclipse Distribution License v1.0.
+
+`SPDX-License-Identifier: EPL-2.0 OR BSD-3-Clause`
+
 ## Badges
+
 [![Build](https://github.com/eclipse/wakaama/actions/workflows/build_and_test.yaml/badge.svg)](https://github.com/eclipse/wakaama/actions/workflows/build_and_test.yaml)
 
 ## Source Layout
