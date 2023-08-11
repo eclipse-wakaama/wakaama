@@ -257,28 +257,23 @@ void observe_cancel(lwm2m_context_t * contextP,
     {
         lwm2m_watcher_t * targetP = NULL;
 
-        if (observedP->watcherList->lastMid == mid
-         && lwm2m_session_is_equal(observedP->watcherList->server->sessionH, fromSessionH, contextP->userData))
-        {
-            targetP = observedP->watcherList;
-            observedP->watcherList = observedP->watcherList->next;
-        }
-        else
-        {
-            lwm2m_watcher_t * parentP;
+        if ((observedP->watcherList->lastMid == mid) &&
+            (observedP->watcherList->server->sessionH == fromSessionH)) {
+          targetP = observedP->watcherList;
+          observedP->watcherList = observedP->watcherList->next;
+        } else {
+          lwm2m_watcher_t *parentP;
 
-            parentP = observedP->watcherList;
-            while (parentP->next != NULL
-                && (parentP->next->lastMid != mid
-                 || !lwm2m_session_is_equal(parentP->next->server->sessionH, fromSessionH, contextP->userData)))
-            {
-                parentP = parentP->next;
-            }
-            if (parentP->next != NULL)
-            {
-                targetP = parentP->next;
-                parentP->next = parentP->next->next;
-            }
+          parentP = observedP->watcherList;
+          while (parentP->next != NULL &&
+                 (parentP->next->lastMid != mid ||
+                  (parentP->next->server->sessionH != fromSessionH))) {
+            parentP = parentP->next;
+          }
+          if (parentP->next != NULL) {
+            targetP = parentP->next;
+            parentP->next = parentP->next->next;
+          }
         }
         if (targetP != NULL)
         {

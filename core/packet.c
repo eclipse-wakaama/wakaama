@@ -224,14 +224,14 @@ static lwm2m_transaction_t * prv_get_transaction(lwm2m_context_t * contextP, voi
     lwm2m_transaction_t * transaction;
 
     transaction = contextP->transactionList;
-    while (transaction != NULL && (lwm2m_session_is_equal(sessionH, transaction->peerH, contextP->userData) == false ||
-                                   transaction->mID != mid)) {
-        transaction = transaction->next;
+    while (transaction != NULL &&
+           ((sessionH != transaction->peerH) || transaction->mID != mid)) {
+      transaction = transaction->next;
     }
 
     if (transaction != NULL &&
-        (lwm2m_session_is_equal(sessionH, transaction->peerH, contextP->userData) == true && transaction->mID == mid)) {
-        return transaction;
+        ((sessionH == transaction->peerH) && transaction->mID == mid)) {
+      return transaction;
     }
 
     return NULL;

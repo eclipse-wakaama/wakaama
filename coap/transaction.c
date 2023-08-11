@@ -298,7 +298,7 @@ bool transaction_handleResponse(lwm2m_context_t * contextP,
 
     while (NULL != transacP)
     {
-        if (lwm2m_session_is_equal(fromSessionH, transacP->peerH, contextP->userData) == true)
+        if (fromSessionH == transacP->peerH)
         {
             if (!transacP->ack_received)
             {
