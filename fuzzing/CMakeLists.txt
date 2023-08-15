@@ -5,3 +5,4 @@ project(fuzzing_tests C)
 include(Fuzzing.cmake)
 
 add_subdirectory(coap_parse_message)
+add_subdirectory(registration_handleRequest)
