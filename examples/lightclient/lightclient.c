@@ -306,6 +306,9 @@ void print_state(lwm2m_context_t * lwm2mH)
             case STATE_REG_UPDATE_NEEDED:
                 fprintf(stderr, "REGISTRATION UPDATE REQUIRED\r\n");
                 break;
+            case STATE_DEREG_NEEDED:
+                fprintf(stdout, "DEREGISTRATION NEEDED\r\n");
+                break;
             case STATE_DEREG_PENDING:
                 fprintf(stderr, "DEREGISTRATION PENDING\r\n");
                 break;

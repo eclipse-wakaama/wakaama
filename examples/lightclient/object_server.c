@@ -362,10 +362,8 @@ static uint8_t prv_server_execute(lwm2m_context_t * contextP,
                                   lwm2m_object_t * objectP)
 
 {
+    int res = COAP_405_METHOD_NOT_ALLOWED;
     server_instance_t * targetP;
-
-    /* Unused parameter */
-    (void)contextP;
 
     targetP = (server_instance_t *)lwm2m_list_find(objectP->instanceList, instanceId);
     if (NULL == targetP) return COAP_404_NOT_FOUND;
@@ -373,16 +371,25 @@ static uint8_t prv_server_execute(lwm2m_context_t * contextP,
     switch (resourceId)
     {
     case LWM2M_SERVER_DISABLE_ID:
-        // executed in core, if COAP_204_CHANGED is returned
-        return COAP_204_CHANGED;
+        if (targetP->shortServerId != 0)
+        {
+            res = lwm2m_registration_disable(contextP, targetP->shortServerId, 86400);
+        }
+        break;
 
     case LWM2M_SERVER_UPDATE_ID:
-        // executed in core, if COAP_204_CHANGED is returned
-        return COAP_204_CHANGED;
+        if (targetP->shortServerId != 0)
+        {
+            res = lwm2m_update_registration(contextP, targetP->shortServerId, false);
+        }
+        break;
 
     default:
-        return COAP_405_METHOD_NOT_ALLOWED;
+        break;
     }
+
+    if (res == 0) res = COAP_204_CHANGED;
+    return res;
 }
 
 static uint8_t prv_server_delete(lwm2m_context_t * contextP,

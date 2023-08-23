@@ -98,6 +98,7 @@
 ((S) == STATE_REG_UPDATE_PENDING ? "STATE_REG_UPDATE_PENDING" : \
 ((S) == STATE_REG_UPDATE_NEEDED ? "STATE_REG_UPDATE_NEEDED" :   \
 ((S) == STATE_REG_FULL_UPDATE_NEEDED ? "STATE_REG_FULL_UPDATE_NEEDED" :   \
+((S) == STATE_DEREG_NEEDED ? "STATE_DEREG_NEEDED" :             \
 ((S) == STATE_DEREG_PENDING ? "STATE_DEREG_PENDING" :           \
 ((S) == STATE_BS_HOLD_OFF ? "STATE_BS_HOLD_OFF" :               \
 ((S) == STATE_BS_INITIATED ? "STATE_BS_INITIATED" :             \
@@ -106,7 +107,7 @@
 ((S) == STATE_BS_FINISHING ? "STATE_BS_FINISHING" :             \
 ((S) == STATE_BS_FAILING ? "STATE_BS_FAILING" :                 \
 ((S) == STATE_BS_FAILED ? "STATE_BS_FAILED" :                   \
-"Unknown"))))))))))))))))
+"Unknown")))))))))))))))))
 #define STR_MEDIA_TYPE(M)                                        \
 ((M) == LWM2M_CONTENT_TEXT ? "LWM2M_CONTENT_TEXT" :              \
 ((M) == LWM2M_CONTENT_LINK ? "LWM2M_CONTENT_LINK" :              \
@@ -336,7 +337,7 @@ lwm2m_observed_t * observe_findByUri(lwm2m_context_t * contextP, lwm2m_uri_t * u
 
 // defined in registration.c
 uint8_t registration_handleRequest(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, void * fromSessionH, coap_packet_t * message, coap_packet_t * response);
-void registration_deregister(lwm2m_context_t * contextP, lwm2m_server_t * serverP);
+uint8_t registration_deregister(lwm2m_context_t * contextP, lwm2m_server_t * serverP);
 void registration_freeClient(lwm2m_client_t * clientP);
 uint8_t registration_start(lwm2m_context_t * contextP, bool restartFailed);
 void registration_step(lwm2m_context_t * contextP, time_t currentTime, time_t * timeoutP);

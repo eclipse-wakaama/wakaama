@@ -1028,6 +1028,17 @@ uint8_t bootstrap_handleDeleteAll(lwm2m_context_t * contextP,
 
     return result;
 }
+
+int lwm2m_initiate_bootstrap(lwm2m_context_t * contextP)
+{
+    if (contextP->state != STATE_INITIAL
+     && contextP->state != STATE_BOOTSTRAPPING)
+    {
+        contextP->state = STATE_BOOTSTRAP_REQUIRED;
+        return NO_ERROR;
+    }
+    return COAP_405_METHOD_NOT_ALLOWED;
+}
 #endif
 #endif
 
