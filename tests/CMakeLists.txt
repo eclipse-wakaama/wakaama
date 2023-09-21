@@ -20,7 +20,13 @@ add_executable(
     uritests.c
 )
 
-target_link_libraries(lwm2munittests cunit)
+include(FindPkgConfig)
+pkg_search_module(CUNIT
+        REQUIRED
+        IMPORTED_TARGET
+        cunit)
+target_link_libraries(lwm2munittests PkgConfig::CUNIT)
+
 target_compile_definitions(
     lwm2munittests PRIVATE LWM2M_CLIENT_MODE LWM2M_SERVER_MODE LWM2M_SUPPORT_TLV LWM2M_SUPPORT_JSON
 )
