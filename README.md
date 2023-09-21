@@ -113,6 +113,10 @@ On Ubuntu 20.04, used in CI, the dependencies can be installed as such:
 - `apt install build-essential clang-format clang-format-14 clang-tools-14 cmake gcovr git libcunit1-dev ninja-build python3-pip`
 - `pip3 install -r tools/requirements-compliance.txt`
 
+For macOS the development dependencies can be installed as such:
+
+`brew install automake clang-format cmake cunit gcc gitlint make ninja`
+
 ### Code formatting
 #### C
 New C code must be formatted with [clang-format](https://clang.llvm.org/docs/ClangFormat.html).
