@@ -1,0 +1,2 @@
+-*/examples/shared/tinydtls/*
+-*/tests/*

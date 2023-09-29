@@ -1,0 +1,30 @@
+name: CodeChecker
+
+on: [push, pull_request]
+
+jobs:
+  codechecker_static_analyzer:
+    runs-on: ubuntu-24.04
+
+    steps:
+    - name: Checkout code including full history and submodules
+      uses: actions/checkout@v4
+      with:
+        submodules: true
+        fetch-depth: 0
+
+    - name: Install CodeChecker
+      run:  |
+        sudo apt-get update
+        sudo apt-get install clang-tools-18 cmake cppcheck libcunit1-dev ninja-build unzip wget
+        pip3 install codechecker
+
+    - name: Run CodeChecker
+      run: |
+        tools/ci/run_ci.sh --run-build --run-code-checker --code-checker diff
+
+    - name: Upload CodeChecker reports
+      uses: actions/upload-artifact@v4
+      with:
+        name: CodeChecker Reports
+        path: build-wakaama/codechecker_report
