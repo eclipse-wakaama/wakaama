@@ -1,0 +1,12 @@
+{
+  "analyze": [
+    "--disable=cplusplus",
+    "--disable=cppcheck-exceptDeallocThrow",
+    "--disable=cppcheck-exceptThrowInDestructor",
+    "--disable=cppcheck-leakUnsafeArgAlloc",
+    "--disable=cppcheck-rethrowNoCurrentException",
+    "--disable=cppcheck-thisSubtraction",
+    "--disable=cppcheck-throwInNoexceptFunction",
+    "--clean"
+  ]
+}
