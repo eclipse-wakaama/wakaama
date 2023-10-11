@@ -291,6 +291,7 @@ int cbor_get_singular(const uint8_t *buffer, size_t bufferLen, lwm2m_data_t *dat
  * @return 0 on error, else number of bytes
  */
 static int prv_serialize_value(uint8_t *buffer, size_t bufferLen, uint8_t mt, uint64_t val) {
+    LOG_ARG("bufferLen: %d, mt: %d, val: %d (0x%x)", bufferLen, mt, val, val);
     int buffer_index = 0;
     uint8_t ai = CBOR_AI_EIGHT_BYTE_VALUE;
 
@@ -319,6 +320,8 @@ static int prv_serialize_value(uint8_t *buffer, size_t bufferLen, uint8_t mt, ui
         ai = CBOR_AI_FOUR_BYTE_VALUE;
     } else if (bufferLen < 9)
         return 0;
+
+    LOG_ARG("ai: %d", ai);
 
     /* Serialize values according to */
     buffer[buffer_index++] = (mt << 5) | ai;
@@ -485,6 +488,8 @@ int cbor_put_type_and_value(uint8_t *buffer, size_t bufferLen, cbor_type_t type,
 }
 
 int cbor_put_singular(uint8_t *buffer, size_t bufferLen, const lwm2m_data_t *dataP) {
+    LOG_ARG("bufferLen: %d, dataType: %s", bufferLen, STR_DATA_TYPE(dataP->type));
+
     int result = 0;
     int res = 0;
 
@@ -607,6 +612,9 @@ int cbor_parse(const lwm2m_uri_t *uriP, const uint8_t *buffer, size_t bufferLen,
 }
 
 int cbor_serialize(const lwm2m_uri_t *uriP, int size, const lwm2m_data_t *dataP, uint8_t **bufferP) {
+    LOG_URI(uriP);
+    LOG_ARG("size: %d, dataType: %s", size, STR_DATA_TYPE(dataP->type));
+
     int result = 0;
     int res;
     uint8_t tmp[13];
