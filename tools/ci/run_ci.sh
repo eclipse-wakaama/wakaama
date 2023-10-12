@@ -40,6 +40,7 @@ RUN_CMAKE_FORMAT=0
 RUN_GITLINT=0
 RUN_GIT_BLAME_IGNORE=0
 RUN_TESTS=0
+RUN_DOXYGEN=0
 
 HELP_MSG="usage: ${SCRIPT_NAME} <OPTIONS>...
 Runs build and test steps in CI.
@@ -83,6 +84,7 @@ Available steps (executed by --all):
   --run-cmake-format       Check CMake files formatting
   --run-build              Build all targets
   --run-tests              Execute tests (works only for top level project)
+  --run-doxygen            Build the Doxygen documentation of the code
 "
 
 function usage() {
@@ -221,6 +223,11 @@ function run_tests() {
   find "${REPO_ROOT_DIR}" -name \*.gcov -exec rm {} \;
 }
 
+function run_doxygen() {
+  mkdir -p build-wakaama/doxygen
+    GIT_REVISION=$(git rev-parse @) WORKING_DIR=$(pwd) DOXYGEN_OUT_DIR=build-wakaama/doxygen \
+      doxygen doc/doxygen/Doxyfile
+}
 # Parse Options
 
 if [[ "$OSTYPE" == "darwin"* ]]; then
@@ -251,6 +258,7 @@ if ! PARSED_OPTS=$($getopt -o vah \
                           -l run-gitlint \
                           -l run-git-blame-ignore \
                           -l run-tests \
+                          -l run-doxygen \
                           -l sanitizer: \
                           -l scan-build: \
                           -l sonarqube: \
@@ -315,6 +323,10 @@ while true; do
       RUN_TESTS=1
       shift
       ;;
+    --run-doxygen)
+      RUN_DOXYGEN=1
+      shift
+      ;;
     --sanitizer)
       OPT_SANITIZER=$2
       shift 2
@@ -359,6 +371,7 @@ while true; do
       RUN_GIT_BLAME_IGNORE=1
       RUN_BUILD=1
       RUN_TESTS=1
+      RUN_DOXYGEN=1
       shift
       ;;
     -h|--help)
@@ -445,4 +458,8 @@ fi
 
 if [ "${RUN_TESTS}" -eq 1 ]; then
   run_tests
+fi
+
+if [ "${RUN_DOXYGEN}" -eq 1 ]; then
+  run_doxygen
 fi
