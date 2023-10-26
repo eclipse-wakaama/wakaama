@@ -201,7 +201,7 @@ function(target_sources_coap target)
     target_sources(
         ${target}
         PRIVATE ${WAKAAMA_TOP_LEVEL_DIRECTORY}/coap/block.c ${WAKAAMA_TOP_LEVEL_DIRECTORY}/coap/er-coap-13/er-coap-13.c
-                ${WAKAAMA_TOP_LEVEL_DIRECTORY}/coap/transaction.c
+                ${WAKAAMA_TOP_LEVEL_DIRECTORY}/coap/message_dedup.c ${WAKAAMA_TOP_LEVEL_DIRECTORY}/coap/transaction.c
     )
     # We should not (have to) do this!
     target_include_directories(${target} PRIVATE ${WAKAAMA_TOP_LEVEL_DIRECTORY}/coap)
