@@ -817,6 +817,8 @@ typedef int (*lwm2m_bootstrap_callback_t)(lwm2m_context_t *contextP, void *sessi
                                           void *userData);
 #endif
 
+typedef struct _coap_msg_dedup_ coap_msg_dedup_t;
+
 struct _lwm2m_context_
 {
 #ifdef LWM2M_CLIENT_MODE
@@ -842,6 +844,7 @@ struct _lwm2m_context_
 #endif
     uint16_t                nextMID;
     lwm2m_transaction_t *   transactionList;
+    coap_msg_dedup_t *message_dedup;
     void *                  userData;
 };
 

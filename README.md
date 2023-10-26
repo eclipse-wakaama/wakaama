@@ -78,7 +78,8 @@ Please note: LwM2M version 1.0 is only supported by clients, while servers are b
 - WAKAAMA_COAP_RAW_BLOCK1_REQUESTS For low memory client devices where it is not possible to keep a large post or put request in memory to be parsed (typically a firmware write).
   This option enable each unprocessed block 1 payload to be passed to the application, typically to be stored to a flash memory.
 - WAKAAMA_COAP_DEFAULT_BLOCK_SIZE CoAP block size used by CoAP layer when performing block-wise transfers. Possible values: 16, 32, 64, 128, 256, 512 and 1024. Defaults to 1024.
-
+- WAKAAMA_COAP_MESSAGE_EXCHANGE_LIFETIME "The time from starting to send a Confirmable message to the time when an acknowledgement is no longer expected [...]" rfc7252#section-4.8.2.
+  Used for message deduplication window.
 
 ### Logging
 
