@@ -64,14 +64,14 @@ static void test_log(void) {
     LOG("Test");
 
     const char *const log_buffer = get_captured_stderr();
-    CU_ASSERT_STRING_EQUAL(log_buffer, "[test_log:64] Test\n");
+    CU_ASSERT_STRING_EQUAL(log_buffer, "DBG - [test_log:64] Test\n");
 }
 
 static void test_log_arg(void) {
     LOG_ARG("Hello, %s", "test");
 
     const char *const log_buffer = get_captured_stderr();
-    CU_ASSERT_STRING_EQUAL(log_buffer, "[test_log_arg:71] Hello, test\n");
+    CU_ASSERT_STRING_EQUAL(log_buffer, "DBG - [test_log_arg:71] Hello, test\n");
 }
 
 static void test_log_uri_null(void) {
@@ -79,7 +79,7 @@ static void test_log_uri_null(void) {
     LOG_URI(uri);
 
     const char *const log_buffer = get_captured_stderr();
-    CU_ASSERT_STRING_EQUAL(log_buffer, "[test_log_uri_null:79] NULL\n");
+    CU_ASSERT_STRING_EQUAL(log_buffer, "DBG - [test_log_uri_null:79] NULL\n");
 }
 
 static void test_log_uri_empty(void) {
@@ -88,11 +88,7 @@ static void test_log_uri_empty(void) {
 
     LOG_URI(&uri);
 
-#ifdef LWM2M_VERSION_1_0
-    const char *const expected_log = "[test_log_uri_empty:89] /65535\n";
-#else
-    const char *const expected_log = "[test_log_uri_empty:89] /\n";
-#endif
+    const char *const expected_log = "DBG - [test_log_uri_empty:89] /\n";
 
     const char *const log_buffer = get_captured_stderr();
     CU_ASSERT_STRING_EQUAL(log_buffer, expected_log);
@@ -106,7 +102,7 @@ static void test_log_uri_obj(void) {
     LOG_URI(&uri);
 
     const char *const log_buffer = get_captured_stderr();
-    CU_ASSERT_STRING_EQUAL(log_buffer, "[test_log_uri_obj:106] /1\n");
+    CU_ASSERT_STRING_EQUAL(log_buffer, "DBG - [test_log_uri_obj:102] /1\n");
 }
 
 static void test_log_uri_obj_inst(void) {
@@ -118,7 +114,7 @@ static void test_log_uri_obj_inst(void) {
     LOG_URI(&uri);
 
     const char *const log_buffer = get_captured_stderr();
-    CU_ASSERT_STRING_EQUAL(log_buffer, "[test_log_uri_obj_inst:118] /2/1\n");
+    CU_ASSERT_STRING_EQUAL(log_buffer, "DBG - [test_log_uri_obj_inst:114] /2/1\n");
 }
 
 static void test_log_uri_obj_inst_res(void) {
@@ -131,7 +127,7 @@ static void test_log_uri_obj_inst_res(void) {
     LOG_URI(&uri);
 
     const char *const log_buffer = get_captured_stderr();
-    CU_ASSERT_STRING_EQUAL(log_buffer, "[test_log_uri_obj_inst_res:131] /3/0/1\n");
+    CU_ASSERT_STRING_EQUAL(log_buffer, "DBG - [test_log_uri_obj_inst_res:127] /3/0/1\n");
 }
 
 static void test_log_uri_obj_inst_res_inst(void) {
@@ -147,9 +143,9 @@ static void test_log_uri_obj_inst_res_inst(void) {
     LOG_URI(&uri);
 
 #ifdef LWM2M_VERSION_1_0
-    const char *const expected_log = "[test_log_uri_obj_inst_res_inst:147] /5/1/2\n";
+    const char *const expected_log = "DBG - [test_log_uri_obj_inst_res_inst:143] /5/1/2\n";
 #else
-    const char *const expected_log = "[test_log_uri_obj_inst_res_inst:147] /5/1/2/0\n";
+    const char *const expected_log = "DBG - [test_log_uri_obj_inst_res_inst:143] /5/1/2/0\n";
 #endif
 
     const char *const log_buffer = get_captured_stderr();
