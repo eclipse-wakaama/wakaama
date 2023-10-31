@@ -13,6 +13,7 @@ set(TEST_SOURCES
     er_coap_coap_parse_message.c
     registration_tests.c
     list_tests.c
+    logging_tests.c
     senml_json_tests.c
     senml_cbor_tests.c
     tests.h
@@ -21,6 +22,7 @@ set(TEST_SOURCES
     unittests.c
     uritests.c
 )
+
 
 add_test_variant(
     TARGET_NAME lwm2munittests
@@ -31,7 +33,7 @@ add_test_variant(
 add_test_variant(
     TARGET_NAME lwm2munittests_client_lwm2m_1_0
     SOURCE_FILES ${TEST_SOURCES}
-    COMPILE_DEFINITIONS LWM2M_CLIENT_MODE LWM2M_VERSION_1_0
+    COMPILE_DEFINITIONS LWM2M_CLIENT_MODE LWM2M_VERSION_1_0 LWM2M_WITH_LOGS
 )
 
 add_test_variant(
@@ -69,7 +71,7 @@ add_test_variant(
 add_test_variant(
     TARGET_NAME lwm2munittests_server_and_bootstrap_server
     SOURCE_FILES ${TEST_SOURCES}
-    COMPILE_DEFINITIONS LWM2M_SERVER_MODE LWM2M_BOOTSTRAP_SERVER_MODE
+    COMPILE_DEFINITIONS LWM2M_SERVER_MODE LWM2M_BOOTSTRAP_SERVER_MODE LWM2M_WITH_LOGS
 )
 
 add_test_variant(
