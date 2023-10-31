@@ -248,7 +248,7 @@ void lwm2m_data_encode_opaque(const uint8_t * buffer,
 {
     int res;
 
-    LOG_ARG("length: %d", length);
+    LOG_ARG("length: %zd", length);
     if (length == 0)
     {
         dataP->value.asBuffer.length = 0;
@@ -274,7 +274,7 @@ void lwm2m_data_encode_nstring(const char * string,
                                size_t length,
                                lwm2m_data_t * dataP)
 {
-    LOG_ARG("length: %d, string: \"%.*s\"", length, length, STR_NULL2EMPTY(string));
+    LOG_ARG("length: %zd, string: \"%.*s\"", length, (int)length, STR_NULL2EMPTY(string));
     lwm2m_data_encode_opaque((uint8_t *)string, length, dataP);
 
     if (dataP->type == LWM2M_TYPE_OPAQUE)
@@ -606,7 +606,7 @@ void lwm2m_data_include(lwm2m_data_t * subDataP,
                         size_t count,
                         lwm2m_data_t * dataP)
 {
-    LOG_ARG("count: %d", count);
+    LOG_ARG("count: %zd", count);
     if (subDataP == NULL || count == 0) return;
 
     switch (subDataP[0].type)
@@ -637,7 +637,7 @@ void lwm2m_data_encode_instances(lwm2m_data_t * subDataP,
                                  size_t count,
                                  lwm2m_data_t * dataP)
 {
-    LOG_ARG("count: %d", count);
+    LOG_ARG("count: %zd", count);
     lwm2m_data_include(subDataP, count, dataP);
     dataP->type = LWM2M_TYPE_MULTIPLE_RESOURCE;
 }
@@ -650,7 +650,7 @@ int lwm2m_data_parse(lwm2m_uri_t * uriP,
 {
     int res;
 
-    LOG_ARG("format: %s, bufferLen: %d", STR_MEDIA_TYPE(format), bufferLen);
+    LOG_ARG("format: %s, bufferLen: %zd", STR_MEDIA_TYPE(format), bufferLen);
     LOG_URI(uriP);
     switch (format)
     {

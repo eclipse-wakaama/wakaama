@@ -224,7 +224,7 @@ int lwm2m_stringToUri(const char * buffer,
     size_t head;
     int readNum;
 
-    LOG_ARG("buffer_len: %u, buffer: \"%.*s\"", buffer_len, buffer_len, STR_NULL2EMPTY(buffer));
+    LOG_ARG("buffer_len: %zu, buffer: \"%.*s\"", buffer_len, (int)buffer_len, STR_NULL2EMPTY(buffer));
 
     if (uriP == NULL) return 0;
 
@@ -280,7 +280,7 @@ int lwm2m_stringToUri(const char * buffer,
         }
     }
 
-    LOG_ARG("Parsed characters: %u", head);
+    LOG_ARG("Parsed characters: %zu", head);
     LOG_URI(uriP);
 
     return head;
@@ -294,7 +294,7 @@ int lwm2m_uriToString(const lwm2m_uri_t * uriP,
     size_t head = 0;
     uri_depth_t depth = URI_DEPTH_NONE;
 
-    LOG_ARG("bufferLen: %u", bufferLen);
+    LOG_ARG("bufferLen: %zu", bufferLen);
     LOG_URI(uriP);
 
     if (uriP && LWM2M_URI_IS_SET_OBJECT(uriP))
@@ -351,7 +351,7 @@ int lwm2m_uriToString(const lwm2m_uri_t * uriP,
 
     if (depthP) *depthP = depth;
 
-    LOG_ARG("length: %u, buffer: \"%.*s\"", head, head, buffer);
+    LOG_ARG("length: %zu, buffer: \"%.*s\"", head, (int)head, buffer);
 
     return head;
 }
