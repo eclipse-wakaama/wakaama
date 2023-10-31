@@ -15,7 +15,6 @@
  *   Lukas Woodtli, GARDENA GmbH - Please refer to git log
  *
  *******************************************************************************/
-
 #include "CUnit/CUnit.h"
 #include "helper/log_handler.h"
 #include "internals.h"
@@ -124,6 +123,21 @@ static void test_log_uri_obj_inst_res_inst(void) {
     CU_ASSERT_STRING_EQUAL(log_buffer, expected_log);
 }
 
+static void test_log_level(void) {
+    LOG_L(DBG, "debug");
+    LOG_L(INFO, "info");
+    LOG_L(WARN, "warning");
+    LOG_L(ERR, "error");
+    LOG_L(FATAL, "fatal");
+    const char * const log_buffer = test_log_handler_get_captured_message();
+    const char * const expected_log = "DBG - [test_log_level] debug\n"
+                                      "INFO - [test_log_level] info\n"
+                                      "WARN - [test_log_level] warning\n"
+                                      "ERR - [test_log_level] error\n"
+                                      "FATAL - [test_log_level] fatal\n";
+    CU_ASSERT_STRING_EQUAL(log_buffer, expected_log);
+}
+
 static struct TestTable table[] = {
     {"test_log", test_log},
     {"test_log_arg", test_log_arg},
@@ -133,6 +147,7 @@ static struct TestTable table[] = {
     {"test_log_uri_obj_inst", test_log_uri_obj_inst},
     {"test_log_uri_obj_inst_res", test_log_uri_obj_inst_res},
     {"test_log_uri_obj_inst_res_inst", test_log_uri_obj_inst_res_inst},
+    {"test_log_level", test_log_level},
     {NULL, NULL},
 };
 

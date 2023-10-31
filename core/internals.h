@@ -107,49 +107,35 @@ typedef enum {
 void lwm2m_log_handler(lwm2m_logging_level_t level, const char *const msg, const char *const func, const int line,
                        const char *const file);
 
-#define LOG(STR) LOG_(LWM2M_LOGGING_DBG, STR)
-#define LOG_ARG(STR, ...) LOG_ARG_(LWM2M_LOGGING_DBG, STR, __VA_ARGS__)
+#define LOG(STR) LOG_L(DBG, STR)
+#define LOG_ARG(STR, ...) LOG_ARG_L(DBG, STR, __VA_ARGS__)
 
-#define LOG_(LEVEL, STR) lwm2m_log_handler(LEVEL, STR, __func__, __LINE__, __FILE__)
+#define LOG_L(LEVEL, STR) lwm2m_log_handler(LWM2M_LOGGING_ ## LEVEL, STR, __func__ , __LINE__, __FILE__)
 
-#define LOG_ARG_(LEVEL, FMT, ...)                                                                                      \
-    do {                                                                                                               \
-        char txt[LWM2M_MAX_LOG_MSG_TXT_SIZE];                                                                          \
-        snprintf(txt, LWM2M_MAX_LOG_MSG_TXT_SIZE, FMT, __VA_ARGS__);                                                   \
-        lwm2m_log_handler(LEVEL, txt, __func__, __LINE__, __FILE__);                                                   \
-    } while (0)
+#define LOG_ARG_L(LEVEL, FMT, ...) do { \
+        char txt[LWM2M_MAX_LOG_MSG_TXT_SIZE]; \
+        snprintf(txt, LWM2M_MAX_LOG_MSG_TXT_SIZE, FMT, __VA_ARGS__); \
+        lwm2m_log_handler(LWM2M_LOGGING_ ## LEVEL, txt, __func__ , __LINE__, __FILE__);  } while(0)
 
 #ifdef LWM2M_VERSION_1_0
-#define LOG_URI(URI) LOG_URI_(LWM2M_LOGGING_DBG, URI)
-#define LOG_URI_(LEVEL, URI)                                                                                           \
-    {                                                                                                                  \
-        if ((URI) == NULL)                                                                                             \
-            LOG("NULL");                                                                                               \
-        else if (!LWM2M_URI_IS_SET_OBJECT(URI))                                                                        \
-            LOG_(LEVEL, "/");                                                                                          \
-        else if (!LWM2M_URI_IS_SET_INSTANCE(URI))                                                                      \
-            LOG_ARG_(LEVEL, "/%d", (URI)->objectId);                                                                   \
-        else if (!LWM2M_URI_IS_SET_RESOURCE(URI))                                                                      \
-            LOG_ARG_(LEVEL, "/%d/%d", (URI)->objectId, (URI)->instanceId);                                             \
-        else                                                                                                           \
-            LOG_ARG_(LEVEL, "/%d/%d/%d", (URI)->objectId, (URI)->instanceId, (URI)->resourceId);                       \
-    }
+#define LOG_URI(URI) LOG_URI_L(DBG, URI)
+#define LOG_URI_L(LEVEL, URI)                                                                \
+{                                                                                   \
+        if ((URI) == NULL) LOG("NULL");       \
+        else if (!LWM2M_URI_IS_SET_OBJECT(URI)) LOG_L(LEVEL, "/"); \
+        else if (!LWM2M_URI_IS_SET_INSTANCE(URI)) LOG_ARG_L(LEVEL, "/%d", (URI)->objectId); \
+        else if (!LWM2M_URI_IS_SET_RESOURCE(URI)) LOG_ARG_L(LEVEL, "/%d/%d", (URI)->objectId, (URI)->instanceId); \
+        else LOG_ARG_L(LEVEL, "/%d/%d/%d", (URI)->objectId, (URI)->instanceId, (URI)->resourceId); \
+}
 #else
-#define LOG_URI(URI) LOG_URI_(LWM2M_LOGGING_DBG, URI)
-#define LOG_URI_(LEVEL, URI)                                                                                           \
-    if ((URI) == NULL)                                                                                                 \
-        LOG("NULL");                                                                                                   \
-    else if (!LWM2M_URI_IS_SET_OBJECT(URI))                                                                            \
-        LOG_(LEVEL, "/");                                                                                              \
-    else if (!LWM2M_URI_IS_SET_INSTANCE(URI))                                                                          \
-        LOG_ARG_(LEVEL, "/%d", (URI)->objectId);                                                                       \
-    else if (!LWM2M_URI_IS_SET_RESOURCE(URI))                                                                          \
-        LOG_ARG_(LEVEL, "/%d/%d", (URI)->objectId, (URI)->instanceId);                                                 \
-    else if (!LWM2M_URI_IS_SET_RESOURCE_INSTANCE(URI))                                                                 \
-        LOG_ARG_(LEVEL, "/%d/%d/%d", (URI)->objectId, (URI)->instanceId, (URI)->resourceId);                           \
-    else                                                                                                               \
-        LOG_ARG_(LEVEL, "/%d/%d/%d/%d", (URI)->objectId, (URI)->instanceId, (URI)->resourceId,                         \
-                 (URI)->resourceInstanceId)
+#define LOG_URI(URI) LOG_URI_L(DBG, URI)
+#define LOG_URI_L(LEVEL, URI)                                                                \
+    if ((URI) == NULL) LOG("NULL");       \
+    else if (!LWM2M_URI_IS_SET_OBJECT(URI)) LOG_L(LEVEL, "/"); \
+    else if (!LWM2M_URI_IS_SET_INSTANCE(URI)) LOG_ARG_L(LEVEL, "/%d", (URI)->objectId); \
+    else if (!LWM2M_URI_IS_SET_RESOURCE(URI)) LOG_ARG_L(LEVEL, "/%d/%d", (URI)->objectId, (URI)->instanceId); \
+    else if (!LWM2M_URI_IS_SET_RESOURCE_INSTANCE(URI)) LOG_ARG_L(LEVEL, "/%d/%d/%d", (URI)->objectId, (URI)->instanceId, (URI)->resourceId); \
+    else LOG_ARG_L(LEVEL, "/%d/%d/%d/%d", (URI)->objectId, (URI)->instanceId, (URI)->resourceId, (URI)->resourceInstanceId)
 #endif
 /* clang-format off */
 #define STR_STATUS(S)                                           \
