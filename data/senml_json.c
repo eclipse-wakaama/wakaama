@@ -609,7 +609,7 @@ int senml_json_parse(const lwm2m_uri_t * uriP,
     time_t baseTime;
     lwm2m_data_t baseValue;
 
-    LOG_ARG("bufferLen: %d, buffer: \"%.*s\"", bufferLen, bufferLen, STR_NULL2EMPTY((char *)buffer));
+    LOG_ARG("bufferLen: %zd, buffer: \"%.*s\"", bufferLen, (int)bufferLen, STR_NULL2EMPTY((char *)buffer));
     LOG_URI(uriP);
     *dataP = NULL;
     recordArray = NULL;

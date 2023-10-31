@@ -304,7 +304,7 @@ uint8_t object_read(lwm2m_context_t * contextP,
     }
     lwm2m_data_free(size, dataP);
 
-    LOG_ARG("result: %u.%02u, length: %d", (result & 0xFF) >> 5, (result & 0x1F), *lengthP);
+    LOG_ARG("result: %u.%02u, length: %zd", (result & 0xFF) >> 5, (result & 0x1F), *lengthP);
 
     return result;
 }

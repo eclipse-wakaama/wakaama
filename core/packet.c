@@ -491,7 +491,7 @@ void lwm2m_handle_packet(lwm2m_context_t *contextP, uint8_t *buffer, size_t leng
     {
         LOG_ARG("Parsed: ver %u, type %u, tkl %u, code %u.%.2u, mid %u, Content type: %d",
                 message->version, message->type, message->token_len, message->code >> 5, message->code & 0x1F, message->mid, message->content_type);
-        LOG_ARG("Payload: %.*s", message->payload_len, STR_NULL2EMPTY(message->payload));
+        LOG_ARG("Payload: %.*s", (int)message->payload_len, STR_NULL2EMPTY(message->payload));
         if (message->code >= COAP_GET && message->code <= COAP_DELETE)
         {
             uint32_t block_num = 0;
@@ -869,14 +869,14 @@ uint8_t message_send(lwm2m_context_t * contextP,
 
     LOG("Entering");
     allocLen = coap_serialize_get_size(message);
-    LOG_ARG("Size to allocate: %d", allocLen);
+    LOG_ARG("Size to allocate: %zd", allocLen);
     if (allocLen == 0) return COAP_500_INTERNAL_SERVER_ERROR;
 
     pktBuffer = (uint8_t *)lwm2m_malloc(allocLen);
     if (pktBuffer != NULL)
     {
         pktBufferLen = coap_serialize_message(message, pktBuffer);
-        LOG_ARG("coap_serialize_message() returned %d", pktBufferLen);
+        LOG_ARG("coap_serialize_message() returned %zd", pktBufferLen);
         if (0 != pktBufferLen)
         {
             result = lwm2m_buffer_send(sessionH, pktBuffer, pktBufferLen, contextP->userData);

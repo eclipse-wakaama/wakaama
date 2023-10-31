@@ -238,12 +238,8 @@ uint8_t dm_handleRequest(lwm2m_context_t * contextP,
                             else
                             {
                                 length = (size_t)res;
-                                LOG_ARG("Observe Request[/%d/%d/%d]: %.*s\n",
-                                        uriP->objectId,
-                                        uriP->instanceId,
-                                        uriP->resourceId,
-                                        length,
-                                        STR_NULL2EMPTY(buffer));
+                                LOG_ARG("Observe Request[/%d/%d/%d]: %.*s\n", uriP->objectId, uriP->instanceId,
+                                        uriP->resourceId, (int)length, STR_NULL2EMPTY(buffer));
                             }
                         }
                     }
@@ -575,7 +571,7 @@ static int prv_lwm2m_dm_write(lwm2m_context_t *contextP, uint16_t clientID, lwm2
                               lwm2m_result_callback_t callback, void *userData) {
     coap_method_t method = partialUpdate ? COAP_POST : COAP_PUT;
 
-    LOG_ARG("clientID: %d, format: %s, length: %d", clientID, STR_MEDIA_TYPE(format), length);
+    LOG_ARG("clientID: %d, format: %s, length: %zd", clientID, STR_MEDIA_TYPE(format), length);
     LOG_URI(uriP);
     if (!LWM2M_URI_IS_SET_INSTANCE(uriP)
      || length == 0)
@@ -604,7 +600,7 @@ int lwm2m_dm_write(lwm2m_context_t *contextP, uint16_t clientID, lwm2m_uri_t *ur
 
 int lwm2m_dm_execute(lwm2m_context_t *contextP, uint16_t clientID, lwm2m_uri_t *uriP, lwm2m_media_type_t format,
                      uint8_t *buffer, size_t length, lwm2m_result_callback_t callback, void *userData) {
-    LOG_ARG("clientID: %d, format: %s, length: %d", clientID, STR_MEDIA_TYPE(format), length);
+    LOG_ARG("clientID: %d, format: %s, length: %zd", clientID, STR_MEDIA_TYPE(format), length);
     LOG_URI(uriP);
     if (!LWM2M_URI_IS_SET_RESOURCE(uriP))
     {
