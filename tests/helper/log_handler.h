@@ -18,7 +18,9 @@
 #ifndef WAKAAMA_LOG_HANDLER_H
 #define WAKAAMA_LOG_HANDLER_H
 
-#ifdef LWM2M_WITH_LOGS
+#include "internals.h"
+
+#if LWM2M_LOG_LEVEL != LWM2M_LOG_DISABLED
 
 char *test_log_handler_get_captured_message(void);
 
