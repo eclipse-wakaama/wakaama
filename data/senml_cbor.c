@@ -406,7 +406,7 @@ int senml_cbor_parse(const lwm2m_uri_t *uriP, const uint8_t *buffer, size_t buff
     int res;
     size_t offset;
 
-    LOG_ARG("bufferLen: %d", bufferLen);
+    LOG_ARG("bufferLen: %zu", bufferLen);
     LOG_URI(uriP);
     *dataP = NULL;
     recordArray = NULL;

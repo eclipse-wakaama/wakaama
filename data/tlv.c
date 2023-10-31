@@ -286,8 +286,8 @@ int lwm2m_decode_TLV(const uint8_t * buffer,
                     size_t * oDataLen)
 {
 
-    LOG_ARG("buffer_len: %d", buffer_len);
-        ;
+    LOG_ARG("buffer_len: %zd", buffer_len);
+    ;
     if (buffer_len < 2) return 0;
 
     *oDataIndex = 2;
@@ -354,7 +354,7 @@ int tlv_parse(const uint8_t * buffer,
     int result;
     int size = 0;
 
-    LOG_ARG("bufferLen: %d", bufferLen);
+    LOG_ARG("bufferLen: %zd", bufferLen);
 
     *dataP = NULL;
 
