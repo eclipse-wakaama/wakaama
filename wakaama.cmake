@@ -46,6 +46,7 @@ function(target_sources_wakaama target)
                 ${WAKAAMA_TOP_LEVEL_DIRECTORY}/core/internals.h
                 ${WAKAAMA_TOP_LEVEL_DIRECTORY}/core/liblwm2m.c
                 ${WAKAAMA_TOP_LEVEL_DIRECTORY}/core/list.c
+                ${WAKAAMA_TOP_LEVEL_DIRECTORY}/core/logging.c
                 ${WAKAAMA_TOP_LEVEL_DIRECTORY}/core/management.c
                 ${WAKAAMA_TOP_LEVEL_DIRECTORY}/core/objects.c
                 ${WAKAAMA_TOP_LEVEL_DIRECTORY}/core/observe.c
