@@ -64,6 +64,12 @@
 
 #include "er-coap-13/er-coap-13.h"
 
+#define LWM2M_DBG (10)
+#define LWM2M_INFO (20)
+#define LWM2M_WARN (30)
+#define LWM2M_ERR (40)
+#define LWM2M_FATAL (50)
+
 #ifdef LWM2M_WITH_LOGS
 #include <inttypes.h>
 
@@ -73,28 +79,77 @@
 #define LWM2M_NEW_LINE "\n"
 #endif
 
-#define LOG(STR) lwm2m_printf("[%s:%d] " STR LWM2M_NEW_LINE, __func__ , __LINE__)
-#define LOG_ARG(FMT, ...) lwm2m_printf("[%s:%d] " FMT LWM2M_NEW_LINE, __func__ , __LINE__ , __VA_ARGS__)
+#ifndef LWM2M_LOG_MAX_MSG_TXT_SIZE
+#define LWM2M_LOG_MAX_MSG_TXT_SIZE 200
+#endif
+
+typedef enum {
+    LWM2M_LOGGING_DBG = (uint8_t)LWM2M_DBG,
+    LWM2M_LOGGING_INFO = (uint8_t)LWM2M_INFO,
+    LWM2M_LOGGING_WARN = (uint8_t)LWM2M_WARN,
+    LWM2M_LOGGING_ERR = (uint8_t)LWM2M_ERR,
+    LWM2M_LOGGING_FATAL = (uint8_t)LWM2M_FATAL
+} lwm2m_logging_level_t;
+
+/* clang-format off */
+#define STR_LOGGING_LEVEL(level) \
+((level) == LWM2M_LOGGING_DBG ? "DBG" : \
+((level) == LWM2M_LOGGING_INFO ? "INFO" : \
+((level) == LWM2M_LOGGING_WARN ? "WARN" : \
+((level) == LWM2M_LOGGING_ERR ? "ERR" : \
+((level) == LWM2M_LOGGING_FATAL ? "FATAL" : \
+"unknown")))))
+/* clang-format on */
+
+/** The default log handler for an log entry. To define a custom log handler define `LWM2M_LOG_CUSTOM_HANDLER` and
+ * implement a function with this signature.
+ * This function should not be called directly. Use the logging macros instead. */
+void lwm2m_log_handler(lwm2m_logging_level_t level, const char *const msg, const char *const func, const int line,
+                       const char *const file);
+
+#define LOG(STR) LOG_(LWM2M_LOGGING_DBG, STR)
+#define LOG_ARG(STR, ...) LOG_ARG_(LWM2M_LOGGING_DBG, STR, __VA_ARGS__)
+
+#define LOG_(LEVEL, STR) lwm2m_log_handler(LEVEL, STR, __func__, __LINE__, __FILE__)
+
+#define LOG_ARG_(LEVEL, FMT, ...)                                                                                      \
+    do {                                                                                                               \
+        char txt[LWM2M_LOG_MAX_MSG_TXT_SIZE];                                                                          \
+        snprintf(txt, LWM2M_LOG_MAX_MSG_TXT_SIZE, FMT, __VA_ARGS__);                                                   \
+        lwm2m_log_handler(LEVEL, txt, __func__, __LINE__, __FILE__);                                                   \
+    } while (0)
+
 #ifdef LWM2M_VERSION_1_0
-#define LOG_URI(URI)                                                                \
-{                                                                                   \
-    if ((URI) == NULL) lwm2m_printf("[%s:%d] NULL" LWM2M_NEW_LINE, __func__ , __LINE__);       \
-    else                                                                            \
-    {                                                                               \
-        lwm2m_printf("[%s:%d] /%d", __func__ , __LINE__ , (URI)->objectId);         \
-        if (LWM2M_URI_IS_SET_INSTANCE(URI)) lwm2m_printf("/%d", (URI)->instanceId); \
-        if (LWM2M_URI_IS_SET_RESOURCE(URI)) lwm2m_printf("/%d", (URI)->resourceId); \
-        lwm2m_printf(LWM2M_NEW_LINE);                                                       \
-    }                                                                               \
-}
+#define LOG_URI(URI) LOG_URI_(LWM2M_LOGGING_DBG, URI)
+#define LOG_URI_(LEVEL, URI)                                                                                           \
+    {                                                                                                                  \
+        if ((URI) == NULL)                                                                                             \
+            LOG("NULL");                                                                                               \
+        else if (!LWM2M_URI_IS_SET_OBJECT(URI))                                                                        \
+            LOG_(LEVEL, "/");                                                                                          \
+        else if (!LWM2M_URI_IS_SET_INSTANCE(URI))                                                                      \
+            LOG_ARG_(LEVEL, "/%d", (URI)->objectId);                                                                   \
+        else if (!LWM2M_URI_IS_SET_RESOURCE(URI))                                                                      \
+            LOG_ARG_(LEVEL, "/%d/%d", (URI)->objectId, (URI)->instanceId);                                             \
+        else                                                                                                           \
+            LOG_ARG_(LEVEL, "/%d/%d/%d", (URI)->objectId, (URI)->instanceId, (URI)->resourceId);                       \
+    }
 #else
-#define LOG_URI(URI)                                                                \
-    if ((URI) == NULL) lwm2m_printf("[%s:%d] NULL" LWM2M_NEW_LINE, __func__ , __LINE__);       \
-    else if (!LWM2M_URI_IS_SET_OBJECT(URI)) lwm2m_printf("[%s:%d] /" LWM2M_NEW_LINE, __func__ , __LINE__); \
-    else if (!LWM2M_URI_IS_SET_INSTANCE(URI)) lwm2m_printf("[%s:%d] /%d" LWM2M_NEW_LINE, __func__ , __LINE__, (URI)->objectId); \
-    else if (!LWM2M_URI_IS_SET_RESOURCE(URI)) lwm2m_printf("[%s:%d] /%d/%d" LWM2M_NEW_LINE, __func__ , __LINE__, (URI)->objectId, (URI)->instanceId); \
-    else if (!LWM2M_URI_IS_SET_RESOURCE_INSTANCE(URI)) lwm2m_printf("[%s:%d] /%d/%d/%d" LWM2M_NEW_LINE, __func__ , __LINE__, (URI)->objectId, (URI)->instanceId, (URI)->resourceId); \
-    else lwm2m_printf("[%s:%d] /%d/%d/%d/%d" LWM2M_NEW_LINE, __func__ , __LINE__, (URI)->objectId, (URI)->instanceId, (URI)->resourceId, (URI)->resourceInstanceId)
+#define LOG_URI(URI) LOG_URI_(LWM2M_LOGGING_DBG, URI)
+#define LOG_URI_(LEVEL, URI)                                                                                           \
+    if ((URI) == NULL)                                                                                                 \
+        LOG("NULL");                                                                                                   \
+    else if (!LWM2M_URI_IS_SET_OBJECT(URI))                                                                            \
+        LOG_(LEVEL, "/");                                                                                              \
+    else if (!LWM2M_URI_IS_SET_INSTANCE(URI))                                                                          \
+        LOG_ARG_(LEVEL, "/%d", (URI)->objectId);                                                                       \
+    else if (!LWM2M_URI_IS_SET_RESOURCE(URI))                                                                          \
+        LOG_ARG_(LEVEL, "/%d/%d", (URI)->objectId, (URI)->instanceId);                                                 \
+    else if (!LWM2M_URI_IS_SET_RESOURCE_INSTANCE(URI))                                                                 \
+        LOG_ARG_(LEVEL, "/%d/%d/%d", (URI)->objectId, (URI)->instanceId, (URI)->resourceId);                           \
+    else                                                                                                               \
+        LOG_ARG_(LEVEL, "/%d/%d/%d/%d", (URI)->objectId, (URI)->instanceId, (URI)->resourceId,                         \
+                 (URI)->resourceInstanceId)
 #endif
 /* clang-format off */
 #define STR_STATUS(S)                                           \
@@ -151,6 +206,7 @@
 ((S) == STATE_READY ? "STATE_READY" :      \
 "Unknown"))))))
 /* clang-format on */
+
 #define STR_NULL2EMPTY(S) ((const char *)(S) ? (const char *)(S) : "")
 #else
 #define LOG_ARG(FMT, ...)
