@@ -127,7 +127,7 @@ time_t lwm2m_gettime(void);
 // Get a seed (which must not repeat when the device reboots) for generating a random number
 int lwm2m_seed(void);
 
-#ifdef LWM2M_WITH_LOGS
+#ifdef LWM2M_LOG_LEVEL
 // Same usage as C89 printf()
 void lwm2m_printf(const char * format, ...);
 #endif
@@ -351,6 +351,9 @@ typedef enum
 // Invalid URIs: /, //, //2, /1//, /1//3, /1/2/3/, /1/2/3/4
 int lwm2m_stringToUri(const char * buffer, size_t buffer_len, lwm2m_uri_t * uriP);
 int lwm2m_uriToString(const lwm2m_uri_t * uriP, uint8_t * buffer, size_t bufferLen, uri_depth_t * depthP);
+
+// This function is not reentrant or thread safe. It's meant to be used for logging only!
+char *uri_logging_to_string(const lwm2m_uri_t *uri);
 
 /*
  * The lwm2m_data_t is used to store LWM2M resource values in a hierarchical way.

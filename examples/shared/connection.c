@@ -168,7 +168,7 @@ int connection_send(connection_t *connP,
     int nbSent;
     size_t offset;
 
-#ifdef LWM2M_WITH_LOGS
+#if LWM2M_LOG_LEVEL != LWM2M_LOG_DISABLED
     char s[INET6_ADDRSTRLEN];
     in_port_t port;
 

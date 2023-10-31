@@ -19,7 +19,7 @@
 #include "internals.h"
 #include "liblwm2m.h"
 
-#ifdef LWM2M_WITH_LOGS
+#if LWM2M_LOG_LEVEL != LWM2M_LOG_DISABLED
 
 #ifndef LWM2M_LOG_CUSTOM_HANDLER
 void lwm2m_log_handler(const lwm2m_logging_level_t level, const char *const msg, const char *const func, const int line,
@@ -29,4 +29,4 @@ void lwm2m_log_handler(const lwm2m_logging_level_t level, const char *const msg,
 }
 #endif
 
-#endif /* LWM2M_WITH_LOGS */
+#endif
