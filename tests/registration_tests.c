@@ -21,6 +21,8 @@
 #include "liblwm2m.h"
 #include "tests.h"
 
+#ifdef LWM2M_SERVER_MODE
+
 static void init_test_packet(coap_packet_t *message, const char *registration_message, uint8_t *payload,
                              const size_t payload_len) {
     int ret = 0;
@@ -110,3 +112,5 @@ CU_ErrorCode create_registration_test_suit(void) {
 
     return add_tests(pSuite, table);
 }
+
+#endif /* LWM2M_SERVER_MODE */
