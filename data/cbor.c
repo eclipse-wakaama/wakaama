@@ -354,11 +354,10 @@ static int prv_serialize_value(uint8_t *buffer, size_t bufferLen, uint8_t mt, ui
 }
 
 /**
- * Serialize CBOR float values from internal representation into a buffer.
+ * Serialize float values from internal double precision IEEE 754 representation into a buffer with CBOR encoding.
  * @param buffer output buffer
  * @param bufferLen output buffer length
- * @param mt CBOR major type
- * @param val
+ * @param val floating-point internal representation
  * @return 0 on error, else number of bytes
  */
 static int prv_serialize_float(uint8_t *buffer, size_t bufferLen, double val) {
@@ -367,15 +366,47 @@ static int prv_serialize_float(uint8_t *buffer, size_t bufferLen, double val) {
 
     if (bufferLen < 3)
         return 0;
-    _Pragma("GCC diagnostic push");
-    _Pragma("GCC diagnostic ignored \"-Wfloat-equal\"");
-    if (val != val) {
-        // NaN
+    if (isnan(val)) {
+        /* Not a Number (NaN). Encode NaN as half- or single precision IEEE 754 float. */
+#ifndef CBOR_NO_FLOAT16_ENCODING
         buffer[0] = (CBOR_FLOATING_OR_SIMPLE << 5) | CBOR_AI_TWO_BYTE_VALUE;
         buffer[1] = 0x7e;
         buffer[2] = 0;
         result = 3;
-    } else if (fval == val) {
+#else
+        /* single precision */
+        if (bufferLen < 5)
+            return 0;
+        buffer[0] = (CBOR_FLOATING_OR_SIMPLE << 5) | CBOR_AI_FOUR_BYTE_VALUE;
+        const float val_nan = NAN;
+        utils_copyValue(&buffer[1], &val_nan, sizeof(val_nan));
+        result = 5;
+#endif
+    } else if (isinf(val)) {
+        /* Positive or negative infinity. Encode half- or single precision IEEE 754 float. */
+#ifndef CBOR_NO_FLOAT16_ENCODING
+        buffer[0] = (CBOR_FLOATING_OR_SIMPLE << 5) | CBOR_AI_TWO_BYTE_VALUE;
+        if (signbit(val)) {
+            buffer[1] = 0xfc;
+        } else {
+            buffer[1] = 0x7c;
+        }
+        buffer[2] = 0;
+        result = 3;
+#else
+        if (bufferLen < 5)
+            return 0;
+        float val_inf;
+        buffer[0] = (CBOR_FLOATING_OR_SIMPLE << 5) | CBOR_AI_FOUR_BYTE_VALUE;
+        if (signbit(val)) {
+            val_inf = -INFINITY;
+        } else {
+            val_inf = INFINITY;
+        }
+        utils_copyValue(&buffer[1], &val_inf, sizeof(val_inf));
+        result = 5;
+#endif
+    } else if (fpclassify(fval - val) == FP_ZERO) {
         uint32_t uval;
         memcpy(&uval, &fval, sizeof(fval));
 #ifndef CBOR_NO_FLOAT16_ENCODING
@@ -432,7 +463,6 @@ static int prv_serialize_float(uint8_t *buffer, size_t bufferLen, double val) {
         utils_copyValue(&buffer[1], &uval, 8);
         result = 9;
     }
-    _Pragma("GCC diagnostic pop");
     return result;
 }
 

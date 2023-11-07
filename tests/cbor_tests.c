@@ -364,7 +364,11 @@ static void cbor_test_17(void) {
 
 static void cbor_test_18(void) {
     lwm2m_data_t data;
+#ifndef CBOR_NO_FLOAT16_ENCODING
     const uint8_t expected[] = {0xf9, 0x00, 0x00};
+#else
+    const uint8_t expected[] = {0xfa, 0x00, 0x00, 0x00, 0x00};
+#endif
     memset(&data, 0, sizeof(data));
     data.type = LWM2M_TYPE_FLOAT;
     data.value.asFloat = 0.0;
@@ -374,7 +378,11 @@ static void cbor_test_18(void) {
 
 static void cbor_test_19(void) {
     lwm2m_data_t data;
+#ifndef CBOR_NO_FLOAT16_ENCODING
     const uint8_t expected[] = {0xf9, 0x80, 0x00};
+#else
+    const uint8_t expected[] = {0xfa, 0x80, 0x00, 0x00, 0x00};
+#endif
     memset(&data, 0, sizeof(data));
     data.type = LWM2M_TYPE_FLOAT;
     data.value.asFloat = -0.0;
@@ -384,7 +392,11 @@ static void cbor_test_19(void) {
 
 static void cbor_test_20(void) {
     lwm2m_data_t data;
+#ifndef CBOR_NO_FLOAT16_ENCODING
     const uint8_t expected[] = {0xf9, 0x3c, 0x00};
+#else
+    const uint8_t expected[] = {0xfa, 0x3f, 0x80, 0x00, 0x00};
+#endif
     memset(&data, 0, sizeof(data));
     data.type = LWM2M_TYPE_FLOAT;
     data.value.asFloat = 1.0;
@@ -395,6 +407,7 @@ static void cbor_test_20(void) {
 static void cbor_test_21(void) {
     lwm2m_data_t data;
     const uint8_t expected[] = {0xfb, 0x3f, 0xf1, 0x99, 0x99, 0x99, 0x99, 0x99, 0x9a};
+
     memset(&data, 0, sizeof(data));
     data.type = LWM2M_TYPE_FLOAT;
     data.value.asFloat = 1.1;
@@ -404,7 +417,11 @@ static void cbor_test_21(void) {
 
 static void cbor_test_22(void) {
     lwm2m_data_t data;
+#ifndef CBOR_NO_FLOAT16_ENCODING
     const uint8_t expected[] = {0xf9, 0x3e, 0x00};
+#else
+    const uint8_t expected[] = {0xfa, 0x3f, 0xc0, 0x00, 0x00};
+#endif
     memset(&data, 0, sizeof(data));
     data.type = LWM2M_TYPE_FLOAT;
     data.value.asFloat = 1.5;
@@ -414,7 +431,11 @@ static void cbor_test_22(void) {
 
 static void cbor_test_23(void) {
     lwm2m_data_t data;
+#ifndef CBOR_NO_FLOAT16_ENCODING
     const uint8_t expected[] = {0xf9, 0x7b, 0xff};
+#else
+    const uint8_t expected[] = {0xfa, 0x47, 0x7f, 0xe0, 0x00};
+#endif
     memset(&data, 0, sizeof(data));
     data.type = LWM2M_TYPE_FLOAT;
     data.value.asFloat = 65504.0;
@@ -454,7 +475,11 @@ static void cbor_test_26(void) {
 
 static void cbor_test_27(void) {
     lwm2m_data_t data;
+#ifndef CBOR_NO_FLOAT16_ENCODING
     const uint8_t expected[] = {0xf9, 0x00, 0x01};
+#else
+    const uint8_t expected[] = {0xfa, 0x33, 0x80, 0x00, 0x00};
+#endif
     memset(&data, 0, sizeof(data));
     data.type = LWM2M_TYPE_FLOAT;
     data.value.asFloat = 5.960464477539063e-8;
@@ -464,7 +489,11 @@ static void cbor_test_27(void) {
 
 static void cbor_test_28(void) {
     lwm2m_data_t data;
+#ifndef CBOR_NO_FLOAT16_ENCODING
     const uint8_t expected[] = {0xf9, 0x04, 0x00};
+#else
+    const uint8_t expected[] = {0xfa, 0x38, 0x80, 0x00, 0x00};
+#endif
     memset(&data, 0, sizeof(data));
     data.type = LWM2M_TYPE_FLOAT;
     data.value.asFloat = 0.00006103515625;
@@ -474,7 +503,11 @@ static void cbor_test_28(void) {
 
 static void cbor_test_29(void) {
     lwm2m_data_t data;
+#ifndef CBOR_NO_FLOAT16_ENCODING
     const uint8_t expected[] = {0xf9, 0xc4, 0x00};
+#else
+    const uint8_t expected[] = {0xfa, 0xc0, 0x80, 0x00, 0x00};
+#endif
     memset(&data, 0, sizeof(data));
     data.type = LWM2M_TYPE_FLOAT;
     data.value.asFloat = -4.0;
@@ -493,8 +526,13 @@ static void cbor_test_30(void) {
 }
 
 static void cbor_test_31(void) {
+    /* Check encoding for infinity */
     lwm2m_data_t data;
+#ifndef CBOR_NO_FLOAT16_ENCODING
     const uint8_t expected[] = {0xf9, 0x7c, 0x00};
+#else
+    const uint8_t expected[] = {0xfa, 0x7f, 0x80, 0x00, 0x00};
+#endif
     memset(&data, 0, sizeof(data));
     data.type = LWM2M_TYPE_FLOAT;
     data.value.asFloat = INFINITY;
@@ -503,8 +541,13 @@ static void cbor_test_31(void) {
 }
 
 static void cbor_test_32(void) {
+    /* Check encoding for NaN */
     lwm2m_data_t data;
+#ifndef CBOR_NO_FLOAT16_ENCODING
     const uint8_t expected[] = {0xf9, 0x7e, 0x00};
+#else
+    const uint8_t expected[] = {0xfa, 0x7f, 0xc0, 0x00, 0x00};
+#endif
     memset(&data, 0, sizeof(data));
     data.type = LWM2M_TYPE_FLOAT;
     data.value.asFloat = NAN;
@@ -513,8 +556,13 @@ static void cbor_test_32(void) {
 }
 
 static void cbor_test_33(void) {
+    /* Check encoding for negative infinity */
     lwm2m_data_t data;
+#ifndef CBOR_NO_FLOAT16_ENCODING
     const uint8_t expected[] = {0xf9, 0xfc, 0x00};
+#else
+    const uint8_t expected[] = {0xfa, 0xff, 0x80, 0x00, 0x00};
+#endif
     memset(&data, 0, sizeof(data));
     data.type = LWM2M_TYPE_FLOAT;
     data.value.asFloat = -INFINITY;
