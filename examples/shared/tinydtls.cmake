@@ -21,20 +21,6 @@ set(TINYDTLS_SOURCES
 
 set(TINYDTLS_SOURCES_GENERATED ${TINYDTLS_SOURCES_DIR}/dtls_config.h)
 
-# source files are only available after tinydtls submodule have been checked out. Create a target "submodule_update" for
-# that purpose.
-find_package(Git REQUIRED)
-add_custom_command(
-    OUTPUT ${TINYDTLS_SOURCES}
-    COMMAND ${GIT_EXECUTABLE} -C ${TINYDTLS_SOURCES_DIR} submodule update
-    COMMENT "Update submodule"
-)
-add_custom_target(
-    submodule_update
-    SOURCES ${TINYDTLS_SOURCES}
-    COMMENT "Generated (and other) tinydtls sources"
-)
-
 get_filename_component(COMPILER_FILENAME "${CMAKE_C_COMPILER}" NAME)
 string(REGEX REPLACE "-[^-]+$" "" TOOLCHAIN_NAME "${COMPILER_FILENAME}")
 
@@ -53,8 +39,6 @@ if(NOT EXISTS ${TINYDTLS_SOURCES_GENERATED})
         BUILD_IN_SOURCE 1
         LOG_DOWNLOAD 1
         LOG_CONFIGURE 1
-        # Make the submodule_update target a dependency.
-        DEPENDS submodule_update
     )
 
     ExternalProject_Add_Step(
