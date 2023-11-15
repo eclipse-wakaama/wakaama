@@ -1277,7 +1277,8 @@ static int prv_getParameters(multi_option_t * query,
         else if (lwm2m_strncmp((char *)query->data, QUERY_QUEUE_MODE, QUERY_QUEUE_MODE_LEN) == 0)
         {
             if ((*bindingP & BINDING_Q) != 0) goto error;
-            if (query->len != QUERY_BINDING_LEN) goto error;
+            if (query->len != QUERY_QUEUE_MODE_LEN)
+                goto error;
 
             *bindingP |= BINDING_Q;
         }
