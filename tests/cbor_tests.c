@@ -121,8 +121,9 @@ static void cbor_test_data_expected(const char *uriStr, lwm2m_data_t *dataP, con
             case LWM2M_TYPE_STRING:
             case LWM2M_TYPE_OPAQUE:
                 if (tlvP->type != dataP->type || tlvP->value.asBuffer.length != dataP->value.asBuffer.length ||
-                    memcmp(tlvP->value.asBuffer.buffer, dataP->value.asBuffer.buffer, tlvP->value.asBuffer.length) !=
-                        0) {
+                    (dataP->value.asBuffer.buffer != NULL &&
+                     memcmp(tlvP->value.asBuffer.buffer, dataP->value.asBuffer.buffer, tlvP->value.asBuffer.length) !=
+                         0)) {
                     printf("(Parsing %s from %s differs from original.)\t", id, STR_MEDIA_TYPE(format));
                     CU_TEST(CU_FALSE);
                 }

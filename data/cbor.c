@@ -639,7 +639,9 @@ int cbor_serialize(const lwm2m_uri_t *uriP, int size, const lwm2m_data_t *dataP,
             if (*bufferP != NULL) {
                 result = res + dataP->value.asBuffer.length;
                 memcpy(*bufferP, tmp, res);
-                memcpy((*bufferP) + res, dataP->value.asBuffer.buffer, dataP->value.asBuffer.length);
+                if (dataP->value.asBuffer.buffer != NULL) {
+                    memcpy((*bufferP) + res, dataP->value.asBuffer.buffer, dataP->value.asBuffer.length);
+                }
             }
         }
         break;

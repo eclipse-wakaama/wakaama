@@ -880,10 +880,12 @@ int lwm2m_data_append_one(int *sizeP, lwm2m_data_t **dataP, lwm2m_data_type_t ty
         lwm2m_data_t *tmpDataP = lwm2m_data_new(tmpSize);
         if (tmpDataP != NULL) {
             // Shallow copy into new array
-            memcpy(tmpDataP, *dataP, (*sizeP) * sizeof(lwm2m_data_t));
-            // Shallow free old data
-            memset(*dataP, 0, (*sizeP) * sizeof(lwm2m_data_t));
-            lwm2m_data_free(*sizeP, *dataP);
+            if (*dataP != NULL) {
+                memcpy(tmpDataP, *dataP, (*sizeP) * sizeof(lwm2m_data_t));
+                // Shallow free old data
+                memset(*dataP, 0, (*sizeP) * sizeof(lwm2m_data_t));
+                lwm2m_data_free(*sizeP, *dataP);
+            }
             // Set the new one
             tmpDataP[*sizeP].id = id;
             tmpDataP[*sizeP].type = type;
