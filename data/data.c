@@ -577,7 +577,7 @@ int lwm2m_data_decode_bool(const lwm2m_data_t * dataP,
         break;
     }
 
-    LOG_ARG("result: %d, value: %s", result, *valueP ? "true" : "false");
+    LOG_ARG("result: %d, value: %s", result, result == 0 ? "undef" : (*valueP ? "true" : "false"));
 
     return result;
 }
