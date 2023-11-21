@@ -125,6 +125,7 @@ function run_cmake_format() {
   # ensures we can run cmake-format on all CMake files at any time.
   if ! git ls-files '*CMakeLists.txt' '*.cmake' | xargs cmake-format --check; then
     echo 'Please run cmake-format on all (changed) CMake files.'
+    exit 1
   fi
 }
 
