@@ -93,22 +93,27 @@ endfunction()
 
 # Add shared source files to an existing target.
 function(target_sources_shared target)
-    get_target_property(TARGET_PROPERTY_DTLS ${target} DTLS)
+    get_target_property(TARGET_PROPERTY_CONN_IMPL ${target} CONNECTION_IMPLEMENTATION)
 
     target_sources(
         ${target} PRIVATE ${WAKAAMA_EXAMPLE_SHARED_DIRECTORY}/commandline.c
                           ${WAKAAMA_EXAMPLE_SHARED_DIRECTORY}/platform.c
     )
 
-    if(NOT TARGET_PROPERTY_DTLS)
+    if(NOT TARGET_PROPERTY_CONN_IMPL)
         target_sources(${target} PRIVATE ${WAKAAMA_EXAMPLE_SHARED_DIRECTORY}/connection.c)
-    elseif(TARGET_PROPERTY_DTLS MATCHES "tinydtls")
+    elseif(TARGET_PROPERTY_CONN_IMPL MATCHES "tinydtls")
         include(${WAKAAMA_EXAMPLE_SHARED_DIRECTORY}/tinydtls.cmake)
         target_sources(${target} PRIVATE ${WAKAAMA_EXAMPLE_SHARED_DIRECTORY}/dtlsconnection.c)
         target_compile_definitions(${target} PRIVATE WITH_TINYDTLS)
         target_sources_tinydtls(${target})
+    elseif(TARGET_PROPERTY_CONN_IMPL MATCHES "testing")
+        target_include_directories(${target} PRIVATE ${WAKAAMA_TOP_LEVEL_DIRECTORY}/tests/helper/)
+        target_sources(${target} PRIVATE ${WAKAAMA_TOP_LEVEL_DIRECTORY}/tests/helper/connection.c)
     else()
-        message(FATAL_ERROR "${target}: Unknown DTLS implementation '${TARGET_PROPERTY_DTLS} requested")
+        message(
+            FATAL_ERROR "${target}: Unknown connection (DTLS) implementation '${TARGET_PROPERTY_CONN_IMPL} requested"
+        )
     endif()
 
     target_include_directories(${target} PUBLIC ${WAKAAMA_EXAMPLE_SHARED_DIRECTORY})
