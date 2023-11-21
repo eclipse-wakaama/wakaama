@@ -1,4 +1,4 @@
 cmake-format
-gitlint
+gitlint~=0.19
 pylint
 -r ../tests/integration/requirements.txt
