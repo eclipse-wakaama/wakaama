@@ -10,6 +10,7 @@ function(add_test_variant)
 
     add_executable(${ADD_TEST_VARIANT_ARG_TARGET_NAME})
     target_sources(${ADD_TEST_VARIANT_ARG_TARGET_NAME} PRIVATE ${ADD_TEST_VARIANT_ARG_SOURCE_FILES})
+    set_target_properties(${ADD_TEST_VARIANT_ARG_TARGET_NAME} PROPERTIES CONNECTION_IMPLEMENTATION "testing")
 
     # link CUnit
     include(FindPkgConfig)
