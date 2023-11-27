@@ -153,7 +153,7 @@ function run_build() {
 }
 
 function run_tests() {
-  ${OPT_WRAPPER_CMD} cmake --build build-wakaama --target test
+  cmake --build build-wakaama --target test
 
   mkdir -p "${REPO_ROOT_DIR}/build-wakaama/coverage"
 
