@@ -31,7 +31,7 @@ jobs:
     - name: Setup SonarScanner
       uses: warchant/setup-sonar-scanner@v7
       with:
-        version: 5.0.1.3006
+        version: 4.1
 
     - name: Install Build Wrapper
       run: |
