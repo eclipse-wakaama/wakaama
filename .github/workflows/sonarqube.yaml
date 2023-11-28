@@ -25,9 +25,9 @@ jobs:
       uses: seanmiddleditch/gha-setup-ninja@master
 
     - name: Setup SonarScanner
-      uses: warchant/setup-sonar-scanner@v3
+      uses: warchant/setup-sonar-scanner@v7
       with:
-        version: 4.6.0.2311
+        version: 5.0.1.3006
 
     - name: Install Build Wrapper
       run: |
