@@ -48,7 +48,7 @@ jobs:
 
     - name: Run SonarCloud Scan
       run: |
-          sonar-scanner \
+          sonar-scanner -X \
           -Dsonar.branch.name="${GITHUB_REF_NAME}" \
           -Dsonar.cfamily.build-wrapper-output=build-wakaama/sonar-cloud-build-wrapper-output \
           -Dsonar.cfamily.cache.enabled=false \
@@ -64,3 +64,4 @@ jobs:
           -Dsonar.sources=.
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
