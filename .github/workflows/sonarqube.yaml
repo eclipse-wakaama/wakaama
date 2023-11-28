@@ -49,7 +49,7 @@ jobs:
     - name: Run SonarCloud Scan
       run: |
           sonar-scanner -X \
-          -Dsonar.branch.name="${GITHUB_REF_NAME}" \
+          -Dsonar.branch.name=master \
           -Dsonar.cfamily.build-wrapper-output=build-wakaama/sonar-cloud-build-wrapper-output \
           -Dsonar.cfamily.cache.enabled=false \
           -Dsonar.cfamily.gcov.reportsPath=build-wakaama \
