@@ -48,9 +48,7 @@ jobs:
 
     - name: Run SonarCloud Scan
       run: |
-          echo -Dsonar.organization=${{ github.repository_owner }}; \
-          echo -Dsonar.projectKey="$(echo ${{ github.repository }} | tr / _)"; \
-          sonar-scanner -X \
+          sonar-scanner \
           -Dsonar.branch.name=master \
           -Dsonar.cfamily.build-wrapper-output=build-wakaama/sonar-cloud-build-wrapper-output \
           -Dsonar.cfamily.cache.enabled=false \
@@ -58,7 +56,6 @@ jobs:
           -Dsonar.cfamily.threads=2 \
           -Dsonar.exclusions="build-wakaama-*/**, .git/**" \
           -Dsonar.host.url=https://sonarcloud.io \
-          -Dsonar.login=${{ secrets.SONAR_TOKEN }} \
           -Dsonar.organization=${{ github.repository_owner }} \
           -Dsonar.projectKey="$(echo ${{ github.repository }} | tr / _)" \
           -Dsonar.sourceEncoding=UTF-8 \
