@@ -48,6 +48,8 @@ jobs:
 
     - name: Run SonarCloud Scan
       run: |
+          echo -Dsonar.organization=${{ github.repository_owner }}; \
+          echo -Dsonar.projectKey="$(echo ${{ github.repository }} | tr / _)"; \
           sonar-scanner -X \
           -Dsonar.branch.name=master \
           -Dsonar.cfamily.build-wrapper-output=build-wakaama/sonar-cloud-build-wrapper-output \
@@ -59,7 +61,6 @@ jobs:
           -Dsonar.login=${{ secrets.SONAR_TOKEN }} \
           -Dsonar.organization=${{ github.repository_owner }} \
           -Dsonar.projectKey="$(echo ${{ github.repository }} | tr / _)" \
-          -Dsonar.organization=eclipse \
           -Dsonar.sourceEncoding=UTF-8 \
           -Dsonar.sources=.
       env:
