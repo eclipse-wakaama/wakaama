@@ -403,16 +403,16 @@ char * coap_get_packet_uri_as_string(coap_packet_t * packet)
     }
     
     strcpy(output, "//");
-    strncat(output, (char *)packet->uri_host, packet->uri_host_len);
+    memcpy(output, (char *)packet->uri_host, packet->uri_host_len);
     if (1 > path_len)
     {
         strcat(output, "/");
     }
     else
     {
-        strncat(output, path_string, path_len);
+        memcpy(output, path_string, path_len);
     }
-    strncat(output, query_string, query_len);
+    memcpy(output, query_string, query_len);
     
     output[len] = 0;
     
