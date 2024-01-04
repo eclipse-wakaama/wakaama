@@ -676,7 +676,9 @@ coap_serialize_message(void *packet, uint8_t *buffer)
     ++option;
   }
 
-  memmove(option, coap_pkt->payload, coap_pkt->payload_len);
+  if (coap_pkt->payload != NULL) {
+    memmove(option, coap_pkt->payload, coap_pkt->payload_len);
+  }
 
   PRINTF("-Done %u B (header len %u, payload len %u)-\n", coap_pkt->payload_len + option - buffer, option - buffer, coap_pkt->payload_len);
 
