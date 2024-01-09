@@ -37,6 +37,7 @@
  * \contributors
  *    David Navarro, Intel Corporation - Adapt to usage in liblwm2m
  *    Tuve Nordius, Husqvarna Group - Please refer to git log
+ *    Lukas Woodtli, Gardena AG - Please refer to git log
  */
 
 
@@ -116,29 +117,36 @@ coap_option_nibble(unsigned int value)
   }
 }
 /*-----------------------------------------------------------------------------------*/
+
+static inline size_t coap_set_option_header_extended(const uint32_t value, uint8_t *buffer)
+{
+  size_t i = 0;
+
+  if (value > 268)
+  {
+    buffer[i] = (value-269)>>8;
+    buffer[i + 1] = (value-269);
+    i += 2;
+  }
+  else if (value>12)
+  {
+    buffer[i] = (value-13);
+    ++i;
+  }
+
+  return i;
+}
+
 static
 size_t
 coap_set_option_header(unsigned int delta, size_t length, uint8_t *buffer)
 {
-  size_t written = 0;
-  unsigned int *x = &delta;
-
   buffer[0] = coap_option_nibble(delta)<<4 | coap_option_nibble(length);
+  ++buffer;
 
-  /* avoids code duplication without function overhead */
-  do
-  {
-    if (*x>268)
-    {
-      buffer[++written] = (*x-269)>>8;
-      buffer[++written] = (*x-269);
-    }
-    else if (*x>12)
-    {
-      buffer[++written] = (*x-13);
-    }
-  }
-  while (x!=(unsigned int *)&length && (x=(unsigned int *)&length));
+  size_t written = coap_set_option_header_extended(delta, buffer);
+  buffer += written;
+  written += coap_set_option_header_extended(length, buffer);
 
   PRINTF("WRITTEN %u B opt header\n", written);
 
