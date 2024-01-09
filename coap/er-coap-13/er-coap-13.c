@@ -62,6 +62,12 @@
 #define PRINTLLADDR(addr)
 #endif
 
+#define COAP_OPTION_EXTENDED_8_BIT_OFFSET 13
+#define COAP_OPTION_EXTENDED_8_BIT_MARKER 13
+
+#define COAP_OPTION_EXTENDED_16_BIT_OFFSET 269
+#define COAP_OPTION_EXTENDED_16_BIT_MARKER 14
+
 /*-----------------------------------------------------------------------------------*/
 /*- Variables -----------------------------------------------------------------------*/
 /*-----------------------------------------------------------------------------------*/
@@ -99,21 +105,20 @@ coap_parse_int_option(uint8_t *bytes, size_t length)
   return var;
 }
 /*-----------------------------------------------------------------------------------*/
-static
-uint8_t
-coap_option_nibble(unsigned int value)
+
+static inline uint8_t coap_option_nibble(unsigned int value)
 {
-  if (value<13)
+  if (value < COAP_OPTION_EXTENDED_8_BIT_OFFSET)
   {
     return value;
   }
-  else if (value<=0xFF+13)
+  else if (value <= 0xFF + COAP_OPTION_EXTENDED_8_BIT_OFFSET)
   {
-    return 13;
+    return COAP_OPTION_EXTENDED_8_BIT_MARKER;
   }
   else
   {
-    return 14;
+    return COAP_OPTION_EXTENDED_16_BIT_MARKER;
   }
 }
 /*-----------------------------------------------------------------------------------*/
@@ -122,36 +127,37 @@ static inline size_t coap_set_option_header_extended(const uint32_t value, uint8
 {
   size_t i = 0;
 
-  if (value > 268)
+  if (value >= COAP_OPTION_EXTENDED_16_BIT_OFFSET)
   {
-    buffer[i] = (value-269)>>8;
-    buffer[i + 1] = (value-269);
+    buffer[i] = (value - COAP_OPTION_EXTENDED_16_BIT_OFFSET) >> 8;
+    buffer[i + 1] = (value - COAP_OPTION_EXTENDED_16_BIT_OFFSET);
     i += 2;
   }
-  else if (value>12)
+  else if (value >= COAP_OPTION_EXTENDED_8_BIT_OFFSET)
   {
-    buffer[i] = (value-13);
-    ++i;
+    buffer[i] = (value - COAP_OPTION_EXTENDED_16_BIT_OFFSET);
+    i++;
   }
 
   return i;
 }
 
-static
-size_t
-coap_set_option_header(unsigned int delta, size_t length, uint8_t *buffer)
+/** Write the header of an option to the buffer.
+ * This also handles extended delta and length fields.
+ * See CoAP spec (RFC 7252) Section: 3.1. Option Format */
+static inline size_t coap_set_option_header(unsigned int delta, size_t length, uint8_t *buffer)
 {
-  buffer[0] = coap_option_nibble(delta)<<4 | coap_option_nibble(length);
-  ++buffer;
+  size_t index = 0;
 
-  size_t written = coap_set_option_header_extended(delta, buffer);
-  buffer += written;
-  written += coap_set_option_header_extended(length, buffer);
+  buffer[index] = coap_option_nibble(delta)<<4 | coap_option_nibble(length);
+  index++;
 
-  PRINTF("WRITTEN %u B opt header\n", written);
+  index += coap_set_option_header_extended(delta, &buffer[index]);
+  index += coap_set_option_header_extended(length, &buffer[index]);
 
-  return ++written;
+  return index;
 }
+
 /*-----------------------------------------------------------------------------------*/
 static
 size_t
