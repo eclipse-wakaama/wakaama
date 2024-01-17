@@ -1,6 +1,6 @@
 /*******************************************************************************
  *
- * Copyright (c) 2023 GARDENA GmbH
+ * Copyright (c) 2024 GARDENA GmbH
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v2.0
@@ -15,18 +15,15 @@
  *   Lukas Woodtli, GARDENA GmbH - Please refer to git log
  *
  *******************************************************************************/
-
-#include "internals.h"
-#include "liblwm2m.h"
+#ifndef WAKAAMA_LOG_HANDLER_H
+#define WAKAAMA_LOG_HANDLER_H
 
 #ifdef LWM2M_WITH_LOGS
 
-#ifndef LWM2M_LOG_CUSTOM_HANDLER
-void lwm2m_log_handler(const lwm2m_logging_level_t level, const char *const msg, const char *const func, const int line,
-                       const char *const file) {
-    (void)file;
-    lwm2m_printf("%s - [%s:%d] %s" LWM2M_NEW_LINE, STR_LOGGING_LEVEL(level), func, line, msg);
-}
+char *test_log_handler_get_captured_message(void);
+
+void test_log_handler_clear_captured_message(void);
+
 #endif
 
-#endif /* LWM2M_WITH_LOGS */
+#endif

@@ -95,6 +95,7 @@ Several preprocessor definitions are supported:
  - LWM2M_RAW_BLOCK1_REQUESTS For low memory client devices where it is not possible to keep a large post or put request in memory to be parsed (typically a firmware write).
    This option enable each unprocessed block 1 payload to be passed to the application, typically to be stored to a flash memory. 
  - LWM2M_COAP_DEFAULT_BLOCK_SIZE CoAP block size used by CoAP layer when performing block-wise transfers. Possible values: 16, 32, 64, 128, 256, 512 and 1024. Defaults to 1024.
+ - LWM2M_LOG_CUSTOM_HANDLER: Provide a custom handler function for log entries. See the default implementation for details.
  - LWM2M_LOG_MAX_MSG_TXT_SIZE: The max. size of the formatted log message. This is only the message without additional data like severity and function name.
 
 ## Development
