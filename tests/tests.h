@@ -44,7 +44,7 @@ CU_ErrorCode create_senml_cbor_suit(void);
 #endif
 CU_ErrorCode create_er_coap_parse_message_suit(void);
 CU_ErrorCode create_list_test_suit(void);
-#ifdef LWM2M_WITH_LOGS
+#if LWM2M_LOG_LEVEL != LWM2M_LOG_DISABLED
 CU_ErrorCode create_logging_test_suit(void);
 #endif
 #ifdef LWM2M_SERVER_MODE

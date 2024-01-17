@@ -22,7 +22,7 @@
 #include <stdio.h>
 #include <unistd.h>
 
-#ifdef LWM2M_WITH_LOGS
+#if LWM2M_LOG_LEVEL != LWM2M_LOG_DISABLED
 
 #ifndef LWM2M_LOG_CUSTOM_HANDLER
 #error These tests expect to use a custom logging handles to capture the log messages!
@@ -123,18 +123,91 @@ static void test_log_uri_obj_inst_res_inst(void) {
     CU_ASSERT_STRING_EQUAL(log_buffer, expected_log);
 }
 
+static lwm2m_uri_t *get_test_uri(void) {
+    static lwm2m_uri_t uri = {0};
+    uri.objectId = 111;
+    uri.instanceId = 222;
+    uri.resourceId = 333;
+#ifndef LWM2M_VERSION_1_0
+    uri.resourceInstanceId = 444;
+#endif
+    return &uri;
+}
+
+#ifdef LWM2M_VERSION_1_0
+#define EXPECTED_TEST_URI_STR "/111/222/333"
+#else
+#define EXPECTED_TEST_URI_STR "/111/222/333/444"
+#endif
+
 static void test_log_level(void) {
-    LOG_L(DBG, "debug");
-    LOG_L(INFO, "info");
-    LOG_L(WARN, "warning");
-    LOG_L(ERR, "error");
-    LOG_L(FATAL, "fatal");
+    LOG_DBG("debug");
+    LOG_ARG_DBG("debug %s", "with arg");
+    LOG_URI_DBG(get_test_uri());
+
+    LOG_INFO("info");
+    LOG_ARG_INFO("info %s", "with arg");
+    LOG_URI_INFO(get_test_uri());
+
+    LOG_WARN("warning");
+    LOG_ARG_WARN("warning %s", "with arg");
+    LOG_URI_WARN(get_test_uri());
+
+    LOG_ERR("error");
+    LOG_ARG_ERR("error %s", "with arg");
+    LOG_URI_ERR(get_test_uri());
+
+    LOG_FATAL("fatal");
+    LOG_ARG_FATAL("fatal %s", "with arg");
+    LOG_URI_FATAL(get_test_uri());
+
     const char * const log_buffer = test_log_handler_get_captured_message();
-    const char * const expected_log = "DBG - [test_log_level] debug\n"
-                                      "INFO - [test_log_level] info\n"
-                                      "WARN - [test_log_level] warning\n"
-                                      "ERR - [test_log_level] error\n"
-                                      "FATAL - [test_log_level] fatal\n";
+#if LWM2M_LOG_LEVEL == LWM2M_DBG
+    const char *const expected_log = "DBG - [test_log_level] debug\n"
+                                     "DBG - [test_log_level] debug with arg\n"
+                                     "DBG - [test_log_level] " EXPECTED_TEST_URI_STR "\n"
+                                     "INFO - [test_log_level] info\n"
+                                     "INFO - [test_log_level] info with arg\n"
+                                     "INFO - [test_log_level] " EXPECTED_TEST_URI_STR "\n"
+                                     "WARN - [test_log_level] warning\n"
+                                     "WARN - [test_log_level] warning with arg\n"
+                                     "WARN - [test_log_level] " EXPECTED_TEST_URI_STR "\n"
+                                     "ERR - [test_log_level] error\n"
+                                     "ERR - [test_log_level] error with arg\n"
+                                     "ERR - [test_log_level] " EXPECTED_TEST_URI_STR "\n"
+                                     "FATAL - [test_log_level] critical\n"
+                                     "FATAL - [test_log_level] critical with arg\n"
+                                     "FATAL - [test_log_level] " EXPECTED_TEST_URI_STR "\n";
+#elif LWM2M_LOG_LEVEL == LWM2M_INFO
+    const char *const expected_log = "INFO - [test_log_level] info\n"
+                                     "INFO - [test_log_level] info with arg\n"
+                                     "INFO - [test_log_level] " EXPECTED_TEST_URI_STR "\n"
+                                     "WARN - [test_log_level] warning\n"
+                                     "WARN - [test_log_level] warning with arg\n"
+                                     "WARN - [test_log_level] " EXPECTED_TEST_URI_STR "\n"
+                                     "ERR - [test_log_level] error\n"
+                                     "ERR - [test_log_level] error with arg\n"
+                                     "ERR - [test_log_level] " EXPECTED_TEST_URI_STR "\n"
+                                     "FATAL - [test_log_level] critical\n"
+                                     "FATAL - [test_log_level] critical with arg\n"
+                                     "FATAL - [test_log_level] " EXPECTED_TEST_URI_STR "\n";
+#elif LWM2M_LOG_LEVEL == LWM2M_WARN
+    const char *const expected_log = "WARN - [test_log_level] warning\n"
+                                     "WARN - [test_log_level] warning with arg\n"
+                                     "WARN - [test_log_level] " EXPECTED_TEST_URI_STR "\n"
+                                     "ERR - [test_log_level] error\n"
+                                     "ERR - [test_log_level] error with arg\n"
+                                     "ERR - [test_log_level] " EXPECTED_TEST_URI_STR "\n"
+                                     "FATAL - [test_log_level] critical\n"
+                                     "FATAL - [test_log_level] critical with arg\n"
+                                     "FATAL - [test_log_level] " EXPECTED_TEST_URI_STR "\n";
+#elif LWM2M_LOG_LEVEL == LWM2M_FATAL
+    const char *const expected_log = "FATAL - [test_log_level] critical\n"
+                                     "FATAL - [test_log_level] critical with arg\n"
+                                     "FATAL - [test_log_level] " EXPECTED_TEST_URI_STR "\n";
+#else
+#error Currently we are not testing to set all possible log levels at compile time
+#endif
     CU_ASSERT_STRING_EQUAL(log_buffer, expected_log);
 }
 
@@ -162,4 +235,4 @@ CU_ErrorCode create_logging_test_suit(void) {
     return add_tests(pSuite, table);
 }
 
-#endif /* LWM2M_WITH_LOGS */
+#endif /* LWM2M_LOG_LEVEL */

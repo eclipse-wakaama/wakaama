@@ -127,7 +127,7 @@ time_t lwm2m_gettime(void);
 // Get a seed (which must not repeat when the device reboots) for generating a random number
 int lwm2m_seed(void);
 
-#ifdef LWM2M_WITH_LOGS
+#ifdef LWM2M_LOG_LEVEL
 // Same usage as C89 printf()
 void lwm2m_printf(const char * format, ...);
 #endif

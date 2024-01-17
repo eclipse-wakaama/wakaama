@@ -69,8 +69,13 @@
 #define LWM2M_WARN (30)
 #define LWM2M_ERR (40)
 #define LWM2M_FATAL (50)
+#define LWM2M_LOG_DISABLED (0xff)
 
-#ifdef LWM2M_WITH_LOGS
+#ifndef LWM2M_LOG_LEVEL
+#define LWM2M_LOG_LEVEL LWM2M_LOG_DISABLED
+#endif
+
+#if LWM2M_LOG_LEVEL != LWM2M_LOG_DISABLED
 #include <inttypes.h>
 
 #ifdef _WIN32
@@ -133,6 +138,7 @@ void lwm2m_log_handler(lwm2m_logging_level_t level, const char *const msg, const
 
 #ifdef LWM2M_VERSION_1_0
 #define LOG_URI(URI) _LOG_URI_L_1_0(DBG, URI)
+#define LOG_URI_L(LEVEL, URI) _LOG_URI_L_1_0(LEVEL, URI)
 #else
 #define LOG_URI(URI) LOG_URI_L(DBG, URI)
 #define LOG_URI_L(LEVEL, URI)                                                                                          \
@@ -144,6 +150,7 @@ void lwm2m_log_handler(lwm2m_logging_level_t level, const char *const msg, const
                       (URI)->resourceInstanceId);                                                                      \
     } while (0)
 #endif
+
 /* clang-format off */
 #define STR_STATUS(S)                                           \
 ((S) == STATE_DEREGISTERED ? "STATE_DEREGISTERED" :             \
@@ -205,6 +212,56 @@ void lwm2m_log_handler(lwm2m_logging_level_t level, const char *const msg, const
 #define LOG_ARG(FMT, ...)
 #define LOG(STR)
 #define LOG_URI(URI)
+#endif
+
+#if LWM2M_LOG_LEVEL <= LWM2M_DBG
+#define LOG_DBG(STR) LOG_L(DBG, STR)
+#define LOG_ARG_DBG(STR, ...) LOG_ARG_L(DBG, STR, __VA_ARGS__)
+#define LOG_URI_DBG(URI) LOG_URI_L(DBG, URI)
+#else
+#define LOG_DBG(STR)
+#define LOG_ARG_DBG(STR, ...)
+#define LOG_URI_DBG(URI)
+#endif
+
+#if LWM2M_LOG_LEVEL <= LWM2M_INFO
+#define LOG_INFO(STR) LOG_L(INFO, STR)
+#define LOG_ARG_INFO(STR, ...) LOG_ARG_L(INFO, STR, __VA_ARGS__)
+#define LOG_URI_INFO(URI) LOG_URI_L(INFO, URI)
+#else
+#define LOG_INFO(STR)
+#define LOG_ARG_INFO(STR, ...)
+#define LOG_URI_INFO(URI)
+#endif
+
+#if LWM2M_LOG_LEVEL <= LWM2M_WARN
+#define LOG_WARN(STR) LOG_L(WARN, STR)
+#define LOG_ARG_WARN(STR, ...) LOG_ARG_L(WARN, STR, __VA_ARGS__)
+#define LOG_URI_WARN(URI) LOG_URI_L(WARN, URI)
+#else
+#define LOG_WARN(STR)
+#define LOG_ARG_WARN(STR, ...)
+#define LOG_URI_WARN(URI)
+#endif
+
+#if LWM2M_LOG_LEVEL <= LWM2M_ERR
+#define LOG_ERR(STR) LOG_L(ERR, STR)
+#define LOG_ARG_ERR(STR, ...) LOG_ARG_L(ERR, STR, __VA_ARGS__)
+#define LOG_URI_ERR(URI) LOG_URI_L(ERR, URI)
+#else
+#define LOG_ERR(STR)
+#define LOG_ARG_ERR(STR, ...)
+#define LOG_URI_ERR(URI)
+#endif
+
+#if LWM2M_LOG_LEVEL <= LWM2M_FATAL
+#define LOG_FATAL(STR) LOG_L(FATAL, STR)
+#define LOG_ARG_FATAL(STR, ...) LOG_ARG_L(FATAL, STR, __VA_ARGS__)
+#define LOG_URI_FATAL(URI) LOG_URI_L(FATAL, URI)
+#else
+#define LOG_FATAL(STR)
+#define LOG_ARG_FATAL(STR, ...)
+#define LOG_URI_FATAL(URI)
 #endif
 
 #define LWM2M_DEFAULT_LIFETIME  86400

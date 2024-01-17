@@ -98,7 +98,7 @@ int main(void) {
        goto exit;
 #endif
 
-#ifdef LWM2M_WITH_LOGS
+#if LWM2M_LOG_LEVEL != LWM2M_LOG_DISABLED
    if (CUE_SUCCESS != create_logging_test_suit())
        goto exit;
 #endif

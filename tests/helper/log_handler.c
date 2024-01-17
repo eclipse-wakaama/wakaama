@@ -20,7 +20,7 @@
 
 #include <unistd.h>
 
-#ifdef LWM2M_WITH_LOGS
+#if LWM2M_LOG_LEVEL != LWM2M_LOG_DISABLED
 
 /* Buffer for captured log message */
 #define CAPTURE_BUF_SIZE 300
