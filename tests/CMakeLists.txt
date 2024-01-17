@@ -21,8 +21,8 @@ set(TEST_SOURCES
     tlvtests.c
     unittests.c
     uritests.c
+    helper/log_handler.c
 )
-
 
 add_test_variant(
     TARGET_NAME lwm2munittests
@@ -33,7 +33,7 @@ add_test_variant(
 add_test_variant(
     TARGET_NAME lwm2munittests_client_lwm2m_1_0
     SOURCE_FILES ${TEST_SOURCES}
-    COMPILE_DEFINITIONS LWM2M_CLIENT_MODE LWM2M_VERSION_1_0 LWM2M_WITH_LOGS
+    COMPILE_DEFINITIONS LWM2M_CLIENT_MODE LWM2M_VERSION_1_0 LWM2M_WITH_LOGS LWM2M_LOG_CUSTOM_HANDLER
 )
 
 add_test_variant(
@@ -45,7 +45,7 @@ add_test_variant(
 add_test_variant(
     TARGET_NAME lwm2munittests_server
     SOURCE_FILES ${TEST_SOURCES}
-    COMPILE_DEFINITIONS LWM2M_SERVER_MODE LWM2M_WITH_LOGS
+    COMPILE_DEFINITIONS LWM2M_SERVER_MODE LWM2M_WITH_LOGS LWM2M_LOG_CUSTOM_HANDLER
 )
 
 add_test_variant(
@@ -71,7 +71,8 @@ add_test_variant(
 add_test_variant(
     TARGET_NAME lwm2munittests_server_and_bootstrap_server
     SOURCE_FILES ${TEST_SOURCES}
-    COMPILE_DEFINITIONS LWM2M_SERVER_MODE LWM2M_BOOTSTRAP_SERVER_MODE LWM2M_WITH_LOGS
+    COMPILE_DEFINITIONS LWM2M_SERVER_MODE LWM2M_BOOTSTRAP_SERVER_MODE LWM2M_LOG_LEVEL=LWM2M_WARN
+                        LWM2M_LOG_CUSTOM_HANDLER
 )
 
 add_test_variant(
@@ -101,6 +102,7 @@ add_test_variant(
         LWM2M_BOOTSTRAP_SERVER_MODE
         LWM2M_SERVER_MODE
         LWM2M_WITH_LOGS
+        LWM2M_LOG_CUSTOM_HANDLER
         LWM2M_OLD_CONTENT_FORMAT_SUPPORT
         LWM2M_SUPPORT_SENML_JSON
         COAP_DEFAULT_BLOCK_SIZE=32
