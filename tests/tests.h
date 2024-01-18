@@ -19,6 +19,8 @@
 #define TESTS_H_
 
 #include "CUnit/CUError.h"
+/* Needed for preprocessor defines */
+#include "internals.h"
 
 struct TestTable {
     const char* name;

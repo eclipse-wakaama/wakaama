@@ -33,34 +33,34 @@ static void setup(void) { test_log_handler_clear_captured_message(); }
 static void teardown(void) { test_log_handler_clear_captured_message(); }
 
 static void test_log(void) {
-    LOG("Test");
+    LOG_FATAL("Test");
 
     const char *const log_buffer = test_log_handler_get_captured_message();
-    CU_ASSERT_STRING_EQUAL(log_buffer, "DBG - [test_log] Test\n");
+    CU_ASSERT_STRING_EQUAL(log_buffer, "FATAL - [test_log] Test\n");
 }
 
 static void test_log_arg(void) {
-    LOG_ARG("Hello, %s", "test");
+    LOG_ARG_FATAL("Hello, %s", "test");
 
     const char *const log_buffer = test_log_handler_get_captured_message();
-    CU_ASSERT_STRING_EQUAL(log_buffer, "DBG - [test_log_arg] Hello, test\n");
+    CU_ASSERT_STRING_EQUAL(log_buffer, "FATAL - [test_log_arg] Hello, test\n");
 }
 
 static void test_log_uri_null(void) {
     lwm2m_uri_t *uri = NULL;
-    LOG_URI(uri);
+    LOG_URI_FATAL(uri);
 
     const char *const log_buffer = test_log_handler_get_captured_message();
-    CU_ASSERT_STRING_EQUAL(log_buffer, "DBG - [test_log_uri_null] NULL\n");
+    CU_ASSERT_STRING_EQUAL(log_buffer, "FATAL - [test_log_uri_null] NULL\n");
 }
 
 static void test_log_uri_empty(void) {
     lwm2m_uri_t uri;
     LWM2M_URI_RESET(&uri);
 
-    LOG_URI(&uri);
+    LOG_URI_FATAL(&uri);
 
-    const char *const expected_log = "DBG - [test_log_uri_empty] /\n";
+    const char *const expected_log = "FATAL - [test_log_uri_empty] /\n";
     const char *const log_buffer = test_log_handler_get_captured_message();
     CU_ASSERT_STRING_EQUAL(log_buffer, expected_log);
 }
@@ -70,10 +70,10 @@ static void test_log_uri_obj(void) {
     LWM2M_URI_RESET(&uri);
     uri.objectId = 1;
 
-    LOG_URI(&uri);
+    LOG_URI_FATAL(&uri);
 
     const char *const log_buffer = test_log_handler_get_captured_message();
-    CU_ASSERT_STRING_EQUAL(log_buffer, "DBG - [test_log_uri_obj] /1\n");
+    CU_ASSERT_STRING_EQUAL(log_buffer, "FATAL - [test_log_uri_obj] /1\n");
 }
 
 static void test_log_uri_obj_inst(void) {
@@ -82,10 +82,10 @@ static void test_log_uri_obj_inst(void) {
     uri.objectId = 2;
     uri.instanceId = 1;
 
-    LOG_URI(&uri);
+    LOG_URI_FATAL(&uri);
 
     const char *const log_buffer = test_log_handler_get_captured_message();
-    CU_ASSERT_STRING_EQUAL(log_buffer, "DBG - [test_log_uri_obj_inst] /2/1\n");
+    CU_ASSERT_STRING_EQUAL(log_buffer, "FATAL - [test_log_uri_obj_inst] /2/1\n");
 }
 
 static void test_log_uri_obj_inst_res(void) {
@@ -95,10 +95,10 @@ static void test_log_uri_obj_inst_res(void) {
     uri.instanceId = 0;
     uri.resourceId = 1;
 
-    LOG_URI(&uri);
+    LOG_URI_FATAL(&uri);
 
     const char *const log_buffer = test_log_handler_get_captured_message();
-    CU_ASSERT_STRING_EQUAL(log_buffer, "DBG - [test_log_uri_obj_inst_res] /3/0/1\n");
+    CU_ASSERT_STRING_EQUAL(log_buffer, "FATAL - [test_log_uri_obj_inst_res] /3/0/1\n");
 }
 
 static void test_log_uri_obj_inst_res_inst(void) {
@@ -111,12 +111,12 @@ static void test_log_uri_obj_inst_res_inst(void) {
     uri.resourceInstanceId = 0;
 #endif
 
-    LOG_URI(&uri);
+    LOG_URI_FATAL(&uri);
 
 #ifdef LWM2M_VERSION_1_0
-    const char *const expected_log = "DBG - [test_log_uri_obj_inst_res_inst] /5/1/2\n";
+    const char *const expected_log = "FATAL - [test_log_uri_obj_inst_res_inst] /5/1/2\n";
 #else
-    const char *const expected_log = "DBG - [test_log_uri_obj_inst_res_inst] /5/1/2/0\n";
+    const char *const expected_log = "FATAL - [test_log_uri_obj_inst_res_inst] /5/1/2/0\n";
 #endif
 
     const char *const log_buffer = test_log_handler_get_captured_message();
@@ -175,8 +175,8 @@ static void test_log_level(void) {
                                      "ERR - [test_log_level] error\n"
                                      "ERR - [test_log_level] error with arg\n"
                                      "ERR - [test_log_level] " EXPECTED_TEST_URI_STR "\n"
-                                     "FATAL - [test_log_level] critical\n"
-                                     "FATAL - [test_log_level] critical with arg\n"
+                                     "FATAL - [test_log_level] fatal\n"
+                                     "FATAL - [test_log_level] fatal with arg\n"
                                      "FATAL - [test_log_level] " EXPECTED_TEST_URI_STR "\n";
 #elif LWM2M_LOG_LEVEL == LWM2M_INFO
     const char *const expected_log = "INFO - [test_log_level] info\n"
@@ -188,8 +188,8 @@ static void test_log_level(void) {
                                      "ERR - [test_log_level] error\n"
                                      "ERR - [test_log_level] error with arg\n"
                                      "ERR - [test_log_level] " EXPECTED_TEST_URI_STR "\n"
-                                     "FATAL - [test_log_level] critical\n"
-                                     "FATAL - [test_log_level] critical with arg\n"
+                                     "FATAL - [test_log_level] fatal\n"
+                                     "FATAL - [test_log_level] fatal with arg\n"
                                      "FATAL - [test_log_level] " EXPECTED_TEST_URI_STR "\n";
 #elif LWM2M_LOG_LEVEL == LWM2M_WARN
     const char *const expected_log = "WARN - [test_log_level] warning\n"
@@ -198,12 +198,12 @@ static void test_log_level(void) {
                                      "ERR - [test_log_level] error\n"
                                      "ERR - [test_log_level] error with arg\n"
                                      "ERR - [test_log_level] " EXPECTED_TEST_URI_STR "\n"
-                                     "FATAL - [test_log_level] critical\n"
-                                     "FATAL - [test_log_level] critical with arg\n"
+                                     "FATAL - [test_log_level] fatal\n"
+                                     "FATAL - [test_log_level] fatal with arg\n"
                                      "FATAL - [test_log_level] " EXPECTED_TEST_URI_STR "\n";
 #elif LWM2M_LOG_LEVEL == LWM2M_FATAL
-    const char *const expected_log = "FATAL - [test_log_level] critical\n"
-                                     "FATAL - [test_log_level] critical with arg\n"
+    const char *const expected_log = "FATAL - [test_log_level] fatal\n"
+                                     "FATAL - [test_log_level] fatal with arg\n"
                                      "FATAL - [test_log_level] " EXPECTED_TEST_URI_STR "\n";
 #else
 #error Currently we are not testing to set all possible log levels at compile time

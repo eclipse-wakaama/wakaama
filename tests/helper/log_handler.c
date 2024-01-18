@@ -23,7 +23,7 @@
 #if LWM2M_LOG_LEVEL != LWM2M_LOG_DISABLED
 
 /* Buffer for captured log message */
-#define CAPTURE_BUF_SIZE 300
+#define CAPTURE_BUF_SIZE 1000
 static char capture_buf[CAPTURE_BUF_SIZE];
 static size_t capture_buf_index = 0;
 
