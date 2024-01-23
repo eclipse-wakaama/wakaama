@@ -40,7 +40,7 @@ static void test_log(void) {
 }
 
 static void test_log_arg(void) {
-    LOG_ARG_FATAL("Hello, %s", "test");
+    LOG_FATAL("Hello, %s", "test");
 
     const char *const log_buffer = test_log_handler_get_captured_message();
     CU_ASSERT_STRING_EQUAL(log_buffer, "FATAL - [test_log_arg] Hello, test\n");
@@ -142,23 +142,23 @@ static lwm2m_uri_t *get_test_uri(void) {
 
 static void test_log_level(void) {
     LOG_DBG("debug");
-    LOG_ARG_DBG("debug %s", "with arg");
+    LOG_DBG("debug %s", "with arg");
     LOG_ARG_DBG("%s", LOG_URI_TO_STRING(get_test_uri()));
 
     LOG_INFO("info");
-    LOG_ARG_INFO("info %s", "with arg");
+    LOG_INFO("info %s", "with arg");
     LOG_ARG_INFO("%s", LOG_URI_TO_STRING(get_test_uri()));
 
     LOG_WARN("warning");
-    LOG_ARG_WARN("warning %s", "with arg");
+    LOG_WARN("warning %s", "with arg");
     LOG_ARG_WARN("%s", LOG_URI_TO_STRING(get_test_uri()));
 
     LOG_ERR("error");
-    LOG_ARG_ERR("error %s", "with arg");
+    LOG_ERR("error %s", "with arg");
     LOG_ARG_ERR("%s", LOG_URI_TO_STRING(get_test_uri()));
 
     LOG_FATAL("fatal");
-    LOG_ARG_FATAL("fatal %s", "with arg");
+    LOG_FATAL("fatal %s", "with arg");
     LOG_ARG_FATAL("%s", LOG_URI_TO_STRING(get_test_uri()));
 
     const char *const log_buffer = test_log_handler_get_captured_message();

@@ -112,7 +112,10 @@ typedef enum {
 void lwm2m_log_handler(lwm2m_logging_level_t level, const char *const msg, const char *const func, const int line,
                        const char *const file);
 
-#define LOG_L(LEVEL, STR) lwm2m_log_handler(LEVEL, STR, __func__, __LINE__, __FILE__)
+/* Inspired by: https://stackoverflow.com/a/53875012 */
+#define LOG_L(LEVEL, ...) LOG_ARG_L_INT(LEVEL, __VA_ARGS__, '\0')
+
+#define LOG_ARG_L_INT(LEVEL, FMT, ...) LOG_ARG_L(LEVEL, FMT "%c", __VA_ARGS__)
 
 #define LOG_ARG_L(LEVEL, FMT, ...)                                                                                     \
     do {                                                                                                               \
@@ -183,42 +186,42 @@ void lwm2m_log_handler(lwm2m_logging_level_t level, const char *const msg, const
 #endif
 
 #if LWM2M_LOG_LEVEL <= LWM2M_DBG
-#define LOG_DBG(STR) LOG_L(LWM2M_LOGGING_DBG, STR)
+#define LOG_DBG(...) LOG_L(LWM2M_LOGGING_DBG, __VA_ARGS__)
 #define LOG_ARG_DBG(STR, ...) LOG_ARG_L(LWM2M_LOGGING_DBG, STR, __VA_ARGS__)
 #else
-#define LOG_DBG(STR)
+#define LOG_DBG(...)
 #define LOG_ARG_DBG(STR, ...)
 #endif
 
 #if LWM2M_LOG_LEVEL <= LWM2M_INFO
-#define LOG_INFO(STR) LOG_L(LWM2M_LOGGING_INFO, STR)
+#define LOG_INFO(...) LOG_L(LWM2M_LOGGING_INFO, __VA_ARGS__)
 #define LOG_ARG_INFO(STR, ...) LOG_ARG_L(LWM2M_LOGGING_INFO, STR, __VA_ARGS__)
 #else
-#define LOG_INFO(STR)
+#define LOG_INFO(...)
 #define LOG_ARG_INFO(STR, ...)
 #endif
 
 #if LWM2M_LOG_LEVEL <= LWM2M_WARN
-#define LOG_WARN(STR) LOG_L(LWM2M_LOGGING_WARN, STR)
+#define LOG_WARN(...) LOG_L(LWM2M_LOGGING_WARN, __VA_ARGS__)
 #define LOG_ARG_WARN(STR, ...) LOG_ARG_L(LWM2M_LOGGING_WARN, STR, __VA_ARGS__)
 #else
-#define LOG_WARN(STR)
+#define LOG_WARN(...)
 #define LOG_ARG_WARN(STR, ...)
 #endif
 
 #if LWM2M_LOG_LEVEL <= LWM2M_ERR
-#define LOG_ERR(STR) LOG_L(LWM2M_LOGGING_ERR, STR)
+#define LOG_ERR(...) LOG_L(LWM2M_LOGGING_ERR, __VA_ARGS__)
 #define LOG_ARG_ERR(STR, ...) LOG_ARG_L(LWM2M_LOGGING_ERR, STR, __VA_ARGS__)
 #else
-#define LOG_ERR(STR)
+#define LOG_ERR(...)
 #define LOG_ARG_ERR(STR, ...)
 #endif
 
 #if LWM2M_LOG_LEVEL <= LWM2M_FATAL
-#define LOG_FATAL(STR) LOG_L(LWM2M_LOGGING_FATAL, STR)
+#define LOG_FATAL(...) LOG_L(LWM2M_LOGGING_FATAL, __VA_ARGS__)
 #define LOG_ARG_FATAL(STR, ...) LOG_ARG_L(LWM2M_LOGGING_FATAL, STR, __VA_ARGS__)
 #else
-#define LOG_FATAL(STR)
+#define LOG_FATAL(...)
 #define LOG_ARG_FATAL(STR, ...)
 #endif
 
