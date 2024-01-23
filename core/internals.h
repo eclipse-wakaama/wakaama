@@ -121,34 +121,7 @@ void lwm2m_log_handler(lwm2m_logging_level_t level, const char *const msg, const
         lwm2m_log_handler(LEVEL, txt, __func__, __LINE__, __FILE__);                                                   \
     } while (0)
 
-#define _LOG_URI_L_1_0(LEVEL, URI)                                                                                     \
-    do {                                                                                                               \
-        if ((URI) == NULL)                                                                                             \
-            LOG_L(LEVEL, "NULL");                                                                                      \
-        else if (!LWM2M_URI_IS_SET_OBJECT(URI))                                                                        \
-            LOG_L(LEVEL, "/");                                                                                         \
-        else if (!LWM2M_URI_IS_SET_INSTANCE(URI))                                                                      \
-            LOG_ARG_L(LEVEL, "/%d", (URI)->objectId);                                                                  \
-        else if (!LWM2M_URI_IS_SET_RESOURCE(URI))                                                                      \
-            LOG_ARG_L(LEVEL, "/%d/%d", (URI)->objectId, (URI)->instanceId);                                            \
-        else                                                                                                           \
-            LOG_ARG_L(LEVEL, "/%d/%d/%d", (URI)->objectId, (URI)->instanceId, (URI)->resourceId);                      \
-    } while (0)
-
-#ifdef LWM2M_VERSION_1_0
-#define LOG_URI_L(LEVEL, URI) _LOG_URI_L_1_0(LEVEL, URI)
-#else
-#define LOG_URI_L(LEVEL, URI)                                                                                          \
-    do {                                                                                                               \
-        if ((URI) == NULL)                                                                                             \
-            LOG_L(LEVEL, "NULL");                                                                                      \
-        else if(!LWM2M_URI_IS_SET_RESOURCE_INSTANCE(URI))                                                              \
-            _LOG_URI_L_1_0(LEVEL, URI);                                                                                \
-        else                                                                                                           \
-            LOG_ARG_L(LEVEL, "/%d/%d/%d/%d", (URI)->objectId, (URI)->instanceId, (URI)->resourceId,                    \
-                      (URI)->resourceInstanceId);                                                                      \
-    } while (0)
-#endif
+#define LOG_URI_TO_STRING(URI) uri_logging_to_string(URI)
 
 /* clang-format off */
 #define STR_STATUS(S)                                           \
@@ -212,58 +185,47 @@ void lwm2m_log_handler(lwm2m_logging_level_t level, const char *const msg, const
 #if LWM2M_LOG_LEVEL <= LWM2M_DBG
 #define LOG_DBG(STR) LOG_L(LWM2M_LOGGING_DBG, STR)
 #define LOG_ARG_DBG(STR, ...) LOG_ARG_L(LWM2M_LOGGING_DBG, STR, __VA_ARGS__)
-#define LOG_URI_DBG(URI) LOG_URI_L(LWM2M_LOGGING_DBG, URI)
 #else
 #define LOG_DBG(STR)
 #define LOG_ARG_DBG(STR, ...)
-#define LOG_URI_DBG(URI)
 #endif
 
 #if LWM2M_LOG_LEVEL <= LWM2M_INFO
 #define LOG_INFO(STR) LOG_L(LWM2M_LOGGING_INFO, STR)
 #define LOG_ARG_INFO(STR, ...) LOG_ARG_L(LWM2M_LOGGING_INFO, STR, __VA_ARGS__)
-#define LOG_URI_INFO(URI) LOG_URI_L(LWM2M_LOGGING_INFO, URI)
 #else
 #define LOG_INFO(STR)
 #define LOG_ARG_INFO(STR, ...)
-#define LOG_URI_INFO(URI)
 #endif
 
 #if LWM2M_LOG_LEVEL <= LWM2M_WARN
 #define LOG_WARN(STR) LOG_L(LWM2M_LOGGING_WARN, STR)
 #define LOG_ARG_WARN(STR, ...) LOG_ARG_L(LWM2M_LOGGING_WARN, STR, __VA_ARGS__)
-#define LOG_URI_WARN(URI) LOG_URI_L(LWM2M_LOGGING_WARN, URI)
 #else
 #define LOG_WARN(STR)
 #define LOG_ARG_WARN(STR, ...)
-#define LOG_URI_WARN(URI)
 #endif
 
 #if LWM2M_LOG_LEVEL <= LWM2M_ERR
 #define LOG_ERR(STR) LOG_L(LWM2M_LOGGING_ERR, STR)
 #define LOG_ARG_ERR(STR, ...) LOG_ARG_L(LWM2M_LOGGING_ERR, STR, __VA_ARGS__)
-#define LOG_URI_ERR(URI) LOG_URI_L(LWM2M_LOGGING_ERR, URI)
 #else
 #define LOG_ERR(STR)
 #define LOG_ARG_ERR(STR, ...)
-#define LOG_URI_ERR(URI)
 #endif
 
 #if LWM2M_LOG_LEVEL <= LWM2M_FATAL
 #define LOG_FATAL(STR) LOG_L(LWM2M_LOGGING_FATAL, STR)
 #define LOG_ARG_FATAL(STR, ...) LOG_ARG_L(LWM2M_LOGGING_FATAL, STR, __VA_ARGS__)
-#define LOG_URI_FATAL(URI) LOG_URI_L(LWM2M_LOGGING_FATAL, URI)
 #else
 #define LOG_FATAL(STR)
 #define LOG_ARG_FATAL(STR, ...)
-#define LOG_URI_FATAL(URI)
 #endif
 
 /* Legacy logging macros. Replace with `LOG_DBG` and related. */
 #define LOG(STR) LOG_DBG(STR)
 #define LOG_ARG(STR, ...) LOG_ARG_DBG(STR, __VA_ARGS__)
-#define LOG_URI(URI) LOG_URI_DBG(URI)
-
+#define LOG_URI(URI) LOG_ARG_DBG("%s", LOG_URI_TO_STRING(URI))
 
 #define LWM2M_DEFAULT_LIFETIME  86400
 

@@ -352,6 +352,9 @@ typedef enum
 int lwm2m_stringToUri(const char * buffer, size_t buffer_len, lwm2m_uri_t * uriP);
 int lwm2m_uriToString(const lwm2m_uri_t * uriP, uint8_t * buffer, size_t bufferLen, uri_depth_t * depthP);
 
+// This function is not reentrant or thread safe. It's meant to be used for logging only!
+char *uri_logging_to_string(const lwm2m_uri_t *uri);
+
 /*
  * The lwm2m_data_t is used to store LWM2M resource values in a hierarchical way.
  * Depending on the type the value is different:

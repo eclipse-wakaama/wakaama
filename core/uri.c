@@ -294,9 +294,6 @@ int lwm2m_uriToString(const lwm2m_uri_t * uriP,
     size_t head = 0;
     uri_depth_t depth = URI_DEPTH_NONE;
 
-    LOG_ARG("bufferLen: %zu", bufferLen);
-    LOG_URI(uriP);
-
     if (uriP && LWM2M_URI_IS_SET_OBJECT(uriP))
     {
         int res;
@@ -351,7 +348,19 @@ int lwm2m_uriToString(const lwm2m_uri_t * uriP,
 
     if (depthP) *depthP = depth;
 
-    LOG_ARG("length: %zu, buffer: \"%.*s\"", head, (int)head, buffer);
-
     return head;
+}
+
+char *uri_logging_to_string(const lwm2m_uri_t *uri) {
+    static char uri_string[URI_MAX_STRING_LEN + 1];
+    memset(uri_string, '\0', sizeof(uri_string));
+    if (uri != NULL) {
+        uri_depth_t depth;
+        lwm2m_uriToString(uri, (uint8_t *)uri_string, URI_MAX_STRING_LEN, &depth);
+    }
+
+    /* Better to be safe than sorry */
+    uri_string[URI_MAX_STRING_LEN] = '\0';
+
+    return uri_string;
 }

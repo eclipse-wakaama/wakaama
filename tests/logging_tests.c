@@ -48,17 +48,17 @@ static void test_log_arg(void) {
 
 static void test_log_uri_null(void) {
     lwm2m_uri_t *uri = NULL;
-    LOG_URI_FATAL(uri);
+    LOG_ARG_FATAL("%s", LOG_URI_TO_STRING(uri));
 
     const char *const log_buffer = test_log_handler_get_captured_message();
-    CU_ASSERT_STRING_EQUAL(log_buffer, "FATAL - [test_log_uri_null] NULL\n");
+    CU_ASSERT_STRING_EQUAL(log_buffer, "FATAL - [test_log_uri_null] \n");
 }
 
 static void test_log_uri_empty(void) {
     lwm2m_uri_t uri;
     LWM2M_URI_RESET(&uri);
 
-    LOG_URI_FATAL(&uri);
+    LOG_ARG_FATAL("%s", LOG_URI_TO_STRING(&uri));
 
     const char *const expected_log = "FATAL - [test_log_uri_empty] /\n";
     const char *const log_buffer = test_log_handler_get_captured_message();
@@ -70,7 +70,7 @@ static void test_log_uri_obj(void) {
     LWM2M_URI_RESET(&uri);
     uri.objectId = 1;
 
-    LOG_URI_FATAL(&uri);
+    LOG_ARG_FATAL("%s", LOG_URI_TO_STRING(&uri));
 
     const char *const log_buffer = test_log_handler_get_captured_message();
     CU_ASSERT_STRING_EQUAL(log_buffer, "FATAL - [test_log_uri_obj] /1\n");
@@ -82,7 +82,7 @@ static void test_log_uri_obj_inst(void) {
     uri.objectId = 2;
     uri.instanceId = 1;
 
-    LOG_URI_FATAL(&uri);
+    LOG_ARG_FATAL("%s", LOG_URI_TO_STRING(&uri));
 
     const char *const log_buffer = test_log_handler_get_captured_message();
     CU_ASSERT_STRING_EQUAL(log_buffer, "FATAL - [test_log_uri_obj_inst] /2/1\n");
@@ -95,7 +95,7 @@ static void test_log_uri_obj_inst_res(void) {
     uri.instanceId = 0;
     uri.resourceId = 1;
 
-    LOG_URI_FATAL(&uri);
+    LOG_ARG_FATAL("%s", LOG_URI_TO_STRING(&uri));
 
     const char *const log_buffer = test_log_handler_get_captured_message();
     CU_ASSERT_STRING_EQUAL(log_buffer, "FATAL - [test_log_uri_obj_inst_res] /3/0/1\n");
@@ -111,7 +111,7 @@ static void test_log_uri_obj_inst_res_inst(void) {
     uri.resourceInstanceId = 0;
 #endif
 
-    LOG_URI_FATAL(&uri);
+    LOG_ARG_FATAL("%s", LOG_URI_TO_STRING(&uri));
 
 #ifdef LWM2M_VERSION_1_0
     const char *const expected_log = "FATAL - [test_log_uri_obj_inst_res_inst] /5/1/2\n";
@@ -143,23 +143,23 @@ static lwm2m_uri_t *get_test_uri(void) {
 static void test_log_level(void) {
     LOG_DBG("debug");
     LOG_ARG_DBG("debug %s", "with arg");
-    LOG_URI_DBG(get_test_uri());
+    LOG_ARG_DBG("%s", LOG_URI_TO_STRING(get_test_uri()));
 
     LOG_INFO("info");
     LOG_ARG_INFO("info %s", "with arg");
-    LOG_URI_INFO(get_test_uri());
+    LOG_ARG_INFO("%s", LOG_URI_TO_STRING(get_test_uri()));
 
     LOG_WARN("warning");
     LOG_ARG_WARN("warning %s", "with arg");
-    LOG_URI_WARN(get_test_uri());
+    LOG_ARG_WARN("%s", LOG_URI_TO_STRING(get_test_uri()));
 
     LOG_ERR("error");
     LOG_ARG_ERR("error %s", "with arg");
-    LOG_URI_ERR(get_test_uri());
+    LOG_ARG_ERR("%s", LOG_URI_TO_STRING(get_test_uri()));
 
     LOG_FATAL("fatal");
     LOG_ARG_FATAL("fatal %s", "with arg");
-    LOG_URI_FATAL(get_test_uri());
+    LOG_ARG_FATAL("%s", LOG_URI_TO_STRING(get_test_uri()));
 
     const char * const log_buffer = test_log_handler_get_captured_message();
 #if LWM2M_LOG_LEVEL == LWM2M_DBG
