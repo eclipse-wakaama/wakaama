@@ -819,7 +819,7 @@ static struct TestTable table[] = {
     {"test of senml_cbor_test_31()", senml_cbor_test_31}, {NULL, NULL},
 };
 
-CU_ErrorCode create_senml_cbor_suit() {
+CU_ErrorCode create_senml_cbor_suit(void) {
     CU_pSuite pSuite = NULL;
 
     pSuite = CU_add_suite("Suite_SenML_CBOR", NULL, NULL);
