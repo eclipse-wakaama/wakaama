@@ -1187,7 +1187,7 @@ static struct TestTable table[] = {
     {"test of cbor_test_83()", cbor_test_83}, {NULL, NULL},
 };
 
-CU_ErrorCode create_cbor_suit() {
+CU_ErrorCode create_cbor_suit(void) {
     CU_pSuite pSuite = NULL;
 
     pSuite = CU_add_suite("Suite_CBOR", NULL, NULL);
