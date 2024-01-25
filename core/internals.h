@@ -112,11 +112,18 @@ typedef enum {
 void lwm2m_log_handler(lwm2m_logging_level_t level, const char *const msg, const char *const func, const int line,
                        const char *const file);
 
-/* Inspired by: https://stackoverflow.com/a/53875012 */
-#define LOG_L(LEVEL, ...) LOG_ARG_L_INT(LEVEL, __VA_ARGS__, '\0')
+/** Basic logging macro. Usually this is not called directly. Use the macros for a given level (e.g. LOG_DBG).
+ * Supports arguments if the message (including format specifiers) is a string literal. Otherwise the use uf
+ * LOG_ARG_DBG (and related macros) are needed.
+ * The limitation that the message needs to be a literal string is due to C11 limitations regarding empty __VA_ARGS__
+ * preceded by an coma. The workaround is inspired by: https://stackoverflow.com/a/53875012 */
+#define LOG_L(LEVEL, ...) LOG_ARG_L_INTERNAL(LEVEL, __VA_ARGS__, '\0')
 
-#define LOG_ARG_L_INT(LEVEL, FMT, ...) LOG_ARG_L(LEVEL, FMT "%c", __VA_ARGS__)
+/* For internal use only. Required for workaround with empty __VA_ARGS__ in C11 */
+#define LOG_ARG_L_INTERNAL(LEVEL, FMT, ...) LOG_ARG_L(LEVEL, FMT "%c", __VA_ARGS__)
 
+/** Basic logging macro that supports arguments. Usually this is not called directly. Use the macros for a given level
+ * (e.g. LOG_ARG_DBG). */
 #define LOG_ARG_L(LEVEL, FMT, ...)                                                                                     \
     do {                                                                                                               \
         char txt[LWM2M_LOG_MAX_MSG_TXT_SIZE];                                                                          \
