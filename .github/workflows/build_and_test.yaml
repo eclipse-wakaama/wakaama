@@ -25,13 +25,7 @@ jobs:
     - name: Install dependencies from APT repository
       run: |
         sudo apt-get update
-        sudo apt-get install libcunit1-dev wget unzip
-
-    - name: Install CMake
-      uses: lukka/get-cmake@latest
-
-    - name: Install Ninja
-      uses: seanmiddleditch/gha-setup-ninja@master
+        sudo apt-get install cmake libcunit1-dev ninja-build unzip wget
 
     - name: Build all binaries
       run: |
