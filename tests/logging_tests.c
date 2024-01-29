@@ -161,7 +161,7 @@ static void test_log_level(void) {
     LOG_FATAL("fatal %s", "with arg");
     LOG_ARG_FATAL("%s", LOG_URI_TO_STRING(get_test_uri()));
 
-    const char * const log_buffer = test_log_handler_get_captured_message();
+    const char *const log_buffer = test_log_handler_get_captured_message();
 #if LWM2M_LOG_LEVEL == LWM2M_DBG
     const char *const expected_log = "DBG - [test_log_level] debug\n"
                                      "DBG - [test_log_level] debug with arg\n"

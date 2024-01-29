@@ -238,12 +238,8 @@ uint8_t dm_handleRequest(lwm2m_context_t * contextP,
                             else
                             {
                                 length = (size_t)res;
-                                LOG_ARG("Observe Request[/%d/%d/%d]: %.*s\n",
-                                        uriP->objectId,
-                                        uriP->instanceId,
-                                        uriP->resourceId,
-                                        (int)length,
-                                        STR_NULL2EMPTY(buffer));
+                                LOG_ARG("Observe Request[/%d/%d/%d]: %.*s\n", uriP->objectId, uriP->instanceId,
+                                        uriP->resourceId, (int)length, STR_NULL2EMPTY(buffer));
                             }
                         }
                     }
