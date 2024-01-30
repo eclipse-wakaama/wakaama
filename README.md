@@ -10,7 +10,7 @@ Developers mailing list: https://dev.eclipse.org/mailman/listinfo/wakaama-dev
 The only official release of Wakaama, version 1.0, is affected by various
 security issues ([CVE-2019-9004], [CVE-2021-41040]).
 
-Please use the most recent commit in the master branch. Release 1.0 is not
+Please use the most recent commit in the main branch. Release 1.0 is not
 supported anymore.
 
 [CVE-2019-9004]: https://www.cve.org/CVERecord?id=CVE-2019-9004
@@ -128,7 +128,7 @@ characters per line.
 To check if your code matches the expected style, the following commands are helpful:
  - `git clang-format-14 --diff`: Show what needs to be changed to match the expected code style
  - `git clang-format-14`: Apply all needed changes directly
- - `git clang-format-14 --commit master`: Fix code style for all changes since master
+ - `git clang-format-14 --commit main`: Fix code style for all changes since main
 
 If existing code gets reformatted, this must be done in a separate commit. Its commit id has to be added to the file
 `.git-blame-ignore-revs` and committed in yet another commit.

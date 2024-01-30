@@ -12,5 +12,5 @@ For more details, please look at https://www.eclipse.org/security/.
 
 None
 
-Please use the most recent commit in the master branch. Release 1.0 is not
+Please use the most recent commit in the main branch. Release 1.0 is not
 supported anymore.
