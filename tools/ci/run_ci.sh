@@ -372,8 +372,13 @@ if [ -n "${OPT_TEST_COVERAGE_REPORT}" ]; then
 fi
 
 if [ -n "${OPT_SCAN_BUILD}" ]; then
+  # Excluding tests as `scan-build` does not know macros of
+  # `CUnit` which leads to a lot of noisy issues in the report.
+  # Also ignoring third-party `tinydtls` library.
   OPT_WRAPPER_CMD="${OPT_SCAN_BUILD} \
-    -o build-wakaama/clang-static-analyzer"
+    -o build-wakaama/clang-static-analyzer \
+    --exclude tests \
+    --exclude examples/shared/tinydtls"
 fi
 
 # Run Steps
