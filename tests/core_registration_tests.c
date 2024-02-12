@@ -27,12 +27,37 @@
 
 #ifdef LWM2M_SERVER_MODE
 
-static void create_test_registration_message(coap_packet_t *packet) {
+#define ASSERT_RESPONSE_HEADER(packet, expected_code)                                                                  \
+    do {                                                                                                               \
+        CU_ASSERT_EQUAL(packet.version, 1);                                                                            \
+        CU_ASSERT_EQUAL(packet.type, COAP_TYPE_ACK);                                                                   \
+        CU_ASSERT_EQUAL(packet.code, expected_code);                                                                   \
+        CU_ASSERT_EQUAL(packet.mid, 0xbeef);                                                                           \
+        CU_ASSERT_EQUAL(packet.token_len, 5);                                                                          \
+        const char *expected_token = "token";                                                                          \
+        CU_ASSERT(memcmp(packet.token, expected_token, strlen(expected_token)) == 0);                                  \
+    } while (0)
+
+#define ASSERT_RESPONSE_LOCATION_PATH(packet, path)                                                                    \
+    do {                                                                                                               \
+        CU_ASSERT_PTR_NOT_NULL_FATAL(packet.location_path);                                                            \
+        const size_t expected_path_len = strlen(path);                                                                 \
+        CU_ASSERT_EQUAL(packet.location_path->len, expected_path_len);                                                 \
+        CU_ASSERT(memcmp(packet.location_path->data, path, expected_path_len) == 0);                                   \
+    } while (0)
+
+#define ASSERT_RESPONSE_PAYLOAD_EMPTY(packet)                                                                          \
+    do {                                                                                                               \
+        CU_ASSERT_PTR_NULL(packet.payload);                                                                            \
+        CU_ASSERT_EQUAL(packet.payload_len, 0);                                                                        \
+    } while (0)
+
+static void create_test_registration_message(coap_packet_t *packet, const lwm2m_media_type_t content_type) {
     coap_init_message(packet, COAP_TYPE_CON, COAP_POST, 0xbeef);
     uint8_t token[] = {'t', 'o', 'k', 'e', 'n'};
     coap_set_header_token(packet, token, sizeof(token));
     coap_set_header_uri_path(packet, "rd");
-    coap_set_header_content_type(packet, LWM2M_CONTENT_LINK);
+    coap_set_header_content_type(packet, content_type);
     coap_set_header_uri_query(packet, "b=U&lwm2m=1.1&lt=300&ep=dummy-client");
 
     char const *payload = "</1/0>,</3/0>;ver=1.2";
@@ -43,7 +68,7 @@ static void test_registration_message_to_server(void) {
     /* arrange */
     coap_packet_t packet;
     memset(&packet, 0, sizeof(packet));
-    create_test_registration_message(&packet);
+    create_test_registration_message(&packet, LWM2M_CONTENT_LINK);
 
     uint8_t reg_coap_msg[80];
     memset(reg_coap_msg, 0, sizeof(reg_coap_msg));
@@ -63,18 +88,11 @@ static void test_registration_message_to_server(void) {
     CU_ASSERT_EQUAL(14, send_buffer_len);
     coap_status_t status = coap_parse_message(&actual_response_packet, send_buffer, send_buffer_len);
     CU_ASSERT_EQUAL(status, NO_ERROR);
-    CU_ASSERT_EQUAL(actual_response_packet.version, 1);
-    CU_ASSERT_EQUAL(actual_response_packet.type, COAP_TYPE_ACK);
-    CU_ASSERT_EQUAL(actual_response_packet.code, COAP_201_CREATED);
-    CU_ASSERT_EQUAL(actual_response_packet.mid, 0xbeef);
-    CU_ASSERT_EQUAL(actual_response_packet.token_len, 5);
-    const char *expected_token = "token";
-    CU_ASSERT(memcmp(actual_response_packet.token, expected_token, strlen(expected_token)) == 0);
-    CU_ASSERT_PTR_NOT_NULL(actual_response_packet.location_path);
-    CU_ASSERT_EQUAL(actual_response_packet.location_path->len, 2);
-    CU_ASSERT(memcmp(actual_response_packet.location_path->data, "rd", 2) == 0);
-    CU_ASSERT_PTR_NULL(actual_response_packet.payload);
-    CU_ASSERT_EQUAL(actual_response_packet.payload_len, 0);
+
+    ASSERT_RESPONSE_HEADER(actual_response_packet, COAP_201_CREATED);
+    ASSERT_RESPONSE_LOCATION_PATH(actual_response_packet, "rd");
+    ASSERT_RESPONSE_PAYLOAD_EMPTY(actual_response_packet);
+
     coap_free_header(&actual_response_packet);
 }
 
