@@ -52,6 +52,8 @@
         CU_ASSERT_EQUAL(packet.payload_len, 0);                                                                        \
     } while (0)
 
+#define ARRAY_LEN(arr) (sizeof(arr) / sizeof(*arr))
+
 static void create_test_registration_message(coap_packet_t *packet, const lwm2m_media_type_t content_type) {
     coap_init_message(packet, COAP_TYPE_CON, COAP_POST, 0xbeef);
     uint8_t token[] = {'t', 'o', 'k', 'e', 'n'};
@@ -94,6 +96,47 @@ static void test_registration_message_to_server(void) {
     ASSERT_RESPONSE_PAYLOAD_EMPTY(actual_response_packet);
 
     coap_free_header(&actual_response_packet);
+}
+
+static void test_registration_message_to_server_wrong_content_type(void) {
+
+    /* Only `LWM2M_CONTENT_TEXT` and `LWM2M_CONTENT_LINK` are allowed for registration. */
+    static const lwm2m_media_type_t test_cases[] = {
+        LWM2M_CONTENT_TEXT,       LWM2M_CONTENT_OPAQUE,   LWM2M_CONTENT_TLV_OLD,
+        LWM2M_CONTENT_TLV,        LWM2M_CONTENT_JSON_OLD, LWM2M_CONTENT_JSON,
+        LWM2M_CONTENT_SENML_JSON, LWM2M_CONTENT_CBOR,     LWM2M_CONTENT_SENML_CBOR};
+
+    for (size_t i = 0; i < ARRAY_LEN(test_cases); ++i) {
+        /* arrange */
+        coap_packet_t packet;
+        memset(&packet, 0, sizeof(packet));
+        const lwm2m_media_type_t content_type = test_cases[i];
+        create_test_registration_message(&packet, content_type);
+
+        uint8_t reg_coap_msg[80];
+        memset(reg_coap_msg, 0, sizeof(reg_coap_msg));
+        size_t msg_size = coap_serialize_message(&packet, reg_coap_msg);
+        coap_free_header(&packet);
+
+        /* act */
+        lwm2m_context_t *const server_ctx = lwm2m_init(NULL);
+        lwm2m_handle_packet(server_ctx, reg_coap_msg, msg_size, NULL);
+
+        /* assert */
+        size_t send_buffer_len;
+        uint8_t *send_buffer = test_get_response_buffer(&send_buffer_len);
+        coap_packet_t actual_response_packet;
+        CU_ASSERT_EQUAL(9, send_buffer_len);
+        coap_status_t status = coap_parse_message(&actual_response_packet, send_buffer, send_buffer_len);
+        CU_ASSERT_EQUAL(status, NO_ERROR);
+
+        ASSERT_RESPONSE_HEADER(actual_response_packet, COAP_400_BAD_REQUEST);
+        CU_ASSERT_PTR_NULL(actual_response_packet.location_path);
+        ASSERT_RESPONSE_PAYLOAD_EMPTY(actual_response_packet);
+
+        lwm2m_close(server_ctx);
+        coap_free_header(&actual_response_packet);
+    }
 }
 
 static void init_test_packet(coap_packet_t *message, const char *registration_message, uint8_t *payload,
@@ -170,6 +213,7 @@ static void test_registration_with_two_rt(void) {
 
 static struct TestTable table[] = {
     {"test_registration_message_to_server", test_registration_message_to_server},
+    {"test_registration_message_to_server_wrong_content_type", test_registration_message_to_server_wrong_content_type},
     {"test_registration_with_rt", test_registration_with_rt},
     {"test_registration_without_rt", test_registration_without_rt},
     {"test_registration_with_two_rt", test_registration_with_two_rt},
