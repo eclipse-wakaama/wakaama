@@ -60,21 +60,12 @@ function(target_sources_wakaama target)
     # We should not (have to) do this!
     target_include_directories(${target} PRIVATE ${WAKAAMA_TOP_LEVEL_DIRECTORY}/core)
 
+    target_compile_definitions(
+        ${target} PUBLIC "$<IF:$<STREQUAL:${CMAKE_C_BYTE_ORDER},BIG_ENDIAN>,LWM2M_BIG_ENDIAN,LWM2M_LITTLE_ENDIAN>"
+    )
+
     # Extract pre-existing target specific definitions WARNING: Directory properties are not taken into account!
     get_target_property(CURRENT_TARGET_COMPILE_DEFINITIONS ${target} COMPILE_DEFINITIONS)
-
-    if(NOT CURRENT_TARGET_COMPILE_DEFINITIONS MATCHES "LWM2M_LITTLE_ENDIAN|LWM2M_BIG_ENDIAN")
-        # Replace TestBigEndian once we require CMake 3.20+
-        include(TestBigEndian)
-        test_big_endian(machine_is_big_endian)
-        if(machine_is_big_endian)
-            target_compile_definitions(${target} PRIVATE LWM2M_BIG_ENDIAN)
-            message(STATUS "${target}: Endiannes not set, defaulting to big endian")
-        else()
-            target_compile_definitions(${target} PRIVATE LWM2M_LITTLE_ENDIAN)
-            message(STATUS "${target}: Endiannes not set, defaulting to little endian")
-        endif()
-    endif()
 
     # LWM2M_COAP_DEFAULT_BLOCK_SIZE is needed by source files -> always set it
     if(NOT CURRENT_TARGET_COMPILE_DEFINITIONS MATCHES "LWM2M_COAP_DEFAULT_BLOCK_SIZE=")
