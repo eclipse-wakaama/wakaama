@@ -106,6 +106,10 @@ typedef enum {
 "unknown")))))
 /* clang-format on */
 
+/** Format the message part of a log entry. This function is not thread save.
+ * This function should not be called directly. It's used internally in the logging system. */
+char *lwm2m_log_fmt_message(const char *fmt, ...);
+
 /** The default log handler for an log entry. To define a custom log handler define `LWM2M_LOG_CUSTOM_HANDLER` and
  * implement a function with this signature.
  * This function should not be called directly. Use the logging macros instead. */
@@ -126,8 +130,7 @@ void lwm2m_log_handler(lwm2m_logging_level_t level, const char *const msg, const
  * (e.g. LOG_ARG_DBG). */
 #define LOG_ARG_L(LEVEL, FMT, ...)                                                                                     \
     do {                                                                                                               \
-        char txt[LWM2M_MAX_LOG_MSG_TXT_SIZE];                                                                          \
-        snprintf(txt, LWM2M_MAX_LOG_MSG_TXT_SIZE, FMT, __VA_ARGS__);                                                   \
+        char *txt = lwm2m_log_fmt_message(FMT, __VA_ARGS__);                                                           \
         lwm2m_log_handler(LEVEL, txt, __func__, __LINE__, __FILE__);                                                   \
     } while (0)
 
