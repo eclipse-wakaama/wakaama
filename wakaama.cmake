@@ -2,6 +2,41 @@ set(WAKAAMA_TOP_LEVEL_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}")
 set(WAKAAMA_EXAMPLE_DIRECTORY "${WAKAAMA_TOP_LEVEL_DIRECTORY}/examples")
 set(WAKAAMA_EXAMPLE_SHARED_DIRECTORY "${WAKAAMA_EXAMPLE_DIRECTORY}/shared")
 
+# Logging
+set(WAKAAMA_LOG_LEVEL
+    LOG_DISABLED
+    CACHE STRING "The lowest log level provided at build time"
+)
+set_property(
+    CACHE WAKAAMA_LOG_LEVEL
+    PROPERTY STRINGS
+             LOG_DISABLED
+             DBG
+             INFO
+             WARN
+             ERR
+             FATAL
+)
+
+option(WAKAAMA_LOG_CUSTOM_HANDLER "Provide a custom handler for logging messages" OFF)
+
+set(WAKAAMA_LOG_MAX_MSG_TXT_SIZE
+    200
+    CACHE STRING "The buffer size for the log message (without additional data)"
+)
+
+# Set the defines for logging configuration
+function(set_defines target)
+    # Logging
+    target_compile_definitions(${target} PUBLIC LWM2M_LOG_LEVEL=LWM2M_${WAKAAMA_LOG_LEVEL})
+
+    if(WAKAAMA_LOG_CUSTOM_HANDLER)
+        target_compile_definitions(${target} PUBLIC LWM2M_LOG_CUSTOM_HANDLER)
+    endif()
+
+    target_compile_definitions(${target} PUBLIC LWM2M_LOG_MAX_MSG_TXT_SIZE=${WAKAAMA_LOG_MAX_MSG_TXT_SIZE})
+endfunction()
+
 # Add data format source files to an existing target.
 #
 # Separated from target_sources_wakaama() for testability reasons.
@@ -65,6 +100,9 @@ function(target_sources_wakaama target)
         ${target} PUBLIC "$<IF:$<STREQUAL:${CMAKE_C_BYTE_ORDER},BIG_ENDIAN>,LWM2M_BIG_ENDIAN,LWM2M_LITTLE_ENDIAN>"
     )
 
+    # set defines
+    set_defines(${target})
+
     # Extract pre-existing target specific definitions WARNING: Directory properties are not taken into account!
     get_target_property(CURRENT_TARGET_COMPILE_DEFINITIONS ${target} COMPILE_DEFINITIONS)
 
@@ -91,6 +129,8 @@ function(target_sources_shared target)
         ${target} PRIVATE ${WAKAAMA_EXAMPLE_SHARED_DIRECTORY}/commandline.c
                           ${WAKAAMA_EXAMPLE_SHARED_DIRECTORY}/platform.c
     )
+
+    set_defines(${target})
 
     if(NOT TARGET_PROPERTY_CONN_IMPL)
         target_sources(${target} PRIVATE ${WAKAAMA_EXAMPLE_SHARED_DIRECTORY}/connection.c)
