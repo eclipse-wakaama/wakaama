@@ -16,11 +16,11 @@ jobs:
         submodules: true
         fetch-depth: 0
     - name: Build and test
-      uses: uraimo/run-on-arch-action@v2.1.1
+      uses: LukasWoodtli/run-on-arch-action@gardena/lw/armv6_bookworm
       id: runcmd
       with:
         arch: ${{ matrix.arch }}
-        distro: bullseye
+        distro: bookworm
         githubToken: ${{ github.token }}
         install: |
           apt update
