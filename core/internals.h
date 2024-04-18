@@ -70,6 +70,7 @@
 #include "../data/senml_cbor.h"
 #include "../data/senml_common.h"
 #include "../data/senml_json.h"
+#include "../data/tlv.h"
 
 #if LWM2M_LOG_LEVEL != LWM2M_LOG_DISABLED
 #include <inttypes.h>
@@ -456,12 +457,6 @@ uint8_t bootstrap_handleFinish(lwm2m_context_t * context, void * fromSessionH);
 uint8_t bootstrap_handleRequest(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, void * fromSessionH, coap_packet_t * message, coap_packet_t * response);
 void bootstrap_start(lwm2m_context_t * contextP);
 lwm2m_status_t bootstrap_getStatus(lwm2m_context_t * contextP);
-
-#ifdef LWM2M_SUPPORT_TLV
-// defined in tlv.c
-int tlv_parse(const uint8_t * buffer, size_t bufferLen, lwm2m_data_t ** dataP);
-int tlv_serialize(bool isResourceInstance, int size, lwm2m_data_t * dataP, uint8_t ** bufferP);
-#endif
 
 // defined in discover.c
 int discover_serialize(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_server_t * serverP, int size, lwm2m_data_t * dataP, uint8_t ** bufferP);
