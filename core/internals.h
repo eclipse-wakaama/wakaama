@@ -65,6 +65,7 @@
 #include "er-coap-13/er-coap-13.h"
 
 #include "../data/json_common.h"
+#include "../data/senml_common.h"
 
 #if LWM2M_LOG_LEVEL != LWM2M_LOG_DISABLED
 #include <inttypes.h>
@@ -396,16 +397,6 @@ typedef enum {
 } cbor_type_t;
 #endif
 
-#if defined(LWM2M_SUPPORT_JSON) || defined(LWM2M_SUPPORT_SENML_JSON) || defined(LWM2M_SUPPORT_SENML_CBOR)
-typedef struct {
-    uint16_t ids[4];
-    lwm2m_data_t value; /* Any buffer will be within the parsed data */
-    time_t time;
-} senml_record_t;
-
-typedef bool (*senml_convertValue)(const senml_record_t *recordP, lwm2m_data_t *targetP);
-#endif
-
 // defined in uri.c
 lwm2m_request_type_t uri_decode(char * altPath, multi_option_t *uriPath, uint8_t code, lwm2m_uri_t *uriP);
 int uri_getNumber(uint8_t * uriString, size_t uriLength);
@@ -508,18 +499,6 @@ int cbor_serialize(const lwm2m_uri_t *uriP, int size, const lwm2m_data_t *dataP,
 // defined in senml_cbor.c
 int senml_cbor_parse(const lwm2m_uri_t *uriP, const uint8_t *buffer, size_t bufferLen, lwm2m_data_t **dataP);
 int senml_cbor_serialize(const lwm2m_uri_t *uriP, int size, const lwm2m_data_t *tlvP, uint8_t **bufferP);
-#endif
-
-// defined in senml_common.c
-#if defined(LWM2M_SUPPORT_JSON) || defined(LWM2M_SUPPORT_SENML_JSON) || defined(LWM2M_SUPPORT_SENML_CBOR)
-int senml_convert_records(const lwm2m_uri_t *uriP, senml_record_t *recordArray, int numRecords,
-                          senml_convertValue convertValue, lwm2m_data_t **dataP);
-lwm2m_data_t *senml_extendData(lwm2m_data_t *parentP, lwm2m_data_type_t type, uint16_t id);
-int senml_dataStrip(int size, lwm2m_data_t *dataP, lwm2m_data_t **resultP);
-lwm2m_data_t *senml_findDataItem(lwm2m_data_t *listP, size_t count, uint16_t id);
-uri_depth_t senml_decreaseLevel(uri_depth_t level);
-int senml_findAndCheckData(const lwm2m_uri_t *uriP, uri_depth_t baseLevel, size_t size, const lwm2m_data_t *tlvP,
-                           lwm2m_data_t **targetP, uri_depth_t *targetLevelP);
 #endif
 
 // defined in discover.c
