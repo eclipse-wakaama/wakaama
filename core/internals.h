@@ -64,6 +64,7 @@
 
 #include "er-coap-13/er-coap-13.h"
 
+#include "../data/cbor.h"
 #include "../data/json_common.h"
 #include "../data/senml_cbor.h"
 #include "../data/senml_common.h"
@@ -382,22 +383,6 @@ typedef enum {
     LWM2M_REQUEST_TYPE_SEND,
 } lwm2m_request_type_t;
 
-#ifdef LWM2M_SUPPORT_SENML_CBOR
-typedef enum {
-    CBOR_TYPE_UNKNOWN,
-    CBOR_TYPE_UNSIGNED_INTEGER,
-    CBOR_TYPE_NEGATIVE_INTEGER,
-    CBOR_TYPE_FLOAT,
-    CBOR_TYPE_SEMANTIC_TAG,
-    CBOR_TYPE_SIMPLE_VALUE,
-    CBOR_TYPE_BREAK,
-    CBOR_TYPE_BYTE_STRING,
-    CBOR_TYPE_TEXT_STRING,
-    CBOR_TYPE_ARRAY,
-    CBOR_TYPE_MAP,
-} cbor_type_t;
-#endif
-
 // defined in uri.c
 lwm2m_request_type_t uri_decode(char * altPath, multi_option_t *uriPath, uint8_t code, lwm2m_uri_t *uriP);
 int uri_getNumber(uint8_t * uriString, size_t uriLength);
@@ -486,16 +471,6 @@ int json_serialize(lwm2m_uri_t * uriP, int size, lwm2m_data_t * tlvP, uint8_t **
 #ifdef LWM2M_SUPPORT_SENML_JSON
 int senml_json_parse(const lwm2m_uri_t * uriP, const uint8_t * buffer, size_t bufferLen, lwm2m_data_t ** dataP);
 int senml_json_serialize(const lwm2m_uri_t * uriP, int size, const lwm2m_data_t * tlvP, uint8_t ** bufferP);
-#endif
-
-#ifdef LWM2M_SUPPORT_SENML_CBOR
-// defined in cbor.c
-int cbor_get_type_and_value(const uint8_t *buffer, size_t bufferLen, cbor_type_t *type, uint64_t *value);
-int cbor_get_singular(const uint8_t *buffer, size_t bufferLen, lwm2m_data_t *dataP);
-int cbor_put_type_and_value(uint8_t *buffer, size_t bufferLen, cbor_type_t type, uint64_t val);
-int cbor_put_singular(uint8_t *buffer, size_t bufferLen, const lwm2m_data_t *dataP);
-int cbor_parse(const lwm2m_uri_t *uriP, const uint8_t *buffer, size_t bufferLen, lwm2m_data_t **dataP);
-int cbor_serialize(const lwm2m_uri_t *uriP, int size, const lwm2m_data_t *dataP, uint8_t **bufferP);
 #endif
 
 // defined in discover.c
