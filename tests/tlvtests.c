@@ -21,6 +21,8 @@
 #include "internals.h"
 #include "liblwm2m.h"
 
+#ifdef LWM2M_SUPPORT_TLV
+
 /**
  * Comparing floats for equality, suppress warnings. Please do not use for new code!
  */
@@ -500,3 +502,5 @@ CU_ErrorCode create_tlv_suit(void) {
 
     return add_tests(pSuite, table);
 }
+
+#endif

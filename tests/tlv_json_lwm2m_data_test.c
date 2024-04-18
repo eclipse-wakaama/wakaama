@@ -30,6 +30,8 @@
 #include "tests.h"
 #include "CUnit/Basic.h"
 
+#ifdef LWM2M_SUPPORT_JSON
+
 static void test_data(const char * uriStr,
                         lwm2m_media_type_t format,
                         lwm2m_data_t * tlvP,
@@ -459,3 +461,5 @@ CU_ErrorCode create_tlv_json_suit(void) {
 
     return add_tests(pSuite, table);
 }
+
+#endif
