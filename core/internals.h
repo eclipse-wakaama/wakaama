@@ -65,6 +65,7 @@
 #include "er-coap-13/er-coap-13.h"
 
 #include "../data/json_common.h"
+#include "../data/senml_cbor.h"
 #include "../data/senml_common.h"
 
 #if LWM2M_LOG_LEVEL != LWM2M_LOG_DISABLED
@@ -495,10 +496,6 @@ int cbor_put_type_and_value(uint8_t *buffer, size_t bufferLen, cbor_type_t type,
 int cbor_put_singular(uint8_t *buffer, size_t bufferLen, const lwm2m_data_t *dataP);
 int cbor_parse(const lwm2m_uri_t *uriP, const uint8_t *buffer, size_t bufferLen, lwm2m_data_t **dataP);
 int cbor_serialize(const lwm2m_uri_t *uriP, int size, const lwm2m_data_t *dataP, uint8_t **bufferP);
-
-// defined in senml_cbor.c
-int senml_cbor_parse(const lwm2m_uri_t *uriP, const uint8_t *buffer, size_t bufferLen, lwm2m_data_t **dataP);
-int senml_cbor_serialize(const lwm2m_uri_t *uriP, int size, const lwm2m_data_t *tlvP, uint8_t **bufferP);
 #endif
 
 // defined in discover.c
