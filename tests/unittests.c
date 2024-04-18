@@ -63,13 +63,14 @@ int main(void) {
 
     if (CUE_SUCCESS != create_convert_numbers_suit())
         goto exit;
-
+#ifdef LWM2M_SUPPORT_JSON
     if (CUE_SUCCESS != create_tlv_json_suit())
         goto exit;
-
+#endif
+#ifdef LWM2M_SUPPORT_TLV
     if (CUE_SUCCESS != create_tlv_suit())
         goto exit;
-
+#endif
     if (CUE_SUCCESS != create_uri_suit())
         goto exit;
 
