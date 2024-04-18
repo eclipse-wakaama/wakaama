@@ -65,6 +65,7 @@
 #include "er-coap-13/er-coap-13.h"
 
 #include "../data/cbor.h"
+#include "../data/json.h"
 #include "../data/json_common.h"
 #include "../data/senml_cbor.h"
 #include "../data/senml_common.h"
@@ -460,12 +461,6 @@ lwm2m_status_t bootstrap_getStatus(lwm2m_context_t * contextP);
 // defined in tlv.c
 int tlv_parse(const uint8_t * buffer, size_t bufferLen, lwm2m_data_t ** dataP);
 int tlv_serialize(bool isResourceInstance, int size, lwm2m_data_t * dataP, uint8_t ** bufferP);
-#endif
-
-// defined in json.c
-#ifdef LWM2M_SUPPORT_JSON
-int json_parse(lwm2m_uri_t * uriP, const uint8_t * buffer, size_t bufferLen, lwm2m_data_t ** dataP);
-int json_serialize(lwm2m_uri_t * uriP, int size, lwm2m_data_t * tlvP, uint8_t ** bufferP);
 #endif
 
 // defined in discover.c
