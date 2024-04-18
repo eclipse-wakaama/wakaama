@@ -64,6 +64,8 @@
 
 #include "er-coap-13/er-coap-13.h"
 
+#include "../data/json_common.h"
+
 #if LWM2M_LOG_LEVEL != LWM2M_LOG_DISABLED
 #include <inttypes.h>
 
@@ -518,23 +520,6 @@ lwm2m_data_t *senml_findDataItem(lwm2m_data_t *listP, size_t count, uint16_t id)
 uri_depth_t senml_decreaseLevel(uri_depth_t level);
 int senml_findAndCheckData(const lwm2m_uri_t *uriP, uri_depth_t baseLevel, size_t size, const lwm2m_data_t *tlvP,
                            lwm2m_data_t **targetP, uri_depth_t *targetLevelP);
-#endif
-
-// defined in json_common.c
-#if defined(LWM2M_SUPPORT_JSON) || defined(LWM2M_SUPPORT_SENML_JSON)
-size_t json_skipSpace(const uint8_t * buffer,size_t bufferLen);
-int json_split(const uint8_t * buffer, size_t bufferLen, size_t * tokenStartP, size_t * tokenLenP, size_t * valueStartP, size_t * valueLenP);
-int json_itemLength(const uint8_t * buffer, size_t bufferLen);
-int json_countItems(const uint8_t * buffer, size_t bufferLen);
-int json_convertNumeric(const uint8_t *value, size_t valueLen, lwm2m_data_t *targetP);
-int json_convertTime(const uint8_t *valueStart, size_t valueLen, time_t *t);
-size_t json_unescapeString(uint8_t *dst, const uint8_t *src, size_t len);
-size_t json_escapeString(uint8_t *dst, size_t dstLen, const uint8_t *src, size_t srcLen);
-lwm2m_data_t * json_extendData(lwm2m_data_t * parentP);
-int json_dataStrip(int size, lwm2m_data_t * dataP, lwm2m_data_t ** resultP);
-lwm2m_data_t * json_findDataItem(lwm2m_data_t * listP, size_t count, uint16_t id);
-uri_depth_t json_decreaseLevel(uri_depth_t level);
-int json_findAndCheckData(const lwm2m_uri_t * uriP, uri_depth_t baseLevel, size_t size, const lwm2m_data_t * tlvP, lwm2m_data_t ** targetP, uri_depth_t *targetLevelP);
 #endif
 
 // defined in discover.c
