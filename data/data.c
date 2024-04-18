@@ -712,10 +712,9 @@ int lwm2m_data_parse(lwm2m_uri_t * uriP,
 #endif
 
 #ifdef LWM2M_SUPPORT_SENML_CBOR
-#if !defined(LWM2M_VERSION_1_1)
     case LWM2M_CONTENT_CBOR:
         return cbor_parse(uriP, buffer, bufferLen, dataP);
-#endif
+
     case LWM2M_CONTENT_SENML_CBOR:
         return senml_cbor_parse(uriP, buffer, bufferLen, dataP);
 #endif
@@ -823,12 +822,13 @@ int lwm2m_data_serialize(lwm2m_uri_t * uriP,
 #endif
 
 #ifdef LWM2M_SUPPORT_SENML_CBOR
-#ifndef LWM2M_VERSION_1_1
+#ifndef LWM2M_VERSION_1_0
     case LWM2M_CONTENT_CBOR:
         return cbor_serialize(uriP, size, dataP, bufferP);
-#endif
+
     case LWM2M_CONTENT_SENML_CBOR:
         return senml_cbor_serialize(uriP, size, dataP, bufferP);
+#endif
 #endif
 
     default:

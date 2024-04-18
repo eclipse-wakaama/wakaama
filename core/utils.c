@@ -810,14 +810,13 @@ uint8_t utils_getResponseFormat(uint8_t accept_num,
 #endif
 
 #ifdef LWM2M_SUPPORT_SENML_CBOR
-#ifndef LWM2M_VERSION_1_1
             case LWM2M_CONTENT_CBOR:
                 if (singular) {
                     *format = LWM2M_CONTENT_CBOR;
                     found = true;
                 }
                 break;
-#endif
+
             case LWM2M_CONTENT_SENML_CBOR:
                 *format = LWM2M_CONTENT_SENML_CBOR;
                 found = true;

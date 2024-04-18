@@ -33,7 +33,6 @@
 #include "tests.h"
 
 #ifdef LWM2M_SUPPORT_SENML_CBOR
-#ifndef LWM2M_VERSION_1_1
 
 /* clang-format off */
 #ifndef STR_MEDIA_TYPE
@@ -1198,5 +1197,4 @@ CU_ErrorCode create_cbor_suit(void) {
     return add_tests(pSuite, table);
 }
 
-#endif
 #endif
