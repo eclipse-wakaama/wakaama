@@ -68,6 +68,7 @@
 #include "../data/json_common.h"
 #include "../data/senml_cbor.h"
 #include "../data/senml_common.h"
+#include "../data/senml_json.h"
 
 #if LWM2M_LOG_LEVEL != LWM2M_LOG_DISABLED
 #include <inttypes.h>
@@ -465,12 +466,6 @@ int tlv_serialize(bool isResourceInstance, int size, lwm2m_data_t * dataP, uint8
 #ifdef LWM2M_SUPPORT_JSON
 int json_parse(lwm2m_uri_t * uriP, const uint8_t * buffer, size_t bufferLen, lwm2m_data_t ** dataP);
 int json_serialize(lwm2m_uri_t * uriP, int size, lwm2m_data_t * tlvP, uint8_t ** bufferP);
-#endif
-
-// defined in senml_json.c
-#ifdef LWM2M_SUPPORT_SENML_JSON
-int senml_json_parse(const lwm2m_uri_t * uriP, const uint8_t * buffer, size_t bufferLen, lwm2m_data_t ** dataP);
-int senml_json_serialize(const lwm2m_uri_t * uriP, int size, const lwm2m_data_t * tlvP, uint8_t ** bufferP);
 #endif
 
 // defined in discover.c
