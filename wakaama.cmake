@@ -25,6 +25,9 @@ set(WAKAAMA_LOG_MAX_MSG_TXT_SIZE
     CACHE STRING "The buffer size for the log message (without additional data)"
 )
 
+# Possibility to disable the examples
+option(WAKAAMA_ENABLE_EXAMPLES "Build all the example applications" ON)
+
 # Set the defines for logging configuration
 function(set_defines target)
     # Logging
