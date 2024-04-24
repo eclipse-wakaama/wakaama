@@ -148,12 +148,28 @@ function run_build() {
   # Existing directory needed by SonarQube build-wrapper
   mkdir -p build-wakaama
 
+  echo "Default build"
   ${OPT_WRAPPER_CMD} cmake -GNinja -S ${OPT_SOURCE_DIRECTORY} -B build-wakaama ${CMAKE_ARGS}
   ${OPT_WRAPPER_CMD} cmake --build build-wakaama
+
+  # CMake presets
+  echo "CMake presets build"
+  for i in $(cmake --list-presets build | awk '/"/{ print $1 }' | tr -d '"');do
+  	echo "CMake preset $i"
+  	${OPT_WRAPPER_CMD} cmake --preset "$i" -G Ninja ${CMAKE_ARGS}
+    ${OPT_WRAPPER_CMD} cmake --build --preset "$i"
+  done
 }
 
 function run_tests() {
+  echo "Default test run"
   cmake --build build-wakaama --target test
+
+  echo "CMake presets test run"
+  for i in $(cmake --list-presets build | awk '/"/{ print $1 }' | tr -d '"');do
+    echo "CMake preset $i"
+    cmake --build --preset "$i" --target test
+  done
 
   mkdir -p "${REPO_ROOT_DIR}/build-wakaama/coverage"
 

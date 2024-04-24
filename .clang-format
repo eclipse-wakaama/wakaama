@@ -3,3 +3,7 @@ Language: Cpp
 BasedOnStyle: LLVM
 IndentWidth: 4
 ColumnLimit: 120
+---
+Language: Json
+BasedOnStyle: llvm
+

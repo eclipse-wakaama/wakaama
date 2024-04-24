@@ -1,0 +1,88 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 21,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "log_base",
+      "description": "Run the tests with corresponding log level",
+      "hidden": true,
+      "binaryDir": "${sourceDir}/build-presets/log_tests/${presetName}",
+      "cacheVariables": {
+        "WAKAAMA_LOG_CUSTOM_HANDLER": {
+          "type": "BOOL",
+          "value": "ON"
+        },
+        "WAKAAMA_ENABLE_EXAMPLES": {
+          "type": "BOOL",
+          "value": "OFF"
+        }
+      }
+    },
+    {
+      "name": "log_dbg",
+      "description": "Run the tests with debug log level",
+      "inherits": "log_base",
+      "cacheVariables": {
+        "WAKAAMA_LOG_LEVEL": {
+          "type": "STRING",
+          "value": "DBG"
+        }
+      }
+    },
+    {
+      "name": "log_info",
+      "description": "Run the tests with info log level",
+      "inherits": "log_base",
+      "cacheVariables": {
+        "WAKAAMA_LOG_LEVEL": {
+          "type": "STRING",
+          "value": "INFO"
+        }
+      }
+    },
+    {
+      "name": "log_warn",
+      "description": "Run the tests with warning log level",
+      "inherits": "log_base",
+      "cacheVariables": {
+        "WAKAAMA_LOG_LEVEL": {
+          "type": "STRING",
+          "value": "WARN"
+        }
+      }
+    },
+    {
+      "name": "log_fatal",
+      "description": "Run the tests with fatal log level",
+      "inherits": "log_base",
+      "cacheVariables": {
+        "WAKAAMA_LOG_LEVEL": {
+          "type": "STRING",
+          "value": "FATAL"
+        }
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "log_dbg",
+      "configurePreset": "log_dbg"
+    },
+    {
+      "name": "log_info",
+      "configurePreset": "log_info"
+    },
+    {
+      "name": "log_warn",
+      "configurePreset": "log_warn"
+    },
+    {
+      "name": "log_fatal",
+      "configurePreset": "log_fatal"
+    }
+  ]
+}
