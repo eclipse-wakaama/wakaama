@@ -22,7 +22,7 @@ jobs:
       run: tools/ci/run_ci.sh --run-build --scan-build scan-build-14
 
     - name: Upload scan build reports
-      uses: actions/upload-artifact@v1
+      uses: actions/upload-artifact@v4
       with:
         name: Clang Static Analyzer Reports
         path: build-wakaama/clang-static-analyzer
