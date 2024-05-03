@@ -299,6 +299,20 @@ static uint8_t prv_firmware_execute(lwm2m_context_t *contextP,
     }
 }
 
+#ifdef LWM2M_RAW_BLOCK1_REQUESTS
+static uint8_t prv_firmware_raw_block1_write(lwm2m_context_t *contextP, lwm2m_uri_t *uriP, lwm2m_media_type_t format,
+                                             uint8_t *buffer, int length, lwm2m_object_t *objectP, uint32_t block_num,
+                                             uint8_t block_more) {
+    // a full implementation would store data to flash and update the
+    // firmware upload state machine and result here.
+    if (block_more == 0) {
+        return COAP_204_CHANGED;
+    }
+
+    return COAP_231_CONTINUE;
+}
+#endif
+
 void display_firmware_object(lwm2m_object_t * object)
 {
     firmware_data_t * data = (firmware_data_t *)object->userData;
@@ -352,6 +366,9 @@ lwm2m_object_t * get_object_firmware(void)
         firmwareObj->readFunc    = prv_firmware_read;
         firmwareObj->writeFunc   = prv_firmware_write;
         firmwareObj->executeFunc = prv_firmware_execute;
+#ifdef LWM2M_RAW_BLOCK1_REQUESTS
+        firmwareObj->rawBlock1WriteFunc = prv_firmware_raw_block1_write;
+#endif
         firmwareObj->userData    = lwm2m_malloc(sizeof(firmware_data_t));
 
         /*
