@@ -480,7 +480,9 @@ int discover_serialize(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_ser
 
 // defined in block.c
 #ifdef LWM2M_RAW_BLOCK1_REQUESTS
-uint8_t coap_block1_handler(lwm2m_block_data_t ** blockData, const char * uri, uint16_t mid, uint8_t * buffer, size_t length, uint16_t blockSize, uint32_t blockNum, bool blockMore, uint8_t ** outputBuffer, size_t * outputLength);
+uint8_t coap_block1_handler(lwm2m_block_data_t **blockData, const char *uri, uint16_t mid, const uint8_t *buffer,
+                            size_t length, uint16_t blockSize, uint32_t blockNum, bool blockMore,
+                            uint8_t **outputBuffer, size_t *outputLength);
 #else
 uint8_t coap_block1_handler(lwm2m_block_data_t **blockData, const char *uri, const uint8_t *buffer, size_t length,
                             uint16_t blockSize, uint32_t blockNum, bool blockMore, uint8_t **outputBuffer,

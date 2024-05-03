@@ -355,14 +355,11 @@ static uint8_t prv_raw_block1_write(lwm2m_context_t *contextP,
     {
         prv_block_buffer_free(targetP);
 
-        int offset; // length of id field  
-        
-        if (payload[0] & 0x20 == 0x20)
-        {
+        int offset; // length of id field
+
+        if ((payload[0] & 0x20) == 0x20) {
             offset = 2;
-        }
-        else
-        {
+        } else {
             offset = 1;
         }
         switch (payload[0] & 0x18)
@@ -386,6 +383,9 @@ static uint8_t prv_raw_block1_write(lwm2m_context_t *contextP,
                 targetP->value_len = (payload[offset]<<16) + (payload[offset+1]<<8) + payload[offset+2];
                 offset += 3;
                 break;
+            default:
+                // this should never occur, so return Bad Request
+                return COAP_400_BAD_REQUEST;
         }
         targetP->value_offset = offset;
         targetP->block_buffer = lwm2m_malloc(targetP->value_offset + targetP->value_offset);
