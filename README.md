@@ -116,7 +116,7 @@ On Ubuntu 20.04, used in CI, the dependencies can be installed as such:
 
 For macOS the development dependencies can be installed as such:
 
-`brew install automake clang-format cmake cunit gcc gitlint make ninja`
+`brew install automake clang-format cmake cunit gcc gitlint gnu-getopt make ninja`
 
 ### Code formatting
 #### C

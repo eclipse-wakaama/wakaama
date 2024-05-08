@@ -198,14 +198,20 @@ function run_tests() {
 
 # Parse Options
 
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  getopt=$(brew --prefix gnu-getopt)/bin/getopt
+else
+  getopt=$(which getopt)
+fi
+
 ret=0
-getopt --test > /dev/null || ret=$?
+$getopt --test > /dev/null || ret=$?
 if [ $ret -ne 4 ]; then
   echo "Error: getopt version is not as expected"
   exit 1
 fi
 
-if ! PARSED_OPTS=$(getopt -o vah \
+if ! PARSED_OPTS=$($getopt -o vah \
                           -l all \
                           -l branch-source: \
                           -l branch-target: \
