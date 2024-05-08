@@ -1,0 +1,30 @@
+name: Build and Test on macOS
+
+on:
+  push:
+    branches: '**'
+  pull_request:
+    branches: '**'
+
+jobs:
+  build_and_test:
+    runs-on: macos-14
+
+    steps:
+    - name: Checkout code including full history and submodules
+      uses: actions/checkout@v4
+      with:
+        submodules: true
+        fetch-depth: 0
+
+    - name: Install dependencies from Homebrew
+      run: |
+        brew install automake cmake cunit gnu-getopt make ninja
+
+    - name: Build all binaries
+      run: |
+        tools/ci/run_ci.sh --run-build  --verbose
+
+    - name: Build, execute unit tests
+      run: |
+        tools/ci/run_ci.sh --run-tests
