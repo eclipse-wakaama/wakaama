@@ -924,6 +924,35 @@ int lwm2m_bootstrap_read(lwm2m_context_t * contextP, void * sessionH, lwm2m_uri_
 #endif
 #endif
 
+/* Logging related public functionality */
+
+/* Logging level values used for preprocessor */
+#define LWM2M_DBG (10)
+#define LWM2M_INFO (20)
+#define LWM2M_WARN (30)
+#define LWM2M_ERR (40)
+#define LWM2M_FATAL (50)
+#define LWM2M_LOG_DISABLED (0xff)
+
+#ifndef LWM2M_LOG_LEVEL
+#define LWM2M_LOG_LEVEL LWM2M_LOG_DISABLED
+#endif
+
+/** Logging levels */
+typedef enum {
+    LWM2M_LOGGING_DBG = (uint8_t)LWM2M_DBG,
+    LWM2M_LOGGING_INFO = (uint8_t)LWM2M_INFO,
+    LWM2M_LOGGING_WARN = (uint8_t)LWM2M_WARN,
+    LWM2M_LOGGING_ERR = (uint8_t)LWM2M_ERR,
+    LWM2M_LOGGING_FATAL = (uint8_t)LWM2M_FATAL
+} lwm2m_logging_level_t;
+
+/** The default log handler for an log entry. To define a custom log handler define `LWM2M_LOG_CUSTOM_HANDLER` and
+ * implement a function with this signature.
+ * This function should not be called directly. Use the logging macros instead. */
+void lwm2m_log_handler(lwm2m_logging_level_t level, const char *const msg, const char *const func, const int line,
+                       const char *const file);
+
 #ifdef __cplusplus
 }
 #endif
