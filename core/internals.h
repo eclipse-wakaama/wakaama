@@ -64,17 +64,6 @@
 
 #include "er-coap-13/er-coap-13.h"
 
-#define LWM2M_DBG (10)
-#define LWM2M_INFO (20)
-#define LWM2M_WARN (30)
-#define LWM2M_ERR (40)
-#define LWM2M_FATAL (50)
-#define LWM2M_LOG_DISABLED (0xff)
-
-#ifndef LWM2M_LOG_LEVEL
-#define LWM2M_LOG_LEVEL LWM2M_LOG_DISABLED
-#endif
-
 #if LWM2M_LOG_LEVEL != LWM2M_LOG_DISABLED
 #include <inttypes.h>
 
@@ -87,14 +76,6 @@
 #ifndef LWM2M_LOG_MAX_MSG_TXT_SIZE
 #define LWM2M_LOG_MAX_MSG_TXT_SIZE 200
 #endif
-
-typedef enum {
-    LWM2M_LOGGING_DBG = (uint8_t)LWM2M_DBG,
-    LWM2M_LOGGING_INFO = (uint8_t)LWM2M_INFO,
-    LWM2M_LOGGING_WARN = (uint8_t)LWM2M_WARN,
-    LWM2M_LOGGING_ERR = (uint8_t)LWM2M_ERR,
-    LWM2M_LOGGING_FATAL = (uint8_t)LWM2M_FATAL
-} lwm2m_logging_level_t;
 
 /* clang-format off */
 #define STR_LOGGING_LEVEL(level) \
@@ -109,12 +90,6 @@ typedef enum {
 /** Format the message part of a log entry. This function is not thread save.
  * This function should not be called directly. It's used internally in the logging system. */
 char *lwm2m_log_fmt_message(const char *fmt, ...);
-
-/** The default log handler for an log entry. To define a custom log handler define `LWM2M_LOG_CUSTOM_HANDLER` and
- * implement a function with this signature.
- * This function should not be called directly. Use the logging macros instead. */
-void lwm2m_log_handler(lwm2m_logging_level_t level, const char *const msg, const char *const func, const int line,
-                       const char *const file);
 
 /** Basic logging macro. Usually this is not called directly. Use the macros for a given level (e.g. LOG_DBG).
  * Supports arguments if the message (including format specifiers) is a string literal. Otherwise the use uf
