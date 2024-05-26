@@ -76,9 +76,6 @@ Wakaama is not a library but files to be built with an application.
 Wakaama uses CMake >= 3.13. Look at examples/server/CMakeLists.txt for an
 example of how to include it.
 Several preprocessor definitions are supported:
- - Endianness: Exactly one has to be defined.
-   - LWM2M_BIG_ENDIAN if your target platform uses big-endian format.
-   - LWM2M_LITTLE_ENDIAN if your target platform uses little-endian format.
  - Mode: One or multiple modes have to be defined.
    - LWM2M_CLIENT_MODE to enable LWM2M Client interfaces.
    - LWM2M_SERVER_MODE to enable LWM2M Server interfaces.
@@ -93,7 +90,7 @@ Several preprocessor definitions are supported:
    - LWM2M_VERSION_1_0 to support only version 1.0
    Please note: Clients support only the specified version, while servers are backward compatible.
  - LWM2M_RAW_BLOCK1_REQUESTS For low memory client devices where it is not possible to keep a large post or put request in memory to be parsed (typically a firmware write).
-   This option enable each unprocessed block 1 payload to be passed to the application, typically to be stored to a flash memory. 
+   This option enable each unprocessed block 1 payload to be passed to the application, typically to be stored to a flash memory.
  - LWM2M_COAP_DEFAULT_BLOCK_SIZE CoAP block size used by CoAP layer when performing block-wise transfers. Possible values: 16, 32, 64, 128, 256, 512 and 1024. Defaults to 1024.
 
 ### Logging

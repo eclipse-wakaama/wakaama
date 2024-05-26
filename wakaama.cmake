@@ -75,7 +75,6 @@ endfunction()
 # The following definitions are needed and default values get applied if not set:
 #
 # - LWM2M_COAP_DEFAULT_BLOCK_SIZE
-# - Either LWM2M_LITTLE_ENDIAN or LWM2M_BIG_ENDIAN
 function(target_sources_wakaama target)
     target_sources(
         ${target}
