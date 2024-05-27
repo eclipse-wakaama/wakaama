@@ -46,66 +46,63 @@ if(WAKAAMA_WITH_CONNECTION_IMPLEMENTATION STREQUAL "TESTING")
         )
     endif()
 
-    add_test_variant(
-        TARGET_NAME lwm2munittests_server
-        SOURCE_FILES ${TEST_SOURCES}
-        COMPILE_DEFINITIONS LWM2M_SERVER_MODE
-    )
+    if(NOT WAKAAMA_CLIENT_LWM2M_V_1_0)
+        add_test_variant(
+            TARGET_NAME lwm2munittests_server
+            SOURCE_FILES ${TEST_SOURCES}
+            COMPILE_DEFINITIONS LWM2M_SERVER_MODE
+        )
 
-    add_test_variant(
-        TARGET_NAME lwm2munittests_server_formats
-        SOURCE_FILES ${TEST_SOURCES}
-        COMPILE_DEFINITIONS LWM2M_SERVER_MODE LWM2M_OLD_CONTENT_FORMAT_SUPPORT LWM2M_SUPPORT_SENML_JSON
-                            LWM2M_SUPPORT_SENML_CBOR
-    )
+        add_test_variant(
+            TARGET_NAME lwm2munittests_server_formats
+            SOURCE_FILES ${TEST_SOURCES}
+            COMPILE_DEFINITIONS LWM2M_SERVER_MODE LWM2M_OLD_CONTENT_FORMAT_SUPPORT LWM2M_SUPPORT_SENML_JSON
+                                LWM2M_SUPPORT_SENML_CBOR
+        )
 
-    add_test_variant(
-        TARGET_NAME lwm2munittests_server_formats_no_float16
-        SOURCE_FILES ${TEST_SOURCES}
-        COMPILE_DEFINITIONS LWM2M_SERVER_MODE LWM2M_OLD_CONTENT_FORMAT_SUPPORT LWM2M_SUPPORT_SENML_JSON
-                            LWM2M_SUPPORT_SENML_CBOR CBOR_NO_FLOAT16_ENCODING
-    )
+        add_test_variant(
+            TARGET_NAME lwm2munittests_server_formats_no_float16
+            SOURCE_FILES ${TEST_SOURCES}
+            COMPILE_DEFINITIONS LWM2M_SERVER_MODE LWM2M_OLD_CONTENT_FORMAT_SUPPORT LWM2M_SUPPORT_SENML_JSON
+                                LWM2M_SUPPORT_SENML_CBOR CBOR_NO_FLOAT16_ENCODING
+        )
 
-    add_test_variant(
-        TARGET_NAME lwm2munittests_bootstrap_server
-        SOURCE_FILES ${TEST_SOURCES}
-        COMPILE_DEFINITIONS LWM2M_BOOTSTRAP_SERVER_MODE
-    )
+        if(NOT WAKAAMA_CLIENT_INITIATED_BOOTSTRAP)
+            add_test_variant(
+                TARGET_NAME lwm2munittests_bootstrap_server
+                SOURCE_FILES ${TEST_SOURCES}
+                COMPILE_DEFINITIONS LWM2M_BOOTSTRAP_SERVER_MODE
+            )
 
-    add_test_variant(
-        TARGET_NAME lwm2munittests_server_and_bootstrap_server
-        SOURCE_FILES ${TEST_SOURCES}
-        COMPILE_DEFINITIONS LWM2M_SERVER_MODE LWM2M_BOOTSTRAP_SERVER_MODE
-    )
+            add_test_variant(
+                TARGET_NAME lwm2munittests_server_and_bootstrap_server
+                SOURCE_FILES ${TEST_SOURCES}
+                COMPILE_DEFINITIONS LWM2M_SERVER_MODE LWM2M_BOOTSTRAP_SERVER_MODE
+            )
+        endif()
+        add_test_variant(
+            TARGET_NAME lwm2munittests_server_blocksize_16
+            SOURCE_FILES ${TEST_SOURCES}
+            COMPILE_DEFINITIONS LWM2M_CLIENT_MODE COAP_DEFAULT_BLOCK_SIZE=16
+        )
 
-    add_test_variant(
-        TARGET_NAME lwm2munittests_server_blocksize_16
-        SOURCE_FILES ${TEST_SOURCES}
-        COMPILE_DEFINITIONS LWM2M_CLIENT_MODE COAP_DEFAULT_BLOCK_SIZE=16
-    )
+        add_test_variant(
+            TARGET_NAME lwm2munittests_server_blocksize_64
+            SOURCE_FILES ${TEST_SOURCES}
+            COMPILE_DEFINITIONS LWM2M_SERVER_MODE COAP_DEFAULT_BLOCK_SIZE=64
+        )
 
-    add_test_variant(
-        TARGET_NAME lwm2munittests_server_blocksize_64
-        SOURCE_FILES ${TEST_SOURCES}
-        COMPILE_DEFINITIONS LWM2M_SERVER_MODE COAP_DEFAULT_BLOCK_SIZE=64
-    )
-
-    add_test_variant(
-        TARGET_NAME lwm2munittests_server_blocksize_1024
-        SOURCE_FILES ${TEST_SOURCES}
-        COMPILE_DEFINITIONS LWM2M_SERVER_MODE COAP_DEFAULT_BLOCK_SIZE=1024
-    )
-
-    add_test_variant(
-        TARGET_NAME lwm2munittests_client_server_bootstrap_all_formats
-        SOURCE_FILES ${TEST_SOURCES}
-        COMPILE_DEFINITIONS
-            LWM2M_CLIENT_MODE
-            LWM2M_SERVER_MODE
-            LWM2M_BOOTSTRAP_SERVER_MODE
-            LWM2M_SERVER_MODE
-            LWM2M_OLD_CONTENT_FORMAT_SUPPORT
-            LWM2M_SUPPORT_SENML_JSON
-            COAP_DEFAULT_BLOCK_SIZE=32
-    )
+        add_test_variant(
+            TARGET_NAME lwm2munittests_client_server_bootstrap_all_formats
+            SOURCE_FILES ${TEST_SOURCES}
+            COMPILE_DEFINITIONS
+                LWM2M_CLIENT_MODE
+                LWM2M_SERVER_MODE
+                LWM2M_BOOTSTRAP_SERVER_MODE
+                LWM2M_SERVER_MODE
+                LWM2M_OLD_CONTENT_FORMAT_SUPPORT
+                LWM2M_SUPPORT_SENML_JSON
+                COAP_DEFAULT_BLOCK_SIZE=32
+        )
+    endif()
 endif()

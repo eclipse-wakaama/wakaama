@@ -20,6 +20,10 @@
         "WAKAAMA_MODE_SERVER": {
           "type": "BOOL",
           "value": "ON"
+        },
+        "WAKAAMA_ENABLE_EXAMPLES": {
+          "type": "BOOL",
+          "value": "ON"
         }
       }
     },
@@ -29,6 +33,10 @@
       "inherits": "base",
       "cacheVariables": {
         "WAKAAMA_MODE_BOOTSTRAP_SERVER": {
+          "type": "BOOL",
+          "value": "ON"
+        },
+        "WAKAAMA_ENABLE_EXAMPLES": {
           "type": "BOOL",
           "value": "ON"
         }
@@ -42,11 +50,45 @@
         "WAKAAMA_MODE_CLIENT": {
           "type": "BOOL",
           "value": "ON"
+        },
+        "WAKAAMA_CLIENT_INITIATED_BOOTSTRAP": {
+          "type": "BOOL",
+          "value": "ON"
+        },
+        "WAKAAMA_DATA_SENML_JSON": {
+          "type": "BOOL",
+          "value": "ON"
+        },
+        "WAKAAMA_ENABLE_EXAMPLES": {
+          "type": "BOOL",
+          "value": "ON"
         }
       }
     },
     {
-      "name": "log_base",
+      "name": "client_raw_block1",
+      "description": "Build a client with raw block 1 requests support",
+      "inherits": "client",
+      "cacheVariables": {
+        "WAKAAMA_RAW_BLOCK1_REQUESTS": {
+          "type": "BOOL",
+          "value": "ON"
+        }
+      }
+    },
+    {
+      "name": "client_tinydtls",
+      "description": "Build a client with tinydtls support",
+      "inherits": "client",
+      "cacheVariables": {
+        "WAKAAMA_WITH_CONNECTION_IMPLEMENTATION": {
+          "type": "STRING",
+          "value": "TINYDTLS"
+        }
+      }
+    },
+    {
+      "name": "unittest_base",
       "description": "Run the tests with corresponding log level",
       "hidden": true,
       "inherits": "base",
@@ -66,21 +108,18 @@
       }
     },
     {
-      "name": "log_dbg",
-      "description": "Run the tests with debug log level",
-      "inherits": "log_base",
+      "name": "unit_test_client_1_0_log_info",
+      "description": "Run the tests with LwM2M 1.1 and client initiated bootstrap (logging: Info)",
+      "inherits": "unittest_base",
       "cacheVariables": {
-        "WAKAAMA_LOG_LEVEL": {
-          "type": "STRING",
-          "value": "DBG"
-        }
-      }
-    },
-    {
-      "name": "log_info",
-      "description": "Run the tests with info log level",
-      "inherits": "log_base",
-      "cacheVariables": {
+        "WAKAAMA_CLIENT_LWM2M_V_1_0": {
+          "type": "BOOL",
+          "value": "ON"
+        },
+        "WAKAAMA_CLIENT_INITIATED_BOOTSTRAP": {
+          "type": "BOOL",
+          "value": "ON"
+        },
         "WAKAAMA_LOG_LEVEL": {
           "type": "STRING",
           "value": "INFO"
@@ -88,10 +127,52 @@
       }
     },
     {
-      "name": "log_warn",
-      "description": "Run the tests with warning log level",
-      "inherits": "log_base",
+      "name": "unit_test_server_formats_log_dbg",
+      "description": "Run the tests with server mode and multiple data formats (logging: debug)",
+      "inherits": "unittest_base",
       "cacheVariables": {
+        "WAKAAMA_DATA_SENML_CBOR": {
+          "type": "BOOL",
+          "value": "ON"
+        },
+        "WAKAAMA_DATA_SENML_JSON": {
+          "type": "BOOL",
+          "value": "ON"
+        },
+        "WAKAAMA_DATA_OLD_CONTENT_FORMAT": {
+          "type": "BOOL",
+          "value": "ON"
+        },
+        "WAKAAMA_LOG_LEVEL": {
+          "type": "STRING",
+          "value": "DBG"
+        }
+      }
+    },
+    {
+      "name": "unit_test_bootstrap_server",
+      "description": "Run the tests with bootstrap server mode",
+      "inherits": "unittest_base",
+      "cacheVariables": {
+        "WAKAAMA_MODE_BOOTSTRAP_SERVER": {
+          "type": "BOOL",
+          "value": "ON"
+        }
+      }
+    },
+    {
+      "name": "unit_test_server_and_bootstrap_server_log_warn",
+      "description": "Run the tests with server and bootstrap server mode (logging: warning)",
+      "inherits": "unittest_base",
+      "cacheVariables": {
+        "WAKAAMA_MODE_BOOTSTRAP_SERVER": {
+          "type": "BOOL",
+          "value": "ON"
+        },
+        "WAKAAMA_MODE_SERVER": {
+          "type": "BOOL",
+          "value": "ON"
+        },
         "WAKAAMA_LOG_LEVEL": {
           "type": "STRING",
           "value": "WARN"
@@ -99,13 +180,72 @@
       }
     },
     {
-      "name": "log_fatal",
-      "description": "Run the tests with fatal log level",
-      "inherits": "log_base",
+      "name": "unit_test_server_and_client_block_size_64_log_fatal",
+      "description": "Run the tests with server and client server mode (64 bit blocks, logging: fatal)",
+      "inherits": "unittest_base",
       "cacheVariables": {
+        "WAKAAMA_MODE_SERVER": {
+          "type": "BOOL",
+          "value": "ON"
+        },
+        "WAKAAMA_MODE_CLIENT": {
+          "type": "BOOL",
+          "value": "ON"
+        },
+        "WAKAAMA_COAP_DEFAULT_BLOCK_SIZE": {
+          "type": "STRING",
+          "value": "64"
+        },
         "WAKAAMA_LOG_LEVEL": {
           "type": "STRING",
           "value": "FATAL"
+        }
+      }
+    },
+    {
+      "name": "unit_test_client_server_bootstrap_all_formats",
+      "description": "Run the tests with all modes and all formats (32 bit blocks)",
+      "inherits": "unittest_base",
+      "cacheVariables": {
+        "WAKAAMA_MODE_SERVER": {
+          "type": "BOOL",
+          "value": "ON"
+        },
+        "WAKAAMA_MODE_BOOTSTRAP_SERVER": {
+          "type": "BOOL",
+          "value": "ON"
+        },
+        "WAKAAMA_MODE_CLIENT": {
+          "type": "BOOL",
+          "value": "ON"
+        },
+        "WAKAAMA_DATA_TLV": {
+          "type": "BOOL",
+          "value": "ON"
+        },
+        "WAKAAMA_DATA_JSON": {
+          "type": "BOOL",
+          "value": "ON"
+        },
+        "WAKAAMA_DATA_SENML_JSON": {
+          "type": "BOOL",
+          "value": "ON"
+        },
+        "WAKAAMA_DATA_SENML_CBOR": {
+          "type": "BOOL",
+          "value": "ON"
+        },
+        "WAKAAMA_DATA_SENML_CBOR_FLOAT16_SUPPORT": {
+          "type": "BOOL",
+          "value": "ON"
+        },
+        "WAKAAMA_DATA_OLD_CONTENT_FORMAT": {
+          "type": "BOOL",
+          "value": "ON"
+        },
+        "WAKAAMA_COAP_DEFAULT_BLOCK_SIZE": {
+          "type": "STRING",
+          "value": "32"
         }
       }
     }
@@ -124,20 +264,32 @@
       "configurePreset": "client"
     },
     {
-      "name": "log_dbg",
-      "configurePreset": "log_dbg"
+      "name": "client_raw_block1",
+      "configurePreset": "client_raw_block1"
     },
     {
-      "name": "log_info",
-      "configurePreset": "log_info"
+      "name": "client_tinydtls",
+      "configurePreset": "client_tinydtls"
     },
     {
-      "name": "log_warn",
-      "configurePreset": "log_warn"
+      "name": "unit_test_client_1_0_log_info",
+      "configurePreset": "unit_test_client_1_0_log_info"
     },
     {
-      "name": "log_fatal",
-      "configurePreset": "log_fatal"
+      "name": "unit_test_server_formats_log_dbg",
+      "configurePreset": "unit_test_server_formats_log_dbg"
+    },
+    {
+      "name": "unit_test_server_and_bootstrap_server_log_warn",
+      "configurePreset": "unit_test_server_and_bootstrap_server_log_warn"
+    },
+    {
+      "name": "unit_test_server_and_client_block_size_64_log_fatal",
+      "configurePreset": "unit_test_server_and_client_block_size_64_log_fatal"
+    },
+    {
+      "name": "unit_test_client_server_bootstrap_all_formats",
+      "configurePreset": "unit_test_client_server_bootstrap_all_formats"
     }
   ]
 }
