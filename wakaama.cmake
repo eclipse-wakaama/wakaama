@@ -7,6 +7,10 @@ option(WAKAAMA_MODE_SERVER "Enable LWM2M Server interfaces" OFF)
 option(WAKAAMA_MODE_BOOTSTRAP_SERVER "Enable LWM2M Bootstrap Server interfaces" OFF)
 option(WAKAAMA_MODE_CLIENT "Enable LWM2M Client interfaces" OFF)
 
+# Client
+option(WAKAAMA_CLIENT_INITIATED_BOOTSTRAP "Enable client initiated bootstrap support in a client" OFF)
+option(WAKAAMA_CLIENT_LWM2M_V_1_0 "Restrict the client code to use LwM2M version 1.0" OFF)
+
 # Logging
 set(WAKAAMA_LOG_LEVEL
     LOG_DISABLED
@@ -44,6 +48,15 @@ function(set_defines target)
     endif()
     if(WAKAAMA_MODE_BOOTSTRAP_SERVER)
         target_compile_definitions(${target} PUBLIC LWM2M_BOOTSTRAP_SERVER_MODE)
+    endif()
+
+    # Client
+    if(WAKAAMA_CLIENT_INITIATED_BOOTSTRAP)
+        target_compile_definitions(${target} PUBLIC LWM2M_BOOTSTRAP)
+    endif()
+
+    if(WAKAAMA_CLIENT_LWM2M_V_1_0)
+        target_compile_definitions(${target} PUBLIC LWM2M_VERSION_1_0)
     endif()
 
     # Logging
