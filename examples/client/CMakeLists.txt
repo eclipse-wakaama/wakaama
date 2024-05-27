@@ -4,7 +4,10 @@ project(lwm2mclient C)
 
 include(../../wakaama.cmake)
 
-if(WAKAAMA_ENABLE_EXAMPLES AND WAKAAMA_MODE_CLIENT)
+if(WAKAAMA_ENABLE_EXAMPLES
+   AND WAKAAMA_MODE_CLIENT
+   AND WAKAAMA_CLIENT_INITIATED_BOOTSTRAP
+)
 
     set(SOURCES
         lwm2mclient.c
