@@ -51,15 +51,17 @@ add_test_variant(
     COMPILE_DEFINITIONS LWM2M_SERVER_MODE
 )
 
-add_test_variant(
-    TARGET_NAME lwm2munittests_client_server_bootstrap_all_formats
-    SOURCE_FILES ${TEST_SOURCES}
-    COMPILE_DEFINITIONS
-        LWM2M_CLIENT_MODE
-        LWM2M_SERVER_MODE
-        LWM2M_BOOTSTRAP_SERVER_MODE
-        LWM2M_SERVER_MODE
-        LWM2M_OLD_CONTENT_FORMAT_SUPPORT
-        LWM2M_SUPPORT_SENML_JSON
-        LWM2M_SUPPORT_SENML_CBOR
-)
+if(NOT WAKAAMA_CLIENT_INITIATED_BOOTSTRAP)
+    add_test_variant(
+        TARGET_NAME lwm2munittests_client_server_bootstrap_all_formats
+        SOURCE_FILES ${TEST_SOURCES}
+        COMPILE_DEFINITIONS
+            LWM2M_CLIENT_MODE
+            LWM2M_SERVER_MODE
+            LWM2M_BOOTSTRAP_SERVER_MODE
+            LWM2M_SERVER_MODE
+            LWM2M_OLD_CONTENT_FORMAT_SUPPORT
+            LWM2M_SUPPORT_SENML_JSON
+            LWM2M_SUPPORT_SENML_CBOR
+    )
+endif()

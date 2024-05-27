@@ -51,6 +51,10 @@
           "type": "BOOL",
           "value": "ON"
         },
+        "WAKAAMA_CLIENT_INITIATED_BOOTSTRAP": {
+          "type": "BOOL",
+          "value": "ON"
+        },
         "WAKAAMA_ENABLE_EXAMPLES": {
           "type": "BOOL",
           "value": "ON"
