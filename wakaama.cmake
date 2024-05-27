@@ -11,6 +11,17 @@ option(WAKAAMA_MODE_CLIENT "Enable LWM2M Client interfaces" OFF)
 option(WAKAAMA_CLIENT_INITIATED_BOOTSTRAP "Enable client initiated bootstrap support in a client" OFF)
 option(WAKAAMA_CLIENT_LWM2M_V_1_0 "Restrict the client code to use LwM2M version 1.0" OFF)
 
+# Data Types
+
+set(WAKAAMA_DATA_TLV "Enable TLV payload support" ON)
+set(WAKAAMA_DATA_JSON "Enable JSON payload support" ON)
+set(WAKAAMA_DATA_SENML_JSON "Enable SenML JSON payload support" ON)
+set(WAKAAMA_DATA_SENML_CBOR "Enable SenML CBOR payload support" ON)
+
+set(WAKAAMA_DATA_SENML_CBOR_FLOAT16_SUPPORT "Enable 16-bit float support in CBOR" ON)
+
+set(WAKAAMA_DATA_OLD_CONTENT_FORMAT "Support the deprecated content format values for TLV and JSON" ON)
+
 # CoAP
 option(WAKAAMA_COAP_RAW_BLOCK1_REQUESTS "Pass each unprocessed block 1 payload to the application" OFF)
 
@@ -82,6 +93,28 @@ function(set_client_defines target)
     endif()
 endfunction()
 
+# Set defines regarding the different data types
+function(set_data_format_defines target)
+    if(WAKAMA_DATA_TLV)
+        target_compile_definitions(${target} PUBLIC LWM2M_SUPPORT_TLV)
+    endif()
+    if(WAKAMA_DATA_JSON)
+        target_compile_definitions(${target} PUBLIC LWM2M_SUPPORT_JSON)
+    endif()
+    if(WAKAMA_DATA_SENML_JSON)
+        target_compile_definitions(${target} PUBLIC LWM2M_SUPPORT_SENML_JSON)
+    endif()
+    if(WAKAMA_DATA_SENML_CBOR)
+        target_compile_definitions(${target} PUBLIC LWM2M_SUPPORT_SENML_CBOR)
+    endif()
+    if(NOT WAKAAMA_DATA_SENML_CBOR_FLOAT16_SUPPORT)
+        target_compile_definitions(${target} PUBLIC CBOR_NO_FLOAT16_ENCODING)
+    endif()
+    if(WAKAAMA_DATA_OLD_CONTENT_FORMAT)
+        target_compile_definitions(${target} PUBLIC LWM2M_OLD_CONTENT_FORMAT_SUPPORT)
+    endif()
+endfunction()
+
 # Set the defines related to CoAP
 function(set_coap_defines)
     if(WAKAAMA_COAP_RAW_BLOCK1_REQUESTS)
@@ -108,6 +141,7 @@ function(set_defines target)
     set_mode_defines(${target})
     set_client_defines(${target})
     set_coap_defines(${target})
+    set_data_format_defines(${target})
     set_logging_defines(${target})
 endfunction()
 
