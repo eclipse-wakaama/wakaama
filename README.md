@@ -42,19 +42,10 @@ git clone --recurse-submodules https://github.com/eclipse/wakaama.git
 
 ## Compiling
 
-Wakaama is not a library but files to be built with an application.
-Wakaama uses CMake >= 3.13. Look at examples/server/CMakeLists.txt for an
-example of how to include it.
-Several preprocessor definitions are supported:
- - Endianness: Exactly one has to be defined.
-   - LWM2M_BIG_ENDIAN if your target platform uses big-endian format.
-   - LWM2M_LITTLE_ENDIAN if your target platform uses little-endian format.
- - LWM2M_BOOTSTRAP to enable LWM2M Bootstrap support in a LWM2M Client.
- - LWM2M_SUPPORT_TLV to enable TLV payload support (implicit except for LWM2M 1.1 clients)
- - LWM2M_SUPPORT_JSON to enable JSON payload support (implicit when defining LWM2M_SERVER_MODE)
- - LWM2M_SUPPORT_SENML_JSON to enable SenML JSON payload support (implicit for LWM2M 1.1 or greater when defining LWM2M_SERVER_MODE or LWM2M_BOOTSTRAP_SERVER_MODE)
- - LWM2M_SUPPORT_SENML_CBOR to enable SenML CBOR payload support (implicit for LWM2M 1.1 or greater when defining LWM2M_SERVER_MODE or LWM2M_BOOTSTRAP_SERVER_MODE)
- - LWM2M_OLD_CONTENT_FORMAT_SUPPORT to support the deprecated content format values for TLV and JSON.
+Wakaama is a highly configurable library. It is built with CMake.
+Look at examples/server/CMakeLists.txt for an example of how to include it.
+
+The different settings can be configured with CMake cache variables (e.g. `cmake -DLOG_LEVEL=INFO`).
 
 ### Mode
 
@@ -72,6 +63,17 @@ Wakaama supports additional client related options. These are only available if 
 - WAKAAMA_CLIENT_LWM2M_V_1_0: Restrict the client code to use LwM2M version 1.0
  
 Please note: LwM2M version 1.0 is only supported by clients, while servers are backward compatible.
+
+### Data Formats
+
+The following data formats are configurable for Wakaama:
+
+- WAKAAMA_DATA_TLV to enable TLV payload support (implicit except for LWM2M 1.1 clients)
+- WAKAAMA_DATA_JSON to enable JSON payload support (implicit when defining LWM2M_SERVER_MODE)
+- WAKAAMA_DATA_SENML_JSON to enable SenML JSON payload support (implicit for LWM2M 1.1 or greater when defining LWM2M_SERVER_MODE or LWM2M_BOOTSTRAP_SERVER_MODE)
+- WAKAAMA_DATA_SENML_CBOR to enable SenML CBOR payload support (implicit for LWM2M 1.1 or greater when defining LWM2M_SERVER_MODE or LWM2M_BOOTSTRAP_SERVER_MODE)
+- WAKAAMA_DATA_SENML_CBOR_FLOAT16_SUPPORT to enable 16-bit floating point encoding support in CBOR.
+- WAKAAMA_DATA_OLD_CONTENT_FORMAT to support the deprecated content format values for TLV and JSON.
 
 ### CoAP Settings
 
