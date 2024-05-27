@@ -75,7 +75,7 @@ git clone --recurse-submodules https://github.com/eclipse/wakaama.git
 Wakaama is a highly configurable library. It is built with CMake.
 Look at examples/server/CMakeLists.txt for an example of how to include it.
 
-The different settings can be configures with CMake cache variables (e.g. `cmake -DLOG_LEVEL=INFO`).
+The different settings can be configures with CMake cache variables (e.g. `cmake -DWAKAAMA_LOG_LEVEL=INFO`).
 
 ### Mode
 
@@ -133,14 +133,13 @@ These features are additions to the core of Wakaama that might be helpful when d
   - PLAIN: Unsecured UDP connection.
   - TINYDTLS: DTLS connection with tinydtls.
   - TESTING: Connection implementation used for testing.
-
 ## Development
 
 ### Dependencies and Tools
 - Mandatory:
   - Compiler: GCC and/or Clang
 - Optional (but strongly recommended):
-  - Build system generator: CMake 3.13+
+  - Build system generator: CMake (might become a mandatory requirement in the future)
   - Version control system: Git (and a GitHub account)
   - Git commit message linter: gitlint
   - Build system: ninja
