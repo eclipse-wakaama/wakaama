@@ -2,6 +2,11 @@ set(WAKAAMA_TOP_LEVEL_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}")
 set(WAKAAMA_EXAMPLE_DIRECTORY "${WAKAAMA_TOP_LEVEL_DIRECTORY}/examples")
 set(WAKAAMA_EXAMPLE_SHARED_DIRECTORY "${WAKAAMA_EXAMPLE_DIRECTORY}/shared")
 
+# Mode
+option(WAKAAMA_MODE_SERVER "Enable LWM2M Server interfaces" OFF)
+option(WAKAAMA_MODE_BOOTSTRAP_SERVER "Enable LWM2M Bootstrap Server interfaces" OFF)
+option(WAKAAMA_MODE_CLIENT "Enable LWM2M Client interfaces" OFF)
+
 # Logging
 set(WAKAAMA_LOG_LEVEL
     LOG_DISABLED
@@ -28,8 +33,22 @@ set(WAKAAMA_LOG_MAX_MSG_TXT_SIZE
 # Possibility to disable the examples
 option(WAKAAMA_ENABLE_EXAMPLES "Build all the example applications" ON)
 
+# Set the defines for Wakaama mode configuration
+function(set_mode_defines target)
+    # Mode
+    if(WAKAAMA_MODE_CLIENT)
+        target_compile_definitions(${target} PUBLIC LWM2M_CLIENT_MODE)
+    endif()
+    if(WAKAAMA_MODE_SERVER)
+        target_compile_definitions(${target} PUBLIC LWM2M_SERVER_MODE)
+    endif()
+    if(WAKAAMA_MODE_BOOTSTRAP_SERVER)
+        target_compile_definitions(${target} PUBLIC LWM2M_BOOTSTRAP_SERVER_MODE)
+    endif()
+endfunction()
+
 # Set the defines for logging configuration
-function(set_defines target)
+function(set_logging_defines target)
     # Logging
     target_compile_definitions(${target} PUBLIC LWM2M_LOG_LEVEL=LWM2M_${WAKAAMA_LOG_LEVEL})
 
@@ -38,6 +57,12 @@ function(set_defines target)
     endif()
 
     target_compile_definitions(${target} PUBLIC LWM2M_LOG_MAX_MSG_TXT_SIZE=${WAKAAMA_LOG_MAX_MSG_TXT_SIZE})
+endfunction()
+
+# Set all the requested defines on target
+function(set_defines target)
+    set_mode_defines(${target})
+    set_logging_defines(${target})
 endfunction()
 
 # Add data format source files to an existing target.

@@ -7,10 +7,61 @@
   },
   "configurePresets": [
     {
+      "name": "base",
+      "description": "Basic preset settings",
+      "hidden": true,
+      "binaryDir": "${sourceDir}/build-presets/${presetName}"
+    },
+    {
+      "name": "server",
+      "description": "Build a server",
+      "inherits": "base",
+      "cacheVariables": {
+        "WAKAAMA_MODE_SERVER": {
+          "type": "BOOL",
+          "value": "ON"
+        },
+        "WAKAAMA_ENABLE_EXAMPLES": {
+          "type": "BOOL",
+          "value": "ON"
+        }
+      }
+    },
+    {
+      "name": "bootstrap_server",
+      "description": "Build a bootstrap server",
+      "inherits": "base",
+      "cacheVariables": {
+        "WAKAAMA_MODE_BOOTSTRAP_SERVER": {
+          "type": "BOOL",
+          "value": "ON"
+        },
+        "WAKAAMA_ENABLE_EXAMPLES": {
+          "type": "BOOL",
+          "value": "ON"
+        }
+      }
+    },
+    {
+      "name": "client",
+      "description": "Build a client",
+      "inherits": "base",
+      "cacheVariables": {
+        "WAKAAMA_MODE_CLIENT": {
+          "type": "BOOL",
+          "value": "ON"
+        },
+        "WAKAAMA_ENABLE_EXAMPLES": {
+          "type": "BOOL",
+          "value": "ON"
+        }
+      }
+    },
+    {
       "name": "log_base",
       "description": "Run the tests with corresponding log level",
       "hidden": true,
-      "binaryDir": "${sourceDir}/build-presets/log_tests/${presetName}",
+      "inherits": "base",
       "cacheVariables": {
         "WAKAAMA_LOG_CUSTOM_HANDLER": {
           "type": "BOOL",
@@ -57,6 +108,18 @@
     }
   ],
   "buildPresets": [
+    {
+      "name": "server",
+      "configurePreset": "server"
+    },
+    {
+      "name": "bootstrap_server",
+      "configurePreset": "bootstrap_server"
+    },
+    {
+      "name": "client",
+      "configurePreset": "client"
+    },
     {
       "name": "log_dbg",
       "configurePreset": "log_dbg"

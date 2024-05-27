@@ -24,17 +24,19 @@ set(TEST_SOURCES
     helper/log_handler.c
 )
 
-add_test_variant(
-    TARGET_NAME lwm2munittests_client_lwm2m_1_0
-    SOURCE_FILES ${TEST_SOURCES}
-    COMPILE_DEFINITIONS LWM2M_CLIENT_MODE LWM2M_VERSION_1_0
-)
+if(LWM2M_CLIENT_MODE AND NOT WAKAAMA_MODE_BOOTSTRAP_SERVER)
+    add_test_variant(
+        TARGET_NAME lwm2munittests_client_lwm2m_1_0
+        SOURCE_FILES ${TEST_SOURCES}
+        COMPILE_DEFINITIONS LWM2M_CLIENT_MODE LWM2M_VERSION_1_0
+    )
 
-add_test_variant(
-    TARGET_NAME lwm2munittests_client_bootstrap
-    SOURCE_FILES ${TEST_SOURCES}
-    COMPILE_DEFINITIONS LWM2M_CLIENT_MODE LWM2M_BOOTSTRAP
-)
+    add_test_variant(
+        TARGET_NAME lwm2munittests_client_bootstrap
+        SOURCE_FILES ${TEST_SOURCES}
+        COMPILE_DEFINITIONS LWM2M_CLIENT_MODE LWM2M_BOOTSTRAP
+    )
+endif()
 
 add_test_variant(
     TARGET_NAME lwm2munittests_server_formats_no_float16_blocksize_64
