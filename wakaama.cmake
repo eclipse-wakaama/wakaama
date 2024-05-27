@@ -11,20 +11,36 @@ option(WAKAAMA_MODE_CLIENT "Enable LWM2M Client interfaces" OFF)
 option(WAKAAMA_CLIENT_INITIATED_BOOTSTRAP "Enable client initiated bootstrap support in a client" OFF)
 option(WAKAAMA_CLIENT_LWM2M_V_1_0 "Restrict the client code to use LwM2M version 1.0" OFF)
 
+# Data Types
+
+set(WAKAAMA_DATA_TLV "Enable TLV payload support" ON)
+set(WAKAAMA_DATA_JSON "Enable JSON payload support" ON)
+set(WAKAAMA_DATA_SENML_JSON "Enable SenML JSON payload support" ON)
+set(WAKAAMA_DATA_SENML_CBOR "Enable SenML CBOR payload support" ON)
+
+set(WAKAAMA_DATA_SENML_CBOR_FLOAT16_SUPPORT "Enable 16-bit float support in CBOR" ON)
+
+set(WAKAAMA_DATA_OLD_CONTENT_FORMAT "Support the deprecated content format values for TLV and JSON" ON)
+
 # CoAP
 option(WAKAAMA_RAW_BLOCK1_REQUESTS "Pass each unprocessed block 1 payload to the application" OFF)
 
 set(WAKAAMA_COAP_DEFAULT_BLOCK_SIZE
-        1024
-        CACHE STRING "Default CoAP block size for block-wise transfers"
+    1024
+    CACHE STRING "Default CoAP block size for block-wise transfers"
 )
 set_property(
-        CACHE WAKAAMA_COAP_DEFAULT_BLOCK_SIZE
-        PROPERTY STRINGS
-        LOG_DISABLED
-        16 32 64 128 256 512 1024
+    CACHE WAKAAMA_COAP_DEFAULT_BLOCK_SIZE
+    PROPERTY STRINGS
+             LOG_DISABLED
+             16
+             32
+             64
+             128
+             256
+             512
+             1024
 )
-
 
 # Logging
 set(WAKAAMA_LOG_LEVEL
@@ -52,6 +68,14 @@ set(WAKAAMA_LOG_MAX_MSG_TXT_SIZE
 # Possibility to disable the examples
 option(WAKAAMA_ENABLE_EXAMPLES "Build all the example applications" ON)
 
+# UDP Connection
+
+set(WAKAAMA_WITH_CONNECTION_IMPLEMENTATION
+    NONE
+    CACHE STRING "The connection implementation (UDP) to be used"
+)
+set_property(CACHE WAKAAMA_WITH_CONNECTION_IMPLEMENTATION PROPERTY STRINGS NONE PLAIN TINYDTLS TESTING)
+
 # Set the defines for logging configuration
 function(set_defines target)
     # Mode
@@ -74,10 +98,30 @@ function(set_defines target)
         target_compile_definitions(${target} PUBLIC LWM2M_VERSION_1_0)
     endif()
 
+    # Data Types
+    if(WAKAMA_DATA_TLV)
+        target_compile_definitions(${target} PUBLIC LWM2M_SUPPORT_TLV)
+    endif()
+    if(WAKAMA_DATA_JSON)
+        target_compile_definitions(${target} PUBLIC LWM2M_SUPPORT_JSON)
+    endif()
+    if(WAKAMA_DATA_SENML_JSON)
+        target_compile_definitions(${target} PUBLIC LWM2M_SUPPORT_SENML_JSON)
+    endif()
+    if(WAKAMA_DATA_SENML_CBOR)
+        target_compile_definitions(${target} PUBLIC LWM2M_SUPPORT_SENML_CBOR)
+    endif()
+    if(NOT WAKAAMA_DATA_SENML_CBOR_FLOAT16_SUPPORT)
+        target_compile_definitions(${target} PUBLIC CBOR_NO_FLOAT16_ENCODING)
+    endif()
+    if(WAKAAMA_DATA_OLD_CONTENT_FORMAT)
+        target_compile_definitions(${target} PUBLIC LWM2M_OLD_CONTENT_FORMAT_SUPPORT)
+    endif()
+
     # CoAP
     if(WAKAAMA_RAW_BLOCK1_REQUESTS)
         target_compile_definitions(${target} PUBLIC LWM2M_RAW_BLOCK1_REQUESTS)
-    endif ()
+    endif()
 
     target_compile_definitions(${target} PUBLIC LWM2M_COAP_DEFAULT_BLOCK_SIZE=${WAKAAMA_COAP_DEFAULT_BLOCK_SIZE})
 
@@ -185,14 +229,14 @@ function(target_sources_shared target)
 
     set_defines(${target})
 
-    if(NOT TARGET_PROPERTY_CONN_IMPL)
+    if(NOT TARGET_PROPERTY_CONN_IMPL OR WAKAAMA_WITH_CONNECTION_IMPLEMENTATION STREQUAL "NONE")
         target_sources(${target} PRIVATE ${WAKAAMA_EXAMPLE_SHARED_DIRECTORY}/connection.c)
-    elseif(TARGET_PROPERTY_CONN_IMPL MATCHES "tinydtls")
+    elseif(TARGET_PROPERTY_CONN_IMPL MATCHES "tinydtls" OR WAKAAMA_WITH_CONNECTION_IMPLEMENTATION STREQUAL "TINYDTLS")
         include(${WAKAAMA_EXAMPLE_SHARED_DIRECTORY}/tinydtls.cmake)
         target_sources(${target} PRIVATE ${WAKAAMA_EXAMPLE_SHARED_DIRECTORY}/dtlsconnection.c)
         target_compile_definitions(${target} PRIVATE WITH_TINYDTLS)
         target_sources_tinydtls(${target})
-    elseif(TARGET_PROPERTY_CONN_IMPL MATCHES "testing")
+    elseif(TARGET_PROPERTY_CONN_IMPL MATCHES "testing" OR WAKAAMA_WITH_CONNECTION_IMPLEMENTATION STREQUAL "TESTING")
         target_include_directories(${target} PRIVATE ${WAKAAMA_TOP_LEVEL_DIRECTORY}/tests/helper/)
         target_sources(${target} PRIVATE ${WAKAAMA_TOP_LEVEL_DIRECTORY}/tests/helper/connection.c)
     else()

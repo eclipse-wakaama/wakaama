@@ -51,6 +51,10 @@
       "hidden": true,
       "inherits": "base",
       "cacheVariables": {
+        "WAKAAMA_WITH_CONNECTION_IMPLEMENTATION": {
+          "type": "STRING",
+          "value": "TESTING"
+        },
         "WAKAAMA_LOG_CUSTOM_HANDLER": {
           "type": "BOOL",
           "value": "ON"
