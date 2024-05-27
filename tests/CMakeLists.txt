@@ -30,6 +30,7 @@ add_test_variant(
     COMPILE_DEFINITIONS LWM2M_CLIENT_MODE
 )
 
+if(WAKAAMA_MODE_CLIENT)
 add_test_variant(
     TARGET_NAME lwm2munittests_client_lwm2m_1_0
     SOURCE_FILES ${TEST_SOURCES}
@@ -41,6 +42,7 @@ add_test_variant(
     SOURCE_FILES ${TEST_SOURCES}
     COMPILE_DEFINITIONS LWM2M_CLIENT_MODE LWM2M_BOOTSTRAP
 )
+endif ()
 
 add_test_variant(
     TARGET_NAME lwm2munittests_server

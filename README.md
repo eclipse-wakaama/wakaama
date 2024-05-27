@@ -76,10 +76,6 @@ Wakaama is not a library but files to be built with an application.
 Wakaama uses CMake >= 3.13. Look at examples/server/CMakeLists.txt for an
 example of how to include it.
 Several preprocessor definitions are supported:
- - Mode: One or multiple modes have to be defined.
-   - LWM2M_CLIENT_MODE to enable LWM2M Client interfaces.
-   - LWM2M_SERVER_MODE to enable LWM2M Server interfaces.
-   - LWM2M_BOOTSTRAP_SERVER_MODE to enable LWM2M Bootstrap Server interfaces.
  - LWM2M_BOOTSTRAP to enable LWM2M Bootstrap support in a LWM2M Client.
  - LWM2M_SUPPORT_TLV to enable TLV payload support (implicit except for LWM2M 1.1 clients)
  - LWM2M_SUPPORT_JSON to enable JSON payload support (implicit when defining LWM2M_SERVER_MODE)
@@ -92,6 +88,14 @@ Several preprocessor definitions are supported:
  - LWM2M_RAW_BLOCK1_REQUESTS For low memory client devices where it is not possible to keep a large post or put request in memory to be parsed (typically a firmware write).
    This option enable each unprocessed block 1 payload to be passed to the application, typically to be stored to a flash memory.
  - LWM2M_COAP_DEFAULT_BLOCK_SIZE CoAP block size used by CoAP layer when performing block-wise transfers. Possible values: 16, 32, 64, 128, 256, 512 and 1024. Defaults to 1024.
+
+### Mode
+
+Wakaama supports multiple modes. At least one mode needs to be defined with CMAke cache variables.
+
+- WAKAAMA_MODE_SERVER to enable LWM2M Server interfaces.
+- WAKAAMA_MODE_BOOTSTRAP_SERVER to enable LWM2M Bootstrap Server interfaces.
+- WAKAAMA_MODE_CLIENT to enable LWM2M Client interfaces.
 
 ### Logging
 
