@@ -11,6 +11,21 @@ option(WAKAAMA_MODE_CLIENT "Enable LWM2M Client interfaces" OFF)
 option(WAKAAMA_CLIENT_INITIATED_BOOTSTRAP "Enable client initiated bootstrap support in a client" OFF)
 option(WAKAAMA_CLIENT_LWM2M_V_1_0 "Restrict the client code to use LwM2M version 1.0" OFF)
 
+# CoAP
+option(WAKAAMA_RAW_BLOCK1_REQUESTS "Pass each unprocessed block 1 payload to the application" OFF)
+
+set(WAKAAMA_COAP_DEFAULT_BLOCK_SIZE
+        1024
+        CACHE STRING "Default CoAP block size for block-wise transfers"
+)
+set_property(
+        CACHE WAKAAMA_COAP_DEFAULT_BLOCK_SIZE
+        PROPERTY STRINGS
+        LOG_DISABLED
+        16 32 64 128 256 512 1024
+)
+
+
 # Logging
 set(WAKAAMA_LOG_LEVEL
     LOG_DISABLED
@@ -58,6 +73,13 @@ function(set_defines target)
     if(WAKAAMA_CLIENT_LWM2M_V_1_0)
         target_compile_definitions(${target} PUBLIC LWM2M_VERSION_1_0)
     endif()
+
+    # CoAP
+    if(WAKAAMA_RAW_BLOCK1_REQUESTS)
+        target_compile_definitions(${target} PUBLIC LWM2M_RAW_BLOCK1_REQUESTS)
+    endif ()
+
+    target_compile_definitions(${target} PUBLIC LWM2M_COAP_DEFAULT_BLOCK_SIZE=${WAKAAMA_COAP_DEFAULT_BLOCK_SIZE})
 
     # Logging
     target_compile_definitions(${target} PUBLIC LWM2M_LOG_LEVEL=LWM2M_${WAKAAMA_LOG_LEVEL})

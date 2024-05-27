@@ -81,9 +81,6 @@ Several preprocessor definitions are supported:
  - LWM2M_SUPPORT_SENML_JSON to enable SenML JSON payload support (implicit for LWM2M 1.1 or greater when defining LWM2M_SERVER_MODE or LWM2M_BOOTSTRAP_SERVER_MODE)
  - LWM2M_SUPPORT_SENML_CBOR to enable SenML CBOR payload support (implicit for LWM2M 1.1 or greater when defining LWM2M_SERVER_MODE or LWM2M_BOOTSTRAP_SERVER_MODE)
  - LWM2M_OLD_CONTENT_FORMAT_SUPPORT to support the deprecated content format values for TLV and JSON.
- - LWM2M_RAW_BLOCK1_REQUESTS For low memory client devices where it is not possible to keep a large post or put request in memory to be parsed (typically a firmware write).
-   This option enable each unprocessed block 1 payload to be passed to the application, typically to be stored to a flash memory.
- - LWM2M_COAP_DEFAULT_BLOCK_SIZE CoAP block size used by CoAP layer when performing block-wise transfers. Possible values: 16, 32, 64, 128, 256, 512 and 1024. Defaults to 1024.
 
 ### Mode
 
@@ -101,6 +98,13 @@ Wakaama supports additional client related options. These are only available if 
 - WAKAAMA_CLIENT_LWM2M_V_1_0: Restrict the client code to use LwM2M version 1.0
  
 Please note: LwM2M version 1.0 is only supported by clients, while servers are backward compatible.
+
+### CoaP Settings
+
+- WAKAAMA_RAW_BLOCK1_REQUESTS For low memory client devices where it is not possible to keep a large post or put request in memory to be parsed (typically a firmware write).
+  This option enable each unprocessed block 1 payload to be passed to the application, typically to be stored to a flash memory.
+- WAKAAMA_COAP_DEFAULT_BLOCK_SIZE CoAP block size used by CoAP layer when performing block-wise transfers. Possible values: 16, 32, 64, 128, 256, 512 and 1024. Defaults to 1024.
+
 
 ### Logging
 
