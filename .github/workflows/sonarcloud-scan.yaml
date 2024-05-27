@@ -39,8 +39,8 @@ jobs:
         -Dsonar.exclusions="build-wakaama-*/**, .git/**" \
         -Dsonar.host.url=https://sonarcloud.io \
         -Dsonar.login=${{ secrets.SONAR_TOKEN }} \
-        -Dsonar.organization=${{ github.repository_owner }} \
-        -Dsonar.projectKey="$(echo ${{ github.repository }} | tr / _)" \
+        -Dsonar.organization="eclipse" \
+        -Dsonar.projectKey="eclipse_wakaama" \
         -Dsonar.sourceEncoding=UTF-8 \
         -Dsonar.sources=.
       env:
