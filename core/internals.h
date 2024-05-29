@@ -170,44 +170,49 @@ char *lwm2m_log_fmt_message(const char *fmt, ...);
 #define STR_NULL2EMPTY(S) ((const char *)(S) ? (const char *)(S) : "")
 #endif
 
+// suppresses warnings about semicolon after empty macro expansion
+#define LWM2M_LOG_NOP                                                                                                  \
+    do {                                                                                                               \
+    } while (0)
+
 #if LWM2M_LOG_LEVEL <= LWM2M_DBG
 #define LOG_DBG(...) LOG_L(LWM2M_LOGGING_DBG, __VA_ARGS__)
 #define LOG_ARG_DBG(STR, ...) LOG_ARG_L(LWM2M_LOGGING_DBG, STR, __VA_ARGS__)
 #else
-#define LOG_DBG(...)
-#define LOG_ARG_DBG(STR, ...)
+#define LOG_DBG(...) LWM2M_LOG_NOP
+#define LOG_ARG_DBG(STR, ...) LWM2M_LOG_NOP
 #endif
 
 #if LWM2M_LOG_LEVEL <= LWM2M_INFO
 #define LOG_INFO(...) LOG_L(LWM2M_LOGGING_INFO, __VA_ARGS__)
 #define LOG_ARG_INFO(STR, ...) LOG_ARG_L(LWM2M_LOGGING_INFO, STR, __VA_ARGS__)
 #else
-#define LOG_INFO(...)
-#define LOG_ARG_INFO(STR, ...)
+#define LOG_INFO(...) LWM2M_LOG_NOP
+#define LOG_ARG_INFO(STR, ...) LWM2M_LOG_NOP
 #endif
 
 #if LWM2M_LOG_LEVEL <= LWM2M_WARN
 #define LOG_WARN(...) LOG_L(LWM2M_LOGGING_WARN, __VA_ARGS__)
 #define LOG_ARG_WARN(STR, ...) LOG_ARG_L(LWM2M_LOGGING_WARN, STR, __VA_ARGS__)
 #else
-#define LOG_WARN(...)
-#define LOG_ARG_WARN(STR, ...)
+#define LOG_WARN(...) LWM2M_LOG_NOP
+#define LOG_ARG_WARN(STR, ...) LWM2M_LOG_NOP
 #endif
 
 #if LWM2M_LOG_LEVEL <= LWM2M_ERR
 #define LOG_ERR(...) LOG_L(LWM2M_LOGGING_ERR, __VA_ARGS__)
 #define LOG_ARG_ERR(STR, ...) LOG_ARG_L(LWM2M_LOGGING_ERR, STR, __VA_ARGS__)
 #else
-#define LOG_ERR(...)
-#define LOG_ARG_ERR(STR, ...)
+#define LOG_ERR(...) LWM2M_LOG_NOP
+#define LOG_ARG_ERR(STR, ...) LWM2M_LOG_NOP
 #endif
 
 #if LWM2M_LOG_LEVEL <= LWM2M_FATAL
 #define LOG_FATAL(...) LOG_L(LWM2M_LOGGING_FATAL, __VA_ARGS__)
 #define LOG_ARG_FATAL(STR, ...) LOG_ARG_L(LWM2M_LOGGING_FATAL, STR, __VA_ARGS__)
 #else
-#define LOG_FATAL(...)
-#define LOG_ARG_FATAL(STR, ...)
+#define LOG_FATAL(...) LWM2M_LOG_NOP
+#define LOG_ARG_FATAL(STR, ...) LWM2M_LOG_NOP
 #endif
 
 /* Legacy logging macros. Replace with `LOG_DBG` and related. */
