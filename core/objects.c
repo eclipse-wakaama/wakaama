@@ -117,7 +117,7 @@ uint8_t object_checkReadable(lwm2m_context_t * contextP,
     lwm2m_data_t * valueP = NULL;
     int size;
 
-    LOG_URI(uriP);
+    LOG_ARG_DBG("%s", LOG_URI_TO_STRING(uriP));
     targetP = (lwm2m_object_t *)LWM2M_LIST_FIND(contextP->objectList, uriP->objectId);
     if (NULL == targetP) return COAP_404_NOT_FOUND;
     if (NULL == targetP->readFunc) return COAP_405_METHOD_NOT_ALLOWED;
@@ -178,7 +178,7 @@ uint8_t object_readData(lwm2m_context_t * contextP,
     uint8_t result;
     lwm2m_object_t * targetP;
 
-    LOG_URI(uriP);
+    LOG_ARG_DBG("%s", LOG_URI_TO_STRING(uriP));
     targetP = (lwm2m_object_t *)LWM2M_LIST_FIND(contextP->objectList, uriP->objectId);
     if (NULL == targetP) return COAP_404_NOT_FOUND;
     if (NULL == targetP->readFunc) return COAP_405_METHOD_NOT_ALLOWED;
@@ -275,7 +275,7 @@ uint8_t object_read(lwm2m_context_t * contextP,
     int size = 0;
     int res;
 
-    LOG_URI(uriP);
+    LOG_ARG_DBG("%s", LOG_URI_TO_STRING(uriP));
     result = object_readData(contextP, uriP, &size, &dataP);
 
     if (result == COAP_205_CONTENT)
@@ -372,7 +372,7 @@ uint8_t object_write(lwm2m_context_t * contextP,
     lwm2m_data_t * dataP = NULL;
     int size = 0;
 
-    LOG_URI(uriP);
+    LOG_ARG_DBG("%s", LOG_URI_TO_STRING(uriP));
     if (!LWM2M_URI_IS_SET_OBJECT(uriP)) return COAP_400_BAD_REQUEST;
     if (!LWM2M_URI_IS_SET_INSTANCE(uriP)) return COAP_400_BAD_REQUEST;
 
@@ -443,7 +443,7 @@ uint8_t object_execute(lwm2m_context_t * contextP,
 {
     lwm2m_object_t * targetP;
 
-    LOG_URI(uriP);
+    LOG_ARG_DBG("%s", LOG_URI_TO_STRING(uriP));
     targetP = (lwm2m_object_t *)LWM2M_LIST_FIND(contextP->objectList, uriP->objectId);
     if (NULL == targetP) return COAP_404_NOT_FOUND;
     if (NULL == targetP->executeFunc) return COAP_405_METHOD_NOT_ALLOWED;
@@ -463,7 +463,7 @@ uint8_t object_create(lwm2m_context_t * contextP,
     int size = 0;
     uint8_t result;
 
-    LOG_URI(uriP);
+    LOG_ARG_DBG("%s", LOG_URI_TO_STRING(uriP));
 
     if (length == 0 || buffer == NULL)
     {
@@ -528,7 +528,7 @@ uint8_t object_raw_block1_write(lwm2m_context_t * contextP,
     uint8_t result = NO_ERROR;
     lwm2m_object_t *targetP;
 
-    LOG_URI(uriP);
+    LOG_ARG_DBG("%s", LOG_URI_TO_STRING(uriP));
     targetP = (lwm2m_object_t *)LWM2M_LIST_FIND(contextP->objectList, uriP->objectId);
     if (NULL == targetP) return COAP_404_NOT_FOUND;
     if (NULL == targetP->rawBlock1WriteFunc) return COAP_405_METHOD_NOT_ALLOWED;
@@ -556,8 +556,8 @@ uint8_t object_raw_block1_execute(lwm2m_context_t * contextP,
 {
     lwm2m_object_t * targetP;
     uint8_t result;
-    
-    LOG_URI(uriP);
+
+    LOG_ARG_DBG("%s", LOG_URI_TO_STRING(uriP));
     targetP = (lwm2m_object_t *)LWM2M_LIST_FIND(contextP->objectList, uriP->objectId);
     if (NULL == targetP) return COAP_404_NOT_FOUND;
     if (NULL == targetP->rawBlock1ExecuteFunc) return COAP_405_METHOD_NOT_ALLOWED;
@@ -584,7 +584,7 @@ uint8_t object_raw_block1_create(lwm2m_context_t * contextP,
     lwm2m_object_t * targetP;
     uint8_t result;
 
-    LOG_URI(uriP);
+    LOG_ARG_DBG("%s", LOG_URI_TO_STRING(uriP));
 
     if (length == 0 || buffer == NULL)
     {
@@ -612,7 +612,7 @@ uint8_t object_delete(lwm2m_context_t * contextP,
     lwm2m_object_t * objectP;
     uint8_t result;
 
-    LOG_URI(uriP);
+    LOG_ARG_DBG("%s", LOG_URI_TO_STRING(uriP));
     objectP = (lwm2m_object_t *)LWM2M_LIST_FIND(contextP->objectList, uriP->objectId);
     if (NULL == objectP) return COAP_404_NOT_FOUND;
     if (NULL == objectP->deleteFunc) return COAP_405_METHOD_NOT_ALLOWED;
@@ -665,7 +665,7 @@ uint8_t object_discover(lwm2m_context_t * contextP,
     lwm2m_data_t * dataP = NULL;
     int size = 0;
 
-    LOG_URI(uriP);
+    LOG_ARG_DBG("%s", LOG_URI_TO_STRING(uriP));
     targetP = (lwm2m_object_t *)LWM2M_LIST_FIND(contextP->objectList, uriP->objectId);
     if (NULL == targetP) return COAP_404_NOT_FOUND;
     if (NULL == targetP->discoverFunc) return COAP_501_NOT_IMPLEMENTED;
@@ -1201,7 +1201,7 @@ uint8_t object_createInstance(lwm2m_context_t * contextP,
 {
     lwm2m_object_t * targetP;
 
-    LOG_URI(uriP);
+    LOG_ARG_DBG("%s", LOG_URI_TO_STRING(uriP));
     targetP = (lwm2m_object_t *)LWM2M_LIST_FIND(contextP->objectList, uriP->objectId);
     if (NULL == targetP) return COAP_404_NOT_FOUND;
 
@@ -1219,7 +1219,7 @@ uint8_t object_writeInstance(lwm2m_context_t * contextP,
 {
     lwm2m_object_t * targetP;
 
-    LOG_URI(uriP);
+    LOG_ARG_DBG("%s", LOG_URI_TO_STRING(uriP));
     targetP = (lwm2m_object_t *)LWM2M_LIST_FIND(contextP->objectList, uriP->objectId);
     if (NULL == targetP) return COAP_404_NOT_FOUND;
 

@@ -494,7 +494,7 @@ int json_parse(lwm2m_uri_t * uriP,
     lwm2m_data_t * parsedP;
 
     LOG_ARG("bufferLen: %zd, buffer: \"%.*s\"", bufferLen, (int)bufferLen, STR_NULL2EMPTY((char *)buffer));
-    LOG_URI(uriP);
+    LOG_ARG_DBG("%s", LOG_URI_TO_STRING(uriP));
     *dataP = NULL;
     recordArray = NULL;
     parsedP = NULL;
@@ -993,7 +993,7 @@ int json_serialize(lwm2m_uri_t * uriP,
 #endif
 
     LOG_ARG("size: %d", size);
-    LOG_URI(uriP);
+    LOG_ARG_DBG("%s", LOG_URI_TO_STRING(uriP));
     if (size != 0 && tlvP == NULL) return -1;
 
 #ifndef LWM2M_VERSION_1_0

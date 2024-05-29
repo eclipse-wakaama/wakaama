@@ -170,7 +170,7 @@ uint8_t dm_handleRequest(lwm2m_context_t * contextP,
     lwm2m_media_type_t format;
 
     LOG_ARG("Code: %02X, server status: %s", message->code, STR_STATUS(serverP->status));
-    LOG_URI(uriP);
+    LOG_ARG_DBG("%s", LOG_URI_TO_STRING(uriP));
 
     if (IS_OPTION(message, COAP_OPTION_CONTENT_TYPE))
     {
@@ -545,7 +545,7 @@ int prv_lwm2m_dm_read(lwm2m_context_t * contextP,
     lwm2m_client_t * clientP;
 
     LOG_ARG("clientID: %d", clientID);
-    LOG_URI(uriP);
+    LOG_ARG_DBG("%s", LOG_URI_TO_STRING(uriP));
 
     clientP = (lwm2m_client_t *)lwm2m_list_find((lwm2m_list_t *)contextP->clientList, clientID);
     if (clientP == NULL) return COAP_404_NOT_FOUND;
@@ -572,7 +572,7 @@ static int prv_lwm2m_dm_write(lwm2m_context_t *contextP, uint16_t clientID, lwm2
     coap_method_t method = partialUpdate ? COAP_POST : COAP_PUT;
 
     LOG_ARG("clientID: %d, format: %s, length: %zd", clientID, STR_MEDIA_TYPE(format), length);
-    LOG_URI(uriP);
+    LOG_ARG_DBG("%s", LOG_URI_TO_STRING(uriP));
     if (!LWM2M_URI_IS_SET_INSTANCE(uriP)
      || length == 0)
     {
@@ -601,7 +601,7 @@ int lwm2m_dm_write(lwm2m_context_t *contextP, uint16_t clientID, lwm2m_uri_t *ur
 int lwm2m_dm_execute(lwm2m_context_t *contextP, uint16_t clientID, lwm2m_uri_t *uriP, lwm2m_media_type_t format,
                      uint8_t *buffer, size_t length, lwm2m_result_callback_t callback, void *userData) {
     LOG_ARG("clientID: %d, format: %s, length: %zd", clientID, STR_MEDIA_TYPE(format), length);
-    LOG_URI(uriP);
+    LOG_ARG_DBG("%s", LOG_URI_TO_STRING(uriP));
     if (!LWM2M_URI_IS_SET_RESOURCE(uriP))
     {
         return COAP_400_BAD_REQUEST;
@@ -628,7 +628,7 @@ int prv_lwm2m_dm_create(lwm2m_context_t * contextP,
     lwm2m_media_type_t format;
 
     LOG_ARG("clientID: %d, size: %d", clientID, size);
-    LOG_URI(uriP);
+    LOG_ARG_DBG("%s", LOG_URI_TO_STRING(uriP));
 
     if (LWM2M_URI_IS_SET_INSTANCE(uriP)
      || size == 0)
@@ -677,7 +677,7 @@ int lwm2m_dm_delete(lwm2m_context_t * contextP,
                     void * userData)
 {
     LOG_ARG("clientID: %d", clientID);
-    LOG_URI(uriP);
+    LOG_ARG_DBG("%s", LOG_URI_TO_STRING(uriP));
     if (!LWM2M_URI_IS_SET_INSTANCE(uriP)
      || LWM2M_URI_IS_SET_RESOURCE(uriP))
     {
@@ -705,7 +705,7 @@ int lwm2m_dm_write_attributes(lwm2m_context_t * contextP,
     size_t length;
 
     LOG_ARG("clientID: %d", clientID);
-    LOG_URI(uriP);
+    LOG_ARG_DBG("%s", LOG_URI_TO_STRING(uriP));
     if (attrP == NULL) return COAP_400_BAD_REQUEST;
 
     if (0 != (attrP->toSet & attrP->toClear)) return COAP_400_BAD_REQUEST;
@@ -842,7 +842,7 @@ int lwm2m_dm_discover(lwm2m_context_t * contextP,
     dm_data_t * dataP;
 
     LOG_ARG("clientID: %d", clientID);
-    LOG_URI(uriP);
+    LOG_ARG_DBG("%s", LOG_URI_TO_STRING(uriP));
     clientP = (lwm2m_client_t *)lwm2m_list_find((lwm2m_list_t *)contextP->clientList, clientID);
     if (clientP == NULL) return COAP_404_NOT_FOUND;
 

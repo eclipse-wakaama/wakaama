@@ -95,7 +95,7 @@ static int prv_textSerialize(lwm2m_data_t * dataP,
     {
         char stringBuffer[11];
         size_t length;
-        
+
         length = utils_intToText(dataP->value.asObjLink.objectId, (uint8_t*)stringBuffer, 5);
         if (length == 0) return -1;
 
@@ -651,7 +651,7 @@ int lwm2m_data_parse(lwm2m_uri_t * uriP,
     int res;
 
     LOG_ARG("format: %s, bufferLen: %zd", STR_MEDIA_TYPE(format), bufferLen);
-    LOG_URI(uriP);
+    LOG_ARG_DBG("%s", LOG_URI_TO_STRING(uriP));
     switch (format)
     {
     case LWM2M_CONTENT_TEXT:
@@ -731,7 +731,7 @@ int lwm2m_data_serialize(lwm2m_uri_t * uriP,
                          lwm2m_media_type_t * formatP,
                          uint8_t ** bufferP)
 {
-    LOG_URI(uriP);
+    LOG_ARG_DBG("%s", LOG_URI_TO_STRING(uriP));
     LOG_ARG("size: %d, formatP: %s", size, STR_MEDIA_TYPE(*formatP));
 
     // Check format

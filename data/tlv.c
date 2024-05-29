@@ -497,12 +497,7 @@ static int prv_getLength(int size,
     return length;
 }
 
-
-int tlv_serialize(bool isResourceInstance, 
-                  int size,
-                  lwm2m_data_t * dataP,
-                  uint8_t ** bufferP)
-{
+int tlv_serialize(bool isResourceInstance, int size, lwm2m_data_t *dataP, uint8_t **bufferP) {
     int length;
     int index;
     int i;

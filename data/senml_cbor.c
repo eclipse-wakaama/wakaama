@@ -407,7 +407,7 @@ int senml_cbor_parse(const lwm2m_uri_t *uriP, const uint8_t *buffer, size_t buff
     size_t offset;
 
     LOG_ARG("bufferLen: %zu", bufferLen);
-    LOG_URI(uriP);
+    LOG_ARG_DBG("%s", LOG_URI_TO_STRING(uriP));
     *dataP = NULL;
     recordArray = NULL;
 
@@ -708,7 +708,7 @@ int senml_cbor_serialize(const lwm2m_uri_t *uriP, int size, const lwm2m_data_t *
     size_t parentUriLen = 0;
 
     LOG_ARG("size: %d", size);
-    LOG_URI(uriP);
+    LOG_ARG_DBG("%s", LOG_URI_TO_STRING(uriP));
     if (size != 0 && tlvP == NULL)
         return -1;
 

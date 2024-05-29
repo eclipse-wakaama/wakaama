@@ -207,7 +207,7 @@ lwm2m_request_type_t uri_decode(char * altPath,
     // must be the last segment
     if (NULL == uriPath->next)
     {
-        LOG_URI(uriP);
+        LOG_ARG_DBG("%s", LOG_URI_TO_STRING(uriP));
         return requestType;
     }
 
@@ -281,7 +281,7 @@ int lwm2m_stringToUri(const char * buffer,
     }
 
     LOG_ARG("Parsed characters: %zu", head);
-    LOG_URI(uriP);
+    LOG_ARG_DBG("%s", LOG_URI_TO_STRING(uriP));
 
     return head;
 }

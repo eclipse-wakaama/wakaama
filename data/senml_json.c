@@ -610,7 +610,7 @@ int senml_json_parse(const lwm2m_uri_t * uriP,
     lwm2m_data_t baseValue;
 
     LOG_ARG("bufferLen: %zd, buffer: \"%.*s\"", bufferLen, (int)bufferLen, STR_NULL2EMPTY((char *)buffer));
-    LOG_URI(uriP);
+    LOG_ARG_DBG("%s", LOG_URI_TO_STRING(uriP));
     *dataP = NULL;
     recordArray = NULL;
     parsedP = NULL;
@@ -1081,7 +1081,7 @@ int senml_json_serialize(const lwm2m_uri_t * uriP,
     size_t parentUriLen = 0;
 
     LOG_ARG("size: %d", size);
-    LOG_URI(uriP);
+    LOG_ARG_DBG("%s", LOG_URI_TO_STRING(uriP));
     if (size != 0 && tlvP == NULL) return -1;
 
     baseUriLen = lwm2m_uriToString(uriP, baseUriStr, URI_MAX_STRING_LEN, &baseLevel);
