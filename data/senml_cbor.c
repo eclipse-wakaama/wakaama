@@ -406,7 +406,7 @@ int senml_cbor_parse(const lwm2m_uri_t *uriP, const uint8_t *buffer, size_t buff
     int res;
     size_t offset;
 
-    LOG_ARG("bufferLen: %zu", bufferLen);
+    LOG_ARG_DBG("bufferLen: %zu", bufferLen);
     LOG_ARG_DBG("%s", LOG_URI_TO_STRING(uriP));
     *dataP = NULL;
     recordArray = NULL;
@@ -442,12 +442,12 @@ int senml_cbor_parse(const lwm2m_uri_t *uriP, const uint8_t *buffer, size_t buff
     recordArray = NULL;
 
     if (count > 0) {
-        LOG_ARG("Parsing successful. count: %d", count);
+        LOG_ARG_DBG("Parsing successful. count: %d", count);
         return count;
     }
 
 error:
-    LOG("Parsing failed");
+    LOG_DBG("Parsing failed");
     if (recordArray != NULL) {
         lwm2m_free(recordArray);
     }
@@ -707,7 +707,7 @@ int senml_cbor_serialize(const lwm2m_uri_t *uriP, int size, const lwm2m_data_t *
     const uint8_t *parentUriStr = NULL;
     size_t parentUriLen = 0;
 
-    LOG_ARG("size: %d", size);
+    LOG_ARG_DBG("size: %d", size);
     LOG_ARG_DBG("%s", LOG_URI_TO_STRING(uriP));
     if (size != 0 && tlvP == NULL)
         return -1;

@@ -100,7 +100,7 @@ lwm2m_request_type_t uri_decode(char * altPath,
     int readNum;
     lwm2m_request_type_t requestType = LWM2M_REQUEST_TYPE_DM;
 
-    LOG_ARG("altPath: \"%s\"", STR_NULL2EMPTY(altPath));
+    LOG_ARG_DBG("altPath: \"%s\"", STR_NULL2EMPTY(altPath));
 
     LWM2M_URI_RESET(uriP);
 
@@ -212,7 +212,7 @@ lwm2m_request_type_t uri_decode(char * altPath,
     }
 
 error:
-    LOG("Exiting on error");
+    LOG_DBG("Exiting on error");
     LWM2M_URI_RESET(uriP);
     return LWM2M_REQUEST_TYPE_UNKNOWN;
 }
@@ -224,7 +224,7 @@ int lwm2m_stringToUri(const char * buffer,
     size_t head;
     int readNum;
 
-    LOG_ARG("buffer_len: %zu, buffer: \"%.*s\"", buffer_len, (int)buffer_len, STR_NULL2EMPTY(buffer));
+    LOG_ARG_DBG("buffer_len: %zu, buffer: \"%.*s\"", buffer_len, (int)buffer_len, STR_NULL2EMPTY(buffer));
 
     if (uriP == NULL) return 0;
 
@@ -280,7 +280,7 @@ int lwm2m_stringToUri(const char * buffer,
         }
     }
 
-    LOG_ARG("Parsed characters: %zu", head);
+    LOG_ARG_DBG("Parsed characters: %zu", head);
     LOG_ARG_DBG("%s", LOG_URI_TO_STRING(uriP));
 
     return head;

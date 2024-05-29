@@ -609,7 +609,7 @@ int senml_json_parse(const lwm2m_uri_t * uriP,
     time_t baseTime;
     lwm2m_data_t baseValue;
 
-    LOG_ARG("bufferLen: %zd, buffer: \"%.*s\"", bufferLen, (int)bufferLen, STR_NULL2EMPTY((char *)buffer));
+    LOG_ARG_DBG("bufferLen: %zd, buffer: \"%.*s\"", bufferLen, (int)bufferLen, STR_NULL2EMPTY((char *)buffer));
     LOG_ARG_DBG("%s", LOG_URI_TO_STRING(uriP));
     *dataP = NULL;
     recordArray = NULL;
@@ -768,11 +768,11 @@ int senml_json_parse(const lwm2m_uri_t * uriP,
     count = size;
     *dataP = resultP;
 
-    LOG_ARG("Parsing successful. count: %d", count);
+    LOG_ARG_DBG("Parsing successful. count: %d", count);
     return count;
 
 error:
-    LOG("Parsing failed");
+    LOG_DBG("Parsing failed");
     if (parsedP != NULL)
     {
         lwm2m_data_free(count, parsedP);
@@ -1080,7 +1080,7 @@ int senml_json_serialize(const lwm2m_uri_t * uriP,
     const uint8_t *parentUriStr = NULL;
     size_t parentUriLen = 0;
 
-    LOG_ARG("size: %d", size);
+    LOG_ARG_DBG("size: %d", size);
     LOG_ARG_DBG("%s", LOG_URI_TO_STRING(uriP));
     if (size != 0 && tlvP == NULL) return -1;
 

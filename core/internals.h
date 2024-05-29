@@ -215,10 +215,6 @@ char *lwm2m_log_fmt_message(const char *fmt, ...);
 #define LOG_ARG_FATAL(STR, ...) LWM2M_LOG_NOP
 #endif
 
-/* Legacy logging macros. Replace with `LOG_DBG` and related. */
-#define LOG(STR) LOG_DBG(STR)
-#define LOG_ARG(STR, ...) LOG_ARG_DBG(STR, __VA_ARGS__)
-
 #define LWM2M_DEFAULT_LIFETIME  86400
 
 #ifdef LWM2M_SUPPORT_SENML_CBOR
