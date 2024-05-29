@@ -157,8 +157,7 @@ lwm2m_transaction_t * transaction_new(void * sessionH,
     lwm2m_transaction_t * transacP;
     int result;
 
-    LOG_ARG("method: %d, altPath: \"%s\", mID: %d, token_len: %d",
-            method, STR_NULL2EMPTY(altPath), mID, token_len);
+    LOG_ARG_DBG("method: %d, altPath: \"%s\", mID: %d, token_len: %d", method, STR_NULL2EMPTY(altPath), mID, token_len);
     LOG_ARG_DBG("%s", LOG_URI_TO_STRING(uriP));
 
     // no transactions without peer
@@ -239,11 +238,11 @@ lwm2m_transaction_t * transaction_new(void * sessionH,
         }
     }
 
-    LOG_ARG("Exiting on success. new transac=%p", (void *)transacP);
+    LOG_ARG_DBG("Exiting on success. new transac=%p", (void *)transacP);
     return transacP;
 
 error:
-    LOG("Exiting on failure");
+    LOG_DBG("Exiting on failure");
     if(transacP->message)
     {
         coap_free_header(transacP->message);
@@ -255,7 +254,7 @@ error:
 
 void transaction_free(lwm2m_transaction_t * transacP)
 {
-    LOG_ARG("Entering. transaction=%p", (void *)transacP);
+    LOG_ARG_DBG("Entering. transaction=%p", (void *)transacP);
     if (transacP->message)
     {
        coap_free_header(transacP->message);
@@ -279,7 +278,7 @@ void transaction_free(lwm2m_transaction_t * transacP)
 void transaction_remove(lwm2m_context_t * contextP,
                         lwm2m_transaction_t * transacP)
 {
-    LOG_ARG("Entering. transaction=%p", (void *)transacP);
+    LOG_ARG_DBG("Entering. transaction=%p", (void *)transacP);
     contextP->transactionList = (lwm2m_transaction_t *) LWM2M_LIST_RM(contextP->transactionList, transacP->mID, NULL);
     transaction_free(transacP);
 }
@@ -293,7 +292,7 @@ bool transaction_handleResponse(lwm2m_context_t * contextP,
     bool reset = false;
     lwm2m_transaction_t * transacP;
 
-    LOG("Entering");
+    LOG_DBG("Entering");
     transacP = contextP->transactionList;
 
     while (NULL != transacP)
@@ -370,7 +369,7 @@ int transaction_send(lwm2m_context_t * contextP,
 {
     bool maxRetriesReached = false;
 
-    LOG_ARG("Entering: transaction=%p", (void *)transacP);
+    LOG_ARG_DBG("Entering: transaction=%p", (void *)transacP);
     if (transacP->buffer == NULL)
     {
         transacP->buffer_len = coap_serialize_get_size(transacP->message);
@@ -444,7 +443,7 @@ int transaction_send(lwm2m_context_t * contextP,
 error:
     if (transacP->callback)
     {
-        LOG_ARG("transaction %p expired..calling callback", (void *)transacP);
+        LOG_ARG_DBG("transaction %p expired..calling callback", (void *)transacP);
         transacP->callback(contextP, transacP, NULL);
     }
     transaction_remove(contextP, transacP);
@@ -457,7 +456,7 @@ void transaction_step(lwm2m_context_t * contextP,
 {
     lwm2m_transaction_t * transacP;
 
-    LOG("Entering");
+    LOG_DBG("Entering");
     transacP = contextP->transactionList;
     while (transacP != NULL)
     {

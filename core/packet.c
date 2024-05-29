@@ -130,7 +130,7 @@ static void handle_reset(lwm2m_context_t * contextP,
                          coap_packet_t * message)
 {
 #ifdef LWM2M_CLIENT_MODE
-    LOG("Entering");
+    LOG_DBG("Entering");
     observe_cancel(contextP, message->mid, fromSessionH);
 #endif
 }
@@ -144,7 +144,7 @@ static uint8_t handle_request(lwm2m_context_t * contextP,
     lwm2m_request_type_t requestType;
     uint8_t result = COAP_IGNORE;
 
-    LOG("Entering");
+    LOG_DBG("Entering");
 
 #ifdef LWM2M_CLIENT_MODE
     requestType = uri_decode(contextP->altPath, message->uri_path, message->code, &uri);
@@ -280,7 +280,7 @@ static lwm2m_transaction_t * prv_create_next_block_transaction(lwm2m_transaction
         ((coap_packet_t *)clone->message)->location_path = message->location_path;
         SET_OPTION((coap_packet_t *)clone->message, COAP_OPTION_LOCATION_PATH);
     }
-    
+
     if (message->location_query != NULL)
     {
         char  str[message->location_query_len + 1];
@@ -294,7 +294,7 @@ static lwm2m_transaction_t * prv_create_next_block_transaction(lwm2m_transaction
         ((coap_packet_t *)clone->message)->content_type = message->content_type;
         SET_OPTION((coap_packet_t *)clone->message, COAP_OPTION_CONTENT_TYPE);
     }
-  
+
     if(IS_OPTION(message, COAP_OPTION_URI_PATH))
     {
         ((coap_packet_t *)clone->message)->uri_path = message->uri_path;
@@ -305,7 +305,7 @@ static lwm2m_transaction_t * prv_create_next_block_transaction(lwm2m_transaction
     {
         coap_set_header_observe(clone->message, message->observe);
     }
-    
+
     for (int i = 0; i < message->accept_num; i++) {
         coap_set_header_accept(clone->message, message->accept[i]);
     }
@@ -363,15 +363,15 @@ static int prv_send_next_block1(lwm2m_context_t * contextP, void * sessionH, uin
     lwm2m_transaction_t * transaction;
     coap_packet_t * message;
     uint32_t block_num;
-    
+
     transaction = prv_get_transaction(contextP, sessionH, mid);
     if(transaction == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
 
     message = (coap_packet_t *) transaction->message;
-    
+
     // safeguard, requested block size should not be greater or zero
     if (block_size > message->block1_size || block_size == 0) block_size = message->block1_size;
-    
+
     if (message->block1_num == 0)
     {
         block_num = message->block1_size / block_size;
@@ -380,14 +380,14 @@ static int prv_send_next_block1(lwm2m_context_t * contextP, void * sessionH, uin
     {
         block_num = message->block1_num + 1;
     }
-    
+
     return prv_send_new_block1(contextP, transaction, block_num, block_size);
 }
 
 static int prv_change_to_block1(lwm2m_context_t * contextP, void * sessionH, uint16_t mid, uint32_t size){
     lwm2m_transaction_t * transaction;
     uint16_t block_size = 16;
-    
+
     transaction = prv_get_transaction(contextP, sessionH, mid);
 
     for (uint16_t n = 1; 16 << n <= (uint16_t)size; n++) {
@@ -405,7 +405,7 @@ static int prv_retry_block1(lwm2m_context_t * contextP, void * sessionH, uint16_
     lwm2m_transaction_t * transaction;
     coap_packet_t * message;
     uint32_t block_num;
-    
+
     transaction = prv_get_transaction(contextP, sessionH, mid);
     if(transaction == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
 
@@ -418,9 +418,9 @@ static int prv_retry_block1(lwm2m_context_t * contextP, void * sessionH, uint16_
     // safeguard, requested block size should not be greater or zero
     if (block_size == message->block1_size && block_size > 16) block_size *= 0.5;
     if (block_size >= message->block1_size || block_size == 0) return COAP_400_BAD_REQUEST;
-    
+
     block_num = message->block1_num;
-    
+
     return prv_send_new_block1(contextP, transaction, block_num, block_size);
 }
 
@@ -437,7 +437,7 @@ static int prv_send_get_block2(lwm2m_context_t * contextP,
     lwm2m_transaction_t * transaction;
     lwm2m_transaction_t * next;
     uint16_t nextMID;
-    
+
     // get current transaction
     transaction = prv_get_transaction(contextP, sessionH, currentMID);
     if(transaction == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
@@ -482,16 +482,17 @@ void lwm2m_handle_packet(lwm2m_context_t *contextP, uint8_t *buffer, size_t leng
     static coap_packet_t message[1];
     static coap_packet_t response[1];
 
-    LOG("Entering");
+    LOG_DBG("Entering");
     /* The buffer length is uint16_t here, as UDP packet length field is 16 bit.
      * This might change in the future e.g. for supporting TCP or other transport.
      */
     coap_error_code = coap_parse_message(message, buffer, (uint16_t)length);
     if (coap_error_code == NO_ERROR)
     {
-        LOG_ARG("Parsed: ver %u, type %u, tkl %u, code %u.%.2u, mid %u, Content type: %d",
-                message->version, message->type, message->token_len, message->code >> 5, message->code & 0x1F, message->mid, message->content_type);
-        LOG_ARG("Payload: %.*s", (int)message->payload_len, STR_NULL2EMPTY(message->payload));
+        LOG_ARG_DBG("Parsed: ver %u, type %u, tkl %u, code %u.%.2u, mid %u, Content type: %d", message->version,
+                    message->type, message->token_len, message->code >> 5, message->code & 0x1F, message->mid,
+                    message->content_type);
+        LOG_ARG_DBG("Payload: %.*s", (int)message->payload_len, STR_NULL2EMPTY(message->payload));
         if (message->code >= COAP_GET && message->code <= COAP_DELETE)
         {
             uint32_t block_num = 0;
@@ -572,8 +573,8 @@ void lwm2m_handle_packet(lwm2m_context_t *contextP, uint8_t *buffer, size_t leng
 
                     // parse block1 header
                     coap_get_header_block1(message, &block1_num, &block1_more, &block1_size, NULL);
-                    LOG_ARG("Blockwise: block1 request NUM %u (SZX %u/ SZX Max%u) MORE %u", block1_num, block1_size,
-                            lwm2m_get_coap_block_size(), block1_more);
+                    LOG_ARG_DBG("Blockwise: block1 request NUM %u (SZX %u/ SZX Max%u) MORE %u", block1_num, block1_size,
+                                lwm2m_get_coap_block_size(), block1_more);
 
                     char * uri = coap_get_packet_uri_as_string(message);
                     if (uri == NULL){
@@ -616,14 +617,14 @@ void lwm2m_handle_packet(lwm2m_context_t *contextP, uint8_t *buffer, size_t leng
                     /* get offset for blockwise transfers */
                     if (coap_get_header_block2(message, &block_num, NULL, &block_size, &block_offset))
                     {
-                        LOG_ARG("Blockwise: block request %u (%u/%u) @ %u bytes", block_num, block_size,
-                                lwm2m_get_coap_block_size(), block_offset);
+                        LOG_ARG_DBG("Blockwise: block request %u (%u/%u) @ %u bytes", block_num, block_size,
+                                    lwm2m_get_coap_block_size(), block_offset);
                         block_size = MIN(block_size, lwm2m_get_coap_block_size());
                     }
 
                     if (block_offset >= response->payload_len)
                     {
-                        LOG("handle_incoming_data(): block_offset >= response->payload_len");
+                        LOG_DBG("handle_incoming_data(): block_offset >= response->payload_len");
 
                         response->code = COAP_402_BAD_OPTION;
                         coap_set_payload(response, "BlockOutOfScope", 15); /* a const char str[] and sizeof(str) produces larger code size */
@@ -766,7 +767,7 @@ void lwm2m_handle_packet(lwm2m_context_t *contextP, uint8_t *buffer, size_t leng
                         default:
                             break;
                     }
-                    
+
                     transaction_handleResponse(contextP, fromSessionH, message, NULL);
                 } else if (IS_OPTION(message, COAP_OPTION_BLOCK2)) {
 #ifdef LWM2M_CLIENT_MODE
@@ -798,8 +799,8 @@ void lwm2m_handle_packet(lwm2m_context_t *contextP, uint8_t *buffer, size_t leng
 
                         // parse block2 header
                         coap_get_header_block2(message, &block2_num, &block2_more, &block2_size, NULL);
-                        LOG_ARG("Blockwise: block2 response NUM %u (SZX %u/ SZX Max%u) MORE %u", block2_num,
-                                block2_size, lwm2m_get_coap_block_size(), block2_more);
+                        LOG_ARG_DBG("Blockwise: block2 response NUM %u (SZX %u/ SZX Max%u) MORE %u", block2_num,
+                                    block2_size, lwm2m_get_coap_block_size(), block2_more);
 
                         // handle block 2
                         coap_error_code = coap_block2_handler(&peerP->blockData, message->mid, message->payload, message->payload_len, block2_size, block2_num, block2_more, &complete_buffer, &complete_buffer_size);
@@ -839,12 +840,12 @@ void lwm2m_handle_packet(lwm2m_context_t *contextP, uint8_t *buffer, size_t leng
     } /* if (parsed correctly) */
     else
     {
-        LOG_ARG("Message parsing failed %u.%02u", coap_error_code >> 5, coap_error_code & 0x1F);
+        LOG_ARG_DBG("Message parsing failed %u.%02u", coap_error_code >> 5, coap_error_code & 0x1F);
     }
 
     if (coap_error_code != NO_ERROR && coap_error_code != COAP_IGNORE)
     {
-        LOG_ARG("ERROR %u: %s", coap_error_code, STR_NULL2EMPTY(coap_error_message));
+        LOG_ARG_DBG("ERROR %u: %s", coap_error_code, STR_NULL2EMPTY(coap_error_message));
 
         /* Set to sendable error code. */
         if (coap_error_code >= 192)
@@ -867,16 +868,16 @@ uint8_t message_send(lwm2m_context_t * contextP,
     size_t pktBufferLen = 0;
     size_t allocLen;
 
-    LOG("Entering");
+    LOG_DBG("Entering");
     allocLen = coap_serialize_get_size(message);
-    LOG_ARG("Size to allocate: %zd", allocLen);
+    LOG_ARG_DBG("Size to allocate: %zd", allocLen);
     if (allocLen == 0) return COAP_500_INTERNAL_SERVER_ERROR;
 
     pktBuffer = (uint8_t *)lwm2m_malloc(allocLen);
     if (pktBuffer != NULL)
     {
         pktBufferLen = coap_serialize_message(message, pktBuffer);
-        LOG_ARG("coap_serialize_message() returned %zd", pktBufferLen);
+        LOG_ARG_DBG("coap_serialize_message() returned %zd", pktBufferLen);
         if (0 != pktBufferLen)
         {
             result = lwm2m_buffer_send(sessionH, pktBuffer, pktBufferLen, contextP->userData);
