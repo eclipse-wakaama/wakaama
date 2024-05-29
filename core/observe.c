@@ -174,7 +174,7 @@ uint8_t observe_handleRequest(lwm2m_context_t * contextP,
     (void) size; /* unused */
 
     LOG_ARG("Code: %02X, server status: %s", message->code, STR_STATUS(serverP->status));
-    LOG_URI(uriP);
+    LOG_ARG_DBG("%s", LOG_URI_TO_STRING(uriP));
 
     coap_get_header_observe(message, &count);
 
@@ -299,7 +299,7 @@ void observe_clear(lwm2m_context_t * contextP,
 {
     lwm2m_observed_t * observedP;
 
-    LOG_URI(uriP);
+    LOG_ARG_DBG("%s", LOG_URI_TO_STRING(uriP));
 
     observedP = contextP->observedList;
     while(observedP != NULL)
@@ -339,7 +339,7 @@ uint8_t observe_setParameters(lwm2m_context_t * contextP,
     uint8_t result;
     lwm2m_watcher_t * watcherP;
 
-    LOG_URI(uriP);
+    LOG_ARG_DBG("%s", LOG_URI_TO_STRING(uriP));
     LOG_ARG("toSet: %08X, toClear: %08X, minPeriod: %d, maxPeriod: %d, greaterThan: %f, lessThan: %f, step: %f",
             attrP->toSet, attrP->toClear, attrP->minPeriod, attrP->maxPeriod, attrP->greaterThan, attrP->lessThan, attrP->step);
 
@@ -435,7 +435,7 @@ lwm2m_observed_t * observe_findByUri(lwm2m_context_t * contextP,
 {
     lwm2m_observed_t * targetP;
 
-    LOG_URI(uriP);
+    LOG_ARG_DBG("%s", LOG_URI_TO_STRING(uriP));
     targetP = contextP->observedList;
     while (targetP != NULL)
     {
@@ -453,7 +453,7 @@ lwm2m_observed_t * observe_findByUri(lwm2m_context_t * contextP,
 #endif
                      {
                          LOG_ARG("Found one with%s observers.", targetP->watcherList ? "" : " no");
-                         LOG_URI(&(targetP->uri));
+                         LOG_ARG_DBG("%s", LOG_URI_TO_STRING(&(targetP->uri)));
                          return targetP;
                      }
                  }
@@ -471,7 +471,7 @@ void lwm2m_resource_value_changed(lwm2m_context_t * contextP,
 {
     lwm2m_observed_t * targetP;
 
-    LOG_URI(uriP);
+    LOG_ARG_DBG("%s", LOG_URI_TO_STRING(uriP));
     targetP = contextP->observedList;
     while (targetP != NULL)
     {
@@ -494,7 +494,7 @@ void lwm2m_resource_value_changed(lwm2m_context_t * contextP,
                         lwm2m_watcher_t * watcherP;
 
                         LOG("Found an observation");
-                        LOG_URI(&(targetP->uri));
+                        LOG_ARG_DBG("%s", LOG_URI_TO_STRING(&(targetP->uri)));
 
                         for (watcherP = targetP->watcherList ; watcherP != NULL ; watcherP = watcherP->next)
                         {
@@ -536,7 +536,7 @@ void observe_step(lwm2m_context_t * contextP,
 
         // TODO: handle resource instances
 
-        LOG_URI(&(targetP->uri));
+        LOG_ARG_DBG("%s", LOG_URI_TO_STRING(&(targetP->uri)));
         if (LWM2M_URI_IS_SET_RESOURCE(&targetP->uri))
         {
             lwm2m_data_t *valueP;
@@ -597,7 +597,7 @@ void observe_step(lwm2m_context_t * contextP,
                         // no conditions
                         notify = true;
                         LOG("Notify with no conditions");
-                        LOG_URI(&(targetP->uri));
+                        LOG_ARG_DBG("%s", LOG_URI_TO_STRING(&(targetP->uri)));
                     }
 
                     if (notify == false
@@ -865,7 +865,7 @@ int lwm2m_send(lwm2m_context_t *contextP, uint16_t shortServerID, lwm2m_uri_t *u
 
     LOG_ARG("shortServerID: %d", shortServerID);
     for (i = 0; i < numUris; i++) {
-        LOG_URI(urisP + i);
+        LOG_ARG_DBG("%s", LOG_URI_TO_STRING(urisP + i));
     }
 
     for (i = 0; i < numUris; i++) {
@@ -1251,7 +1251,7 @@ int prv_lwm2m_observe(lwm2m_context_t * contextP,
     uint8_t token[4];
 
     LOG_ARG("clientID: %d", clientID);
-    LOG_URI(uriP);
+    LOG_ARG_DBG("%s", LOG_URI_TO_STRING(uriP));
 
     if (!LWM2M_URI_IS_SET_INSTANCE(uriP) && LWM2M_URI_IS_SET_RESOURCE(uriP)) return COAP_400_BAD_REQUEST;
 
@@ -1339,7 +1339,7 @@ int prv_lwm2m_observe_cancel(lwm2m_context_t * contextP,
     int ret;
 
     LOG_ARG("clientID: %d", clientID);
-    LOG_URI(uriP);
+    LOG_ARG_DBG("%s", LOG_URI_TO_STRING(uriP));
 
     clientP = (lwm2m_client_t *)lwm2m_list_find((lwm2m_list_t *)contextP->clientList, clientID);
     if (clientP == NULL) return COAP_404_NOT_FOUND;

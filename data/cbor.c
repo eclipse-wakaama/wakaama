@@ -591,7 +591,7 @@ int cbor_parse(const lwm2m_uri_t *uriP, const uint8_t *buffer, size_t bufferLen,
     uint8_t *tmp;
 
     LOG_ARG("bufferLen: %zu", bufferLen);
-    LOG_URI(uriP);
+    LOG_ARG_DBG("%s", LOG_URI_TO_STRING(uriP));
 
     if (!uriP || (uriP && !LWM2M_URI_IS_SET_RESOURCE(uriP)))
         return 0;
@@ -642,14 +642,14 @@ int cbor_parse(const lwm2m_uri_t *uriP, const uint8_t *buffer, size_t bufferLen,
 }
 
 int cbor_serialize(const lwm2m_uri_t *uriP, int size, const lwm2m_data_t *dataP, uint8_t **bufferP) {
-    LOG_URI(uriP);
+    LOG_ARG_DBG("%s", LOG_URI_TO_STRING(uriP));
     LOG_ARG("size: %d, dataType: %s", size, STR_DATA_TYPE(dataP->type));
 
     int result = 0;
     int res;
     uint8_t tmp[13];
 
-    LOG_URI(uriP);
+    LOG_ARG_DBG("%s", LOG_URI_TO_STRING(uriP));
     (void)uriP;
 
     *bufferP = NULL;

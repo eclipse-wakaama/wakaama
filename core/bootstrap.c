@@ -761,7 +761,7 @@ uint8_t bootstrap_handleCommand(lwm2m_context_t * contextP,
     lwm2m_media_type_t format;
 
     LOG_ARG("Code: %02X", message->code);
-    LOG_URI(uriP);
+    LOG_ARG_DBG("%s", LOG_URI_TO_STRING(uriP));
     format = utils_convertMediaType(message->content_type);
 
     result = prv_checkServerStatus(serverP);
@@ -1043,7 +1043,7 @@ uint8_t bootstrap_handleRequest(lwm2m_context_t * contextP,
     char * name;
     lwm2m_media_type_t format = 0;
 
-    LOG_URI(uriP);
+    LOG_ARG_DBG("%s", LOG_URI_TO_STRING(uriP));
     if (contextP->bootstrapCallback == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
     if (message->code != COAP_POST) return COAP_400_BAD_REQUEST;
     if (message->uri_query == NULL) return COAP_400_BAD_REQUEST;
@@ -1178,7 +1178,7 @@ int lwm2m_bootstrap_delete(lwm2m_context_t * contextP,
     lwm2m_transaction_t * transaction;
     bs_data_t * dataP;
 
-    LOG_URI(uriP);
+    LOG_ARG_DBG("%s", LOG_URI_TO_STRING(uriP));
     transaction = transaction_new(sessionH, COAP_DELETE, NULL, uriP, contextP->nextMID++, 4, NULL);
     if (transaction == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
 
@@ -1217,7 +1217,7 @@ int lwm2m_bootstrap_write(lwm2m_context_t * contextP,
     lwm2m_transaction_t * transaction;
     bs_data_t * dataP;
 
-    LOG_URI(uriP);
+    LOG_ARG_DBG("%s", LOG_URI_TO_STRING(uriP));
     if (uriP == NULL
     || buffer == NULL
     || length == 0)
@@ -1288,7 +1288,7 @@ int lwm2m_bootstrap_discover(lwm2m_context_t * contextP, void * sessionH, lwm2m_
     lwm2m_transaction_t * transaction;
     bs_data_t * dataP;
 
-    LOG_URI(uriP);
+    LOG_ARG_DBG("%s", LOG_URI_TO_STRING(uriP));
 
     if (uriP
      && (LWM2M_URI_IS_SET_INSTANCE(uriP)
@@ -1326,7 +1326,7 @@ int lwm2m_bootstrap_read(lwm2m_context_t * contextP, void * sessionH, lwm2m_uri_
     lwm2m_transaction_t * transaction;
     bs_data_t * dataP;
 
-    LOG_URI(uriP);
+    LOG_ARG_DBG("%s", LOG_URI_TO_STRING(uriP));
 
     if (uriP
      && (LWM2M_URI_IS_SET_RESOURCE(uriP)

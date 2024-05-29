@@ -1772,7 +1772,7 @@ uint8_t  registration_handleRequest(lwm2m_context_t * contextP,
     uint8_t result;
     time_t tv_sec;
 
-    LOG_URI(uriP);
+    LOG_ARG_DBG("%s", LOG_URI_TO_STRING(uriP));
     tv_sec = lwm2m_gettime();
     if (tv_sec < 0) return COAP_500_INTERNAL_SERVER_ERROR;
 

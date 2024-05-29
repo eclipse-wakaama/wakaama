@@ -218,7 +218,6 @@ char *lwm2m_log_fmt_message(const char *fmt, ...);
 /* Legacy logging macros. Replace with `LOG_DBG` and related. */
 #define LOG(STR) LOG_DBG(STR)
 #define LOG_ARG(STR, ...) LOG_ARG_DBG(STR, __VA_ARGS__)
-#define LOG_URI(URI) LOG_ARG_DBG("%s", LOG_URI_TO_STRING(URI))
 
 #define LWM2M_DEFAULT_LIFETIME  86400
 

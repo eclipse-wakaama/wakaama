@@ -159,7 +159,7 @@ lwm2m_transaction_t * transaction_new(void * sessionH,
 
     LOG_ARG("method: %d, altPath: \"%s\", mID: %d, token_len: %d",
             method, STR_NULL2EMPTY(altPath), mID, token_len);
-    LOG_URI(uriP);
+    LOG_ARG_DBG("%s", LOG_URI_TO_STRING(uriP));
 
     // no transactions without peer
     if (NULL == sessionH) return NULL;
