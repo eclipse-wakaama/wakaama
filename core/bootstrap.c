@@ -685,12 +685,7 @@ static uint8_t prv_checkServerStatus(lwm2m_server_t * serverP)
     switch (serverP->status)
     {
     case STATE_BS_HOLD_OFF:
-        serverP->status = STATE_BS_PENDING;
-        LOG_ARG_DBG("Status changed to: %s", STR_STATUS(serverP->status));
-        break;
-
-    case STATE_BS_INITIATED:
-        // The ACK was probably lost
+    case STATE_BS_INITIATED: // The ACK was probably lost
         serverP->status = STATE_BS_PENDING;
         LOG_ARG_DBG("Status changed to: %s", STR_STATUS(serverP->status));
         break;
