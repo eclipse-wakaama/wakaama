@@ -39,6 +39,13 @@ jobs:
       env:
         CC:  ${{ matrix.compiler }}
 
+    - name: Install example binaries
+      run: |
+        rm -rf integration-tests/
+        cmake --install build-presets/server/ --prefix integration_tests/install
+        cmake --install build-presets/bootstrap_server/ --prefix integration_tests/install
+        cmake --install build-presets/client/ --prefix integration_tests/install
+
     - name: Install dependencies
       run: |
           python -m pip install --upgrade pip

@@ -113,6 +113,7 @@ function run_clang_format() {
 
 function run_clean() {
   rm -rf build-wakaama
+  rm -rf build-presets
 }
 
 function run_cmake_format() {
