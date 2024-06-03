@@ -76,9 +76,8 @@ set(WAKAAMA_WITH_CONNECTION_IMPLEMENTATION
 )
 set_property(CACHE WAKAAMA_WITH_CONNECTION_IMPLEMENTATION PROPERTY STRINGS NONE PLAIN TINYDTLS TESTING)
 
-# Set the defines for logging configuration
-function(set_defines target)
-    # Mode
+# Set mode related defines for target
+function(set_defines_for_mode target)
     if(WAKAAMA_MODE_CLIENT)
         target_compile_definitions(${target} PUBLIC LWM2M_CLIENT_MODE)
     endif()
@@ -88,8 +87,10 @@ function(set_defines target)
     if(WAKAAMA_MODE_BOOTSTRAP_SERVER)
         target_compile_definitions(${target} PUBLIC LWM2M_BOOTSTRAP_SERVER_MODE)
     endif()
+endfunction()
 
-    # Client
+# Set client related defines for target
+function(set_defines_for_client target)
     if(WAKAAMA_CLIENT_INITIATED_BOOTSTRAP)
         target_compile_definitions(${target} PUBLIC LWM2M_BOOTSTRAP)
     endif()
@@ -97,8 +98,10 @@ function(set_defines target)
     if(WAKAAMA_CLIENT_LWM2M_V_1_0)
         target_compile_definitions(${target} PUBLIC LWM2M_VERSION_1_0)
     endif()
+endfunction()
 
-    # Data Types
+# Set data types related defines for target
+function(set_defines_for_datatypes target)
     if(WAKAMA_DATA_TLV)
         target_compile_definitions(${target} PUBLIC LWM2M_SUPPORT_TLV)
     endif()
@@ -117,15 +120,19 @@ function(set_defines target)
     if(WAKAAMA_DATA_OLD_CONTENT_FORMAT)
         target_compile_definitions(${target} PUBLIC LWM2M_OLD_CONTENT_FORMAT_SUPPORT)
     endif()
+endfunction()
 
-    # CoAP
+# Set CoAP related defines for target
+function(set_defines_for_coap target)
     if(WAKAAMA_RAW_BLOCK1_REQUESTS)
         target_compile_definitions(${target} PUBLIC LWM2M_RAW_BLOCK1_REQUESTS)
     endif()
 
     target_compile_definitions(${target} PUBLIC LWM2M_COAP_DEFAULT_BLOCK_SIZE=${WAKAAMA_COAP_DEFAULT_BLOCK_SIZE})
+endfunction()
 
-    # Logging
+# Set logging related defines for target
+function(set_defines_for_logging target)
     target_compile_definitions(${target} PUBLIC LWM2M_LOG_LEVEL=LWM2M_${WAKAAMA_LOG_LEVEL})
 
     if(WAKAAMA_LOG_CUSTOM_HANDLER)
@@ -133,6 +140,19 @@ function(set_defines target)
     endif()
 
     target_compile_definitions(${target} PUBLIC LWM2M_LOG_MAX_MSG_TXT_SIZE=${WAKAAMA_LOG_MAX_MSG_TXT_SIZE})
+endfunction()
+
+# Set the relevant defines for target
+function(set_defines target)
+    set_defines_for_mode(${target})
+
+    set_defines_for_client(${target})
+
+    set_defines_for_datatypes(${target})
+
+    set_defines_for_coap(${target})
+
+    set_defines_for_logging(${target})
 endfunction()
 
 # Add data format source files to an existing target.
