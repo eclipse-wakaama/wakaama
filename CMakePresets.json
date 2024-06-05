@@ -34,17 +34,6 @@
       }
     },
     {
-      "name": "log_info",
-      "description": "Run the tests with info log level",
-      "inherits": "log_base",
-      "cacheVariables": {
-        "WAKAAMA_LOG_LEVEL": {
-          "type": "STRING",
-          "value": "INFO"
-        }
-      }
-    },
-    {
       "name": "log_warn",
       "description": "Run the tests with warning log level",
       "inherits": "log_base",
@@ -71,10 +60,6 @@
     {
       "name": "log_dbg",
       "configurePreset": "log_dbg"
-    },
-    {
-      "name": "log_info",
-      "configurePreset": "log_info"
     },
     {
       "name": "log_warn",
