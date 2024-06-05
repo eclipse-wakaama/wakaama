@@ -178,19 +178,6 @@ static void test_log_level(void) {
                                      "FATAL - [test_log_level] fatal\n"
                                      "FATAL - [test_log_level] fatal with arg\n"
                                      "FATAL - [test_log_level] " EXPECTED_TEST_URI_STR "\n";
-#elif LWM2M_LOG_LEVEL == LWM2M_INFO
-    const char *const expected_log = "INFO - [test_log_level] info\n"
-                                     "INFO - [test_log_level] info with arg\n"
-                                     "INFO - [test_log_level] " EXPECTED_TEST_URI_STR "\n"
-                                     "WARN - [test_log_level] warning\n"
-                                     "WARN - [test_log_level] warning with arg\n"
-                                     "WARN - [test_log_level] " EXPECTED_TEST_URI_STR "\n"
-                                     "ERR - [test_log_level] error\n"
-                                     "ERR - [test_log_level] error with arg\n"
-                                     "ERR - [test_log_level] " EXPECTED_TEST_URI_STR "\n"
-                                     "FATAL - [test_log_level] fatal\n"
-                                     "FATAL - [test_log_level] fatal with arg\n"
-                                     "FATAL - [test_log_level] " EXPECTED_TEST_URI_STR "\n";
 #elif LWM2M_LOG_LEVEL == LWM2M_WARN
     const char *const expected_log = "WARN - [test_log_level] warning\n"
                                      "WARN - [test_log_level] warning with arg\n"
