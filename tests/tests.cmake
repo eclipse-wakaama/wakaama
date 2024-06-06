@@ -27,6 +27,10 @@ function(add_test_variant)
     target_sources_wakaama(${ADD_TEST_VARIANT_ARG_TARGET_NAME})
     target_sources_shared(${ADD_TEST_VARIANT_ARG_TARGET_NAME})
 
+    if(SANITIZER AND WAKAAMA_ENABLE_VALGRIND)
+        message(FATAL_ERROR "Sanitizers are not compatible with Valgrind. Use only one at a time.")
+    endif()
+
     if(SANITIZER)
         target_compile_options(
             ${ADD_TEST_VARIANT_ARG_TARGET_NAME} PRIVATE -fsanitize=${SANITIZER} -fno-sanitize-recover=all
@@ -36,11 +40,22 @@ function(add_test_variant)
         )
     endif()
 
+    if(WAKAAMA_ENABLE_VALGRIND)
+        if(WAKAAMA_ENABLE_VALGRIND STREQUAL "memcheck")
+            set(VALGRIND_LAUNCHER valgrind --tool=memcheck --leak-check=full --show-leak-kinds=all --track-origins=yes --error-exitcode=1)
+        elseif(WAKAAMA_ENABLE_VALGRIND STREQUAL "helgrind")
+            set(VALGRIND_LAUNCHER valgrind --tool=helgrind --error-exitcode=1)
+        else ()
+            message(FATAL_ERROR "Valgrind tool '${WAKAAMA_ENABLE_VALGRIND}' not supported")
+        endif()
+    endif()
+
     if(COVERAGE)
         target_compile_options(${ADD_TEST_VARIANT_ARG_TARGET_NAME} PRIVATE --coverage)
         target_link_options(${ADD_TEST_VARIANT_ARG_TARGET_NAME} PRIVATE --coverage)
     endif()
 
+    get_target_property(TEST_WORKING_DIR ${ADD_TEST_VARIANT_ARG_TARGET_NAME} BINARY_DIR)
     # Add our unit tests to the "test" target
-    add_test(NAME ${ADD_TEST_VARIANT_ARG_TARGET_NAME}_test COMMAND ${ADD_TEST_VARIANT_ARG_TARGET_NAME})
+    add_test(NAME ${ADD_TEST_VARIANT_ARG_TARGET_NAME}_test COMMAND ${VALGRIND_LAUNCHER} ${TEST_WORKING_DIR}/${ADD_TEST_VARIANT_ARG_TARGET_NAME} COMMAND_EXPAND_LISTS)
 endfunction()
