@@ -477,7 +477,8 @@ static bool prv_convertValue(const _record_t * recordP,
             dataLength = utils_base64Decode((const char *)recordP->value.value.asBuffer.buffer,
                                    recordP->value.value.asBuffer.length,
                                    data,
-                                   dataLength);
+                                   dataLength,
+                                   true);
             if (dataLength)
             {
                 lwm2m_data_encode_opaque(data, dataLength, targetP);
@@ -898,7 +899,9 @@ static int prv_serializeValue(const lwm2m_data_t * tlvP,
             res = utils_base64Encode(tlvP->value.asBuffer.buffer,
                                      tlvP->value.asBuffer.length,
                                      buffer+head,
-                                     bufferLen - head);
+                                     bufferLen - head,
+                                     true,
+                                     false);
             if (res < tlvP->value.asBuffer.length) return -1;
             head += res;
         }

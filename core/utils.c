@@ -983,37 +983,64 @@ static char b64Alphabet[64] =
     'w', 'x', 'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/'
 };
 
-static void prv_encodeBlock(const uint8_t input[3],
-                            uint8_t output[4])
+static char b64UrlAlphabet[64] =
 {
-    output[0] = b64Alphabet[input[0] >> 2];
-    output[1] = b64Alphabet[((input[0] & 0x03) << 4) | (input[1] >> 4)];
-    output[2] = b64Alphabet[((input[1] & 0x0F) << 2) | (input[2] >> 6)];
-    output[3] = b64Alphabet[input[2] & 0x3F];
+    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
+    'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f',
+    'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v',
+    'w', 'x', 'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-', '_'
+};
+
+static void prv_encodeBlock(const uint8_t input[3],
+                            uint8_t output[4],
+                            const char *base64Alphabet)
+{
+    output[0] = base64Alphabet[input[0] >> 2];
+    output[1] = base64Alphabet[((input[0] & 0x03) << 4) | (input[1] >> 4)];
+    output[2] = base64Alphabet[((input[1] & 0x0F) << 2) | (input[2] >> 6)];
+    output[3] = base64Alphabet[input[2] & 0x3F];
 }
 
-size_t utils_base64GetSize(size_t dataLen)
+size_t utils_base64GetSize(size_t dataLen, bool withPadding)
 {
     size_t result_len;
-
-    result_len = 4 * (dataLen / 3);
-    if (dataLen % 3) result_len += 4;
-
+    if(withPadding)
+    {
+        result_len = 4 * (dataLen / 3);
+        if (dataLen % 3) result_len += 4;
+    }
+    else
+    {
+        result_len = (dataLen * 4) / 3;
+        if(dataLen % 3) result_len += 1;
+    }
     return result_len;
 }
 
 size_t utils_base64Encode(const uint8_t * dataP,
                           size_t dataLen, 
                           uint8_t * bufferP,
-                          size_t bufferLen)
+                          size_t bufferLen,
+                          bool useB64UrlAlphabet,
+                          bool withPadding)
 {
     unsigned int data_index;
     unsigned int result_index;
     size_t result_len;
+    char *base64Alphabet = NULL;
 
-    result_len = utils_base64GetSize(dataLen);
+    result_len = utils_base64GetSize(dataLen, withPadding);
 
     if (result_len > bufferLen) return 0;
+
+    if(useB64UrlAlphabet)
+    {
+        base64Alphabet = b64UrlAlphabet;
+    }
+    else
+    {
+        base64Alphabet = b64Alphabet;
+    }
 
     data_index = 0;
     result_index = 0;
@@ -1025,19 +1052,25 @@ size_t utils_base64Encode(const uint8_t * dataP,
             // should never happen
             break;
         case 1:
-            bufferP[result_index] = b64Alphabet[dataP[data_index] >> 2];
-            bufferP[result_index + 1] = b64Alphabet[(dataP[data_index] & 0x03) << 4];
-            bufferP[result_index + 2] = PRV_B64_PADDING;
-            bufferP[result_index + 3] = PRV_B64_PADDING;
+            bufferP[result_index] = base64Alphabet[dataP[data_index] >> 2];
+            bufferP[result_index + 1] = base64Alphabet[(dataP[data_index] & 0x03) << 4];
+            if(withPadding)
+            {
+                bufferP[result_index + 2] = PRV_B64_PADDING;
+                bufferP[result_index + 3] = PRV_B64_PADDING;
+            }
             break;
         case 2:
-            bufferP[result_index] = b64Alphabet[dataP[data_index] >> 2];
-            bufferP[result_index + 1] = b64Alphabet[(dataP[data_index] & 0x03) << 4 | (dataP[data_index + 1] >> 4)];
-            bufferP[result_index + 2] = b64Alphabet[(dataP[data_index + 1] & 0x0F) << 2];
-            bufferP[result_index + 3] = PRV_B64_PADDING;
+            bufferP[result_index] = base64Alphabet[dataP[data_index] >> 2];
+            bufferP[result_index + 1] = base64Alphabet[(dataP[data_index] & 0x03) << 4 | (dataP[data_index + 1] >> 4)];
+            bufferP[result_index + 2] = base64Alphabet[(dataP[data_index + 1] & 0x0F) << 2];
+            if(withPadding)
+            {
+                bufferP[result_index + 3] = PRV_B64_PADDING;
+            }
             break;
         default:
-            prv_encodeBlock(dataP + data_index, bufferP + result_index);
+            prv_encodeBlock(dataP + data_index, bufferP + result_index, base64Alphabet);
             break;
         }
         data_index += 3;
@@ -1078,18 +1111,29 @@ size_t utils_base64GetDecodedSize(const char * dataP, size_t dataLen)
     return result;
 }
 
-static uint8_t prv_base64Value(char digit)
+static uint8_t prv_base64Value(char digit, bool useB64UrlAlphabet)
 {
     uint8_t result = 0xFF;
     if (digit >= 'A' && digit <= 'Z') result = digit - 'A';
     else if (digit >= 'a' && digit <= 'z') result = digit - 'a' + 26;
     else if (digit >= '0' && digit <= '9') result = digit - '0' + 52;
-    else if (digit == '+') result = 62;
-    else if (digit == '/') result = 63;
+    else
+    {
+        if(useB64UrlAlphabet)
+        {
+            if (digit == '-') result = 62;
+            else if (digit == '_') result = 63;
+        }
+        else
+        {
+            if (digit == '+') result = 62;
+            else if (digit == '/') result = 63;
+        }
+    }
     return result;
 }
 
-size_t utils_base64Decode(const char * dataP, size_t dataLen, uint8_t * bufferP, size_t bufferLen)
+size_t utils_base64Decode(const char * dataP, size_t dataLen, uint8_t * bufferP, size_t bufferLen, bool useB64UrlAlphabet)
 {
     size_t dataIndex;
     size_t bufferIndex;
@@ -1103,23 +1147,23 @@ size_t utils_base64Decode(const char * dataP, size_t dataLen, uint8_t * bufferP,
     {
         uint8_t v1, v2, v3, v4;
         if (dataLen - dataIndex < 2) return 0;
-        v1 = prv_base64Value(dataP[dataIndex++]);
+        v1 = prv_base64Value(dataP[dataIndex++], useB64UrlAlphabet);
         if (v1 >= 64) return 0;
-        v2 = prv_base64Value(dataP[dataIndex++]);
+        v2 = prv_base64Value(dataP[dataIndex++], useB64UrlAlphabet);
         if (v2 >= 64) return 0;
         bufferP[bufferIndex++] = (v1 << 2) + (v2 >> 4);
         if (dataIndex < dataLen)
         {
             if (dataP[dataIndex] != PRV_B64_PADDING)
             {
-                v3 = prv_base64Value(dataP[dataIndex++]);
+                v3 = prv_base64Value(dataP[dataIndex++], useB64UrlAlphabet);
                 if (v3 >= 64) return 0;
                 bufferP[bufferIndex++] = (v2 << 4) + (v3 >> 2);
                 if (dataIndex < dataLen)
                 {
                     if (dataP[dataIndex] != PRV_B64_PADDING)
                     {
-                        v4 = prv_base64Value(dataP[dataIndex++]);
+                        v4 = prv_base64Value(dataP[dataIndex++], useB64UrlAlphabet);
                         if (v4 >= 64) return 0;
                         bufferP[bufferIndex++] = (v3 << 6) + v4;
                     }

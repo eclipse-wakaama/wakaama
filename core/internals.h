@@ -588,10 +588,10 @@ int utils_textToObjLink(const uint8_t * buffer,
                         uint16_t * objectId,
                         uint16_t * objectInstanceId);
 void utils_copyValue(void * dst, const void * src, size_t len);
-size_t utils_base64GetSize(size_t dataLen);
-size_t utils_base64Encode(const uint8_t * dataP, size_t dataLen, uint8_t * bufferP, size_t bufferLen);
+size_t utils_base64GetSize(size_t dataLen, bool withPadding);
+size_t utils_base64Encode(const uint8_t * dataP, size_t dataLen, uint8_t * bufferP, size_t bufferLen, bool useB64UrlAlphabet, bool withPadding);
 size_t utils_base64GetDecodedSize(const char * dataP, size_t dataLen);
-size_t utils_base64Decode(const char * dataP, size_t dataLen, uint8_t * bufferP, size_t bufferLen);
+size_t utils_base64Decode(const char * dataP, size_t dataLen, uint8_t * bufferP, size_t bufferLen, bool useB64UrlAlphabet);
 #ifdef LWM2M_CLIENT_MODE
 lwm2m_server_t * utils_findServer(lwm2m_context_t * contextP, void * fromSessionH);
 lwm2m_server_t * utils_findBootstrapServer(lwm2m_context_t * contextP, void * fromSessionH);

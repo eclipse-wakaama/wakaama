@@ -119,10 +119,10 @@ static int prv_textSerialize(lwm2m_data_t * dataP,
     {
         size_t length;
 
-        length = utils_base64GetSize(dataP->value.asBuffer.length);
+        length = utils_base64GetSize(dataP->value.asBuffer.length, false);
         *bufferP = (uint8_t *)lwm2m_malloc(length);
         if (*bufferP == NULL) return 0;
-        length = utils_base64Encode(dataP->value.asBuffer.buffer, dataP->value.asBuffer.length, *bufferP, length);
+        length = utils_base64Encode(dataP->value.asBuffer.buffer, dataP->value.asBuffer.length, *bufferP, length, true, false);
         if (length == 0)
         {
             lwm2m_free(*bufferP);
