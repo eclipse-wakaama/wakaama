@@ -144,10 +144,10 @@ There are some example applications provided to test the server, client and boot
 The following recipes assume you are on a unix like platform and you have cmake and make installed.
 
 ### Server example
- * Create a build directory and change to that.
- * ``cmake [wakaama directory]/examples/server``
- * ``make``
- * ``./lwm2mserver [Options]``
+
+ * ``cmake -S examples/server -B build-server -DWAKAAMA_MODE_SERVER=ON``
+ * ``cmake --build build-server``
+ * ``./build-server/lwm2mserver [Options]``
 
 The lwm2mserver listens on UDP port 5683. It features a basic command line
 interface. Type 'help' for a list of supported commands.
@@ -164,10 +164,10 @@ Options:
 ```
 
 ### Test client example
- * Create a build directory and change to that.
- * ``cmake [wakaama directory]/examples/client``
- * ``make``
- * ``./lwm2mclient [Options]``
+
+ * ``cmake -S examples/client -B build-client -DWAKAAMA_MODE_CLIENT=ON``
+ * ``cmake --build build-client``
+ * ``./build-client/lwm2mclient [Options]``
 
 Next to lwm2mclient a DTLS enabled variant named lwm2mclient_tinydtls gets built.
 
@@ -226,11 +226,9 @@ To launch a bootstrap session:
 
 ### Simpler test client example
 
-In the any directory, run the following commands:
- * Create a build directory and change to that.
- * ``cmake [wakaama directory]/examples/lightclient``
- * ``make``
- * ``./lightclient [Options]``
+ * ``cmake -S examples/lightclient -B build-lightclient``
+ * ``cmake --build build-lightclient``
+ * ``./build-lightclient/lightclient [Options]``
 
 The lightclient is much simpler that the lwm2mclient and features only four
 LWM2M objects:
@@ -253,9 +251,9 @@ Options:
   -S BYTES	CoAP block size. Options: 16, 32, 64, 128, 256, 512, 1024. Default: 1024
 ```
 ### Bootstrap Server example
- * Create a build directory and change to that.
- * ``cmake [wakaama directory]/examples/bootstrap_server``
- * ``make``
- * ``./bootstrap_server [Options]``
+
+ * ``cmake -S examples/bootstrap_server -B build-bootstrap -DWAKAAMA_MODE_BOOTSTRAP_SERVER=ON``
+ * ``cmake --build build-bootstrap``
+ * ``./build-bootstrap/bootstrap_server [Options]``
 
 Refer to [examples/bootstrap_server/README](./examples/bootstrap_server/README) for more information.
