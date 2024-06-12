@@ -1,5 +1,7 @@
 # Wakaama
 
+[![Build](https://github.com/eclipse/wakaama/actions/workflows/build_and_test.yaml/badge.svg)](https://github.com/eclipse/wakaama/actions/workflows/build_and_test.yaml)
+
 Wakaama (formerly liblwm2m) is an implementation of the Open Mobile Alliance's LightWeight M2M
 protocol (LWM2M).
 
@@ -21,10 +23,6 @@ supported anymore.
 This work is dual-licensed under the Eclipse Public License v2.0 and Eclipse Distribution License v1.0.
 
 `SPDX-License-Identifier: EPL-2.0 OR BSD-3-Clause`
-
-## Badges
-
-[![Build](https://github.com/eclipse/wakaama/actions/workflows/build_and_test.yaml/badge.svg)](https://github.com/eclipse/wakaama/actions/workflows/build_and_test.yaml)
 
 ## Checking out the code
 
