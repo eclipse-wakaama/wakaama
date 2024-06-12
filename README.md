@@ -26,34 +26,6 @@ This work is dual-licensed under the Eclipse Public License v2.0 and Eclipse Dis
 
 [![Build](https://github.com/eclipse/wakaama/actions/workflows/build_and_test.yaml/badge.svg)](https://github.com/eclipse/wakaama/actions/workflows/build_and_test.yaml)
 
-## Source Layout
-
-    -+- core                   (the LWM2M engine)
-     |
-     +- coap                   (CoAP stack adaptation)
-     |    |
-     |    +- er-coap-13        (Modified Erbium's CoAP engine from
-     |                          https://web.archive.org/web/20180316172739/http://people.inf.ethz.ch/mkovatsc/erbium.php)
-     |
-     +- data                   (data formats serialization/deserialization)
-     |
-     +- tests                  (test cases)
-     |    |
-     |    +- integration       (pytest based integration tests implementing the OMA-ETS-LightweightM2M-V1_1-20190912-D specification
-     |                          https://www.openmobilealliance.org/release/LightweightM2M/ETS/OMA-ETS-LightweightM2M-V1_1-20190912-D.pdf)
-     +- examples
-          |
-          +- bootstrap_server  (a command-line LWM2M bootstrap server)
-          |
-          +- client            (a command-line LWM2M client with several test objects)
-          |
-          +- lightclient       (a very simple command-line LWM2M client with several test objects)
-          |
-          +- server            (a command-line LWM2M server)
-          |
-          +- shared            (utility functions for connection handling and command-
-                                line interface)
-
 ## Checking out the code
 
 ### Using Wakaama as library
