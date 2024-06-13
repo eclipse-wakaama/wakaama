@@ -163,6 +163,8 @@ function run_build() {
 }
 
 function run_tests() {
+  export CTEST_OUTPUT_ON_FAILURE=ON
+
   echo "Default test run"
   cmake --build build-wakaama --target test
 
