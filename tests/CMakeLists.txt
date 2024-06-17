@@ -24,7 +24,7 @@ set(TEST_SOURCES
     helper/log_handler.c
 )
 
-if(LWM2M_CLIENT_MODE AND NOT WAKAAMA_MODE_BOOTSTRAP_SERVER)
+if(WAKAAMA_MODE_CLIENT AND NOT WAKAAMA_MODE_BOOTSTRAP_SERVER)
     add_test_variant(
         TARGET_NAME lwm2munittests_client_lwm2m_1_0
         SOURCE_FILES ${TEST_SOURCES}
