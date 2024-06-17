@@ -1795,9 +1795,7 @@ uint8_t  registration_handleRequest(lwm2m_context_t * contextP,
         {
             return COAP_400_BAD_REQUEST;
         }
-        if (message->content_type != (coap_content_type_t)LWM2M_CONTENT_LINK
-         && message->content_type != (coap_content_type_t)LWM2M_CONTENT_TEXT)
-        {
+        if (message->content_type != (coap_content_type_t)LWM2M_CONTENT_LINK) {
             lwm2m_free(name);
             return COAP_400_BAD_REQUEST;
         }
