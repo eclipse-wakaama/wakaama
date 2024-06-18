@@ -15,27 +15,24 @@
  *
  *******************************************************************************/
 
-#include "tests.h"
 #include "CUnit/Basic.h"
 #include "internals.h"
+#include "tests.h"
 
-
-static void test_uri_decode(void)
-{
+static void test_uri_decode(void) {
     lwm2m_uri_t uri;
     lwm2m_request_type_t requestType;
-    multi_option_t extraID = { .next = NULL, .is_static = 1, .len = 3, .data = (uint8_t *) "555" };
+    multi_option_t extraID = {.next = NULL, .is_static = 1, .len = 3, .data = (uint8_t *)"555"};
 #ifndef LWM2M_VERSION_1_0
-    multi_option_t riID = { .next = NULL, .is_static = 1, .len = 2, .data = (uint8_t *) "12" };
+    multi_option_t riID = {.next = NULL, .is_static = 1, .len = 2, .data = (uint8_t *)"12"};
 #endif
-    multi_option_t rID = { .next = NULL, .is_static = 1, .len = 1, .data = (uint8_t *) "0" };
-    multi_option_t iID = { .next = &rID, .is_static = 1, .len = 2, .data = (uint8_t *) "11" };
-    multi_option_t oID = { .next = &iID, .is_static = 1, .len = 4, .data = (uint8_t *) "9050" };
-    multi_option_t location = { .next = NULL, .is_static = 1, .len = 4, .data = (uint8_t *) "5a3f" };
-    multi_option_t locationDecimal = { .next = NULL, .is_static = 1, .len = 4, .data = (uint8_t *) "5312" };
-    multi_option_t reg = { .next = NULL, .is_static = 1, .len = 2, .data = (uint8_t *) "rd" };
-    multi_option_t boot = { .next = NULL, .is_static = 1, .len = 2, .data = (uint8_t *) "bs" };
-
+    multi_option_t rID = {.next = NULL, .is_static = 1, .len = 1, .data = (uint8_t *)"0"};
+    multi_option_t iID = {.next = &rID, .is_static = 1, .len = 2, .data = (uint8_t *)"11"};
+    multi_option_t oID = {.next = &iID, .is_static = 1, .len = 4, .data = (uint8_t *)"9050"};
+    multi_option_t location = {.next = NULL, .is_static = 1, .len = 4, .data = (uint8_t *)"5a3f"};
+    multi_option_t locationDecimal = {.next = NULL, .is_static = 1, .len = 4, .data = (uint8_t *)"5312"};
+    multi_option_t reg = {.next = NULL, .is_static = 1, .len = 2, .data = (uint8_t *)"rd"};
+    multi_option_t boot = {.next = NULL, .is_static = 1, .len = 2, .data = (uint8_t *)"bs"};
 
 #ifndef LWM2M_VERSION_1_0
     rID.next = &riID;
@@ -188,12 +185,9 @@ static void test_uri_decode(void)
 #ifndef LWM2M_VERSION_1_0
     CU_ASSERT(!LWM2M_URI_IS_SET_RESOURCE_INSTANCE(&uri))
 #endif
-
 }
 
-
-static void test_string_to_uri(void)
-{
+static void test_string_to_uri(void) {
     int result;
     lwm2m_uri_t uri;
     result = lwm2m_stringToUri("", 0, &uri);
@@ -248,24 +242,22 @@ static void test_string_to_uri(void)
     result = lwm2m_stringToUri("/1/2/3/4/5", 10, &uri);
 #endif
     CU_ASSERT_EQUAL(result, 0)
-
 }
 
-static void test_uri_to_string(void)
-{
+static void test_uri_to_string(void) {
     lwm2m_uri_t uri;
     lwm2m_uri_t uri2;
     uri_depth_t depth;
     int result;
     char buffer[URI_MAX_STRING_LEN];
 
-    result = lwm2m_uriToString(NULL, (uint8_t*)buffer, sizeof(buffer), &depth);
+    result = lwm2m_uriToString(NULL, (uint8_t *)buffer, sizeof(buffer), &depth);
     CU_ASSERT_EQUAL(result, 0)
     CU_ASSERT_EQUAL(depth, URI_DEPTH_NONE)
     CU_ASSERT_EQUAL(lwm2m_stringToUri(buffer, result, &uri2), result)
 
     LWM2M_URI_RESET(&uri);
-    result = lwm2m_uriToString(&uri, (uint8_t*)buffer, sizeof(buffer), &depth);
+    result = lwm2m_uriToString(&uri, (uint8_t *)buffer, sizeof(buffer), &depth);
     CU_ASSERT_EQUAL(result, 1)
     CU_ASSERT_EQUAL(depth, URI_DEPTH_NONE)
     CU_ASSERT_NSTRING_EQUAL(buffer, "/", result)
@@ -278,7 +270,7 @@ static void test_uri_to_string(void)
 #endif
 
     uri.objectId = 1;
-    result = lwm2m_uriToString(&uri, (uint8_t*)buffer, sizeof(buffer), &depth);
+    result = lwm2m_uriToString(&uri, (uint8_t *)buffer, sizeof(buffer), &depth);
     CU_ASSERT_EQUAL(result, 2)
     CU_ASSERT_EQUAL(depth, URI_DEPTH_OBJECT)
     CU_ASSERT_NSTRING_EQUAL(buffer, "/1", result)
@@ -292,7 +284,7 @@ static void test_uri_to_string(void)
     CU_ASSERT_EQUAL(uri2.objectId, uri.objectId)
 
     uri.instanceId = 2;
-    result = lwm2m_uriToString(&uri, (uint8_t*)buffer, sizeof(buffer), &depth);
+    result = lwm2m_uriToString(&uri, (uint8_t *)buffer, sizeof(buffer), &depth);
     CU_ASSERT_EQUAL(result, 4)
     CU_ASSERT_EQUAL(depth, URI_DEPTH_OBJECT_INSTANCE)
     CU_ASSERT_NSTRING_EQUAL(buffer, "/1/2", result)
@@ -307,7 +299,7 @@ static void test_uri_to_string(void)
     CU_ASSERT_EQUAL(uri2.instanceId, uri.instanceId)
 
     uri.resourceId = 3;
-    result = lwm2m_uriToString(&uri, (uint8_t*)buffer, sizeof(buffer), &depth);
+    result = lwm2m_uriToString(&uri, (uint8_t *)buffer, sizeof(buffer), &depth);
     CU_ASSERT_EQUAL(result, 6)
     CU_ASSERT_EQUAL(depth, URI_DEPTH_RESOURCE)
     CU_ASSERT_NSTRING_EQUAL(buffer, "/1/2/3", result)
@@ -324,7 +316,7 @@ static void test_uri_to_string(void)
 
 #ifndef LWM2M_VERSION_1_0
     uri.resourceInstanceId = 4;
-    result = lwm2m_uriToString(&uri, (uint8_t*)buffer, sizeof(buffer), &depth);
+    result = lwm2m_uriToString(&uri, (uint8_t *)buffer, sizeof(buffer), &depth);
     CU_ASSERT_EQUAL(depth, URI_DEPTH_RESOURCE_INSTANCE)
     CU_ASSERT_EQUAL(result, 8)
     CU_ASSERT_NSTRING_EQUAL(buffer, "/1/2/3/4", result)
@@ -346,15 +338,15 @@ static void test_uri_to_string(void)
 #ifndef LWM2M_VERSION_1_0
     uri.resourceInstanceId = LWM2M_MAX_ID - 1;
 #endif
-    result = lwm2m_uriToString(&uri, (uint8_t*)buffer, sizeof(buffer), &depth);
+    result = lwm2m_uriToString(&uri, (uint8_t *)buffer, sizeof(buffer), &depth);
     CU_ASSERT_EQUAL(result, URI_MAX_STRING_LEN)
 #ifdef LWM2M_VERSION_1_0
     CU_ASSERT_EQUAL(depth, URI_DEPTH_RESOURCE)
-    CU_ASSERT_EQUAL(URI_MAX_STRING_LEN, 3*6)
+    CU_ASSERT_EQUAL(URI_MAX_STRING_LEN, 3 * 6)
     CU_ASSERT_NSTRING_EQUAL(buffer, "/65534/65534/65534", result)
 #else
     CU_ASSERT_EQUAL(depth, URI_DEPTH_RESOURCE_INSTANCE)
-    CU_ASSERT_EQUAL(URI_MAX_STRING_LEN, 4*6)
+    CU_ASSERT_EQUAL(URI_MAX_STRING_LEN, 4 * 6)
     CU_ASSERT_NSTRING_EQUAL(buffer, "/65534/65534/65534/65534", result)
 #endif
     CU_ASSERT_EQUAL(lwm2m_stringToUri(buffer, result, &uri2), result)
@@ -373,10 +365,10 @@ static void test_uri_to_string(void)
 }
 
 static struct TestTable table[] = {
-        { "test of uri_decode()", test_uri_decode },
-        { "test of lwm2m_stringToUri()", test_string_to_uri },
-        { "test of lwm2m_uriToString()", test_uri_to_string },
-        { NULL, NULL },
+    {"test of uri_decode()", test_uri_decode},
+    {"test of lwm2m_stringToUri()", test_string_to_uri},
+    {"test of lwm2m_uriToString()", test_uri_to_string},
+    {NULL, NULL},
 };
 
 CU_ErrorCode create_uri_suit(void) {

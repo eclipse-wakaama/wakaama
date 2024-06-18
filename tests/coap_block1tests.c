@@ -16,10 +16,10 @@
  *
  *******************************************************************************/
 
-#include "tests.h"
 #include "CUnit/Basic.h"
 #include "internals.h"
 #include "liblwm2m.h"
+#include "tests.h"
 
 static const char *URI = "/1/2/3";
 static const uint16_t BLOCK_SIZE = 5;
@@ -44,9 +44,8 @@ static uint8_t handle_67(lwm2m_block_data_t **blk1, uint8_t **resultBuffer, size
                                resultBuffer, resultLen);
 }
 
-static void test_block1_nominal(void)
-{
-    lwm2m_block_data_t * blk1 = NULL;
+static void test_block1_nominal(void) {
+    lwm2m_block_data_t *blk1 = NULL;
 
     uint8_t *resultBuffer = NULL;
     size_t resultLen = 0;
@@ -67,9 +66,8 @@ static void test_block1_nominal(void)
     free_block_data(blk1);
 }
 
-static void test_block1_retransmit(void)
-{
-    lwm2m_block_data_t * blk1 = NULL;
+static void test_block1_retransmit(void) {
+    lwm2m_block_data_t *blk1 = NULL;
 
     uint8_t *resultBuffer = NULL;
     size_t resultLen = 0;

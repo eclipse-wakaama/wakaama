@@ -6,22 +6,22 @@ include(../wakaama.cmake)
 include(tests.cmake)
 
 set(TEST_SOURCES
+    helper/log_handler.c
     coap_block1tests.c
     coap_block2tests.c
+    coap_parse_message.c
     data_cbor_tests.c
     core_convert_numbers_test.c
-    coap_parse_message.c
-    core_registration_tests.c
     core_list_tests.c
     core_logging_tests.c
-    data_senml_json_tests.c
+    core_registration_tests.c
+    core_uritests.c
     data_senml_cbor_tests.c
-    tests.h
+    data_senml_json_tests.c
     data_tlv_json_lwm2m_data_test.c
     data_tlvtests.c
+    tests.h
     unittests.c
-    core_uritests.c
-    helper/log_handler.c
 )
 
 if(LWM2M_CLIENT_MODE AND NOT WAKAAMA_MODE_BOOTSTRAP_SERVER)
