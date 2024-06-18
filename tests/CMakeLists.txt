@@ -6,21 +6,21 @@ include(../wakaama.cmake)
 include(tests.cmake)
 
 set(TEST_SOURCES
-    block1tests.c
-    block2tests.c
-    cbor_tests.c
-    convert_numbers_test.c
-    er_coap_coap_parse_message.c
-    registration_tests.c
-    list_tests.c
-    logging_tests.c
-    senml_json_tests.c
-    senml_cbor_tests.c
+    coap_block1tests.c
+    coap_block2tests.c
+    data_cbor_tests.c
+    core_convert_numbers_test.c
+    coap_parse_message.c
+    core_registration_tests.c
+    core_list_tests.c
+    core_logging_tests.c
+    data_senml_json_tests.c
+    data_senml_cbor_tests.c
     tests.h
-    tlv_json_lwm2m_data_test.c
-    tlvtests.c
+    data_tlv_json_lwm2m_data_test.c
+    data_tlvtests.c
     unittests.c
-    uritests.c
+    core_uritests.c
     helper/log_handler.c
 )
 
