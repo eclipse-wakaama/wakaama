@@ -30,14 +30,16 @@ if(WAKAAMA_ENABLE_EXAMPLES
     target_sources_wakaama(lwm2mclient)
     target_sources_shared(lwm2mclient)
 
-    # Client without raw block 1 requests DTLS support
-    add_executable(lwm2mclient_raw_block1 ${SOURCES})
-    target_compile_definitions(
-        lwm2mclient_raw_block1 PRIVATE LWM2M_CLIENT_MODE LWM2M_BOOTSTRAP LWM2M_SUPPORT_SENML_JSON
-                                       LWM2M_RAW_BLOCK1_REQUESTS
-    )
-    target_sources_wakaama(lwm2mclient_raw_block1)
-    target_sources_shared(lwm2mclient_raw_block1)
+    if(WAKAAMA_COAP_RAW_BLOCK1_REQUESTS)
+        # Client with raw block 1 requests and without DTLS support
+        add_executable(lwm2mclient_raw_block1 ${SOURCES})
+        target_compile_definitions(
+            lwm2mclient_raw_block1 PRIVATE LWM2M_CLIENT_MODE LWM2M_BOOTSTRAP LWM2M_SUPPORT_SENML_JSON
+                                           LWM2M_RAW_BLOCK1_REQUESTS
+        )
+        target_sources_wakaama(lwm2mclient_raw_block1)
+        target_sources_shared(lwm2mclient_raw_block1)
+    endif()
 
     # Client with DTLS support provided by tinydtls
     add_executable(lwm2mclient_tinydtls ${SOURCES})
