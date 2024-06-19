@@ -58,6 +58,21 @@
         "WAKAAMA_ENABLE_EXAMPLES": {
           "type": "BOOL",
           "value": "ON"
+        },
+        "WAKAAMA_DATA_SENML_JSON": {
+          "type": "BOOL",
+          "value": "ON"
+        }
+      }
+    },
+    {
+      "name": "client_coap_raw_block1",
+      "description": "Build a client with CoAP raw block1 support",
+      "inherits": "client",
+      "cacheVariables": {
+        "WAKAAMA_COAP_RAW_BLOCK1_REQUESTS": {
+          "type": "BOOL",
+          "value": "ON"
         }
       }
     },
