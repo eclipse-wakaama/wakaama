@@ -120,8 +120,13 @@ lwm2m_request_type_t uri_decode(char * altPath,
         uriPath = uriPath->next;
         if (uriPath != NULL) goto error;
         return LWM2M_REQUEST_TYPE_BOOTSTRAP;
+    } else if (NULL != uriPath && URI_SEND_SEGMENT_LEN == uriPath->len &&
+               0 == strncmp(URI_SEND_SEGMENT, (char *)uriPath->data, uriPath->len)) {
+        uriPath = uriPath->next;
+        if (uriPath != NULL)
+            goto error;
+        return LWM2M_REQUEST_TYPE_SEND;
     }
-
     if (requestType != LWM2M_REQUEST_TYPE_REGISTRATION)
     {
         // Read altPath if any
