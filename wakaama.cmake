@@ -197,6 +197,7 @@ function(target_sources_wakaama target)
                 ${WAKAAMA_TOP_LEVEL_DIRECTORY}/core/registration.c
                 ${WAKAAMA_TOP_LEVEL_DIRECTORY}/core/uri.c
                 ${WAKAAMA_TOP_LEVEL_DIRECTORY}/core/utils.c
+                ${WAKAAMA_TOP_LEVEL_DIRECTORY}/core/reporting.c
     )
 
     target_include_directories(${target} PRIVATE ${WAKAAMA_TOP_LEVEL_DIRECTORY}/include)

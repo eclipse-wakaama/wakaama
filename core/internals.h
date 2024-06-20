@@ -369,13 +369,13 @@ typedef struct
 } bs_data_t;
 #endif
 
-typedef enum
-{
+typedef enum {
     LWM2M_REQUEST_TYPE_UNKNOWN,
     LWM2M_REQUEST_TYPE_DM,
     LWM2M_REQUEST_TYPE_REGISTRATION,
     LWM2M_REQUEST_TYPE_BOOTSTRAP,
-    LWM2M_REQUEST_TYPE_DELETE_ALL
+    LWM2M_REQUEST_TYPE_DELETE_ALL,
+    LWM2M_REQUEST_TYPE_SEND,
 } lwm2m_request_type_t;
 
 #ifdef LWM2M_SUPPORT_SENML_CBOR
@@ -598,6 +598,11 @@ lwm2m_server_t * utils_findBootstrapServer(lwm2m_context_t * contextP, void * fr
 #endif
 #if defined(LWM2M_SERVER_MODE) || defined(LWM2M_BOOTSTRAP_SERVER_MODE)
 lwm2m_client_t * utils_findClient(lwm2m_context_t * contextP, void * fromSessionH);
+#endif
+
+// defined in reporting.c
+#if defined(LWM2M_SERVER_MODE) && !defined(LWM2M_VERSION_1_0)
+uint8_t reporting_handleSend(lwm2m_context_t *contextP, void *fromSessionH, coap_packet_t *message);
 #endif
 
 #endif

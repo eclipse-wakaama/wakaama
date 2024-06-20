@@ -835,6 +835,8 @@ struct _lwm2m_context_
 #ifdef LWM2M_SERVER_MODE
     lwm2m_result_callback_t monitorCallback;
     void *                  monitorUserData;
+    lwm2m_result_callback_t reportingSendCallback;
+    void *reportingSendUserData;
 #endif
 #ifdef LWM2M_BOOTSTRAP_SERVER_MODE
     lwm2m_bootstrap_callback_t bootstrapCallback;
@@ -906,6 +908,9 @@ int lwm2m_dm_delete(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t *
 // Information Reporting APIs
 int lwm2m_observe(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, lwm2m_result_callback_t callback, void * userData);
 int lwm2m_observe_cancel(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, lwm2m_result_callback_t callback, void * userData);
+
+// Send resources Reporting API.
+void lwm2m_reporting_set_send_callback(lwm2m_context_t *contextP, lwm2m_result_callback_t callback, void *userData);
 #endif
 
 #ifdef LWM2M_BOOTSTRAP_SERVER_MODE

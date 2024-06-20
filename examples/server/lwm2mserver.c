@@ -989,6 +989,21 @@ static void prv_monitor_callback(lwm2m_context_t *lwm2mH, uint16_t clientID, lwm
     fflush(stdout);
 }
 
+#ifndef LWM2M_VERSION_1_0
+static void prv_reporting_send_callback(lwm2m_context_t *lwm2mH, uint16_t clientID, lwm2m_uri_t *uriP, int status,
+                                        block_info_t *block_info, lwm2m_media_type_t format, uint8_t *data,
+                                        size_t dataLength, void *userData) {
+    /* unused parameter */
+    (void)userData;
+
+    fprintf(stdout, "\r\nClient #%d send.\r\n", clientID);
+    output_data(stdout, block_info, format, data, dataLength, 1);
+
+    fprintf(stdout, "\r\n> ");
+    fflush(stdout);
+}
+#endif
+
 static void prv_quit(lwm2m_context_t *lwm2mH,
                      char * buffer,
                      void * user_data)
@@ -1158,6 +1173,10 @@ int main(int argc, char *argv[])
     fprintf(stdout, "> "); fflush(stdout);
 
     lwm2m_set_monitoring_callback(lwm2mH, prv_monitor_callback, NULL);
+
+#ifndef LWM2M_VERSION_1_0
+    lwm2m_reporting_set_send_callback(lwm2mH, prv_reporting_send_callback, NULL);
+#endif
 
     while (0 == g_quit)
     {
