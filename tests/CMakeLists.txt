@@ -10,6 +10,7 @@ set(TEST_SOURCES
     coap_block1tests.c
     coap_block2tests.c
     coap_parse_message.c
+    coap_message_deduplication.c
     data_cbor_tests.c
     core_convert_numbers_test.c
     core_list_tests.c
