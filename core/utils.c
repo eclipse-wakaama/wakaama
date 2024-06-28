@@ -855,10 +855,8 @@ lwm2m_server_t * utils_findServer(lwm2m_context_t * contextP,
     lwm2m_server_t * targetP;
 
     targetP = contextP->serverList;
-    while (targetP != NULL
-        && false == lwm2m_session_is_equal(targetP->sessionH, fromSessionH, contextP->userData))
-    {
-        targetP = targetP->next;
+    while (targetP != NULL && (targetP->sessionH != fromSessionH)) {
+      targetP = targetP->next;
     }
 
     return targetP;
@@ -873,10 +871,8 @@ lwm2m_server_t * utils_findBootstrapServer(lwm2m_context_t * contextP,
     lwm2m_server_t * targetP;
 
     targetP = contextP->bootstrapServerList;
-    while (targetP != NULL
-        && false == lwm2m_session_is_equal(targetP->sessionH, fromSessionH, contextP->userData))
-    {
-        targetP = targetP->next;
+    while (targetP != NULL && (targetP->sessionH != fromSessionH)) {
+      targetP = targetP->next;
     }
 
     return targetP;
@@ -895,10 +891,8 @@ lwm2m_client_t * utils_findClient(lwm2m_context_t * contextP,
     lwm2m_client_t * targetP;
 
     targetP = contextP->clientList;
-    while (targetP != NULL
-        && false == lwm2m_session_is_equal(targetP->sessionH, fromSessionH, contextP->userData))
-    {
-        targetP = targetP->next;
+    while (targetP != NULL && (targetP->sessionH != fromSessionH)) {
+      targetP = targetP->next;
     }
 
     return targetP;

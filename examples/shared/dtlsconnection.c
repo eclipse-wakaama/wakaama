@@ -652,10 +652,3 @@ uint8_t lwm2m_buffer_send(void * sessionH,
 
     return COAP_NO_ERROR;
 }
-
-bool lwm2m_session_is_equal(void * session1,
-                            void * session2,
-                            void * userData)
-{
-    return (session1 == session2);
-}

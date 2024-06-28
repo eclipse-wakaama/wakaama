@@ -152,10 +152,6 @@ void lwm2m_close_connection(void * sessionH, void * userData);
 // buffer, length: data to send
 // userData: parameter to lwm2m_init()
 uint8_t lwm2m_buffer_send(void * sessionH, uint8_t * buffer, size_t length, void * userData);
-// Compare two session handles
-// Returns true if the two sessions identify the same peer. false otherwise.
-// userData: parameter to lwm2m_init()
-bool lwm2m_session_is_equal(void * session1, void * session2, void * userData);
 
 /*
  * Error code
@@ -749,7 +745,8 @@ struct _lwm2m_transaction_
     size_t
         payload_len;  // the length of the entire payload, message payload might be smaller in case of a block1 transfer
     uint8_t *payload; // carries the entire payload across multiple transactions in case of a block 1 transfer
-    lwm2m_transaction_callback_t callback;
+    lwm2m_transaction_callback_t
+        callback; // If not NULL, called before instance gets freed
     void * userData;
 };
 
