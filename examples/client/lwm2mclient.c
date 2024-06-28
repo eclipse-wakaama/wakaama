@@ -60,7 +60,7 @@
 #include "liblwm2m.h"
 #include "commandline.h"
 #ifdef WITH_TINYDTLS
-#include "dtlsconnection.h"
+#include "tinydtls/connection.h"
 #else
 #include "udp/connection.h"
 #endif

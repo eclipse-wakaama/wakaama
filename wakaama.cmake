@@ -245,9 +245,13 @@ function(target_sources_shared target)
         target_sources(${target} PRIVATE ${WAKAAMA_TOP_LEVEL_DIRECTORY}/transport/udp/connection.c)
         target_include_directories(${target} PUBLIC ${WAKAAMA_TOP_LEVEL_DIRECTORY}/transport/udp/include)
     elseif(TARGET_PROPERTY_CONN_IMPL MATCHES "tinydtls")
-        include(${WAKAAMA_EXAMPLE_SHARED_DIRECTORY}/tinydtls.cmake)
-        target_sources(${target} PRIVATE ${WAKAAMA_EXAMPLE_SHARED_DIRECTORY}/dtlsconnection.c)
+        include(${WAKAAMA_TOP_LEVEL_DIRECTORY}/transport/tinydtls/tinydtls.cmake)
+        target_sources(${target} PRIVATE ${WAKAAMA_TOP_LEVEL_DIRECTORY}/transport/tinydtls/connection.c)
         target_compile_definitions(${target} PRIVATE WITH_TINYDTLS)
+        target_include_directories(
+            ${target} PUBLIC ${WAKAAMA_TOP_LEVEL_DIRECTORY}/transport/tinydtls/include
+                             ${WAKAAMA_TOP_LEVEL_DIRECTORY}/transport/tinydtls/third_party
+        )
         target_sources_tinydtls(${target})
     elseif(TARGET_PROPERTY_CONN_IMPL MATCHES "testing")
         target_include_directories(${target} PRIVATE ${WAKAAMA_TOP_LEVEL_DIRECTORY}/tests/helper/)
