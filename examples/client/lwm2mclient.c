@@ -62,7 +62,7 @@
 #ifdef WITH_TINYDTLS
 #include "dtlsconnection.h"
 #else
-#include "connection.h"
+#include "plain_connection/connection.h"
 #endif
 
 #include <arpa/inet.h>

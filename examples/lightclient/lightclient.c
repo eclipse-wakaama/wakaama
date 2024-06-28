@@ -56,7 +56,7 @@
 */
 
 #include "liblwm2m.h"
-#include "connection.h"
+#include "plain_connection/connection.h"
 
 #include <arpa/inet.h>
 #include <ctype.h>
