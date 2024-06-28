@@ -72,7 +72,7 @@
 #include <inttypes.h>
 
 #include "commandline.h"
-#include "connection.h"
+#include "udp/connection.h"
 
 #define MAX_PACKET_SIZE 2048
 
