@@ -1,5 +1,5 @@
 # List source files
-set(TINYDTLS_SOURCES_DIR ${CMAKE_CURRENT_LIST_DIR}/tinydtls)
+set(TINYDTLS_SOURCES_DIR ${CMAKE_CURRENT_LIST_DIR}/third_party/tinydtls)
 set(TINYDTLS_SOURCES
     ${TINYDTLS_SOURCES_DIR}/tinydtls.h
     ${TINYDTLS_SOURCES_DIR}/dtls.h
