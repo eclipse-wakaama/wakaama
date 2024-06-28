@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.13)
 
 project(lwm2mclient C)
 
+#set(WAKAAMA_LOG_LEVEL DBG)
 include(../../wakaama.cmake)
 
 if(WAKAAMA_ENABLE_EXAMPLES

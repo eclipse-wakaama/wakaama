@@ -1111,7 +1111,7 @@ static void prv_obsRequestCallback(lwm2m_context_t * contextP,
                                       &observationData->uri,
                                       COAP_202_DELETED,
                                       NULL,
-                                      LWM2M_CONTENT_TEXT, NULL, 0,
+                                      LWM2M_CONTENT_LINK, NULL, 0,
                                       observationData->userData);
         }
 
