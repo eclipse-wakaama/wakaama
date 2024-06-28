@@ -1,3 +1,3 @@
 [submodule "platforms/Linux/tinydtls"]
-	path = examples/shared/tinydtls
+	path = addons/connections/tinydtls_connection/third_party/tinydtls
 	url = https://github.com/eclipse/tinydtls.git
