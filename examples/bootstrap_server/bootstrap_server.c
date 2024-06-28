@@ -35,9 +35,9 @@
 #include <signal.h>
 #include <inttypes.h>
 
-#include "commandline.h"
-#include "connection.h"
 #include "bootstrap_info.h"
+#include "commandline.h"
+#include "udp/connection.h"
 
 #define CMD_STATUS_NEW  0
 #define CMD_STATUS_SENT 1
