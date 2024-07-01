@@ -26,7 +26,7 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 
-int create_socket(const char *portStr, int addressFamily) {
+int lwm2m_create_socket(const char *portStr, int addressFamily) {
     int s = -1;
     struct addrinfo hints;
     struct addrinfo *res;
@@ -56,8 +56,8 @@ int create_socket(const char *portStr, int addressFamily) {
     return s;
 }
 
-connection_t *connection_find(connection_t *connList, struct sockaddr_storage *addr, size_t addrLen) {
-    connection_t *connP;
+lwm2m_connection_t *lwm2m_connection_find(lwm2m_connection_t *connList, struct sockaddr_storage *addr, size_t addrLen) {
+    lwm2m_connection_t *connP;
 
     connP = connList;
     while (connP != NULL) {
@@ -70,10 +70,11 @@ connection_t *connection_find(connection_t *connList, struct sockaddr_storage *a
     return connP;
 }
 
-connection_t *connection_new_incoming(connection_t *connList, int sock, struct sockaddr *addr, size_t addrLen) {
-    connection_t *connP;
+lwm2m_connection_t *lwm2m_connection_new_incoming(lwm2m_connection_t *connList, int sock, struct sockaddr *addr,
+                                                  size_t addrLen) {
+    lwm2m_connection_t *connP;
 
-    connP = (connection_t *)lwm2m_malloc(sizeof(connection_t));
+    connP = (lwm2m_connection_t *)lwm2m_malloc(sizeof(lwm2m_connection_t));
     if (connP != NULL) {
         connP->sock = sock;
         memcpy(&(connP->addr), addr, addrLen);
@@ -84,14 +85,15 @@ connection_t *connection_new_incoming(connection_t *connList, int sock, struct s
     return connP;
 }
 
-connection_t *connection_create(connection_t *connList, int sock, char *host, char *port, int addressFamily) {
+lwm2m_connection_t *lwm2m_connection_create(lwm2m_connection_t *connList, int sock, char *host, char *port,
+                                            int addressFamily) {
     struct addrinfo hints;
     struct addrinfo *servinfo = NULL;
     struct addrinfo *p;
     int s;
     struct sockaddr *sa;
     socklen_t sl;
-    connection_t *connP = NULL;
+    lwm2m_connection_t *connP = NULL;
 
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = addressFamily;
@@ -114,7 +116,7 @@ connection_t *connection_create(connection_t *connList, int sock, char *host, ch
         }
     }
     if (s >= 0) {
-        connP = connection_new_incoming(connList, sock, sa, sl);
+        connP = lwm2m_connection_new_incoming(connList, sock, sa, sl);
         close(s);
     }
     if (NULL != servinfo) {
@@ -124,9 +126,9 @@ connection_t *connection_create(connection_t *connList, int sock, char *host, ch
     return connP;
 }
 
-void connection_free(connection_t *connList) {
+void lwm2m_connection_free(lwm2m_connection_t *connList) {
     while (connList != NULL) {
-        connection_t *nextP;
+        lwm2m_connection_t *nextP;
 
         nextP = connList->next;
         lwm2m_free(connList);
@@ -135,7 +137,7 @@ void connection_free(connection_t *connList) {
     }
 }
 
-int connection_send(connection_t *connP, uint8_t *buffer, size_t length) {
+int lwm2m_connection_send(lwm2m_connection_t *connP, uint8_t *buffer, size_t length) {
     int nbSent;
     size_t offset;
 
@@ -174,7 +176,7 @@ int connection_send(connection_t *connP, uint8_t *buffer, size_t length) {
 }
 
 uint8_t lwm2m_buffer_send(void *sessionH, uint8_t *buffer, size_t length, void *userdata) {
-    connection_t *connP = (connection_t *)sessionH;
+    lwm2m_connection_t *connP = (lwm2m_connection_t *)sessionH;
 
     (void)userdata; /* unused */
 
@@ -183,7 +185,7 @@ uint8_t lwm2m_buffer_send(void *sessionH, uint8_t *buffer, size_t length, void *
         return COAP_500_INTERNAL_SERVER_ERROR;
     }
 
-    if (-1 == connection_send(connP, buffer, length)) {
+    if (-1 == lwm2m_connection_send(connP, buffer, length)) {
         fprintf(stderr, "#> failed sending %zu bytes\r\n", length);
         return COAP_500_INTERNAL_SERVER_ERROR;
     }
