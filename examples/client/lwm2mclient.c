@@ -101,10 +101,10 @@ typedef struct
     lwm2m_object_t * serverObject;
     int sock;
 #ifdef WITH_TINYDTLS
-    dtls_connection_t * connList;
+    lwm2m_dtls_connection_t *connList;
     lwm2m_context_t * lwm2mH;
 #else
-    connection_t * connList;
+    lwm2m_connection_t *connList;
 #endif
     int addressFamily;
 } client_data_t;
@@ -211,15 +211,15 @@ void * lwm2m_connect_server(uint16_t secObjInstID,
 {
   client_data_t * dataP;
   lwm2m_list_t * instance;
-  dtls_connection_t * newConnP = NULL;
+  lwm2m_dtls_connection_t *newConnP = NULL;
   dataP = (client_data_t *)userData;
   lwm2m_object_t  * securityObj = dataP->securityObjP;
 
   instance = LWM2M_LIST_FIND(dataP->securityObjP->instanceList, secObjInstID);
   if (instance == NULL) return NULL;
 
-
-  newConnP = connection_create(dataP->connList, dataP->sock, securityObj, instance->id, dataP->lwm2mH, dataP->addressFamily);
+  newConnP = lwm2m_connection_create(dataP->connList, dataP->sock, securityObj, instance->id, dataP->lwm2mH,
+                                     dataP->addressFamily);
   if (newConnP == NULL)
   {
       fprintf(stderr, "Connection creation failed.\n");
@@ -237,7 +237,7 @@ void * lwm2m_connect_server(uint16_t secObjInstID,
     char * uri;
     char * host;
     char * port;
-    connection_t * newConnP = NULL;
+    lwm2m_connection_t *newConnP = NULL;
 
     dataP = (client_data_t *)userData;
 
@@ -272,7 +272,7 @@ void * lwm2m_connect_server(uint16_t secObjInstID,
     port++;
 
     fprintf(stderr, "Opening connection to server at %s:%s\r\n", host, port);
-    newConnP = connection_create(dataP->connList, dataP->sock, host, port, dataP->addressFamily);
+    newConnP = lwm2m_connection_create(dataP->connList, dataP->sock, host, port, dataP->addressFamily);
     if (newConnP == NULL) {
         fprintf(stderr, "Connection creation failed.\r\n");
     }
@@ -291,16 +291,16 @@ void lwm2m_close_connection(void * sessionH,
 {
     client_data_t * app_data;
 #ifdef WITH_TINYDTLS
-    dtls_connection_t * targetP;
+    lwm2m_dtls_connection_t *targetP;
 #else
-    connection_t * targetP;
+    lwm2m_connection_t *targetP;
 #endif
 
     app_data = (client_data_t *)userData;
 #ifdef WITH_TINYDTLS
-    targetP = (dtls_connection_t *)sessionH;
+    targetP = (lwm2m_dtls_connection_t *)sessionH;
 #else
-    targetP = (connection_t *)sessionH;
+    targetP = (lwm2m_connection_t *)sessionH;
 #endif
 
     if (targetP == app_data->connList)
@@ -311,9 +311,9 @@ void lwm2m_close_connection(void * sessionH,
     else
     {
 #ifdef WITH_TINYDTLS
-        dtls_connection_t * parentP;
+        lwm2m_dtls_connection_t *parentP;
 #else
-        connection_t * parentP;
+        lwm2m_connection_t *parentP;
 #endif
 
         parentP = app_data->connList;
@@ -1124,7 +1124,7 @@ int main(int argc, char *argv[])
      *This call an internal function that create an IPV6 socket on the port 5683.
      */
     fprintf(stderr, "Trying to bind LWM2M Client to port %s\r\n", localPort);
-    data.sock = create_socket(localPort, data.addressFamily);
+    data.sock = lwm2m_create_socket(localPort, data.addressFamily);
     if (data.sock < 0)
     {
         fprintf(stderr, "Failed to open socket: %d %s\r\n", errno, strerror(errno));
@@ -1434,9 +1434,9 @@ int main(int argc, char *argv[])
                     in_port_t port;
 
 #ifdef WITH_TINYDTLS
-                    dtls_connection_t * connP;
+                    lwm2m_dtls_connection_t *connP;
 #else
-                    connection_t * connP;
+                    lwm2m_connection_t *connP;
 #endif
                     if (AF_INET == addr.ss_family)
                     {
@@ -1457,14 +1457,14 @@ int main(int argc, char *argv[])
                      */
                     output_buffer(stderr, buffer, (size_t)numBytes, 0);
 
-                    connP = connection_find(data.connList, &addr, addrLen);
+                    connP = lwm2m_connection_find(data.connList, &addr, addrLen);
                     if (connP != NULL)
                     {
                         /*
                          * Let liblwm2m respond to the query depending on the context
                          */
 #ifdef WITH_TINYDTLS
-                        result = connection_handle_packet(connP, buffer, numBytes);
+                        result = lwm2m_connection_handle_packet(connP, buffer, numBytes);
                         if (0 != result)
                         {
                              printf("error handling message %d\n",result);
@@ -1529,7 +1529,7 @@ int main(int argc, char *argv[])
         lwm2m_close(lwm2mH);
     }
     close(data.sock);
-    connection_free(data.connList);
+    lwm2m_connection_free(data.connList);
 
     clean_security_object(objArray[0]);
     lwm2m_free(objArray[0]);
