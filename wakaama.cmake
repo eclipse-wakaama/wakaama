@@ -242,11 +242,22 @@ function(target_sources_shared target)
     set_defines(${target})
 
     if(NOT TARGET_PROPERTY_CONN_IMPL)
-        target_sources(${target} PRIVATE ${WAKAAMA_EXAMPLE_SHARED_DIRECTORY}/connection.c)
+        target_sources(
+            ${target} PRIVATE ${WAKAAMA_TOP_LEVEL_DIRECTORY}/addons/connections/plain_connection/connection.c
+        )
+        target_include_directories(
+            ${target} PUBLIC ${WAKAAMA_TOP_LEVEL_DIRECTORY}/addons/connections/plain_connection/include
+        )
     elseif(TARGET_PROPERTY_CONN_IMPL MATCHES "tinydtls")
-        include(${WAKAAMA_EXAMPLE_SHARED_DIRECTORY}/tinydtls.cmake)
-        target_sources(${target} PRIVATE ${WAKAAMA_EXAMPLE_SHARED_DIRECTORY}/dtlsconnection.c)
+        include(${WAKAAMA_TOP_LEVEL_DIRECTORY}/addons/connections/tinydtls_connection/tinydtls.cmake)
+        target_sources(
+            ${target} PRIVATE ${WAKAAMA_TOP_LEVEL_DIRECTORY}/addons/connections/tinydtls_connection/dtlsconnection.c
+        )
         target_compile_definitions(${target} PRIVATE WITH_TINYDTLS)
+        target_include_directories(
+            ${target} PUBLIC ${WAKAAMA_TOP_LEVEL_DIRECTORY}/addons/connections/tinydtls_connection/include
+                             ${WAKAAMA_TOP_LEVEL_DIRECTORY}/addons/connections/tinydtls_connection/third_party
+        )
         target_sources_tinydtls(${target})
     elseif(TARGET_PROPERTY_CONN_IMPL MATCHES "testing")
         target_include_directories(${target} PRIVATE ${WAKAAMA_TOP_LEVEL_DIRECTORY}/tests/helper/)
