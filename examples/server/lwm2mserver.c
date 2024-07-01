@@ -1039,7 +1039,7 @@ int main(int argc, char *argv[])
     struct timeval tv;
     int result;
     lwm2m_context_t * lwm2mH = NULL;
-    connection_t * connList = NULL;
+    lwm2m_connection_t *connList = NULL;
     int addressFamily = AF_INET6;
     int opt;
     const char * localPort = LWM2M_STANDARD_PORT_STR;
@@ -1154,7 +1154,7 @@ int main(int argc, char *argv[])
         opt += 1;
     }
 
-    sock = create_socket(localPort, addressFamily);
+    sock = lwm2m_create_socket(localPort, addressFamily);
     if (sock < 0)
     {
         fprintf(stderr, "Error opening socket: %d\r\n", errno);
@@ -1228,9 +1228,9 @@ int main(int argc, char *argv[])
                 {
                     char s[INET6_ADDRSTRLEN];
                     in_port_t port;
-                    connection_t * connP;
+                    lwm2m_connection_t *connP;
 
-					s[0] = 0;
+                    s[0] = 0;
                     if (AF_INET == addr.ss_family)
                     {
                         struct sockaddr_in *saddr = (struct sockaddr_in *)&addr;
@@ -1247,10 +1247,10 @@ int main(int argc, char *argv[])
                     fprintf(stderr, "%zd bytes received from [%s]:%hu\r\n", numBytes, s, ntohs(port));
                     output_buffer(stderr, buffer, (size_t)numBytes, 0);
 
-                    connP = connection_find(connList, &addr, addrLen);
+                    connP = lwm2m_connection_find(connList, &addr, addrLen);
                     if (connP == NULL)
                     {
-                        connP = connection_new_incoming(connList, sock, (struct sockaddr *)&addr, addrLen);
+                        connP = lwm2m_connection_new_incoming(connList, sock, (struct sockaddr *)&addr, addrLen);
                         if (connP != NULL)
                         {
                             connList = connP;
@@ -1292,7 +1292,7 @@ int main(int argc, char *argv[])
 
     lwm2m_close(lwm2mH);
     close(sock);
-    connection_free(connList);
+    lwm2m_connection_free(connList);
 
     return 0;
 }

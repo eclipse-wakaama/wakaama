@@ -34,21 +34,23 @@
 #define LWM2M_BSSERVER_PORT_STR "5685"
 #define LWM2M_BSSERVER_PORT 5685
 
-typedef struct _connection_t {
-    struct _connection_t *next;
+typedef struct _lwm2m_connection_t {
+    struct _lwm2m_connection_t *next;
     int sock;
     struct sockaddr_in6 addr;
     size_t addrLen;
-} connection_t;
+} lwm2m_connection_t;
 
-int create_socket(const char *portStr, int ai_family);
+int lwm2m_create_socket(const char *portStr, int ai_family);
 
-connection_t *connection_find(connection_t *connList, struct sockaddr_storage *addr, size_t addrLen);
-connection_t *connection_new_incoming(connection_t *connList, int sock, struct sockaddr *addr, size_t addrLen);
-connection_t *connection_create(connection_t *connList, int sock, char *host, char *port, int addressFamily);
+lwm2m_connection_t *lwm2m_connection_find(lwm2m_connection_t *connList, struct sockaddr_storage *addr, size_t addrLen);
+lwm2m_connection_t *lwm2m_connection_new_incoming(lwm2m_connection_t *connList, int sock, struct sockaddr *addr,
+                                                  size_t addrLen);
+lwm2m_connection_t *lwm2m_connection_create(lwm2m_connection_t *connList, int sock, char *host, char *port,
+                                            int addressFamily);
 
-void connection_free(connection_t *connList);
+void lwm2m_connection_free(lwm2m_connection_t *connList);
 
-int connection_send(connection_t *connP, uint8_t *buffer, size_t length);
+int lwm2m_connection_send(lwm2m_connection_t *connP, uint8_t *buffer, size_t length);
 
 #endif

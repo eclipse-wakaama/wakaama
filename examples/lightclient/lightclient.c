@@ -93,7 +93,7 @@ typedef struct
 {
     lwm2m_object_t * securityObjP;
     int sock;
-    connection_t * connList;
+    lwm2m_connection_t *connList;
     int addressFamily;
 } client_data_t;
 
@@ -110,7 +110,7 @@ void * lwm2m_connect_server(uint16_t secObjInstID,
     char * uri;
     char * host;
     char * port;
-    connection_t * newConnP = NULL;
+    lwm2m_connection_t *newConnP = NULL;
 
     dataP = (client_data_t *)userData;
 
@@ -149,7 +149,7 @@ void * lwm2m_connect_server(uint16_t secObjInstID,
     *port = 0;
     port++;
 
-    newConnP = connection_create(dataP->connList, dataP->sock, host, port, dataP->addressFamily);
+    newConnP = lwm2m_connection_create(dataP->connList, dataP->sock, host, port, dataP->addressFamily);
     if (newConnP == NULL) {
         fprintf(stderr, "Connection creation failed.\r\n");
     }
@@ -166,10 +166,10 @@ void lwm2m_close_connection(void * sessionH,
                             void * userData)
 {
     client_data_t * app_data;
-    connection_t * targetP;
+    lwm2m_connection_t *targetP;
 
     app_data = (client_data_t *)userData;
-    targetP = (connection_t *)sessionH;
+    targetP = (lwm2m_connection_t *)sessionH;
 
     if (targetP == app_data->connList)
     {
@@ -178,7 +178,7 @@ void lwm2m_close_connection(void * sessionH,
     }
     else
     {
-        connection_t * parentP;
+        lwm2m_connection_t *parentP;
 
         parentP = app_data->connList;
         while (parentP != NULL && parentP->next != targetP)
@@ -396,7 +396,7 @@ int main(int argc, char *argv[])
      *This call an internal function that create an IPv6 socket on the port 5683.
      */
     fprintf(stderr, "Trying to bind LWM2M Client to port %s\r\n", localPort);
-    data.sock = create_socket(localPort, data.addressFamily);
+    data.sock = lwm2m_create_socket(localPort, data.addressFamily);
     if (data.sock < 0)
     {
         fprintf(stderr, "Failed to open socket: %d %s\r\n", errno, strerror(errno));
@@ -537,9 +537,9 @@ int main(int argc, char *argv[])
                 } 
                 else if (0 < numBytes)
                 {
-                    connection_t * connP;
+                    lwm2m_connection_t *connP;
 
-                    connP = connection_find(data.connList, &addr, addrLen);
+                    connP = lwm2m_connection_find(data.connList, &addr, addrLen);
                     if (connP != NULL)
                     {
                         /*
@@ -564,7 +564,7 @@ int main(int argc, char *argv[])
      */
     lwm2m_close(lwm2mH);
     close(data.sock);
-    connection_free(data.connList);
+    lwm2m_connection_free(data.connList);
 
     free_security_object(objArray[0]);
     free_server_object(objArray[1]);

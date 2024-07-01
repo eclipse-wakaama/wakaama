@@ -43,8 +43,8 @@
 // after 40sec of inactivity we rehandshake
 #define DTLS_NAT_TIMEOUT 40
 
-typedef struct _dtls_connection_t {
-    struct _dtls_connection_t *next;
+typedef struct _lwm2m_dtls_connection_t {
+    struct _lwm2m_dtls_connection_t *next;
     int sock;
     struct sockaddr_in6 addr;
     size_t addrLen;
@@ -54,22 +54,24 @@ typedef struct _dtls_connection_t {
     lwm2m_context_t *lwm2mH;
     dtls_context_t *dtlsContext;
     time_t lastSend; // last time a data was sent to the server (used for NAT timeouts)
-} dtls_connection_t;
+} lwm2m_dtls_connection_t;
 
-int create_socket(const char *portStr, int ai_family);
+int lwm2m_create_socket(const char *portStr, int ai_family);
 
-dtls_connection_t *connection_find(dtls_connection_t *connList, const struct sockaddr_storage *addr, size_t addrLen);
-dtls_connection_t *connection_new_incoming(dtls_connection_t *connList, int sock, const struct sockaddr *addr,
-                                           size_t addrLen);
-dtls_connection_t *connection_create(dtls_connection_t *connList, int sock, lwm2m_object_t *securityObj, int instanceId,
-                                     lwm2m_context_t *lwm2mH, int addressFamily);
+lwm2m_dtls_connection_t *lwm2m_connection_find(lwm2m_dtls_connection_t *connList, const struct sockaddr_storage *addr,
+                                               size_t addrLen);
+lwm2m_dtls_connection_t *lwm2m_connection_new_incoming(lwm2m_dtls_connection_t *connList, int sock,
+                                                       const struct sockaddr *addr, size_t addrLen);
+lwm2m_dtls_connection_t *lwm2m_connection_create(lwm2m_dtls_connection_t *connList, int sock,
+                                                 lwm2m_object_t *securityObj, int instanceId, lwm2m_context_t *lwm2mH,
+                                                 int addressFamily);
 
-void connection_free(dtls_connection_t *connList);
+void lwm2m_connection_free(lwm2m_dtls_connection_t *connList);
 
-int connection_send(dtls_connection_t *connP, uint8_t *buffer, size_t length);
-int connection_handle_packet(dtls_connection_t *connP, uint8_t *buffer, size_t length);
+int lwm2m_connection_send(lwm2m_dtls_connection_t *connP, uint8_t *buffer, size_t length);
+int lwm2m_connection_handle_packet(lwm2m_dtls_connection_t *connP, uint8_t *buffer, size_t length);
 
 // rehandshake a connection, useful when your NAT timed out and your client has a new IP/PORT
-int connection_rehandshake(dtls_connection_t *connP, bool sendCloseNotify);
+int lwm2m_connection_rehandshake(lwm2m_dtls_connection_t *connP, bool sendCloseNotify);
 
 #endif

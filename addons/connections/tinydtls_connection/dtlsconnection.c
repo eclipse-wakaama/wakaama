@@ -30,7 +30,7 @@ dtls_context_t *dtlsContext;
 
 typedef struct _dtls_app_context_ {
     lwm2m_context_t *lwm2mH;
-    dtls_connection_t *connList;
+    lwm2m_dtls_connection_t *connList;
 } dtls_app_context_t;
 
 /********************* Security Obj Helpers **********************/
@@ -117,7 +117,7 @@ char *security_get_secret_key(lwm2m_context_t *lwm2mH, lwm2m_object_t *obj, int 
 /********************* Security Obj Helpers Ends **********************/
 
 /* Returns the number sent, or -1 for errors */
-int send_data(dtls_connection_t *connP, uint8_t *buffer, size_t length) {
+int send_data(lwm2m_dtls_connection_t *connP, uint8_t *buffer, size_t length) {
     int nbSent;
     size_t offset;
 
@@ -165,7 +165,7 @@ static int get_psk_info(struct dtls_context_t *ctx, const session_t *session, dt
     dtls_app_context_t *appContext = (dtls_app_context_t *)ctx->app;
 
     // find connection
-    dtls_connection_t *cnx = connection_find(appContext->connList, &(session->addr.st), session->size);
+    lwm2m_dtls_connection_t *cnx = lwm2m_connection_find(appContext->connList, &(session->addr.st), session->size);
     if (cnx == NULL) {
         printf("GET PSK session not found\n");
         return dtls_alert_fatal_create(DTLS_ALERT_INTERNAL_ERROR);
@@ -218,7 +218,7 @@ static int send_to_peer(struct dtls_context_t *ctx, session_t *session, uint8 *d
     dtls_app_context_t *appContext = (dtls_app_context_t *)ctx->app;
 
     // find connection
-    dtls_connection_t *cnx = connection_find(appContext->connList, &(session->addr.st), session->size);
+    lwm2m_dtls_connection_t *cnx = lwm2m_connection_find(appContext->connList, &(session->addr.st), session->size);
     if (cnx != NULL) {
         // send data to peer
 
@@ -237,7 +237,7 @@ static int read_from_peer(struct dtls_context_t *ctx, session_t *session, uint8 
     dtls_app_context_t *appContext = (dtls_app_context_t *)ctx->app;
 
     // find connection
-    dtls_connection_t *cnx = connection_find(appContext->connList, &(session->addr.st), session->size);
+    lwm2m_dtls_connection_t *cnx = lwm2m_connection_find(appContext->connList, &(session->addr.st), session->size);
     if (cnx != NULL) {
         lwm2m_handle_packet(appContext->lwm2mH, (uint8_t *)data, len, (void *)cnx);
         return 0;
@@ -259,7 +259,7 @@ static dtls_handler_t cb = {
     // #endif /* DTLS_ECC */
 };
 
-dtls_context_t *get_dtls_context(lwm2m_context_t *lwm2mH, dtls_connection_t *connList) {
+dtls_context_t *get_dtls_context(lwm2m_context_t *lwm2mH, lwm2m_dtls_connection_t *connList) {
     static dtls_app_context_t appContext;
     appContext.lwm2mH = lwm2mH;
     appContext.connList = connList;
@@ -319,7 +319,7 @@ int sockaddr_cmp(struct sockaddr *x, struct sockaddr *y) {
     }
 }
 
-int create_socket(const char *portStr, int ai_family) {
+int lwm2m_create_socket(const char *portStr, int ai_family) {
     int s = -1;
     struct addrinfo hints;
     struct addrinfo *res;
@@ -349,8 +349,9 @@ int create_socket(const char *portStr, int ai_family) {
     return s;
 }
 
-dtls_connection_t *connection_find(dtls_connection_t *connList, const struct sockaddr_storage *addr, size_t addrLen) {
-    dtls_connection_t *connP;
+lwm2m_dtls_connection_t *lwm2m_connection_find(lwm2m_dtls_connection_t *connList, const struct sockaddr_storage *addr,
+                                               size_t addrLen) {
+    lwm2m_dtls_connection_t *connP;
 
     connP = connList;
     while (connP != NULL) {
@@ -365,13 +366,13 @@ dtls_connection_t *connection_find(dtls_connection_t *connList, const struct soc
     return connP;
 }
 
-dtls_connection_t *connection_new_incoming(dtls_connection_t *connList, int sock, const struct sockaddr *addr,
-                                           size_t addrLen) {
-    dtls_connection_t *connP;
+lwm2m_dtls_connection_t *lwm2m_connection_new_incoming(lwm2m_dtls_connection_t *connList, int sock,
+                                                       const struct sockaddr *addr, size_t addrLen) {
+    lwm2m_dtls_connection_t *connP;
 
-    connP = (dtls_connection_t *)malloc(sizeof(dtls_connection_t));
+    connP = (lwm2m_dtls_connection_t *)malloc(sizeof(lwm2m_dtls_connection_t));
     if (connP != NULL) {
-        memset(connP, 0, sizeof(dtls_connection_t));
+        memset(connP, 0, sizeof(lwm2m_dtls_connection_t));
         connP->sock = sock;
         memcpy(&(connP->addr), addr, addrLen);
         connP->addrLen = addrLen;
@@ -387,15 +388,16 @@ dtls_connection_t *connection_new_incoming(dtls_connection_t *connList, int sock
     return connP;
 }
 
-dtls_connection_t *connection_create(dtls_connection_t *connList, int sock, lwm2m_object_t *securityObj, int instanceId,
-                                     lwm2m_context_t *lwm2mH, int addressFamily) {
+lwm2m_dtls_connection_t *lwm2m_connection_create(lwm2m_dtls_connection_t *connList, int sock,
+                                                 lwm2m_object_t *securityObj, int instanceId, lwm2m_context_t *lwm2mH,
+                                                 int addressFamily) {
     struct addrinfo hints;
     struct addrinfo *servinfo = NULL;
     struct addrinfo *p;
     int s;
     struct sockaddr *sa;
     socklen_t sl;
-    dtls_connection_t *connP = NULL;
+    lwm2m_dtls_connection_t *connP = NULL;
     char uriBuf[URI_LENGTH];
     char *uri;
     char *host;
@@ -455,7 +457,7 @@ dtls_connection_t *connection_create(dtls_connection_t *connList, int sock, lwm2
         }
     }
     if (s >= 0) {
-        connP = connection_new_incoming(connList, sock, sa, sl);
+        connP = lwm2m_connection_new_incoming(connList, sock, sa, sl);
         close(s);
 
         // do we need to start tinydtls?
@@ -479,11 +481,11 @@ dtls_connection_t *connection_create(dtls_connection_t *connList, int sock, lwm2
     return connP;
 }
 
-void connection_free(dtls_connection_t *connList) {
+void lwm2m_connection_free(lwm2m_dtls_connection_t *connList) {
     dtls_free_context(dtlsContext);
     dtlsContext = NULL;
     while (connList != NULL) {
-        dtls_connection_t *nextP;
+        lwm2m_dtls_connection_t *nextP;
 
         nextP = connList->next;
         free(connList);
@@ -492,7 +494,7 @@ void connection_free(dtls_connection_t *connList) {
     }
 }
 
-int connection_send(dtls_connection_t *connP, uint8_t *buffer, size_t length) {
+int lwm2m_connection_send(lwm2m_dtls_connection_t *connP, uint8_t *buffer, size_t length) {
     if (connP->dtlsSession == NULL) {
         // no security
         if (0 >= send_data(connP, buffer, length)) {
@@ -501,7 +503,7 @@ int connection_send(dtls_connection_t *connP, uint8_t *buffer, size_t length) {
     } else {
         if (DTLS_NAT_TIMEOUT > 0 && (lwm2m_gettime() - connP->lastSend) > DTLS_NAT_TIMEOUT) {
             // we need to rehandhake because our source IP/port probably changed for the server
-            if (connection_rehandshake(connP, false) != 0) {
+            if (lwm2m_connection_rehandshake(connP, false) != 0) {
                 printf("can't send due to rehandshake error\n");
                 return -1;
             }
@@ -514,23 +516,23 @@ int connection_send(dtls_connection_t *connP, uint8_t *buffer, size_t length) {
     return 0;
 }
 
-int connection_handle_packet(dtls_connection_t *connP, uint8_t *buffer, size_t numBytes) {
+int lwm2m_connection_handle_packet(lwm2m_dtls_connection_t *connP, uint8_t *buffer, size_t length) {
 
     if (connP->dtlsSession != NULL) {
         // Let liblwm2m respond to the query depending on the context
-        int result = dtls_handle_message(connP->dtlsContext, connP->dtlsSession, buffer, numBytes);
+        int result = dtls_handle_message(connP->dtlsContext, connP->dtlsSession, buffer, length);
         if (result != 0) {
             printf("error dtls handling message %d\n", result);
         }
         return result;
     } else {
         // no security, just give the plaintext buffer to liblwm2m
-        lwm2m_handle_packet(connP->lwm2mH, buffer, numBytes, (void *)connP);
+        lwm2m_handle_packet(connP->lwm2mH, buffer, length, (void *)connP);
         return 0;
     }
 }
 
-int connection_rehandshake(dtls_connection_t *connP, bool sendCloseNotify) {
+int lwm2m_connection_rehandshake(lwm2m_dtls_connection_t *connP, bool sendCloseNotify) {
 
     // if not a dtls connection we do nothing
     if (connP->dtlsSession == NULL) {
@@ -555,14 +557,14 @@ int connection_rehandshake(dtls_connection_t *connP, bool sendCloseNotify) {
 }
 
 uint8_t lwm2m_buffer_send(void *sessionH, uint8_t *buffer, size_t length, void *userdata) {
-    dtls_connection_t *connP = (dtls_connection_t *)sessionH;
+    lwm2m_dtls_connection_t *connP = (lwm2m_dtls_connection_t *)sessionH;
 
     if (connP == NULL) {
         fprintf(stderr, "#> failed sending %zu bytes, missing connection\r\n", length);
         return COAP_500_INTERNAL_SERVER_ERROR;
     }
 
-    if (-1 == connection_send(connP, buffer, length)) {
+    if (-1 == lwm2m_connection_send(connP, buffer, length)) {
         fprintf(stderr, "#> failed sending %zu bytes\r\n", length);
         return COAP_500_INTERNAL_SERVER_ERROR;
     }

@@ -58,7 +58,7 @@ typedef struct _endpoint_
 typedef struct
 {
     int               sock;
-    connection_t *    connList;
+    lwm2m_connection_t *connList;
     bs_info_t *       bsInfo;
     endpoint_t *      endpointList;
     int               addressFamily;
@@ -488,7 +488,7 @@ static void prv_bootstrap_client(lwm2m_context_t *lwm2mH,
     char * end = NULL;
     char * host;
     char * port;
-    connection_t * newConnP = NULL;
+    lwm2m_connection_t *newConnP = NULL;
 
     uri = buffer;
     end = get_end_of_arg(buffer);
@@ -527,7 +527,7 @@ static void prv_bootstrap_client(lwm2m_context_t *lwm2mH,
     port++;
 
     fprintf(stderr, "Trying to connect to LWM2M CLient at %s:%s\r\n", host, port);
-    newConnP = connection_create(dataP->connList, dataP->sock, host, port, dataP->addressFamily);
+    newConnP = lwm2m_connection_create(dataP->connList, dataP->sock, host, port, dataP->addressFamily);
     if (newConnP == NULL) {
         fprintf(stderr, "Connection creation failed.\r\n");
         return;
@@ -631,7 +631,7 @@ int main(int argc, char *argv[])
         opt += 1;
     }
 
-    data.sock = create_socket(port, data.addressFamily);
+    data.sock = lwm2m_create_socket(port, data.addressFamily);
     if (data.sock < 0)
     {
         fprintf(stderr, "Error opening socket: %d\r\n", errno);
@@ -720,9 +720,9 @@ int main(int argc, char *argv[])
                 {
                     char s[INET6_ADDRSTRLEN];
                     in_port_t rec_port;
-                    connection_t * connP;
+                    lwm2m_connection_t *connP;
 
-					s[0] = 0;
+                    s[0] = 0;
                     if (AF_INET == addr.ss_family)
                     {
                         struct sockaddr_in *saddr = (struct sockaddr_in *)&addr;
@@ -740,10 +740,11 @@ int main(int argc, char *argv[])
 
                     output_buffer(stderr, buffer, (size_t)numBytes, 0);
 
-                    connP = connection_find(data.connList, &addr, addrLen);
+                    connP = lwm2m_connection_find(data.connList, &addr, addrLen);
                     if (connP == NULL)
                     {
-                        connP = connection_new_incoming(data.connList, data.sock, (struct sockaddr *)&addr, addrLen);
+                        connP =
+                            lwm2m_connection_new_incoming(data.connList, data.sock, (struct sockaddr *)&addr, addrLen);
                         if (connP != NULL)
                         {
                             data.connList = connP;
@@ -825,7 +826,7 @@ int main(int argc, char *argv[])
         prv_endpoint_free(endP);
     }
     close(data.sock);
-    connection_free(data.connList);
+    lwm2m_connection_free(data.connList);
 
     return 0;
 }
