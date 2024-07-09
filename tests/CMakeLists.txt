@@ -65,3 +65,5 @@ if(NOT WAKAAMA_CLIENT_INITIATED_BOOTSTRAP)
             LWM2M_SUPPORT_SENML_CBOR
     )
 endif()
+
+add_subdirectory(fuzzing)

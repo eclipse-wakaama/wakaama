@@ -1606,8 +1606,7 @@ static int prv_getId(uint8_t * data,
                 }
                 // Ignore any unrecognized attribute
             }
-            if (data[limit] == REG_ATTR_SEPARATOR)
-            {
+            if (limit < length && data[limit] == REG_ATTR_SEPARATOR) {
                 limit += 1;
             }
             data += limit;
