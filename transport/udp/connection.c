@@ -61,7 +61,7 @@ lwm2m_connection_t *lwm2m_connection_find(lwm2m_connection_t *connList, struct s
 
     connP = connList;
     while (connP != NULL) {
-        if ((connP->addrLen == addrLen) && (memcmp(&(connP->addr), addr, addrLen) == 0)) {
+        if ((connP->addrLen == addrLen) && (memcmp(&(connP->addr), addr, addrLen) == 0)) { // NOSONAR
             return connP;
         }
         connP = connP->next;
