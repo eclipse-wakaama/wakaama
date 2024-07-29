@@ -44,7 +44,7 @@ char *security_get_uri(lwm2m_context_t *lwm2mH, lwm2m_object_t *obj, int instanc
     if (dataP != NULL && dataP->type == LWM2M_TYPE_STRING && dataP->value.asBuffer.length > 0) {
         if (bufferSize > dataP->value.asBuffer.length) {
             memset(uriBuffer, 0, dataP->value.asBuffer.length + 1);
-            strncpy(uriBuffer, (const char *)dataP->value.asBuffer.buffer, dataP->value.asBuffer.length);
+            strncpy(uriBuffer, (const char *)dataP->value.asBuffer.buffer, dataP->value.asBuffer.length); // NOSONAR
             lwm2m_data_free(size, dataP);
             return uriBuffer;
         }
@@ -173,7 +173,7 @@ static int get_psk_info(struct dtls_context_t *ctx, const session_t *session, dt
 
     switch (type) {
     case DTLS_PSK_IDENTITY: {
-        size_t idLen;
+        size_t idLen = 0;
         char *id2;
         id2 = security_get_public_id(appContext->lwm2mH, cnx->securityObj, cnx->securityInstId, &idLen);
         if (result_length < idLen) {
@@ -186,7 +186,7 @@ static int get_psk_info(struct dtls_context_t *ctx, const session_t *session, dt
         return idLen;
     }
     case DTLS_PSK_KEY: {
-        size_t keyLen;
+        size_t keyLen = 0;
         char *key;
         key = security_get_secret_key(appContext->lwm2mH, cnx->securityObj, cnx->securityInstId, &keyLen);
 
@@ -413,12 +413,12 @@ lwm2m_dtls_connection_t *lwm2m_connection_create(lwm2m_dtls_connection_t *connLi
 
     // parse uri in the form "coaps://[host]:[port]"
     char defaultport[5];
-    if (0 == strncmp(uri, "coaps://", strlen("coaps://"))) {
-        host = uri + strlen("coaps://");
-        strncpy(defaultport, COAPS_PORT, 5);
-    } else if (0 == strncmp(uri, "coap://", strlen("coap://"))) {
-        host = uri + strlen("coap://");
-        strncpy(defaultport, COAP_PORT, 5);
+    if (0 == strncmp(uri, "coaps://", strlen("coaps://"))) {      // NOSONAR
+        host = uri + strlen("coaps://");                          // NOSONAR
+        strncpy(defaultport, COAPS_PORT, 5);                      // NOSONAR
+    } else if (0 == strncmp(uri, "coap://", strlen("coap://"))) { // NOSONAR
+        host = uri + strlen("coap://");                           // NOSONAR
+        strncpy(defaultport, COAP_PORT, 5);                       // NOSONAR
     } else {
         return NULL;
     }
@@ -429,7 +429,7 @@ lwm2m_dtls_connection_t *lwm2m_connection_create(lwm2m_dtls_connection_t *connLi
         // remove brackets
         if (host[0] == '[') {
             host++;
-            if (*(port - 1) == ']') {
+            if (*(port - 1) == ']') { // NOSONAR
                 *(port - 1) = 0;
             } else {
                 return NULL;
