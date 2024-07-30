@@ -33,6 +33,23 @@ typedef struct _dtls_app_context_ {
     lwm2m_dtls_connection_t *connList;
 } dtls_app_context_t;
 
+static char *get_opaque_value(size_t *length, int size, lwm2m_data_t *dataP) {
+    if (dataP != NULL && dataP->type == LWM2M_TYPE_OPAQUE) {
+        char *buff;
+
+        buff = (char *)lwm2m_malloc(dataP->value.asBuffer.length);
+        if (buff != 0) {
+            memcpy(buff, dataP->value.asBuffer.buffer, dataP->value.asBuffer.length);
+            *length = dataP->value.asBuffer.length;
+        }
+        lwm2m_data_free(size, dataP);
+
+        return buff;
+    } else {
+        return NULL;
+    }
+}
+
 /********************* Security Obj Helpers **********************/
 char *security_get_uri(lwm2m_context_t *lwm2mH, lwm2m_object_t *obj, int instanceId, char *uriBuffer,
                        size_t bufferSize) {
@@ -76,20 +93,7 @@ char *security_get_public_id(lwm2m_context_t *lwm2mH, lwm2m_object_t *obj, int i
     dataP->id = 3; // public key or id
 
     obj->readFunc(lwm2mH, instanceId, &size, &dataP, obj);
-    if (dataP != NULL && dataP->type == LWM2M_TYPE_OPAQUE) {
-        char *buff;
-
-        buff = (char *)lwm2m_malloc(dataP->value.asBuffer.length);
-        if (buff != 0) {
-            memcpy(buff, dataP->value.asBuffer.buffer, dataP->value.asBuffer.length);
-            *length = dataP->value.asBuffer.length;
-        }
-        lwm2m_data_free(size, dataP);
-
-        return buff;
-    } else {
-        return NULL;
-    }
+    return get_opaque_value(length, size, dataP);
 }
 
 char *security_get_secret_key(lwm2m_context_t *lwm2mH, lwm2m_object_t *obj, int instanceId, size_t *length) {
@@ -98,20 +102,7 @@ char *security_get_secret_key(lwm2m_context_t *lwm2mH, lwm2m_object_t *obj, int 
     dataP->id = 5; // secret key
 
     obj->readFunc(lwm2mH, instanceId, &size, &dataP, obj);
-    if (dataP != NULL && dataP->type == LWM2M_TYPE_OPAQUE) {
-        char *buff;
-
-        buff = (char *)lwm2m_malloc(dataP->value.asBuffer.length);
-        if (buff != 0) {
-            memcpy(buff, dataP->value.asBuffer.buffer, dataP->value.asBuffer.length);
-            *length = dataP->value.asBuffer.length;
-        }
-        lwm2m_data_free(size, dataP);
-
-        return buff;
-    } else {
-        return NULL;
-    }
+    return get_opaque_value(length, size, dataP);
 }
 
 /********************* Security Obj Helpers Ends **********************/
