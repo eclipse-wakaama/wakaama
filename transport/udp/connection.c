@@ -26,11 +26,40 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 
+static int find_and_bind_to_address(struct addrinfo *res) {
+    int s = -1;
+    for (struct addrinfo *p = res; p != NULL && s == -1; p = p->ai_next) {
+        s = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
+        if (s >= 0) {
+            if (-1 == bind(s, p->ai_addr, p->ai_addrlen)) {
+                close(s);
+                s = -1;
+            }
+        }
+    }
+    return s;
+}
+
+static int find_and_connect_to_address(struct addrinfo *servinfo, struct sockaddr **sa, socklen_t *sl) {
+    int s = -1;
+    for (struct addrinfo *p = servinfo; p != NULL && s == -1; p = p->ai_next) {
+        s = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
+        if (s >= 0) {
+            (*sa) = p->ai_addr;
+            (*sl) = p->ai_addrlen;
+            if (-1 == connect(s, p->ai_addr, p->ai_addrlen)) {
+                close(s);
+                s = -1;
+            }
+        }
+    }
+    return s;
+}
+
 int lwm2m_create_socket(const char *portStr, int addressFamily) {
     int s = -1;
     struct addrinfo hints;
     struct addrinfo *res;
-    struct addrinfo *p;
 
     memset(&hints, 0, sizeof hints);
     hints.ai_family = addressFamily;
@@ -41,15 +70,7 @@ int lwm2m_create_socket(const char *portStr, int addressFamily) {
         return -1;
     }
 
-    for (p = res; p != NULL && s == -1; p = p->ai_next) {
-        s = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
-        if (s >= 0) {
-            if (-1 == bind(s, p->ai_addr, p->ai_addrlen)) {
-                close(s);
-                s = -1;
-            }
-        }
-    }
+    s = find_and_bind_to_address(res);
 
     freeaddrinfo(res);
 
@@ -89,7 +110,6 @@ lwm2m_connection_t *lwm2m_connection_create(lwm2m_connection_t *connList, int so
                                             int addressFamily) {
     struct addrinfo hints;
     struct addrinfo *servinfo = NULL;
-    struct addrinfo *p;
     int s;
     struct sockaddr *sa;
     socklen_t sl;
@@ -103,18 +123,7 @@ lwm2m_connection_t *lwm2m_connection_create(lwm2m_connection_t *connList, int so
         return NULL;
 
     // we test the various addresses
-    s = -1;
-    for (p = servinfo; p != NULL && s == -1; p = p->ai_next) {
-        s = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
-        if (s >= 0) {
-            sa = p->ai_addr;
-            sl = p->ai_addrlen;
-            if (-1 == connect(s, p->ai_addr, p->ai_addrlen)) {
-                close(s);
-                s = -1;
-            }
-        }
-    }
+    s = find_and_connect_to_address(servinfo, &sa, &sl);
     if (s >= 0) {
         connP = lwm2m_connection_new_incoming(connList, sock, sa, sl);
         close(s);
@@ -137,32 +146,38 @@ void lwm2m_connection_free(lwm2m_connection_t *connList) {
     }
 }
 
+static int get_address_and_port(const lwm2m_connection_t *connP, char *str, size_t str_len, in_port_t *port) {
+    if (AF_INET == connP->addr.sin6_family) {
+        struct sockaddr_in *saddr = (struct sockaddr_in *)&connP->addr;
+        inet_ntop(saddr->sin_family, &saddr->sin_addr, str, INET6_ADDRSTRLEN);
+        *port = saddr->sin_port;
+    } else if (AF_INET6 == connP->addr.sin6_family) {
+        struct sockaddr_in6 *saddr = (struct sockaddr_in6 *)&connP->addr;
+        inet_ntop(saddr->sin6_family, &saddr->sin6_addr, str, INET6_ADDRSTRLEN);
+        *port = saddr->sin6_port;
+    } else {
+        return -1;
+    }
+    return 0;
+}
+
 int lwm2m_connection_send(lwm2m_connection_t *connP, uint8_t *buffer, size_t length) {
     int nbSent;
     size_t offset;
 
-#if LWM2M_LOG_LEVEL != LWM2M_LOG_DISABLED
     char s[INET6_ADDRSTRLEN];
     in_port_t port;
 
     s[0] = 0;
 
-    if (AF_INET == connP->addr.sin6_family) {
-        struct sockaddr_in *saddr = (struct sockaddr_in *)&connP->addr;
-        inet_ntop(saddr->sin_family, &saddr->sin_addr, s, INET6_ADDRSTRLEN);
-        port = saddr->sin_port;
-    } else if (AF_INET6 == connP->addr.sin6_family) {
-        struct sockaddr_in6 *saddr = (struct sockaddr_in6 *)&connP->addr;
-        inet_ntop(saddr->sin6_family, &saddr->sin6_addr, s, INET6_ADDRSTRLEN);
-        port = saddr->sin6_port;
-    } else {
-        return -1;
+    int ret = get_address_and_port(connP, s, INET6_ADDRSTRLEN, &port);
+    if (ret < 0) {
+        return ret;
     }
 
     fprintf(stderr, "Sending %zu bytes to [%s]:%hu\r\n", length, s, ntohs(port));
 
     output_buffer(stderr, buffer, length, 0);
-#endif
 
     offset = 0;
     while (offset != length) {
