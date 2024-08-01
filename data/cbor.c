@@ -21,6 +21,9 @@
 #include <assert.h>
 
 #ifdef LWM2M_SUPPORT_SENML_CBOR
+#ifdef LWM2M_VERSION_1_0
+#error "CBOR is supported since LwM2M 1.1"
+#endif
 
 /*
  * Ensure type assumptions taken are correct on the platform.
@@ -585,7 +588,6 @@ int cbor_put_singular(uint8_t *buffer, size_t bufferLen, const lwm2m_data_t *dat
     return result;
 }
 
-#if !defined(LWM2M_VERSION_1_1)
 int cbor_parse(const lwm2m_uri_t *uriP, const uint8_t *buffer, size_t bufferLen, lwm2m_data_t **dataP) {
     int result = 0;
     uint8_t *tmp;
@@ -689,6 +691,5 @@ int cbor_serialize(const lwm2m_uri_t *uriP, int size, const lwm2m_data_t *dataP,
 
     return result;
 }
-#endif
 
 #endif
