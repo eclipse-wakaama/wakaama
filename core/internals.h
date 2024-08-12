@@ -68,6 +68,7 @@
 #include "management.h"
 #include "objects.h"
 #include "observe.h"
+#include "packet.h"
 #include "registration.h"
 #include "reporting.h"
 #include "uri.h"
@@ -413,9 +414,6 @@ bool transaction_handleResponse(lwm2m_context_t * contextP, void * fromSessionH,
 void transaction_step(lwm2m_context_t * contextP, time_t currentTime, time_t * timeoutP);
 bool transaction_free_userData(lwm2m_context_t * context, lwm2m_transaction_t * transaction);
 bool transaction_set_payload(lwm2m_transaction_t *transaction, uint8_t *buffer, size_t length);
-
-// defined in packet.c
-uint8_t message_send(lwm2m_context_t * contextP, coap_packet_t * message, void * sessionH);
 
 #ifdef LWM2M_SUPPORT_TLV
 // defined in tlv.c
