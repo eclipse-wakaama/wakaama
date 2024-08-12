@@ -62,6 +62,7 @@
 #include <stddef.h>
 #include <stdbool.h>
 
+#include "discover.h"
 #include "er-coap-13/er-coap-13.h"
 #include "reporting.h"
 #include "utils.h"
@@ -540,9 +541,6 @@ lwm2m_data_t * json_findDataItem(lwm2m_data_t * listP, size_t count, uint16_t id
 uri_depth_t json_decreaseLevel(uri_depth_t level);
 int json_findAndCheckData(const lwm2m_uri_t * uriP, uri_depth_t baseLevel, size_t size, const lwm2m_data_t * tlvP, lwm2m_data_t ** targetP, uri_depth_t *targetLevelP);
 #endif
-
-// defined in discover.c
-int discover_serialize(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_server_t * serverP, int size, lwm2m_data_t * dataP, uint8_t ** bufferP);
 
 // defined in block.c
 #ifdef LWM2M_RAW_BLOCK1_REQUESTS
