@@ -70,6 +70,7 @@
 #include "observe.h"
 #include "registration.h"
 #include "reporting.h"
+#include "uri.h"
 #include "utils.h"
 
 #if LWM2M_LOG_LEVEL != LWM2M_LOG_DISABLED
@@ -377,15 +378,6 @@ typedef struct
 } bs_data_t;
 #endif
 
-typedef enum {
-    LWM2M_REQUEST_TYPE_UNKNOWN,
-    LWM2M_REQUEST_TYPE_DM,
-    LWM2M_REQUEST_TYPE_REGISTRATION,
-    LWM2M_REQUEST_TYPE_BOOTSTRAP,
-    LWM2M_REQUEST_TYPE_DELETE_ALL,
-    LWM2M_REQUEST_TYPE_SEND,
-} lwm2m_request_type_t;
-
 #ifdef LWM2M_SUPPORT_SENML_CBOR
 typedef enum {
     CBOR_TYPE_UNKNOWN,
@@ -411,10 +403,6 @@ typedef struct {
 
 typedef bool (*senml_convertValue)(const senml_record_t *recordP, lwm2m_data_t *targetP);
 #endif
-
-// defined in uri.c
-lwm2m_request_type_t uri_decode(char * altPath, multi_option_t *uriPath, uint8_t code, lwm2m_uri_t *uriP);
-int uri_getNumber(uint8_t * uriString, size_t uriLength);
 
 // defined in transaction.c
 lwm2m_transaction_t * transaction_new(void * sessionH, coap_method_t method, char * altPath, lwm2m_uri_t * uriP, uint16_t mID, uint8_t token_len, uint8_t* token);
