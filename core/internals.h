@@ -63,6 +63,7 @@
 #include <stdbool.h>
 
 #include "er-coap-13/er-coap-13.h"
+#include "reporting.h"
 
 #if LWM2M_LOG_LEVEL != LWM2M_LOG_DISABLED
 #include <inttypes.h>
@@ -598,11 +599,6 @@ lwm2m_server_t * utils_findBootstrapServer(lwm2m_context_t * contextP, void * fr
 #endif
 #if defined(LWM2M_SERVER_MODE) || defined(LWM2M_BOOTSTRAP_SERVER_MODE)
 lwm2m_client_t * utils_findClient(lwm2m_context_t * contextP, void * fromSessionH);
-#endif
-
-// defined in reporting.c
-#if defined(LWM2M_SERVER_MODE) && !defined(LWM2M_VERSION_1_0)
-uint8_t reporting_handleSend(lwm2m_context_t *contextP, void *fromSessionH, coap_packet_t *message);
 #endif
 
 #endif
