@@ -64,6 +64,7 @@
 
 #include "er-coap-13/er-coap-13.h"
 #include "reporting.h"
+#include "utils.h"
 
 #if LWM2M_LOG_LEVEL != LWM2M_LOG_DISABLED
 #include <inttypes.h>
@@ -560,45 +561,5 @@ uint8_t coap_block2_handler(lwm2m_block_data_t **blockData, uint16_t mid, const 
 void coap_block2_set_expected_mid(lwm2m_block_data_t *blockDataHead, uint16_t currentMid, uint16_t expectedMid);
 void free_block_data(lwm2m_block_data_t * blockData);
 void block2_delete(lwm2m_block_data_t ** pBlockDataHead, uint16_t mid);
-
-// defined in utils.c
-lwm2m_data_type_t utils_depthToDatatype(uri_depth_t depth);
-lwm2m_version_t utils_stringToVersion(uint8_t *buffer, size_t length);
-lwm2m_binding_t utils_stringToBinding(uint8_t *buffer, size_t length);
-lwm2m_media_type_t utils_convertMediaType(coap_content_type_t type);
-uint8_t utils_getResponseFormat(uint8_t accept_num,
-                                const uint16_t *accept,
-                                int numData,
-                                const lwm2m_data_t *dataP,
-                                bool singleResource,
-                                lwm2m_media_type_t *format);
-int utils_isAltPathValid(const char * altPath);
-int utils_stringCopy(char * buffer, size_t length, const char * str);
-size_t utils_intToText(int64_t data, uint8_t * string, size_t length);
-size_t utils_uintToText(uint64_t data, uint8_t * string, size_t length);
-size_t utils_floatToText(double data, uint8_t * string, size_t length, bool allowExponential);
-size_t utils_objLinkToText(uint16_t objectId,
-                           uint16_t objectInstanceId,
-                           uint8_t * string,
-                           size_t length);
-int utils_textToInt(const uint8_t * buffer, int length, int64_t * dataP);
-int utils_textToUInt(const uint8_t * buffer, int length, uint64_t * dataP);
-int utils_textToFloat(const uint8_t * buffer, int length, double * dataP, bool allowExponential);
-int utils_textToObjLink(const uint8_t * buffer,
-                        int length,
-                        uint16_t * objectId,
-                        uint16_t * objectInstanceId);
-void utils_copyValue(void * dst, const void * src, size_t len);
-size_t utils_base64GetSize(size_t dataLen);
-size_t utils_base64Encode(const uint8_t * dataP, size_t dataLen, uint8_t * bufferP, size_t bufferLen);
-size_t utils_base64GetDecodedSize(const char * dataP, size_t dataLen);
-size_t utils_base64Decode(const char * dataP, size_t dataLen, uint8_t * bufferP, size_t bufferLen);
-#ifdef LWM2M_CLIENT_MODE
-lwm2m_server_t * utils_findServer(lwm2m_context_t * contextP, void * fromSessionH);
-lwm2m_server_t * utils_findBootstrapServer(lwm2m_context_t * contextP, void * fromSessionH);
-#endif
-#if defined(LWM2M_SERVER_MODE) || defined(LWM2M_BOOTSTRAP_SERVER_MODE)
-lwm2m_client_t * utils_findClient(lwm2m_context_t * contextP, void * fromSessionH);
-#endif
 
 #endif
