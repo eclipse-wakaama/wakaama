@@ -1,3 +1,5 @@
+include_guard(DIRECTORY)
+
 set(WAKAAMA_TOP_LEVEL_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}")
 set(WAKAAMA_EXAMPLE_DIRECTORY "${WAKAAMA_TOP_LEVEL_DIRECTORY}/examples")
 set(WAKAAMA_EXAMPLE_SHARED_DIRECTORY "${WAKAAMA_EXAMPLE_DIRECTORY}/shared")
@@ -237,14 +239,19 @@ function(target_sources_wakaama target)
     target_sources_data(${target})
 endfunction()
 
+# Commandline library
+add_library(wakaama_command_line OBJECT)
+target_sources(wakaama_command_line PRIVATE ${WAKAAMA_EXAMPLE_SHARED_DIRECTORY}/commandline.c)
+target_include_directories(wakaama_command_line PRIVATE ${WAKAAMA_TOP_LEVEL_DIRECTORY}/include)
+target_include_directories(wakaama_command_line PUBLIC ${WAKAAMA_EXAMPLE_SHARED_DIRECTORY})
+
 # Add shared source files to an existing target.
 function(target_sources_shared target)
     get_target_property(TARGET_PROPERTY_CONN_IMPL ${target} CONNECTION_IMPLEMENTATION)
 
-    target_sources(
-        ${target} PRIVATE ${WAKAAMA_EXAMPLE_SHARED_DIRECTORY}/commandline.c
-                          ${WAKAAMA_EXAMPLE_SHARED_DIRECTORY}/platform.c
-    )
+    target_sources(${target} PRIVATE ${WAKAAMA_EXAMPLE_SHARED_DIRECTORY}/platform.c)
+
+    target_link_libraries(${target} PRIVATE wakaama_command_line)
 
     set_defines(${target})
 
