@@ -65,6 +65,13 @@ set(WAKAAMA_LOG_MAX_MSG_TXT_SIZE
     CACHE STRING "The buffer size for the log message (without additional data)"
 )
 
+# Transport
+set(WAKAAMA_TRANSPORT
+    NONE
+    CACHE STRING "The transport layer implementation"
+)
+set_property(CACHE WAKAAMA_TRANSPORT PROPERTY STRINGS NONE POSIX_UDP TINYDTLS TESTING)
+
 # Possibility to disable the examples
 option(WAKAAMA_ENABLE_EXAMPLES "Build all the example applications" ON)
 
@@ -241,10 +248,10 @@ function(target_sources_shared target)
 
     set_defines(${target})
 
-    if(NOT TARGET_PROPERTY_CONN_IMPL)
+    if(NOT TARGET_PROPERTY_CONN_IMPL OR WAKAAMA_TRANSPORT STREQUAL POSIX_UDP)
         target_sources(${target} PRIVATE ${WAKAAMA_TOP_LEVEL_DIRECTORY}/transport/udp/connection.c)
         target_include_directories(${target} PUBLIC ${WAKAAMA_TOP_LEVEL_DIRECTORY}/transport/udp/include)
-    elseif(TARGET_PROPERTY_CONN_IMPL MATCHES "tinydtls")
+    elseif(TARGET_PROPERTY_CONN_IMPL MATCHES "tinydtls" OR WAKAAMA_TRANSPORT STREQUAL TINYDTLS)
         include(${WAKAAMA_TOP_LEVEL_DIRECTORY}/transport/tinydtls/tinydtls.cmake)
         target_sources(${target} PRIVATE ${WAKAAMA_TOP_LEVEL_DIRECTORY}/transport/tinydtls/connection.c)
         target_compile_definitions(${target} PRIVATE WITH_TINYDTLS)
@@ -253,7 +260,7 @@ function(target_sources_shared target)
                              ${WAKAAMA_TOP_LEVEL_DIRECTORY}/transport/tinydtls/third_party
         )
         target_sources_tinydtls(${target})
-    elseif(TARGET_PROPERTY_CONN_IMPL MATCHES "testing")
+    elseif(TARGET_PROPERTY_CONN_IMPL MATCHES "testing" OR WAKAAMA_TRANSPORT STREQUAL TESTING)
         target_include_directories(${target} PRIVATE ${WAKAAMA_TOP_LEVEL_DIRECTORY}/tests/helper/)
         target_sources(${target} PRIVATE ${WAKAAMA_TOP_LEVEL_DIRECTORY}/tests/helper/connection.c)
     else()

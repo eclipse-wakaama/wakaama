@@ -91,7 +91,15 @@ The logging infrastructure can be configured with CMake cache variables (e.g. `c
 - WAKAAMA_LOG_CUSTOM_HANDLER: Set this define to provide a custom handler function for log entries. See the default implementation for details.
 - WAKAAMA_LOG_MAX_MSG_TXT_SIZE: The max. size of the formatted log message. This is only the message without additional data like severity and function name.
 
+### Transport
 
+- WAKAAMA_TRANSPORT: Select the implementation of the transport layer. One of:
+  - POSIX_UDP: A simple UDP implementation using the POSIX socket API.
+  - TINYDTLS: Use DTLS with the 'tinydtls' library.
+  - TESTING: A special transport layer used for unit testing.
+  - NONE: No transport layer is provided.
+
+If `NONE` is chosen, the user of Wakaama needs to implement a custom transport layer. Check the available implementations for more information.
 
 ## Development
 
