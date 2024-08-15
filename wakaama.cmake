@@ -74,6 +74,9 @@ set(WAKAAMA_TRANSPORT
 )
 set_property(CACHE WAKAAMA_TRANSPORT PROPERTY STRINGS NONE POSIX_UDP TINYDTLS TESTING)
 
+# Endianess
+add_compile_definitions("$<IF:$<STREQUAL:${CMAKE_C_BYTE_ORDER},BIG_ENDIAN>,LWM2M_BIG_ENDIAN,LWM2M_LITTLE_ENDIAN>")
+
 # Possibility to disable the examples
 option(WAKAAMA_ENABLE_EXAMPLES "Build all the example applications" ON)
 
@@ -213,10 +216,6 @@ function(target_sources_wakaama target)
 
     # We should not (have to) do this!
     target_include_directories(${target} PRIVATE ${WAKAAMA_TOP_LEVEL_DIRECTORY}/core)
-
-    target_compile_definitions(
-        ${target} PUBLIC "$<IF:$<STREQUAL:${CMAKE_C_BYTE_ORDER},BIG_ENDIAN>,LWM2M_BIG_ENDIAN,LWM2M_LITTLE_ENDIAN>"
-    )
 
     # set defines
     set_defines(${target})
