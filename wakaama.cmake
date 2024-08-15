@@ -245,13 +245,17 @@ target_sources(wakaama_command_line PRIVATE ${WAKAAMA_EXAMPLE_SHARED_DIRECTORY}/
 target_include_directories(wakaama_command_line PRIVATE ${WAKAAMA_TOP_LEVEL_DIRECTORY}/include)
 target_include_directories(wakaama_command_line PUBLIC ${WAKAAMA_EXAMPLE_SHARED_DIRECTORY})
 
+# POSIX platform library
+add_library(wakaama_platform_posix OBJECT)
+target_sources(wakaama_platform_posix PRIVATE ${WAKAAMA_EXAMPLE_SHARED_DIRECTORY}/platform.c)
+target_include_directories(wakaama_platform_posix PRIVATE ${WAKAAMA_TOP_LEVEL_DIRECTORY}/include)
+target_compile_definitions(wakaama_platform_posix PRIVATE _POSIX_C_SOURCE=200809)
+
 # Add shared source files to an existing target.
 function(target_sources_shared target)
     get_target_property(TARGET_PROPERTY_CONN_IMPL ${target} CONNECTION_IMPLEMENTATION)
 
-    target_sources(${target} PRIVATE ${WAKAAMA_EXAMPLE_SHARED_DIRECTORY}/platform.c)
-
-    target_link_libraries(${target} PRIVATE wakaama_command_line)
+    target_link_libraries(${target} PRIVATE wakaama_command_line wakaama_platform_posix)
 
     set_defines(${target})
 
