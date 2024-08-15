@@ -251,6 +251,14 @@ target_sources(wakaama_platform_posix PRIVATE ${WAKAAMA_EXAMPLE_SHARED_DIRECTORY
 target_include_directories(wakaama_platform_posix PRIVATE ${WAKAAMA_TOP_LEVEL_DIRECTORY}/include)
 target_compile_definitions(wakaama_platform_posix PRIVATE _POSIX_C_SOURCE=200809)
 
+# Transport UDP (POSIX) implementation library
+add_library(wakaama_transport_posix_udp OBJECT)
+target_sources(wakaama_transport_posix_udp PRIVATE ${WAKAAMA_TOP_LEVEL_DIRECTORY}/transport/udp/connection.c)
+target_include_directories(wakaama_transport_posix_udp PUBLIC ${WAKAAMA_TOP_LEVEL_DIRECTORY}/transport/udp/include)
+target_include_directories(wakaama_transport_posix_udp PRIVATE ${WAKAAMA_TOP_LEVEL_DIRECTORY}/include)
+target_link_libraries(wakaama_transport_posix_udp PRIVATE wakaama_command_line)
+target_compile_definitions(wakaama_transport_posix_udp PRIVATE _POSIX_C_SOURCE=200809)
+
 # Add shared source files to an existing target.
 function(target_sources_shared target)
     get_target_property(TARGET_PROPERTY_CONN_IMPL ${target} CONNECTION_IMPLEMENTATION)
@@ -260,8 +268,7 @@ function(target_sources_shared target)
     set_defines(${target})
 
     if(NOT TARGET_PROPERTY_CONN_IMPL OR WAKAAMA_TRANSPORT STREQUAL POSIX_UDP)
-        target_sources(${target} PRIVATE ${WAKAAMA_TOP_LEVEL_DIRECTORY}/transport/udp/connection.c)
-        target_include_directories(${target} PUBLIC ${WAKAAMA_TOP_LEVEL_DIRECTORY}/transport/udp/include)
+        target_link_libraries(${target} PRIVATE wakaama_transport_posix_udp)
     elseif(TARGET_PROPERTY_CONN_IMPL MATCHES "tinydtls" OR WAKAAMA_TRANSPORT STREQUAL TINYDTLS)
         include(${WAKAAMA_TOP_LEVEL_DIRECTORY}/transport/tinydtls/tinydtls.cmake)
         target_sources(${target} PRIVATE ${WAKAAMA_TOP_LEVEL_DIRECTORY}/transport/tinydtls/connection.c)
