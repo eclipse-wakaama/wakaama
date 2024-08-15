@@ -29,19 +29,20 @@ struct TestTable {
 
 CU_ErrorCode add_tests(CU_pSuite pSuite, struct TestTable* testTable);
 CU_ErrorCode create_uri_suit(void);
+#ifdef LWM2M_SUPPORT_TLV
 CU_ErrorCode create_tlv_suit(void);
-CU_ErrorCode create_object_read_suit(void);
+#endif
 CU_ErrorCode create_convert_numbers_suit(void);
+#ifdef LWM2M_SUPPORT_JSON
 CU_ErrorCode create_tlv_json_suit(void);
+#endif
 CU_ErrorCode create_block1_suit(void);
 CU_ErrorCode create_block2_suit(void);
 #ifdef LWM2M_SUPPORT_SENML_JSON
 CU_ErrorCode create_senml_json_suit(void);
 #endif
 #ifdef LWM2M_SUPPORT_SENML_CBOR
-#ifndef LWM2M_VERSION_1_1
 CU_ErrorCode create_cbor_suit(void);
-#endif
 CU_ErrorCode create_senml_cbor_suit(void);
 #endif
 CU_ErrorCode create_er_coap_parse_message_suit(void);

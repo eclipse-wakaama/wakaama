@@ -64,6 +64,14 @@
 
 #include "er-coap-13/er-coap-13.h"
 
+#include "../data/cbor.h"
+#include "../data/json.h"
+#include "../data/json_common.h"
+#include "../data/senml_cbor.h"
+#include "../data/senml_common.h"
+#include "../data/senml_json.h"
+#include "../data/tlv.h"
+
 #if LWM2M_LOG_LEVEL != LWM2M_LOG_DISABLED
 #include <inttypes.h>
 
@@ -378,32 +386,6 @@ typedef enum {
     LWM2M_REQUEST_TYPE_SEND,
 } lwm2m_request_type_t;
 
-#ifdef LWM2M_SUPPORT_SENML_CBOR
-typedef enum {
-    CBOR_TYPE_UNKNOWN,
-    CBOR_TYPE_UNSIGNED_INTEGER,
-    CBOR_TYPE_NEGATIVE_INTEGER,
-    CBOR_TYPE_FLOAT,
-    CBOR_TYPE_SEMANTIC_TAG,
-    CBOR_TYPE_SIMPLE_VALUE,
-    CBOR_TYPE_BREAK,
-    CBOR_TYPE_BYTE_STRING,
-    CBOR_TYPE_TEXT_STRING,
-    CBOR_TYPE_ARRAY,
-    CBOR_TYPE_MAP,
-} cbor_type_t;
-#endif
-
-#if defined(LWM2M_SUPPORT_JSON) || defined(LWM2M_SUPPORT_SENML_JSON) || defined(LWM2M_SUPPORT_SENML_CBOR)
-typedef struct {
-    uint16_t ids[4];
-    lwm2m_data_t value; /* Any buffer will be within the parsed data */
-    time_t time;
-} senml_record_t;
-
-typedef bool (*senml_convertValue)(const senml_record_t *recordP, lwm2m_data_t *targetP);
-#endif
-
 // defined in uri.c
 lwm2m_request_type_t uri_decode(char * altPath, multi_option_t *uriPath, uint8_t code, lwm2m_uri_t *uriP);
 int uri_getNumber(uint8_t * uriString, size_t uriLength);
@@ -475,69 +457,6 @@ uint8_t bootstrap_handleFinish(lwm2m_context_t * context, void * fromSessionH);
 uint8_t bootstrap_handleRequest(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, void * fromSessionH, coap_packet_t * message, coap_packet_t * response);
 void bootstrap_start(lwm2m_context_t * contextP);
 lwm2m_status_t bootstrap_getStatus(lwm2m_context_t * contextP);
-
-#ifdef LWM2M_SUPPORT_TLV
-// defined in tlv.c
-int tlv_parse(const uint8_t * buffer, size_t bufferLen, lwm2m_data_t ** dataP);
-int tlv_serialize(bool isResourceInstance, int size, lwm2m_data_t * dataP, uint8_t ** bufferP);
-#endif
-
-// defined in json.c
-#ifdef LWM2M_SUPPORT_JSON
-int json_parse(lwm2m_uri_t * uriP, const uint8_t * buffer, size_t bufferLen, lwm2m_data_t ** dataP);
-int json_serialize(lwm2m_uri_t * uriP, int size, lwm2m_data_t * tlvP, uint8_t ** bufferP);
-#endif
-
-// defined in senml_json.c
-#ifdef LWM2M_SUPPORT_SENML_JSON
-int senml_json_parse(const lwm2m_uri_t * uriP, const uint8_t * buffer, size_t bufferLen, lwm2m_data_t ** dataP);
-int senml_json_serialize(const lwm2m_uri_t * uriP, int size, const lwm2m_data_t * tlvP, uint8_t ** bufferP);
-#endif
-
-#ifdef LWM2M_SUPPORT_SENML_CBOR
-// defined in cbor.c
-int cbor_get_type_and_value(const uint8_t *buffer, size_t bufferLen, cbor_type_t *type, uint64_t *value);
-int cbor_get_singular(const uint8_t *buffer, size_t bufferLen, lwm2m_data_t *dataP);
-int cbor_put_type_and_value(uint8_t *buffer, size_t bufferLen, cbor_type_t type, uint64_t val);
-int cbor_put_singular(uint8_t *buffer, size_t bufferLen, const lwm2m_data_t *dataP);
-#if !defined(LWM2M_VERSION_1_0) && !defined(LWM2M_VERSION_1_1)
-int cbor_parse(const lwm2m_uri_t *uriP, const uint8_t *buffer, size_t bufferLen, lwm2m_data_t **dataP);
-int cbor_serialize(const lwm2m_uri_t *uriP, int size, const lwm2m_data_t *dataP, uint8_t **bufferP);
-#endif
-
-// defined in senml_cbor.c
-int senml_cbor_parse(const lwm2m_uri_t *uriP, const uint8_t *buffer, size_t bufferLen, lwm2m_data_t **dataP);
-int senml_cbor_serialize(const lwm2m_uri_t *uriP, int size, const lwm2m_data_t *tlvP, uint8_t **bufferP);
-#endif
-
-// defined in senml_common.c
-#if defined(LWM2M_SUPPORT_JSON) || defined(LWM2M_SUPPORT_SENML_JSON) || defined(LWM2M_SUPPORT_SENML_CBOR)
-int senml_convert_records(const lwm2m_uri_t *uriP, senml_record_t *recordArray, int numRecords,
-                          senml_convertValue convertValue, lwm2m_data_t **dataP);
-lwm2m_data_t *senml_extendData(lwm2m_data_t *parentP, lwm2m_data_type_t type, uint16_t id);
-int senml_dataStrip(int size, lwm2m_data_t *dataP, lwm2m_data_t **resultP);
-lwm2m_data_t *senml_findDataItem(lwm2m_data_t *listP, size_t count, uint16_t id);
-uri_depth_t senml_decreaseLevel(uri_depth_t level);
-int senml_findAndCheckData(const lwm2m_uri_t *uriP, uri_depth_t baseLevel, size_t size, const lwm2m_data_t *tlvP,
-                           lwm2m_data_t **targetP, uri_depth_t *targetLevelP);
-#endif
-
-// defined in json_common.c
-#if defined(LWM2M_SUPPORT_JSON) || defined(LWM2M_SUPPORT_SENML_JSON)
-size_t json_skipSpace(const uint8_t * buffer,size_t bufferLen);
-int json_split(const uint8_t * buffer, size_t bufferLen, size_t * tokenStartP, size_t * tokenLenP, size_t * valueStartP, size_t * valueLenP);
-int json_itemLength(const uint8_t * buffer, size_t bufferLen);
-int json_countItems(const uint8_t * buffer, size_t bufferLen);
-int json_convertNumeric(const uint8_t *value, size_t valueLen, lwm2m_data_t *targetP);
-int json_convertTime(const uint8_t *valueStart, size_t valueLen, time_t *t);
-size_t json_unescapeString(uint8_t *dst, const uint8_t *src, size_t len);
-size_t json_escapeString(uint8_t *dst, size_t dstLen, const uint8_t *src, size_t srcLen);
-lwm2m_data_t * json_extendData(lwm2m_data_t * parentP);
-int json_dataStrip(int size, lwm2m_data_t * dataP, lwm2m_data_t ** resultP);
-lwm2m_data_t * json_findDataItem(lwm2m_data_t * listP, size_t count, uint16_t id);
-uri_depth_t json_decreaseLevel(uri_depth_t level);
-int json_findAndCheckData(const lwm2m_uri_t * uriP, uri_depth_t baseLevel, size_t size, const lwm2m_data_t * tlvP, lwm2m_data_t ** targetP, uri_depth_t *targetLevelP);
-#endif
 
 // defined in discover.c
 int discover_serialize(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_server_t * serverP, int size, lwm2m_data_t * dataP, uint8_t ** bufferP);
