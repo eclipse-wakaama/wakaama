@@ -259,6 +259,20 @@ target_include_directories(wakaama_transport_posix_udp PRIVATE ${WAKAAMA_TOP_LEV
 target_link_libraries(wakaama_transport_posix_udp PRIVATE wakaama_command_line)
 target_compile_definitions(wakaama_transport_posix_udp PRIVATE _POSIX_C_SOURCE=200809)
 
+# Transport 'tinydtls' implementation library
+add_library(wakaama_transport_tinydtls OBJECT)
+include(${WAKAAMA_TOP_LEVEL_DIRECTORY}/transport/tinydtls/tinydtls.cmake)
+target_sources(wakaama_transport_tinydtls PRIVATE ${WAKAAMA_TOP_LEVEL_DIRECTORY}/transport/tinydtls/connection.c)
+target_compile_definitions(wakaama_transport_tinydtls PUBLIC WITH_TINYDTLS)
+target_include_directories(
+    wakaama_transport_tinydtls PUBLIC ${WAKAAMA_TOP_LEVEL_DIRECTORY}/transport/tinydtls/include
+                                      ${WAKAAMA_TOP_LEVEL_DIRECTORY}/transport/tinydtls/third_party
+)
+target_include_directories(wakaama_transport_tinydtls PRIVATE ${WAKAAMA_TOP_LEVEL_DIRECTORY}/include)
+target_sources_tinydtls(wakaama_transport_tinydtls)
+target_link_libraries(wakaama_transport_tinydtls PRIVATE wakaama_command_line)
+target_compile_definitions(wakaama_transport_tinydtls PRIVATE _POSIX_C_SOURCE=200809)
+
 # Add shared source files to an existing target.
 function(target_sources_shared target)
     get_target_property(TARGET_PROPERTY_CONN_IMPL ${target} CONNECTION_IMPLEMENTATION)
@@ -270,14 +284,7 @@ function(target_sources_shared target)
     if(NOT TARGET_PROPERTY_CONN_IMPL OR WAKAAMA_TRANSPORT STREQUAL POSIX_UDP)
         target_link_libraries(${target} PRIVATE wakaama_transport_posix_udp)
     elseif(TARGET_PROPERTY_CONN_IMPL MATCHES "tinydtls" OR WAKAAMA_TRANSPORT STREQUAL TINYDTLS)
-        include(${WAKAAMA_TOP_LEVEL_DIRECTORY}/transport/tinydtls/tinydtls.cmake)
-        target_sources(${target} PRIVATE ${WAKAAMA_TOP_LEVEL_DIRECTORY}/transport/tinydtls/connection.c)
-        target_compile_definitions(${target} PRIVATE WITH_TINYDTLS)
-        target_include_directories(
-            ${target} PUBLIC ${WAKAAMA_TOP_LEVEL_DIRECTORY}/transport/tinydtls/include
-                             ${WAKAAMA_TOP_LEVEL_DIRECTORY}/transport/tinydtls/third_party
-        )
-        target_sources_tinydtls(${target})
+        target_link_libraries(${target} PRIVATE wakaama_transport_tinydtls)
     elseif(TARGET_PROPERTY_CONN_IMPL MATCHES "testing" OR WAKAAMA_TRANSPORT STREQUAL TESTING)
         target_include_directories(${target} PRIVATE ${WAKAAMA_TOP_LEVEL_DIRECTORY}/tests/helper/)
         target_sources(${target} PRIVATE ${WAKAAMA_TOP_LEVEL_DIRECTORY}/tests/helper/connection.c)
