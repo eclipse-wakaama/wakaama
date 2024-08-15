@@ -15,7 +15,7 @@ function(add_test_variant)
     # link CUnit
     include(FindPkgConfig)
     pkg_search_module(CUNIT REQUIRED IMPORTED_TARGET cunit)
-    target_link_libraries(${ADD_TEST_VARIANT_ARG_TARGET_NAME} PkgConfig::CUNIT)
+    target_link_libraries(${ADD_TEST_VARIANT_ARG_TARGET_NAME} PRIVATE PkgConfig::CUNIT)
 
     # Currently we require that TLV and JSON is available in all tests
     target_compile_definitions(${ADD_TEST_VARIANT_ARG_TARGET_NAME} PRIVATE LWM2M_SUPPORT_TLV LWM2M_SUPPORT_JSON)
