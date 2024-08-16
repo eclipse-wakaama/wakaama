@@ -39,7 +39,7 @@ CU_ErrorCode create_block2_suit(void);
 CU_ErrorCode create_senml_json_suit(void);
 #endif
 #ifdef LWM2M_SUPPORT_SENML_CBOR
-#ifndef LWM2M_VERSION_1_1
+#ifdef LWM2M_VERSION_1_0
 CU_ErrorCode create_cbor_suit(void);
 #endif
 CU_ErrorCode create_senml_cbor_suit(void);
