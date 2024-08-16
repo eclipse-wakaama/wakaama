@@ -585,7 +585,7 @@ int cbor_put_singular(uint8_t *buffer, size_t bufferLen, const lwm2m_data_t *dat
     return result;
 }
 
-#if !defined(LWM2M_VERSION_1_1)
+#if defined(LWM2M_VERSION_1_0)
 int cbor_parse(const lwm2m_uri_t *uriP, const uint8_t *buffer, size_t bufferLen, lwm2m_data_t **dataP) {
     int result = 0;
     uint8_t *tmp;
