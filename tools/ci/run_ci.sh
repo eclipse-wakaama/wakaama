@@ -183,8 +183,7 @@ function run_tests() {
   #see https://github.com/koalaman/shellcheck/wiki/SC2089
   gcovr_opts=(-r "${REPO_ROOT_DIR}/" \
     --keep `: # Needed for SonarQube` \
-    --exclude "${REPO_ROOT_DIR}"/examples \
-    --exclude "${REPO_ROOT_DIR}"/tests)
+    --exclude "${REPO_ROOT_DIR}"/examples)
 
   case "${OPT_TEST_COVERAGE_REPORT}" in
     xml)
