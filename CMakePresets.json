@@ -62,6 +62,18 @@
         "WAKAAMA_DATA_SENML_JSON": {
           "type": "BOOL",
           "value": "ON"
+        },
+        "WAKAAMA_DATA_JSON": {
+          "type": "BOOL",
+          "value": "OFF"
+        },
+        "WAKAAMA_DATA_SENML_CBOR": {
+          "type": "BOOL",
+          "value": "OFF"
+        },
+        "WAKAAMA_DATA_TLV": {
+          "type": "BOOL",
+          "value": "OFF"
         }
       }
     },
