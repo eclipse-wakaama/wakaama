@@ -21,6 +21,8 @@
 #include "liblwm2m.h"
 #include "tests.h"
 
+#ifndef LWM2M_RAW_BLOCK1_REQUESTS
+
 static const char *URI = "/1/2/3";
 static const uint16_t BLOCK_SIZE = 5;
 
@@ -156,3 +158,5 @@ CU_ErrorCode create_block1_suit(void) {
     }
     return add_tests(pSuite, table);
 }
+
+#endif
