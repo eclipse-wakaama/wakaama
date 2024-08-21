@@ -12,13 +12,13 @@ function(add_test_variant)
     target_sources(${ADD_TEST_VARIANT_ARG_TARGET_NAME} PRIVATE ${ADD_TEST_VARIANT_ARG_SOURCE_FILES})
     set_target_properties(${ADD_TEST_VARIANT_ARG_TARGET_NAME} PROPERTIES CONNECTION_IMPLEMENTATION "testing")
 
+    set_defines(${ADD_TEST_VARIANT_ARG_TARGET_NAME})
+
     # link CUnit
     include(FindPkgConfig)
     pkg_search_module(CUNIT REQUIRED IMPORTED_TARGET cunit)
     target_link_libraries(${ADD_TEST_VARIANT_ARG_TARGET_NAME} PRIVATE PkgConfig::CUNIT)
 
-    # Currently we require that TLV and JSON is available in all tests
-    target_compile_definitions(${ADD_TEST_VARIANT_ARG_TARGET_NAME} PRIVATE LWM2M_SUPPORT_TLV LWM2M_SUPPORT_JSON)
     target_compile_definitions(${ADD_TEST_VARIANT_ARG_TARGET_NAME} PRIVATE ${ADD_TEST_VARIANT_ARG_COMPILE_DEFINITIONS})
 
     # Our tests are designed for POSIX systems
