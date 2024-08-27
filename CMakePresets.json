@@ -89,10 +89,30 @@
       }
     },
     {
-      "name": "log_base",
+      "name": "test_base",
       "description": "Run the tests with corresponding log level",
       "hidden": true,
       "inherits": "base",
+      "cacheVariables": {
+        "WAKAAMA_ENABLE_EXAMPLES": {
+          "type": "BOOL",
+          "value": "OFF"
+        },
+        "WAKAAMA_DATA_TLV": {
+          "type": "BOOL",
+          "value": "ON"
+        },
+        "WAKAAMA_DATA_JSON": {
+          "type": "BOOL",
+          "value": "OFF"
+        }
+      }
+    },
+    {
+      "name": "log_base",
+      "description": "Run the tests with corresponding log level",
+      "hidden": true,
+      "inherits": "test_base",
       "cacheVariables": {
         "WAKAAMA_LOG_CUSTOM_HANDLER": {
           "type": "BOOL",
@@ -109,6 +129,10 @@
       "description": "Run the tests with debug log level",
       "inherits": "log_base",
       "cacheVariables": {
+        "WAKAAMA_MODE_SERVER": {
+          "type": "BOOL",
+          "value": "ON"
+        },
         "WAKAAMA_LOG_LEVEL": {
           "type": "STRING",
           "value": "DBG"
@@ -120,6 +144,10 @@
       "description": "Run the tests with warning log level",
       "inherits": "log_base",
       "cacheVariables": {
+        "WAKAAMA_MODE_BOOTSTRAP_SERVER": {
+          "type": "BOOL",
+          "value": "ON"
+        },
         "WAKAAMA_LOG_LEVEL": {
           "type": "STRING",
           "value": "WARN"
@@ -131,9 +159,109 @@
       "description": "Run the tests with fatal log level",
       "inherits": "log_base",
       "cacheVariables": {
+        "WAKAAMA_MODE_CLIENT": {
+          "type": "BOOL",
+          "value": "ON"
+        },
         "WAKAAMA_LOG_LEVEL": {
           "type": "STRING",
           "value": "FATAL"
+        }
+      }
+    },
+    {
+      "name": "client_1_0",
+      "description": "Run the tests for lwm2m 1.0 client",
+      "inherits": "test_base",
+      "cacheVariables": {
+        "WAKAAMA_MODE_CLIENT": {
+          "type": "BOOL",
+          "value": "ON"
+        },
+        "WAKAAMA_CLIENT_LWM2M_V_1_0": {
+          "type": "BOOL",
+          "value": "ON"
+        },
+        "WAKAAMA_DATA_SENML_JSON": {
+          "type": "BOOL",
+          "value": "OFF"
+        },
+        "WAKAAMA_DATA_SENML_CBOR": {
+          "type": "BOOL",
+          "value": "OFF"
+        }
+      }
+    },
+    {
+      "name": "client_bootstrap",
+      "description": "Run the tests for client with client initiated bootstrap",
+      "inherits": "test_base",
+      "cacheVariables": {
+        "WAKAAMA_MODE_CLIENT": {
+          "type": "BOOL",
+          "value": "ON"
+        },
+        "WAKAAMA_CLIENT_INITIATED_BOOTSTRAP": {
+          "type": "BOOL",
+          "value": "ON"
+        }
+      }
+    },
+    {
+      "name": "client_server_bootstrap_all_formats",
+      "description": "Run the tests for Wakaama with most features enabled",
+      "inherits": "test_base",
+      "cacheVariables": {
+        "WAKAAMA_MODE_CLIENT": {
+          "type": "BOOL",
+          "value": "ON"
+        },
+        "WAKAAMA_MODE_SERVER": {
+          "type": "BOOL",
+          "value": "ON"
+        },
+        "WAKAAMA_MODE_BOOTSTRAP_SERVER": {
+          "type": "BOOL",
+          "value": "ON"
+        },
+        "WAKAAMA_DATA_SENML_JSON": {
+          "type": "BOOL",
+          "value": "ON"
+        },
+        "WAKAAMA_DATA_SENML_CBOR": {
+          "type": "BOOL",
+          "value": "ON"
+        },
+        "WAKAAMA_DATA_OLD_CONTENT_FORMAT": {
+          "type": "BOOL",
+          "value": "ON"
+        }
+      }
+    },
+    {
+      "name": "server_formats_no_float16_blocksize_64",
+      "description": "Run the tests for server without float16 and blocksize 64",
+      "inherits": "test_base",
+      "cacheVariables": {
+        "WAKAAMA_MODE_SERVER": {
+          "type": "BOOL",
+          "value": "ON"
+        },
+        "WAKAAMA_DATA_SENML_JSON": {
+          "type": "BOOL",
+          "value": "ON"
+        },
+        "WAKAAMA_DATA_SENML_CBOR": {
+          "type": "BOOL",
+          "value": "ON"
+        },
+        "WAKAAMA_DATA_SENML_CBOR_FLOAT16_SUPPORT": {
+          "type": "BOOL",
+          "value": "FALSE"
+        },
+        "WAKAAMA_COAP_DEFAULT_BLOCK_SIZE": {
+          "type": "STRING",
+          "value": "64"
         }
       }
     }
@@ -162,6 +290,22 @@
     {
       "name": "log_fatal",
       "configurePreset": "log_fatal"
+    },
+    {
+      "name": "client_1_0",
+      "configurePreset": "client_1_0"
+    },
+    {
+      "name": "client_bootstrap",
+      "configurePreset": "client_bootstrap"
+    },
+    {
+      "name": "client_server_bootstrap_all_formats",
+      "configurePreset": "client_server_bootstrap_all_formats"
+    },
+    {
+      "name": "server_formats_no_float16_blocksize_64",
+      "configurePreset": "server_formats_no_float16_blocksize_64"
     }
   ]
 }
