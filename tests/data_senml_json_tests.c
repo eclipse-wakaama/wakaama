@@ -31,7 +31,7 @@
 #include "CUnit/Basic.h"
 #include "tests.h"
 
-#ifdef LWM2M_SUPPORT_SENML_JSON
+#if defined(LWM2M_SUPPORT_JSON) && defined(LWM2M_SUPPORT_SENML_JSON)
 
 #ifndef STR_MEDIA_TYPE
 #define STR_MEDIA_TYPE(M)                                                                                              \

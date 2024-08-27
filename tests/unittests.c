@@ -64,10 +64,12 @@ int main(void) {
     if (CUE_SUCCESS != create_convert_numbers_suit())
         goto exit;
 
+#ifdef LWM2M_SUPPORT_TLV
+#ifdef LWM2M_SUPPORT_JSON
     if (CUE_SUCCESS != create_tlv_json_suit())
         goto exit;
+#endif
 
-#ifdef LWM2M_SUPPORT_TLV
     if (CUE_SUCCESS != create_tlv_suit())
         goto exit;
 #endif
@@ -75,9 +77,9 @@ int main(void) {
     if (CUE_SUCCESS != create_uri_suit())
         goto exit;
 
-#ifdef LWM2M_SUPPORT_SENML_JSON
-   if (CUE_SUCCESS != create_senml_json_suit())
-       goto exit;
+#if defined(LWM2M_SUPPORT_JSON) && defined(LWM2M_SUPPORT_SENML_JSON)
+    if (CUE_SUCCESS != create_senml_json_suit())
+        goto exit;
 #endif
 
 #ifdef LWM2M_SUPPORT_SENML_CBOR
