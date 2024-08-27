@@ -3,7 +3,6 @@ cmake_minimum_required(VERSION 3.13)
 project(lwm2munittests C)
 
 include(../wakaama.cmake)
-include(tests.cmake)
 
 set(TEST_SOURCES
     helper/log_handler.c
@@ -24,4 +23,34 @@ set(TEST_SOURCES
     unittests.c
 )
 
-add_test_variant(TARGET_NAME lwm2munittests SOURCE_FILES ${TEST_SOURCES})
+set(TARGET_NAME lwm2munittests)
+
+add_executable(${TARGET_NAME})
+target_sources(${TARGET_NAME} PRIVATE ${TEST_SOURCES})
+set_target_properties(${TARGET_NAME} PROPERTIES CONNECTION_IMPLEMENTATION "testing")
+
+set_defines(${TARGET_NAME})
+
+# link CUnit
+include(FindPkgConfig)
+pkg_search_module(CUNIT REQUIRED IMPORTED_TARGET cunit)
+target_link_libraries(${TARGET_NAME} PRIVATE PkgConfig::CUNIT)
+
+# Our tests are designed for POSIX systems
+target_compile_definitions(${TARGET_NAME} PRIVATE _POSIX_C_SOURCE=200809)
+
+target_sources_wakaama(${TARGET_NAME})
+target_sources_shared(${TARGET_NAME})
+
+if(SANITIZER)
+    target_compile_options(${TARGET_NAME} PRIVATE -fsanitize=${SANITIZER} -fno-sanitize-recover=all)
+    target_link_options(${TARGET_NAME} PRIVATE -fsanitize=${SANITIZER} -fno-sanitize-recover=all)
+endif()
+
+if(COVERAGE)
+    target_compile_options(${TARGET_NAME} PRIVATE --coverage)
+    target_link_options(${TARGET_NAME} PRIVATE --coverage)
+endif()
+
+# Add our unit tests to the "test" target
+add_test(NAME ${TARGET_NAME}_test COMMAND ${TARGET_NAME})
