@@ -24,47 +24,4 @@ set(TEST_SOURCES
     unittests.c
 )
 
-if(WAKAAMA_MODE_CLIENT
-   AND WAKAAMA_CLIENT_LWM2M_V_1_0
-   AND NOT WAKAAMA_MODE_BOOTSTRAP_SERVER
-)
-    add_test_variant(
-        TARGET_NAME lwm2munittests_client_lwm2m_1_0
-        SOURCE_FILES ${TEST_SOURCES}
-        COMPILE_DEFINITIONS LWM2M_CLIENT_MODE LWM2M_VERSION_1_0
-    )
-
-    add_test_variant(
-        TARGET_NAME lwm2munittests_client_bootstrap
-        SOURCE_FILES ${TEST_SOURCES}
-        COMPILE_DEFINITIONS LWM2M_CLIENT_MODE LWM2M_BOOTSTRAP
-    )
-endif()
-
-add_test_variant(
-    TARGET_NAME lwm2munittests_server_formats_no_float16_blocksize_64
-    SOURCE_FILES ${TEST_SOURCES}
-    COMPILE_DEFINITIONS LWM2M_SERVER_MODE LWM2M_OLD_CONTENT_FORMAT_SUPPORT LWM2M_SUPPORT_SENML_JSON
-                        LWM2M_SUPPORT_SENML_CBOR CBOR_NO_FLOAT16_ENCODING COAP_DEFAULT_BLOCK_SIZE=64
-)
-
-add_test_variant(
-    TARGET_NAME lwm2munittests_server
-    SOURCE_FILES ${TEST_SOURCES}
-    COMPILE_DEFINITIONS LWM2M_SERVER_MODE
-)
-
-if(NOT WAKAAMA_CLIENT_INITIATED_BOOTSTRAP)
-    add_test_variant(
-        TARGET_NAME lwm2munittests_client_server_bootstrap_all_formats
-        SOURCE_FILES ${TEST_SOURCES}
-        COMPILE_DEFINITIONS
-            LWM2M_CLIENT_MODE
-            LWM2M_SERVER_MODE
-            LWM2M_BOOTSTRAP_SERVER_MODE
-            LWM2M_SERVER_MODE
-            LWM2M_OLD_CONTENT_FORMAT_SUPPORT
-            LWM2M_SUPPORT_SENML_JSON
-            LWM2M_SUPPORT_SENML_CBOR
-    )
-endif()
+add_test_variant(TARGET_NAME lwm2munittests SOURCE_FILES ${TEST_SOURCES})
