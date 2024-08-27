@@ -72,7 +72,7 @@ set(WAKAAMA_TRANSPORT
     NONE
     CACHE STRING "The transport layer implementation"
 )
-set_property(CACHE WAKAAMA_TRANSPORT PROPERTY STRINGS NONE POSIX_UDP TINYDTLS TESTING)
+set_property(CACHE WAKAAMA_TRANSPORT PROPERTY STRINGS NONE POSIX_UDP TINYDTLS)
 
 # Endianess
 add_compile_definitions("$<IF:$<STREQUAL:${CMAKE_C_BYTE_ORDER},BIG_ENDIAN>,LWM2M_BIG_ENDIAN,LWM2M_LITTLE_ENDIAN>")
@@ -272,6 +272,12 @@ target_sources_tinydtls(wakaama_transport_tinydtls)
 target_link_libraries(wakaama_transport_tinydtls PRIVATE wakaama_command_line)
 target_compile_definitions(wakaama_transport_tinydtls PRIVATE _POSIX_C_SOURCE=200809)
 
+# Transport 'testing' implementation library
+add_library(wakaama_transport_testing_fake OBJECT)
+target_include_directories(wakaama_transport_testing_fake PUBLIC ${WAKAAMA_TOP_LEVEL_DIRECTORY}/tests/helper/)
+target_include_directories(wakaama_transport_testing_fake PRIVATE ${WAKAAMA_TOP_LEVEL_DIRECTORY}/include/)
+target_sources(wakaama_transport_testing_fake PRIVATE ${WAKAAMA_TOP_LEVEL_DIRECTORY}/tests/helper/connection.c)
+
 # Add shared source files to an existing target.
 function(target_sources_shared target)
     get_target_property(TARGET_PROPERTY_CONN_IMPL ${target} CONNECTION_IMPLEMENTATION)
@@ -284,9 +290,6 @@ function(target_sources_shared target)
         target_link_libraries(${target} PRIVATE wakaama_transport_posix_udp)
     elseif(TARGET_PROPERTY_CONN_IMPL MATCHES "tinydtls" OR WAKAAMA_TRANSPORT STREQUAL TINYDTLS)
         target_link_libraries(${target} PRIVATE wakaama_transport_tinydtls)
-    elseif(TARGET_PROPERTY_CONN_IMPL MATCHES "testing" OR WAKAAMA_TRANSPORT STREQUAL TESTING)
-        target_include_directories(${target} PRIVATE ${WAKAAMA_TOP_LEVEL_DIRECTORY}/tests/helper/)
-        target_sources(${target} PRIVATE ${WAKAAMA_TOP_LEVEL_DIRECTORY}/tests/helper/connection.c)
     else()
         message(
             FATAL_ERROR "${target}: Unknown connection (DTLS) implementation '${TARGET_PROPERTY_CONN_IMPL} requested"

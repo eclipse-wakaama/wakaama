@@ -27,7 +27,6 @@ set(TARGET_NAME lwm2munittests)
 
 add_executable(${TARGET_NAME})
 target_sources(${TARGET_NAME} PRIVATE ${TEST_SOURCES})
-set_target_properties(${TARGET_NAME} PROPERTIES CONNECTION_IMPLEMENTATION "testing")
 
 set_defines(${TARGET_NAME})
 
@@ -40,7 +39,8 @@ target_link_libraries(${TARGET_NAME} PRIVATE PkgConfig::CUNIT)
 target_compile_definitions(${TARGET_NAME} PRIVATE _POSIX_C_SOURCE=200809)
 
 target_sources_wakaama(${TARGET_NAME})
-target_sources_shared(${TARGET_NAME})
+
+target_link_libraries(${TARGET_NAME} PRIVATE wakaama_command_line wakaama_platform_posix wakaama_transport_testing_fake)
 
 if(SANITIZER)
     target_compile_options(${TARGET_NAME} PRIVATE -fsanitize=${SANITIZER} -fno-sanitize-recover=all)
