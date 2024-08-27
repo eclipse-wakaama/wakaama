@@ -150,7 +150,7 @@ function run_build() {
   mkdir -p build-wakaama
 
   echo "Default build"
-  ${OPT_WRAPPER_CMD} cmake -GNinja -S ${OPT_SOURCE_DIRECTORY} -B build-wakaama ${CMAKE_ARGS}
+  ${OPT_WRAPPER_CMD} cmake -GNinja -S ${OPT_SOURCE_DIRECTORY} -B build-wakaama -DWAKAAMA_MODE_SERVER=ON ${CMAKE_ARGS}
   ${OPT_WRAPPER_CMD} cmake --build build-wakaama
 
   # CMake presets
@@ -212,6 +212,8 @@ function run_tests() {
 
   gcovr "${gcovr_opts[@]}" $gcovr_out -o "${gcovr_file[@]}"
   echo Coverage file "${gcovr_file[@]}" ready
+  # clean up
+  find "${REPO_ROOT_DIR}" -name \*.gcov -exec rm {} \;
 }
 
 # Parse Options
