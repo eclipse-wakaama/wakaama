@@ -108,6 +108,12 @@ If `NONE` is chosen, the user of Wakaama needs to implement a custom transport l
 
 If `NONE` is chosen, the user of Wakaama needs to implement a custom platform abstraction layer. Check the available POSIX implementation for more information.
 
+### Command Line
+
+Wakaama provides a simple CLI library. It can be enabled with:
+
+- WAKAAMA_CLI: If enabled the command line library is added to Wakaama (default: disabled)
+
 ## Development
 
 ### Dependencies and Tools

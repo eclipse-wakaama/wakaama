@@ -81,6 +81,9 @@ set(WAKAAMA_PLATFORM
 )
 set_property(CACHE WAKAAMA_TRANSPORT PROPERTY STRINGS POSIX NONE)
 
+# Command line interface
+option(WAKAAMA_CLI "Command line interface library" OFF)
+
 # Endianess
 add_compile_definitions("$<IF:$<STREQUAL:${CMAKE_C_BYTE_ORDER},BIG_ENDIAN>,LWM2M_BIG_ENDIAN,LWM2M_LITTLE_ENDIAN>")
 
@@ -291,6 +294,10 @@ function(target_sources_shared target)
 
     if(WAKAAMA_PLATFORM STREQUAL POSIX)
         target_link_libraries(${target} PRIVATE wakaama_command_line wakaama_platform_posix)
+    endif()
+
+    if(WAKAAMA_CLI)
+        target_link_libraries(${target} PRIVATE wakaama_command_line)
     endif()
 
     set_defines(${target})
