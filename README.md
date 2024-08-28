@@ -100,6 +100,14 @@ The logging infrastructure can be configured with CMake cache variables (e.g. `c
 
 If `NONE` is chosen, the user of Wakaama needs to implement a custom transport layer. Check the available implementations for more information.
 
+### Platform
+
+- WAKAAMA_PLATFORM: Select the implementation of the platform abstraction layer, one of:
+  - POSIX: An implementation using the POSIX API.
+  - NONE: No platform abstraction layer is provided.
+
+If `NONE` is chosen, the user of Wakaama needs to implement a custom platform abstraction layer. Check the available POSIX implementation for more information.
+
 ## Development
 
 ### Dependencies and Tools
