@@ -74,6 +74,13 @@ set(WAKAAMA_TRANSPORT
 )
 set_property(CACHE WAKAAMA_TRANSPORT PROPERTY STRINGS NONE POSIX_UDP TINYDTLS)
 
+# Platform
+set(WAKAAMA_PLATFORM
+    NONE
+    CACHE STRING "The platform abstraction layer implementation"
+)
+set_property(CACHE WAKAAMA_TRANSPORT PROPERTY STRINGS POSIX NONE)
+
 # Endianess
 add_compile_definitions("$<IF:$<STREQUAL:${CMAKE_C_BYTE_ORDER},BIG_ENDIAN>,LWM2M_BIG_ENDIAN,LWM2M_LITTLE_ENDIAN>")
 
@@ -282,7 +289,9 @@ target_sources(wakaama_transport_testing_fake PRIVATE ${WAKAAMA_TOP_LEVEL_DIRECT
 function(target_sources_shared target)
     get_target_property(TARGET_PROPERTY_CONN_IMPL ${target} CONNECTION_IMPLEMENTATION)
 
-    target_link_libraries(${target} PRIVATE wakaama_command_line wakaama_platform_posix)
+    if(WAKAAMA_PLATFORM STREQUAL POSIX)
+        target_link_libraries(${target} PRIVATE wakaama_command_line wakaama_platform_posix)
+    endif()
 
     set_defines(${target})
 

@@ -10,7 +10,13 @@
       "name": "base",
       "description": "Basic preset settings",
       "hidden": true,
-      "binaryDir": "${sourceDir}/build-presets/${presetName}"
+      "binaryDir": "${sourceDir}/build-presets/${presetName}",
+      "cacheVariables": {
+        "WAKAAMA_PLATFORM": {
+          "type": "STRING",
+          "value": "POSIX"
+        }
+      }
     },
     {
       "name": "server",
