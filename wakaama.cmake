@@ -323,6 +323,28 @@ function(target_sources_shared target)
     target_include_directories(${target} PUBLIC ${WAKAAMA_EXAMPLE_SHARED_DIRECTORY})
 endfunction()
 
+# Static library that users of Wakaama can link against
+#
+# This library simplifies building and maintaining Wakaama. It handles defines and compiler flags, adding the right
+# source files and setting include directories...
+add_library(wakaama_static STATIC)
+target_sources_wakaama(wakaama_static)
+target_include_directories(wakaama_static PUBLIC ${WAKAAMA_TOP_LEVEL_DIRECTORY}/include/)
+
+if(WAKAAMA_TRANSPORT STREQUAL POSIX_UDP)
+    target_link_libraries(wakaama_static PUBLIC wakaama_transport_posix_udp)
+elseif(WAKAAMA_TRANSPORT STREQUAL TINYDTLS)
+    target_link_libraries(wakaama_static PUBLIC wakaama_transport_tinydtls)
+endif()
+
+if(WAKAAMA_PLATFORM STREQUAL POSIX)
+    target_link_libraries(wakaama_static PUBLIC wakaama_platform_posix)
+endif()
+
+if(WAKAAMA_CLI)
+    target_link_libraries(wakaama_static PUBLIC wakaama_command_line)
+endif()
+
 # Enforce a certain level of hygiene
 add_compile_options(
     -Waggregate-return
