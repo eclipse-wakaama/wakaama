@@ -88,7 +88,7 @@ class Lwm2mClient(HelperBase):
 
     def __init__(self, arguments="", timeout=3, encoding="utf8"):
         self.pexpectobj = pexpect.spawn(REPO_BASE_PATH +
-                                        "/build-presets/client/examples/client/lwm2mclient "
+                                        "/build-wakaama-client/udp/lwm2mclient "
                                         + arguments,
                                         encoding=encoding,
                                         timeout=timeout)
