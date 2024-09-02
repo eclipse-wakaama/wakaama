@@ -198,11 +198,11 @@ Options:
 
 ### Test client example
 
- * ``cmake -S examples/client -B build-client -DWAKAAMA_MODE_CLIENT=ON``
- * ``cmake --build build-client``
+ * ``cmake -S examples/client/udp -B build-client-udp``
+ * ``cmake --build build-client-udp``
  * ``./build-client/lwm2mclient [Options]``
 
-Next to lwm2mclient a DTLS enabled variant named lwm2mclient_tinydtls gets built.
+Next to lwm2mclient there are also examples with DTLS enabled and with raw block1 transfer enabled.
 
 The lwm2mclient features nine LWM2M objects:
  - Security Object (id: 0)
