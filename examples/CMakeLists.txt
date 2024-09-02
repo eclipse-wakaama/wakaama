@@ -4,4 +4,3 @@ cmake_minimum_required(VERSION 3.21)
 add_compile_definitions(_POSIX_C_SOURCE=200809)
 
 add_subdirectory(client)
-add_subdirectory(lightclient)
