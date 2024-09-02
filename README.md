@@ -285,7 +285,7 @@ Options:
 ```
 ### Bootstrap Server example
 
- * ``cmake -S examples/bootstrap_server -B build-bootstrap -DWAKAAMA_MODE_BOOTSTRAP_SERVER=ON``
+ * ``cmake -S examples/bootstrap_server -B build-bootstrap``
  * ``cmake --build build-bootstrap``
  * ``./build-bootstrap/bootstrap_server [Options]``
 
