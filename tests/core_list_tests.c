@@ -80,8 +80,26 @@ static void test_list_rm(void) {
 
 static void test_list_newId(void) {
     list_node_t *list = reset_list();
-    const uint16_t id = lwm2m_list_newId((lwm2m_list_t *)list);
+    const uint16_t id = LWM2M_LIST_NEW_ID(list);
     CU_ASSERT_EQUAL(id, 1);
+}
+
+static void test_dynamic_allocated_nodes(void) {
+    list_node_t *head = lwm2m_malloc(sizeof(list_node_t));
+    memset(head, 0, sizeof(*head));
+    for (int i = 0; i < 3; ++i) {
+        list_node_t *node = lwm2m_malloc(sizeof(list_node_t));
+        memset(node, 0, sizeof(*node));
+        node->mID = LWM2M_LIST_NEW_ID(head);
+        LWM2M_LIST_ADD(head, node);
+    }
+    const size_t count = LWM2M_LIST_COUNT(head);
+    CU_ASSERT_EQUAL(4, count);
+    CU_ASSERT_PTR_NOT_NULL(LWM2M_LIST_FIND(head, 0));
+    CU_ASSERT_PTR_NOT_NULL(LWM2M_LIST_FIND(head, 1));
+    CU_ASSERT_PTR_NOT_NULL(LWM2M_LIST_FIND(head, 2));
+    CU_ASSERT_PTR_NOT_NULL(LWM2M_LIST_FIND(head, 3));
+    LWM2M_LIST_FREE(head);
 }
 
 static void test_list_malloc_free(void) {
@@ -106,6 +124,7 @@ static struct TestTable table[] = {
     {"test_list_not_find", test_list_not_find},
     {"test_list_rm", test_list_rm},
     {"test_list_newId", test_list_newId},
+    {"test_dynamic_allocated_nodes", test_dynamic_allocated_nodes},
     {"test_list_malloc_free", test_list_malloc_free},
     {NULL, NULL},
 };
