@@ -38,7 +38,7 @@ jobs:
 
     strategy:
       matrix:
-        example: ["bootstrap_server", "client", "lightclient", "server"]
+        example: ["bootstrap_server", "client/udp", "client/tinydtls", "client/raw_block1", "lightclient", "server"]
 
     steps:
     - name: Checkout code including full history and submodules
