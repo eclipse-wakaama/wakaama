@@ -41,7 +41,7 @@ jobs:
 
     - name: Build examples for integration tests
       run: |
-        for example in "server"
+        for example in "server" "bootstrap_server"
         do
           echo "Building example ${example}"
           tools/ci/run_ci.sh \

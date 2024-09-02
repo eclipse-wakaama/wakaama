@@ -104,8 +104,7 @@ class Lwm2mBootstrapServer(HelperBase):
 
     def __init__(self, arguments="", timeout=3, encoding="utf8"):
         self.pexpectobj = pexpect.spawn(REPO_BASE_PATH +
-                                        "/build-presets/bootstrap_server/examples/"
-                                        "bootstrap_server/bootstrap_server "
+                                        "/build-wakaama-bootstrap_server/bootstrap_server "
                                         + arguments,
                                         encoding=encoding,
                                         timeout=timeout)
