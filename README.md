@@ -106,7 +106,7 @@ If `NONE` is chosen, the user of Wakaama needs to implement a custom transport l
 - Mandatory:
   - Compiler: GCC and/or Clang
 - Optional (but strongly recommended):
-  - Build system generator: CMake 3.13+
+  - Build system generator: CMake 3.21+
   - Version control system: Git (and a GitHub account)
   - Git commit message linter: gitlint
   - Build system: ninja
