@@ -29,6 +29,7 @@ OPT_SANITIZER=""
 OPT_SCAN_BUILD=""
 OPT_SONARQUBE=""
 OPT_SOURCE_DIRECTORY="${REPO_ROOT_DIR}"
+OPT_BUILD_DIRECTORY="build-wakaama"
 OPT_TEST_COVERAGE_REPORT=""
 OPT_VERBOSE=0
 OPT_WRAPPER_CMD=""
@@ -58,6 +59,9 @@ Options:
                             (BINARY: defaults to ${OPT_CLANG_FORMAT})
   --source-directory PATH   Configure CMake using PATH instead of the
                             repositories root directory.
+  --build-directory PATH    Configure CMake using PATH as the build directory.
+                            Defaults to 'build-wakaama'. Builds from CMake
+                            presets are placed into 'build-presets' by default.
   --sanitizer TYPE          Enable sanitizer
                             (TYPE: address leak thread undefined)
   --scan-build BINARY       Enable Clang code analyzer using specified
@@ -112,7 +116,7 @@ function run_clang_format() {
 }
 
 function run_clean() {
-  rm -rf build-wakaama
+  rm -rf "${OPT_BUILD_DIRECTORY}"
   rm -rf build-presets
 }
 
@@ -147,12 +151,12 @@ function run_git_blame_ignore() {
 
 function run_build() {
   # Existing directory needed by SonarQube build-wrapper
-  mkdir -p build-wakaama
+  mkdir -p "${OPT_BUILD_DIRECTORY}"
 
   echo "Default build"
-  ${OPT_WRAPPER_CMD} cmake -GNinja -S ${OPT_SOURCE_DIRECTORY} -B build-wakaama \
+  ${OPT_WRAPPER_CMD} cmake -GNinja -S ${OPT_SOURCE_DIRECTORY} -B "${OPT_BUILD_DIRECTORY}" \
     -DWAKAAMA_PLATFORM=POSIX ${CMAKE_ARGS}
-  ${OPT_WRAPPER_CMD} cmake --build build-wakaama
+  ${OPT_WRAPPER_CMD} cmake --build "${OPT_BUILD_DIRECTORY}"
 
   # CMake presets
   echo "CMake presets build"
@@ -167,7 +171,7 @@ function run_tests() {
   export CTEST_OUTPUT_ON_FAILURE=ON
 
   echo "Default test run"
-  cmake --build build-wakaama --target test
+  cmake --build "${OPT_BUILD_DIRECTORY}" --target test
 
   echo "CMake presets test run"
   for i in $(cmake --list-presets build | awk '/"/{ print $1 }' | tr -d '"');do
@@ -175,7 +179,7 @@ function run_tests() {
     cmake --build --preset "$i" --target test
   done
 
-  mkdir -p "${REPO_ROOT_DIR}/build-wakaama/coverage"
+  mkdir -p "${REPO_ROOT_DIR}/${OPT_BUILD_DIRECTORY}/coverage"
 
   if [ -z "${OPT_TEST_COVERAGE_REPORT}" ]; then
     return 0
@@ -189,15 +193,15 @@ function run_tests() {
   case "${OPT_TEST_COVERAGE_REPORT}" in
     xml)
       gcovr_out="--xml"
-      gcovr_file=("${REPO_ROOT_DIR}/build-wakaama/coverage/report.xml")
+      gcovr_file=("${REPO_ROOT_DIR}/${OPT_BUILD_DIRECTORY}/coverage/report.xml")
       ;;
     html)
       gcovr_out="--html --html-details"
-      gcovr_file=("${REPO_ROOT_DIR}/build-wakaama/coverage/report.html")
+      gcovr_file=("${REPO_ROOT_DIR}/${OPT_BUILD_DIRECTORY}/coverage/report.html")
       ;;
     text)
       gcovr_out=""
-      gcovr_file=("${REPO_ROOT_DIR}/build-wakaama/coverage/report.txt")
+      gcovr_file=("${REPO_ROOT_DIR}/${OPT_BUILD_DIRECTORY}/coverage/report.txt")
       ;;
     none)
       gcovr "${gcovr_opts[@]}" >/dev/null
@@ -251,6 +255,7 @@ if ! PARSED_OPTS=$($getopt -o vah \
                           -l scan-build: \
                           -l sonarqube: \
                           -l source-directory: \
+                          -l build-directory: \
                           -l test-coverage: \
                           -l verbose \
                           --name "${SCRIPT_NAME}" -- "$@");
@@ -330,6 +335,10 @@ while true; do
       OPT_SOURCE_DIRECTORY=$2
       shift 2
       ;;
+    --build-directory)
+      OPT_BUILD_DIRECTORY=$2
+      shift 2
+      ;;
     --test-coverage)
       OPT_TEST_COVERAGE_REPORT=$2
       shift 2
@@ -391,7 +400,7 @@ fi
 if [ -n "${OPT_SONARQUBE}" ]; then
   OPT_TEST_COVERAGE_REPORT="${OPT_TEST_COVERAGE_REPORT:-none}"
   OPT_WRAPPER_CMD="${OPT_SONARQUBE} \
-    --out-dir build-wakaama/sonar-cloud-build-wrapper-output"
+    --out-dir ${OPT_BUILD_DIRECTORY}/sonar-cloud-build-wrapper-output"
 fi
 
 if [ -n "${OPT_TEST_COVERAGE_REPORT}" ]; then
@@ -403,7 +412,7 @@ if [ -n "${OPT_SCAN_BUILD}" ]; then
   # `CUnit` which leads to a lot of noisy issues in the report.
   # Also ignoring third-party `tinydtls` library.
   OPT_WRAPPER_CMD="${OPT_SCAN_BUILD} \
-    -o build-wakaama/clang-static-analyzer \
+    -o ${OPT_BUILD_DIRECTORY}/clang-static-analyzer \
     --exclude tests \
     --exclude examples/shared/tinydtls"
 fi

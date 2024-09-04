@@ -57,4 +57,5 @@ jobs:
         tools/ci/run_ci.sh \
           --run-clean \
           --run-build \
-          --source-directory examples/${{ matrix.example }}
+          --source-directory examples/${{ matrix.example }} \
+          --build-directory wakaama-build-${{ matrix.example }}
