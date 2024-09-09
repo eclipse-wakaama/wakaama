@@ -9,6 +9,14 @@ option(WAKAAMA_MODE_SERVER "Enable LWM2M Server interfaces" OFF)
 option(WAKAAMA_MODE_BOOTSTRAP_SERVER "Enable LWM2M Bootstrap Server interfaces" OFF)
 option(WAKAAMA_MODE_CLIENT "Enable LWM2M Client interfaces" OFF)
 
+if(NOT WAKAAMA_MODE_SERVER
+   AND NOT WAKAAMA_MODE_BOOTSTRAP_SERVER
+   AND NOT WAKAAMA_MODE_CLIENT
+)
+    message(WARNING "No mode selected. Defaulting to 'WAKAAMA_MODE_SERVER'")
+    set(WAKAAMA_MODE_SERVER ON)
+endif()
+
 # Client
 option(WAKAAMA_CLIENT_INITIATED_BOOTSTRAP "Enable client initiated bootstrap support in a client" OFF)
 option(WAKAAMA_CLIENT_LWM2M_V_1_0 "Restrict the client code to use LwM2M version 1.0" OFF)

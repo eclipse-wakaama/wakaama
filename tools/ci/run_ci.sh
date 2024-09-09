@@ -151,7 +151,7 @@ function run_build() {
 
   echo "Default build"
   ${OPT_WRAPPER_CMD} cmake -GNinja -S ${OPT_SOURCE_DIRECTORY} -B build-wakaama \
-    -DWAKAAMA_MODE_SERVER=ON -DWAKAAMA_PLATFORM=POSIX ${CMAKE_ARGS}
+    -DWAKAAMA_PLATFORM=POSIX ${CMAKE_ARGS}
   ${OPT_WRAPPER_CMD} cmake --build build-wakaama
 
   # CMake presets
