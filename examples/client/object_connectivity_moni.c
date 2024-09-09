@@ -86,6 +86,19 @@ typedef struct
     int linkUtilization;
 } conn_m_data_t;
 
+static void reduce_single_instance(lwm2m_data_t *const dataP, lwm2m_data_t **const subTlvP, size_t *const count) {
+    if (dataP->type == LWM2M_TYPE_MULTIPLE_RESOURCE) {
+        (*count) = dataP->value.asChildren.count;
+        (*subTlvP) = dataP->value.asChildren.array;
+    } else {
+        (*count) = 1; // reduced to 1 instance to fit in one block size
+        (*subTlvP) = lwm2m_data_new((*count));
+        for (size_t i = 0; i < (*count); i++)
+            (*subTlvP)[i].id = i;
+        lwm2m_data_encode_instances((*subTlvP), (*count), dataP);
+    }
+}
+
 static uint8_t prv_set_value(lwm2m_data_t * dataP,
                              conn_m_data_t * connDataP)
 {
@@ -102,18 +115,7 @@ static uint8_t prv_set_value(lwm2m_data_t * dataP,
 
     case RES_M_AVL_NETWORK_BEARER:
     {
-        if (dataP->type == LWM2M_TYPE_MULTIPLE_RESOURCE)
-        {
-            count = dataP->value.asChildren.count;
-            subTlvP = dataP->value.asChildren.array;
-        }
-        else
-        {
-            count = 1; // reduced to 1 instance to fit in one block size
-            subTlvP = lwm2m_data_new(count);
-            for (i = 0; i < count; i++) subTlvP[i].id = i;
-            lwm2m_data_encode_instances(subTlvP, count, dataP);
-        }
+        reduce_single_instance(dataP, &subTlvP, &count);
 
         for (i = 0; i < count; i++)
         {
@@ -141,18 +143,7 @@ static uint8_t prv_set_value(lwm2m_data_t * dataP,
 
     case RES_M_IP_ADDRESSES:
     {
-        if (dataP->type == LWM2M_TYPE_MULTIPLE_RESOURCE)
-        {
-            count = dataP->value.asChildren.count;
-            subTlvP = dataP->value.asChildren.array;
-        }
-        else
-        {
-            count = 1; // reduced to 1 instance to fit in one block size
-            subTlvP = lwm2m_data_new(count);
-            for (i = 0; i < count; i++) subTlvP[i].id = i;
-            lwm2m_data_encode_instances(subTlvP, count, dataP);
-        }
+        reduce_single_instance(dataP, &subTlvP, &count);
 
         for (i = 0; i < count; i++)
         {
@@ -204,18 +195,7 @@ static uint8_t prv_set_value(lwm2m_data_t * dataP,
 
     case RES_O_APN:
     {
-        if (dataP->type == LWM2M_TYPE_MULTIPLE_RESOURCE)
-        {
-            count = dataP->value.asChildren.count;
-            subTlvP = dataP->value.asChildren.array;
-        }
-        else
-        {
-            count = 1; // reduced to 1 instance to fit in one block size
-            subTlvP = lwm2m_data_new(count);
-            for (i = 0; i < count; i++) subTlvP[i].id = i;
-            lwm2m_data_encode_instances(subTlvP, count, dataP);
-        }
+        reduce_single_instance(dataP, &subTlvP, &count);
 
         for (i = 0; i < count; i++)
         {
