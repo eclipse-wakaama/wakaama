@@ -170,9 +170,6 @@ pytest -v tests/integration
 
 ## Examples
 
-The examples can be enabled (or disabled) with the CMake cache variable `WAKAAMA_ENABLE_EXAMPLES` (e.g.
-`cmake -DWAKAAMA_ENABLE_EXAMPLES=OFF`).
-
 There are some example applications provided to test the server, client and bootstrap capabilities of Wakaama.
 The following recipes assume you are on a unix like platform and you have cmake and make installed.
 
