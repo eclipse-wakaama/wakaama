@@ -224,6 +224,34 @@ static uint8_t prv_get_value(lwm2m_data_t * dataP,
     }
 }
 
+static void remove_optional_resource(uint16_t *resList, int val, const uint_fast16_t id, ssize_t *nbRes) {
+    if (val >= 0) {
+        /* No removal, since we have a value */
+        return;
+    }
+
+    for (ssize_t i = 0; i < *nbRes; i++) {
+        if (resList[i] == id) {
+            *nbRes -= 1;
+            memmove(&resList[i], &resList[i + 1], (*nbRes - i) * sizeof(resList[i]));
+            break;
+        }
+    }
+}
+
+/** Remove optional resources that don't exist */
+static void remove_all_optional_resources(uint16_t *resList, server_instance_t *targetP, ssize_t *nbRes) {
+    remove_optional_resource(resList, targetP->registrationPriorityOrder, LWM2M_SERVER_REG_ORDER_ID, nbRes);
+    remove_optional_resource(resList, targetP->initialRegistrationDelayTimer, LWM2M_SERVER_INITIAL_REG_DELAY_ID, nbRes);
+    remove_optional_resource(resList, targetP->registrationFailureBlock, LWM2M_SERVER_REG_FAIL_BLOCK_ID, nbRes);
+    remove_optional_resource(resList, targetP->bootstrapOnRegistrationFailure, LWM2M_SERVER_REG_FAIL_BOOTSTRAP_ID,
+                             nbRes);
+    remove_optional_resource(resList, targetP->communicationRetryCount, LWM2M_SERVER_COMM_RETRY_COUNT_ID, nbRes);
+    remove_optional_resource(resList, targetP->communicationRetryTimer, LWM2M_SERVER_COMM_RETRY_TIMER_ID, nbRes);
+    remove_optional_resource(resList, targetP->communicationSequenceDelayTimer, LWM2M_SERVER_SEQ_DELAY_TIMER_ID, nbRes);
+    remove_optional_resource(resList, targetP->communicationSequenceRetryCount, LWM2M_SERVER_SEQ_RETRY_COUNT_ID, nbRes);
+}
+
 static uint8_t prv_server_read(lwm2m_context_t *contextP,
                                uint16_t instanceId,
                                int * numDataP,
@@ -256,106 +284,10 @@ static uint8_t prv_server_read(lwm2m_context_t *contextP,
             LWM2M_SERVER_MUTE_SEND_ID,
 #endif
         };
-        int nbRes = sizeof(resList)/sizeof(uint16_t);
+        ssize_t nbRes = sizeof(resList) / sizeof(uint16_t);
 
 #ifndef LWM2M_VERSION_1_0
-        /* Remove optional resources that don't exist */
-        if(targetP->registrationPriorityOrder < 0)
-        {
-            for (i=0; i < nbRes; i++)
-            {
-                if (resList[i] == LWM2M_SERVER_REG_ORDER_ID)
-                {
-                    nbRes -= 1;
-                    memmove(&resList[i], &resList[i+1], (nbRes-i)*sizeof(resList[i]));
-                    break;
-                }
-            }
-        }
-        if(targetP->initialRegistrationDelayTimer < 0)
-        {
-            for (i=0; i < nbRes; i++)
-            {
-                if (resList[i] == LWM2M_SERVER_INITIAL_REG_DELAY_ID)
-                {
-                    nbRes -= 1;
-                    memmove(&resList[i], &resList[i+1], (nbRes-i)*sizeof(resList[i]));
-                    break;
-                }
-            }
-        }
-        if(targetP->registrationFailureBlock < 0)
-        {
-            for (i=0; i < nbRes; i++)
-            {
-                if (resList[i] == LWM2M_SERVER_REG_FAIL_BLOCK_ID)
-                {
-                    nbRes -= 1;
-                    memmove(&resList[i], &resList[i+1], (nbRes-i)*sizeof(resList[i]));
-                    break;
-                }
-            }
-        }
-        if(targetP->bootstrapOnRegistrationFailure < 0)
-        {
-            for (i=0; i < nbRes; i++)
-            {
-                if (resList[i] == LWM2M_SERVER_REG_FAIL_BOOTSTRAP_ID)
-                {
-                    nbRes -= 1;
-                    memmove(&resList[i], &resList[i+1], (nbRes-i)*sizeof(resList[i]));
-                    break;
-                }
-            }
-        }
-        if(targetP->communicationRetryCount < 0)
-        {
-            for (i=0; i < nbRes; i++)
-            {
-                if (resList[i] == LWM2M_SERVER_COMM_RETRY_COUNT_ID)
-                {
-                    nbRes -= 1;
-                    memmove(&resList[i], &resList[i+1], (nbRes-i)*sizeof(resList[i]));
-                    break;
-                }
-            }
-        }
-        if(targetP->communicationRetryTimer < 0)
-        {
-            for (i=0; i < nbRes; i++)
-            {
-                if (resList[i] == LWM2M_SERVER_COMM_RETRY_TIMER_ID)
-                {
-                    nbRes -= 1;
-                    memmove(&resList[i], &resList[i+1], (nbRes-i)*sizeof(resList[i]));
-                    break;
-                }
-            }
-        }
-        if(targetP->communicationSequenceDelayTimer < 0)
-        {
-            for (i=0; i < nbRes; i++)
-            {
-                if (resList[i] == LWM2M_SERVER_SEQ_DELAY_TIMER_ID)
-                {
-                    nbRes -= 1;
-                    memmove(&resList[i], &resList[i+1], (nbRes-i)*sizeof(resList[i]));
-                    break;
-                }
-            }
-        }
-        if(targetP->communicationSequenceRetryCount < 0)
-        {
-            for (i=0; i < nbRes; i++)
-            {
-                if (resList[i] == LWM2M_SERVER_SEQ_RETRY_COUNT_ID)
-                {
-                    nbRes -= 1;
-                    memmove(&resList[i], &resList[i+1], (nbRes-i)*sizeof(resList[i]));
-                    break;
-                }
-            }
-        }
+        remove_all_optional_resources(resList, targetP, &nbRes);
 #endif
 
         *dataArrayP = lwm2m_data_new(nbRes);
@@ -419,106 +351,10 @@ static uint8_t prv_server_discover(lwm2m_context_t *contextP,
             LWM2M_SERVER_MUTE_SEND_ID,
 #endif
         };
-        int nbRes = sizeof(resList) / sizeof(uint16_t);
+        ssize_t nbRes = sizeof(resList) / sizeof(uint16_t);
 
 #ifndef LWM2M_VERSION_1_0
-        /* Remove optional resources that don't exist */
-        if(targetP->registrationPriorityOrder < 0)
-        {
-            for (i=0; i < nbRes; i++)
-            {
-                if (resList[i] == LWM2M_SERVER_REG_ORDER_ID)
-                {
-                    nbRes -= 1;
-                    memmove(&resList[i], &resList[i+1], (nbRes-i)*sizeof(resList[i]));
-                    break;
-                }
-            }
-        }
-        if(targetP->initialRegistrationDelayTimer < 0)
-        {
-            for (i=0; i < nbRes; i++)
-            {
-                if (resList[i] == LWM2M_SERVER_INITIAL_REG_DELAY_ID)
-                {
-                    nbRes -= 1;
-                    memmove(&resList[i], &resList[i+1], (nbRes-i)*sizeof(resList[i]));
-                    break;
-                }
-            }
-        }
-        if(targetP->registrationFailureBlock < 0)
-        {
-            for (i=0; i < nbRes; i++)
-            {
-                if (resList[i] == LWM2M_SERVER_REG_FAIL_BLOCK_ID)
-                {
-                    nbRes -= 1;
-                    memmove(&resList[i], &resList[i+1], (nbRes-i)*sizeof(resList[i]));
-                    break;
-                }
-            }
-        }
-        if(targetP->bootstrapOnRegistrationFailure < 0)
-        {
-            for (i=0; i < nbRes; i++)
-            {
-                if (resList[i] == LWM2M_SERVER_REG_FAIL_BOOTSTRAP_ID)
-                {
-                    nbRes -= 1;
-                    memmove(&resList[i], &resList[i+1], (nbRes-i)*sizeof(resList[i]));
-                    break;
-                }
-            }
-        }
-        if(targetP->communicationRetryCount < 0)
-        {
-            for (i=0; i < nbRes; i++)
-            {
-                if (resList[i] == LWM2M_SERVER_COMM_RETRY_COUNT_ID)
-                {
-                    nbRes -= 1;
-                    memmove(&resList[i], &resList[i+1], (nbRes-i)*sizeof(resList[i]));
-                    break;
-                }
-            }
-        }
-        if(targetP->communicationRetryTimer < 0)
-        {
-            for (i=0; i < nbRes; i++)
-            {
-                if (resList[i] == LWM2M_SERVER_COMM_RETRY_TIMER_ID)
-                {
-                    nbRes -= 1;
-                    memmove(&resList[i], &resList[i+1], (nbRes-i)*sizeof(resList[i]));
-                    break;
-                }
-            }
-        }
-        if(targetP->communicationSequenceDelayTimer < 0)
-        {
-            for (i=0; i < nbRes; i++)
-            {
-                if (resList[i] == LWM2M_SERVER_SEQ_DELAY_TIMER_ID)
-                {
-                    nbRes -= 1;
-                    memmove(&resList[i], &resList[i+1], (nbRes-i)*sizeof(resList[i]));
-                    break;
-                }
-            }
-        }
-        if(targetP->communicationSequenceRetryCount < 0)
-        {
-            for (i=0; i < nbRes; i++)
-            {
-                if (resList[i] == LWM2M_SERVER_SEQ_RETRY_COUNT_ID)
-                {
-                    nbRes -= 1;
-                    memmove(&resList[i], &resList[i+1], (nbRes-i)*sizeof(resList[i]));
-                    break;
-                }
-            }
-        }
+        remove_all_optional_resources(resList, targetP, &nbRes);
 #endif
 
         *dataArrayP = lwm2m_data_new(nbRes);
