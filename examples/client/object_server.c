@@ -252,6 +252,20 @@ static void remove_all_optional_resources(uint16_t *resList, server_instance_t *
     remove_optional_resource(resList, targetP->communicationSequenceRetryCount, LWM2M_SERVER_SEQ_RETRY_COUNT_ID, nbRes);
 }
 
+static uint8_t prv_get_all_values(const int *numDataP, lwm2m_data_t *const *dataArrayP,
+                                  server_instance_t *const targetP) {
+    int i = 0;
+    uint8_t result;
+    do {
+        if ((*dataArrayP)[i].type == LWM2M_TYPE_MULTIPLE_RESOURCE) {
+            result = COAP_404_NOT_FOUND;
+        } else {
+            result = prv_get_value((*dataArrayP) + i, targetP);
+        }
+        i++;
+    } while (i < *numDataP && result == COAP_205_CONTENT);
+    return result;
+}
 static uint8_t prv_server_read(lwm2m_context_t *contextP,
                                uint16_t instanceId,
                                int * numDataP,
@@ -299,19 +313,7 @@ static uint8_t prv_server_read(lwm2m_context_t *contextP,
         }
     }
 
-    i = 0;
-    do
-    {
-        if ((*dataArrayP)[i].type == LWM2M_TYPE_MULTIPLE_RESOURCE)
-        {
-            result = COAP_404_NOT_FOUND;
-        }
-        else
-        {
-            result = prv_get_value((*dataArrayP) + i, targetP);
-        }
-        i++;
-    } while (i < *numDataP && result == COAP_205_CONTENT);
+    result = prv_get_all_values(numDataP, dataArrayP, targetP);
 
     return result;
 }
