@@ -47,10 +47,10 @@
 
 #include "liblwm2m.h"
 
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <limits.h>
 
 typedef struct _server_instance_
 {
@@ -239,6 +239,12 @@ static void remove_optional_resource(uint16_t *resList, int val, const uint_fast
     }
 }
 
+static void setup_resources(lwm2m_data_t *const *dataArrayP, const uint16_t *const resList, const size_t nbRes) {
+    for (size_t i = 0; i < nbRes; i++) {
+        (*dataArrayP)[i].id = resList[i];
+    }
+}
+
 /** Remove optional resources that don't exist */
 static void remove_all_optional_resources(uint16_t *resList, server_instance_t *targetP, ssize_t *nbRes) {
     remove_optional_resource(resList, targetP->registrationPriorityOrder, LWM2M_SERVER_REG_ORDER_ID, nbRes);
@@ -274,7 +280,6 @@ static uint8_t prv_server_read(lwm2m_context_t *contextP,
 {
     server_instance_t * targetP;
     uint8_t result;
-    int i;
 
     /* unused parameter */
     (void)contextP;
@@ -307,10 +312,7 @@ static uint8_t prv_server_read(lwm2m_context_t *contextP,
         *dataArrayP = lwm2m_data_new(nbRes);
         if (*dataArrayP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
         *numDataP = nbRes;
-        for (i = 0 ; i < nbRes ; i++)
-        {
-            (*dataArrayP)[i].id = resList[i];
-        }
+        setup_resources(dataArrayP, resList, nbRes);
     }
 
     result = prv_get_all_values(numDataP, dataArrayP, targetP);
@@ -362,10 +364,7 @@ static uint8_t prv_server_discover(lwm2m_context_t *contextP,
         *dataArrayP = lwm2m_data_new(nbRes);
         if (*dataArrayP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
         *numDataP = nbRes;
-        for (i = 0; i < nbRes; i++)
-        {
-            (*dataArrayP)[i].id = resList[i];
-        }
+        setup_resources(dataArrayP, resList, nbRes);
     }
     else
     {
