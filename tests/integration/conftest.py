@@ -72,7 +72,7 @@ class Lwm2mServer(HelperBase):
 
     def __init__(self, arguments="", timeout=3, encoding="utf8"):
         self.pexpectobj = pexpect.spawn(REPO_BASE_PATH +
-                                        "/build-presets/server/examples/server/lwm2mserver " +
+                                        "/build-wakaama-server/lwm2mserver " +
                                         arguments,
                                         encoding=encoding,
                                         timeout=timeout)
@@ -88,7 +88,7 @@ class Lwm2mClient(HelperBase):
 
     def __init__(self, arguments="", timeout=3, encoding="utf8"):
         self.pexpectobj = pexpect.spawn(REPO_BASE_PATH +
-                                        "/build-presets/client/examples/client/lwm2mclient "
+                                        "/build-wakaama-client/udp/lwm2mclient "
                                         + arguments,
                                         encoding=encoding,
                                         timeout=timeout)
@@ -104,8 +104,7 @@ class Lwm2mBootstrapServer(HelperBase):
 
     def __init__(self, arguments="", timeout=3, encoding="utf8"):
         self.pexpectobj = pexpect.spawn(REPO_BASE_PATH +
-                                        "/build-presets/bootstrap_server/examples/"
-                                        "bootstrap_server/bootstrap_server "
+                                        "/build-wakaama-bootstrap_server/bootstrap_server "
                                         + arguments,
                                         encoding=encoding,
                                         timeout=timeout)
