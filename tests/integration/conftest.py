@@ -72,7 +72,7 @@ class Lwm2mServer(HelperBase):
 
     def __init__(self, arguments="", timeout=3, encoding="utf8"):
         self.pexpectobj = pexpect.spawn(REPO_BASE_PATH +
-                                        "/build-presets/server/examples/server/lwm2mserver " +
+                                        "/build-wakaama-server/lwm2mserver " +
                                         arguments,
                                         encoding=encoding,
                                         timeout=timeout)

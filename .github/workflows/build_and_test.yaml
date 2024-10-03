@@ -39,6 +39,21 @@ jobs:
       env:
         CC:  ${{ matrix.compiler }}
 
+    - name: Build examples for integration tests
+      run: |
+        for example in "server"
+        do
+          echo "Building example ${example}"
+          tools/ci/run_ci.sh \
+            --run-clean \
+            --run-build \
+            --sanitizer ${{ matrix.sanitizer }} \
+            --source-directory examples/${example} \
+            --build-directory build-wakaama-${example}
+        done
+      env:
+        CC:  ${{ matrix.compiler }}
+
     - name: Install dependencies
       run: |
           python -m pip install --upgrade pip

@@ -178,7 +178,7 @@ The following recipes assume you are on a unix like platform and you have cmake 
 
 ### Server example
 
- * ``cmake -S examples/server -B build-server -DWAKAAMA_MODE_SERVER=ON``
+ * ``cmake -S examples/server -B build-server``
  * ``cmake --build build-server``
  * ``./build-server/lwm2mserver [Options]``
 
