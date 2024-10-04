@@ -869,7 +869,7 @@ void lwm2m_handle_packet(lwm2m_context_t *contextP, uint8_t *buffer, size_t leng
 // its matching LWM2M Server Object (ID 1) instance
 int lwm2m_configure(lwm2m_context_t * contextP, const char * endpointName, const char * msisdn, const char * altPath, uint16_t numObject, lwm2m_object_t * objectList[]);
 int lwm2m_add_object(lwm2m_context_t * contextP, lwm2m_object_t * objectP);
-int lwm2m_remove_object(lwm2m_context_t * contextP, uint16_t id);
+int lwm2m_remove_object(lwm2m_context_t * contextP, uint16_t id, lwm2m_object_t **obj_removed);
 
 // send a registration update to the server specified by the server short identifier
 // or all if the ID is 0.
