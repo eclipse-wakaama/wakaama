@@ -4,11 +4,11 @@ on: [push, pull_request]
 
 jobs:
   standards:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
 
     strategy:
       matrix:
-        compiler: ["clang-14", "gcc-12"]
+        compiler: ["clang-18", "gcc-13"]
         c_standard: ["99", "11"]
         c_extensions: ["ON", "OFF"]
 
@@ -34,7 +34,7 @@ jobs:
         CC:  ${{ matrix.compiler }}
 
   standalone-examples:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
 
     strategy:
       matrix:
