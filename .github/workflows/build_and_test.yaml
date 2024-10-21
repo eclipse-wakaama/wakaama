@@ -8,12 +8,12 @@ on:
 
 jobs:
   build_and_test:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
 
     strategy:
       matrix:
         sanitizer: ["address", "leak", "thread", "undefined"]
-        compiler: ["clang-14", "gcc-12"]
+        compiler: ["clang-18", "gcc-13"]
 
     steps:
     - name: Checkout code including full history and submodules

@@ -5,7 +5,7 @@ on: pull_request
 jobs:
   lint-code:
     name: Run compliance checks
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
 
     steps:
     - name: Checkout code including full history
