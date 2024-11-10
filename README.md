@@ -4,6 +4,8 @@
 
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/eclipse-wakaama/wakaama/badge)](https://scorecard.dev/viewer/?uri=github.com/eclipse-wakaama/wakaama)
 
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/9686/badge)](https://www.bestpractices.dev/projects/9686)
+
 Wakaama (formerly liblwm2m) is an implementation of the Open Mobile Alliance's LightWeight M2M
 protocol (LWM2M).
 
