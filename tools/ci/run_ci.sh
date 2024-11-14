@@ -242,14 +242,13 @@ function run_code_checker() {
   readonly code_checker_result_dir="build-wakaama/code_checker_result/"
   readonly code_checker_report="build-wakaama/code_checker_report/"
 
-  set +e +o pipefail
   CodeChecker check --logfile build-wakaama/compile_commands.json \
                     --config "$config_file" \
                     --ignore "$ignore_file" \
                     --output $code_checker_result_dir \
                     || true  # Currently failing with found issues
-  set -e -o pipefail
 
+  echo "!!! CodeChecker check finished!!!"
   if [ "${OPT_CODE_CHECKER}" = "diff" ]; then
     CodeChecker cmd diff -b "$baseline_file" \
                          -n $code_checker_result_dir \
