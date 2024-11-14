@@ -21,7 +21,7 @@ jobs:
 
     - name: Run CodeChecker
       run: |
-        tools/ci/run_ci.sh --run-build --run-code-checker --code-checker diff
+        bash -x tools/ci/run_ci.sh --run-build --run-code-checker --code-checker diff
 
     - name: Upload CodeChecker reports
       uses: actions/upload-artifact@v4
