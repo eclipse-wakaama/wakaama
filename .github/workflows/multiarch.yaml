@@ -16,7 +16,7 @@ jobs:
         submodules: true
         fetch-depth: 0
     - name: Build and test
-      uses: uraimo/run-on-arch-action@v2.7.2
+      uses: uraimo/run-on-arch-action@v2.8.1
       id: runcmd
       with:
         arch: ${{ matrix.arch }}
