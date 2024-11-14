@@ -1,2 +1,2 @@
--*/examples/shared/tinydtls/*
+-*/transport/tinydtls/third_party/*
 -*/tests/*
