@@ -11,12 +11,12 @@ jobs:
         arch: ["armv6", "armv7", "aarch64", "s390x", "ppc64le"]
     steps:
     - name: Checkout code including full history and submodules
-      uses: actions/checkout@v4
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       with:
         submodules: true
         fetch-depth: 0
     - name: Build and test
-      uses: uraimo/run-on-arch-action@v2.8.1
+      uses: uraimo/run-on-arch-action@5397f9e30a9b62422f302092631c99ae1effcd9e # v2.8.1
       id: runcmd
       with:
         arch: ${{ matrix.arch }}
