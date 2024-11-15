@@ -1,4 +1,29 @@
-cmake-format==0.6.13
-gitlint==0.19
-pylint==3.3.1
+# Our (direct) dependencies
+cmake-format==0.6.13 --hash=sha256:ec7ed949101e5f0b7bc19317d122b83ccbc28fd766c41c93094845719667c56e
+gitlint==0.19 --hash=sha256:3a566c6f641e054be26ecf67210c237e4fe45472f6606761c9fea7b44e570d3c
+pylint==3.3.1 --hash=sha256:2f846a466dd023513240bc140ad2dd73bfc080a5d85a710afdb728c420a5a2b9
+
+# For convenience
 -r ../tests/integration/requirements.txt
+
+# Dependencies of our dependencies (aka transitive dependencies)
+
+## for cmake-format
+cmakelang==0.6.13 --hash=sha256:764b9467195c7c36453d60a829f30229720d26c7dffd41cb516b99bd9c7daf4e
+six==1.16.0 --hash=sha256:8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254
+
+## for gitlint
+arrow==1.2.3 --hash=sha256:5a49ab92e3b7b71d96cd6bfcc4df14efefc9dfa96ea19045815914a6ab6b1fe2
+click==8.1.3 --hash=sha256:bb4d8133cb15a609f44e8213d9b391b0809795062913b383c62be0ee95b1db48
+dill==0.3.9 --hash=sha256:468dff3b89520b474c0397703366b7b95eebe6303f108adf9b19da1f702be87a
+gitlint-core==0.19.0 --hash=sha256:b5c66ac380eae983bed3fa21e5dd35c03d93f3024c7a2bce3a0d1fa9a43c9494
+python-dateutil==2.9.0 --hash=sha256:cbf2f1da5e6083ac2fbfd4da39a25f34312230110440f424a14c7558bb85d82e
+sh==1.14.3 --hash=sha256:e4045b6c732d9ce75d571c79f5ac2234edd9ae4f5fa9d59b09705082bdca18c7
+types-python-dateutil==2.9.0.20241003 --hash=sha256:250e1d8e80e7bbc3a6c99b907762711d1a1cdd00e978ad39cb5940f6f0a87f3d
+
+## for pylint
+astroid==3.3.5 --hash=sha256:a9d1c946ada25098d790e079ba2a1b112157278f3fb7e718ae6a9252f5835dc8
+isort==5.13.2 --hash=sha256:8ca5e72a8d85860d5a3fa69b8745237f2939afe12dbf656afbcb47fe72d947a6
+mccabe==0.7.0 --hash=sha256:6c2d30ab6be0e4a46919781807b4f0d834ebdd6c6e3dca0bda5a15f863427b6e
+platformdirs==4.3.6 --hash=sha256:73e575e1408ab8103900836b97580d5307456908a03e92031bab39e4554cc3fb
+tomlkit==0.13.2 --hash=sha256:7a974427f6e119197f670fbbbeae7bef749a6c14e793db934baefc1b5f03efde

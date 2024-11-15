@@ -56,7 +56,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-          pip install -r tests/integration/requirements.txt
+          pip install --require-hashes -r tests/integration/requirements.txt
 
     - name: Execute integration tests
       run: |
