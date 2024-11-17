@@ -9,7 +9,6 @@ on:
     - cron: '30 4 * * 0'
   push:
     branches:
-      - gardena/rs/upstream/run-openssf-score-card
       - main
 
 permissions: read-all
