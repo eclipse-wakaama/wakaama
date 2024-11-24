@@ -128,12 +128,12 @@ Wakaama provides a simple CLI library. It can be enabled with:
   - Version control system: Git (and a GitHub account)
   - Git commit message linter: gitlint
   - Build system: ninja
-  - C code formatting: clang-format, version 14
+  - C code formatting: clang-format, version 18
   - CMake list files formatting: cmake-format, version 0.6.13
   - Unit testing: CUnit
 
-On Ubuntu 20.04, used in CI, the dependencies can be installed as such:
-- `apt install build-essential clang-format clang-format-14 clang-tools-14 cmake gcovr git libcunit1-dev ninja-build python3-pip`
+On Ubuntu 24.04, used in CI, the dependencies can be installed as such:
+- `apt install build-essential clang-format clang-format-18 clang-tools-18 cmake gcovr git libcunit1-dev ninja-build python3-pip`
 - `pip3 install -r tools/requirements-compliance.txt`
 
 For macOS the development dependencies can be installed as such:
@@ -148,9 +148,9 @@ The style is based on the LLVM style, but with 4 instead of 2 spaces indentation
 characters per line.
 
 To check if your code matches the expected style, the following commands are helpful:
- - `git clang-format-14 --diff`: Show what needs to be changed to match the expected code style
- - `git clang-format-14`: Apply all needed changes directly
- - `git clang-format-14 --commit main`: Fix code style for all changes since main
+ - `git clang-format-18 --diff`: Show what needs to be changed to match the expected code style
+ - `git clang-format-18`: Apply all needed changes directly
+ - `git clang-format-18 --commit main`: Fix code style for all changes since main
 
 If existing code gets reformatted, this must be done in a separate commit. Its commit id has to be added to the file
 `.git-blame-ignore-revs` and committed in yet another commit.
