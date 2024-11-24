@@ -8,6 +8,10 @@ on:
   schedule:
     - cron: '20 14 * * 1'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   codeql:
     runs-on: ubuntu-24.04
