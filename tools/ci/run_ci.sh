@@ -24,7 +24,7 @@ OPT_BRANCH_SOURCE=
 OPT_BRANCH_TARGET=main
 OPT_C_EXTENSIONS=""
 OPT_C_STANDARD=""
-OPT_CLANG_FORMAT="clang-format-14"
+OPT_CLANG_FORMAT="clang-format-18"
 OPT_SANITIZER=""
 OPT_SCAN_BUILD=""
 OPT_SONARQUBE=""
@@ -103,11 +103,12 @@ function run_clang_format() {
   # shellcheck disable=SC2064
   trap "{ rm -f -- '${patch_file}'; }" EXIT TERM INT
 
-  "git-${OPT_CLANG_FORMAT}" --diff "${OPT_BRANCH_TARGET}" 2>&1 |
+  (set +o pipefail; "git-${OPT_CLANG_FORMAT}" --diff "${OPT_BRANCH_TARGET}" 2>&1 |
     { grep -v \
       -e 'no modified files to format' \
       -e 'clang-format did not modify any files' || true;
     } > "${patch_file}"
+  )
 
   if [ -s "${patch_file}" ]; then
     cat "${patch_file}"
