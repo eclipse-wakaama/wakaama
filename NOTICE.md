@@ -25,7 +25,7 @@ A copy of the EDL is available at http://www.eclipse.org/org/documents/edl-v10.p
 
 The project maintains the following source code repositories:
 
-* https://github.com/eclipse/wakaama
+* https://github.com/eclipse-wakaama/wakaama
 
 ## Third-party Content
 

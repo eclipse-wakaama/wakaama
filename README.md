@@ -1,6 +1,6 @@
 # Wakaama
 
-[![Build](https://github.com/eclipse/wakaama/actions/workflows/build_and_test.yaml/badge.svg)](https://github.com/eclipse/wakaama/actions/workflows/build_and_test.yaml)
+[![Build](https://github.com/eclipse-wakaama/wakaama/actions/workflows/build_and_test.yaml/badge.svg)](https://github.com/eclipse/wakaama/actions/workflows/build_and_test.yaml)
 
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/eclipse-wakaama/wakaama/badge)](https://scorecard.dev/viewer/?uri=github.com/eclipse-wakaama/wakaama)
 
@@ -33,7 +33,7 @@ This work is dual-licensed under the Eclipse Public License v2.0 and Eclipse Dis
 ### Using Wakaama as library
 
 ```
-git clone https://github.com/eclipse/wakaama.git
+git clone https://github.com/eclipse-wakaama/wakaama.git
 ```
 
 ### Working on Wakaama
@@ -41,7 +41,7 @@ git clone https://github.com/eclipse/wakaama.git
 When working on Wakaama itself, or intending to run the example client application, submodules must be checked out:
 
 ```
-git clone --recurse-submodules https://github.com/eclipse/wakaama.git
+git clone --recurse-submodules https://github.com/eclipse-wakaama/wakaama.git
 ```
 
 ## Compiling
