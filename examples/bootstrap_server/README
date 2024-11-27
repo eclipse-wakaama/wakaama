@@ -6,7 +6,7 @@ Options:
   -4            Use IPv4 connection. Default: IPv6 connection
   -S BYTES      CoAP block size. Options: 16, 32, 64, 128, 256, 512, 1024. Default: 1024
 
-When it receives a Bootstrap Request from a LWM2M Client, it sends commands as
+When it receives a Bootstrap Request from a LwM2M Client, it sends commands as
 described in the Bootstrap Information file.
 This file is a custom .INI file:
 
@@ -16,10 +16,10 @@ Spaces at the end of lines are ignored.
 
 Supported sections are [Server] and [Endpoint].
 
-[Server] describes a LWM2M Server account. Keys are:
-  - id: the short ID of the LWM2M Server. Also used as the instance ID
+[Server] describes a LwM2M Server account. Keys are:
+  - id: the short ID of the LwM2M Server. Also used as the instance ID
         to avoid collisions. (MANDATORY)
-  - uri: the URI of the LWM2M Server (MANDATORY)
+  - uri: the URI of the LwM2M Server (MANDATORY)
   - bootstrap: supported values are YES or NO. Determines if this
                server is a Bootstrap Server. (Optional, default is no)
   - lifetime: registration lifetime. (optional)
@@ -40,12 +40,12 @@ Operations are sent in the same order as they appear in this file.
 
 Supported keys for this section are:
   - Name: Endpoint Name of the Client (Optional)
-  - Delete: Value must be a valid LWM2M URI. / is allowed. Send a Delete
+  - Delete: Value must be a valid LwM2M URI. / is allowed. Send a Delete
             operation on the URI.
   - Server: [Value] is a Server ID matching a Server section. Send one
-            or two Write operations containing the LWM2M Server
+            or two Write operations containing the LwM2M Server
             informations (one operation only for Bootstrap Servers as they
-            do not have a matching LWM2M Server Object instance.)
+            do not have a matching LwM2M Server Object instance.)
 
 All keywords (section names, key names, "yes", "no", "NoSec", "PSK",
 "RPK", "Certificate") are case-insensitive.

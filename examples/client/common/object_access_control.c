@@ -407,7 +407,7 @@ static uint8_t prv_create(lwm2m_context_t *contextP, uint16_t objInstId, int num
 }
 
 /*
- * Create an empty multiple instance LWM2M Object: Access Control
+ * Create an empty multiple instance LwM2M Object: Access Control
  */
 lwm2m_object_t *acc_ctrl_create_object(void) {
     /*

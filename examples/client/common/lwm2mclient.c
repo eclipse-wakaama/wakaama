@@ -331,7 +331,7 @@ static void prv_output_servers(lwm2m_context_t *lwm2mH, char *buffer, void *user
     }
 
     if (lwm2mH->serverList == NULL) {
-        fprintf(stdout, "No LWM2M Server.\r\n");
+        fprintf(stdout, "No LwM2M Server.\r\n");
     } else {
         fprintf(stdout, "LWM2M Servers:\r\n");
         for (targetP = lwm2mH->serverList; targetP != NULL; targetP = targetP->next) {
@@ -803,13 +803,13 @@ static void prv_display_objects(lwm2m_context_t *lwm2mH, char *buffer, void *use
 
 void print_usage(void) {
     fprintf(stdout, "Usage: lwm2mclient [OPTION]\r\n");
-    fprintf(stdout, "Launch a LWM2M client.\r\n");
+    fprintf(stdout, "Launch a LwM2M client.\r\n");
     fprintf(stdout, "Options:\r\n");
     fprintf(stdout, "  -n NAME\tSet the endpoint name of the Client. Default: testlwm2mclient\r\n");
     fprintf(stdout, "  -l PORT\tSet the local UDP port of the Client. Default: 56830\r\n");
-    fprintf(stdout, "  -h HOST\tSet the hostname of the LWM2M Server to connect to. Default: localhost\r\n");
+    fprintf(stdout, "  -h HOST\tSet the hostname of the LwM2M Server to connect to. Default: localhost\r\n");
     fprintf(stdout,
-            "  -p PORT\tSet the port of the LWM2M Server to connect to. Default: " LWM2M_STANDARD_PORT_STR "\r\n");
+            "  -p PORT\tSet the port of the LwM2M Server to connect to. Default: " LWM2M_STANDARD_PORT_STR "\r\n");
     fprintf(stdout, "  -4\t\tUse IPv4 connection. Default: IPv6 connection\r\n");
     fprintf(stdout, "  -t TIME\tSet the lifetime of the Client. Default: 300\r\n");
     fprintf(stdout, "  -b\t\tBootstrap requested.\r\n");
@@ -1010,7 +1010,7 @@ int main(int argc, char *argv[]) {
     /*
      *This call an internal function that create an IPV6 socket on the port 5683.
      */
-    fprintf(stderr, "Trying to bind LWM2M Client to port %s\r\n", localPort);
+    fprintf(stderr, "Trying to bind LwM2M Client to port %s\r\n", localPort);
     data.sock = lwm2m_create_socket(localPort, data.addressFamily);
     if (data.sock < 0) {
         fprintf(stderr, "Failed to open socket: %d %s\r\n", errno, strerror(errno));

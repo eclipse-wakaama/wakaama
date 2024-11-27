@@ -52,7 +52,7 @@
 */
 
 /*
- * This object is single instance only, and is mandatory to all LWM2M device as it describe the object such as its
+ * This object is single instance only, and is mandatory to all LwM2M device as it describe the object such as its
  * manufacturer, model, etc...
  *
  * Here we implement only some of the optional resources.

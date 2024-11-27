@@ -27,7 +27,7 @@
 #ifdef LWM2M_SUPPORT_SENML_JSON
 
 #ifdef LWM2M_VERSION_1_0
-#error SenML JSON not supported with LWM2M 1.0
+#error SenML JSON not supported with LwM2M 1.0
 #endif
 
 #define PRV_JSON_BUFFER_SIZE 1024

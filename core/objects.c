@@ -1033,7 +1033,7 @@ int object_getServers(lwm2m_context_t * contextP, bool checkOnly)
     lwm2m_object_t * objectP;
     lwm2m_object_t * securityObjP = NULL;
     lwm2m_object_t * serverObjP = NULL;
-    lwm2m_list_t *securityInstP; // instanceID of the server in the LWM2M Security Object
+    lwm2m_list_t *securityInstP; // instanceID of the server in the LwM2M Security Object
 
     LOG_DBG("Entering");
 
@@ -1134,7 +1134,7 @@ int object_getServers(lwm2m_context_t * contextP, bool checkOnly)
             }
             else
             {
-                lwm2m_list_t *serverInstP; // instanceID of the server in the LWM2M Server Object
+                lwm2m_list_t *serverInstP; // instanceID of the server in the LwM2M Server Object
 
                 lwm2m_data_free(size, dataP);
                 size = 1;
