@@ -55,15 +55,15 @@ The different settings can be configured with CMake cache variables (e.g. `cmake
 
 Wakaama supports multiple modes. At least one mode needs to be defined with CMake cache variables.
 
-- WAKAAMA_MODE_SERVER to enable LWM2M Server interfaces.
-- WAKAAMA_MODE_BOOTSTRAP_SERVER to enable LWM2M Bootstrap Server interfaces.
-- WAKAAMA_MODE_CLIENT to enable LWM2M Client interfaces.
+- WAKAAMA_MODE_SERVER to enable LwM2M Server interfaces.
+- WAKAAMA_MODE_BOOTSTRAP_SERVER to enable LwM2M Bootstrap Server interfaces.
+- WAKAAMA_MODE_CLIENT to enable LwM2M Client interfaces.
 
 #### Client Settings
 
 Wakaama supports additional client related options. These are only available if the client mode is enabled. 
 
-- WAKAAMA_CLIENT_INITIATED_BOOTSTRAP to enable LWM2M Bootstrap support in a LWM2M Client.
+- WAKAAMA_CLIENT_INITIATED_BOOTSTRAP to enable LwM2M Bootstrap support in a LWM2M Client.
 - WAKAAMA_CLIENT_LWM2M_V_1_0: Restrict the client code to use LwM2M version 1.0
  
 Please note: LwM2M version 1.0 is only supported by clients, while servers are backward compatible.
@@ -72,10 +72,10 @@ Please note: LwM2M version 1.0 is only supported by clients, while servers are b
 
 The following data formats are configurable for Wakaama:
 
-- WAKAAMA_DATA_TLV to enable TLV payload support (implicit except for LWM2M 1.1 clients)
+- WAKAAMA_DATA_TLV to enable TLV payload support (implicit except for LwM2M 1.1 clients)
 - WAKAAMA_DATA_JSON to enable JSON payload support (implicit when defining LWM2M_SERVER_MODE)
-- WAKAAMA_DATA_SENML_JSON to enable SenML JSON payload support (implicit for LWM2M 1.1 or greater when defining LWM2M_SERVER_MODE or LWM2M_BOOTSTRAP_SERVER_MODE)
-- WAKAAMA_DATA_SENML_CBOR to enable SenML CBOR payload support (implicit for LWM2M 1.1 or greater when defining LWM2M_SERVER_MODE or LWM2M_BOOTSTRAP_SERVER_MODE)
+- WAKAAMA_DATA_SENML_JSON to enable SenML JSON payload support (implicit for LwM2M 1.1 or greater when defining LWM2M_SERVER_MODE or LWM2M_BOOTSTRAP_SERVER_MODE)
+- WAKAAMA_DATA_SENML_CBOR to enable SenML CBOR payload support (implicit for LwM2M 1.1 or greater when defining LWM2M_SERVER_MODE or LWM2M_BOOTSTRAP_SERVER_MODE)
 - WAKAAMA_DATA_SENML_CBOR_FLOAT16_SUPPORT to enable 16-bit floating point encoding support in CBOR.
 - WAKAAMA_DATA_OLD_CONTENT_FORMAT to support the deprecated content format values for TLV and JSON.
 
@@ -189,7 +189,7 @@ interface. Type 'help' for a list of supported commands.
 Options are:
 ```
 Usage: lwm2mserver [OPTION]
-Launch a LWM2M server on localhost.
+Launch a LwM2M server on localhost.
 
 Options:
   -4		Use IPv4 connection. Default: IPv6 connection
@@ -205,12 +205,12 @@ Options:
 
 Next to lwm2mclient there are also examples with DTLS enabled and with raw block1 transfer enabled.
 
-The lwm2mclient features nine LWM2M objects:
+The lwm2mclient features nine LwM2M objects:
  - Security Object (id: 0)
  - Server Object (id: 1)
  - Access Control Object (id: 2) as a skeleton
  - Device Object (id: 3) containing hard-coded values from the Example LWM2M
- Client of Appendix E of the LWM2M Technical Specification.
+ Client of Appendix E of the LwM2M Technical Specification.
  - Connectivity Monitoring Object (id: 4) as a skeleton
  - Firmware Update Object (id: 5) as a skeleton.
  - Location Object (id: 6) as a skeleton.
@@ -228,19 +228,19 @@ The lwm2mclient features nine LWM2M objects:
            exec |  2 |     E      |    No     |    Yes    |         |       |
            dec  |  3 |    R/W     |    No     |    Yes    |  Float  |       |
 
-The lwm2mclient opens UDP port 56830 and tries to register to a LWM2M Server at
+The lwm2mclient opens UDP port 56830 and tries to register to a LwM2M Server at
 127.0.0.1:5683. It features a basic command line interface. Type 'help' for a
 list of supported commands.
 
 Options are:
 ```
 Usage: lwm2mclient [OPTION]
-Launch a LWM2M client.
+Launch a LwM2M client.
 Options:
   -n NAME	Set the endpoint name of the Client. Default: testlwm2mclient
   -l PORT	Set the local UDP port of the Client. Default: 56830
-  -h HOST	Set the hostname of the LWM2M Server to connect to. Default: localhost
-  -p PORT	Set the port of the LWM2M Server to connect to. Default: 5683
+  -h HOST	Set the hostname of the LwM2M Server to connect to. Default: localhost
+  -p PORT	Set the port of the LwM2M Server to connect to. Default: 5683
   -4		Use IPv4 connection. Default: IPv6 connection
   -t TIME	Set the lifetime of the Client. Default: 300
   -b		Bootstrap requested.
@@ -269,7 +269,7 @@ LWM2M objects:
  - Security Object (id: 0)
  - Server Object (id: 1)
  - Device Object (id: 3) containing hard-coded values from the Example LWM2M
- Client of Appendix E of the LWM2M Technical Specification.
+ Client of Appendix E of the LwM2M Technical Specification.
  - Test Object (id: 31024) from the lwm2mclient as described above.
 
 The lightclient does not feature any command-line interface.
@@ -277,7 +277,7 @@ The lightclient does not feature any command-line interface.
 Options are:
 ```
 Usage: lwm2mclient [OPTION]
-Launch a LWM2M client.
+Launch a LwM2M client.
 Options:
   -n NAME	Set the endpoint name of the Client. Default: testlightclient
   -l PORT	Set the local UDP port of the Client. Default: 56830

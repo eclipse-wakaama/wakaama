@@ -5,9 +5,9 @@ set(WAKAAMA_EXAMPLE_DIRECTORY "${WAKAAMA_TOP_LEVEL_DIRECTORY}/examples")
 set(WAKAAMA_EXAMPLE_SHARED_DIRECTORY "${WAKAAMA_EXAMPLE_DIRECTORY}/shared")
 
 # Mode
-option(WAKAAMA_MODE_SERVER "Enable LWM2M Server interfaces" OFF)
-option(WAKAAMA_MODE_BOOTSTRAP_SERVER "Enable LWM2M Bootstrap Server interfaces" OFF)
-option(WAKAAMA_MODE_CLIENT "Enable LWM2M Client interfaces" OFF)
+option(WAKAAMA_MODE_SERVER "Enable LwM2M Server interfaces" OFF)
+option(WAKAAMA_MODE_BOOTSTRAP_SERVER "Enable LwM2M Bootstrap Server interfaces" OFF)
+option(WAKAAMA_MODE_CLIENT "Enable LwM2M Client interfaces" OFF)
 
 if(NOT WAKAAMA_MODE_SERVER
    AND NOT WAKAAMA_MODE_BOOTSTRAP_SERVER

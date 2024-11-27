@@ -1294,7 +1294,7 @@ static int prv_getParameters(multi_option_t * query,
     if (*versionP == VERSION_1_0 &&
         (*bindingP & (BINDING_T|BINDING_N)) != 0)
     {
-        /* These bindings aren't valid in LWM2M 1.0 */
+        /* These bindings aren't valid in LwM2M 1.0 */
         goto error;
     }
 
@@ -1579,7 +1579,7 @@ static int prv_getId(uint8_t * data,
 
                     if (limit2 > limit - 2) return 0;
 
-                    // Note that the LWM2M 1.1.1 spec limits the major and
+                    // Note that the LwM2M 1.1.1 spec limits the major and
                     // minor to 1 digit. This allow for values up to 255 in
                     // case it is expanded in the future or some client
                     // incorrectly exceeds 1 digit.

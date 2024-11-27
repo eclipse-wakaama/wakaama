@@ -31,7 +31,7 @@ static_assert(sizeof(double) == sizeof(uint64_t), "sizeof(double) != sizeof(uint
 #endif
 
 #ifdef LWM2M_VERSION_1_0
-#error CBOR not supported with LWM2M 1.0
+#error CBOR not supported with LwM2M 1.0
 #endif
 
 #define CBOR_UNSIGNED_INTEGER 0

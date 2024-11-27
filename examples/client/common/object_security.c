@@ -40,7 +40,7 @@
  */
 
 /*
- * Here we implement a very basic LWM2M Security Object which only knows NoSec security mode.
+ * Here we implement a very basic LwM2M Security Object which only knows NoSec security mode.
  */
 
 #include "liblwm2m.h"

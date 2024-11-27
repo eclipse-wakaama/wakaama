@@ -1023,7 +1023,7 @@ void handle_sigint(int signum)
 void print_usage(void)
 {
     fprintf(stderr, "Usage: lwm2mserver [OPTION]\r\n");
-    fprintf(stderr, "Launch a LWM2M server on localhost.\r\n\n");
+    fprintf(stderr, "Launch a LwM2M server on localhost.\r\n\n");
     fprintf(stdout, "Options:\r\n");
     fprintf(stdout, "  -4\t\tUse IPv4 connection. Default: IPv6 connection\r\n");
     fprintf(stdout, "  -l PORT\tSet the local UDP port of the Server. Default: "LWM2M_STANDARD_PORT_STR"\r\n");

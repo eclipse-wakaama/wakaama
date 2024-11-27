@@ -82,7 +82,7 @@ void handle_sigint(int signum)
 
 void print_usage(const char *filename, const char *port) {
     fprintf(stdout, "Usage: bootstap_server [OPTION]\r\n");
-    fprintf(stderr, "Launch a LWM2M Bootstrap Server.\r\n\n");
+    fprintf(stderr, "Launch a LwM2M Bootstrap Server.\r\n\n");
     fprintf(stdout, "Options:\r\n");
     fprintf(stdout, "  -f FILE\tSpecify BootStrap Information file. Default: ./%s\r\n", filename);
     fprintf(stdout, "  -l PORT\tSet the local UDP port of the Bootstrap Server. Default: %s\r\n", port);
@@ -526,7 +526,7 @@ static void prv_bootstrap_client(lwm2m_context_t *lwm2mH,
     *port = 0;
     port++;
 
-    fprintf(stderr, "Trying to connect to LWM2M CLient at %s:%s\r\n", host, port);
+    fprintf(stderr, "Trying to connect to LwM2M CLient at %s:%s\r\n", host, port);
     newConnP = lwm2m_connection_create(dataP->connList, dataP->sock, host, port, dataP->addressFamily);
     if (newConnP == NULL) {
         fprintf(stderr, "Connection creation failed.\r\n");
@@ -535,7 +535,7 @@ static void prv_bootstrap_client(lwm2m_context_t *lwm2mH,
     dataP->connList = newConnP;
 
     // simulate a client bootstrap request.
-    // Only LWM2M 1.0 clients support this method of bootstrap. For them, TLV
+    // Only LwM2M 1.0 clients support this method of bootstrap. For them, TLV
     // support is mandatory.
     if (COAP_204_CHANGED == prv_bootstrap_callback(lwm2mH, newConnP, COAP_NO_ERROR, NULL, name, LWM2M_CONTENT_TLV, NULL, 0, user_data))
     {

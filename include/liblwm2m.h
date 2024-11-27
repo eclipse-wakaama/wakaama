@@ -93,8 +93,8 @@ extern "C" {
 
 #ifndef LWM2M_SUPPORT_TLV
 #if defined(LWM2M_VERSION_1_0) || defined(LWM2M_SERVER_MODE) || defined(LWM2M_BOOTSTRAP_SERVER_MODE)
-/* TLV is mandatory for LWM2M 1.0 client and server. */
-/* TLV is mandatory for LWM2M 1.1 server. */
+/* TLV is mandatory for LwM2M 1.0 client and server. */
+/* TLV is mandatory for LwM2M 1.1 server. */
 #define LWM2M_SUPPORT_TLV
 #endif
 #endif
@@ -137,7 +137,7 @@ typedef struct _lwm2m_context_ lwm2m_context_t;
 // communication layer
 #ifdef LWM2M_CLIENT_MODE
 // Returns a session handle that MUST uniquely identify a peer.
-// contextP: Pointer to the LWM2M context
+// contextP: Pointer to the LwM2M context
 // secObjInstID: ID of the Securty Object instance to open a connection to
 // userData: parameter to lwm2m_init()
 void * lwm2m_connect_server(uint16_t secObjInstID, void * userData);
@@ -203,7 +203,7 @@ bool lwm2m_session_is_equal(void * session1, void * session2, void * userData);
 #define LWM2M_OSCORE_OBJECT_ID             21
 
 /*
- * Resource IDs for the LWM2M Security Object
+ * Resource IDs for the LwM2M Security Object
  */
 #define LWM2M_SECURITY_URI_ID 0
 #define LWM2M_SECURITY_BOOTSTRAP_ID 1
@@ -238,7 +238,7 @@ bool lwm2m_session_is_equal(void * session1, void * session2, void * userData);
 #define LWM2M_SECURITY_RDS_APPLICATION_ID 30
 
 /*
- * Resource IDs for the LWM2M Server Object
+ * Resource IDs for the LwM2M Server Object
  */
 #define LWM2M_SERVER_SHORT_ID_ID              0
 #define LWM2M_SERVER_LIFETIME_ID              1
@@ -349,7 +349,7 @@ typedef enum
 
 #define LWM2M_STRING_ID_MAX_LEN 6
 
-// Parse an URI in LWM2M format and fill the lwm2m_uri_t.
+// Parse an URI in LwM2M format and fill the lwm2m_uri_t.
 // Return the number of characters read from buffer or 0 in case of error.
 // Valid URIs: /1, /1/, /1/2, /1/2/, /1/2/3
 // Invalid URIs: /, //, //2, /1//, /1//3, /1/2/3/, /1/2/3/4
@@ -360,7 +360,7 @@ int lwm2m_uriToString(const lwm2m_uri_t * uriP, uint8_t * buffer, size_t bufferL
 char *uri_logging_to_string(const lwm2m_uri_t *uri);
 
 /*
- * The lwm2m_data_t is used to store LWM2M resource values in a hierarchical way.
+ * The lwm2m_data_t is used to store LwM2M resource values in a hierarchical way.
  * Depending on the type the value is different:
  * - LWM2M_TYPE_OBJECT, LWM2M_TYPE_OBJECT_INSTANCE, LWM2M_TYPE_MULTIPLE_RESOURCE: value.asChildren
  * - LWM2M_TYPE_STRING, LWM2M_TYPE_OPAQUE, LWM2M_TYPE_CORE_LINK: value.asBuffer
@@ -478,7 +478,7 @@ void lwm2m_data_include(lwm2m_data_t * subDataP, size_t count, lwm2m_data_t * da
 int lwm2m_decode_TLV(const uint8_t * buffer, size_t buffer_len, lwm2m_data_type_t * oType, uint16_t * oID, size_t * oDataIndex, size_t * oDataLen);
 
 /*
- * LWM2M Objects
+ * LwM2M Objects
  *
  * For the read callback, if *numDataP is not zero, *dataArrayP is pre-allocated
  * and contains the list of resources to read.
@@ -528,9 +528,9 @@ struct _lwm2m_object_t
 };
 
 /*
- * LWM2M Servers
+ * LwM2M Servers
  *
- * Since LWM2M Server Object instances are not accessible to LWM2M servers,
+ * Since LwM2M Server Object instances are not accessible to LWM2M servers,
  * there is no need to store them as lwm2m_objects_t
  */
 
@@ -557,8 +557,8 @@ typedef enum
 typedef enum {
     VERSION_MISSING = 0,  // Version number not in registration.
     VERSION_UNRECOGNIZED, // Version number in registration not recognized.
-    VERSION_1_0,          // LWM2M version 1.0
-    VERSION_1_1,          // LWM2M version 1.1
+    VERSION_1_0,          // LwM2M version 1.0
+    VERSION_1_1,          // LwM2M version 1.1
 } lwm2m_version_t;
 
 #define BINDING_UNKNOWN 0x01
@@ -575,7 +575,7 @@ typedef enum {
 typedef uint8_t lwm2m_binding_t;
 
 /*
- * LWM2M block data
+ * LwM2M block data
  *
  * Temporary data needed to handle block1 request and block2 responses.
  */
@@ -636,7 +636,7 @@ typedef struct _block_info_t
 } block_info_t;
 
 /*
- * LWM2M result callback
+ * LwM2M result callback
  *
  * When used with an observe, if 'data' is not nil, 'status' holds the observe counter.
  */
@@ -645,7 +645,7 @@ typedef void (*lwm2m_result_callback_t)(lwm2m_context_t *contextP, uint16_t clie
                                         size_t dataLength, void *userData);
 
 /*
- * LWM2M Observations
+ * LwM2M Observations
  *
  * Used to store latest user operation on the observation of remote clients resources.
  * Any node in the observation list means observation was established with client already.
@@ -666,7 +666,7 @@ typedef struct _lwm2m_observation_
 } lwm2m_observation_t;
 
 /*
- * LWM2M Link Attributes
+ * LwM2M Link Attributes
  *
  * Used for observation parameters.
  *
@@ -690,7 +690,7 @@ typedef struct
 } lwm2m_attributes_t;
 
 /*
- * LWM2M Clients
+ * LwM2M Clients
  *
  * Be careful not to mix lwm2m_client_object_t used to store list of objects of remote clients
  * and lwm2m_object_t describing objects exposed to remote servers.
@@ -726,7 +726,7 @@ typedef struct _lwm2m_client_
 } lwm2m_client_t;
 
 /*
- * LWM2M transaction
+ * LwM2M transaction
  *
  * Adaptation of Erbium's coap_transaction_t
  */
@@ -755,7 +755,7 @@ struct _lwm2m_transaction_
 };
 
 /*
- * LWM2M observed resources
+ * LwM2M observed resources
  */
 typedef struct _lwm2m_watcher_
 {
@@ -801,14 +801,14 @@ typedef enum
 
 #endif
 /*
- * LWM2M Context
+ * LwM2M Context
  */
 
 #ifdef LWM2M_BOOTSTRAP_SERVER_MODE
 // In all the following APIs, the session handle MUST uniquely identify a peer.
 
-// LWM2M bootstrap callback
-// When a LWM2M client requests bootstrap information, the callback is called with status COAP_NO_ERROR, uriP is nil and
+// LwM2M bootstrap callback
+// When a LwM2M client requests bootstrap information, the callback is called with status COAP_NO_ERROR, uriP is nil and
 // name is set. The callback must return a COAP_* error code. COAP_204_CHANGED for success.
 // After a lwm2m_bootstrap_delete() or a lwm2m_bootstrap_write(), the callback is called with the status returned by the
 // client, the URI of the operation (may be nil) and name is nil. The callback return value is ignored.
@@ -862,8 +862,8 @@ void lwm2m_handle_packet(lwm2m_context_t *contextP, uint8_t *buffer, size_t leng
 #ifdef LWM2M_CLIENT_MODE
 // configure the client side with the Endpoint Name, binding, MSISDN (can be nil), alternative path
 // for objects (can be nil) and a list of objects.
-// LWM2M Security Object (ID 0) must be present with either a bootstrap server or a LWM2M server and
-// its matching LWM2M Server Object (ID 1) instance
+// LwM2M Security Object (ID 0) must be present with either a bootstrap server or a LWM2M server and
+// its matching LwM2M Server Object (ID 1) instance
 int lwm2m_configure(lwm2m_context_t * contextP, const char * endpointName, const char * msisdn, const char * altPath, uint16_t numObject, lwm2m_object_t * objectList[]);
 int lwm2m_add_object(lwm2m_context_t * contextP, lwm2m_object_t * objectP);
 int lwm2m_remove_object(lwm2m_context_t * contextP, uint16_t id);
@@ -887,9 +887,9 @@ int lwm2m_send(lwm2m_context_t *contextP, uint16_t shortServerID, lwm2m_uri_t *u
 
 #ifdef LWM2M_SERVER_MODE
 // Clients registration/deregistration monitoring API.
-// When a LWM2M client registers, the callback is called with status COAP_201_CREATED.
-// When a LWM2M client deregisters, the callback is called with status COAP_202_DELETED.
-// clientID is the internal ID of the LWM2M Client.
+// When a LwM2M client registers, the callback is called with status COAP_201_CREATED.
+// When a LwM2M client deregisters, the callback is called with status COAP_202_DELETED.
+// clientID is the internal ID of the LwM2M Client.
 // The callback's parameters uri, data, dataLength are always NULL.
 // The lwm2m_client_t is present in the lwm2m_context_t's clientList when the callback is called. On a deregistration,
 // it deleted when the callback returns.
@@ -917,7 +917,7 @@ void lwm2m_reporting_set_send_callback(lwm2m_context_t *contextP, lwm2m_result_c
 
 #ifdef LWM2M_BOOTSTRAP_SERVER_MODE
 // Clients bootstrap request monitoring API.
-// When a LWM2M client sends a bootstrap request, the callback is called with the client's endpoint name.
+// When a LwM2M client sends a bootstrap request, the callback is called with the client's endpoint name.
 void lwm2m_set_bootstrap_callback(lwm2m_context_t * contextP, lwm2m_bootstrap_callback_t callback, void * userData);
 
 // Boostrap Interface APIs

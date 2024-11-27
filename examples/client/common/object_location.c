@@ -18,7 +18,7 @@
  *
  ******************************************************************************/
 /*! \file
-  LWM2M object "Location" implementation
+  LwM2M object "Location" implementation
 
   \author Joerg Hubschneider
 */
@@ -151,7 +151,7 @@ static uint8_t prv_res2tlv(lwm2m_data_t *dataP, location_data_t *locDataP) {
  * object, single resources or a sequence of resources
  * see 3GPP TS 23.032 V11.0.0(2012-09) page 23,24.
  * implemented for: HORIZONTAL_VELOCITY_WITH_UNCERTAINT
- * @param contextP     in,     unused pointer to LWM2M context
+ * @param contextP     in,     unused pointer to LwM2M context
  * @param objInstId    in,     instances ID of the location object to read
  * @param numDataP     in/out, pointer to the number of resource to read. 0 is the
  *                             exception for all readable resource of object instance
@@ -253,8 +253,8 @@ void location_setLocationAtTime(lwm2m_object_t *locationObj, float latitude, flo
 }
 
 /**
- * This function creates the LWM2M Location.
- * @return gives back allocated LWM2M data object structure pointer. On error,
+ * This function creates the LwM2M Location.
+ * @return gives back allocated LwM2M data object structure pointer. On error,
  * NULL value is returned.
  */
 lwm2m_object_t *get_object_location(void) {

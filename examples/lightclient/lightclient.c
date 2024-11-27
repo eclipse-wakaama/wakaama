@@ -196,7 +196,7 @@ void lwm2m_close_connection(void * sessionH,
 void print_usage(void)
 {
     fprintf(stdout, "Usage: lwm2mclient [OPTION]\r\n");
-    fprintf(stdout, "Launch a LWM2M client.\r\n");
+    fprintf(stdout, "Launch a LwM2M client.\r\n");
     fprintf(stdout, "Options:\r\n");
     fprintf(stdout, "  -n NAME\tSet the endpoint name of the Client. Default: testlightclient\r\n");
     fprintf(stdout, "  -l PORT\tSet the local UDP port of the Client. Default: 56830\r\n");
@@ -280,7 +280,7 @@ void print_state(lwm2m_context_t * lwm2mH)
 
     if (lwm2mH->serverList == NULL)
     {
-        fprintf(stderr, "No LWM2M Server.\r\n");
+        fprintf(stderr, "No LwM2M Server.\r\n");
     }
     else
     {
@@ -395,7 +395,7 @@ int main(int argc, char *argv[])
     /*
      *This call an internal function that create an IPv6 socket on the port 5683.
      */
-    fprintf(stderr, "Trying to bind LWM2M Client to port %s\r\n", localPort);
+    fprintf(stderr, "Trying to bind LwM2M Client to port %s\r\n", localPort);
     data.sock = lwm2m_create_socket(localPort, data.addressFamily);
     if (data.sock < 0)
     {
