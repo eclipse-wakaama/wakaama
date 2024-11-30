@@ -704,7 +704,7 @@ static void prv_remove(lwm2m_context_t * lwm2mH,
     /* unused parameter */
     (void)user_data;
 
-    res = lwm2m_remove_object(lwm2mH, 31024);
+    res = lwm2m_remove_object(lwm2mH, 31024, NULL);
     if (res != 0)
     {
         fprintf(stdout, "Removing object 31024 failed: ");
