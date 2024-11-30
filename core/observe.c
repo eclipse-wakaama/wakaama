@@ -945,7 +945,10 @@ int lwm2m_send(lwm2m_context_t *contextP, uint16_t shortServerID, lwm2m_uri_t *u
 
         coap_set_header_uri_path(transactionP->message, "/" URI_SEND_SEGMENT);
         coap_set_header_content_type(transactionP->message, format);
-        coap_set_payload(transactionP->message, buffer, length);
+        if (!transaction_set_payload(transactionP, buffer, length)) {
+            transaction_free(transactionP);
+            return COAP_500_INTERNAL_SERVER_ERROR;
+        }
 
         transactionP->callback = callback;
         transactionP->userData = userData;
