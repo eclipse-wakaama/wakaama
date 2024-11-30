@@ -953,19 +953,17 @@ syntax_error:
 static void prv_monitor_callback(lwm2m_context_t *lwm2mH, uint16_t clientID, lwm2m_uri_t *uriP, int status,
                                  block_info_t *block_info, lwm2m_media_type_t format, uint8_t *data, size_t dataLength,
                                  void *userData) {
-    lwm2m_client_t * targetP;
+    lwm2m_client_t *clientP;
 
     /* unused parameter */
     (void)userData;
+
+    clientP = (lwm2m_client_t *)LWM2M_LIST_FIND(lwm2mH->clientList, clientID);
 
     switch (status)
     {
     case COAP_201_CREATED:
         fprintf(stdout, "\r\nNew client #%d registered.\r\n", clientID);
-
-        targetP = (lwm2m_client_t *)lwm2m_list_find((lwm2m_list_t *)lwm2mH->clientList, clientID);
-
-        prv_dump_client(targetP);
         break;
 
     case COAP_202_DELETED:
@@ -974,16 +972,13 @@ static void prv_monitor_callback(lwm2m_context_t *lwm2mH, uint16_t clientID, lwm
 
     case COAP_204_CHANGED:
         fprintf(stdout, "\r\nClient #%d updated.\r\n", clientID);
-
-        targetP = (lwm2m_client_t *)lwm2m_list_find((lwm2m_list_t *)lwm2mH->clientList, clientID);
-
-        prv_dump_client(targetP);
         break;
 
     default:
         fprintf(stdout, "\r\nMonitor callback called with an unknown status: %d.\r\n", status);
         break;
     }
+    prv_dump_client(clientP);
 
     fprintf(stdout, "\r\n> ");
     fflush(stdout);
