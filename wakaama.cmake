@@ -296,33 +296,6 @@ target_include_directories(wakaama_transport_testing_fake PUBLIC ${WAKAAMA_TOP_L
 target_include_directories(wakaama_transport_testing_fake PRIVATE ${WAKAAMA_TOP_LEVEL_DIRECTORY}/include/)
 target_sources(wakaama_transport_testing_fake PRIVATE ${WAKAAMA_TOP_LEVEL_DIRECTORY}/tests/helper/connection.c)
 
-# Add shared source files to an existing target.
-function(target_sources_shared target)
-    get_target_property(TARGET_PROPERTY_CONN_IMPL ${target} CONNECTION_IMPLEMENTATION)
-
-    if(WAKAAMA_PLATFORM STREQUAL POSIX)
-        target_link_libraries(${target} PRIVATE wakaama_command_line wakaama_platform_posix)
-    endif()
-
-    if(WAKAAMA_CLI)
-        target_link_libraries(${target} PRIVATE wakaama_command_line)
-    endif()
-
-    set_defines(${target})
-
-    if(NOT TARGET_PROPERTY_CONN_IMPL OR WAKAAMA_TRANSPORT STREQUAL POSIX_UDP)
-        target_link_libraries(${target} PRIVATE wakaama_transport_posix_udp)
-    elseif(TARGET_PROPERTY_CONN_IMPL MATCHES "tinydtls" OR WAKAAMA_TRANSPORT STREQUAL TINYDTLS)
-        target_link_libraries(${target} PRIVATE wakaama_transport_tinydtls)
-    else()
-        message(
-            FATAL_ERROR "${target}: Unknown connection (DTLS) implementation '${TARGET_PROPERTY_CONN_IMPL} requested"
-        )
-    endif()
-
-    target_include_directories(${target} PUBLIC ${WAKAAMA_EXAMPLE_SHARED_DIRECTORY})
-endfunction()
-
 # Static library that users of Wakaama can link against
 #
 # This library simplifies building and maintaining Wakaama. It handles defines and compiler flags, adding the right
