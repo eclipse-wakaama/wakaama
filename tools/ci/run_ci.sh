@@ -156,31 +156,15 @@ function run_build() {
   # Existing directory needed by SonarQube build-wrapper
   mkdir -p "${OPT_BUILD_DIRECTORY}"
 
-  echo "Default build"
   ${OPT_WRAPPER_CMD} cmake -GNinja -S ${OPT_SOURCE_DIRECTORY} -B "${OPT_BUILD_DIRECTORY}" \
     -DWAKAAMA_PLATFORM=POSIX ${CMAKE_ARGS}
   ${OPT_WRAPPER_CMD} cmake --build "${OPT_BUILD_DIRECTORY}"
-
-  # CMake presets
-  echo "CMake presets build"
-  for i in $(cmake --list-presets build | awk '/"/{ print $1 }' | tr -d '"');do
-  	echo "CMake preset $i"
-  	${OPT_WRAPPER_CMD} cmake --preset "$i" -G Ninja ${CMAKE_ARGS}
-    ${OPT_WRAPPER_CMD} cmake --build --preset "$i"
-  done
 }
 
 function run_tests() {
   export CTEST_OUTPUT_ON_FAILURE=ON
 
-  echo "Default test run"
   cmake --build "${OPT_BUILD_DIRECTORY}" --target test
-
-  echo "CMake presets test run"
-  for i in $(cmake --list-presets build | awk '/"/{ print $1 }' | tr -d '"');do
-    echo "CMake preset $i"
-    cmake --build --preset "$i" --target test
-  done
 
   mkdir -p "${REPO_ROOT_DIR}/${OPT_BUILD_DIRECTORY}/coverage"
 
