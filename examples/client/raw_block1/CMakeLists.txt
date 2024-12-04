@@ -33,3 +33,5 @@ target_sources(
 )
 
 target_link_libraries(lwm2mclient_raw_block1 PRIVATE wakaama_static)
+
+enable_testing()
