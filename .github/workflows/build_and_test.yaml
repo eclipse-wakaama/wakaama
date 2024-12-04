@@ -18,6 +18,7 @@ jobs:
       matrix:
         sanitizer: ["address", "leak", "thread", "undefined"]
         compiler: ["clang-18", "gcc-13"]
+        example: ["bootstrap_server", "client/udp", "client/tinydtls", "client/raw_block1", "lightclient", "server"]
 
     steps:
     - name: Checkout code including full history and submodules
@@ -29,7 +30,7 @@ jobs:
     - name: Install dependencies from APT repository
       run: |
         sudo apt-get update
-        sudo apt-get install cmake libcunit1-dev ninja-build unzip wget
+        sudo apt-get install cmake libcunit1-dev ninja-build
 
     - name: Build all binaries
       run: |
@@ -43,27 +44,22 @@ jobs:
       env:
         CC:  ${{ matrix.compiler }}
 
-    - name: Build examples for integration tests
+    - name: Build examples
       run: |
-        for example in "server" "bootstrap_server" "client/udp"
-        do
-          echo "Building example ${example}"
-          tools/ci/run_ci.sh \
-            --run-clean \
-            --run-build \
-            --sanitizer ${{ matrix.sanitizer }} \
-            --source-directory examples/${example} \
-            --build-directory build-wakaama-${example}
-        done
+        tools/ci/run_ci.sh \
+          --run-clean \
+          --run-build \
+          --sanitizer ${{ matrix.sanitizer }} \
+          --source-directory examples/${{ matrix.example }} \
+          --build-directory wakaama-build-${{ matrix.example }}
       env:
         CC:  ${{ matrix.compiler }}
 
-    - name: Install dependencies
+    - name: Unit test examples
       run: |
-          pip install --require-hashes -r tests/integration/requirements.txt
-
-    - name: Execute integration tests
-      run: |
-          python -c "import sys; print(sys.version)"
-          pytest -v tests/integration
-
+        tools/ci/run_ci.sh \
+          --run-tests \
+          --source-directory examples/${{ matrix.example }} \
+          --build-directory wakaama-build-${{ matrix.example }}
+      env:
+        CC:  ${{ matrix.compiler }}
