@@ -5,17 +5,9 @@ set(WAKAAMA_EXAMPLE_DIRECTORY "${WAKAAMA_TOP_LEVEL_DIRECTORY}/examples")
 set(WAKAAMA_EXAMPLE_SHARED_DIRECTORY "${WAKAAMA_EXAMPLE_DIRECTORY}/shared")
 
 # Mode
-option(WAKAAMA_MODE_SERVER "Enable LWM2M Server interfaces" OFF)
-option(WAKAAMA_MODE_BOOTSTRAP_SERVER "Enable LWM2M Bootstrap Server interfaces" OFF)
-option(WAKAAMA_MODE_CLIENT "Enable LWM2M Client interfaces" OFF)
-
-if(NOT WAKAAMA_MODE_SERVER
-   AND NOT WAKAAMA_MODE_BOOTSTRAP_SERVER
-   AND NOT WAKAAMA_MODE_CLIENT
-)
-    message(WARNING "No mode selected. Defaulting to 'WAKAAMA_MODE_SERVER'")
-    set(WAKAAMA_MODE_SERVER ON)
-endif()
+option(WAKAAMA_MODE_SERVER "Enable LWM2M Server interfaces" ON)
+option(WAKAAMA_MODE_BOOTSTRAP_SERVER "Enable LWM2M Bootstrap Server interfaces" ON)
+option(WAKAAMA_MODE_CLIENT "Enable LWM2M Client interfaces" ON)
 
 # Client
 option(WAKAAMA_CLIENT_INITIATED_BOOTSTRAP "Enable client initiated bootstrap support in a client" OFF)

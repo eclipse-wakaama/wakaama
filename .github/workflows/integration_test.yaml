@@ -1,0 +1,49 @@
+name: Build and Test
+
+on:
+  push:
+    branches: '**'
+  pull_request:
+    branches: '**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build_and_test:
+    runs-on: ubuntu-24.04
+
+    steps:
+    - name: Checkout code including full history and submodules
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      with:
+        submodules: true
+        fetch-depth: 0
+
+    - name: Install dependencies from APT repository
+      run: |
+        sudo apt-get update
+        sudo apt-get install cmake libcunit1-dev ninja-build
+
+    - name: Build examples for integration tests
+      run: |
+        for example in "server" "bootstrap_server" "client/udp"
+        do
+          echo "Building example ${example}"
+          tools/ci/run_ci.sh \
+            --run-clean \
+            --run-build \
+            --run-tests \
+            --source-directory examples/${example} \
+            --build-directory build-wakaama-${example}
+        done
+
+    - name: Install dependencies
+      run: |
+          pip install --require-hashes -r tests/integration/requirements.txt
+
+    - name: Execute integration tests
+      run: |
+          python -c "import sys; print(sys.version)"
+          pytest -v tests/integration
