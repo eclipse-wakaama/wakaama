@@ -12,6 +12,18 @@
       "hidden": true,
       "binaryDir": "${sourceDir}/build-presets/${presetName}",
       "cacheVariables": {
+        "WAKAAMA_MODE_SERVER": {
+          "type": "BOOL",
+          "value": "OFF"
+        },
+        "WAKAAMA_MODE_BOOTSTRAP_SERVER": {
+          "type": "BOOL",
+          "value": "OFF"
+        },
+        "WAKAAMA_MODE_CLIENT": {
+          "type": "BOOL",
+          "value": "OFF"
+        },
         "WAKAAMA_PLATFORM": {
           "type": "STRING",
           "value": "POSIX"
