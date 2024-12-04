@@ -477,7 +477,6 @@ void lwm2m_data_include(lwm2m_data_t * subDataP, size_t count, lwm2m_data_t * da
 
 int lwm2m_decode_TLV(const uint8_t * buffer, size_t buffer_len, lwm2m_data_type_t * oType, uint16_t * oID, size_t * oDataIndex, size_t * oDataLen);
 
-
 /*
  * LWM2M Objects
  *
@@ -555,8 +554,7 @@ typedef enum
     STATE_BS_FAILED,               // bootstrap failed
 } lwm2m_status_t;
 
-typedef enum
-{
+typedef enum {
     VERSION_MISSING = 0,  // Version number not in registration.
     VERSION_UNRECOGNIZED, // Version number in registration not recognized.
     VERSION_1_0,          // LWM2M version 1.0
@@ -727,7 +725,6 @@ typedef struct _lwm2m_client_
     lwm2m_block_data_t *    blockData;   // list to handle temporary block data.
 } lwm2m_client_t;
 
-
 /*
  * LWM2M transaction
  *
@@ -894,7 +891,8 @@ int lwm2m_send(lwm2m_context_t *contextP, uint16_t shortServerID, lwm2m_uri_t *u
 // When a LWM2M client deregisters, the callback is called with status COAP_202_DELETED.
 // clientID is the internal ID of the LWM2M Client.
 // The callback's parameters uri, data, dataLength are always NULL.
-// The lwm2m_client_t is present in the lwm2m_context_t's clientList when the callback is called. On a deregistration, it deleted when the callback returns.
+// The lwm2m_client_t is present in the lwm2m_context_t's clientList when the callback is called. On a deregistration,
+// it deleted when the callback returns.
 void lwm2m_set_monitoring_callback(lwm2m_context_t * contextP, lwm2m_result_callback_t callback, void * userData);
 
 // Device Management APIs
