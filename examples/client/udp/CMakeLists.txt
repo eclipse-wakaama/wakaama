@@ -3,6 +3,8 @@ cmake_minimum_required(VERSION 3.21)
 project(lwm2mclient C)
 
 set(WAKAAMA_MODE_CLIENT ON)
+set(WAKAAMA_MODE_SERVER OFF)
+set(WAKAAMA_MODE_BOOTSTRAP_SERVER OFF)
 set(WAKAAMA_CLIENT_INITIATED_BOOTSTRAP ON)
 set(WAKAAMA_DATA_SENML_JSON ON)
 set(WAKAAMA_DATA_SENML_CBOR OFF)
@@ -30,3 +32,5 @@ target_sources(
 )
 
 target_link_libraries(lwm2mclient PRIVATE wakaama_static)
+
+enable_testing()
