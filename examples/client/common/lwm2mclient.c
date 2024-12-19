@@ -269,8 +269,7 @@ void lwm2m_close_connection(void *sessionH, void *userData) {
 #endif
 
     if (targetP == app_data->connList) {
-        app_data->connList = targetP->next;
-        lwm2m_free(targetP);
+        app_data->connList = lwm2m_connection_remove_one(targetP);
     } else {
 #ifdef WITH_TINYDTLS
         lwm2m_dtls_connection_t *parentP;
@@ -278,14 +277,7 @@ void lwm2m_close_connection(void *sessionH, void *userData) {
         lwm2m_connection_t *parentP;
 #endif
 
-        parentP = app_data->connList;
-        while (parentP != NULL && parentP->next != targetP) {
-            parentP = parentP->next;
-        }
-        if (parentP != NULL) {
-            parentP->next = targetP->next;
-            lwm2m_free(targetP);
-        }
+        lwm2m_connection_free(app_data->connList);
     }
 }
 

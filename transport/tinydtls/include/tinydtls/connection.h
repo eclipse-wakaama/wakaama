@@ -65,6 +65,7 @@ lwm2m_dtls_connection_t *lwm2m_connection_new_incoming(lwm2m_dtls_connection_t *
 lwm2m_dtls_connection_t *lwm2m_connection_create(lwm2m_dtls_connection_t *connList, int sock,
                                                  lwm2m_object_t *securityObj, int instanceId, lwm2m_context_t *lwm2mH,
                                                  int addressFamily);
+lwm2m_dtls_connection_t *lwm2m_connection_remove_one(lwm2m_dtls_connection_t *connList);
 
 void lwm2m_connection_free(lwm2m_dtls_connection_t *connList);
 
