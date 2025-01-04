@@ -1155,3 +1155,15 @@ lwm2m_data_type_t utils_depthToDatatype(uri_depth_t depth)
 
     return LWM2M_TYPE_UNDEFINED;
 }
+
+size_t utils_strnlen(const char *str, size_t max_size) {
+    if (str == NULL) {
+        return 0;
+    }
+    const char *pos = memchr(str, '\0', max_size);
+    if (pos == NULL) {
+        return max_size;
+    }
+
+    return pos - str;
+}

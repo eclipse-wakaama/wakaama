@@ -47,5 +47,15 @@ lwm2m_server_t *utils_findBootstrapServer(lwm2m_context_t *contextP, void *fromS
 #if defined(LWM2M_SERVER_MODE) || defined(LWM2M_BOOTSTRAP_SERVER_MODE)
 lwm2m_client_t *utils_findClient(lwm2m_context_t *contextP, void *fromSessionH);
 #endif
+/** A safer version of `strlen`. Finds the number of chars (bytes) of the given string up to a given max. length.
+ *
+ * The behaviour is undefined if the maximum length value is bigger than the actually reserved memory behind the @a str
+ * buffer.
+ *
+ * @param str The null-terminated string to find the length of.
+ * @param max_size Max size of string.
+ * @return The size of the string if it is smaller or equal to max_size. Otherwise max_size.
+ */
+size_t utils_strnlen(const char *str, size_t max_size);
 
 #endif /* WAKAAMA_UTILS_H */

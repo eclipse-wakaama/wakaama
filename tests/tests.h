@@ -58,4 +58,5 @@ CU_ErrorCode create_logging_test_suit(void);
 #ifdef LWM2M_SERVER_MODE
 CU_ErrorCode create_registration_test_suit(void);
 #endif
+CU_ErrorCode create_utils_suit(void);
 #endif /* TESTS_H_ */
