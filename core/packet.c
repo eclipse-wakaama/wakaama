@@ -87,6 +87,7 @@ Contains code snippets which are:
 
 
 #include "internals.h"
+#include "message_dedup.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -498,6 +499,26 @@ void lwm2m_handle_packet(lwm2m_context_t *contextP, uint8_t *buffer, size_t leng
                     message->type, message->token_len, message->code >> 5, message->code & 0x1F, message->mid,
                     message->content_type);
         LOG_ARG_DBG("Payload: %.*s", (int)message->payload_len, STR_NULL2EMPTY(message->payload));
+
+        uint8_t dedup_coap_error_code = NO_ERROR;
+        if (coap_check_message_duplication(&contextP->message_dedup, message->mid, fromSessionH,
+                                           &dedup_coap_error_code)) {
+            if (dedup_coap_error_code == NO_ERROR) {
+                /* Internal error occurred, return silently. */
+                return;
+            }
+            LOG_WARN("Message %d already seen in transmission window", message->mid);
+            coap_init_message(response, COAP_TYPE_ACK, dedup_coap_error_code, message->mid);
+            if (message->token_len) {
+                coap_set_header_token(response, message->token, message->token_len);
+            }
+            coap_error_code = message_send(contextP, response, fromSessionH);
+            if (coap_error_code != NO_ERROR) {
+                LOG_ERR("Warning: Message already seen in transmission window");
+            }
+            return;
+        }
+
         if (message->code >= COAP_GET && message->code <= COAP_DELETE)
         {
             uint32_t block_num = 0;
@@ -644,7 +665,10 @@ void lwm2m_handle_packet(lwm2m_context_t *contextP, uint8_t *buffer, size_t leng
                                            lwm2m_get_coap_block_size());
                     coap_set_payload(response, response->payload, lwm2m_get_coap_block_size());
                 }
-
+                if (!coap_deduplication_set_response_code(&contextP->message_dedup, response->mid, fromSessionH,
+                                                          response->code)) {
+                    LOG_ARG_ERR("Message %" PRIu16 " duplication not tracked", response->mid);
+                }
                 coap_error_code = message_send(contextP, response, fromSessionH);
 
                 lwm2m_free(payload);
@@ -669,6 +693,10 @@ void lwm2m_handle_packet(lwm2m_context_t *contextP, uint8_t *buffer, size_t leng
                 }
                 if (1 == coap_set_status_code(response, coap_error_code))
                 {
+                    if (!coap_deduplication_set_response_code(&contextP->message_dedup, response->mid, fromSessionH,
+                                                              response->code)) {
+                        LOG_ARG_ERR("Message %" PRIu16 " duplication not tracked", response->mid);
+                    }
                     coap_error_code = message_send(contextP, response, fromSessionH);
                 }
             }
@@ -718,6 +746,10 @@ void lwm2m_handle_packet(lwm2m_context_t *contextP, uint8_t *buffer, size_t leng
                         coap_init_message(response, COAP_TYPE_ACK, 0, message->mid);
                         if (message->payload_len > lwm2m_get_coap_block_size()) {
                             coap_set_status_code(response, COAP_413_ENTITY_TOO_LARGE);
+                        }
+                        if (!coap_deduplication_set_response_code(&contextP->message_dedup, response->mid, fromSessionH,
+                                                                  response->code)) {
+                            LOG_ARG_ERR("Message %" PRIu16 " duplication not tracked", response->mid);
                         }
                         coap_error_code = message_send(contextP, response, fromSessionH);
                     }
@@ -860,6 +892,10 @@ void lwm2m_handle_packet(lwm2m_context_t *contextP, uint8_t *buffer, size_t leng
         /* Reuse input buffer for error message. */
         coap_init_message(message, COAP_TYPE_ACK, coap_error_code, message->mid);
         coap_set_payload(message, coap_error_message, strlen(coap_error_message));
+        if (!coap_deduplication_set_response_code(&contextP->message_dedup, response->mid, fromSessionH,
+                                                  response->code)) {
+            LOG_ARG_ERR("Message %" PRIu16 " duplication not tracked", response->mid);
+        }
         message_send(contextP, message, fromSessionH);
     }
 }
@@ -892,4 +928,3 @@ uint8_t message_send(lwm2m_context_t * contextP,
 
     return result;
 }
-
