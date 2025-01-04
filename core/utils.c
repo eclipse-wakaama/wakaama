@@ -940,18 +940,9 @@ int utils_stringCopy(char * buffer,
                      size_t length,
                      const char * str)
 {
-    size_t i;
+    size_t i = strlen(str); // NOSONAR
 
-    for (i = 0 ; i < length && str[i] != 0 ; i++)
-    {
-        buffer[i] = str[i];
-    }
-
-    if (i == length) return -1;
-
-    buffer[i] = 0;
-
-    return (int)i;
+    return (int)utils_strncpy(buffer, length, str, i);
 }
 
 void utils_copyValue(void * dst,
@@ -1166,4 +1157,31 @@ size_t utils_strnlen(const char *str, size_t max_size) {
     }
 
     return pos - str;
+}
+
+size_t utils_strncpy(char *dest, const size_t dest_size, const char *src, const size_t src_size) {
+    if (src == NULL || dest == NULL) {
+        return 0;
+    }
+
+    size_t bytes_to_write = dest_size;
+    size_t actual_src_len = utils_strnlen(src, src_size);
+
+    if (actual_src_len < bytes_to_write) {
+        bytes_to_write = actual_src_len;
+    }
+    memmove(dest, src, bytes_to_write);
+    if (bytes_to_write < dest_size) {
+        dest[bytes_to_write] = '\0';
+    }
+
+    // Do this always. Just to be sure!
+    if (dest_size > 0) {
+        dest[dest_size - 1] = '\0';
+    }
+
+    if (dest_size > 0 && bytes_to_write == dest_size) {
+        return bytes_to_write - 1; // '\0' written to last position
+    }
+    return bytes_to_write;
 }
