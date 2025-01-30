@@ -24,7 +24,7 @@ jobs:
       id: runcmd
       with:
         arch: ${{ matrix.arch }}
-        distro: ${{ matrix.arch == 'armv6' && 'bookworm' || 'ubuntu22.04' }}
+        distro: ${{ matrix.arch == 'ppc64le' && 'ubuntu22.04' || 'bookworm' }}
         githubToken: ${{ github.token }}
         install: |
           apt update
