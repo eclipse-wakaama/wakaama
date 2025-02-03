@@ -31,8 +31,8 @@ jobs:
           apt -qy --no-install-recommends install \
                 automake \
                 build-essential \
-                clang \
                 cmake \
+                gcc-12 \
                 git \
                 libcunit1-dev \
                 ninja-build \
@@ -46,4 +46,4 @@ jobs:
           # user (host system).
           git config --global --add safe.directory "${PWD}/examples/shared/tinydtls"
 
-          CC=clang tools/ci/run_ci.sh --run-build --run-tests
+          CC=gcc-12 tools/ci/run_ci.sh --run-build --run-tests
