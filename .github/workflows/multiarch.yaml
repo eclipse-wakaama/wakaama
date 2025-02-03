@@ -32,7 +32,7 @@ jobs:
                 automake \
                 build-essential \
                 cmake \
-                gcc-12 \
+                gcc-11 \
                 git \
                 libcunit1-dev \
                 ninja-build \
@@ -46,4 +46,4 @@ jobs:
           # user (host system).
           git config --global --add safe.directory "${PWD}/examples/shared/tinydtls"
 
-          CC=gcc-12 tools/ci/run_ci.sh --run-build --run-tests
+          CC=gcc-11 tools/ci/run_ci.sh --run-build --run-tests
