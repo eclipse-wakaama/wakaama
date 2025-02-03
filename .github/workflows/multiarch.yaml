@@ -31,6 +31,7 @@ jobs:
           apt -qy --no-install-recommends install \
                 automake \
                 build-essential \
+                clang \
                 cmake \
                 git \
                 libcunit1-dev \
@@ -45,4 +46,4 @@ jobs:
           # user (host system).
           git config --global --add safe.directory "${PWD}/examples/shared/tinydtls"
 
-          tools/ci/run_ci.sh --run-build --run-tests
+          CC=clang tools/ci/run_ci.sh --run-build --run-tests
