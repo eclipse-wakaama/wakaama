@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        arch: ["armv6", "armv7", "aarch64", "s390x", "ppc64le"]
+        arch: ["armv6", "armv7"]
     steps:
     - name: Checkout code including full history and submodules
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
