@@ -172,6 +172,12 @@ tools/ci/run_ci.sh --run-build
 pytest -v tests/integration
 ```
 
+### Disabling Unit Tests
+
+Building the unit tests can be controlled by the CMake cache variable:
+
+- `WAKAAMA_UNIT_TESTS`: The tests are enabled by default
+
 ## Examples
 
 There are some example applications provided to test the server, client and bootstrap capabilities of Wakaama.
