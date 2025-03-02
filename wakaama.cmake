@@ -44,6 +44,12 @@ set_property(
              1024
 )
 
+# The maximum number of retransmissions used for confirmable messages.
+set(WAKAAMA_COAP_DEFAULT_MAX_RETRANSMIT
+    4
+    CACHE STRING "Default CoAP max retransmissions"
+)
+
 # Logging
 set(WAKAAMA_LOG_LEVEL
     LOG_DISABLED
@@ -144,6 +150,10 @@ function(set_coap_defines)
     endif()
 
     target_compile_definitions(${target} PUBLIC LWM2M_COAP_DEFAULT_BLOCK_SIZE=${WAKAAMA_COAP_DEFAULT_BLOCK_SIZE})
+
+    target_compile_definitions(
+        ${target} PUBLIC LWM2M_COAP_DEFAULT_MAX_RETRANSMIT=${WAKAAMA_COAP_DEFAULT_MAX_RETRANSMIT}
+    )
 endfunction()
 
 # Set the defines for logging configuration
@@ -237,17 +247,6 @@ function(target_sources_wakaama target)
     if(NOT CURRENT_TARGET_COMPILE_DEFINITIONS MATCHES "LWM2M_COAP_DEFAULT_BLOCK_SIZE=")
         target_compile_definitions(${target} PRIVATE "LWM2M_COAP_DEFAULT_BLOCK_SIZE=${LWM2M_COAP_DEFAULT_BLOCK_SIZE}")
         message(STATUS "${target}: Default CoAP block size not set, using ${LWM2M_COAP_DEFAULT_BLOCK_SIZE}")
-    endif()
-
-    # LWM2M_COAP_DEFAULT_MAX_RETRANSMIT is needed by source files -> always set it
-    if(NOT CURRENT_TARGET_COMPILE_DEFINITIONS MATCHES "LWM2M_COAP_DEFAULT_MAX_RETRANSMIT=")
-        target_compile_definitions(
-            ${target} PRIVATE "LWM2M_COAP_DEFAULT_MAX_RETRANSMIT=${LWM2M_COAP_DEFAULT_MAX_RETRANSMIT}"
-        )
-        message(
-            STATUS
-                "${target}: Default CoAP max retransmission count not set, using ${LWM2M_COAP_DEFAULT_MAX_RETRANSMIT}"
-        )
     endif()
 
     # Detect invalid configuration already during CMake run
@@ -349,10 +348,4 @@ add_compile_options(
 set(LWM2M_COAP_DEFAULT_BLOCK_SIZE
     1024
     CACHE STRING "Default CoAP block size; Used if not set on a per-target basis"
-)
-
-# The maximum number of retransmissions used for confirmable messages.
-set(LWM2M_COAP_DEFAULT_MAX_RETRANSMIT
-    4
-    CACHE STRING "Default CoAP max retransmissions; Used if not set on a per-target basis"
 )
