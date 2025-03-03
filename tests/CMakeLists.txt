@@ -15,6 +15,7 @@ set(TEST_SOURCES
     core_logging_tests.c
     core_registration_tests.c
     core_uritests.c
+    core_utils_tests.c
     data_senml_cbor_tests.c
     data_senml_json_tests.c
     data_tlv_json_lwm2m_data_test.c
