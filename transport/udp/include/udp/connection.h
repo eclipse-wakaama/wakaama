@@ -49,6 +49,8 @@ lwm2m_connection_t *lwm2m_connection_new_incoming(lwm2m_connection_t *connList, 
 lwm2m_connection_t *lwm2m_connection_create(lwm2m_connection_t *connList, int sock, char *host, char *port,
                                             int addressFamily);
 
+lwm2m_connection_t *lwm2m_connection_remove_one(lwm2m_connection_t *connList);
+
 void lwm2m_connection_free(lwm2m_connection_t *connList);
 
 int lwm2m_connection_send(lwm2m_connection_t *connP, uint8_t *buffer, size_t length);
