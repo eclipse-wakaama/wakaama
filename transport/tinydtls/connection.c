@@ -472,16 +472,17 @@ lwm2m_dtls_connection_t *lwm2m_connection_create(lwm2m_dtls_connection_t *connLi
     return connP;
 }
 
+lwm2m_dtls_connection_t *lwm2m_connection_remove_one(lwm2m_dtls_connection_t *connList) {
+    lwm2m_dtls_connection_t *nextP = connList->next;
+    lwm2m_free(connList);
+    return nextP;
+}
+
 void lwm2m_connection_free(lwm2m_dtls_connection_t *connList) {
     dtls_free_context(dtlsContext);
     dtlsContext = NULL;
     while (connList != NULL) {
-        lwm2m_dtls_connection_t *nextP;
-
-        nextP = connList->next;
-        free(connList);
-
-        connList = nextP;
+        connList = lwm2m_connection_remove_one(connList);
     }
 }
 
