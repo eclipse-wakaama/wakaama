@@ -74,8 +74,6 @@
 #include "commandline.h"
 #include "udp/connection.h"
 
-#define MAX_PACKET_SIZE 2048
-
 static int g_quit = 0;
 
 static void prv_print_error(uint8_t status)
@@ -1203,7 +1201,7 @@ int main(int argc, char *argv[])
         }
         else if (result > 0)
         {
-            uint8_t buffer[MAX_PACKET_SIZE];
+            uint8_t buffer[LWM2M_COAP_MAX_MESSAGE_SIZE];
             ssize_t numBytes;
 
             if (FD_ISSET(sock, &readfds))
@@ -1212,18 +1210,14 @@ int main(int argc, char *argv[])
                 socklen_t addrLen;
 
                 addrLen = sizeof(addr);
-                numBytes = recvfrom(sock, buffer, MAX_PACKET_SIZE, 0, (struct sockaddr *)&addr, &addrLen);
+                numBytes = recvfrom(sock, buffer, LWM2M_COAP_MAX_MESSAGE_SIZE, 0, (struct sockaddr *)&addr, &addrLen);
 
                 if (numBytes == -1)
                 {
                     fprintf(stderr, "Error in recvfrom(): %d\r\n", errno);
-                }
-                else if (numBytes >= MAX_PACKET_SIZE) 
-                {
-                    fprintf(stderr, "Received packet >= MAX_PACKET_SIZE\r\n");
-                } 
-                else
-                {
+                } else if (numBytes >= LWM2M_COAP_MAX_MESSAGE_SIZE) {
+                    fprintf(stderr, "Received packet >= LWM2M_COAP_MAX_MESSAGE_SIZE\r\n");
+                } else {
                     char s[INET6_ADDRSTRLEN];
                     in_port_t port;
                     lwm2m_connection_t *connP;
