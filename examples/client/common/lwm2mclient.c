@@ -81,7 +81,6 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#define MAX_PACKET_SIZE 2048
 #define DEFAULT_SERVER_IPV6 "[::1]"
 #define DEFAULT_SERVER_IPV4 "127.0.0.1"
 
@@ -1251,7 +1250,7 @@ int main(int argc, char *argv[]) {
                 fprintf(stderr, "Error in select(): %d %s\r\n", errno, strerror(errno));
             }
         } else if (result > 0) {
-            uint8_t buffer[MAX_PACKET_SIZE];
+            uint8_t buffer[LWM2M_COAP_MAX_MESSAGE_SIZE];
             ssize_t numBytes;
 
             /*
@@ -1266,12 +1265,13 @@ int main(int argc, char *argv[]) {
                 /*
                  * We retrieve the data received
                  */
-                numBytes = recvfrom(data.sock, buffer, MAX_PACKET_SIZE, 0, (struct sockaddr *)&addr, &addrLen);
+                numBytes =
+                    recvfrom(data.sock, buffer, LWM2M_COAP_MAX_MESSAGE_SIZE, 0, (struct sockaddr *)&addr, &addrLen);
 
                 if (0 > numBytes) {
                     fprintf(stderr, "Error in recvfrom(): %d %s\r\n", errno, strerror(errno));
-                } else if (numBytes >= MAX_PACKET_SIZE) {
-                    fprintf(stderr, "Received packet >= MAX_PACKET_SIZE\r\n");
+                } else if (numBytes >= LWM2M_COAP_MAX_MESSAGE_SIZE) {
+                    fprintf(stderr, "Received packet >= LWM2M_COAP_MAX_MESSAGE_SIZE\r\n");
                 } else if (0 < numBytes) {
                     char s[INET6_ADDRSTRLEN];
                     in_port_t port;
