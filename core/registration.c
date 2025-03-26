@@ -857,10 +857,17 @@ static void prv_handleRegistrationUpdateReply(lwm2m_context_t * contextP,
             LOG_ARG_DBG("%d Registration update failed", dataP->server->shortID);
         }
     }
-    if (packet != NULL && packet->code != COAP_231_CONTINUE)
+    if (packet != NULL && packet->code == COAP_231_CONTINUE)
     {
-        lwm2m_free(dataP->payload);
-        transaction_free_userData(contextP, transacP);
+        ; // pass 
+    }
+    else
+    {
+        uint8_t * payload = dataP->payload;
+        if (transaction_free_userData(contextP, transacP))
+        {
+            lwm2m_free(payload);
+        }
     }
 }
 
