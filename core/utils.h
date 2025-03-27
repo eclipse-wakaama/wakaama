@@ -46,6 +46,10 @@ lwm2m_server_t *utils_findBootstrapServer(lwm2m_context_t *contextP, void *fromS
 #endif
 #if defined(LWM2M_SERVER_MODE) || defined(LWM2M_BOOTSTRAP_SERVER_MODE)
 lwm2m_client_t *utils_findClient(lwm2m_context_t *contextP, void *fromSessionH);
+lwm2m_client_t * utils_find_client_by_registration_id(lwm2m_client_t * head, const uint16_t registration_id);
 #endif
+//void utils_randomString(char *dest, size_t length);
+
+uint16_t utils_random_registration_id(const lwm2m_client_t* client_list);
 
 #endif /* WAKAAMA_UTILS_H */

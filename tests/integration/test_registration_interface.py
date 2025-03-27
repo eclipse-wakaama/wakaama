@@ -20,12 +20,14 @@ def parse_client_registration(server_output):
     """
     client_id, = re.findall(r".lient #([0-9]+) ", server_output)
     event, = re.findall(r"(registered|updated)", server_output)
+    #registration_id, = re.findall(r"registration id: \"([\w-]+)\"\r\r\n", server_output)
+    registration_id, = re.findall(r"registration id: \"([0-9]+)\"\r\r\n", server_output)
     endpoint, = re.findall(r"name: \"([\w-]+)\"\r\r\n", server_output)
     version, = re.findall(r"version: \"([0-9.]+)\"\r\r\n", server_output)
     binding, = re.findall(r"binding: \"([A-Z]+)\"\r\r\n", server_output)
     lifetime, = re.findall(r"lifetime: ([0-9]+) sec\r\r\n", server_output)
     objects = re.search(r"objects: ([\/0-9]+ ?(\([0-9.]+\))?, ?)+\r\r\n", server_output)
-    return int(client_id), event, endpoint, version, binding, int(lifetime), objects.string
+    return int(client_id), registration_id, event, endpoint, version, binding, int(lifetime), objects.string
 
 
 def test_registration_interface(lwm2mserver, lwm2mclient):
@@ -34,9 +36,10 @@ def test_registration_interface(lwm2mserver, lwm2mclient):
 
     lwm2mclient.wait_for_text("STATE_READY")
     text = lwm2mserver.wait_for_packet()
-    client_id, event, endpoint, version, binding, lifetime, objects = \
+    client_id, registration_id, event, endpoint, version, binding, lifetime, objects = \
         parse_client_registration(text)
     assert client_id == 0
+    assert int(registration_id) < 0xFFFE # UINT16_MAX - 1
     assert event == "registered"
     assert endpoint == "testlwm2mclient"
     assert version == "1.1"
