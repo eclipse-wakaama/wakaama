@@ -26,6 +26,16 @@ lwm2m_media_type_t utils_convertMediaType(coap_content_type_t type);
 uint8_t utils_getResponseFormat(uint8_t accept_num, const uint16_t *accept, int numData, const lwm2m_data_t *dataP,
                                 bool singleResource, lwm2m_media_type_t *format);
 int utils_isAltPathValid(const char *altPath);
+/** Copy a string.
+ *
+ * Use utils_strncpy() if possible!
+ * This is less safe than utils_strncpy().
+ *
+ * @param buffer The destination buffer
+ * @param length The max number of bytes to be written to in the destination buffer
+ * @param str The source string (needs to be NULL-terminated)
+ * @return The number of bytes written
+ */
 int utils_stringCopy(char *buffer, size_t length, const char *str);
 size_t utils_intToText(int64_t data, uint8_t *string, size_t length);
 size_t utils_uintToText(uint64_t data, uint8_t *string, size_t length);
@@ -47,5 +57,26 @@ lwm2m_server_t *utils_findBootstrapServer(lwm2m_context_t *contextP, void *fromS
 #if defined(LWM2M_SERVER_MODE) || defined(LWM2M_BOOTSTRAP_SERVER_MODE)
 lwm2m_client_t *utils_findClient(lwm2m_context_t *contextP, void *fromSessionH);
 #endif
+/** A safer version of `strlen`. Finds the number of chars (bytes) of the given string up to a given max. length.
+ *
+ * The behaviour is undefined if the maximum length value is bigger than the actually reserved memory behind the @a str
+ * buffer.
+ *
+ * @param str The null-terminated string to find the length of.
+ * @param max_size Max size of string.
+ * @return The size of the string if it is smaller or equal to max_size. Otherwise max_size.
+ */
+size_t utils_strnlen(const char *str, size_t max_size);
+
+/** A safer version of `strncpy`. Copies at most src_size bytes to dest, but checks for available space.
+ *
+ * If dest is not NULL and dest_size is not 0, then the destination buffer is always terminated with '\0'.
+ *
+ * @param dest The char buffer where to copy the string.
+ * @param dest_size The size of the destination buffer.
+ * @param src The source string.
+ * @param src_size The size of the source string buffer. The effective source string can be shorter.
+ */
+size_t utils_strncpy(char *dest, const size_t dest_size, const char *src, const size_t src_size);
 
 #endif /* WAKAAMA_UTILS_H */
