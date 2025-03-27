@@ -122,25 +122,24 @@ static int prv_checkFinished(lwm2m_transaction_t * transacP,
     uint8_t* token;
     coap_packet_t * transactionMessage = (coap_packet_t *) transacP->message;
 
-    if (transactionMessage->mid != receivedMessage->mid) {
-        return false;
+    if (transactionMessage->mid == receivedMessage->mid) {
+        if (COAP_DELETE < transactionMessage->code) {
+            // response
+            return transacP->ack_received ? 1 : 0;
+        }
+        if (!IS_OPTION(transactionMessage, COAP_OPTION_TOKEN)) {
+            // request without token
+            return transacP->ack_received ? 1 : 0;
+        }
     }
 
-    if (COAP_DELETE < transactionMessage->code)
-    {
-        // response
-        return transacP->ack_received ? 1 : 0;
-    }
-    if (!IS_OPTION(transactionMessage, COAP_OPTION_TOKEN))
-    {
-        // request without token
-        return transacP->ack_received ? 1 : 0;
-    }
-
-    len = coap_get_header_token(receivedMessage, &token);
-    if (transactionMessage->token_len == len)
-    {
-        if (memcmp(transactionMessage->token, token, len)==0) return 1;
+    if (COAP_DELETE >= transactionMessage->code && IS_OPTION(transactionMessage, COAP_OPTION_TOKEN)) {
+        // request with token
+        len = coap_get_header_token(receivedMessage, &token);
+        if (transactionMessage->token_len == len) {
+            if (memcmp(transactionMessage->token, token, len) == 0)
+                return 1;
+        }
     }
 
     return 0;
