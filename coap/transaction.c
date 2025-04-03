@@ -346,12 +346,10 @@ bool transaction_handleResponse(lwm2m_context_t * contextP,
                 {
                     transacP->retrans_time = tv_sec;
                 }
-                if (transacP->response_timeout)
-                {
-                    transacP->retrans_time += transacP->response_timeout;
-                }
-                else
-                {
+                if (message->code == COAP_EMPTY_MESSAGE_CODE) {
+                    // if empty ack received, set timeout for separate response
+                    transacP->retrans_time += COAP_SEPARATE_TIMEOUT;
+                } else {
                     transacP->retrans_time += COAP_RESPONSE_TIMEOUT * transacP->retrans_counter;
                 }
                 return true;
@@ -431,6 +429,7 @@ int transaction_send(lwm2m_context_t * contextP,
     }
     else
     {
+        LOG_WARN("ACK received but separate response timed out!");
         goto error;
     }
     if (maxRetriesReached)
