@@ -86,6 +86,7 @@ The following data formats are configurable for Wakaama:
 - WAKAAMA_COAP_MAX_MESSAGE_SIZE Max size of a CoAP packet including headers and options.
 - WAKAAMA_COAP_DEFAULT_BLOCK_SIZE CoAP block size used by CoAP layer when performing block-wise transfers. Possible values: 16, 32, 64, 128, 256, 512 and 1024. Defaults to 1024.
 - WAKAAMA_COAP_DEFAULT_MAX_RETRANSMIT The maximum number of retransmissions used for confirmable messages.
+- WAKAAMA_COAP_SEPARATE_TIMEOUT: The max time to wait between the empty ack and the separate response message.
 
 
 ### Logging
