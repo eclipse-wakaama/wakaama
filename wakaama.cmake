@@ -59,6 +59,12 @@ set(WAKAAMA_COAP_DEFAULT_MAX_RETRANSMIT
     CACHE STRING "Default CoAP max retransmissions"
 )
 
+# The max time to wait between the empty ack and the separate response message.
+set(WAKAAMA_COAP_SEPARATE_TIMEOUT
+    15
+    CACHE STRING "CoAP separate response timeout; Used if not set on a per-target basis"
+)
+
 # Logging
 set(WAKAAMA_LOG_LEVEL
     LOG_DISABLED
@@ -165,6 +171,8 @@ function(set_coap_defines)
     target_compile_definitions(
         ${target} PUBLIC LWM2M_COAP_DEFAULT_MAX_RETRANSMIT=${WAKAAMA_COAP_DEFAULT_MAX_RETRANSMIT}
     )
+
+    target_compile_definitions(${target} PUBLIC LWM2M_COAP_SEPARATE_TIMEOUT=${WAKAAMA_COAP_SEPARATE_TIMEOUT})
 endfunction()
 
 # Set the defines for logging configuration
