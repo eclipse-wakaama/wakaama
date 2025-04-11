@@ -1658,8 +1658,8 @@ static lwm2m_client_object_t *prv_decodeRegisterPayload(uint8_t *payload, size_t
             if (objectP == NULL)
             {
                 objectP = (lwm2m_client_object_t *)lwm2m_malloc(sizeof(lwm2m_client_object_t));
-                memset(objectP, 0, sizeof(lwm2m_client_object_t));
                 if (objectP == NULL) goto error;
+                memset(objectP, 0, sizeof(lwm2m_client_object_t));
                 objectP->id = id;
                 objList = (lwm2m_client_object_t *)LWM2M_LIST_ADD(objList, objectP);
             }
@@ -1676,8 +1676,8 @@ static lwm2m_client_object_t *prv_decodeRegisterPayload(uint8_t *payload, size_t
                 if (instanceP == NULL)
                 {
                     instanceP = (lwm2m_list_t *)lwm2m_malloc(sizeof(lwm2m_list_t));
-                    memset(instanceP, 0, sizeof(lwm2m_list_t));
                     instanceP->id = instance;
+                    memset(instanceP, 0, sizeof(lwm2m_list_t));
                     objectP->instanceList = LWM2M_LIST_ADD(objectP->instanceList, instanceP);
                 }
             }
