@@ -876,7 +876,6 @@ static int prv_updateRegistration(lwm2m_context_t * contextP,
     if (transaction == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
 
     coap_set_header_uri_path(transaction->message, server->location);
-    coap_set_header_content_type(transaction->message, LWM2M_CONTENT_LINK);
 
     if (withObjects == true)
     {
@@ -1170,7 +1169,6 @@ void registration_deregister(lwm2m_context_t * contextP,
     if (transaction == NULL) return;
 
     coap_set_header_uri_path(transaction->message, serverP->location);
-    coap_set_header_content_type(transaction->message, LWM2M_CONTENT_LINK);
 
     transaction->callback = prv_handleDeregistrationReply;
     transaction->userData = (void *) serverP;
@@ -1798,7 +1796,8 @@ uint8_t  registration_handleRequest(lwm2m_context_t * contextP,
         {
             return COAP_400_BAD_REQUEST;
         }
-        if (message->content_type != (coap_content_type_t)LWM2M_CONTENT_LINK) {
+        if (message->content_type != (coap_content_type_t)LWM2M_CONTENT_LINK &&
+            message->content_type != (coap_content_type_t)LWM2M_CONTENT_TEXT) {
             lwm2m_free(name);
             return COAP_400_BAD_REQUEST;
         }
