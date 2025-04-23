@@ -102,9 +102,8 @@ static void test_registration_message_to_server_wrong_content_type(void) {
 
     /* Only `LWM2M_CONTENT_TEXT` and `LWM2M_CONTENT_LINK` are allowed for registration. */
     static const lwm2m_media_type_t test_cases[] = {
-        LWM2M_CONTENT_TEXT,       LWM2M_CONTENT_OPAQUE,   LWM2M_CONTENT_TLV_OLD,
-        LWM2M_CONTENT_TLV,        LWM2M_CONTENT_JSON_OLD, LWM2M_CONTENT_JSON,
-        LWM2M_CONTENT_SENML_JSON, LWM2M_CONTENT_CBOR,     LWM2M_CONTENT_SENML_CBOR};
+        LWM2M_CONTENT_OPAQUE, LWM2M_CONTENT_TLV_OLD,    LWM2M_CONTENT_TLV,  LWM2M_CONTENT_JSON_OLD,
+        LWM2M_CONTENT_JSON,   LWM2M_CONTENT_SENML_JSON, LWM2M_CONTENT_CBOR, LWM2M_CONTENT_SENML_CBOR};
 
     for (size_t i = 0; i < ARRAY_LEN(test_cases); ++i) {
         /* arrange */
