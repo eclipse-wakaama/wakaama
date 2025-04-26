@@ -13,6 +13,7 @@ set(TEST_SOURCES
     core_convert_numbers_test.c
     core_list_tests.c
     core_logging_tests.c
+    core_message_size_test.c
     core_registration_tests.c
     core_uritests.c
     data_senml_cbor_tests.c

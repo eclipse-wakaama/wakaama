@@ -2,6 +2,10 @@ name: Compilation only checks
 
 on: [push, pull_request]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   standards:
     runs-on: ubuntu-24.04
@@ -14,7 +18,7 @@ jobs:
 
     steps:
     - name: Checkout code including full history and submodules
-      uses: actions/checkout@v4
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       with:
         submodules: true
         fetch-depth: 0
@@ -38,11 +42,11 @@ jobs:
 
     strategy:
       matrix:
-        example: ["bootstrap_server", "client", "lightclient", "server"]
+        example: ["bootstrap_server", "client/udp", "client/tinydtls", "client/raw_block1", "lightclient", "server"]
 
     steps:
     - name: Checkout code including full history and submodules
-      uses: actions/checkout@v4
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       with:
         submodules: true
         fetch-depth: 0

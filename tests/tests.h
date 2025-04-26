@@ -57,5 +57,6 @@ CU_ErrorCode create_logging_test_suit(void);
 #endif
 #ifdef LWM2M_SERVER_MODE
 CU_ErrorCode create_registration_test_suit(void);
+CU_ErrorCode create_message_size_test_suit(void);
 #endif
 #endif /* TESTS_H_ */

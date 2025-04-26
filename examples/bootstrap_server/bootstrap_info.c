@@ -484,7 +484,7 @@ static int prv_add_server(bs_info_t * infoP,
     serverP->securityData = lwm2m_data_new(serverP->securitySize);
     if (serverP->securityData == NULL) goto error;
 
-    // LWM2M Server URI
+    // LwM2M Server URI
     serverP->securityData[0].id = LWM2M_SECURITY_URI_ID;
     lwm2m_data_encode_string(dataP->uri, serverP->securityData);
 

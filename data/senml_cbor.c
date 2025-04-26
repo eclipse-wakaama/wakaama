@@ -22,7 +22,7 @@
 #ifdef LWM2M_SUPPORT_SENML_CBOR
 
 #ifdef LWM2M_VERSION_1_0
-#error SenML CBOR not supported with LWM2M 1.0
+#error SenML CBOR not supported with LwM2M 1.0
 #endif
 
 #define PRV_CBOR_BUFFER_SIZE 1024

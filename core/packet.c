@@ -125,6 +125,8 @@ bool lwm2m_set_coap_block_size(const uint16_t coap_block_size_arg) {
 
 uint16_t lwm2m_get_coap_block_size(void) { return coap_block_size; }
 
+uint16_t lwm2m_get_coap_message_size(void) { return (uint16_t)LWM2M_COAP_MAX_MESSAGE_SIZE; }
+
 static void handle_reset(lwm2m_context_t * contextP,
                          void * fromSessionH,
                          coap_packet_t * message)
@@ -477,6 +479,14 @@ static int prv_send_get_next_block2(lwm2m_context_t * contextP,
     return prv_send_get_block2(contextP, sessionH, blockDataHead, currentMID, block2_num + 1, block2_size);
 }
 
+static bool is_message_too_large(const coap_packet_t *message, const size_t packet_size) {
+    if (IS_OPTION(message, COAP_OPTION_BLOCK1) || IS_OPTION(message, COAP_OPTION_BLOCK2)) {
+        /* In case of block-transfer the *payload* mustn't be bigger than the block size. */
+        return message->payload_len > lwm2m_get_coap_block_size();
+    }
+    /* In case of a normal message (not block-transfer) the *complete packet* mustn't be bigger than the packet size. */
+    return packet_size > LWM2M_COAP_MAX_MESSAGE_SIZE;
+}
 
 /* This function is an adaptation of function coap_receive() from Erbium's er-coap-13-engine.c.
  * Erbium is Copyright (c) 2013, Institute for Pervasive Computing, ETH Zurich
@@ -522,7 +532,7 @@ void lwm2m_handle_packet(lwm2m_context_t *contextP, uint8_t *buffer, size_t leng
                 coap_set_header_token(response, message->token, message->token_len);
             }
 
-            if (message->payload_len > lwm2m_get_coap_block_size()) {
+            if (is_message_too_large(message, length)) {
                 coap_error_code = COAP_413_ENTITY_TOO_LARGE;
 
                 if (IS_OPTION(message, COAP_OPTION_BLOCK1)){
@@ -716,7 +726,7 @@ void lwm2m_handle_packet(lwm2m_context_t *contextP, uint8_t *buffer, size_t leng
                     if (!done && message->type == COAP_TYPE_CON )
                     {
                         coap_init_message(response, COAP_TYPE_ACK, 0, message->mid);
-                        if (message->payload_len > lwm2m_get_coap_block_size()) {
+                        if (is_message_too_large(message, length)) {
                             coap_set_status_code(response, COAP_413_ENTITY_TOO_LARGE);
                         }
                         coap_error_code = message_send(contextP, response, fromSessionH);

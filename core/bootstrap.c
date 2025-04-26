@@ -192,7 +192,7 @@ static uint8_t prv_handleBootstrapDiscover(lwm2m_context_t * contextP,
 
     length = 0;
 #if !defined(LWM2M_VERSION_1_0)
-    // LWM2M 1.1.1 adds "</>;" at the beginning
+    // LwM2M 1.1.1 adds "</>;" at the beginning
     length += 4;
 #endif
     length += QUERY_VERSION_LEN + LWM2M_VERSION_LEN;
@@ -302,7 +302,7 @@ static uint8_t prv_handleBootstrapDiscover(lwm2m_context_t * contextP,
     if (*bufferP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
 
 #if !defined(LWM2M_VERSION_1_0)
-    // LWM2M 1.1.1 adds "</>;" at the beginning
+    // LwM2M 1.1.1 adds "</>;" at the beginning
     if (length - (*lengthP) < 4) goto error;
     (*bufferP)[(*lengthP)++] = REG_URI_START;
     (*bufferP)[(*lengthP)++] = REG_PATH_SEPARATOR;
@@ -614,7 +614,7 @@ uint8_t bootstrap_handleFinish(lwm2m_context_t * context,
 /*
  * Reset the bootstrap servers statuses
  *
- * TODO: handle LWM2M Servers the client is registered to ?
+ * TODO: handle LwM2M Servers the client is registered to ?
  *
  */
 void bootstrap_start(lwm2m_context_t * contextP)

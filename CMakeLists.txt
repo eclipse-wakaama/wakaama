@@ -4,8 +4,9 @@ project(wakaama C)
 
 include(wakaama.cmake)
 
-add_subdirectory(examples)
+option(WAKAAMA_UNIT_TESTS "Enable build of Unit Tests" ON)
 
-# Enable "test" target
-enable_testing()
-add_subdirectory(tests)
+if(WAKAAMA_UNIT_TESTS)
+    enable_testing()
+    add_subdirectory(tests)
+endif()

@@ -64,8 +64,6 @@ typedef struct
     int               addressFamily;
 } internal_data_t;
 
-#define MAX_PACKET_SIZE 2048
-
 static int g_quit = 0;
 
 static void prv_quit(lwm2m_context_t * lwm2mH,
@@ -82,7 +80,7 @@ void handle_sigint(int signum)
 
 void print_usage(const char *filename, const char *port) {
     fprintf(stdout, "Usage: bootstap_server [OPTION]\r\n");
-    fprintf(stderr, "Launch a LWM2M Bootstrap Server.\r\n\n");
+    fprintf(stderr, "Launch a LwM2M Bootstrap Server.\r\n\n");
     fprintf(stdout, "Options:\r\n");
     fprintf(stdout, "  -f FILE\tSpecify BootStrap Information file. Default: ./%s\r\n", filename);
     fprintf(stdout, "  -l PORT\tSet the local UDP port of the Bootstrap Server. Default: %s\r\n", port);
@@ -526,7 +524,7 @@ static void prv_bootstrap_client(lwm2m_context_t *lwm2mH,
     *port = 0;
     port++;
 
-    fprintf(stderr, "Trying to connect to LWM2M CLient at %s:%s\r\n", host, port);
+    fprintf(stderr, "Trying to connect to LwM2M CLient at %s:%s\r\n", host, port);
     newConnP = lwm2m_connection_create(dataP->connList, dataP->sock, host, port, dataP->addressFamily);
     if (newConnP == NULL) {
         fprintf(stderr, "Connection creation failed.\r\n");
@@ -535,7 +533,7 @@ static void prv_bootstrap_client(lwm2m_context_t *lwm2mH,
     dataP->connList = newConnP;
 
     // simulate a client bootstrap request.
-    // Only LWM2M 1.0 clients support this method of bootstrap. For them, TLV
+    // Only LwM2M 1.0 clients support this method of bootstrap. For them, TLV
     // support is mandatory.
     if (COAP_204_CHANGED == prv_bootstrap_callback(lwm2mH, newConnP, COAP_NO_ERROR, NULL, name, LWM2M_CONTENT_TLV, NULL, 0, user_data))
     {
@@ -696,7 +694,7 @@ int main(int argc, char *argv[])
         }
         else if (result >= 0)
         {
-            uint8_t buffer[MAX_PACKET_SIZE];
+            uint8_t buffer[LWM2M_COAP_MAX_MESSAGE_SIZE];
             ssize_t numBytes;
 
             // Packet received
@@ -706,18 +704,15 @@ int main(int argc, char *argv[])
                 socklen_t addrLen;
 
                 addrLen = sizeof(addr);
-                numBytes = recvfrom(data.sock, buffer, MAX_PACKET_SIZE, 0, (struct sockaddr *)&addr, &addrLen);
+                numBytes =
+                    recvfrom(data.sock, buffer, LWM2M_COAP_MAX_MESSAGE_SIZE, 0, (struct sockaddr *)&addr, &addrLen);
 
                 if (numBytes == -1)
                 {
                     fprintf(stderr, "Error in recvfrom(): %d\r\n", errno);
-                }
-                else if (numBytes >= MAX_PACKET_SIZE) 
-                {
-                    fprintf(stderr, "Received packet >= MAX_PACKET_SIZE\r\n");
-                } 
-                else
-                {
+                } else if (numBytes >= LWM2M_COAP_MAX_MESSAGE_SIZE) {
+                    fprintf(stderr, "Received packet >= LWM2M_COAP_MAX_MESSAGE_SIZE\r\n");
+                } else {
                     char s[INET6_ADDRSTRLEN];
                     in_port_t rec_port;
                     lwm2m_connection_t *connP;
@@ -759,7 +754,7 @@ int main(int argc, char *argv[])
             // command line input
             else if (FD_ISSET(STDIN_FILENO, &readfds))
             {
-                numBytes = read(STDIN_FILENO, buffer, MAX_PACKET_SIZE - 1);
+                numBytes = read(STDIN_FILENO, buffer, LWM2M_COAP_MAX_MESSAGE_SIZE - 1);
 
                 if (numBytes > 1)
                 {

@@ -5,17 +5,9 @@ set(WAKAAMA_EXAMPLE_DIRECTORY "${WAKAAMA_TOP_LEVEL_DIRECTORY}/examples")
 set(WAKAAMA_EXAMPLE_SHARED_DIRECTORY "${WAKAAMA_EXAMPLE_DIRECTORY}/shared")
 
 # Mode
-option(WAKAAMA_MODE_SERVER "Enable LWM2M Server interfaces" OFF)
-option(WAKAAMA_MODE_BOOTSTRAP_SERVER "Enable LWM2M Bootstrap Server interfaces" OFF)
-option(WAKAAMA_MODE_CLIENT "Enable LWM2M Client interfaces" OFF)
-
-if(NOT WAKAAMA_MODE_SERVER
-   AND NOT WAKAAMA_MODE_BOOTSTRAP_SERVER
-   AND NOT WAKAAMA_MODE_CLIENT
-)
-    message(WARNING "No mode selected. Defaulting to 'WAKAAMA_MODE_SERVER'")
-    set(WAKAAMA_MODE_SERVER ON)
-endif()
+option(WAKAAMA_MODE_SERVER "Enable LwM2M Server interfaces" ON)
+option(WAKAAMA_MODE_BOOTSTRAP_SERVER "Enable LwM2M Bootstrap Server interfaces" ON)
+option(WAKAAMA_MODE_CLIENT "Enable LwM2M Client interfaces" ON)
 
 # Client
 option(WAKAAMA_CLIENT_INITIATED_BOOTSTRAP "Enable client initiated bootstrap support in a client" OFF)
@@ -50,6 +42,27 @@ set_property(
              256
              512
              1024
+)
+
+set(WAKAAMA_COAP_MAX_MESSAGE_SIZE
+    2048
+    CACHE STRING "Max. CoAP packet size."
+)
+
+if(WAKAAMA_COAP_DEFAULT_BLOCK_SIZE GREATER WAKAAMA_COAP_MAX_MESSAGE_SIZE)
+    message(FATAL_ERROR "Packet size needs to be bigger than the block size.")
+endif()
+
+# The maximum number of retransmissions used for confirmable messages.
+set(WAKAAMA_COAP_DEFAULT_MAX_RETRANSMIT
+    4
+    CACHE STRING "Default CoAP max retransmissions"
+)
+
+# The max time to wait between the empty ack and the separate response message.
+set(WAKAAMA_COAP_SEPARATE_TIMEOUT
+    15
+    CACHE STRING "CoAP separate response timeout; Used if not set on a per-target basis"
 )
 
 # Logging
@@ -152,6 +165,14 @@ function(set_coap_defines)
     endif()
 
     target_compile_definitions(${target} PUBLIC LWM2M_COAP_DEFAULT_BLOCK_SIZE=${WAKAAMA_COAP_DEFAULT_BLOCK_SIZE})
+
+    target_compile_definitions(${target} PUBLIC LWM2M_COAP_MAX_MESSAGE_SIZE=${WAKAAMA_COAP_MAX_MESSAGE_SIZE})
+
+    target_compile_definitions(
+        ${target} PUBLIC LWM2M_COAP_DEFAULT_MAX_RETRANSMIT=${WAKAAMA_COAP_DEFAULT_MAX_RETRANSMIT}
+    )
+
+    target_compile_definitions(${target} PUBLIC LWM2M_COAP_SEPARATE_TIMEOUT=${WAKAAMA_COAP_SEPARATE_TIMEOUT})
 endfunction()
 
 # Set the defines for logging configuration
@@ -295,33 +316,6 @@ add_library(wakaama_transport_testing_fake OBJECT)
 target_include_directories(wakaama_transport_testing_fake PUBLIC ${WAKAAMA_TOP_LEVEL_DIRECTORY}/tests/helper/)
 target_include_directories(wakaama_transport_testing_fake PRIVATE ${WAKAAMA_TOP_LEVEL_DIRECTORY}/include/)
 target_sources(wakaama_transport_testing_fake PRIVATE ${WAKAAMA_TOP_LEVEL_DIRECTORY}/tests/helper/connection.c)
-
-# Add shared source files to an existing target.
-function(target_sources_shared target)
-    get_target_property(TARGET_PROPERTY_CONN_IMPL ${target} CONNECTION_IMPLEMENTATION)
-
-    if(WAKAAMA_PLATFORM STREQUAL POSIX)
-        target_link_libraries(${target} PRIVATE wakaama_command_line wakaama_platform_posix)
-    endif()
-
-    if(WAKAAMA_CLI)
-        target_link_libraries(${target} PRIVATE wakaama_command_line)
-    endif()
-
-    set_defines(${target})
-
-    if(NOT TARGET_PROPERTY_CONN_IMPL OR WAKAAMA_TRANSPORT STREQUAL POSIX_UDP)
-        target_link_libraries(${target} PRIVATE wakaama_transport_posix_udp)
-    elseif(TARGET_PROPERTY_CONN_IMPL MATCHES "tinydtls" OR WAKAAMA_TRANSPORT STREQUAL TINYDTLS)
-        target_link_libraries(${target} PRIVATE wakaama_transport_tinydtls)
-    else()
-        message(
-            FATAL_ERROR "${target}: Unknown connection (DTLS) implementation '${TARGET_PROPERTY_CONN_IMPL} requested"
-        )
-    endif()
-
-    target_include_directories(${target} PUBLIC ${WAKAAMA_EXAMPLE_SHARED_DIRECTORY})
-endfunction()
 
 # Static library that users of Wakaama can link against
 #

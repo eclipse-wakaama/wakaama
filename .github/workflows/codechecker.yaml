@@ -1,0 +1,53 @@
+name: CodeChecker
+
+on: [push, pull_request]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  codechecker_static_analyzer:
+    runs-on: ubuntu-24.04
+
+    steps:
+    - name: Checkout code including full history and submodules
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      with:
+        submodules: true
+        fetch-depth: 0
+
+    - name: Install CodeChecker
+      run:  |
+        sudo apt-get update
+        sudo apt-get install clang-tools-18 cmake cppcheck libcunit1-dev ninja-build
+        pip install --require-hashes -r tools/requirements-codechecker.txt
+
+    - name: Run CodeChecker
+      run: |
+        tools/ci/run_ci.sh --run-build --run-code-checker --code-checker diff
+      env:
+        CC: clang-18
+
+    - name: Upload CodeChecker reports
+      uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
+      with:
+        name: CodeChecker Reports
+        path: build-wakaama/code_checker_report/
+        if-no-files-found: error
+      if: failure()
+
+    - name: Create baseline for Upload
+      run: |
+        bash -x tools/ci/run_ci.sh --run-build --run-code-checker --code-checker baseline
+      env:
+        CC: clang-18
+      if: failure()
+
+    - name: Upload CodeChecker baseline (for debugging)
+      uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
+      with:
+        name: CodeChecker Baseline
+        path: tools/code_checker/reports.baseline
+        if-no-files-found: error
+      if: failure()

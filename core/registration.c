@@ -1297,7 +1297,7 @@ static int prv_getParameters(multi_option_t * query,
     if (*versionP == VERSION_1_0 &&
         (*bindingP & (BINDING_T|BINDING_N)) != 0)
     {
-        /* These bindings aren't valid in LWM2M 1.0 */
+        /* These bindings aren't valid in LwM2M 1.0 */
         goto error;
     }
 
@@ -1582,7 +1582,7 @@ static int prv_getId(uint8_t * data,
 
                     if (limit2 > limit - 2) return 0;
 
-                    // Note that the LWM2M 1.1.1 spec limits the major and
+                    // Note that the LwM2M 1.1.1 spec limits the major and
                     // minor to 1 digit. This allow for values up to 255 in
                     // case it is expanded in the future or some client
                     // incorrectly exceeds 1 digit.
@@ -1661,8 +1661,8 @@ static lwm2m_client_object_t *prv_decodeRegisterPayload(uint8_t *payload, size_t
             if (objectP == NULL)
             {
                 objectP = (lwm2m_client_object_t *)lwm2m_malloc(sizeof(lwm2m_client_object_t));
-                memset(objectP, 0, sizeof(lwm2m_client_object_t));
                 if (objectP == NULL) goto error;
+                memset(objectP, 0, sizeof(lwm2m_client_object_t));
                 objectP->id = id;
                 objList = (lwm2m_client_object_t *)LWM2M_LIST_ADD(objList, objectP);
             }
@@ -1679,8 +1679,8 @@ static lwm2m_client_object_t *prv_decodeRegisterPayload(uint8_t *payload, size_t
                 if (instanceP == NULL)
                 {
                     instanceP = (lwm2m_list_t *)lwm2m_malloc(sizeof(lwm2m_list_t));
-                    memset(instanceP, 0, sizeof(lwm2m_list_t));
                     instanceP->id = instance;
+                    memset(instanceP, 0, sizeof(lwm2m_list_t));
                     objectP->instanceList = LWM2M_LIST_ADD(objectP->instanceList, instanceP);
                 }
             }
@@ -1724,8 +1724,7 @@ static lwm2m_client_t * prv_getClientByName(lwm2m_context_t * contextP,
     return targetP;
 }
 
-void registration_freeClient(lwm2m_client_t * clientP)
-{
+void registration_freeClient(lwm2m_context_t *const context, lwm2m_client_t *clientP) {
     LOG_DBG("Entering");
     if (clientP->name != NULL) lwm2m_free(clientP->name);
     if (clientP->msisdn != NULL) lwm2m_free(clientP->msisdn);
@@ -1747,6 +1746,8 @@ void registration_freeClient(lwm2m_client_t * clientP)
 
         free_block_data(targetP);
     }
+    transaction_remove_client(context, clientP);
+    lwm2m_session_remove(clientP->sessionH);
     lwm2m_free(clientP);
 }
 
@@ -1861,7 +1862,7 @@ uint8_t  registration_handleRequest(lwm2m_context_t * contextP,
                 {
                     lwm2m_client_t * tmpClientP = utils_findClient(contextP, fromSessionH);
                     contextP->clientList = (lwm2m_client_t *)LWM2M_LIST_RM(contextP->clientList, tmpClientP->internalID, &tmpClientP);
-                    registration_freeClient(tmpClientP);
+                    registration_freeClient(contextP, tmpClientP);
                 }
             }
             if (clientP != NULL)
@@ -1901,12 +1902,12 @@ uint8_t  registration_handleRequest(lwm2m_context_t * contextP,
 
             if (prv_getLocationString(clientP->internalID, location) == 0)
             {
-                registration_freeClient(clientP);
+                registration_freeClient(contextP, clientP);
                 return COAP_500_INTERNAL_SERVER_ERROR;
             }
             if (coap_set_header_location_path(response, location) == 0)
             {
-                registration_freeClient(clientP);
+                registration_freeClient(contextP, clientP);
                 return COAP_500_INTERNAL_SERVER_ERROR;
             }
 
@@ -2020,13 +2021,18 @@ uint8_t  registration_handleRequest(lwm2m_context_t * contextP,
         if (!LWM2M_URI_IS_SET_OBJECT(uriP)) return COAP_400_BAD_REQUEST;
         if (LWM2M_URI_IS_SET_INSTANCE(uriP)) return COAP_400_BAD_REQUEST;
 
-        contextP->clientList = (lwm2m_client_t *)LWM2M_LIST_RM(contextP->clientList, uriP->objectId, &clientP);
-        if (clientP == NULL) return COAP_400_BAD_REQUEST;
-        if (contextP->monitorCallback != NULL)
-        {
-            contextP->monitorCallback(contextP, clientP->internalID, NULL, COAP_202_DELETED, NULL, LWM2M_CONTENT_TEXT, NULL, 0, contextP->monitorUserData);
+        clientP = (lwm2m_client_t *)LWM2M_LIST_FIND(contextP->clientList, uriP->objectId);
+
+        if (clientP == NULL) {
+            return COAP_400_BAD_REQUEST;
         }
-        registration_freeClient(clientP);
+
+        if (contextP->monitorCallback != NULL) {
+            contextP->monitorCallback(contextP, clientP->internalID, NULL, COAP_202_DELETED, NULL, LWM2M_CONTENT_TEXT,
+                                      NULL, 0, contextP->monitorUserData);
+        }
+        contextP->clientList = (lwm2m_client_t *)LWM2M_LIST_RM(contextP->clientList, clientP->internalID, NULL);
+        registration_freeClient(contextP, clientP);
         result = COAP_202_DELETED;
     }
     break;
@@ -2139,17 +2145,14 @@ void registration_step(lwm2m_context_t * contextP,
     {
         lwm2m_client_t * nextP = clientP->next;
 
-        if (clientP->endOfLife <= currentTime)
-        {
-            contextP->clientList = (lwm2m_client_t *)LWM2M_LIST_RM(contextP->clientList, clientP->internalID, NULL);
-            if (contextP->monitorCallback != NULL)
-            {
-                contextP->monitorCallback(contextP, clientP->internalID, NULL, COAP_202_DELETED, NULL, LWM2M_CONTENT_TEXT, NULL, 0, contextP->monitorUserData);
+        if (clientP->endOfLife <= currentTime) {
+            if (contextP->monitorCallback != NULL) {
+                contextP->monitorCallback(contextP, clientP->internalID, NULL, COAP_202_DELETED, NULL,
+                                          LWM2M_CONTENT_TEXT, NULL, 0, contextP->monitorUserData);
             }
-            registration_freeClient(clientP);
-        }
-        else
-        {
+            contextP->clientList = (lwm2m_client_t *)LWM2M_LIST_RM(contextP->clientList, clientP->internalID, NULL);
+            registration_freeClient(contextP, clientP);
+        } else {
             time_t interval;
 
             interval = clientP->endOfLife - currentTime;

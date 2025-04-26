@@ -122,25 +122,24 @@ static int prv_checkFinished(lwm2m_transaction_t * transacP,
     uint8_t* token;
     coap_packet_t * transactionMessage = (coap_packet_t *) transacP->message;
 
-    if (transactionMessage->mid != receivedMessage->mid) {
-        return false;
+    if (transactionMessage->mid == receivedMessage->mid) {
+        if (COAP_DELETE < transactionMessage->code) {
+            // response
+            return transacP->ack_received ? 1 : 0;
+        }
+        if (!IS_OPTION(transactionMessage, COAP_OPTION_TOKEN)) {
+            // request without token
+            return transacP->ack_received ? 1 : 0;
+        }
     }
 
-    if (COAP_DELETE < transactionMessage->code)
-    {
-        // response
-        return transacP->ack_received ? 1 : 0;
-    }
-    if (!IS_OPTION(transactionMessage, COAP_OPTION_TOKEN))
-    {
-        // request without token
-        return transacP->ack_received ? 1 : 0;
-    }
-
-    len = coap_get_header_token(receivedMessage, &token);
-    if (transactionMessage->token_len == len)
-    {
-        if (memcmp(transactionMessage->token, token, len)==0) return 1;
+    if (COAP_DELETE >= transactionMessage->code && IS_OPTION(transactionMessage, COAP_OPTION_TOKEN)) {
+        // request with token
+        len = coap_get_header_token(receivedMessage, &token);
+        if (transactionMessage->token_len == len) {
+            if (memcmp(transactionMessage->token, token, len) == 0)
+                return 1;
+        }
     }
 
     return 0;
@@ -347,12 +346,10 @@ bool transaction_handleResponse(lwm2m_context_t * contextP,
                 {
                     transacP->retrans_time = tv_sec;
                 }
-                if (transacP->response_timeout)
-                {
-                    transacP->retrans_time += transacP->response_timeout;
-                }
-                else
-                {
+                if (message->code == COAP_EMPTY_MESSAGE_CODE) {
+                    // if empty ack received, set timeout for separate response
+                    transacP->retrans_time += COAP_SEPARATE_TIMEOUT;
+                } else {
                     transacP->retrans_time += COAP_RESPONSE_TIMEOUT * transacP->retrans_counter;
                 }
                 return true;
@@ -432,6 +429,7 @@ int transaction_send(lwm2m_context_t * contextP,
     }
     else
     {
+        LOG_WARN("ACK received but separate response timed out!");
         goto error;
     }
     if (maxRetriesReached)
@@ -526,4 +524,23 @@ bool transaction_free_userData(lwm2m_context_t * context, lwm2m_transaction_t * 
     lwm2m_free(transaction->userData);
     transaction->userData = NULL;
     return true;
+}
+
+/*
+ * Remove transactions from a specific client.
+ */
+void transaction_remove_client(lwm2m_context_t *contextP, lwm2m_client_t *clientP) {
+    lwm2m_transaction_t *transacP;
+
+    LOG_DBG("Entering");
+    transacP = contextP->transactionList;
+    while (transacP != NULL) {
+        lwm2m_transaction_t *nextP = transacP->next;
+
+        if (lwm2m_session_is_equal(transacP->peerH, clientP->sessionH, contextP->userData)) {
+            LOG_DBG("Found session to remove");
+            transaction_remove(contextP, transacP);
+        }
+        transacP = nextP;
+    }
 }

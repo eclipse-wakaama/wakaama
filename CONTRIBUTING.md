@@ -14,7 +14,7 @@ syntax and access rights and then dispatches them to the relevant objects.
 
 The project maintains the following source code repositories
 
-* https://github.com/eclipse/wakaama
+* https://github.com/eclipse-wakaama/wakaama
 
 This project uses GitHub issues to track ongoing development and issues.
 

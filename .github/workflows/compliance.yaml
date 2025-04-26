@@ -2,6 +2,10 @@ name: Compliance
 
 on: pull_request
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   lint-code:
     name: Run compliance checks
@@ -9,7 +13,7 @@ jobs:
 
     steps:
     - name: Checkout code including full history
-      uses: actions/checkout@v4
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       with:
         fetch-depth: 0
 
@@ -17,7 +21,7 @@ jobs:
       run: |
         sudo apt update
         sudo apt -qy --no-install-recommends install clang-format-14
-        pip3 install -r tools/requirements-compliance.txt
+        pip3 install --require-hashes -r tools/requirements-compliance.txt
 
     - name: Check commits with gitlint
       run: |

@@ -652,7 +652,7 @@ int json_parse(lwm2m_uri_t * uriP,
             else
             {
                 /* Base name may have a trailing "/" on a multiple instance
-                 * resource. This isn't valid for a URI string in LWM2M 1.0.
+                 * resource. This isn't valid for a URI string in LwM2M 1.0.
                  * Strip off any trailing "/" to avoid an error. */
                 if (buffer[bnStart + bnLen - 1] == '/') bnLen -= 1;
                 res = lwm2m_stringToUri((char *)buffer + bnStart, bnLen, &baseURI);

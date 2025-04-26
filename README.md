@@ -1,6 +1,6 @@
 # Wakaama
 
-[![Build](https://github.com/eclipse/wakaama/actions/workflows/build_and_test.yaml/badge.svg)](https://github.com/eclipse/wakaama/actions/workflows/build_and_test.yaml)
+[![Build](https://github.com/eclipse-wakaama/wakaama/actions/workflows/build_and_test.yaml/badge.svg)](https://github.com/eclipse/wakaama/actions/workflows/build_and_test.yaml)
 
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/eclipse-wakaama/wakaama/badge)](https://scorecard.dev/viewer/?uri=github.com/eclipse-wakaama/wakaama)
 
@@ -33,7 +33,7 @@ This work is dual-licensed under the Eclipse Public License v2.0 and Eclipse Dis
 ### Using Wakaama as library
 
 ```
-git clone https://github.com/eclipse/wakaama.git
+git clone https://github.com/eclipse-wakaama/wakaama.git
 ```
 
 ### Working on Wakaama
@@ -41,7 +41,7 @@ git clone https://github.com/eclipse/wakaama.git
 When working on Wakaama itself, or intending to run the example client application, submodules must be checked out:
 
 ```
-git clone --recurse-submodules https://github.com/eclipse/wakaama.git
+git clone --recurse-submodules https://github.com/eclipse-wakaama/wakaama.git
 ```
 
 ## Compiling
@@ -55,15 +55,15 @@ The different settings can be configured with CMake cache variables (e.g. `cmake
 
 Wakaama supports multiple modes. At least one mode needs to be defined with CMake cache variables.
 
-- WAKAAMA_MODE_SERVER to enable LWM2M Server interfaces.
-- WAKAAMA_MODE_BOOTSTRAP_SERVER to enable LWM2M Bootstrap Server interfaces.
-- WAKAAMA_MODE_CLIENT to enable LWM2M Client interfaces.
+- WAKAAMA_MODE_SERVER to enable LwM2M Server interfaces.
+- WAKAAMA_MODE_BOOTSTRAP_SERVER to enable LwM2M Bootstrap Server interfaces.
+- WAKAAMA_MODE_CLIENT to enable LwM2M Client interfaces.
 
 #### Client Settings
 
 Wakaama supports additional client related options. These are only available if the client mode is enabled. 
 
-- WAKAAMA_CLIENT_INITIATED_BOOTSTRAP to enable LWM2M Bootstrap support in a LWM2M Client.
+- WAKAAMA_CLIENT_INITIATED_BOOTSTRAP to enable LwM2M Bootstrap support in a LWM2M Client.
 - WAKAAMA_CLIENT_LWM2M_V_1_0: Restrict the client code to use LwM2M version 1.0
  
 Please note: LwM2M version 1.0 is only supported by clients, while servers are backward compatible.
@@ -72,10 +72,10 @@ Please note: LwM2M version 1.0 is only supported by clients, while servers are b
 
 The following data formats are configurable for Wakaama:
 
-- WAKAAMA_DATA_TLV to enable TLV payload support (implicit except for LWM2M 1.1 clients)
+- WAKAAMA_DATA_TLV to enable TLV payload support (implicit except for LwM2M 1.1 clients)
 - WAKAAMA_DATA_JSON to enable JSON payload support (implicit when defining LWM2M_SERVER_MODE)
-- WAKAAMA_DATA_SENML_JSON to enable SenML JSON payload support (implicit for LWM2M 1.1 or greater when defining LWM2M_SERVER_MODE or LWM2M_BOOTSTRAP_SERVER_MODE)
-- WAKAAMA_DATA_SENML_CBOR to enable SenML CBOR payload support (implicit for LWM2M 1.1 or greater when defining LWM2M_SERVER_MODE or LWM2M_BOOTSTRAP_SERVER_MODE)
+- WAKAAMA_DATA_SENML_JSON to enable SenML JSON payload support (implicit for LwM2M 1.1 or greater when defining LWM2M_SERVER_MODE or LWM2M_BOOTSTRAP_SERVER_MODE)
+- WAKAAMA_DATA_SENML_CBOR to enable SenML CBOR payload support (implicit for LwM2M 1.1 or greater when defining LWM2M_SERVER_MODE or LWM2M_BOOTSTRAP_SERVER_MODE)
 - WAKAAMA_DATA_SENML_CBOR_FLOAT16_SUPPORT to enable 16-bit floating point encoding support in CBOR.
 - WAKAAMA_DATA_OLD_CONTENT_FORMAT to support the deprecated content format values for TLV and JSON.
 
@@ -83,7 +83,10 @@ The following data formats are configurable for Wakaama:
 
 - WAKAAMA_COAP_RAW_BLOCK1_REQUESTS For low memory client devices where it is not possible to keep a large post or put request in memory to be parsed (typically a firmware write).
   This option enable each unprocessed block 1 payload to be passed to the application, typically to be stored to a flash memory.
+- WAKAAMA_COAP_MAX_MESSAGE_SIZE Max size of a CoAP packet including headers and options.
 - WAKAAMA_COAP_DEFAULT_BLOCK_SIZE CoAP block size used by CoAP layer when performing block-wise transfers. Possible values: 16, 32, 64, 128, 256, 512 and 1024. Defaults to 1024.
+- WAKAAMA_COAP_DEFAULT_MAX_RETRANSMIT The maximum number of retransmissions used for confirmable messages.
+- WAKAAMA_COAP_SEPARATE_TIMEOUT: The max time to wait between the empty ack and the separate response message.
 
 
 ### Logging
@@ -128,17 +131,17 @@ Wakaama provides a simple CLI library. It can be enabled with:
   - Version control system: Git (and a GitHub account)
   - Git commit message linter: gitlint
   - Build system: ninja
-  - C code formatting: clang-format, version 14
+  - C code formatting: clang-format, version 18
   - CMake list files formatting: cmake-format, version 0.6.13
   - Unit testing: CUnit
 
-On Ubuntu 20.04, used in CI, the dependencies can be installed as such:
-- `apt install build-essential clang-format clang-format-14 clang-tools-14 cmake gcovr git libcunit1-dev ninja-build python3-pip`
+On Ubuntu 24.04, used in CI, the dependencies can be installed as such:
+- `apt install build-essential clang-format clang-format-18 clang-tools-18 cmake cppcheck gcovr git libcunit1-dev ninja-build python3-pip`
 - `pip3 install -r tools/requirements-compliance.txt`
 
 For macOS the development dependencies can be installed as such:
 
-`brew install automake clang-format cmake cunit gcc gitlint gnu-getopt make ninja`
+`brew install automake clang-format cmake cppcheck cunit gcc gitlint gnu-getopt make ninja`
 
 ### Code formatting
 #### C
@@ -148,9 +151,9 @@ The style is based on the LLVM style, but with 4 instead of 2 spaces indentation
 characters per line.
 
 To check if your code matches the expected style, the following commands are helpful:
- - `git clang-format-14 --diff`: Show what needs to be changed to match the expected code style
- - `git clang-format-14`: Apply all needed changes directly
- - `git clang-format-14 --commit main`: Fix code style for all changes since main
+ - `git clang-format-18 --diff`: Show what needs to be changed to match the expected code style
+ - `git clang-format-18`: Apply all needed changes directly
+ - `git clang-format-18 --commit main`: Fix code style for all changes since main
 
 If existing code gets reformatted, this must be done in a separate commit. Its commit id has to be added to the file
 `.git-blame-ignore-revs` and committed in yet another commit.
@@ -172,10 +175,13 @@ tools/ci/run_ci.sh --run-build
 pytest -v tests/integration
 ```
 
-## Examples
+### Disabling Unit Tests
 
-The examples can be enabled (or disabled) with the CMake cache variable `WAKAAMA_ENABLE_EXAMPLES` (e.g.
-`cmake -DWAKAAMA_ENABLE_EXAMPLES=OFF`).
+Building the unit tests can be controlled by the CMake cache variable:
+
+- `WAKAAMA_UNIT_TESTS`: The tests are enabled by default
+
+## Examples
 
 There are some example applications provided to test the server, client and bootstrap capabilities of Wakaama.
 The following recipes assume you are on a unix like platform and you have cmake and make installed.
@@ -192,7 +198,7 @@ interface. Type 'help' for a list of supported commands.
 Options are:
 ```
 Usage: lwm2mserver [OPTION]
-Launch a LWM2M server on localhost.
+Launch a LwM2M server on localhost.
 
 Options:
   -4		Use IPv4 connection. Default: IPv6 connection
@@ -202,18 +208,18 @@ Options:
 
 ### Test client example
 
- * ``cmake -S examples/client -B build-client -DWAKAAMA_MODE_CLIENT=ON``
- * ``cmake --build build-client``
- * ``./build-client/lwm2mclient [Options]``
+ * ``cmake -S examples/client/udp -B build-client-udp``
+ * ``cmake --build build-client-udp``
+ * ``./build-client-udp/lwm2mclient [Options]``
 
-Next to lwm2mclient a DTLS enabled variant named lwm2mclient_tinydtls gets built.
+Next to lwm2mclient there are also examples with DTLS enabled and with raw block1 transfer enabled.
 
-The lwm2mclient features nine LWM2M objects:
+The lwm2mclient features nine LwM2M objects:
  - Security Object (id: 0)
  - Server Object (id: 1)
  - Access Control Object (id: 2) as a skeleton
  - Device Object (id: 3) containing hard-coded values from the Example LWM2M
- Client of Appendix E of the LWM2M Technical Specification.
+ Client of Appendix E of the LwM2M Technical Specification.
  - Connectivity Monitoring Object (id: 4) as a skeleton
  - Firmware Update Object (id: 5) as a skeleton.
  - Location Object (id: 6) as a skeleton.
@@ -231,19 +237,19 @@ The lwm2mclient features nine LWM2M objects:
            exec |  2 |     E      |    No     |    Yes    |         |       |
            dec  |  3 |    R/W     |    No     |    Yes    |  Float  |       |
 
-The lwm2mclient opens UDP port 56830 and tries to register to a LWM2M Server at
+The lwm2mclient opens UDP port 56830 and tries to register to a LwM2M Server at
 127.0.0.1:5683. It features a basic command line interface. Type 'help' for a
 list of supported commands.
 
 Options are:
 ```
 Usage: lwm2mclient [OPTION]
-Launch a LWM2M client.
+Launch a LwM2M client.
 Options:
   -n NAME	Set the endpoint name of the Client. Default: testlwm2mclient
   -l PORT	Set the local UDP port of the Client. Default: 56830
-  -h HOST	Set the hostname of the LWM2M Server to connect to. Default: localhost
-  -p PORT	Set the port of the LWM2M Server to connect to. Default: 5683
+  -h HOST	Set the hostname of the LwM2M Server to connect to. Default: localhost
+  -p PORT	Set the port of the LwM2M Server to connect to. Default: 5683
   -4		Use IPv4 connection. Default: IPv6 connection
   -t TIME	Set the lifetime of the Client. Default: 300
   -b		Bootstrap requested.
@@ -272,7 +278,7 @@ LWM2M objects:
  - Security Object (id: 0)
  - Server Object (id: 1)
  - Device Object (id: 3) containing hard-coded values from the Example LWM2M
- Client of Appendix E of the LWM2M Technical Specification.
+ Client of Appendix E of the LwM2M Technical Specification.
  - Test Object (id: 31024) from the lwm2mclient as described above.
 
 The lightclient does not feature any command-line interface.
@@ -280,7 +286,7 @@ The lightclient does not feature any command-line interface.
 Options are:
 ```
 Usage: lwm2mclient [OPTION]
-Launch a LWM2M client.
+Launch a LwM2M client.
 Options:
   -n NAME	Set the endpoint name of the Client. Default: testlightclient
   -l PORT	Set the local UDP port of the Client. Default: 56830

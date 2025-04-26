@@ -347,11 +347,8 @@ uint8_t coap_block2_handler(lwm2m_block_data_t **pBlockDataHead, uint16_t mid, c
 
 void free_block_data(lwm2m_block_data_t * blockData)
 {
-    if (blockData != NULL)
-    {
-#ifndef LWM2M_RAW_BLOCK1_REQUESTS
+    if (blockData != NULL) {
         lwm2m_free(blockData->blockBuffer);
-#endif
         if (blockData->blockType == BLOCK_1)
         {
             lwm2m_free(blockData->identifier.uri);

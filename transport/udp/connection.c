@@ -213,3 +213,5 @@ bool lwm2m_session_is_equal(void *session1, void *session2, void *userData) {
 
     return (session1 == session2);
 }
+
+void lwm2m_session_remove(void *session_h) { (void)session_h; /* unused */ }
