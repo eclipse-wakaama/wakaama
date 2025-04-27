@@ -903,6 +903,21 @@ lwm2m_client_t * utils_findClient(lwm2m_context_t * contextP,
 
     return targetP;
 }
+
+lwm2m_client_t * utils_find_client_by_registration_id(lwm2m_client_t * head, const uint16_t registration_id)
+{
+    while (NULL != head) {
+        if (head->registration_id == registration_id) {
+            return head;
+        }
+
+        head = head->next;
+    }
+
+    return NULL;
+}
+
+
 #endif
 
 int utils_isAltPathValid(const char * altPath)
@@ -1154,4 +1169,40 @@ lwm2m_data_type_t utils_depthToDatatype(uri_depth_t depth)
     }
 
     return LWM2M_TYPE_UNDEFINED;
+}
+
+#if 0
+/* inspired by:
+ * https://stackoverflow.com/a/15768317 */
+void utils_randomString(char *dest, size_t length) {
+    char charset[] = "0123456789"
+                     "abcdefghijklmnopqrstuvwxyz"
+                     "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+    while (length-- > 0) {
+        size_t index = (double) rand() / RAND_MAX * (sizeof charset - 1);
+        *dest++ = charset[index];
+    }
+    *dest = '\0';
+}
+#endif
+
+uint16_t utils_random_registration_id(const lwm2m_client_t* const client_list) {
+    uint16_t reg_id = (uint16_t)(rand() % LWM2M_MAX_ID); // NOSONAR
+    const lwm2m_client_t * head = client_list;
+    bool reg_id_already_in_use = false;
+    while (head != NULL) {
+            if (head->registration_id == reg_id) {
+                reg_id_already_in_use = true;
+                break;
+            }
+
+            head = head->next;
+    }
+
+    if (reg_id_already_in_use) {
+        return utils_random_registration_id(client_list);
+    }
+
+    return reg_id;
 }
