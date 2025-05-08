@@ -722,6 +722,7 @@ typedef struct _lwm2m_client_
 {
     struct _lwm2m_client_ * next;       // matches lwm2m_list_t::next
     uint16_t                internalID; // matches lwm2m_list_t::id
+    uint16_t registration_id;
     char *                  name;
     lwm2m_version_t         version;
     lwm2m_binding_t         binding;
