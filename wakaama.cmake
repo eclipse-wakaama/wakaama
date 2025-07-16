@@ -44,6 +44,27 @@ set_property(
              1024
 )
 
+set(WAKAAMA_COAP_MAX_MESSAGE_SIZE
+    2048
+    CACHE STRING "Max. CoAP packet size."
+)
+
+if(WAKAAMA_COAP_DEFAULT_BLOCK_SIZE GREATER WAKAAMA_COAP_MAX_MESSAGE_SIZE)
+    message(FATAL_ERROR "Packet size needs to be bigger than the block size.")
+endif()
+
+# The maximum number of retransmissions used for confirmable messages.
+set(WAKAAMA_COAP_DEFAULT_MAX_RETRANSMIT
+    4
+    CACHE STRING "Default CoAP max retransmissions"
+)
+
+# The max time to wait between the empty ack and the separate response message.
+set(WAKAAMA_COAP_SEPARATE_TIMEOUT
+    15
+    CACHE STRING "CoAP separate response timeout; Used if not set on a per-target basis"
+)
+
 # Logging
 set(WAKAAMA_LOG_LEVEL
     LOG_DISABLED
@@ -144,6 +165,14 @@ function(set_coap_defines)
     endif()
 
     target_compile_definitions(${target} PUBLIC LWM2M_COAP_DEFAULT_BLOCK_SIZE=${WAKAAMA_COAP_DEFAULT_BLOCK_SIZE})
+
+    target_compile_definitions(${target} PUBLIC LWM2M_COAP_MAX_MESSAGE_SIZE=${WAKAAMA_COAP_MAX_MESSAGE_SIZE})
+
+    target_compile_definitions(
+        ${target} PUBLIC LWM2M_COAP_DEFAULT_MAX_RETRANSMIT=${WAKAAMA_COAP_DEFAULT_MAX_RETRANSMIT}
+    )
+
+    target_compile_definitions(${target} PUBLIC LWM2M_COAP_SEPARATE_TIMEOUT=${WAKAAMA_COAP_SEPARATE_TIMEOUT})
 endfunction()
 
 # Set the defines for logging configuration

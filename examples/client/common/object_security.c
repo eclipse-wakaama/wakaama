@@ -214,8 +214,8 @@ static uint8_t prv_security_write(lwm2m_context_t *contextP, uint16_t instanceId
             if (targetP->uri != NULL)
                 lwm2m_free(targetP->uri);
             targetP->uri = (char *)lwm2m_malloc(dataArray[i].value.asBuffer.length + 1);
-            memset(targetP->uri, 0, dataArray[i].value.asBuffer.length + 1);
             if (targetP->uri != NULL) {
+                memset(targetP->uri, 0, dataArray[i].value.asBuffer.length + 1);
                 strncpy(targetP->uri, (char *)dataArray[i].value.asBuffer.buffer, // NOSONAR
                         dataArray[i].value.asBuffer.length);
                 result = COAP_204_CHANGED;
@@ -250,8 +250,8 @@ static uint8_t prv_security_write(lwm2m_context_t *contextP, uint16_t instanceId
             if (targetP->publicIdentity != NULL)
                 lwm2m_free(targetP->publicIdentity);
             targetP->publicIdentity = (char *)lwm2m_malloc(dataArray[i].value.asBuffer.length + 1);
-            memset(targetP->publicIdentity, 0, dataArray[i].value.asBuffer.length + 1);
             if (targetP->publicIdentity != NULL) {
+                memset(targetP->publicIdentity, 0, dataArray[i].value.asBuffer.length + 1);
                 memcpy(targetP->publicIdentity, (char *)dataArray[i].value.asBuffer.buffer,
                        dataArray[i].value.asBuffer.length);
                 targetP->publicIdLen = dataArray[i].value.asBuffer.length;
@@ -265,8 +265,8 @@ static uint8_t prv_security_write(lwm2m_context_t *contextP, uint16_t instanceId
             if (targetP->serverPublicKey != NULL)
                 lwm2m_free(targetP->serverPublicKey);
             targetP->serverPublicKey = (char *)lwm2m_malloc(dataArray[i].value.asBuffer.length + 1);
-            memset(targetP->serverPublicKey, 0, dataArray[i].value.asBuffer.length + 1);
             if (targetP->serverPublicKey != NULL) {
+                memset(targetP->serverPublicKey, 0, dataArray[i].value.asBuffer.length + 1);
                 memcpy(targetP->serverPublicKey, (char *)dataArray[i].value.asBuffer.buffer,
                        dataArray[i].value.asBuffer.length);
                 targetP->serverPublicKeyLen = dataArray[i].value.asBuffer.length;
@@ -280,8 +280,8 @@ static uint8_t prv_security_write(lwm2m_context_t *contextP, uint16_t instanceId
             if (targetP->secretKey != NULL)
                 lwm2m_free(targetP->secretKey);
             targetP->secretKey = (char *)lwm2m_malloc(dataArray[i].value.asBuffer.length + 1);
-            memset(targetP->secretKey, 0, dataArray[i].value.asBuffer.length + 1);
             if (targetP->secretKey != NULL) {
+                memset(targetP->secretKey, 0, dataArray[i].value.asBuffer.length + 1);
                 memcpy(targetP->secretKey, (char *)dataArray[i].value.asBuffer.buffer,
                        dataArray[i].value.asBuffer.length);
                 targetP->secretKeyLen = dataArray[i].value.asBuffer.length;

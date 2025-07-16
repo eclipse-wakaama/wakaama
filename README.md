@@ -83,7 +83,10 @@ The following data formats are configurable for Wakaama:
 
 - WAKAAMA_COAP_RAW_BLOCK1_REQUESTS For low memory client devices where it is not possible to keep a large post or put request in memory to be parsed (typically a firmware write).
   This option enable each unprocessed block 1 payload to be passed to the application, typically to be stored to a flash memory.
+- WAKAAMA_COAP_MAX_MESSAGE_SIZE Max size of a CoAP packet including headers and options.
 - WAKAAMA_COAP_DEFAULT_BLOCK_SIZE CoAP block size used by CoAP layer when performing block-wise transfers. Possible values: 16, 32, 64, 128, 256, 512 and 1024. Defaults to 1024.
+- WAKAAMA_COAP_DEFAULT_MAX_RETRANSMIT The maximum number of retransmissions used for confirmable messages.
+- WAKAAMA_COAP_SEPARATE_TIMEOUT: The max time to wait between the empty ack and the separate response message.
 
 
 ### Logging

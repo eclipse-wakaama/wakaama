@@ -64,8 +64,6 @@ typedef struct
     int               addressFamily;
 } internal_data_t;
 
-#define MAX_PACKET_SIZE 2048
-
 static int g_quit = 0;
 
 static void prv_quit(lwm2m_context_t * lwm2mH,
@@ -696,7 +694,7 @@ int main(int argc, char *argv[])
         }
         else if (result >= 0)
         {
-            uint8_t buffer[MAX_PACKET_SIZE];
+            uint8_t buffer[LWM2M_COAP_MAX_MESSAGE_SIZE];
             ssize_t numBytes;
 
             // Packet received
@@ -706,18 +704,15 @@ int main(int argc, char *argv[])
                 socklen_t addrLen;
 
                 addrLen = sizeof(addr);
-                numBytes = recvfrom(data.sock, buffer, MAX_PACKET_SIZE, 0, (struct sockaddr *)&addr, &addrLen);
+                numBytes =
+                    recvfrom(data.sock, buffer, LWM2M_COAP_MAX_MESSAGE_SIZE, 0, (struct sockaddr *)&addr, &addrLen);
 
                 if (numBytes == -1)
                 {
                     fprintf(stderr, "Error in recvfrom(): %d\r\n", errno);
-                }
-                else if (numBytes >= MAX_PACKET_SIZE) 
-                {
-                    fprintf(stderr, "Received packet >= MAX_PACKET_SIZE\r\n");
-                } 
-                else
-                {
+                } else if (numBytes >= LWM2M_COAP_MAX_MESSAGE_SIZE) {
+                    fprintf(stderr, "Received packet >= LWM2M_COAP_MAX_MESSAGE_SIZE\r\n");
+                } else {
                     char s[INET6_ADDRSTRLEN];
                     in_port_t rec_port;
                     lwm2m_connection_t *connP;
@@ -759,7 +754,7 @@ int main(int argc, char *argv[])
             // command line input
             else if (FD_ISSET(STDIN_FILENO, &readfds))
             {
-                numBytes = read(STDIN_FILENO, buffer, MAX_PACKET_SIZE - 1);
+                numBytes = read(STDIN_FILENO, buffer, LWM2M_COAP_MAX_MESSAGE_SIZE - 1);
 
                 if (numBytes > 1)
                 {

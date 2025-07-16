@@ -158,6 +158,11 @@ uint8_t lwm2m_buffer_send(void * sessionH, uint8_t * buffer, size_t length, void
 bool lwm2m_session_is_equal(void * session1, void * session2, void * userData);
 
 /*
+ * Remove session from list
+ */
+void lwm2m_session_remove(void *sessionH);
+
+/*
  * Error code
  */
 
@@ -308,6 +313,13 @@ void lwm2m_list_free(lwm2m_list_t * head);
  */
 bool lwm2m_set_coap_block_size(uint16_t coap_block_size_arg);
 uint16_t lwm2m_get_coap_block_size(void);
+
+/*
+ * Helper function for getting the configured max. size for a CoAP message.
+ *
+ * This size is currently configurable only at build-time. Getting the value can be useful at run-time.
+ */
+uint16_t lwm2m_get_coap_message_size(void);
 
 /*
  * URI
@@ -740,8 +752,7 @@ struct _lwm2m_transaction_
     lwm2m_transaction_t * next;  // matches lwm2m_list_t::next
     uint16_t              mID;   // matches lwm2m_list_t::id
     void *                peerH;
-    uint8_t               ack_received; // indicates, that the ACK was received
-    time_t                response_timeout; // timeout to wait for response, if token is used. When 0, use calculated acknowledge timeout.
+    uint8_t ack_received; // indicates, that the ACK was received
     uint8_t  retrans_counter;
     time_t   retrans_time;
     void * message;

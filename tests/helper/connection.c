@@ -50,3 +50,10 @@ uint8_t *test_get_response_buffer(size_t *len) {
     *len = response_len;
     return response_buffer;
 }
+
+void lwm2m_session_remove(void *sessionH) {
+    (void)sessionH;
+
+    // Currently the tests do not use a session structure, assume a NULL pointer here.
+    assert(sessionH == NULL);
+}

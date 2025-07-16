@@ -74,8 +74,6 @@
 #include "commandline.h"
 #include "udp/connection.h"
 
-#define MAX_PACKET_SIZE 2048
-
 static int g_quit = 0;
 
 static void prv_print_error(uint8_t status)
@@ -953,19 +951,17 @@ syntax_error:
 static void prv_monitor_callback(lwm2m_context_t *lwm2mH, uint16_t clientID, lwm2m_uri_t *uriP, int status,
                                  block_info_t *block_info, lwm2m_media_type_t format, uint8_t *data, size_t dataLength,
                                  void *userData) {
-    lwm2m_client_t * targetP;
+    lwm2m_client_t *clientP;
 
     /* unused parameter */
     (void)userData;
+
+    clientP = (lwm2m_client_t *)LWM2M_LIST_FIND(lwm2mH->clientList, clientID);
 
     switch (status)
     {
     case COAP_201_CREATED:
         fprintf(stdout, "\r\nNew client #%d registered.\r\n", clientID);
-
-        targetP = (lwm2m_client_t *)lwm2m_list_find((lwm2m_list_t *)lwm2mH->clientList, clientID);
-
-        prv_dump_client(targetP);
         break;
 
     case COAP_202_DELETED:
@@ -974,35 +970,34 @@ static void prv_monitor_callback(lwm2m_context_t *lwm2mH, uint16_t clientID, lwm
 
     case COAP_204_CHANGED:
         fprintf(stdout, "\r\nClient #%d updated.\r\n", clientID);
-
-        targetP = (lwm2m_client_t *)lwm2m_list_find((lwm2m_list_t *)lwm2mH->clientList, clientID);
-
-        prv_dump_client(targetP);
         break;
 
     default:
         fprintf(stdout, "\r\nMonitor callback called with an unknown status: %d.\r\n", status);
         break;
     }
+    prv_dump_client(clientP);
 
     fprintf(stdout, "\r\n> ");
     fflush(stdout);
 }
 
-#ifndef LWM2M_VERSION_1_0
 static void prv_reporting_send_callback(lwm2m_context_t *lwm2mH, uint16_t clientID, lwm2m_uri_t *uriP, int status,
                                         block_info_t *block_info, lwm2m_media_type_t format, uint8_t *data,
                                         size_t dataLength, void *userData) {
+    lwm2m_client_t *clientP;
+
     /* unused parameter */
     (void)userData;
 
-    fprintf(stdout, "\r\nClient #%d send.\r\n", clientID);
-    output_data(stdout, block_info, format, data, dataLength, 1);
+    clientP = (lwm2m_client_t *)LWM2M_LIST_FIND(lwm2mH->clientList, clientID);
+
+    fprintf(stdout, "\r\nSend callback called with status: %d.\r\n", status);
+    prv_dump_client(clientP);
 
     fprintf(stdout, "\r\n> ");
     fflush(stdout);
 }
-#endif
 
 static void prv_quit(lwm2m_context_t *lwm2mH,
                      char * buffer,
@@ -1173,6 +1168,7 @@ int main(int argc, char *argv[])
     fprintf(stdout, "> "); fflush(stdout);
 
     lwm2m_set_monitoring_callback(lwm2mH, prv_monitor_callback, NULL);
+    lwm2m_reporting_set_send_callback(lwm2mH, prv_reporting_send_callback, NULL);
 
 #ifndef LWM2M_VERSION_1_0
     lwm2m_reporting_set_send_callback(lwm2mH, prv_reporting_send_callback, NULL);
@@ -1205,7 +1201,7 @@ int main(int argc, char *argv[])
         }
         else if (result > 0)
         {
-            uint8_t buffer[MAX_PACKET_SIZE];
+            uint8_t buffer[LWM2M_COAP_MAX_MESSAGE_SIZE];
             ssize_t numBytes;
 
             if (FD_ISSET(sock, &readfds))
@@ -1214,18 +1210,14 @@ int main(int argc, char *argv[])
                 socklen_t addrLen;
 
                 addrLen = sizeof(addr);
-                numBytes = recvfrom(sock, buffer, MAX_PACKET_SIZE, 0, (struct sockaddr *)&addr, &addrLen);
+                numBytes = recvfrom(sock, buffer, LWM2M_COAP_MAX_MESSAGE_SIZE, 0, (struct sockaddr *)&addr, &addrLen);
 
                 if (numBytes == -1)
                 {
                     fprintf(stderr, "Error in recvfrom(): %d\r\n", errno);
-                }
-                else if (numBytes >= MAX_PACKET_SIZE) 
-                {
-                    fprintf(stderr, "Received packet >= MAX_PACKET_SIZE\r\n");
-                } 
-                else
-                {
+                } else if (numBytes >= LWM2M_COAP_MAX_MESSAGE_SIZE) {
+                    fprintf(stderr, "Received packet >= LWM2M_COAP_MAX_MESSAGE_SIZE\r\n");
+                } else {
                     char s[INET6_ADDRSTRLEN];
                     in_port_t port;
                     lwm2m_connection_t *connP;

@@ -574,9 +574,7 @@ static int prv_lwm2m_dm_write(lwm2m_context_t *contextP, uint16_t clientID, lwm2
 
     LOG_ARG_DBG("clientID: %d, format: %s, length: %zd", clientID, STR_MEDIA_TYPE(format), length);
     LOG_ARG_DBG("%s", LOG_URI_TO_STRING(uriP));
-    if (!LWM2M_URI_IS_SET_INSTANCE(uriP)
-     || length == 0)
-    {
+    if (!LWM2M_URI_IS_SET_OBJECT(uriP) || length == 0) {
         return COAP_400_BAD_REQUEST;
     }
 
