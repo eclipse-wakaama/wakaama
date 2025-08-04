@@ -43,9 +43,25 @@ target_sources_wakaama(${TARGET_NAME})
 
 target_link_libraries(${TARGET_NAME} PRIVATE wakaama_command_line wakaama_platform_posix wakaama_transport_testing_fake)
 
+if(SANITIZER AND WAKAAMA_ENABLE_VALGRIND)
+    message(FATAL_ERROR "Sanitizers are not compatible with Valgrind. Use only one at a time.")
+endif()
+
 if(SANITIZER)
     target_compile_options(${TARGET_NAME} PRIVATE -fsanitize=${SANITIZER} -fno-sanitize-recover=all)
     target_link_options(${TARGET_NAME} PRIVATE -fsanitize=${SANITIZER} -fno-sanitize-recover=all)
+endif()
+
+if(VALGRIND)
+    if(VALGRIND STREQUAL "memcheck")
+        set(VALGRIND_LAUNCHER valgrind --tool=memcheck --leak-check=full --show-leak-kinds=all --track-origins=yes
+                              --error-exitcode=1
+        )
+    elseif(VALGRIND STREQUAL "helgrind")
+        set(VALGRIND_LAUNCHER valgrind --tool=helgrind --error-exitcode=1)
+    else()
+        message(FATAL_ERROR "Valgrind tool '${VALGRIND}' not supported")
+    endif()
 endif()
 
 if(COVERAGE)
@@ -53,5 +69,6 @@ if(COVERAGE)
     target_link_options(${TARGET_NAME} PRIVATE --coverage)
 endif()
 
+get_target_property(TEST_WORKING_DIR ${TARGET_NAME} BINARY_DIR)
 # Add our unit tests to the "test" target
-add_test(NAME ${TARGET_NAME}_test COMMAND ${TARGET_NAME})
+add_test(NAME ${TARGET_NAME}_test COMMAND ${VALGRIND_LAUNCHER} ${TEST_WORKING_DIR}/${TARGET_NAME} COMMAND_EXPAND_LISTS)
