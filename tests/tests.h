@@ -59,4 +59,5 @@ CU_ErrorCode create_logging_test_suit(void);
 CU_ErrorCode create_registration_test_suit(void);
 CU_ErrorCode create_message_size_test_suit(void);
 #endif
+CU_ErrorCode create_utils_suit(void);
 #endif /* TESTS_H_ */
