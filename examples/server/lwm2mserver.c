@@ -147,6 +147,7 @@ static void prv_dump_client(lwm2m_client_t * targetP)
     lwm2m_client_object_t * objectP;
 
     fprintf(stdout, "Client #%d:\r\n", targetP->internalID);
+    fprintf(stdout, "\tregistration id: \"%d\"\r\n", targetP->registration_id);
     fprintf(stdout, "\tname: \"%s\"\r\n", targetP->name);
     fprintf(stdout, "\tversion: \"%s\"\r\n", prv_dump_version(targetP->version));
     prv_dump_binding(targetP->binding);
