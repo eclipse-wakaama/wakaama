@@ -2068,7 +2068,7 @@ void registration_step(lwm2m_context_t * contextP,
 #ifndef LWM2M_VERSION_1_0
         case STATE_REG_HOLD_OFF:
         {
-            time_t interval = targetP->registration - currentTime;
+            int64_t interval = targetP->registration - currentTime;
             if (0 >= interval)
             {
                 prv_register(contextP, targetP);
