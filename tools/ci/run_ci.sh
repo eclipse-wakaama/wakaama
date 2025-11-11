@@ -32,6 +32,7 @@ OPT_SOURCE_DIRECTORY="${REPO_ROOT_DIR}"
 OPT_BUILD_DIRECTORY="build-wakaama"
 OPT_TEST_COVERAGE_REPORT=""
 OPT_CODE_CHECKER="full"
+OPT_FUZZING_TYPE="fuzzing"
 OPT_VERBOSE=0
 OPT_WRAPPER_CMD=""
 RUN_BUILD=0
@@ -43,6 +44,7 @@ RUN_GIT_BLAME_IGNORE=0
 RUN_TESTS=0
 RUN_DOXYGEN=0
 RUN_CODE_CHECKER=0
+RUN_FUZZER=0
 
 HELP_MSG="usage: ${SCRIPT_NAME} <OPTIONS>...
 Runs build and test steps in CI.
@@ -77,6 +79,8 @@ Options:
   --code-checker ACTION     Run the CodeChecker code analyzer to create a baseline,
                             do a full check or a PR check (show just difference to baseline)
                             (TYPE: full, diff, baseline)
+  --fuzzing-type TYPE       Run the fuzzer to discover new issues or execute the regression tests
+                            (TYPE: fuzzing, regression)
   -v, --verbose             Verbose output
   -a, --all                 Run all steps required for a MR
   -h, --help                Display this help and exit
@@ -91,6 +95,7 @@ Available steps (executed by --all):
   --run-tests              Execute tests (works only for top level project)
   --run-doxygen            Build the Doxygen documentation of the code
   --run-code-checker       Run the CodeChecker code analyzer
+  --run-fuzzer             Run the fuzzer (libFuzzer)
 "
 
 function usage() {
@@ -259,6 +264,28 @@ function run_code_checker() {
     fi
 }
 
+function run_fuzzer() {
+
+  ${OPT_WRAPPER_CMD} cmake -GNinja -DCMAKE_C_COMPILER=clang -S ${OPT_SOURCE_DIRECTORY}/fuzzing \
+    -B "${OPT_BUILD_DIRECTORY}" ${CMAKE_ARGS}
+
+  case "${OPT_FUZZING_TYPE}" in
+    fuzzing)
+      cmake_target=run_all_fuzzing_tests
+      ;;
+    regression)
+      cmake_target=run_all_fuzzing_reg_tests
+      ;;
+    *)
+      echo "Error: Unknown fuzzing type: " \
+           "${OPT_FUZZING_TYPE}"
+      usage 1
+      ;;
+  esac
+
+  ${OPT_WRAPPER_CMD} cmake --build "${OPT_BUILD_DIRECTORY}" --target "${cmake_target}"
+}
+
 # Parse Options
 
 if [[ "$OSTYPE" == "darwin"* ]]; then
@@ -291,6 +318,7 @@ if ! PARSED_OPTS=$($getopt -o vah \
                           -l run-tests \
                           -l run-doxygen \
                           -l run-code-checker \
+                          -l run-fuzzer \
                           -l sanitizer: \
                           -l scan-build: \
                           -l sonarqube: \
@@ -298,6 +326,7 @@ if ! PARSED_OPTS=$($getopt -o vah \
                           -l build-directory: \
                           -l test-coverage: \
                           -l code-checker: \
+                          -l fuzzing-type: \
                           -l verbose \
                           --name "${SCRIPT_NAME}" -- "$@");
 then
@@ -366,6 +395,10 @@ while true; do
       RUN_CLEAN=1
       shift
       ;;
+    --run-fuzzer)
+      RUN_FUZZER=1
+      shift
+      ;;
     --sanitizer)
       OPT_SANITIZER=$2
       shift 2
@@ -396,6 +429,10 @@ while true; do
       ;;
     --code-checker)
       OPT_CODE_CHECKER=$2
+      shift 2
+      ;;
+    --fuzzing-type)
+      OPT_FUZZING_TYPE=$2
       shift 2
       ;;
     --)
@@ -518,5 +555,10 @@ fi
 
 if [ "${RUN_CODE_CHECKER}" = "1" ]; then
   run_code_checker
+fi
+
+
+if [ "${RUN_FUZZER}" = "1" ]; then
+  run_fuzzer
 fi
 
