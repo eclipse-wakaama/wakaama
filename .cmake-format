@@ -23,5 +23,14 @@ additional_commands = {
       "SOURCE_FILES": '*',
       "COMPILE_DEFINITIONS": '*',
     }
+  },
+  "add_fuzzing_test": {
+    "kwargs": {
+      "TARGET_NAME": '*',
+      "SOURCE_FILES": '*',
+      "CORPUS_DIRS": '*',
+      "MAX_LEN": '*',
+      "CRASH_FILES_DIR": '*',
+    }
   }
 }
