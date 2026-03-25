@@ -43,16 +43,10 @@
 */
 #include "internals.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
 
-// the maximum payload transferred by block we accumulate per transfer
-#ifndef MAX_BLOCK_SIZE
-#define MAX_BLOCK_SIZE 4096
-#endif
-
-    
 bool prv_matchBlock1 (block_data_identifier_t identifier, lwm2m_block_data_t * blockData)
     {
     if (blockData->identifier.uri == NULL || identifier.uri == NULL)
@@ -247,7 +241,12 @@ static uint8_t prv_coap_block_handler(lwm2m_block_data_t **pBlockDataHead, block
           }
 
           // re-alloc new buffer
-          blockData->blockBufferSize = oldSize+length;
+          const size_t new_size = oldSize + length;
+          if (LWM2M_COAP_MAX_MESSAGE_SIZE < new_size) {
+              return COAP_413_ENTITY_TOO_LARGE;
+          }
+
+          blockData->blockBufferSize = new_size;
           blockData->blockBuffer = (uint8_t *) lwm2m_malloc(blockData->blockBufferSize);
           if (NULL == blockData->blockBuffer) return COAP_500_INTERNAL_SERVER_ERROR; //TODO: should we clean up
           memcpy(blockData->blockBuffer, oldBuffer, oldSize);

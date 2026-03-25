@@ -142,10 +142,45 @@ static void test_block1_same_message_after_success(void) {
     free_block_data(blk1);
 }
 
+static void test_block1_unbounded_allocation(void) {
+    lwm2m_block_data_t *blk1 = NULL;
+
+    uint8_t *resultBuffer = NULL;
+    size_t resultLen = 0;
+
+    const size_t max_message_size = LWM2M_COAP_MAX_MESSAGE_SIZE;
+    const size_t test_block_size = 128;
+
+    const size_t total_blocks_num = max_message_size / test_block_size;
+
+    uint8_t block_buffer[test_block_size];
+    memset(block_buffer, 0xaf, test_block_size);
+
+    for (size_t block_num = 0; block_num <= total_blocks_num; ++block_num) {
+        const bool block_more = true;
+        const uint8_t status = coap_block1_handler(&blk1, URI, block_buffer, test_block_size, test_block_size,
+                                                   block_num, block_more, &resultBuffer, &resultLen);
+        CU_ASSERT_PTR_NULL(resultBuffer)
+        CU_ASSERT_PTR_NOT_NULL(blk1)
+        CU_ASSERT(blk1->blockBufferSize <= max_message_size)
+
+        if (total_blocks_num > block_num) {
+            CU_ASSERT_EQUAL(blk1->blockNum, block_num)
+            CU_ASSERT_EQUAL(status, COAP_231_CONTINUE)
+        } else {
+            // The last block leads to bigger total message than the max. buffer size.
+            CU_ASSERT_EQUAL(status, COAP_413_ENTITY_TOO_LARGE);
+        }
+    }
+
+    free_block_data(blk1);
+}
+
 static struct TestTable table[] = {
     {"test of test_block1_nominal()", test_block1_nominal},
     {"test of test_block1_retransmit()", test_block1_retransmit},
     {"test of test_block1_same_message_after_success()", test_block1_same_message_after_success},
+    {"test of test_block1_unbounded_allocation()", test_block1_unbounded_allocation},
     {NULL, NULL},
 };
 
