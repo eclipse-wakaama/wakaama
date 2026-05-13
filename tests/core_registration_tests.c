@@ -87,7 +87,7 @@ static void test_registration_message_to_server(void) {
     size_t send_buffer_len;
     uint8_t *send_buffer = test_get_response_buffer(&send_buffer_len);
     coap_packet_t actual_response_packet;
-    CU_ASSERT_EQUAL(14, send_buffer_len);
+    CU_ASSERT(18 >= send_buffer_len && send_buffer_len >= 14);
     coap_status_t status = coap_parse_message(&actual_response_packet, send_buffer, send_buffer_len);
     CU_ASSERT_EQUAL(status, NO_ERROR);
 

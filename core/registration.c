@@ -1883,6 +1883,16 @@ uint8_t  registration_handleRequest(lwm2m_context_t * contextP,
                 }
                 memset(clientP, 0, sizeof(lwm2m_client_t));
                 clientP->internalID = lwm2m_list_newId((lwm2m_list_t *)contextP->clientList);
+                clientP->registration_id = utils_random_registration_id(contextP->clientList);
+                if (clientP->registration_id == LWM2M_MAX_ID) {
+                    lwm2m_free(name);
+                    lwm2m_free(altPath);
+                    if (msisdn != NULL)
+                        lwm2m_free(msisdn);
+                    prv_freeClientObjectList(objects);
+                    return COAP_500_INTERNAL_SERVER_ERROR;
+                }
+
                 contextP->clientList = (lwm2m_client_t *)LWM2M_LIST_ADD(contextP->clientList, clientP);
             }
             clientP->name = name;
@@ -1896,8 +1906,7 @@ uint8_t  registration_handleRequest(lwm2m_context_t * contextP,
             clientP->objectList = objects;
             clientP->sessionH = fromSessionH;
 
-            if (prv_getLocationString(clientP->internalID, location) == 0)
-            {
+            if (prv_getLocationString(clientP->registration_id, location) == 0) {
                 registration_freeClient(contextP, clientP);
                 return COAP_500_INTERNAL_SERVER_ERROR;
             }
@@ -1918,8 +1927,9 @@ uint8_t  registration_handleRequest(lwm2m_context_t * contextP,
             // Registration update
             if (LWM2M_URI_IS_SET_INSTANCE(uriP)) return COAP_400_BAD_REQUEST;
 
-            clientP = (lwm2m_client_t *)lwm2m_list_find((lwm2m_list_t *)contextP->clientList, uriP->objectId);
-            if (clientP == NULL) return COAP_404_NOT_FOUND;
+            clientP = utils_find_client_by_registration_id(contextP->clientList, uriP->objectId);
+            if (clientP == NULL)
+                return COAP_404_NOT_FOUND;
 
             // Endpoint client name MUST NOT be present
             if (name != NULL)
@@ -2017,7 +2027,7 @@ uint8_t  registration_handleRequest(lwm2m_context_t * contextP,
         if (!LWM2M_URI_IS_SET_OBJECT(uriP)) return COAP_400_BAD_REQUEST;
         if (LWM2M_URI_IS_SET_INSTANCE(uriP)) return COAP_400_BAD_REQUEST;
 
-        clientP = (lwm2m_client_t *)LWM2M_LIST_FIND(contextP->clientList, uriP->objectId);
+        clientP = utils_find_client_by_registration_id(contextP->clientList, uriP->objectId);
 
         if (clientP == NULL) {
             return COAP_400_BAD_REQUEST;
