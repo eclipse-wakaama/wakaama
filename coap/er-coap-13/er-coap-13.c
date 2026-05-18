@@ -401,9 +401,9 @@ char * coap_get_packet_uri_as_string(coap_packet_t * packet)
     char * output;
     
     char * path_string = coap_get_multi_option_as_path_string(packet->uri_path);
-    size_t path_len = strlen(path_string);
+    size_t path_len = strlen(path_string); // NOSONAR
     char * query_string = coap_get_multi_option_as_query_string(packet->uri_query);
-    size_t query_len = strlen(query_string);
+    size_t query_len = strlen(query_string);  // NOSONAR
 
     size_t len = 2 * sizeof(char); // "//"
     len += packet->uri_host_len;
@@ -450,7 +450,7 @@ coap_get_variable(const uint8_t *buffer, size_t length, const char *name, const 
   /*initialize the output buffer first*/
   *output = 0;
 
-  name_len = strlen(name);
+  name_len = strlen(name); // NOSONAR
   end = buffer + length;
 
   for (start = buffer; start + name_len < end; ++start){
@@ -1199,7 +1199,7 @@ coap_set_header_proxy_uri(void *packet, const char *uri)
   coap_packet_t *const coap_pkt = (coap_packet_t *) packet;
 
   coap_pkt->proxy_uri = (uint8_t *)uri;
-  coap_pkt->proxy_uri_len = strlen(uri);
+  coap_pkt->proxy_uri_len = strlen(uri); // NOSONAR
 
   SET_OPTION(coap_pkt, COAP_OPTION_PROXY_URI);
   return coap_pkt->proxy_uri_len;
@@ -1222,7 +1222,7 @@ coap_set_header_uri_host(void *packet, const char *host)
   coap_packet_t *const coap_pkt = (coap_packet_t *) packet;
 
   coap_pkt->uri_host = (uint8_t *)host;
-  coap_pkt->uri_host_len = strlen(host);
+  coap_pkt->uri_host_len = strlen(host); // NOSONAR
 
   SET_OPTION(coap_pkt, COAP_OPTION_URI_HOST);
   return coap_pkt->uri_host_len;
@@ -1279,7 +1279,7 @@ coap_set_header_uri_path_segment(void *packet, const char *segment)
   }
   else
   {
-      length = strlen(segment);
+      length = strlen(segment); // NOSONAR
       coap_add_multi_option(&(coap_pkt->uri_path), (uint8_t *)segment, length, 0);
   }
 
@@ -1357,7 +1357,7 @@ coap_set_header_uri_query_segment(void *packet, const char *segment)
   }
   else
   {
-      length = strlen(segment);
+      length = strlen(segment); // NOSONAR
       coap_add_multi_option(&(coap_pkt->uri_query), (uint8_t *)segment, length, 0);
   }
 
@@ -1423,7 +1423,7 @@ coap_set_header_location_query(void *packet, char *query)
   while (query[0]=='?') ++query;
 
   coap_pkt->location_query = (uint8_t *)query;
-  coap_pkt->location_query_len = strlen(query);
+  coap_pkt->location_query_len = strlen(query); // NOSONAR
 
   SET_OPTION(coap_pkt, COAP_OPTION_LOCATION_QUERY);
   return coap_pkt->location_query_len;

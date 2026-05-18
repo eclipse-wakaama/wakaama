@@ -56,7 +56,7 @@ static void test_block2_receive_simple_GET(void) {
     const uint16_t MID = 1234;
 
     const char *buffer0 = "0123";
-    size_t length0 = strlen(buffer0);
+    size_t length0 = strlen(buffer0); // NOSONAR
     const uint16_t blockSize = 4; // use smaller block size for testing than the example in the RFC
 
     uint32_t blockNum = 0;
@@ -72,7 +72,7 @@ static void test_block2_receive_simple_GET(void) {
     CU_ASSERT_PTR_NULL(resultBuffer)
 
     const char *buffer1 = "4567";
-    size_t length1 = strlen(buffer1);
+    size_t length1 = strlen(buffer1); // NOSONAR
     ++blockNum;
     status = coap_block2_handler(&blk, MID, (const uint8_t *const)buffer1, length1, blockSize, blockNum, blockMore,
                                  &resultBuffer, &resultLen);

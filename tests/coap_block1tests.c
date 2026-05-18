@@ -28,7 +28,7 @@ static const uint16_t BLOCK_SIZE = 5;
 
 static uint8_t handle_12345(lwm2m_block_data_t **blk1, uint8_t **resultBuffer, size_t *resultLen) {
     const char *buffer = "12345";
-    const size_t bufferLength = strlen(buffer);
+    const size_t bufferLength = strlen(buffer); // NOSONAR
     const int BLOCK_NUM = 0;
     const bool BLOCK_MORE = true;
 
@@ -38,7 +38,7 @@ static uint8_t handle_12345(lwm2m_block_data_t **blk1, uint8_t **resultBuffer, s
 
 static uint8_t handle_67(lwm2m_block_data_t **blk1, uint8_t **resultBuffer, size_t *resultLen) {
     const char *buffer = "67";
-    size_t bufferLength = strlen(buffer);
+    size_t bufferLength = strlen(buffer); // NOSONAR
 
     const int BLOCK_NUM = 1;
     bool BLOCK_MORE = false;

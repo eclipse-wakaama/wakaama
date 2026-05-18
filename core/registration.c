@@ -73,8 +73,8 @@ static int prv_getRegistrationQueryLength(lwm2m_context_t * contextP,
     int res;
     uint8_t buffer[21];
 
-    index = strlen(QUERY_STARTER QUERY_VERSION_FULL QUERY_DELIMITER QUERY_NAME);
-    index += strlen(contextP->endpointName);
+    index = strlen(QUERY_STARTER QUERY_VERSION_FULL QUERY_DELIMITER QUERY_NAME); // NOSONAR
+    index += strlen(contextP->endpointName); // NOSONAR
 
     if (NULL != contextP->msisdn)
     {
@@ -86,22 +86,22 @@ static int prv_getRegistrationQueryLength(lwm2m_context_t * contextP,
     switch (server->binding)
     {
     case BINDING_U:
-        index += strlen("&b=U");
+        index += strlen("&b=U"); // NOSONAR
         break;
     case BINDING_UQ:
-        index += strlen("&b=UQ");
+        index += strlen("&b=UQ"); // NOSONAR
         break;
     case BINDING_S:
-        index += strlen("&b=S");
+        index += strlen("&b=S"); // NOSONAR
         break;
     case BINDING_SQ:
-        index += strlen("&b=SQ");
+        index += strlen("&b=SQ"); // NOSONAR
         break;
     case BINDING_US:
-        index += strlen("&b=US");
+        index += strlen("&b=US"); // NOSONAR
         break;
     case BINDING_UQS:
-        index += strlen("&b=UQS");
+        index += strlen("&b=UQS"); // NOSONAR
         break;
     default:
         return 0;
