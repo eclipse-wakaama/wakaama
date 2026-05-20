@@ -869,7 +869,7 @@ void lwm2m_handle_packet(lwm2m_context_t *contextP, uint8_t *buffer, size_t leng
         }
         /* Reuse input buffer for error message. */
         coap_init_message(message, COAP_TYPE_ACK, coap_error_code, message->mid);
-        coap_set_payload(message, coap_error_message, strlen(coap_error_message));
+        coap_set_payload(message, coap_error_message, utils_strlen(coap_error_message));
         message_send(contextP, message, fromSessionH);
     }
 }

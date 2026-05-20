@@ -784,19 +784,19 @@ int object_getRegisterPayloadBufferLength(lwm2m_context_t * contextP)
     uint8_t buffer[REG_OBJECT_MIN_LEN + 5];
 
     LOG_DBG("Entering");
-    index = strlen(REG_START);
+    index = utils_strlen(REG_START);
 
     if ((contextP->altPath != NULL)
      && (contextP->altPath[0] != 0))
     {
-        index += strlen(contextP->altPath);
+        index += utils_strlen(contextP->altPath);
     }
     else
     {
-        index += strlen(REG_DEFAULT_PATH);
+        index += utils_strlen(REG_DEFAULT_PATH);
     }
 
-    index += strlen(REG_LWM2M_RESOURCE_TYPE);
+    index += utils_strlen(REG_LWM2M_RESOURCE_TYPE);
 
     for (objectP = contextP->objectList; objectP != NULL; objectP = objectP->next)
     {
@@ -817,7 +817,7 @@ int object_getRegisterPayloadBufferLength(lwm2m_context_t * contextP)
         if (objectP->versionMajor != 0 || objectP->versionMinor != 0)
         {
             index -= 1;
-            index += strlen(REG_VERSION_START);
+            index += utils_strlen(REG_VERSION_START);
 
             result = utils_uintToText(objectP->versionMajor, buffer, sizeof(buffer));
             if (result < 0) return 0;
@@ -840,7 +840,7 @@ int object_getRegisterPayloadBufferLength(lwm2m_context_t * contextP)
         else if(objectP->instanceList == NULL)
         {
             index -= 1;
-            index += strlen(REG_PATH_END);
+            index += utils_strlen(REG_PATH_END);
         }
 
         if (objectP->instanceList != NULL)
@@ -857,7 +857,7 @@ int object_getRegisterPayloadBufferLength(lwm2m_context_t * contextP)
                 if (result == 0) return 0;
                 index += result;
 
-                index += strlen(REG_PATH_END);
+                index += utils_strlen(REG_PATH_END);
             }
         }
     }

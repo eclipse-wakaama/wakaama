@@ -442,7 +442,7 @@ static void prv_resultCallback(lwm2m_context_t * contextP,
                 return;
             }
 
-            result = lwm2m_stringToUri(locationString, strlen(locationString), &locationUri);
+            result = lwm2m_stringToUri(locationString, utils_strlen(locationString), &locationUri);
             if (result == 0)
             {
                 LOG_DBG("Error: lwm2m_stringToUri() failed for Location_path option in prv_resultCallback()");

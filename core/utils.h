@@ -68,6 +68,14 @@ lwm2m_client_t *utils_findClient(lwm2m_context_t *contextP, void *fromSessionH);
  */
 size_t utils_strnlen(const char *str, size_t max_size);
 
+/** Same functionality as `strlen`. Finds the number of chars (bytes) of the given string.
+ *
+ * The max. length of checked strings can be limited by setting the define LWM2M_MAX_STRLEN.
+ * @param str The null-terminated string to find the length of.
+ * @return The size of the string.
+ */
+size_t utils_strlen(const char *str);
+
 /** A safer version of `strncpy`. Copies at most src_size bytes to dest, but checks for available space.
  *
  * If dest is not NULL and dest_size is not 0, then the destination buffer is always terminated with '\0'.

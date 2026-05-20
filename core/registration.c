@@ -73,35 +73,35 @@ static int prv_getRegistrationQueryLength(lwm2m_context_t * contextP,
     int res;
     uint8_t buffer[21];
 
-    index = strlen(QUERY_STARTER QUERY_VERSION_FULL QUERY_DELIMITER QUERY_NAME);
-    index += strlen(contextP->endpointName);
+    index = utils_strlen(QUERY_STARTER QUERY_VERSION_FULL QUERY_DELIMITER QUERY_NAME);
+    index += utils_strlen(contextP->endpointName);
 
     if (NULL != contextP->msisdn)
     {
-        index += strlen(QUERY_DELIMITER QUERY_SMS);
-        index += strlen(contextP->msisdn);
+        index += utils_strlen(QUERY_DELIMITER QUERY_SMS);
+        index += utils_strlen(contextP->msisdn);
     }
 
 #ifdef LWM2M_VERSION_1_0
     switch (server->binding)
     {
     case BINDING_U:
-        index += strlen("&b=U");
+        index += utils_strlen("&b=U");
         break;
     case BINDING_UQ:
-        index += strlen("&b=UQ");
+        index += utils_strlen("&b=UQ");
         break;
     case BINDING_S:
-        index += strlen("&b=S");
+        index += utils_strlen("&b=S");
         break;
     case BINDING_SQ:
-        index += strlen("&b=SQ");
+        index += utils_strlen("&b=SQ");
         break;
     case BINDING_US:
-        index += strlen("&b=US");
+        index += utils_strlen("&b=US");
         break;
     case BINDING_UQS:
-        index += strlen("&b=UQS");
+        index += utils_strlen("&b=UQS");
         break;
     default:
         return 0;
@@ -135,7 +135,7 @@ static int prv_getRegistrationQueryLength(lwm2m_context_t * contextP,
 
     if (0 != server->lifetime)
     {
-        index += strlen(QUERY_DELIMITER QUERY_LIFETIME);
+        index += utils_strlen(QUERY_DELIMITER QUERY_LIFETIME);
         res = utils_intToText(server->lifetime, buffer, sizeof(buffer));
         if (res == 0) return 0;
         index += res;

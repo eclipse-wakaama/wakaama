@@ -210,7 +210,7 @@ size_t utils_intToText(int64_t data,
          */
         if (data == INT64_MIN) {
             const char *const int64_min_str = "-9223372036854775808";
-            const size_t int64_min_strlen = strlen(int64_min_str);
+            const size_t int64_min_strlen = utils_strlen(int64_min_str);
             if (int64_min_strlen >= length) {
                 return 0;
             }
@@ -940,7 +940,7 @@ int utils_stringCopy(char * buffer,
                      size_t length,
                      const char * str)
 {
-    size_t i = strlen(str); // NOSONAR
+    size_t i = utils_strlen(str); // NOSONAR
 
     return (int)utils_strncpy(buffer, length, str, i);
 }
@@ -1157,6 +1157,14 @@ size_t utils_strnlen(const char *str, size_t max_size) {
     }
 
     return pos - str;
+}
+
+size_t utils_strlen(const char *str) {
+#ifdef LWM2M_MAX_STRLEN
+    return utils_strnlen(str, LWM2M_MAX_STRLEN);
+#else
+    return strlen(str); // NOSONAR
+#endif
 }
 
 size_t utils_strncpy(char *dest, const size_t dest_size, const char *src, const size_t src_size) {
