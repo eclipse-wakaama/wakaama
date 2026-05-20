@@ -71,6 +71,9 @@ static int prv_parseNumber(uint8_t * uriString,
         {
             result *= 10;
             result += uriString[*headP] - '0';
+            if (result > LWM2M_MAX_ID) {
+                return -1;
+            }
         }
         else
         {
