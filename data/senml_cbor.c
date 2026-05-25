@@ -113,6 +113,9 @@ static int prv_parseItem(const uint8_t *buffer, size_t bufferLen, senml_record_t
                 label = SENML_CBOR_OBJECT_LINK_LABEL;
             } else {
                 /* Label ending in _ must be supported or generate error. */
+                if (data.value.asBuffer.length == 0) {
+                    return -1;
+                }
                 if (data.value.asBuffer.buffer[data.value.asBuffer.length - 1] == '_')
                     return -1;
                 label = SENML_CBOR_UNKNOWN_LABEL;
