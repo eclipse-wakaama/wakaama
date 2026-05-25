@@ -135,14 +135,15 @@ lwm2m_connection_t *lwm2m_connection_create(lwm2m_connection_t *connList, int so
     return connP;
 }
 
+lwm2m_connection_t *lwm2m_connection_remove_one(lwm2m_connection_t *connList) {
+    lwm2m_connection_t *nextP = connList->next;
+    lwm2m_free(connList);
+    return nextP;
+}
+
 void lwm2m_connection_free(lwm2m_connection_t *connList) {
     while (connList != NULL) {
-        lwm2m_connection_t *nextP;
-
-        nextP = connList->next;
-        lwm2m_free(connList);
-
-        connList = nextP;
+        connList = lwm2m_connection_remove_one(connList);
     }
 }
 
