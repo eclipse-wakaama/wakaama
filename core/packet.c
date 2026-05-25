@@ -87,6 +87,7 @@ Contains code snippets which are:
 
 
 #include "internals.h"
+#include "message_dedup.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -508,6 +509,23 @@ void lwm2m_handle_packet(lwm2m_context_t *contextP, uint8_t *buffer, size_t leng
                     message->type, message->token_len, message->code >> 5, message->code & 0x1F, message->mid,
                     message->content_type);
         LOG_ARG_DBG("Payload: %.*s", (int)message->payload_len, STR_NULL2EMPTY(message->payload));
+
+        uint8_t *dedup_response = NULL;
+        size_t dedup_response_len = 0;
+        if (coap_check_message_duplication(&contextP->message_dedup, message->mid, fromSessionH, &dedup_response,
+                                           &dedup_response_len)) {
+            if (dedup_response_len == 0 || dedup_response == NULL) {
+                /* Internal error occurred, return silently. */
+                return;
+            }
+            LOG_DBG("Message %d already seen in transmission window", message->mid);
+            coap_error_code = message_send(contextP, response, fromSessionH);
+            if (coap_error_code != NO_ERROR) {
+                LOG_ERR("Warning: Message already seen in transmission window");
+            }
+            return;
+        }
+
         if (message->code >= COAP_GET && message->code <= COAP_DELETE)
         {
             uint32_t block_num = 0;
@@ -654,7 +672,9 @@ void lwm2m_handle_packet(lwm2m_context_t *contextP, uint8_t *buffer, size_t leng
                                            lwm2m_get_coap_block_size());
                     coap_set_payload(response, response->payload, lwm2m_get_coap_block_size());
                 }
-
+                if (!coap_deduplication_set_response(&contextP->message_dedup, response->mid, fromSessionH, response)) {
+                    LOG_ARG_ERR("Message %" PRIu16 " duplication not tracked", response->mid);
+                }
                 coap_error_code = message_send(contextP, response, fromSessionH);
 
                 lwm2m_free(payload);
@@ -679,6 +699,10 @@ void lwm2m_handle_packet(lwm2m_context_t *contextP, uint8_t *buffer, size_t leng
                 }
                 if (1 == coap_set_status_code(response, coap_error_code))
                 {
+                    if (!coap_deduplication_set_response(&contextP->message_dedup, response->mid, fromSessionH,
+                                                         response)) {
+                        LOG_ARG_ERR("Message %" PRIu16 " duplication not tracked", response->mid);
+                    }
                     coap_error_code = message_send(contextP, response, fromSessionH);
                 }
             }
@@ -728,6 +752,10 @@ void lwm2m_handle_packet(lwm2m_context_t *contextP, uint8_t *buffer, size_t leng
                         coap_init_message(response, COAP_TYPE_ACK, 0, message->mid);
                         if (is_message_too_large(message, length)) {
                             coap_set_status_code(response, COAP_413_ENTITY_TOO_LARGE);
+                        }
+                        if (!coap_deduplication_set_response(&contextP->message_dedup, response->mid, fromSessionH,
+                                                             response)) {
+                            LOG_ARG_ERR("Message %" PRIu16 " duplication not tracked", response->mid);
                         }
                         coap_error_code = message_send(contextP, response, fromSessionH);
                     }
@@ -870,8 +898,34 @@ void lwm2m_handle_packet(lwm2m_context_t *contextP, uint8_t *buffer, size_t leng
         /* Reuse input buffer for error message. */
         coap_init_message(message, COAP_TYPE_ACK, coap_error_code, message->mid);
         coap_set_payload(message, coap_error_message, strlen(coap_error_message));
+        if (!coap_deduplication_set_response(&contextP->message_dedup, response->mid, fromSessionH, response)) {
+            LOG_ARG_ERR("Message %" PRIu16 " duplication not tracked", response->mid);
+        }
         message_send(contextP, message, fromSessionH);
     }
+}
+
+size_t message_serialize(coap_packet_t *packet, uint8_t **serializedMessage) {
+
+    size_t pktBufferLen = 0;
+    size_t allocLen;
+
+    LOG_DBG("Entering");
+    *serializedMessage = NULL;
+    allocLen = coap_serialize_get_size(packet);
+    LOG_ARG_DBG("Size to allocate: %zd", allocLen);
+    if (allocLen == 0)
+        return 0;
+
+    *serializedMessage = (uint8_t *)lwm2m_malloc(allocLen);
+    if (*serializedMessage == NULL) {
+        return 0;
+    }
+
+    pktBufferLen = coap_serialize_message(packet, *serializedMessage);
+    coap_free_header(packet);
+    LOG_ARG_DBG("coap_serialize_message() returned %zd", pktBufferLen);
+    return pktBufferLen;
 }
 
 uint8_t message_send(lwm2m_context_t * contextP,
@@ -879,27 +933,23 @@ uint8_t message_send(lwm2m_context_t * contextP,
                      void * sessionH)
 {
     uint8_t result = COAP_500_INTERNAL_SERVER_ERROR;
-    uint8_t * pktBuffer;
-    size_t pktBufferLen = 0;
-    size_t allocLen;
+    uint8_t *pktBuffer = NULL;
+    size_t pktBufferLen;
 
     LOG_DBG("Entering");
-    allocLen = coap_serialize_get_size(message);
-    LOG_ARG_DBG("Size to allocate: %zd", allocLen);
-    if (allocLen == 0) return COAP_500_INTERNAL_SERVER_ERROR;
 
-    pktBuffer = (uint8_t *)lwm2m_malloc(allocLen);
-    if (pktBuffer != NULL)
-    {
-        pktBufferLen = coap_serialize_message(message, pktBuffer);
-        LOG_ARG_DBG("coap_serialize_message() returned %zd", pktBufferLen);
-        if (0 != pktBufferLen)
-        {
+    coap_msg_dedup_t *dedup = coap_deduplication_find(contextP->message_dedup, message->mid, sessionH);
+    if (dedup != NULL) {
+        pktBuffer = dedup->full_response;
+        pktBufferLen = dedup->full_response_len;
+        result = lwm2m_buffer_send(sessionH, pktBuffer, pktBufferLen, contextP->userData);
+        // Do not free pktBuffer as it is owned by the deduplication struct
+    } else {
+        pktBufferLen = message_serialize(message, &pktBuffer);
+        if (pktBuffer != NULL) {
             result = lwm2m_buffer_send(sessionH, pktBuffer, pktBufferLen, contextP->userData);
+            lwm2m_free(pktBuffer);
         }
-        lwm2m_free(pktBuffer);
     }
-
     return result;
 }
-

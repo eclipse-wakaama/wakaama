@@ -87,7 +87,8 @@ The following data formats are configurable for Wakaama:
 - WAKAAMA_COAP_DEFAULT_BLOCK_SIZE CoAP block size used by CoAP layer when performing block-wise transfers. Possible values: 16, 32, 64, 128, 256, 512 and 1024. Defaults to 1024.
 - WAKAAMA_COAP_DEFAULT_MAX_RETRANSMIT The maximum number of retransmissions used for confirmable messages.
 - WAKAAMA_COAP_SEPARATE_TIMEOUT: The max time to wait between the empty ack and the separate response message.
-
+- WAKAAMA_COAP_MESSAGE_EXCHANGE_LIFETIME "The time from starting to send a Confirmable message to the time when an acknowledgement is no longer expected [...]" rfc7252#section-4.8.2.
+  Used for message deduplication window.
 
 ### Logging
 

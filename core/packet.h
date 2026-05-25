@@ -19,6 +19,7 @@
 #define WAKAAMA_PACKET_H
 #include "internals.h"
 
+size_t message_serialize(coap_packet_t *packet, uint8_t **serializedMessage);
 uint8_t message_send(lwm2m_context_t *contextP, coap_packet_t *message, void *sessionH);
 
 #endif /* WAKAAMA_PACKET_H */

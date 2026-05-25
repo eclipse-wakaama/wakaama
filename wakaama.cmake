@@ -65,6 +65,17 @@ set(WAKAAMA_COAP_SEPARATE_TIMEOUT
     CACHE STRING "CoAP separate response timeout; Used if not set on a per-target basis"
 )
 
+# EXCHANGE_LIFETIME https://datatracker.ietf.org/doc/html/rfc7252#section-4.8.2 "The time from starting to send a
+# Confirmable message to the time when an acknowledgement is no longer expected." Also used as the time to block message
+# ids from a client to prevent receiving duplicate packets. Defaults to 247s with default parameters according to
+# rfc7252.
+set(WAKAAMA_COAP_MESSAGE_EXCHANGE_LIFETIME
+    247
+    CACHE
+        STRING
+        "The time from starting to send a Confirmable message to the time when an acknowledgement is no longer expected"
+)
+
 # Logging
 set(WAKAAMA_LOG_LEVEL
     LOG_DISABLED
@@ -169,6 +180,10 @@ function(set_coap_defines)
     target_compile_definitions(${target} PUBLIC LWM2M_COAP_MAX_MESSAGE_SIZE=${WAKAAMA_COAP_MAX_MESSAGE_SIZE})
 
     target_compile_definitions(
+        ${target} PUBLIC LWM2M_COAP_MESSAGE_EXCHANGE_LIFETIME=${WAKAAMA_COAP_MESSAGE_EXCHANGE_LIFETIME}
+    )
+
+    target_compile_definitions(
         ${target} PUBLIC LWM2M_COAP_DEFAULT_MAX_RETRANSMIT=${WAKAAMA_COAP_DEFAULT_MAX_RETRANSMIT}
     )
 
@@ -220,7 +235,7 @@ function(target_sources_coap target)
     target_sources(
         ${target}
         PRIVATE ${WAKAAMA_TOP_LEVEL_DIRECTORY}/coap/block.c ${WAKAAMA_TOP_LEVEL_DIRECTORY}/coap/er-coap-13/er-coap-13.c
-                ${WAKAAMA_TOP_LEVEL_DIRECTORY}/coap/transaction.c
+                ${WAKAAMA_TOP_LEVEL_DIRECTORY}/coap/message_dedup.c ${WAKAAMA_TOP_LEVEL_DIRECTORY}/coap/transaction.c
     )
     # We should not (have to) do this!
     target_include_directories(${target} PRIVATE ${WAKAAMA_TOP_LEVEL_DIRECTORY}/coap)
@@ -266,6 +281,29 @@ function(target_sources_wakaama target)
     if(NOT CURRENT_TARGET_COMPILE_DEFINITIONS MATCHES "LWM2M_COAP_DEFAULT_BLOCK_SIZE=")
         target_compile_definitions(${target} PRIVATE "LWM2M_COAP_DEFAULT_BLOCK_SIZE=${LWM2M_COAP_DEFAULT_BLOCK_SIZE}")
         message(STATUS "${target}: Default CoAP block size not set, using ${LWM2M_COAP_DEFAULT_BLOCK_SIZE}")
+    endif()
+
+    # LWM2M_COAP_SEPARATE_TIMEOUT is needed by source files -> always set it
+    if(NOT CURRENT_TARGET_COMPILE_DEFINITIONS MATCHES "LWM2M_COAP_SEPARATE_TIMEOUT=")
+        target_compile_definitions(${target} PRIVATE "LWM2M_COAP_SEPARATE_TIMEOUT=${LWM2M_COAP_SEPARATE_TIMEOUT}")
+        message(STATUS "${target}: CoAP separate response timeout not set, using ${LWM2M_COAP_SEPARATE_TIMEOUT}")
+    endif()
+
+    # LWM2M_COAP_DEFAULT_MAX_RETRANSMIT is needed by source files -> always set it
+    if(NOT CURRENT_TARGET_COMPILE_DEFINITIONS MATCHES "LWM2M_COAP_DEFAULT_MAX_RETRANSMIT=")
+        target_compile_definitions(
+            ${target} PRIVATE "LWM2M_COAP_DEFAULT_MAX_RETRANSMIT=${LWM2M_COAP_DEFAULT_MAX_RETRANSMIT}"
+        )
+        message(
+            STATUS
+                "${target}: Default CoAP max retransmission count not set, using ${LWM2M_COAP_DEFAULT_MAX_RETRANSMIT}"
+        )
+    endif()
+
+    # LWM2M_COAP_MAX_MESSAGE_SIZE is needed by source files -> always set it
+    if(NOT CURRENT_TARGET_COMPILE_DEFINITIONS MATCHES "LWM2M_COAP_MAX_MESSAGE_SIZE=")
+        target_compile_definitions(${target} PRIVATE "LWM2M_COAP_MAX_MESSAGE_SIZE=2048")
+        message(STATUS "${target}: Default CoAP packet size not set, using 2048")
     endif()
 
     # Detect invalid configuration already during CMake run

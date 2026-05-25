@@ -95,6 +95,9 @@ int main(void) {
    if (CUE_SUCCESS != create_er_coap_parse_message_suit())
        goto exit;
 
+   if (CUE_SUCCESS != create_message_deduplication_suit())
+       goto exit;
+
    if (CUE_SUCCESS != create_list_test_suit())
        goto exit;
 #ifdef LWM2M_SERVER_MODE

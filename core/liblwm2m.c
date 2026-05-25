@@ -51,6 +51,7 @@
 */
 
 #include "internals.h"
+#include "message_dedup.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -223,6 +224,7 @@ void lwm2m_close(lwm2m_context_t * contextP)
 #endif
 
     prv_deleteTransactionList(contextP);
+    coap_deduplication_free(contextP);
     lwm2m_free(contextP);
 }
 
@@ -493,6 +495,7 @@ next_step:
 
     registration_step(contextP, tv_sec, timeoutP);
     transaction_step(contextP, tv_sec, timeoutP);
+    coap_cleanup_message_deduplication_step(&contextP->message_dedup, tv_sec, timeoutP);
 
     LOG_ARG_DBG("Final timeoutP: %d", (int)*timeoutP);
 #ifdef LWM2M_CLIENT_MODE
