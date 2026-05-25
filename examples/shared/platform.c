@@ -87,3 +87,14 @@ void lwm2m_printf(const char * format, ...)
 
     va_end(ap);
 }
+
+void lwm2m_coap_printf(const char * format, ...)
+{
+    va_list ap;
+
+    va_start(ap, format);
+
+    vfprintf(stderr, format, ap);
+
+    va_end(ap);
+}

@@ -132,6 +132,11 @@ int lwm2m_seed(void);
 void lwm2m_printf(const char * format, ...);
 #endif
 
+#ifdef LWM2M_WITH_COAP_LOGS
+// Same usage as C89 printf()
+void lwm2m_coap_printf(const char * format, ...);
+#endif
+
 typedef struct _lwm2m_context_ lwm2m_context_t;
 
 // communication layer
