@@ -462,7 +462,11 @@ next_step:
 
         case STATE_REG_FAILED:
             // TODO avoid infinite loop by checking the bootstrap info is different
+#ifdef LWM2M_BOOTSTRAP
             contextP->state = STATE_BOOTSTRAP_REQUIRED;
+#else
+            contextP->state = STATE_REGISTER_REQUIRED;
+#endif
             goto next_step;
 
         case STATE_REG_PENDING:
@@ -477,7 +481,11 @@ next_step:
         if (registration_getStatus(contextP) == STATE_REG_FAILED)
         {
             // TODO avoid infinite loop by checking the bootstrap info is different
+#ifdef LWM2M_BOOTSTRAP
             contextP->state = STATE_BOOTSTRAP_REQUIRED;
+#else
+            contextP->state = STATE_REGISTER_REQUIRED;
+#endif
             goto next_step;
             break;
         }
