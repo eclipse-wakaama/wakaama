@@ -1,0 +1,39 @@
+name: Test with Valgrind
+
+on:
+  push:
+    branches: '**'
+  pull_request:
+    branches: '**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build_and_test:
+    runs-on: ubuntu-24.04
+
+    strategy:
+      matrix:
+        tool: ["memcheck", "helgrind"]
+
+    steps:
+    - name: Checkout code including full history and submodules
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      with:
+        submodules: true
+        fetch-depth: 0
+
+    - name: Install dependencies from APT repository
+      run: |
+        sudo apt-get update
+        sudo apt-get install cmake libcunit1-dev ninja-build valgrind
+
+    - name: Build Wakaama
+      run: |
+        tools/ci/run_ci.sh --run-build --valgrind ${{ matrix.tool }}  --verbose
+
+    - name: Execute unit tests with Valgrind
+      run: |
+        tools/ci/run_ci.sh --run-tests

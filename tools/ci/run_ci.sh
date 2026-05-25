@@ -26,6 +26,7 @@ OPT_C_EXTENSIONS=""
 OPT_C_STANDARD=""
 OPT_CLANG_FORMAT="clang-format-18"
 OPT_SANITIZER=""
+OPT_VALGRIND=""
 OPT_SCAN_BUILD=""
 OPT_SONARQUBE=""
 OPT_SOURCE_DIRECTORY="${REPO_ROOT_DIR}"
@@ -67,6 +68,8 @@ Options:
                             presets are placed into 'build-presets' by default.
   --sanitizer TYPE          Enable sanitizer
                             (TYPE: address leak thread undefined)
+  --valgrind TOOL           Enable valgrind
+                            (TOOL: memcheck helgrind)
   --scan-build BINARY       Enable Clang code analyzer using specified
                             executable
                             (BINARY: e.g. scan-build-10)
@@ -292,6 +295,7 @@ if ! PARSED_OPTS=$($getopt -o vah \
                           -l run-doxygen \
                           -l run-code-checker \
                           -l sanitizer: \
+                          -l valgrind: \
                           -l scan-build: \
                           -l sonarqube: \
                           -l source-directory: \
@@ -370,6 +374,10 @@ while true; do
       OPT_SANITIZER=$2
       shift 2
       ;;
+    --valgrind)
+      OPT_VALGRIND=$2
+      shift 2
+      ;;
     --scan-build)
       OPT_SCAN_BUILD=$2
       # Analyzing works only when code gets actually built
@@ -446,6 +454,10 @@ fi
 
 if [ -n "${OPT_SANITIZER}" ]; then
   CMAKE_ARGS="${CMAKE_ARGS} -DSANITIZER=${OPT_SANITIZER}"
+fi
+
+if [ -n "${OPT_VALGRIND}" ]; then
+  CMAKE_ARGS="${CMAKE_ARGS} -DVALGRIND=${OPT_VALGRIND}"
 fi
 
 if [ -n "${OPT_SCAN_BUILD}" ] && [ -n "${OPT_SONARQUBE}" ]; then
